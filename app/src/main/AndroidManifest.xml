@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.grapheneos.camera">
 
+    <uses-feature android:name="android.hardware.camera.any" />
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
