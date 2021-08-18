@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Camera</string>
+
+    <string name="manual_permission_dialog_title">Camera permission required</string>
+    <string name="manual_permission_dialog_message">
+        The app needs permission to access the camera to function. Please provide the required permission via Settings in order to use this app.
+    </string>
 </resources>
