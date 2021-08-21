@@ -6,9 +6,27 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/camera"
+    <FrameLayout
+        android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        tools:ignore="UselessParent">
+
+        <!-- [UselessParent] message was suppressed
+            TODO: Add more components to parent layout (RelativeLayout) later
+         -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/camera"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <ImageView
+            android:layout_width="84dp"
+            android:layout_height="84dp"
+            android:id="@+id/focusRing"
+            android:src="@drawable/focus_ring"
+            android:visibility="invisible"
+            android:contentDescription="@string/focus_ring" />
+
+    </FrameLayout>
 
 </RelativeLayout>

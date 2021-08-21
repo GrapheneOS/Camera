@@ -19,6 +19,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.animation.Animator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -27,6 +28,8 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageView;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -113,11 +116,16 @@ public class MainActivity extends AppCompatActivity {
 
             else if(event.getAction()==MotionEvent.ACTION_UP) {
 
+                final float x = event.getX();
+                final float y = event.getY();
+
                 MeteringPointFactory factory = new SurfaceOrientedMeteringPointFactory(
                         mPreviewView.getWidth(), mPreviewView.getHeight()
                 );
 
-                final MeteringPoint autoFocusPoint = factory.createPoint(event.getX(), event.getY());
+                final MeteringPoint autoFocusPoint = factory.createPoint(x, y);
+
+                animateFocusRing(x, y);
 
                 camera.getCameraControl().startFocusAndMetering(
                             new FocusMeteringAction.Builder(
@@ -133,6 +141,45 @@ public class MainActivity extends AppCompatActivity {
         });
 
         start_auto_focus();
+    }
+
+    private void animateFocusRing(float x, float y) {
+        ImageView focusRing = findViewById(R.id.focusRing);
+
+        // Move the focus ring so that its center is at the tap location (x, y)
+        float width = focusRing.getWidth();
+        float height = focusRing.getHeight();
+        focusRing.setX(x - width / 2);
+        focusRing.setY(y - height / 2);
+
+        // Show focus ring
+        focusRing.setVisibility(View.VISIBLE);
+        focusRing.setAlpha(1F);
+
+        // Animate the focus ring to disappear
+        focusRing.animate()
+                .setStartDelay(500)
+                .setDuration(300)
+                .alpha(0F)
+                .setListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        Log.i(TAG, "Animation started!");
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animator) {
+                        focusRing.setVisibility(View.INVISIBLE);
+                        Log.i(TAG, "Animation completed!");
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {}
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {}
+
+                }).start();
     }
 
     private void start_auto_focus(){
