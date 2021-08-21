@@ -139,14 +139,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 .alpha(0F)
                 .setListener(new Animator.AnimatorListener() {
                     @Override
-                    public void onAnimationStart(Animator animation) {
-                        Log.i(TAG, "Animation started!");
-                    }
+                    public void onAnimationStart(Animator animation) {}
 
                     @Override
                     public void onAnimationEnd(Animator animator) {
                         focusRing.setVisibility(View.INVISIBLE);
-                        Log.i(TAG, "Animation completed!");
                     }
 
                     @Override
@@ -246,7 +243,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // Check camera permission again if the user switches back to the app (maybe
         // after enabling/disabling the camera permission in Settings)
         // Will also be called by Android Lifecycle when the app starts up
-        Log.i(TAG, "onResume");
         check_camera_permission();
     }
 
