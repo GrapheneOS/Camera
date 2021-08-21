@@ -14,6 +14,7 @@ import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
+import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
@@ -28,6 +29,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -37,7 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener {
 
     private static final String TAG = "GOCam";
 
@@ -62,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 check_camera_permission();
             });
+
+    private ScaleGestureDetector scaleGestureDetector;
 
     private void start_camera(){
 
@@ -155,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void start_auto_focus(){
-        MeteringPoint autoFocusPoint = new SurfaceOrientedMeteringPointFactory(1f, 1f)
+        final MeteringPoint autoFocusPoint = new SurfaceOrientedMeteringPointFactory(1f, 1f)
                 .createPoint(.5f, .5f);
 
         FocusMeteringAction autoFocusAction = new FocusMeteringAction.Builder(
@@ -257,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mPreviewView = findViewById(R.id.camera);
+        scaleGestureDetector = new ScaleGestureDetector(this, this);
     }
 
     @Override
@@ -285,9 +290,31 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     ).disableAutoCancel().build()
             );
 
-            return true;
+            return v.performClick();
         }
 
-        return mPreviewView.performClick();
+        return scaleGestureDetector.onTouchEvent(event);
     }
+
+    @Override
+    public boolean onScale(ScaleGestureDetector detector) {
+
+        final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
+        float scale = 1f;
+
+        if(zoomState!=null) {
+            scale = zoomState.getZoomRatio() * detector.getScaleFactor();
+        }
+
+        camera.getCameraControl().setZoomRatio(scale);
+        return true;
+    }
+
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+        return true;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector detector) { }
 }
