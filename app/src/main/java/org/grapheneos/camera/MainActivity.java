@@ -7,9 +7,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
@@ -26,11 +29,14 @@ import android.util.Log;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "GOCam";
+
+    private static final int AUTO_FOCUS_INTERVAL_IN_SECONDS = 2;
 
     private PreviewView mPreviewView;
 
@@ -97,6 +103,28 @@ public class MainActivity extends AppCompatActivity {
 
         // Get a camera instance bound to the lifecycle of this activity
         camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
+
+        start_auto_focus();
+    }
+
+    private void start_auto_focus(){
+        MeteringPoint autoFocusPoint = new SurfaceOrientedMeteringPointFactory(1f, 1f)
+                .createPoint(.5f, .5f);
+
+        FocusMeteringAction autoFocusAction = new FocusMeteringAction.Builder(
+                autoFocusPoint,
+                FocusMeteringAction.FLAG_AF
+        ).setAutoCancelDuration(AUTO_FOCUS_INTERVAL_IN_SECONDS, TimeUnit.SECONDS).build();
+
+        camera.getCameraControl().startFocusAndMetering(autoFocusAction).addListener(() ->
+                        Log.i(TAG, "Auto-focusing every " + AUTO_FOCUS_INTERVAL_IN_SECONDS + " seconds..."),
+                ContextCompat.getMainExecutor(this));
+    }
+
+    private void stop_auto_focus(){
+        camera.getCameraControl().cancelFocusAndMetering().addListener(() ->
+                Log.i(TAG, "Auto-focus has stopped."),
+                ContextCompat.getMainExecutor(this));
     }
 
     private void check_camera_permission(){
