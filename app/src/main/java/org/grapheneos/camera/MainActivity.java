@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private static final String TAG = "GOCam";
 
@@ -110,35 +110,7 @@ public class MainActivity extends AppCompatActivity {
         camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
 
         // Focus camera on touch/tap
-        mPreviewView.setOnTouchListener((v, event) -> {
-
-            if(event.getAction()==MotionEvent.ACTION_DOWN) return true;
-
-            else if(event.getAction()==MotionEvent.ACTION_UP) {
-
-                final float x = event.getX();
-                final float y = event.getY();
-
-                MeteringPointFactory factory = new SurfaceOrientedMeteringPointFactory(
-                        mPreviewView.getWidth(), mPreviewView.getHeight()
-                );
-
-                final MeteringPoint autoFocusPoint = factory.createPoint(x, y);
-
-                animateFocusRing(x, y);
-
-                camera.getCameraControl().startFocusAndMetering(
-                            new FocusMeteringAction.Builder(
-                                    autoFocusPoint,
-                                    FocusMeteringAction.FLAG_AF
-                            ).disableAutoCancel().build()
-                );
-
-                return true;
-            }
-
-            return mPreviewView.performClick();
-        });
+        mPreviewView.setOnTouchListener(this);
 
         start_auto_focus();
     }
@@ -285,5 +257,37 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mPreviewView = findViewById(R.id.camera);
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+
+        if(event.getAction()==MotionEvent.ACTION_DOWN)
+            return true;
+
+        else if(event.getAction()==MotionEvent.ACTION_UP) {
+
+            final float x = event.getX();
+            final float y = event.getY();
+
+            MeteringPointFactory factory = new SurfaceOrientedMeteringPointFactory(
+                    mPreviewView.getWidth(), mPreviewView.getHeight()
+            );
+
+            final MeteringPoint autoFocusPoint = factory.createPoint(x, y);
+
+            animateFocusRing(x, y);
+
+            camera.getCameraControl().startFocusAndMetering(
+                    new FocusMeteringAction.Builder(
+                            autoFocusPoint,
+                            FocusMeteringAction.FLAG_AF
+                    ).disableAutoCancel().build()
+            );
+
+            return true;
+        }
+
+        return mPreviewView.performClick();
     }
 }
