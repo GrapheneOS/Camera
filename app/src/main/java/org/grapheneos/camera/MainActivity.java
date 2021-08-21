@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -66,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             });
 
     private ScaleGestureDetector scaleGestureDetector;
+
+    private GestureDetector dbTapGestureDetector;
 
     private void start_camera(){
 
@@ -252,10 +255,27 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setContentView(R.layout.activity_main);
         mPreviewView = findViewById(R.id.camera);
         scaleGestureDetector = new ScaleGestureDetector(this, this);
+        dbTapGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                Log.i(TAG, "===============Double tap detected.=========");
+
+                final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
+
+                if(zoomState!=null) {
+                    camera.getCameraControl().setZoomRatio(zoomState.getZoomRatio() * 1.5f);
+                }
+
+                return super.onDoubleTap(e);
+            }
+        });
     }
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+
+        dbTapGestureDetector.onTouchEvent(event);
+        scaleGestureDetector.onTouchEvent(event);
 
         if(event.getAction()==MotionEvent.ACTION_DOWN)
             return true;
@@ -283,7 +303,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return v.performClick();
         }
 
-        return scaleGestureDetector.onTouchEvent(event);
+        return true;
     }
 
     @Override
