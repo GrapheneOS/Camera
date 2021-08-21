@@ -172,12 +172,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 ContextCompat.getMainExecutor(this));
     }
 
-    private void stop_auto_focus(){
-        camera.getCameraControl().cancelFocusAndMetering().addListener(() ->
-                Log.i(TAG, "Auto-focus has stopped."),
-                ContextCompat.getMainExecutor(this));
-    }
-
     private void check_camera_permission(){
 
         Log.i(TAG, "Checking camera status...");
