@@ -11,6 +11,7 @@ import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.MeteringPoint;
+import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -25,6 +26,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.MotionEvent;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -103,6 +105,32 @@ public class MainActivity extends AppCompatActivity {
 
         // Get a camera instance bound to the lifecycle of this activity
         camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
+
+        // Focus camera on touch/tap
+        mPreviewView.setOnTouchListener((v, event) -> {
+
+            if(event.getAction()==MotionEvent.ACTION_DOWN) return true;
+
+            else if(event.getAction()==MotionEvent.ACTION_UP) {
+
+                MeteringPointFactory factory = new SurfaceOrientedMeteringPointFactory(
+                        mPreviewView.getWidth(), mPreviewView.getHeight()
+                );
+
+                final MeteringPoint autoFocusPoint = factory.createPoint(event.getX(), event.getY());
+
+                camera.getCameraControl().startFocusAndMetering(
+                            new FocusMeteringAction.Builder(
+                                    autoFocusPoint,
+                                    FocusMeteringAction.FLAG_AF
+                            ).disableAutoCancel().build()
+                );
+
+                return true;
+            }
+
+            return mPreviewView.performClick();
+        });
 
         start_auto_focus();
     }
