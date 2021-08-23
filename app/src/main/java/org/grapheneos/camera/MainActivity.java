@@ -263,7 +263,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
 
                 if(zoomState!=null) {
-                    camera.getCameraControl().setZoomRatio(zoomState.getZoomRatio() * 1.5f);
+                    float zoom = zoomState.getZoomRatio() * 1.5f;
+                    if(zoom>zoomState.getMaxZoomRatio()) zoom = zoomState.getMaxZoomRatio();
+                    camera.getCameraControl().setZoomRatio(zoom);
                 }
 
                 return super.onDoubleTap(e);
