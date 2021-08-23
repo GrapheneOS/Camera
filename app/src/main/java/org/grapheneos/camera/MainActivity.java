@@ -271,6 +271,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
     }
 
+    private boolean isZooming = false;
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
 
@@ -281,6 +283,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return true;
 
         else if(event.getAction()==MotionEvent.ACTION_UP) {
+
+            if(isZooming) {
+                isZooming = false;
+                return true;
+            }
 
             final float x = event.getX();
             final float y = event.getY();
@@ -308,6 +315,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
+
+        isZooming = true;
 
         final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
         float scale = 1f;
