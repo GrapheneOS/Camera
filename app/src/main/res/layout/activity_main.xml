@@ -40,6 +40,7 @@
         app:tabMode="scrollable"
         app:tabIndicator="@drawable/mode_indicator"
         app:tabGravity="center"
+        app:tabPaddingStart="32dp"
         app:tabIndicatorHeight="30dp"
         android:background="@android:color/transparent"
         android:layout_marginVertical="12dp"
