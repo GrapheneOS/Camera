@@ -34,6 +34,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.google.android.material.tabs.TabLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.concurrent.ExecutionException;
@@ -271,6 +272,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 return super.onDoubleTap(e);
             }
         });
+
+        TabLayout tabLayout = findViewById(R.id.camera_mode_tabs);
+        TabLayout.Tab selected;
+
+        tabLayout.addTab(tabLayout.newTab().setText("Night Light"));
+        tabLayout.addTab(selected=tabLayout.newTab().setText("Camera"));
+        tabLayout.addTab(tabLayout.newTab().setText("Portrait"));
+        tabLayout.addTab(tabLayout.newTab().setText("Bokeh Mode"));
+        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
+
+        tabLayout.selectTab(selected);
     }
 
     private boolean isZooming = false;
