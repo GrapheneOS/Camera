@@ -6,4 +6,5 @@
         The app needs permission to access the camera to function. Please provide the required permission via Settings in order to use this app.
     </string>
     <string name="focus_ring">Focus Ring</string>
+    <string name="flip_camera">Flip Camera</string>
 </resources>
