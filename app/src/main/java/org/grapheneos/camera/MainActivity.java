@@ -32,11 +32,15 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -273,16 +277,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        TabLayout tabLayout = findViewById(R.id.camera_mode_tabs);
+        CenteringTabLayout tabLayout = findViewById(R.id.camera_mode_tabs);
         TabLayout.Tab selected;
 
-        tabLayout.addTab(tabLayout.newTab().setText("Night Light"));
-        tabLayout.addTab(selected=tabLayout.newTab().setText("Camera"));
-        tabLayout.addTab(tabLayout.newTab().setText("Portrait"));
-        tabLayout.addTab(tabLayout.newTab().setText("Bokeh Mode"));
-        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
+        tabLayout.addTab(tabLayout.newTab().setText("Night Light")); // NIGHT
+        tabLayout.addTab(tabLayout.newTab().setText("Portrait")); // BOKEH
+        tabLayout.addTab(selected=tabLayout.newTab().setText("Camera")); // AUTO
+        tabLayout.addTab(tabLayout.newTab().setText("HDR")); // HDR
+        tabLayout.addTab(tabLayout.newTab().setText("Beauty")); // Beauty
+//        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
 
-        tabLayout.selectTab(selected);
+        selected.select();
     }
 
     private boolean isZooming = false;

@@ -65,16 +65,25 @@
 
     </LinearLayout>
 
-    <com.google.android.material.tabs.TabLayout
+<!--    <org.grapheneos.camera.HomeFeatureLayout-->
+<!--        android:id="@+id/camera_modes"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_marginBottom="10dp"-->
+<!--        android:scrollbars="none"-->
+<!--        android:layout_height="wrap_content"/>-->
+
+    <org.grapheneos.camera.CenteringTabLayout
         android:id="@+id/camera_mode_tabs"
         android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="30dp"
+        app:tabPaddingStart="18.75dp"
         app:tabRippleColor="@android:color/transparent"
         app:tabIndicatorFullWidth="false"
-        app:tabMode="scrollable"
+        app:tabMode="auto"
         app:tabIndicator="@drawable/mode_indicator"
-        app:tabGravity="center"
+        app:tabGravity="fill"
         app:tabIndicatorHeight="30dp"
         android:background="@android:color/transparent"
         android:layout_marginVertical="12dp"
