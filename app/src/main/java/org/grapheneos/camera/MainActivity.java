@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -268,9 +269,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
 
                 if(zoomState!=null) {
-                    float zoom = zoomState.getZoomRatio() * 1.5f;
-                    if(zoom>zoomState.getMaxZoomRatio()) zoom = zoomState.getMaxZoomRatio();
-                    camera.getCameraControl().setZoomRatio(zoom);
+                    final float start = zoomState.getLinearZoom();
+                    float end = start * 1.5f;
+
+                    if(end<0.25f) end=0.25f;
+                    else if(end>zoomState.getMaxZoomRatio()) end = zoomState.getMaxZoomRatio();
+
+                    final ValueAnimator animator = ValueAnimator.ofFloat(start, end);
+                    animator.setDuration(300);
+                    animator.addUpdateListener(valueAnimator ->
+                            camera.getCameraControl().setLinearZoom(
+                                    (float) valueAnimator.getAnimatedValue()));
+                    animator.start();
                 }
 
                 return super.onDoubleTap(e);
