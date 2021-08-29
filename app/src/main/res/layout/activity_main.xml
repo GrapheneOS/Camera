@@ -2,19 +2,15 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".MainActivity">
 
     <FrameLayout
         android:layout_height="match_parent"
-        android:layout_width="match_parent"
-        tools:ignore="UselessParent">
+        android:layout_width="match_parent">
 
-        <!-- [UselessParent] message was suppressed
-            TODO: Add more components to parent layout (RelativeLayout) later
-         -->
         <androidx.camera.view.PreviewView
             android:id="@+id/camera"
             android:layout_width="match_parent"
@@ -78,7 +74,6 @@
             android:src="@drawable/option_circle"
             android:layout_gravity="center_vertical"
             android:contentDescription="@string/flip_camera" />
-
 
     </LinearLayout>
 
