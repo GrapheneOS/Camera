@@ -2,7 +2,6 @@ package org.grapheneos.camera;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
@@ -54,6 +53,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     // is already visible and to dismiss it if the permission gets granted.
     private AlertDialog manualPermissionDialog;
 
+    private ProcessCameraProvider cameraProvider;
+
+    private int cameraSelector = CameraSelector.LENS_FACING_FRONT;
+
     private Camera camera;
 
     // Used to request permission from the user
@@ -72,18 +75,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private GestureDetector dbTapGestureDetector;
 
-    private void start_camera(){
+    private void initializeCamera(){
 
-        // Don't do anything if camera has already started
-        if(camera!=null) return;
+        if(cameraProvider!=null) {
+            startCamera();
+            return;
+        }
 
         final ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
                 ProcessCameraProvider.getInstance(this);
 
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                bindPreview(cameraProvider);
+                cameraProvider = cameraProviderFuture.get();
+                startCamera();
             } catch (ExecutionException | InterruptedException e) {
                 // No errors need to be handled for this Future.
                 // This should never be reached.
@@ -91,14 +96,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }, ContextCompat.getMainExecutor(this));
     }
 
-    // Bind the camera to the camera (Preview) view
-    void bindPreview(@NonNull ProcessCameraProvider cameraProvider) {
+    void startCamera(){
+        startCamera(false);
+    }
+
+    // Start the camera with latest hard configuration
+    void startCamera(final boolean forced){
+
+        if(!forced && camera!=null) return;
 
         Preview preview = new Preview.Builder()
                 .build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .requireLensFacing(this.cameraSelector)
                 .build();
 
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
@@ -122,6 +133,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         mPreviewView.setOnTouchListener(this);
 
         start_auto_focus();
+    }
+
+    private void toggleCameraSelector(){
+        if(cameraSelector==CameraSelector.LENS_FACING_BACK) cameraSelector = CameraSelector.LENS_FACING_FRONT;
+        else cameraSelector = CameraSelector.LENS_FACING_BACK;
+        startCamera(true);
     }
 
     private void animateFocusRing(float x, float y) {
@@ -190,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Log.i(TAG, "Permission granted.");
 
             // Setup the camera since the permission is available
-            start_camera();
+            initializeCamera();
         }
 
         // Check if the user has default denied the camera permission for app
@@ -255,8 +272,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mPreviewView = findViewById(R.id.camera);
+
         scaleGestureDetector = new ScaleGestureDetector(this, this);
+
         dbTapGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDoubleTap(MotionEvent e) {
@@ -294,6 +314,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
 
         selected.select();
+
+        View fco = findViewById(R.id.flip_camera_option);
+        fco.setOnClickListener(v -> toggleCameraSelector());
     }
 
     private boolean isZooming = false;
