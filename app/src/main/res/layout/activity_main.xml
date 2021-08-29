@@ -38,13 +38,30 @@
         android:layout_above="@id/camera_mode_tabs"
         android:layout_marginBottom="20dp">
 
-        <ImageView
+        <FrameLayout
+            android:id="@+id/flip_camera_option"
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:src="@drawable/option_circle"
-            android:layout_gravity="center_vertical"
-            android:contentDescription="@string/flip_camera"/>
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_gravity="center">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/option_circle"
+                android:layout_gravity="center"
+                android:contentDescription="@string/flip_camera"/>
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/flip_camera"
+                android:layout_gravity="center"
+                android:contentDescription="@string/flip_camera"/>
+
+        </FrameLayout>
 
         <ImageView
             android:layout_weight="1"
@@ -64,14 +81,6 @@
 
 
     </LinearLayout>
-
-<!--    <org.grapheneos.camera.HomeFeatureLayout-->
-<!--        android:id="@+id/camera_modes"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_alignParentBottom="true"-->
-<!--        android:layout_marginBottom="10dp"-->
-<!--        android:scrollbars="none"-->
-<!--        android:layout_height="wrap_content"/>-->
 
     <org.grapheneos.camera.CenteringTabLayout
         android:id="@+id/camera_mode_tabs"
