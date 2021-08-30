@@ -19,6 +19,7 @@ import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
+import androidx.viewpager2.widget.ViewPager2;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -71,11 +72,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private int cameraSelector = CameraSelector.LENS_FACING_FRONT;
 
+    private int flashMode = ImageCapture.FLASH_MODE_AUTO;
+
     private Camera camera;
 
     private ImageCapture imageCapture;
 
     private Bitmap lastFrame;
+
+    private ViewPager2 flashPager;
 
     // Used to request permission from the user
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -137,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         imageCapture = builder
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
+                .setFlashMode(flashMode)
                 .build();
 
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
@@ -158,6 +164,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private void toggleCameraSelector(){
         if(cameraSelector==CameraSelector.LENS_FACING_BACK) cameraSelector = CameraSelector.LENS_FACING_FRONT;
         else cameraSelector = CameraSelector.LENS_FACING_BACK;
+        startCamera(true);
+    }
+
+    private void toggleFlashMode(){
+        if(flashMode==2) flashMode = 0;
+        else ++flashMode;
+
+        flashPager.setCurrentItem(flashMode);
         startCamera(true);
     }
 
@@ -392,6 +406,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         });
             }
         });
+
+        flashPager = findViewById(R.id.flash_pager);
+        flashPager.setAdapter(new FlashAdapter());
+
+        flashPager.setUserInputEnabled(false);
+
+        flashPager.setOnClickListener(v -> toggleFlashMode());
     }
 
     private Bitmap blurRenderScript(Bitmap smallBitmap) {

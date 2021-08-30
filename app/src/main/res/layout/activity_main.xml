@@ -134,4 +134,21 @@
         android:layout_marginVertical="12dp"
         android:layout_marginHorizontal="8dp"/>
 
+    <FrameLayout
+        android:layout_height="32dp"
+        android:layout_width="32dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/flash_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:contentDescription="@string/flash_mode"/>
+
+    </FrameLayout>
+
 </RelativeLayout>
