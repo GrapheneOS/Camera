@@ -2,6 +2,7 @@ package org.grapheneos.camera;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
@@ -9,6 +10,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
@@ -26,17 +28,24 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private int cameraSelector = CameraSelector.LENS_FACING_FRONT;
 
     private Camera camera;
+
+    private ImageCapture imageCapture;
 
     // Used to request permission from the user
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -117,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         ImageCapture.Builder builder = new ImageCapture.Builder();
 
-        final ImageCapture imageCapture = builder
+        imageCapture = builder
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
                 .build();
 
@@ -317,6 +328,48 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         View fco = findViewById(R.id.flip_camera_option);
         fco.setOnClickListener(v -> toggleCameraSelector());
+
+        ImageButton capture_button = findViewById(R.id.capture_button);
+        capture_button.setOnClickListener(new View.OnClickListener(){
+
+            final String IMAGE_FILE_FORMAT = ".jpg";
+
+            public String getImageFileName() {
+                String fileName;
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss",
+                        Locale.US);/* w  ww .  j av  a  2s.  co  m*/
+                fileName = sdf.format(new Date());
+                return "IMG_" + fileName + IMAGE_FILE_FORMAT;
+            }
+
+            @Override
+            public void onClick(View v) {
+                if(camera==null) return;
+
+                File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), getImageFileName());
+
+                ImageCapture.OutputFileOptions outputFileOptions =
+                        new ImageCapture.OutputFileOptions.Builder(imageFile)
+                        .build();
+
+                imageCapture.takePicture(
+                        outputFileOptions,
+                        ContextCompat.getMainExecutor(MainActivity.this),
+                        new ImageCapture.OnImageSavedCallback() {
+
+                            @Override
+                            public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
+
+                                Log.i(TAG, "Image saved successfully!");
+                            }
+
+                            @Override
+                            public void onError(@NonNull ImageCaptureException exception) {
+                                Toast.makeText(MainActivity.this, "Unexpected Error: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+        });
     }
 
     private boolean isZooming = false;
