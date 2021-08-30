@@ -46,6 +46,13 @@
             <ImageView
                 android:layout_width="64dp"
                 android:layout_height="64dp"
+                android:src="@drawable/circle"
+                android:layout_gravity="center"
+                android:contentDescription="@string/flip_camera"/>
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:src="@drawable/option_circle"
                 android:layout_gravity="center"
                 android:contentDescription="@string/flip_camera"/>
@@ -67,13 +74,32 @@
             android:layout_gravity="center_vertical"
             android:contentDescription="@string/flip_camera" />
 
-        <ImageView
+        <FrameLayout
+            android:id="@+id/image_preview"
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="64dp"
-            android:src="@drawable/option_circle"
-            android:layout_gravity="center_vertical"
-            android:contentDescription="@string/flip_camera" />
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_gravity="center">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/circle"
+                android:layout_gravity="center"
+                android:contentDescription="@string/flip_camera"/>
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/option_circle"
+                android:layout_gravity="center"
+                android:contentDescription="@string/flip_camera"/>
+
+        </FrameLayout>
+
+
 
     </LinearLayout>
 
