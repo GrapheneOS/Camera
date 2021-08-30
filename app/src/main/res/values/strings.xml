@@ -7,4 +7,5 @@
     </string>
     <string name="focus_ring">Focus Ring</string>
     <string name="flip_camera">Flip Camera</string>
+    <string name="loading_camera">Loading camera</string>
 </resources>

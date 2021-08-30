@@ -25,11 +25,16 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -69,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private Camera camera;
 
     private ImageCapture imageCapture;
+
+    private Bitmap lastFrame;
 
     // Used to request permission from the user
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -133,6 +140,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 .build();
 
         preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
+
+        lastFrame = mPreviewView.getBitmap();
 
         // Unbind/close all other camera(s) [if any]
         cameraProvider.unbindAll();
@@ -326,6 +335,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         selected.select();
 
+        final ImageView mainOverlay = findViewById(R.id.main_overlay);
+
+        mPreviewView.getPreviewStreamState().observe(this,  state -> {
+            if(state.equals(PreviewView.StreamState.STREAMING)){
+                mainOverlay.setVisibility(View.GONE);
+            } else {
+                if(lastFrame!=null){
+                    mainOverlay.setImageBitmap(blurRenderScript(lastFrame, 4));
+                    mainOverlay.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
         View fco = findViewById(R.id.flip_camera_option);
         fco.setOnClickListener(v -> toggleCameraSelector());
 
@@ -370,6 +392,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         });
             }
         });
+    }
+
+    private Bitmap blurRenderScript(Bitmap smallBitmap, int radius) {
+
+        final float defaultBitmapScale = 0.1f;
+
+        int width  = Math.round(smallBitmap.getWidth() * defaultBitmapScale);
+        int height = Math.round(smallBitmap.getHeight() * defaultBitmapScale);
+
+        Bitmap inputBitmap  = Bitmap.createScaledBitmap(smallBitmap, width, height, false);
+        Bitmap outputBitmap = Bitmap.createBitmap(inputBitmap);
+
+        RenderScript renderScript = RenderScript.create(this);
+        ScriptIntrinsicBlur theIntrinsic = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript));
+        Allocation tmpIn = Allocation.createFromBitmap(renderScript, inputBitmap);
+        Allocation tmpOut = Allocation.createFromBitmap(renderScript, outputBitmap);
+        theIntrinsic.setRadius(radius);
+        theIntrinsic.setInput(tmpIn);
+        theIntrinsic.forEach(tmpOut);
+        tmpOut.copyTo(outputBitmap);
+
+        return outputBitmap;
     }
 
     private boolean isZooming = false;
