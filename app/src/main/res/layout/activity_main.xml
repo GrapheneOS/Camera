@@ -32,7 +32,8 @@
         android:orientation="horizontal"
         android:weightSum="3"
         android:layout_above="@id/camera_mode_tabs"
-        android:layout_marginBottom="20dp">
+        android:layout_marginBottom="20dp"
+        android:baselineAligned="false">
 
         <FrameLayout
             android:id="@+id/flip_camera_option"
@@ -66,13 +67,21 @@
 
         </FrameLayout>
 
-        <ImageView
+        <FrameLayout
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="84dp"
-            android:src="@drawable/option_circle"
-            android:layout_gravity="center_vertical"
-            android:contentDescription="@string/flip_camera" />
+            android:layout_gravity="center">
+
+            <ImageButton
+                android:id="@+id/capture_button"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_gravity="center"
+                android:background="@drawable/camera_shutter"
+                android:contentDescription="@string/flip_camera" />
+
+        </FrameLayout>
 
         <FrameLayout
             android:id="@+id/image_preview"
