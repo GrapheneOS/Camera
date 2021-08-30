@@ -409,7 +409,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                             @Override
                             public void onError(@NonNull ImageCaptureException exception) {
-                                Toast.makeText(MainActivity.this, "Unexpected Error: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+//                                Toast.makeText(MainActivity.this, "", Toast.LENGTH_LONG).show();
+                                exception.printStackTrace();
                             }
                         });
             }
