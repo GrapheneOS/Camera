@@ -15,6 +15,7 @@ import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
+import androidx.camera.core.VideoCapture;
 import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -23,6 +24,8 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import android.Manifest;
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -41,6 +44,8 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -422,6 +427,38 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         flashPager.setUserInputEnabled(false);
 
         flashPager.setOnClickListener(v -> toggleFlashMode());
+
+        ImageView captureModeView = findViewById(R.id.capture_mode);
+
+        captureModeView.setOnClickListener(new View.OnClickListener(){
+
+            boolean isVideoMode = false;
+            final int SWITCH_ANIM_DURATION = 150;
+
+            @Override
+            public void onClick(View v) {
+
+                final int imgID = isVideoMode ? R.drawable.video_camera : R.drawable.camera;
+
+                isVideoMode = !isVideoMode;
+
+                final ObjectAnimator oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f);
+                final ObjectAnimator oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f);
+                oa1.setInterpolator(new DecelerateInterpolator());
+                oa2.setInterpolator(new AccelerateDecelerateInterpolator());
+                oa1.setDuration(SWITCH_ANIM_DURATION);
+                oa2.setDuration(SWITCH_ANIM_DURATION);
+                oa1.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        super.onAnimationEnd(animation);
+                        captureModeView.setImageResource(imgID);
+                        oa2.start();
+                    }
+                });
+                oa1.start();
+            }
+        });
     }
 
     private Bitmap blurRenderScript(Bitmap smallBitmap) {

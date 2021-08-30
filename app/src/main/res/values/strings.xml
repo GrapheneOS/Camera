@@ -9,4 +9,5 @@
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>
     <string name="flash_mode">Flash Mode</string>
+    <string name="capture_mode">Capture Mode</string>
 </resources>
