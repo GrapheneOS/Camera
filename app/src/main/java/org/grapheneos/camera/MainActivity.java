@@ -342,7 +342,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 mainOverlay.setVisibility(View.GONE);
             } else {
                 if(lastFrame!=null){
-                    mainOverlay.setImageBitmap(blurRenderScript(lastFrame, 4));
+                    mainOverlay.setImageBitmap(blurRenderScript(lastFrame));
                     mainOverlay.setVisibility(View.VISIBLE);
                 }
             }
@@ -394,7 +394,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
     }
 
-    private Bitmap blurRenderScript(Bitmap smallBitmap, int radius) {
+    private Bitmap blurRenderScript(Bitmap smallBitmap) {
 
         final float defaultBitmapScale = 0.1f;
 
@@ -408,7 +408,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         ScriptIntrinsicBlur theIntrinsic = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript));
         Allocation tmpIn = Allocation.createFromBitmap(renderScript, inputBitmap);
         Allocation tmpOut = Allocation.createFromBitmap(renderScript, outputBitmap);
-        theIntrinsic.setRadius(radius);
+        theIntrinsic.setRadius(4);
         theIntrinsic.setInput(tmpIn);
         theIntrinsic.forEach(tmpOut);
         tmpOut.copyTo(outputBitmap);
