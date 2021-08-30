@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private ProcessCameraProvider cameraProvider;
 
-    private int cameraSelector = CameraSelector.LENS_FACING_FRONT;
+    private int cameraSelector = CameraSelector.LENS_FACING_BACK;
 
     private int flashMode = ImageCapture.FLASH_MODE_AUTO;
 
