@@ -159,6 +159,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         mPreviewView.setOnTouchListener(this);
 
         start_auto_focus();
+
+        if(!camera.getCameraInfo().hasFlashUnit())
+            flashPager.setCurrentItem(2);
     }
 
     private void toggleCameraSelector(){
@@ -168,11 +171,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void toggleFlashMode(){
-        if(flashMode==2) flashMode = 0;
-        else ++flashMode;
+        if(camera.getCameraInfo().hasFlashUnit()){
+            if(flashMode==2) flashMode = 0;
+            else ++flashMode;
 
-        flashPager.setCurrentItem(flashMode);
-        startCamera(true);
+            flashPager.setCurrentItem(flashMode);
+            startCamera(true);
+        } else {
+            Toast.makeText(this, "Flash is unavailable for the current mode.",
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private void animateFocusRing(float x, float y) {
