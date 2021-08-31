@@ -7,11 +7,16 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/focus_ring.xml" value="0.19479166666666667" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/mode_indicator.xml" value="0.21979166666666666" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/option_circle.xml" value="0.21979166666666666" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera.xml" value="0.20208333333333334" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera_shutter.xml" value="0.1984375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera_shutter_normal.xml" value="0.1984375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera_shutter_off.xml" value="0.1984375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera_shutter_on.xml" value="0.1984375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/circle.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/flash_auto.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/flash_off.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/flash_on.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/video_camera.xml" value="0.20208333333333334" />
       </map>
     </option>
   </component>
