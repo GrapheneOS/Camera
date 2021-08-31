@@ -135,8 +135,8 @@
         android:layout_marginHorizontal="8dp"/>
 
     <FrameLayout
-        android:layout_height="32dp"
-        android:layout_width="32dp"
+        android:layout_height="28dp"
+        android:layout_width="28dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="12dp"
         android:layout_alignParentTop="true"
@@ -152,8 +152,8 @@
     </FrameLayout>
 
     <FrameLayout
-        android:layout_height="32dp"
-        android:layout_width="32dp"
+        android:layout_height="28dp"
+        android:layout_width="28dp"
         android:layout_marginEnd="12dp"
         android:layout_marginTop="12dp"
         android:layout_alignParentTop="true"
