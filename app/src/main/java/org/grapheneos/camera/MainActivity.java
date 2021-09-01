@@ -5,18 +5,13 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
-import androidx.camera.core.CameraSelector;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
-import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
-import androidx.camera.core.VideoCapture;
 import androidx.camera.core.ZoomState;
-import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
@@ -47,24 +42,18 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.google.android.material.tabs.TabLayout;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener {
 
     private static final String TAG = "GOCam";
-
-    private static final int AUTO_FOCUS_INTERVAL_IN_SECONDS = 2;
 
     private PreviewView mPreviewView;
 
@@ -72,23 +61,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     // is already visible and to dismiss it if the permission gets granted.
     private AlertDialog manualPermissionDialog;
 
-    private ProcessCameraProvider cameraProvider;
-
-    private int cameraSelector = CameraSelector.LENS_FACING_BACK;
-
-    private int flashMode = ImageCapture.FLASH_MODE_AUTO;
-
-    private Camera camera;
-
-    private ImageCapture imageCapture;
-
-    private VideoCapture videoCapture;
-
-    private boolean videoMode = false;
-
     private Bitmap lastFrame;
 
     private ViewPager2 flashPager;
+
+    private CamConfig config;
 
     // Used to request permission from the user
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -106,93 +83,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private GestureDetector dbTapGestureDetector;
 
-    private void initializeCamera(){
-
-        if(cameraProvider!=null) {
-            startCamera();
-            return;
-        }
-
-        final ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
-                ProcessCameraProvider.getInstance(this);
-
-        cameraProviderFuture.addListener(() -> {
-            try {
-                cameraProvider = cameraProviderFuture.get();
-                startCamera();
-            } catch (ExecutionException | InterruptedException e) {
-                // No errors need to be handled for this Future.
-                // This should never be reached.
-            }
-        }, ContextCompat.getMainExecutor(this));
+    public PreviewView getPreviewView() {
+        return mPreviewView;
     }
 
-    void startCamera(){
-        startCamera(false);
+    public ViewPager2 getFlashPager() {
+        return flashPager;
     }
 
-    // Start the camera with latest hard configuration
-    void startCamera(final boolean forced){
-
-        if(!forced && camera!=null) return;
-
-        Preview preview = new Preview.Builder()
-                .build();
-
-        CameraSelector cameraSelector = new CameraSelector.Builder()
-                .requireLensFacing(this.cameraSelector)
-                .build();
-
-        ImageCapture.Builder builder = new ImageCapture.Builder();
-
-        if(videoMode)
-            videoCapture = new VideoCapture.Builder().build();
-
-        imageCapture = builder
-                .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
-                .setFlashMode(flashMode)
-                .build();
-
-        preview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
-
-        lastFrame = mPreviewView.getBitmap();
-
-        // Unbind/close all other camera(s) [if any]
-        cameraProvider.unbindAll();
-
-        // Get a camera instance bound to the lifecycle of this activity
-        if(videoCapture!=null){
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture);
-        } else {
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
-        }
-
-        // Focus camera on touch/tap
-        mPreviewView.setOnTouchListener(this);
-
-        start_auto_focus();
-
-        if(!camera.getCameraInfo().hasFlashUnit())
-            flashPager.setCurrentItem(2);
-    }
-
-    private void toggleCameraSelector(){
-        if(cameraSelector==CameraSelector.LENS_FACING_BACK) cameraSelector = CameraSelector.LENS_FACING_FRONT;
-        else cameraSelector = CameraSelector.LENS_FACING_BACK;
-        startCamera(true);
-    }
-
-    private void toggleFlashMode(){
-        if(camera.getCameraInfo().hasFlashUnit()){
-            if(flashMode==2) flashMode = 0;
-            else ++flashMode;
-
-            flashPager.setCurrentItem(flashMode);
-            startCamera(true);
-        } else {
-            Toast.makeText(this, "Flash is unavailable for the current mode.",
-                    Toast.LENGTH_LONG).show();
-        }
+    public void updateLastFrame() {
+        this.lastFrame = mPreviewView.getBitmap();
     }
 
     private void animateFocusRing(float x, float y) {
@@ -231,20 +131,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }).start();
     }
 
-    private void start_auto_focus(){
-        final MeteringPoint autoFocusPoint = new SurfaceOrientedMeteringPointFactory(1f, 1f)
-                .createPoint(.5f, .5f);
-
-        FocusMeteringAction autoFocusAction = new FocusMeteringAction.Builder(
-                autoFocusPoint,
-                FocusMeteringAction.FLAG_AF
-        ).setAutoCancelDuration(AUTO_FOCUS_INTERVAL_IN_SECONDS, TimeUnit.SECONDS).build();
-
-        camera.getCameraControl().startFocusAndMetering(autoFocusAction).addListener(() ->
-                        Log.i(TAG, "Auto-focusing every " + AUTO_FOCUS_INTERVAL_IN_SECONDS + " seconds..."),
-                ContextCompat.getMainExecutor(this));
-    }
-
     private void check_camera_permission(){
 
         Log.i(TAG, "Checking camera status...");
@@ -261,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Log.i(TAG, "Permission granted.");
 
             // Setup the camera since the permission is available
-            initializeCamera();
+            config.initializeCamera();
         }
 
         // Check if the user has default denied the camera permission for app
@@ -327,16 +213,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        config = new CamConfig(this);
+
         mPreviewView = findViewById(R.id.camera);
-
         scaleGestureDetector = new ScaleGestureDetector(this, this);
-
         dbTapGestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDoubleTap(MotionEvent e) {
                 Log.i(TAG, "===============Double tap detected.=========");
 
-                final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
+                final ZoomState zoomState = config.getCamera().getCameraInfo().
+                        getZoomState().getValue();
 
                 if(zoomState!=null) {
                     final float start = zoomState.getLinearZoom();
@@ -348,7 +235,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     final ValueAnimator animator = ValueAnimator.ofFloat(start, end);
                     animator.setDuration(300);
                     animator.addUpdateListener(valueAnimator ->
-                            camera.getCameraControl().setLinearZoom(
+                            config.getCamera().getCameraControl().setLinearZoom(
                                     (float) valueAnimator.getAnimatedValue()));
                     animator.start();
                 }
@@ -382,8 +269,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        View fco = findViewById(R.id.flip_camera_option);
-        fco.setOnClickListener(v -> toggleCameraSelector());
+        final View fco = findViewById(R.id.flip_camera_option);
+        fco.setOnClickListener(v -> config.toggleCameraSelector());
 
         ImageButton capture_button = findViewById(R.id.capture_button);
         capture_button.setOnClickListener(new View.OnClickListener(){
@@ -400,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
             @Override
             public void onClick(View v) {
-                if(camera==null) return;
+                if(config.getCamera()==null) return;
 
                 File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), getImageFileName());
 
@@ -408,7 +295,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         new ImageCapture.OutputFileOptions.Builder(imageFile)
                         .build();
 
-                imageCapture.takePicture(
+                config.getImageCapture().takePicture(
                         outputFileOptions,
                         ContextCompat.getMainExecutor(MainActivity.this),
                         new ImageCapture.OnImageSavedCallback() {
@@ -429,14 +316,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
 
         flashPager = findViewById(R.id.flash_pager);
+
         flashPager.setAdapter(new FlashAdapter());
-
         flashPager.setUserInputEnabled(false);
+        flashPager.setOnClickListener(v -> config.toggleFlashMode());
 
-        flashPager.setOnClickListener(v -> toggleFlashMode());
-
-        ImageView captureModeView = findViewById(R.id.capture_mode);
-
+        final ImageView captureModeView = findViewById(R.id.capture_mode);
         captureModeView.setOnClickListener(new View.OnClickListener(){
 
             final int SWITCH_ANIM_DURATION = 150;
@@ -444,18 +329,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void onClick(View v) {
 
-                final int imgID = videoMode ? R.drawable.video_camera : R.drawable.camera;
+                final int imgID = config.isVideoMode() ? R.drawable.video_camera :
+                        R.drawable.camera;
 
-                videoMode = !videoMode;
-
-                startCamera(true);
+                config.switchCameraMode();
+                config.startCamera(true);
 
                 final ObjectAnimator oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f);
                 final ObjectAnimator oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f);
+
                 oa1.setInterpolator(new DecelerateInterpolator());
                 oa2.setInterpolator(new AccelerateDecelerateInterpolator());
+
                 oa1.setDuration(SWITCH_ANIM_DURATION);
                 oa2.setDuration(SWITCH_ANIM_DURATION);
+
                 oa1.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
@@ -466,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 });
                 oa1.start();
 
-                if(videoMode){
+                if(config.isVideoMode()){
                     capture_button.setBackgroundResource(0);
                     capture_button.setImageResource(R.drawable.start_recording);
                 } else {
@@ -528,7 +416,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
             animateFocusRing(x, y);
 
-            camera.getCameraControl().startFocusAndMetering(
+            config.getCamera().getCameraControl().startFocusAndMetering(
                     new FocusMeteringAction.Builder(
                             autoFocusPoint,
                             FocusMeteringAction.FLAG_AF
@@ -546,14 +434,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         isZooming = true;
 
-        final ZoomState zoomState = camera.getCameraInfo().getZoomState().getValue();
+        final ZoomState zoomState = config.getCamera().getCameraInfo().getZoomState().getValue();
         float scale = 1f;
 
         if(zoomState!=null) {
             scale = zoomState.getZoomRatio() * detector.getScaleFactor();
         }
 
-        camera.getCameraControl().setZoomRatio(scale);
+        config.getCamera().getCameraControl().setZoomRatio(scale);
         return true;
     }
 
