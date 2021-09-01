@@ -469,7 +469,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 if(videoMode){
                     capture_button.setBackgroundResource(0);
-                    capture_button.setImageResource(R.drawable.video_shutter);
+                    capture_button.setImageResource(R.drawable.start_recording);
                 } else {
                     capture_button.setBackgroundResource(R.drawable.camera_shutter);
                     capture_button.setImageResource(0);
