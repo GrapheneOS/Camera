@@ -83,6 +83,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private ImageCapture imageCapture;
 
+    private VideoCapture videoCapture;
+
+    private boolean videoMode = false;
+
     private Bitmap lastFrame;
 
     private ViewPager2 flashPager;
@@ -140,10 +144,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 .requireLensFacing(this.cameraSelector)
                 .build();
 
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .build();
-
         ImageCapture.Builder builder = new ImageCapture.Builder();
+
+        if(videoMode)
+            videoCapture = new VideoCapture.Builder().build();
 
         imageCapture = builder
                 .setTargetRotation(this.getWindowManager().getDefaultDisplay().getRotation())
@@ -158,7 +162,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         cameraProvider.unbindAll();
 
         // Get a camera instance bound to the lifecycle of this activity
-        camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis, imageCapture);
+        if(videoCapture!=null){
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture);
+        } else {
+            camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
+        }
 
         // Focus camera on touch/tap
         mPreviewView.setOnTouchListener(this);
@@ -432,15 +440,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         captureModeView.setOnClickListener(new View.OnClickListener(){
 
-            boolean isVideoMode = false;
             final int SWITCH_ANIM_DURATION = 150;
 
             @Override
             public void onClick(View v) {
 
-                final int imgID = isVideoMode ? R.drawable.video_camera : R.drawable.camera;
+                final int imgID = videoMode ? R.drawable.video_camera : R.drawable.camera;
 
-                isVideoMode = !isVideoMode;
+                videoMode = !videoMode;
+
+                startCamera(true);
 
                 final ObjectAnimator oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f);
                 final ObjectAnimator oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f);
@@ -457,6 +466,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     }
                 });
                 oa1.start();
+
+                if(videoMode){
+                    capture_button.setBackgroundResource(0);
+                    capture_button.setImageResource(R.drawable.video_shutter);
+                } else {
+                    capture_button.setBackgroundResource(R.drawable.camera_shutter);
+                    capture_button.setImageResource(0);
+                }
             }
         });
     }
