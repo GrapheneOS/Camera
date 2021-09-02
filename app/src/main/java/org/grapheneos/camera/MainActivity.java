@@ -2,12 +2,9 @@ package org.grapheneos.camera;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.FocusMeteringAction;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
@@ -27,7 +24,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.Settings;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
@@ -45,10 +41,6 @@ import android.widget.ImageView;
 
 import com.google.android.material.tabs.TabLayout;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener {
@@ -66,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ViewPager2 flashPager;
 
     private CamConfig config;
+
+    private ImageCapturer imageCapturer;
 
     // Used to request permission from the user
     private final ActivityResultLauncher<String> requestPermissionLauncher =
@@ -214,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setContentView(R.layout.activity_main);
 
         config = new CamConfig(this);
+        imageCapturer = new ImageCapturer(this);
 
         mPreviewView = findViewById(R.id.camera);
         scaleGestureDetector = new ScaleGestureDetector(this, this);
@@ -273,47 +268,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         fco.setOnClickListener(v -> config.toggleCameraSelector());
 
         ImageButton capture_button = findViewById(R.id.capture_button);
-        capture_button.setOnClickListener(new View.OnClickListener(){
-
-            final String IMAGE_FILE_FORMAT = ".jpg";
-
-            public String getImageFileName() {
-                String fileName;
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss",
-                        Locale.US);/* w  ww .  j av  a  2s.  co  m*/
-                fileName = sdf.format(new Date());
-                return "IMG_" + fileName + IMAGE_FILE_FORMAT;
-            }
-
-            @Override
-            public void onClick(View v) {
-                if(config.getCamera()==null) return;
-
-                File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), getImageFileName());
-
-                ImageCapture.OutputFileOptions outputFileOptions =
-                        new ImageCapture.OutputFileOptions.Builder(imageFile)
-                        .build();
-
-                config.getImageCapture().takePicture(
-                        outputFileOptions,
-                        ContextCompat.getMainExecutor(MainActivity.this),
-                        new ImageCapture.OnImageSavedCallback() {
-
-                            @Override
-                            public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-
-                                Log.i(TAG, "Image saved successfully!");
-                            }
-
-                            @Override
-                            public void onError(@NonNull ImageCaptureException exception) {
-//                                Toast.makeText(MainActivity.this, "", Toast.LENGTH_LONG).show();
-                                exception.printStackTrace();
-                            }
-                        });
-            }
-        });
+        capture_button.setOnClickListener(v -> imageCapturer.takePicture());
 
         flashPager = findViewById(R.id.flash_pager);
 
@@ -362,6 +317,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }
         });
+    }
+
+    public CamConfig getConfig() {
+        return config;
     }
 
     private Bitmap blurRenderScript(Bitmap smallBitmap) {
