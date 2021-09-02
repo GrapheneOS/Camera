@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -76,6 +77,17 @@ public class VideoCapturer {
                         public void onError(int videoCaptureError, @NonNull String message, @Nullable Throwable cause) {
                             isRecording = false;
                             afterRecordingStops();
+
+                            if(videoCaptureError==6){
+                                Toast.makeText(mActivity,
+                                        "Video too short to be saved", Toast.LENGTH_LONG)
+                                        .show();
+                                return;
+                            }
+
+                            Toast.makeText(mActivity, "Unable to save recording." +
+                                    "\nError Code: " + videoCaptureError, Toast.LENGTH_LONG)
+                                    .show();
                         }
                     });
 
