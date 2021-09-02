@@ -333,7 +333,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         R.drawable.camera;
 
                 config.switchCameraMode();
-                config.startCamera(true);
 
                 final ObjectAnimator oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f);
                 final ObjectAnimator oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f);

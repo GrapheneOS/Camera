@@ -95,6 +95,7 @@ public class CamConfig {
 
     public void switchCameraMode(){
         this.videoMode = !this.isVideoMode();
+        startCamera(true);
     }
 
     // Tells whether flash is available for the current mode
