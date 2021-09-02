@@ -16,4 +16,5 @@
     <string name="loading_camera">Loading camera</string>
     <string name="flash_mode">Flash Mode</string>
     <string name="capture_mode">Capture Mode</string>
+    <string name="start_value_timer">00:00</string>
 </resources>

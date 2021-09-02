@@ -169,4 +169,19 @@
 
     </FrameLayout>
 
+    <TextView
+        android:id="@+id/timer"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="12dp"
+        android:paddingHorizontal="8dp"
+        android:background="@drawable/timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:visibility="gone"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:text="@string/start_value_timer"/>
+
 </RelativeLayout>

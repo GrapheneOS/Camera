@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Environment;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Toast;
 
@@ -31,6 +32,33 @@ public class VideoCapturer {
 
     private String videoFileFormat = ".mp4";
 
+    private final Handler handler = new Handler();
+
+    private int elapsedSeconds = 0;
+
+    private final Runnable runnable = new Runnable() {
+
+        @Override
+        public void run() {
+            ++elapsedSeconds;
+
+            final String secs = padTo2(elapsedSeconds % 60);
+            final String mins  = padTo2((elapsedSeconds / 60) % 60);
+            final String hours = padTo2(elapsedSeconds / 3600);
+
+            String timerText;
+
+            if(hours.equals("00")){
+                timerText = mins+":"+secs;
+            } else {
+                timerText = hours+":"+mins+":"+secs;
+            }
+
+            mActivity.getTimerView().setText(timerText);
+            startTimer();
+        }
+    };
+
     public VideoCapturer(final MainActivity mActivity) {
         this.mActivity = mActivity;
     }
@@ -38,6 +66,19 @@ public class VideoCapturer {
     public String getParentDirPath() {
         return mActivity.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
                 .getAbsolutePath();
+    }
+
+    private String padTo2(int time){
+        return String.format("%1$" + 2 + "s", time).replace(' ', '0');
+    }
+
+    private void startTimer() {
+        handler.postDelayed(runnable, 1000);
+    }
+
+    private void cancelTimer() {
+        elapsedSeconds = 0;
+        handler.removeCallbacks(runnable);
     }
 
     public File generateFileForVideo() {
@@ -105,6 +146,10 @@ public class VideoCapturer {
         mActivity.getFlashPager().setVisibility(View.GONE);
         mActivity.getThirdCircle().setImageResource(R.drawable.camera_shutter);
         mActivity.getTabLayout().setVisibility(View.INVISIBLE);
+
+        mActivity.getTimerView().setText(R.string.start_value_timer);
+        mActivity.getTimerView().setVisibility(View.VISIBLE);
+        startTimer();
     }
 
     public void afterRecordingStops(){
@@ -114,6 +159,9 @@ public class VideoCapturer {
         mActivity.getCaptureModeView().setVisibility(View.VISIBLE);
         mActivity.getTabLayout().setVisibility(View.VISIBLE);
         mActivity.getFlashPager().setVisibility(View.VISIBLE);
+
+        mActivity.getTimerView().setVisibility(View.GONE);
+        cancelTimer();
     }
 
     public boolean isRecording(){

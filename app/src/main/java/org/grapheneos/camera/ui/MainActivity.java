@@ -39,6 +39,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.google.android.material.tabs.TabLayout;
 
@@ -90,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private GestureDetector dbTapGestureDetector;
 
+    private TextView timerView;
+
     private boolean isZooming = false;
 
     // Used to request permission from the user
@@ -132,6 +135,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 checkPermissions();
             });
+
+    public TextView getTimerView() {
+        return timerView;
+    }
 
     public PreviewView getPreviewView() {
         return mPreviewView;
@@ -338,6 +345,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
 
         selected.select();
+
+        timerView = findViewById(R.id.timer);
 
         final ImageView mainOverlay = findViewById(R.id.main_overlay);
 
