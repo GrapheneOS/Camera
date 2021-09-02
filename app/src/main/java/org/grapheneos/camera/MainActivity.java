@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     Log.i(TAG, "Permission denied for camera.");
                 }
 
-                check_permissions();
+                checkPermissions();
             });
 
     private ScaleGestureDetector scaleGestureDetector;
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }).start();
     }
 
-    private void check_permissions(){
+    private void checkPermissions(){
 
         Log.i(TAG, "Checking camera status...");
 
@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // Check camera permission again if the user switches back to the app (maybe
         // after enabling/disabling the camera permission in Settings)
         // Will also be called by Android Lifecycle when the app starts up
-        check_permissions();
+        checkPermissions();
     }
 
     @Override
