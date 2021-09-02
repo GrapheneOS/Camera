@@ -16,6 +16,8 @@ import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.grapheneos.camera.ui.MainActivity;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 

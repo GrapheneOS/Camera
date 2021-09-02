@@ -5,7 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.MainActivity">
 
     <FrameLayout
         android:layout_height="match_parent"
@@ -119,7 +119,7 @@
 
     </LinearLayout>
 
-    <org.grapheneos.camera.BottomTabLayout
+    <org.grapheneos.camera.ui.BottomTabLayout
         android:id="@+id/camera_mode_tabs"
         android:layout_alignParentBottom="true"
         android:layout_width="match_parent"

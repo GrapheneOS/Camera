@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package org.grapheneos.camera.capturer;
 
 import android.os.Environment;
 import android.util.Log;
@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.core.content.ContextCompat;
+
+import org.grapheneos.camera.ui.MainActivity;
 
 import java.io.File;
 import java.text.SimpleDateFormat;

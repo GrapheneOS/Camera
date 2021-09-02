@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package org.grapheneos.camera.capturer;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -12,6 +12,9 @@ import androidx.annotation.Nullable;
 import androidx.camera.core.VideoCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import org.grapheneos.camera.ui.MainActivity;
+import org.grapheneos.camera.R;
 
 import java.io.File;
 import java.text.SimpleDateFormat;

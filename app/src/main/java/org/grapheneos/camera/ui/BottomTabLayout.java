@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package org.grapheneos.camera.ui;
 
 import android.content.Context;
 import android.os.Build;

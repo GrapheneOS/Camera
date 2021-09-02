@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package org.grapheneos.camera.ui;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -42,6 +42,12 @@ import android.widget.ImageView;
 
 import com.google.android.material.tabs.TabLayout;
 
+import org.grapheneos.camera.CamConfig;
+import org.grapheneos.camera.adapter.FlashAdapter;
+import org.grapheneos.camera.R;
+import org.grapheneos.camera.capturer.ImageCapturer;
+import org.grapheneos.camera.capturer.VideoCapturer;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener {
@@ -79,6 +85,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ImageView thirdCircle;
 
     private ImageButton captureButton;
+
+    private ScaleGestureDetector scaleGestureDetector;
+
+    private GestureDetector dbTapGestureDetector;
+
+    private boolean isZooming = false;
 
     // Used to request permission from the user
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
@@ -120,10 +132,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 checkPermissions();
             });
-
-    private ScaleGestureDetector scaleGestureDetector;
-
-    private GestureDetector dbTapGestureDetector;
 
     public PreviewView getPreviewView() {
         return mPreviewView;
@@ -449,8 +457,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         return outputBitmap;
     }
-
-    private boolean isZooming = false;
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
