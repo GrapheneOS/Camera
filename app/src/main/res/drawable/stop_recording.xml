@@ -10,10 +10,10 @@
                 android:height="84dp" />
 
             <padding
-                android:bottom="24dp"
-                android:left="24dp"
-                android:right="24dp"
-                android:top="24dp" />
+                android:bottom="28dp"
+                android:left="28dp"
+                android:right="28dp"
+                android:top="28dp" />
 
             <stroke
                 android:width="6dp"
@@ -25,8 +25,8 @@
         <shape
             android:shape="rectangle">
             <size
-                android:width="32dp"
-                android:height="32dp" />
+                android:width="16dp"
+                android:height="16dp" />
 
             <solid android:color="#ff0000" />
         </shape>

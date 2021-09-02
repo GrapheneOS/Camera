@@ -68,6 +68,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private ImageCapturer imageCapturer;
 
+    private VideoCapturer videoCapturer;
+
+    private View flipCameraCircle;
+
+    private ImageView captureModeView;
+
+    private BottomTabLayout tabLayout;
+
+    private ImageView thirdCircle;
+
     // Used to request permission from the user
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
@@ -256,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         config = new CamConfig(this);
         imageCapturer = new ImageCapturer(this);
+        videoCapturer = new VideoCapturer(this);
 
         mPreviewView = findViewById(R.id.camera);
         scaleGestureDetector = new ScaleGestureDetector(this, this);
@@ -286,7 +297,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        BottomTabLayout tabLayout = findViewById(R.id.camera_mode_tabs);
+        tabLayout = findViewById(R.id.camera_mode_tabs);
         TabLayout.Tab selected;
 
         tabLayout.addTab(tabLayout.newTab().setText("Night Light")); // NIGHT
@@ -311,8 +322,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        final View fco = findViewById(R.id.flip_camera_option);
-        fco.setOnClickListener(v -> config.toggleCameraSelector());
+        flipCameraCircle = findViewById(R.id.flip_camera_circle);
+        flipCameraCircle.setOnClickListener(v -> config.toggleCameraSelector());
+
+        thirdCircle = findViewById(R.id.third_circle);
+        thirdCircle.setOnClickListener(v -> {
+            if(videoCapturer.isRecording()){
+                imageCapturer.takePicture();
+            } else {
+                Log.i(TAG, "Attempting to open gallery...");
+            }
+        });
 
         ImageButton capture_button = findViewById(R.id.capture_button);
         capture_button.setOnClickListener(v -> {
@@ -320,8 +340,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissionLauncher.launch(AUDIO_PERMISSION);
+                    return;
                 }
 
+                if (videoCapturer.isRecording()) {
+                    videoCapturer.stopRecording();
+                    capture_button.setImageResource(R.drawable.start_recording);
+                    thirdCircle.setImageResource(R.drawable.circle);
+                    flipCameraCircle.setVisibility(View.VISIBLE);
+                    captureModeView.setVisibility(View.VISIBLE);
+                    tabLayout.setVisibility(View.VISIBLE);
+                    flashPager.setVisibility(View.VISIBLE);
+                } else {
+                    videoCapturer.startRecording();
+                    capture_button.setImageResource(R.drawable.stop_recording);
+                    flipCameraCircle.setVisibility(View.INVISIBLE);
+                    captureModeView.setVisibility(View.GONE);
+                    flashPager.setVisibility(View.GONE);
+                    thirdCircle.setImageResource(R.drawable.camera_shutter);
+                    tabLayout.setVisibility(View.INVISIBLE);
+                }
             } else {
                 imageCapturer.takePicture();
             }
@@ -333,7 +371,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         flashPager.setUserInputEnabled(false);
         flashPager.setOnClickListener(v -> config.toggleFlashMode());
 
-        final ImageView captureModeView = findViewById(R.id.capture_mode);
+        captureModeView = findViewById(R.id.capture_mode);
         captureModeView.setOnClickListener(new View.OnClickListener(){
 
             final int SWITCH_ANIM_DURATION = 150;

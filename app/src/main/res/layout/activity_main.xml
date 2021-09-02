@@ -42,7 +42,7 @@
         android:baselineAligned="false">
 
         <FrameLayout
-            android:id="@+id/flip_camera_option"
+            android:id="@+id/flip_camera_circle"
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="64dp"
@@ -99,6 +99,7 @@
             android:layout_gravity="center">
 
             <ImageView
+                android:id="@+id/third_circle"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/circle"
