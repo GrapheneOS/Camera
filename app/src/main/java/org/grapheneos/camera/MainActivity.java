@@ -10,6 +10,7 @@ import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
 import androidx.camera.core.ZoomState;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -47,11 +48,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private static final String TAG = "GOCam";
 
+    private final String[] CAMERA_PERMISSION = {Manifest.permission.CAMERA};
+
+    private final String[] AUDIO_PERMISSION = {Manifest.permission.RECORD_AUDIO};
+
     private PreviewView mPreviewView;
 
     // Hold a reference to the manual permission dialog to avoid re-creating it if it
     // is already visible and to dismiss it if the permission gets granted.
-    private AlertDialog manualPermissionDialog;
+    private AlertDialog cameraPermissionDialog;
+
+    private AlertDialog audioPermissionDialog;
 
     private Bitmap lastFrame;
 
@@ -62,12 +69,41 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ImageCapturer imageCapturer;
 
     // Used to request permission from the user
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    Log.i(TAG, "Permission granted for camera on request.");
+    private final ActivityResultLauncher<String[]> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
+
+                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        == PackageManager.PERMISSION_GRANTED)  {
+                    Log.i(TAG, "Permission granted for recording audio.");
                 } else {
-                    Log.i(TAG, "Permission denied/unavailable for camera on request.");
+                    Log.i(TAG, "Permission denied for recording audio.");
+
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+                    builder.setTitle(R.string.audio_permission_dialog_title);
+                    builder.setMessage(R.string.audio_permission_dialog_message);
+
+                    // Open the settings menu for the current app
+                    builder.setPositiveButton("Settings", (dialog, which) -> {
+                        Intent intent = new
+                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package",
+                                getPackageName(), null);
+                        intent.setData(uri);
+                        startActivity(intent);
+                    });
+
+                    builder.setNegativeButton("Cancel",  null);
+
+                    audioPermissionDialog = builder.show();
+                }
+
+                if(ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED){
+                    Log.i(TAG, "Permission granted for camera.");
+                } else {
+                    Log.i(TAG, "Permission denied for camera.");
                 }
 
                 check_camera_permission();
@@ -135,8 +171,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 PackageManager.PERMISSION_GRANTED) {
 
             // If the user has manually granted the permission, dismiss the dialog.
-            if(manualPermissionDialog!=null && manualPermissionDialog.isShowing())
-                manualPermissionDialog.cancel();
+            if(cameraPermissionDialog!=null && cameraPermissionDialog.isShowing())
+                cameraPermissionDialog.cancel();
 
             Log.i(TAG, "Permission granted.");
 
@@ -151,12 +187,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Log.i(TAG, "The user has default denied camera permission.");
 
             // Don't build and show a new dialog if it's already visible
-            if(manualPermissionDialog!=null && manualPermissionDialog.isShowing()) return;
+            if(cameraPermissionDialog!=null && cameraPermissionDialog.isShowing())
+                return;
 
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-            builder.setTitle(R.string.manual_permission_dialog_title);
-            builder.setMessage(R.string.manual_permission_dialog_message);
+            builder.setTitle(R.string.camera_permission_dialog_title);
+            builder.setMessage(R.string.camera_permission_dialog_message);
 
             final AtomicBoolean positive_clicked = new AtomicBoolean(false);
 
@@ -182,14 +219,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             });
 
-            manualPermissionDialog = builder.show();
+            cameraPermissionDialog = builder.show();
         }
 
         // Request for the permission (Android will actually popup the permission
         // dialog in this case)
         else {
             Log.i(TAG, "Requesting permission from user...");
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+            requestPermissionLauncher.launch(CAMERA_PERMISSION);
+        }
+
+        if(audioPermissionDialog!=null){
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.RECORD_AUDIO) ==
+                    PackageManager.PERMISSION_GRANTED){
+                if(audioPermissionDialog.isShowing()){
+                    audioPermissionDialog.dismiss();
+                }
+            }
         }
     }
 
@@ -268,7 +315,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         fco.setOnClickListener(v -> config.toggleCameraSelector());
 
         ImageButton capture_button = findViewById(R.id.capture_button);
-        capture_button.setOnClickListener(v -> imageCapturer.takePicture());
+        capture_button.setOnClickListener(v -> {
+            if (config.isVideoMode()) {
+
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissionLauncher.launch(AUDIO_PERMISSION);
+                }
+
+            } else {
+                imageCapturer.takePicture();
+            }
+        });
 
         flashPager = findViewById(R.id.flash_pager);
 

@@ -1,10 +1,16 @@
 <resources>
     <string name="app_name">Camera</string>
 
-    <string name="manual_permission_dialog_title">Camera permission required</string>
-    <string name="manual_permission_dialog_message">
+    <string name="camera_permission_dialog_title">Camera permission required</string>
+    <string name="camera_permission_dialog_message">
         The app needs permission to access the camera to function. Please provide the required permission via Settings in order to use this app.
     </string>
+
+    <string name="audio_permission_dialog_title">Audio permission required</string>
+    <string name="audio_permission_dialog_message">
+        The app needs permission to access the audio to record video. Please provide the required permission via Settings in order to use this app.
+    </string>
+
     <string name="focus_ring">Focus Ring</string>
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>
