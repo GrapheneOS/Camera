@@ -244,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        CenteringTabLayout tabLayout = findViewById(R.id.camera_mode_tabs);
+        BottomTabLayout tabLayout = findViewById(R.id.camera_mode_tabs);
         TabLayout.Tab selected;
 
         tabLayout.addTab(tabLayout.newTab().setText("Night Light")); // NIGHT

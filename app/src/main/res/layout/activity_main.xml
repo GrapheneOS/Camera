@@ -118,7 +118,7 @@
 
     </LinearLayout>
 
-    <org.grapheneos.camera.CenteringTabLayout
+    <org.grapheneos.camera.BottomTabLayout
         android:id="@+id/camera_mode_tabs"
         android:layout_alignParentBottom="true"
         android:layout_width="match_parent"

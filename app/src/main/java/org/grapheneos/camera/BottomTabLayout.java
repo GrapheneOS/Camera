@@ -11,20 +11,20 @@ import androidx.core.view.ViewCompat;
 
 import com.google.android.material.tabs.TabLayout;
 
-public class CenteringTabLayout extends TabLayout {
+public class BottomTabLayout extends TabLayout {
 
 //    private final ArrayList<Integer> snapPoints = new ArrayList<>();
 //    private int count = 0;
 
-    public CenteringTabLayout(Context context) {
+    public BottomTabLayout(Context context) {
         super(context);
     }
 
-    public CenteringTabLayout(Context context, AttributeSet attrs) {
+    public BottomTabLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public CenteringTabLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public BottomTabLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
