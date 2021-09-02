@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private ImageView thirdCircle;
 
+    private ImageButton captureButton;
+
     // Used to request permission from the user
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
@@ -129,6 +131,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public ViewPager2 getFlashPager() {
         return flashPager;
+    }
+
+    public BottomTabLayout getTabLayout() {
+        return tabLayout;
+    }
+
+    public ImageView getCaptureModeView() {
+        return captureModeView;
+    }
+
+    public View getFlipCameraCircle() {
+        return flipCameraCircle;
+    }
+
+    public ImageView getThirdCircle() {
+        return thirdCircle;
+    }
+
+    public ImageButton getCaptureButton() {
+        return captureButton;
     }
 
     public void updateLastFrame() {
@@ -334,8 +356,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        ImageButton capture_button = findViewById(R.id.capture_button);
-        capture_button.setOnClickListener(v -> {
+        captureButton = findViewById(R.id.capture_button);
+        captureButton.setOnClickListener(v -> {
             if (config.isVideoMode()) {
 
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -345,20 +367,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 if (videoCapturer.isRecording()) {
                     videoCapturer.stopRecording();
-                    capture_button.setImageResource(R.drawable.start_recording);
-                    thirdCircle.setImageResource(R.drawable.circle);
-                    flipCameraCircle.setVisibility(View.VISIBLE);
-                    captureModeView.setVisibility(View.VISIBLE);
-                    tabLayout.setVisibility(View.VISIBLE);
-                    flashPager.setVisibility(View.VISIBLE);
                 } else {
                     videoCapturer.startRecording();
-                    capture_button.setImageResource(R.drawable.stop_recording);
-                    flipCameraCircle.setVisibility(View.INVISIBLE);
-                    captureModeView.setVisibility(View.GONE);
-                    flashPager.setVisibility(View.GONE);
-                    thirdCircle.setImageResource(R.drawable.camera_shutter);
-                    tabLayout.setVisibility(View.INVISIBLE);
                 }
             } else {
                 imageCapturer.takePicture();
@@ -404,11 +414,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 oa1.start();
 
                 if(config.isVideoMode()){
-                    capture_button.setBackgroundResource(0);
-                    capture_button.setImageResource(R.drawable.start_recording);
+                    captureButton.setBackgroundResource(0);
+                    captureButton.setImageResource(R.drawable.start_recording);
                 } else {
-                    capture_button.setBackgroundResource(R.drawable.camera_shutter);
-                    capture_button.setImageResource(0);
+                    captureButton.setBackgroundResource(R.drawable.camera_shutter);
+                    captureButton.setImageResource(0);
                 }
             }
         });

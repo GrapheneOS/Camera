@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Environment;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -59,6 +60,8 @@ public class VideoCapturer {
         if (ActivityCompat.checkSelfPermission(mActivity,
                 Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
 
+            beforeRecordingStarts();
+
             mActivity.getConfig().getVideoCapture().startRecording(
                     outputOptions,
                     ContextCompat.getMainExecutor(mActivity),
@@ -66,16 +69,36 @@ public class VideoCapturer {
                         @Override
                         public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
                             isRecording = false;
+                            afterRecordingStops();
                         }
 
                         @Override
                         public void onError(int videoCaptureError, @NonNull String message, @Nullable Throwable cause) {
                             isRecording = false;
+                            afterRecordingStops();
                         }
                     });
 
             isRecording = true;
         }
+    }
+
+    public void beforeRecordingStarts(){
+        mActivity.getCaptureButton().setImageResource(R.drawable.stop_recording);
+        mActivity.getFlipCameraCircle().setVisibility(View.INVISIBLE);
+        mActivity.getCaptureModeView().setVisibility(View.GONE);
+        mActivity.getFlashPager().setVisibility(View.GONE);
+        mActivity.getThirdCircle().setImageResource(R.drawable.camera_shutter);
+        mActivity.getTabLayout().setVisibility(View.INVISIBLE);
+    }
+
+    public void afterRecordingStops(){
+        mActivity.getCaptureButton().setImageResource(R.drawable.start_recording);
+        mActivity.getThirdCircle().setImageResource(R.drawable.circle);
+        mActivity.getFlipCameraCircle().setVisibility(View.VISIBLE);
+        mActivity.getCaptureModeView().setVisibility(View.VISIBLE);
+        mActivity.getTabLayout().setVisibility(View.VISIBLE);
+        mActivity.getFlashPager().setVisibility(View.VISIBLE);
     }
 
     public boolean isRecording(){
