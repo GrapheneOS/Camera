@@ -90,7 +90,6 @@
         </FrameLayout>
 
         <FrameLayout
-            android:id="@+id/image_preview"
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="64dp"
@@ -99,7 +98,7 @@
             android:layout_gravity="center">
 
             <ImageView
-                android:id="@+id/third_circle"
+                android:id="@+id/image_preview"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/circle"
@@ -107,6 +106,7 @@
                 android:contentDescription="@string/flip_camera"/>
 
             <ImageView
+                android:id="@+id/third_circle"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/option_circle"
@@ -114,8 +114,6 @@
                 android:contentDescription="@string/flip_camera"/>
 
         </FrameLayout>
-
-
 
     </LinearLayout>
 

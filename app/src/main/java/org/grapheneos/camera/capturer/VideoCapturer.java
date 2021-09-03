@@ -155,7 +155,7 @@ public class VideoCapturer {
 
     public void afterRecordingStops(){
         mActivity.getCaptureButton().setImageResource(R.drawable.start_recording);
-        mActivity.getThirdCircle().setImageResource(R.drawable.circle);
+        mActivity.getThirdCircle().setImageResource(R.drawable.option_circle);
         mActivity.getFlipCameraCircle().setVisibility(View.VISIBLE);
         mActivity.getCaptureModeView().setVisibility(View.VISIBLE);
         mActivity.getTabLayout().setVisibility(View.VISIBLE);
