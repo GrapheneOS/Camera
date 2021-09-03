@@ -8,6 +8,7 @@ import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
+import androidx.camera.core.TorchState;
 import androidx.camera.core.ZoomState;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -40,6 +41,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.tabs.TabLayout;
 
@@ -92,6 +94,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private GestureDetector dbTapGestureDetector;
 
     private TextView timerView;
+
+    private ImageView torchToggleView;
+
+    public ImageView getTorchToggleView() {
+        return torchToggleView;
+    }
 
     private boolean isZooming = false;
 
@@ -304,6 +312,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         config = new CamConfig(this);
         imageCapturer = new ImageCapturer(this);
         videoCapturer = new VideoCapturer(this);
+
+        torchToggleView = findViewById(R.id.torch_toggle);
+        torchToggleView.setOnClickListener(v -> {
+
+            if(!config.isFlashAvailable()) return;
+
+            Integer torchState =
+                    config.getCamera().getCameraInfo().getTorchState().getValue();
+
+            if(torchState!=null){
+                config.getCamera().getCameraControl().enableTorch(torchState
+                        == TorchState.OFF);
+            } else {
+                Toast.makeText(this, "Unable to toggle" +
+                        "torch", Toast.LENGTH_SHORT).show();
+            }
+
+        });
 
         mPreviewView = findViewById(R.id.camera);
         scaleGestureDetector = new ScaleGestureDetector(this, this);

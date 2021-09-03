@@ -10,6 +10,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
+import androidx.camera.core.TorchState;
 import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
@@ -196,8 +197,19 @@ public class CamConfig {
 
         start_auto_focus();
 
-        if(!isFlashAvailable())
+        if(isFlashAvailable()){
+            camera.getCameraInfo().getTorchState().observe(mActivity, torchState -> {
+                if(torchState== TorchState.ON){
+                    mActivity.getTorchToggleView()
+                            .setImageResource(R.drawable.torch_on);
+                } else {
+                    mActivity.getTorchToggleView()
+                            .setImageResource(R.drawable.torch_off);
+                }
+            });
+        } else {
             mActivity.getFlashPager().setCurrentItem(2);
+        }
     }
 
     private void start_auto_focus(){
