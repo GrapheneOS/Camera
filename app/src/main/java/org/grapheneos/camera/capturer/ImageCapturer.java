@@ -141,11 +141,31 @@ public class ImageCapturer {
 
                             latestFile = new File(path);
 
-                            if(bm!=null)
-                                mActivity.getImagePreview().setImageBitmap(bm);
-                        }
+                            final String mimeType = MimeTypeMap.getSingleton()
+                                    .getMimeTypeFromExtension(getExtension(
+                                            new File(path)
+                                    ));
 
-                        mActivity.getPreviewLoader().setVisibility(View.GONE);
+                            MediaScannerConnection.scanFile(
+                                    mActivity,
+                                    new String[]{path},
+                                    new String[]{mimeType},
+                                    (path1, uri) -> {
+                                        Log.d(TAG, "Image capture scanned into media store: "
+                                                + uri);
+
+                                        mActivity.runOnUiThread(()-> {
+                                            mActivity.getPreviewLoader()
+                                                    .setVisibility(View.GONE);
+
+                                            if (bm != null)
+                                                mActivity.getImagePreview()
+                                                        .setImageBitmap(bm);
+
+                                        });
+                                    }
+                            );
+                        }
                     }
 
                     @Override
