@@ -41,9 +41,11 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.tabs.TabLayout;
 
 import org.grapheneos.camera.CamConfig;
@@ -101,8 +103,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private View thirdOption;
 
+    private ShapeableImageView imagePreview;
+
+    private ProgressBar previewLoader;
+
     public ImageView getTorchToggleView() {
         return torchToggleView;
+    }
+
+    public ShapeableImageView getImagePreview() {
+        return imagePreview;
+    }
+
+    public ProgressBar getPreviewLoader() {
+        return previewLoader;
     }
 
     private boolean isZooming = false;
@@ -325,6 +339,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         videoCapturer = new VideoCapturer(this);
 
         thirdOption = findViewById(R.id.third_option);
+        previewLoader = findViewById(R.id.preview_loading);
+        imagePreview = findViewById(R.id.image_preview);
+
+        Bitmap bitmap = imageCapturer.getLatestImage();
+        if(bitmap!=null)
+            imagePreview.setImageBitmap(bitmap);
 
         torchToggleView = findViewById(R.id.torch_toggle);
         torchToggleView.setOnClickListener(v -> {

@@ -94,17 +94,19 @@
             android:id="@+id/third_option"
             android:layout_weight="1"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="96dp"
             android:clickable="true"
             android:focusable="true"
             android:layout_gravity="center">
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/image_preview"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/circle"
                 android:layout_gravity="center"
+                android:scaleType="centerCrop"
+                app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
                 android:contentDescription="@string/flip_camera"/>
 
             <ImageView
@@ -114,6 +116,15 @@
                 android:src="@drawable/option_circle"
                 android:layout_gravity="center"
                 android:contentDescription="@string/flip_camera"/>
+
+            <ProgressBar
+                android:indeterminateDrawable="@drawable/progress_bar_style"
+                android:id="@+id/preview_loading"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                android:indeterminate="true" />
 
         </FrameLayout>
 

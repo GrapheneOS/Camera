@@ -1,7 +1,11 @@
 package org.grapheneos.camera.capturer;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
@@ -28,8 +32,47 @@ public class ImageCapturer {
     }
 
     public String getParentDirPath(){
-        return mActivity.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-                .getAbsolutePath();
+        return getParentDir().getAbsolutePath();
+    }
+
+    public File getParentDir(){
+        return mActivity.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+    }
+
+    public Bitmap getLatestImage(){
+        File dir = getParentDir();
+
+        final File[] files = dir.listFiles(file -> {
+
+            if(!file.isFile()) return false;
+
+            final String ext = getExtension(file);
+            return ext.equals("jpg") || ext.equals("png");
+        });
+
+        if (files == null || files.length == 0)
+            return null;
+
+        File lastModifiedFile = files[0];
+
+        for (File file : files) {
+            if (lastModifiedFile.lastModified() < file.lastModified())
+                lastModifiedFile = file;
+        }
+
+        return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
+    }
+
+    private String getExtension(File file) {
+
+        final String fileName = file.getName();
+        final int lastIndexOf = fileName.lastIndexOf(".");
+
+        if(lastIndexOf==-1)
+            return "";
+
+        else
+            return fileName.substring(lastIndexOf+1);
     }
 
     public File generateFileForImage(){
@@ -50,6 +93,8 @@ public class ImageCapturer {
                 new ImageCapture.OutputFileOptions.Builder(imageFile)
                         .build();
 
+        mActivity.getPreviewLoader().setVisibility(View.VISIBLE);
+
         mActivity.getConfig().getImageCapture().takePicture(
                 outputFileOptions,
                 ContextCompat.getMainExecutor(mActivity),
@@ -58,11 +103,22 @@ public class ImageCapturer {
                     @Override
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
                         Log.i(TAG, "Image saved successfully!");
+                        final Uri imageUri = outputFileResults.getSavedUri();
+                        if(imageUri!=null){
+                            final String path = imageUri.getEncodedPath();
+                            final Bitmap bm = BitmapFactory.decodeFile(path);
+
+                            if(bm!=null)
+                                mActivity.getImagePreview().setImageBitmap(bm);
+                        }
+
+                        mActivity.getPreviewLoader().setVisibility(View.GONE);
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
                         exception.printStackTrace();
+                        mActivity.getPreviewLoader().setVisibility(View.GONE);
                     }
                 });
     }
