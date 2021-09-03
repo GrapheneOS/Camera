@@ -51,6 +51,7 @@
             android:layout_gravity="center">
 
             <ImageView
+                android:id="@+id/flip_camera_icon"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/circle"
@@ -90,6 +91,7 @@
         </FrameLayout>
 
         <FrameLayout
+            android:id="@+id/third_option"
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="64dp"

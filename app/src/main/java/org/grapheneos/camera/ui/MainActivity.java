@@ -38,6 +38,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -50,10 +51,11 @@ import org.grapheneos.camera.adapter.FlashAdapter;
 import org.grapheneos.camera.R;
 import org.grapheneos.camera.capturer.ImageCapturer;
 import org.grapheneos.camera.capturer.VideoCapturer;
+import org.grapheneos.camera.notifier.SensorOrientationChangeNotifier;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener, SensorOrientationChangeNotifier.Listener {
 
     private static final String TAG = "GOCam";
 
@@ -96,6 +98,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private TextView timerView;
 
     private ImageView torchToggleView;
+
+    private View thirdOption;
 
     public ImageView getTorchToggleView() {
         return torchToggleView;
@@ -298,10 +302,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
+        SensorOrientationChangeNotifier.getInstance(this).addListener(this);
         // Check camera permission again if the user switches back to the app (maybe
         // after enabling/disabling the camera permission in Settings)
         // Will also be called by Android Lifecycle when the app starts up
         checkPermissions();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SensorOrientationChangeNotifier.getInstance(this).remove(this);
     }
 
     @Override
@@ -312,6 +323,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         config = new CamConfig(this);
         imageCapturer = new ImageCapturer(this);
         videoCapturer = new VideoCapturer(this);
+
+        thirdOption = findViewById(R.id.third_option);
 
         torchToggleView = findViewById(R.id.torch_toggle);
         torchToggleView.setOnClickListener(v -> {
@@ -556,4 +569,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public void onScaleEnd(ScaleGestureDetector detector) { }
+
+    private void rotateView(View view, float angle) {
+        view.animate()
+                .rotation(angle)
+                .setDuration(400)
+                .setInterpolator(new LinearInterpolator())
+                .start();
+    }
+
+    @Override
+    public void onOrientationChange(int rotation) {
+        final float d = Math.abs(flashPager.getRotation() - rotation);
+        if(d>=90) rotation = 360 - rotation;
+
+        rotateView(flashPager, rotation);
+        rotateView(flipCameraCircle, rotation);
+        rotateView(captureModeView, rotation);
+        rotateView(thirdOption, rotation);
+    }
 }
