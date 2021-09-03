@@ -3,7 +3,6 @@ package org.grapheneos.camera.capturer;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 
@@ -12,6 +11,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.core.content.ContextCompat;
 
+import org.grapheneos.camera.R;
 import org.grapheneos.camera.ui.MainActivity;
 
 import java.io.File;
@@ -36,7 +36,25 @@ public class ImageCapturer {
     }
 
     public File getParentDir(){
-        return mActivity.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File[] dirs = mActivity.getExternalMediaDirs();
+        File parentDir = null;
+
+        for (File dir : dirs){
+            if(dir!=null){
+                parentDir = dir;
+                break;
+            }
+        }
+
+        if(parentDir!=null){
+                parentDir = new File(parentDir.getAbsolutePath(),
+                        mActivity.getResources().getString(R.string.app_name));
+                if(parentDir.mkdirs()){
+                    Log.i(TAG, "Parent directory was successfully created");
+                }
+            }
+
+        return parentDir;
     }
 
     public Bitmap getLatestImage(){
