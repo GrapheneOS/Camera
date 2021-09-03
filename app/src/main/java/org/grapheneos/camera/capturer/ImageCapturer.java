@@ -2,9 +2,11 @@ package org.grapheneos.camera.capturer;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 
 import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
@@ -26,6 +28,8 @@ public class ImageCapturer {
     private String imageFileFormat = ".jpg";
 
     private final MainActivity mActivity;
+
+    private File latestFile;
 
     public ImageCapturer(final MainActivity mActivity) {
         this.mActivity = mActivity;
@@ -58,6 +62,15 @@ public class ImageCapturer {
     }
 
     public Bitmap getLatestImage(){
+        final File lastModifiedFile = getLatestImageFile();
+        if(lastModifiedFile==null) return null;
+        return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
+    }
+
+    public File getLatestImageFile(){
+
+        if(latestFile!=null) return latestFile;
+
         File dir = getParentDir();
 
         final File[] files = dir.listFiles(file -> {
@@ -78,7 +91,7 @@ public class ImageCapturer {
                 lastModifiedFile = file;
         }
 
-        return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
+        return lastModifiedFile;
     }
 
     private String getExtension(File file) {
@@ -125,6 +138,8 @@ public class ImageCapturer {
                         if(imageUri!=null){
                             final String path = imageUri.getEncodedPath();
                             final Bitmap bm = BitmapFactory.decodeFile(path);
+
+                            latestFile = new File(path);
 
                             if(bm!=null)
                                 mActivity.getImagePreview().setImageBitmap(bm);
