@@ -22,10 +22,12 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
@@ -55,6 +57,7 @@ import org.grapheneos.camera.capturer.ImageCapturer;
 import org.grapheneos.camera.capturer.VideoCapturer;
 import org.grapheneos.camera.notifier.SensorOrientationChangeNotifier;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener, SensorOrientationChangeNotifier.Listener {
@@ -232,6 +235,44 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     public void onAnimationRepeat(Animator animation) {}
 
                 }).start();
+    }
+
+    public void openGallery(File imageFile) {
+
+        String mediaId = "";
+
+        String[] projection = new String[] {
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME
+        };
+
+        Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                projection, null, null, null);
+
+        if(cursor != null){
+            while (cursor.moveToNext()) {
+                String name = cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME)));
+                if(name.equals(imageFile.getName())){
+                    mediaId = cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)));
+                    break;
+                }
+            }
+            cursor.close();
+        }
+
+        Uri mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+
+        if(!mediaId.equals("")){
+            mediaUri = mediaUri.buildUpon()
+                    .authority("media")
+                    .appendPath(mediaId)
+                    .build();
+        }
+
+        Log.d("TagInfo","Uri:  "+mediaUri);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW, mediaUri);
+        startActivity(intent);
     }
 
     private void checkPermissions(){
@@ -428,6 +469,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if(videoCapturer.isRecording()){
                 imageCapturer.takePicture();
             } else {
+                openGallery(imageCapturer.getLatestImageFile());
                 Log.i(TAG, "Attempting to open gallery...");
             }
         });
