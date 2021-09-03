@@ -128,38 +128,44 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
 
-                if(ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                        == PackageManager.PERMISSION_GRANTED)  {
-                    Log.i(TAG, "Permission granted for recording audio.");
-                } else {
-                    Log.i(TAG, "Permission denied for recording audio.");
+                if(permissions.containsKey(Manifest.permission.RECORD_AUDIO)){
+                    if(ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                            == PackageManager.PERMISSION_GRANTED)  {
+                        Log.i(TAG, "Permission granted for recording audio.");
+                    } else {
+                        Log.i(TAG, "Permission denied for recording audio.");
 
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-                    builder.setTitle(R.string.audio_permission_dialog_title);
-                    builder.setMessage(R.string.audio_permission_dialog_message);
+                        builder.setTitle(R.string.audio_permission_dialog_title);
+                        builder.setMessage(R.string.audio_permission_dialog_message);
 
-                    // Open the settings menu for the current app
-                    builder.setPositiveButton("Settings", (dialog, which) -> {
-                        Intent intent = new
-                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        Uri uri = Uri.fromParts("package",
-                                getPackageName(), null);
-                        intent.setData(uri);
-                        startActivity(intent);
-                    });
+                        // Open the settings menu for the current app
+                        builder.setPositiveButton("Settings", (dialog, which) -> {
+                            Intent intent = new
+                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            Uri uri = Uri.fromParts("package",
+                                    getPackageName(), null);
+                            intent.setData(uri);
+                            startActivity(intent);
+                        });
 
-                    builder.setNegativeButton("Cancel",  null);
+                        builder.setNegativeButton("Cancel",  null);
 
-                    audioPermissionDialog = builder.show();
+                        audioPermissionDialog = builder.show();
+                    }
                 }
 
-                if(ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.CAMERA)
-                        == PackageManager.PERMISSION_GRANTED){
-                    Log.i(TAG, "Permission granted for camera.");
-                } else {
-                    Log.i(TAG, "Permission denied for camera.");
+                if(permissions.containsKey(Manifest.permission.CAMERA)){
+
+                    if(ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.CAMERA) ==
+                            PackageManager.PERMISSION_GRANTED) {
+                        Log.i(TAG, "Permission granted for camera.");
+                    } else {
+                        Log.i(TAG, "Permission denied for camera.");
+                    }
+
                 }
 
                 checkPermissions();
