@@ -57,7 +57,6 @@ import org.grapheneos.camera.capturer.ImageCapturer;
 import org.grapheneos.camera.capturer.VideoCapturer;
 import org.grapheneos.camera.notifier.SensorOrientationChangeNotifier;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, ScaleGestureDetector.OnScaleGestureListener, SensorOrientationChangeNotifier.Listener {
@@ -243,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }).start();
     }
 
-    public void openGallery(File imageFile) {
+    public void openGallery() {
 
         String mediaId = "";
 
@@ -258,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if(cursor != null){
             while (cursor.moveToNext()) {
                 String name = cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME)));
-                if(name.equals(imageFile.getName())){
+                if(name.equals(config.getLatestMediaFile().getName())){
                     mediaId = cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)));
                     break;
                 }
@@ -389,7 +388,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         previewLoader = findViewById(R.id.preview_loading);
         imagePreview = findViewById(R.id.image_preview);
 
-        Bitmap bitmap = imageCapturer.getLatestImage();
+        Bitmap bitmap = config.getLatestPreview();
         if(bitmap!=null)
             imagePreview.setImageBitmap(bitmap);
 
@@ -475,7 +474,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if(videoCapturer.isRecording()){
                 imageCapturer.takePicture();
             } else {
-                openGallery(imageCapturer.getLatestImageFile());
+                openGallery();
                 Log.i(TAG, "Attempting to open gallery...");
             }
         });

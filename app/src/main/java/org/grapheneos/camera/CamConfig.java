@@ -1,5 +1,7 @@
 package org.grapheneos.camera;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,6 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.grapheneos.camera.ui.MainActivity;
 
+import java.io.File;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +46,8 @@ public class CamConfig {
     private VideoCapture videoCapture;
 
     private final MainActivity mActivity;
+
+    private File latestFile;
 
     public CamConfig(final MainActivity mActivity){
         this.mActivity = mActivity;
@@ -94,6 +99,81 @@ public class CamConfig {
 
     public void setVideoCapture(VideoCapture videoCapture) {
         this.videoCapture = videoCapture;
+    }
+
+    public String getParentDirPath(){
+        return getParentDir().getAbsolutePath();
+    }
+
+    public File getParentDir(){
+        File[] dirs = mActivity.getExternalMediaDirs();
+        File parentDir = null;
+
+        for (File dir : dirs){
+            if(dir!=null){
+                parentDir = dir;
+                break;
+            }
+        }
+
+        if(parentDir!=null){
+            parentDir = new File(parentDir.getAbsolutePath(),
+                    mActivity.getResources().getString(R.string.app_name));
+            if(parentDir.mkdirs()){
+                Log.i(TAG, "Parent directory was successfully created");
+            }
+        }
+
+        return parentDir;
+    }
+
+    public Bitmap getLatestPreview(){
+        final File lastModifiedFile = getLatestMediaFile();
+        if(lastModifiedFile==null) return null;
+        return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
+    }
+
+    public void setLatestFile(File latestFile) {
+        this.latestFile = latestFile;
+    }
+
+    public File getLatestMediaFile(){
+
+        if(latestFile!=null) return latestFile;
+
+        File dir = getParentDir();
+
+        final File[] files = dir.listFiles(file -> {
+
+            if(!file.isFile()) return false;
+
+            final String ext = getExtension(file);
+            return ext.equals("jpg") || ext.equals("png") || ext.equals("mp4");
+        });
+
+        if (files == null || files.length == 0)
+            return null;
+
+        File lastModifiedFile = files[0];
+
+        for (File file : files) {
+            if (lastModifiedFile.lastModified() < file.lastModified())
+                lastModifiedFile = file;
+        }
+
+        return lastModifiedFile;
+    }
+
+    public static String getExtension(File file) {
+
+        final String fileName = file.getName();
+        final int lastIndexOf = fileName.lastIndexOf(".");
+
+        if(lastIndexOf==-1)
+            return "";
+
+        else
+            return fileName.substring(lastIndexOf+1);
     }
 
     public void switchCameraMode(){

@@ -13,7 +13,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.core.content.ContextCompat;
 
-import org.grapheneos.camera.R;
+import org.grapheneos.camera.CamConfig;
 import org.grapheneos.camera.ui.MainActivity;
 
 import java.io.File;
@@ -29,81 +29,8 @@ public class ImageCapturer {
 
     private final MainActivity mActivity;
 
-    private File latestFile;
-
     public ImageCapturer(final MainActivity mActivity) {
         this.mActivity = mActivity;
-    }
-
-    public String getParentDirPath(){
-        return getParentDir().getAbsolutePath();
-    }
-
-    public File getParentDir(){
-        File[] dirs = mActivity.getExternalMediaDirs();
-        File parentDir = null;
-
-        for (File dir : dirs){
-            if(dir!=null){
-                parentDir = dir;
-                break;
-            }
-        }
-
-        if(parentDir!=null){
-                parentDir = new File(parentDir.getAbsolutePath(),
-                        mActivity.getResources().getString(R.string.app_name));
-                if(parentDir.mkdirs()){
-                    Log.i(TAG, "Parent directory was successfully created");
-                }
-            }
-
-        return parentDir;
-    }
-
-    public Bitmap getLatestImage(){
-        final File lastModifiedFile = getLatestImageFile();
-        if(lastModifiedFile==null) return null;
-        return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
-    }
-
-    public File getLatestImageFile(){
-
-        if(latestFile!=null) return latestFile;
-
-        File dir = getParentDir();
-
-        final File[] files = dir.listFiles(file -> {
-
-            if(!file.isFile()) return false;
-
-            final String ext = getExtension(file);
-            return ext.equals("jpg") || ext.equals("png");
-        });
-
-        if (files == null || files.length == 0)
-            return null;
-
-        File lastModifiedFile = files[0];
-
-        for (File file : files) {
-            if (lastModifiedFile.lastModified() < file.lastModified())
-                lastModifiedFile = file;
-        }
-
-        return lastModifiedFile;
-    }
-
-    private String getExtension(File file) {
-
-        final String fileName = file.getName();
-        final int lastIndexOf = fileName.lastIndexOf(".");
-
-        if(lastIndexOf==-1)
-            return "";
-
-        else
-            return fileName.substring(lastIndexOf+1);
     }
 
     public File generateFileForImage(){
@@ -112,7 +39,7 @@ public class ImageCapturer {
                 Locale.US);/* w  ww .  j av  a  2s.  co  m*/
         fileName = sdf.format(new Date());
         fileName = "IMG_" + fileName + imageFileFormat;
-        return new File(getParentDirPath(), fileName);
+        return new File(mActivity.getConfig().getParentDirPath(), fileName);
     }
 
     public void takePicture() {
@@ -139,20 +66,20 @@ public class ImageCapturer {
                             final String path = imageUri.getEncodedPath();
                             final Bitmap bm = BitmapFactory.decodeFile(path);
 
-                            latestFile = new File(path);
+                            mActivity.getConfig().setLatestFile(new File(path));
 
                             final String mimeType = MimeTypeMap.getSingleton()
-                                    .getMimeTypeFromExtension(getExtension(
-                                            new File(path)
-                                    ));
+                                    .getMimeTypeFromExtension(
+                                            CamConfig.getExtension(new File(path))
+                                    );
 
                             MediaScannerConnection.scanFile(
                                     mActivity,
                                     new String[]{path},
                                     new String[]{mimeType},
                                     (path1, uri) -> {
-                                        Log.d(TAG, "Image capture scanned into media store: "
-                                                + uri);
+                                        Log.d(TAG, "Image capture scanned" +
+                                                " into media store: " + uri);
 
                                         mActivity.runOnUiThread(()-> {
                                             mActivity.getPreviewLoader()
