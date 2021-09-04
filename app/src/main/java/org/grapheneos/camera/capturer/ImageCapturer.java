@@ -65,8 +65,9 @@ public class ImageCapturer {
                         if(imageUri!=null){
                             final String path = imageUri.getEncodedPath();
                             final Bitmap bm = BitmapFactory.decodeFile(path);
+                            final File file = new File(path);
 
-                            mActivity.getConfig().setLatestFile(new File(path));
+                            mActivity.getConfig().setLatestFile(file);
 
                             final String mimeType = MimeTypeMap.getSingleton()
                                     .getMimeTypeFromExtension(
@@ -75,7 +76,7 @@ public class ImageCapturer {
 
                             MediaScannerConnection.scanFile(
                                     mActivity,
-                                    new String[]{path},
+                                    new String[]{file.getParent()},
                                     new String[]{mimeType},
                                     (path1, uri) -> {
                                         Log.d(TAG, "Image capture scanned" +

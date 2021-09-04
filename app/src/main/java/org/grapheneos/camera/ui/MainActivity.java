@@ -251,19 +251,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 MediaStore.Images.Media.DISPLAY_NAME
         };
 
-        Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        Cursor cursor = getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, null);
+
+        final String fileName = config.getLatestMediaFile().getName();
 
         if(cursor != null){
             while (cursor.moveToNext()) {
                 String name = cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME)));
-                if(name.equals(config.getLatestMediaFile().getName())){
+                if(name.equals(fileName)){
                     mediaId = cursor.getString((cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)));
                     break;
                 }
             }
             cursor.close();
         }
+
+        Log.i(TAG, "Hello World " + mediaId);
 
         Uri mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
