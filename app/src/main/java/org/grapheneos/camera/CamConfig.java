@@ -289,6 +289,7 @@ public class CamConfig {
             });
         } else {
             mActivity.getFlashPager().setCurrentItem(2);
+            flashMode = ImageCapture.FLASH_MODE_OFF;
         }
     }
 
