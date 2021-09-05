@@ -101,7 +101,6 @@
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/image_preview"
-                android:rotation="90"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/circle"

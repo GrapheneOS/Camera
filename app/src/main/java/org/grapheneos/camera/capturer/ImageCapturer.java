@@ -2,6 +2,7 @@ package org.grapheneos.camera.capturer;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.util.Log;
@@ -46,6 +47,13 @@ public class ImageCapturer {
         return mActivity.getPreviewLoader().getVisibility()==View.VISIBLE;
     }
 
+    public static Bitmap fixImagePreview(Bitmap bInput){
+        float degrees = 90;
+        Matrix matrix = new Matrix();
+        matrix.setRotate(degrees);
+        return Bitmap.createBitmap(bInput, 0, 0, bInput.getWidth(), bInput.getHeight(), matrix, true);
+    }
+
     public void takePicture() {
         if (mActivity.getConfig().getCamera() == null) return;
 
@@ -68,14 +76,16 @@ public class ImageCapturer {
                         final Uri imageUri = outputFileResults.getSavedUri();
                         if(imageUri!=null){
                             final String path = imageUri.getEncodedPath();
-                            final Bitmap bm = BitmapFactory.decodeFile(path);
+                            final Bitmap bm = fixImagePreview(
+                                    BitmapFactory.decodeFile(path));
                             final File file = new File(path);
 
                             mActivity.getConfig().setLatestFile(file);
 
                             final String mimeType = MimeTypeMap.getSingleton()
                                     .getMimeTypeFromExtension(
-                                            CamConfig.getExtension(new File(path))
+                                            CamConfig.getExtension(
+                                                    new File(path))
                                     );
 
                             MediaScannerConnection.scanFile(

@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.grapheneos.camera.capturer.ImageCapturer;
 import org.grapheneos.camera.ui.MainActivity;
 
 import java.io.File;
@@ -169,7 +170,7 @@ public class CamConfig {
             }
         }
 
-        return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
+        return ImageCapturer.fixImagePreview(BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath()));
     }
 
     public void setLatestFile(File latestFile) {
