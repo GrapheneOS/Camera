@@ -251,11 +251,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 MediaStore.Images.Media.DISPLAY_NAME
         };
 
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection, null, null, null);
-
         final String fileName = config.getLatestMediaFile().getName();
+
+        Uri mediaUri;
+
+        if(videoCapturer.isLatestMediaVideo()){
+            mediaUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+        } else {
+            mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        }
+
+        Cursor cursor = getContentResolver().query(
+                mediaUri, projection, null, null, null);
 
         if(cursor != null){
             while (cursor.moveToNext()) {
@@ -267,10 +274,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
             cursor.close();
         }
-
-        Log.i(TAG, "Hello World " + mediaId);
-
-        Uri mediaUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
         if(!mediaId.equals("")){
             mediaUri = mediaUri.buildUpon()

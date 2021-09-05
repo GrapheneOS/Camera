@@ -3,9 +3,13 @@ package org.grapheneos.camera.capturer;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
-import android.os.Environment;
+import android.graphics.Bitmap;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -14,6 +18,7 @@ import androidx.camera.core.VideoCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import org.grapheneos.camera.CamConfig;
 import org.grapheneos.camera.ui.MainActivity;
 import org.grapheneos.camera.R;
 
@@ -63,11 +68,6 @@ public class VideoCapturer {
         this.mActivity = mActivity;
     }
 
-    public String getParentDirPath() {
-        return mActivity.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
-                .getAbsolutePath();
-    }
-
     private String padTo2(int time){
         return String.format("%1$" + 2 + "s", time).replace(' ', '0');
     }
@@ -87,7 +87,17 @@ public class VideoCapturer {
                 Locale.US);/* w  ww .  j av  a  2s.  co  m*/
         fileName = sdf.format(new Date());
         fileName = "VID_" + fileName + videoFileFormat;
-        return new File(getParentDirPath(), fileName);
+        return new File(mActivity.getConfig().getParentDirPath(), fileName);
+    }
+
+    public static boolean isVideo(File file){
+        return CamConfig.getExtension(file).equals("mp4");
+    }
+
+    public boolean isLatestMediaVideo(){
+        return VideoCapturer.isVideo(
+                mActivity.getConfig().getLatestMediaFile()
+        );
     }
 
     @SuppressLint("RestrictedApi")
@@ -114,6 +124,54 @@ public class VideoCapturer {
                         @Override
                         public void onVideoSaved(@NonNull VideoCapture.OutputFileResults outputFileResults) {
                             isRecording = false;
+
+                            mActivity.getPreviewLoader()
+                                    .setVisibility(View.VISIBLE);
+
+                            final Uri videoUri = outputFileResults.getSavedUri();
+
+                            if(videoUri!=null){
+                                final String path = videoUri.getEncodedPath();
+
+                                Bitmap tBm = null;
+
+                                try {
+                                    tBm = CamConfig.getVideoThumbnail(path);
+                                } catch (Throwable throwable) {
+                                    throwable.printStackTrace();
+                                }
+
+                                final File file = new File(path);
+
+                                mActivity.getConfig().setLatestFile(file);
+
+                                final String mimeType = MimeTypeMap.getSingleton()
+                                        .getMimeTypeFromExtension(
+                                                CamConfig.getExtension(new File(path))
+                                        );
+
+                                final Bitmap bm = tBm;
+                                MediaScannerConnection.scanFile(
+                                        mActivity,
+                                        new String[]{file.getParent()},
+                                        new String[]{mimeType},
+                                        (path1, uri) -> {
+                                            Log.d(TAG, "Image capture scanned" +
+                                                    " into media store: " + uri);
+
+                                            mActivity.runOnUiThread(()-> {
+                                                mActivity.getPreviewLoader()
+                                                        .setVisibility(View.GONE);
+
+                                                if (bm != null)
+                                                    mActivity.getImagePreview()
+                                                            .setImageBitmap(bm);
+
+                                            });
+                                        }
+                                );
+                            }
+
                             afterRecordingStops();
                         }
 

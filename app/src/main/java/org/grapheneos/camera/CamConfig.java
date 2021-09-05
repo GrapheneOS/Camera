@@ -2,6 +2,7 @@ package org.grapheneos.camera;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -127,9 +128,47 @@ public class CamConfig {
         return parentDir;
     }
 
+    public static Bitmap getVideoThumbnail(String p_videoPath)
+            throws Throwable
+    {
+        Bitmap m_bitmap;
+        MediaMetadataRetriever m_mediaMetadataRetriever = null;
+        try
+        {
+            m_mediaMetadataRetriever = new MediaMetadataRetriever();
+            m_mediaMetadataRetriever.setDataSource(p_videoPath);
+            m_bitmap = m_mediaMetadataRetriever.getFrameAtTime();
+        }
+        catch (Exception m_e)
+        {
+            throw new Throwable(
+                    "Exception in retriveVideoFrameFromVideo(String p_videoPath)"
+                            + m_e.getMessage());
+        }
+        finally
+        {
+            if (m_mediaMetadataRetriever != null)
+            {
+                m_mediaMetadataRetriever.release();
+            }
+        }
+        return m_bitmap;
+    }
+
     public Bitmap getLatestPreview(){
         final File lastModifiedFile = getLatestMediaFile();
         if(lastModifiedFile==null) return null;
+
+        if(getExtension(lastModifiedFile).equals("mp4")){
+
+            try {
+                return getVideoThumbnail(lastModifiedFile.getAbsolutePath());
+            } catch (Throwable throwable) {
+                throwable.printStackTrace();
+                return null;
+            }
+        }
+
         return BitmapFactory.decodeFile(lastModifiedFile.getAbsolutePath());
     }
 
