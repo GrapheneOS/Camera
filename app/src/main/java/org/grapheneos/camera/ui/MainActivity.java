@@ -479,7 +479,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if(videoCapturer.isRecording()){
                 imageCapturer.takePicture();
             } else {
-                openGallery();
+                if(imageCapturer.isTakingPicture()){
+                    Toast.makeText(this, "Please wait for the image to get " +
+                                    "captured before trying to open the gallery.",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    openGallery();
+                }
                 Log.i(TAG, "Attempting to open gallery...");
             }
         });

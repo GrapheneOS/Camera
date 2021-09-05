@@ -42,6 +42,10 @@ public class ImageCapturer {
         return new File(mActivity.getConfig().getParentDirPath(), fileName);
     }
 
+    public boolean isTakingPicture(){
+        return mActivity.getPreviewLoader().getVisibility()==View.VISIBLE;
+    }
+
     public void takePicture() {
         if (mActivity.getConfig().getCamera() == null) return;
 
