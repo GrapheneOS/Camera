@@ -101,17 +101,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private TextView timerView;
 
-    private ImageView torchToggleView;
-
     private View thirdOption;
 
     private ShapeableImageView imagePreview;
 
     private ProgressBar previewLoader;
 
-    public ImageView getTorchToggleView() {
-        return torchToggleView;
-    }
 
     public ShapeableImageView getImagePreview() {
         return imagePreview;
@@ -399,24 +394,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         Bitmap bitmap = config.getLatestPreview();
         if(bitmap!=null)
             imagePreview.setImageBitmap(bitmap);
-
-        torchToggleView = findViewById(R.id.torch_toggle);
-        torchToggleView.setOnClickListener(v -> {
-
-            if(!config.isFlashAvailable()) return;
-
-            Integer torchState =
-                    config.getCamera().getCameraInfo().getTorchState().getValue();
-
-            if(torchState!=null){
-                config.getCamera().getCameraControl().enableTorch(torchState
-                        == TorchState.OFF);
-            } else {
-                Toast.makeText(this, "Unable to toggle" +
-                        "torch", Toast.LENGTH_SHORT).show();
-            }
-
-        });
 
         mPreviewView = findViewById(R.id.camera);
         scaleGestureDetector = new ScaleGestureDetector(this, this);

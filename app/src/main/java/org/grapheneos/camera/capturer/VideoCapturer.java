@@ -201,10 +201,8 @@ public class VideoCapturer {
         mActivity.getCaptureButton().setImageResource(R.drawable.stop_recording);
         mActivity.getFlipCameraCircle().setVisibility(View.INVISIBLE);
         mActivity.getCaptureModeView().setVisibility(View.GONE);
-        mActivity.getFlashPager().setVisibility(View.GONE);
         mActivity.getThirdCircle().setImageResource(R.drawable.camera_shutter);
         mActivity.getTabLayout().setVisibility(View.INVISIBLE);
-        mActivity.getTorchToggleView().setVisibility(View.VISIBLE);
 
         mActivity.getTimerView().setText(R.string.start_value_timer);
         mActivity.getTimerView().setVisibility(View.VISIBLE);
@@ -217,8 +215,6 @@ public class VideoCapturer {
         mActivity.getFlipCameraCircle().setVisibility(View.VISIBLE);
         mActivity.getCaptureModeView().setVisibility(View.VISIBLE);
         mActivity.getTabLayout().setVisibility(View.VISIBLE);
-        mActivity.getFlashPager().setVisibility(View.VISIBLE);
-        mActivity.getTorchToggleView().setVisibility(View.GONE);
 
         mActivity.getTimerView().setVisibility(View.GONE);
         cancelTimer();

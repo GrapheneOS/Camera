@@ -163,18 +163,6 @@
 
     </FrameLayout>
 
-    <ImageView
-        android:id="@+id/torch_toggle"
-        android:layout_height="28dp"
-        android:layout_width="28dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:src="@drawable/torch_off"
-        android:visibility="gone"
-        android:contentDescription="@string/toggle_torch"/>
-
     <FrameLayout
         android:layout_height="28dp"
         android:layout_width="28dp"

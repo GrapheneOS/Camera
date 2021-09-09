@@ -320,19 +320,9 @@ public class CamConfig {
 
         start_auto_focus();
 
-        if(isFlashAvailable()){
-            camera.getCameraInfo().getTorchState().observe(mActivity, torchState -> {
-                if(torchState== TorchState.ON){
-                    mActivity.getTorchToggleView()
-                            .setImageResource(R.drawable.torch_on);
-                } else {
-                    mActivity.getTorchToggleView()
-                            .setImageResource(R.drawable.torch_off);
-                }
-            });
-        } else {
+        if(!isFlashAvailable()){
             mActivity.getFlashPager().setCurrentItem(
-                ImageCapture.FLASH_MODE_OFF);
+                    ImageCapture.FLASH_MODE_OFF);
             setFlashMode(ImageCapture.FLASH_MODE_OFF);
         }
     }
