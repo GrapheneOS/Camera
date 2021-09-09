@@ -151,6 +151,7 @@ public class CamConfig {
             if (m_mediaMetadataRetriever != null)
             {
                 m_mediaMetadataRetriever.release();
+                m_mediaMetadataRetriever.close();
             }
         }
         return m_bitmap;
