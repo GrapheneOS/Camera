@@ -41,8 +41,6 @@ public class CamConfig {
 
     private int cameraSelector = CameraSelector.LENS_FACING_BACK;
 
-    private int flashMode = ImageCapture.FLASH_MODE_AUTO;
-
     private boolean videoMode = false;
 
     private VideoCapture videoCapture;
@@ -76,7 +74,9 @@ public class CamConfig {
     }
 
     public int getFlashMode() {
-        return flashMode;
+        if(imageCapture!=null)
+            return imageCapture.getFlashMode();
+        else return ImageCapture.FLASH_MODE_OFF;
     }
 
     public ProcessCameraProvider getCameraProvider() {
@@ -96,7 +96,7 @@ public class CamConfig {
     }
 
     public void setFlashMode(int flashMode) {
-        this.flashMode = flashMode;
+        imageCapture.setFlashMode(flashMode);
     }
 
     public void setVideoCapture(VideoCapture videoCapture) {
@@ -228,14 +228,17 @@ public class CamConfig {
 
     public void toggleFlashMode(){
         if(camera.getCameraInfo().hasFlashUnit()){
-            if(flashMode==2) flashMode = 0;
-            else ++flashMode;
 
-            mActivity.getFlashPager().setCurrentItem(flashMode);
-            startCamera(true);
+            if(getFlashMode()==ImageCapture.FLASH_MODE_OFF)
+                setFlashMode(ImageCapture.FLASH_MODE_AUTO);
+
+            else setFlashMode(imageCapture.getFlashMode()+1);
+
+            mActivity.getFlashPager().setCurrentItem(getFlashMode());
 
         } else {
-            Toast.makeText(mActivity, "Flash is unavailable for the current mode.",
+            Toast.makeText(mActivity, "Flash is unavailable" +
+                            " for the current mode.",
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -293,7 +296,7 @@ public class CamConfig {
 
         imageCapture = builder
                 .setTargetRotation(mActivity.getWindowManager().getDefaultDisplay().getRotation())
-                .setFlashMode(flashMode)
+                .setFlashMode(getFlashMode())
                 .build();
 
         preview.setSurfaceProvider(mActivity.getPreviewView().getSurfaceProvider());
@@ -328,8 +331,9 @@ public class CamConfig {
                 }
             });
         } else {
-            mActivity.getFlashPager().setCurrentItem(2);
-            flashMode = ImageCapture.FLASH_MODE_OFF;
+            mActivity.getFlashPager().setCurrentItem(
+                ImageCapture.FLASH_MODE_OFF);
+            setFlashMode(ImageCapture.FLASH_MODE_OFF);
         }
     }
 
