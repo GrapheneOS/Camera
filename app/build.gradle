@@ -43,3 +43,5 @@ dependencies {
     implementation "androidx.camera:camera-view:1.0.0-alpha28"
     implementation "androidx.camera:camera-extensions:1.0.0-alpha28"
 }
+
+apply plugin: 'kotlin-android'
