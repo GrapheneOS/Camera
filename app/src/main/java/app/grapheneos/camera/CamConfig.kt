@@ -112,7 +112,7 @@ class CamConfig(private val mActivity: MainActivity) {
         if (camera!!.cameraInfo.hasFlashUnit()) {
             flashMode =
                 if (flashMode == ImageCapture.FLASH_MODE_OFF) ImageCapture.FLASH_MODE_AUTO else imageCapture!!.flashMode + 1
-            mActivity.flashPager?.currentItem = flashMode
+            mActivity.flashPager.currentItem = flashMode
         } else {
             Toast.makeText(
                 mActivity, "Flash is unavailable" +
@@ -169,7 +169,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .setFlashMode(flashMode)
             .build()
 
-        preview.setSurfaceProvider(mActivity.previewView?.surfaceProvider)
+        preview.setSurfaceProvider(mActivity.previewView.surfaceProvider)
         mActivity.updateLastFrame()
 
         // Unbind/close all other camera(s) [if any]
@@ -189,10 +189,10 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         // Focus camera on touch/tap
-        mActivity.previewView?.setOnTouchListener(mActivity)
+        mActivity.previewView.setOnTouchListener(mActivity)
         startAutoFocus()
         if (!isFlashAvailable) {
-            mActivity.flashPager?.currentItem = ImageCapture.FLASH_MODE_OFF
+            mActivity.flashPager.currentItem = ImageCapture.FLASH_MODE_OFF
             flashMode = ImageCapture.FLASH_MODE_OFF
         }
     }

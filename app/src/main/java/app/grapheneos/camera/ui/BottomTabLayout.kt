@@ -12,16 +12,17 @@ import androidx.core.view.ViewCompat
 class BottomTabLayout : TabLayout {
     //    private final ArrayList<Integer> snapPoints = new ArrayList<>();
     //    private int count = 0;
-    constructor(context: Context?) : super(context!!)
-    constructor(context: Context?, attrs: AttributeSet?) : super(
-        context!!, attrs
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet?) : super(
+        context, attrs
     )
 
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(
-        context!!, attrs, defStyleAttr
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(
+        context, attrs, defStyleAttr
     )
 
     private var sp = 0
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)

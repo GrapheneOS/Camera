@@ -32,7 +32,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     private val handler = Handler(Looper.getMainLooper())
-    private var elapsedSeconds = 0
+    private var elapsedSeconds : Int = 0
     private val runnable = Runnable {
         ++elapsedSeconds
         val secs = padTo2(elapsedSeconds % 60)
@@ -43,7 +43,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         } else {
             "$hours:$mins:$secs"
         }
-        mActivity.timerView!!.text = timerText
+        mActivity.timerView.text = timerText
         startTimer()
     }
 
@@ -68,17 +68,17 @@ class VideoCapturer(private val mActivity: MainActivity) {
         ) /* w  ww .  j av  a  2s.  co  m*/
         fileName = sdf.format(Date())
         fileName = "VID_$fileName$videoFileFormat"
-        return File(mActivity.config!!.parentDirPath, fileName)
+        return File(mActivity.config.parentDirPath, fileName)
     }
 
     val isLatestMediaVideo: Boolean
         get() = isVideo(
-            mActivity.config!!.latestMediaFile
+            mActivity.config.latestMediaFile
         )
 
     @SuppressLint("RestrictedApi")
     fun startRecording() {
-        if (mActivity.config!!.camera == null) return
+        if (mActivity.config.camera == null) return
         val videoFile = generateFileForVideo()
         val outputOptions = VideoCapture.OutputFileOptions.Builder(videoFile)
             .build()
@@ -90,13 +90,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             beforeRecordingStarts()
-            mActivity.config!!.videoCapture!!.startRecording(
+            mActivity.config.videoCapture!!.startRecording(
                 outputOptions,
                 ContextCompat.getMainExecutor(mActivity),
                 object : VideoCapture.OnVideoSavedCallback {
                     override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
                         isRecording = false
-                        mActivity.previewLoader?.visibility = View.VISIBLE
+                        mActivity.previewLoader.visibility = View.VISIBLE
                         val videoUri = outputFileResults.savedUri
                         if (videoUri != null) {
                             val path : String = videoUri.encodedPath!!
@@ -108,7 +108,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             }
 
                             val file = File(path)
-                            mActivity.config!!.setLatestFile(file)
+                            mActivity.config.setLatestFile(file)
                             val mimeType = MimeTypeMap.getSingleton()
                                 .getMimeTypeFromExtension(
                                     getExtension(File(path))
@@ -122,9 +122,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                             " into media store: " + uri
                                 )
                                 mActivity.runOnUiThread {
-                                    mActivity.previewLoader?.visibility = View.GONE
+                                    mActivity.previewLoader.visibility = View.GONE
                                     if (bm != null) mActivity.imagePreview
-                                        ?.setImageBitmap(bm)
+                                        .setImageBitmap(bm)
                                 }
                             }
                         }
@@ -160,29 +160,29 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun beforeRecordingStarts() {
-        mActivity.captureButton!!.setImageResource(R.drawable.stop_recording)
-        mActivity.flipCameraCircle!!.visibility = View.INVISIBLE
-        mActivity.captureModeView!!.visibility = View.GONE
-        mActivity.thirdCircle!!.setImageResource(R.drawable.camera_shutter)
-        mActivity.tabLayout!!.visibility = View.INVISIBLE
-        mActivity.timerView!!.setText(R.string.start_value_timer)
-        mActivity.timerView!!.visibility = View.VISIBLE
+        mActivity.captureButton.setImageResource(R.drawable.stop_recording)
+        mActivity.flipCameraCircle.visibility = View.INVISIBLE
+        mActivity.captureModeView.visibility = View.GONE
+        mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
+        mActivity.tabLayout.visibility = View.INVISIBLE
+        mActivity.timerView.setText(R.string.start_value_timer)
+        mActivity.timerView.visibility = View.VISIBLE
         startTimer()
     }
 
     fun afterRecordingStops() {
-        mActivity.captureButton!!.setImageResource(R.drawable.start_recording)
-        mActivity.thirdCircle!!.setImageResource(R.drawable.option_circle)
-        mActivity.flipCameraCircle!!.visibility = View.VISIBLE
-        mActivity.captureModeView!!.visibility = View.VISIBLE
-        mActivity.tabLayout!!.visibility = View.VISIBLE
-        mActivity.timerView!!.visibility = View.GONE
+        mActivity.captureButton.setImageResource(R.drawable.start_recording)
+        mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
+        mActivity.flipCameraCircle.visibility = View.VISIBLE
+        mActivity.captureModeView.visibility = View.VISIBLE
+        mActivity.tabLayout.visibility = View.VISIBLE
+        mActivity.timerView.visibility = View.GONE
         cancelTimer()
     }
 
     @SuppressLint("RestrictedApi")
     fun stopRecording() {
-        mActivity.config!!.videoCapture!!.stopRecording()
+        mActivity.config.videoCapture!!.stopRecording()
     }
 
     companion object {

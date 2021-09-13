@@ -58,52 +58,37 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
-    var previewView: PreviewView? = null
-        private set
+    lateinit var previewView: PreviewView
 
     // Hold a reference to the manual permission dialog to avoid re-creating it if it
     // is already visible and to dismiss it if the permission gets granted.
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
     private var lastFrame: Bitmap? = null
-    var flashPager: ViewPager2? = null
-        private set
-    var config: CamConfig? = null
-        private set
+    lateinit var flashPager: ViewPager2
+    lateinit var config: CamConfig
 
-    private var imageCapturer: ImageCapturer? = null
-    private var videoCapturer: VideoCapturer? = null
+    private lateinit var imageCapturer: ImageCapturer
+    private lateinit var videoCapturer: VideoCapturer
 
-    var flipCameraCircle: View? = null
-        private set
+    lateinit var flipCameraCircle: View
+    lateinit var captureModeView: ImageView
+    lateinit var tabLayout: BottomTabLayout
+    lateinit var thirdCircle: ImageView
+    lateinit var captureButton: ImageButton
 
-    var captureModeView: ImageView? = null
-        private set
-
-    var tabLayout: BottomTabLayout? = null
-        private set
-
-    var thirdCircle: ImageView? = null
-        private set
-
-    var captureButton: ImageButton? = null
-        private set
-
-    private var scaleGestureDetector: ScaleGestureDetector? = null
-    private var dbTapGestureDetector: GestureDetector? = null
-    var timerView: TextView? = null
-        private set
-    private var thirdOption: View? = null
-    var imagePreview: ShapeableImageView? = null
-        private set
-    var previewLoader: ProgressBar? = null
-        private set
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
+    private lateinit var dbTapGestureDetector: GestureDetector
+    lateinit var timerView: TextView
+    private lateinit var thirdOption: View
+    lateinit var imagePreview: ShapeableImageView
+    lateinit var previewLoader: ProgressBar
     private var isZooming = false
 
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
-    ) { permissions: Map<String?, Boolean?> ->
+    ) { permissions: Map<String, Boolean> ->
         if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED
@@ -145,7 +130,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     }
 
     fun updateLastFrame() {
-        lastFrame = previewView!!.bitmap
+        lastFrame = previewView.bitmap
     }
 
     private fun animateFocusRing(x: Float, y: Float) {
@@ -183,9 +168,9 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME
         )
-        val fileName = config!!.latestMediaFile!!.name
+        val fileName = config.latestMediaFile!!.name
         var mediaUri: Uri
-        mediaUri = if (videoCapturer!!.isLatestMediaVideo) {
+        mediaUri = if (videoCapturer.isLatestMediaVideo) {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         } else {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -231,7 +216,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             Log.i(TAG, "Permission granted.")
 
             // Setup the camera since the permission is available
-            config!!.initializeCamera()
+            config.initializeCamera()
         } else if(shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)){
 
             Log.i(TAG, "The user has default denied camera permission.")
@@ -274,14 +259,14 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             requestPermissionLauncher.launch(cameraPermission)
         }
 
-        if (audioPermissionDialog != null) {
+        audioPermissionDialog?.let { dialog ->
             if (ContextCompat.checkSelfPermission(
                     this, Manifest.permission.RECORD_AUDIO
                 ) ==
                 PackageManager.PERMISSION_GRANTED
             ) {
-                if (audioPermissionDialog!!.isShowing) {
-                    audioPermissionDialog!!.dismiss()
+                if (dialog.isShowing) {
+                    dialog.dismiss()
                 }
             }
         }
@@ -304,20 +289,21 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         config = CamConfig(this)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = findViewById(R.id.third_option)
         previewLoader = findViewById(R.id.preview_loading)
         imagePreview = findViewById(R.id.image_preview)
-        val bitmap = config!!.latestPreview
-        if (bitmap != null) imagePreview?.setImageBitmap(bitmap)
+        val bitmap = config.latestPreview
+        if (bitmap != null) imagePreview.setImageBitmap(bitmap)
         previewView = findViewById(R.id.camera)
         scaleGestureDetector = ScaleGestureDetector(this, this)
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 Log.i(TAG, "===============Double tap detected.=========")
-                val zoomState = config!!.camera!!.cameraInfo.zoomState.value
+                val zoomState = config.camera!!.cameraInfo.zoomState.value
                 if (zoomState != null) {
                     val start = zoomState.linearZoom
                     var end = start * 1.5f
@@ -326,7 +312,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                     val animator = ValueAnimator.ofFloat(start, end)
                     animator.duration = 300
                     animator.addUpdateListener { valueAnimator: ValueAnimator ->
-                        config!!.camera!!.cameraControl.setLinearZoom(
+                        config.camera!!.cameraControl.setLinearZoom(
                             valueAnimator.animatedValue as Float
                         )
                     }
@@ -336,23 +322,21 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             }
         })
         tabLayout = findViewById(R.id.camera_mode_tabs)
-        var selected: TabLayout.Tab? = null
+        var selected: TabLayout.Tab?
 
-        tabLayout?.newTab()?.let { tabLayout?.addTab(it.setText("Night Light")) } // NIGHT
-        tabLayout?.newTab()?.let { tabLayout?.addTab(it.setText("Portrait")) } // BOKEH
-        tabLayout?.newTab()?.setText("Camera").also {
-            if (it != null) {
-                selected = it
-            }
-        }?.let { tabLayout?.addTab(it) } // AUTO
-        tabLayout?.newTab()?.let { tabLayout?.addTab(it.setText("HDR")) } // HDR
-        tabLayout?.newTab()?.let { tabLayout?.addTab(it.setText("Beauty")) } // Beauty
+        tabLayout.newTab().let { tabLayout.addTab(it.setText("Night Light")) } // NIGHT
+        tabLayout.newTab().let { tabLayout.addTab(it.setText("Portrait")) } // BOKEH
+        tabLayout.newTab().setText("Camera").also {
+            selected = it
+        }.let { tabLayout.addTab(it) } // AUTO
+        tabLayout.newTab().let { tabLayout.addTab(it.setText("HDR")) } // HDR
+        tabLayout.newTab().let { tabLayout.addTab(it.setText("Beauty")) } // Beauty
         //        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
 
         selected?.select()
         timerView = findViewById(R.id.timer)
         val mainOverlay = findViewById<ImageView>(R.id.main_overlay)
-        previewView?.previewStreamState?.observe(this, { state: StreamState ->
+        previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.GONE
             } else {
@@ -363,13 +347,13 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             }
         })
         flipCameraCircle = findViewById(R.id.flip_camera_circle)
-        flipCameraCircle?.setOnClickListener { config!!.toggleCameraSelector() }
+        flipCameraCircle.setOnClickListener { config.toggleCameraSelector() }
         thirdCircle = findViewById(R.id.third_circle)
-        thirdCircle?.setOnClickListener {
-            if (videoCapturer!!.isRecording) {
-                imageCapturer!!.takePicture()
+        thirdCircle.setOnClickListener {
+            if (videoCapturer.isRecording) {
+                imageCapturer.takePicture()
             } else {
-                if (imageCapturer!!.isTakingPicture) {
+                if (imageCapturer.isTakingPicture) {
                     Toast.makeText(
                         this, "Please wait for the image to get " +
                                 "captured before trying to open the gallery.",
@@ -382,8 +366,8 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             }
         }
         captureButton = findViewById(R.id.capture_button)
-        captureButton?.setOnClickListener(View.OnClickListener {
-            if (config!!.isVideoMode) {
+        captureButton.setOnClickListener(View.OnClickListener {
+            if (config.isVideoMode) {
                 if (ActivityCompat.checkSelfPermission(
                         this,
                         Manifest.permission.RECORD_AUDIO
@@ -392,26 +376,26 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                     requestPermissionLauncher.launch(audioPermission)
                     return@OnClickListener
                 }
-                if (videoCapturer!!.isRecording) {
-                    videoCapturer!!.stopRecording()
+                if (videoCapturer.isRecording) {
+                    videoCapturer.stopRecording()
                 } else {
-                    videoCapturer!!.startRecording()
+                    videoCapturer.startRecording()
                 }
             } else {
-                imageCapturer!!.takePicture()
+                imageCapturer.takePicture()
             }
         })
         flashPager = findViewById(R.id.flash_pager)
-        flashPager?.adapter = FlashAdapter()
-        flashPager?.isUserInputEnabled = false
+        flashPager.adapter = FlashAdapter()
+        flashPager.isUserInputEnabled = false
 
-        flashPager?.setOnClickListener { config!!.toggleFlashMode() }
+        flashPager.setOnClickListener { config.toggleFlashMode() }
         captureModeView = findViewById(R.id.capture_mode)
-        captureModeView?.setOnClickListener(object : View.OnClickListener {
+        captureModeView.setOnClickListener(object : View.OnClickListener {
             val SWITCH_ANIM_DURATION = 150
             override fun onClick(v: View) {
-                val imgID = if (config!!.isVideoMode) R.drawable.video_camera else R.drawable.camera
-                config!!.switchCameraMode()
+                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
+                config.switchCameraMode()
                 val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
                 val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
                 oa1.interpolator = DecelerateInterpolator()
@@ -421,17 +405,17 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                 oa1.addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
                         super.onAnimationEnd(animation)
-                        captureModeView?.setImageResource(imgID)
+                        captureModeView.setImageResource(imgID)
                         oa2.start()
                     }
                 })
                 oa1.start()
-                if (config!!.isVideoMode) {
-                    captureButton?.setBackgroundResource(0)
-                    captureButton?.setImageResource(R.drawable.start_recording)
+                if (config.isVideoMode) {
+                    captureButton.setBackgroundResource(0)
+                    captureButton.setImageResource(R.drawable.start_recording)
                 } else {
-                    captureButton?.setBackgroundResource(R.drawable.camera_shutter)
-                    captureButton?.setImageResource(0)
+                    captureButton.setBackgroundResource(R.drawable.camera_shutter)
+                    captureButton.setImageResource(0)
                 }
             }
         })
@@ -455,8 +439,8 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        dbTapGestureDetector!!.onTouchEvent(event)
-        scaleGestureDetector!!.onTouchEvent(event)
+        dbTapGestureDetector.onTouchEvent(event)
+        scaleGestureDetector.onTouchEvent(event)
         if (event.action == MotionEvent.ACTION_DOWN) return true else if (event.action == MotionEvent.ACTION_UP) {
             if (isZooming) {
                 isZooming = false
@@ -465,11 +449,11 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             val x = event.x
             val y = event.y
             val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
-                previewView!!.width.toFloat(), previewView!!.height.toFloat()
+                previewView.width.toFloat(), previewView.height.toFloat()
             )
             val autoFocusPoint = factory.createPoint(x, y)
             animateFocusRing(x, y)
-            config!!.camera!!.cameraControl.startFocusAndMetering(
+            config.camera!!.cameraControl.startFocusAndMetering(
                 FocusMeteringAction.Builder(
                     autoFocusPoint,
                     FocusMeteringAction.FLAG_AF
@@ -482,12 +466,12 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
-        val zoomState = config!!.camera!!.cameraInfo.zoomState.value
+        val zoomState = config.camera!!.cameraInfo.zoomState.value
         var scale = 1f
         if (zoomState != null) {
             scale = zoomState.zoomRatio * detector.scaleFactor
         }
-        config!!.camera!!.cameraControl.setZoomRatio(scale)
+        config.camera!!.cameraControl.setZoomRatio(scale)
         return true
     }
 
@@ -506,7 +490,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
 
     override fun onOrientationChange(orientation: Int) {
         var rotation = orientation
-        val d = abs(flashPager!!.rotation - rotation)
+        val d = abs(flashPager.rotation - rotation)
         if (d >= 90) rotation = 360 - rotation
         rotateView(flashPager, rotation.toFloat())
         rotateView(flipCameraCircle, rotation.toFloat())
