@@ -1,4 +1,4 @@
-package org.grapheneos.camera.notifier;
+package app.grapheneos.camera.notifier;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -6,7 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-import org.grapheneos.camera.ui.MainActivity;
+import app.grapheneos.camera.ui.MainActivity;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

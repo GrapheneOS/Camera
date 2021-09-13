@@ -1,4 +1,4 @@
-package org.grapheneos.camera.ui;
+package app.grapheneos.camera.ui;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -50,12 +50,12 @@ import android.widget.Toast;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.tabs.TabLayout;
 
-import org.grapheneos.camera.CamConfig;
-import org.grapheneos.camera.adapter.FlashAdapter;
-import org.grapheneos.camera.R;
-import org.grapheneos.camera.capturer.ImageCapturer;
-import org.grapheneos.camera.capturer.VideoCapturer;
-import org.grapheneos.camera.notifier.SensorOrientationChangeNotifier;
+import app.grapheneos.camera.CamConfig;
+import app.grapheneos.camera.adapter.FlashAdapter;
+import app.grapheneos.camera.R;
+import app.grapheneos.camera.capturer.ImageCapturer;
+import app.grapheneos.camera.capturer.VideoCapturer;
+import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

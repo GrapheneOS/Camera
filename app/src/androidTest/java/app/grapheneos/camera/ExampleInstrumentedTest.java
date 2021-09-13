@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package app.grapheneos.camera;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("org.grapheneos.camera", appContext.getPackageName());
+        assertEquals("app.grapheneos.camera", appContext.getPackageName());
     }
 }

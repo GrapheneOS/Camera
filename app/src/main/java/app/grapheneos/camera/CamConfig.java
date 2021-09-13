@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package app.grapheneos.camera;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -13,15 +13,16 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
-import androidx.camera.core.TorchState;
 import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import org.grapheneos.camera.capturer.ImageCapturer;
-import org.grapheneos.camera.ui.MainActivity;
+import app.grapheneos.camera.R;
+
+import app.grapheneos.camera.capturer.ImageCapturer;
+import app.grapheneos.camera.ui.MainActivity;
 
 import java.io.File;
 import java.util.concurrent.ExecutionException;

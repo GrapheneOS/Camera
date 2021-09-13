@@ -1,4 +1,4 @@
-package org.grapheneos.camera.capturer;
+package app.grapheneos.camera.capturer;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,8 +14,8 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.core.content.ContextCompat;
 
-import org.grapheneos.camera.CamConfig;
-import org.grapheneos.camera.ui.MainActivity;
+import app.grapheneos.camera.CamConfig;
+import app.grapheneos.camera.ui.MainActivity;
 
 import java.io.File;
 import java.text.SimpleDateFormat;

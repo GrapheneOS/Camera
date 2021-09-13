@@ -1,4 +1,4 @@
-package org.grapheneos.camera.adapter;
+package app.grapheneos.camera.adapter;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -7,7 +7,7 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.grapheneos.camera.R;
+import app.grapheneos.camera.R;
 
 public class FlashAdapter extends RecyclerView.Adapter<FlashAdapter.IconHolder> {
 

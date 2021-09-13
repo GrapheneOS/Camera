@@ -1,4 +1,4 @@
-package org.grapheneos.camera;
+package app.grapheneos.camera;
 
 import org.junit.Test;
 
