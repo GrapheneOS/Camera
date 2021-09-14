@@ -32,7 +32,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     private val handler = Handler(Looper.getMainLooper())
-    private var elapsedSeconds : Int = 0
+    private var elapsedSeconds: Int = 0
     private val runnable = Runnable {
         ++elapsedSeconds
         val secs = padTo2(elapsedSeconds % 60)
@@ -93,13 +93,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.config.videoCapture!!.startRecording(
                 outputOptions,
                 ContextCompat.getMainExecutor(mActivity),
-                object : VideoCapture.OnVideoSavedCallback {
+                object: VideoCapture.OnVideoSavedCallback {
                     override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
                         isRecording = false
                         mActivity.previewLoader.visibility = View.VISIBLE
                         val videoUri = outputFileResults.savedUri
                         if (videoUri != null) {
-                            val path : String = videoUri.encodedPath!!
+                            val path: String = videoUri.encodedPath!!
                             var tBm: Bitmap? = null
                             try {
                                 tBm = getVideoThumbnail(path)

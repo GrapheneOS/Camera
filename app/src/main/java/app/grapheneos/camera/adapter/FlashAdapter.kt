@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.widget.ImageView
 import app.grapheneos.camera.R
 
-class FlashAdapter : RecyclerView.Adapter<IconHolder>() {
+class FlashAdapter: RecyclerView.Adapter<IconHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): IconHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
         val iconView = layoutInflater.inflate(
@@ -25,7 +25,7 @@ class FlashAdapter : RecyclerView.Adapter<IconHolder>() {
         return resIds.size
     }
 
-    class IconHolder(val icon: ImageView) : RecyclerView.ViewHolder(
+    class IconHolder(val icon: ImageView): RecyclerView.ViewHolder(
         icon
     )
 

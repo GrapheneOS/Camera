@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
+class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
             .setStartDelay(500)
             .setDuration(300)
             .alpha(0f)
-            .setListener(object : Animator.AnimatorListener {
+            .setListener(object: Animator.AnimatorListener {
                 override fun onAnimationStart(animation: Animator) {}
                 override fun onAnimationEnd(animator: Animator) {
                     focusRing.visibility = View.INVISIBLE
@@ -300,7 +300,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
         if (bitmap != null) imagePreview.setImageBitmap(bitmap)
         previewView = findViewById(R.id.camera)
         scaleGestureDetector = ScaleGestureDetector(this, this)
-        dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
+        dbTapGestureDetector = GestureDetector(this, object: SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 Log.i(TAG, "===============Double tap detected.=========")
                 val zoomState = config.camera!!.cameraInfo.zoomState.value
@@ -391,7 +391,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
 
         flashPager.setOnClickListener { config.toggleFlashMode() }
         captureModeView = findViewById(R.id.capture_mode)
-        captureModeView.setOnClickListener(object : View.OnClickListener {
+        captureModeView.setOnClickListener(object: View.OnClickListener {
             val SWITCH_ANIM_DURATION = 150
             override fun onClick(v: View) {
                 val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
@@ -402,7 +402,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                 oa2.interpolator = AccelerateDecelerateInterpolator()
                 oa1.duration = SWITCH_ANIM_DURATION.toLong()
                 oa2.duration = SWITCH_ANIM_DURATION.toLong()
-                oa1.addListener(object : AnimatorListenerAdapter() {
+                oa1.addListener(object: AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
                         super.onAnimationEnd(animation)
                         captureModeView.setImageResource(imgID)

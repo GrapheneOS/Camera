@@ -27,22 +27,22 @@ class ImageCapturer(private val mActivity: MainActivity) {
         ) /* w  ww .  j av  a  2s.  co  m*/
         fileName = sdf.format(Date())
         fileName = "IMG_$fileName$imageFileFormat"
-        return File(mActivity.config!!.parentDirPath, fileName)
+        return File(mActivity.config.parentDirPath, fileName)
     }
 
     val isTakingPicture: Boolean
-        get() = mActivity.previewLoader!!.visibility == View.VISIBLE
+        get() = mActivity.previewLoader.visibility == View.VISIBLE
 
     fun takePicture() {
-        if (mActivity.config!!.camera == null) return
+        if (mActivity.config.camera == null) return
         val imageFile = generateFileForImage()
         val outputFileOptions = ImageCapture.OutputFileOptions.Builder(imageFile)
             .build()
-        mActivity.previewLoader!!.visibility = View.VISIBLE
-        mActivity.config!!.imageCapture!!.takePicture(
+        mActivity.previewLoader.visibility = View.VISIBLE
+        mActivity.config.imageCapture!!.takePicture(
             outputFileOptions,
             ContextCompat.getMainExecutor(mActivity),
-            object : ImageCapture.OnImageSavedCallback {
+            object: ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.i(TAG, "Image saved successfully!")
                     val imageUri = outputFileResults.savedUri
@@ -52,7 +52,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             BitmapFactory.decodeFile(path)
                         )
                         val file = File(path)
-                        mActivity.config!!.setLatestFile(file)
+                        mActivity.config.setLatestFile(file)
                         val mimeType = MimeTypeMap.getSingleton()
                             .getMimeTypeFromExtension(
                                 getExtension(
@@ -67,8 +67,8 @@ class ImageCapturer(private val mActivity: MainActivity) {
                                         " into media store: " + uri
                             )
                             mActivity.runOnUiThread {
-                                mActivity.previewLoader!!.visibility = View.GONE
-                                mActivity.imagePreview?.setImageBitmap(bm)
+                                mActivity.previewLoader.visibility = View.GONE
+                                mActivity.imagePreview.setImageBitmap(bm)
                             }
                         }
                     }
@@ -76,7 +76,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
                 override fun onError(exception: ImageCaptureException) {
                     exception.printStackTrace()
-                    mActivity.previewLoader!!.visibility = View.GONE
+                    mActivity.previewLoader.visibility = View.GONE
                 }
             })
     }

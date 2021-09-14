@@ -33,7 +33,7 @@ class SensorOrientationChangeNotifier private constructor(mainActivity: MainActi
         mSensorManager.unregisterListener(mSensorEventListener)
     }
 
-    private inner class NotifierSensorEventListener : SensorEventListener {
+    private inner class NotifierSensorEventListener: SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
             val x = event.values[0]
             val y = event.values[1]

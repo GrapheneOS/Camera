@@ -9,15 +9,15 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 
-class BottomTabLayout : TabLayout {
+class BottomTabLayout: TabLayout {
     //    private final ArrayList<Integer> snapPoints = new ArrayList<>();
     //    private int count = 0;
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet?) : super(
+    constructor(context: Context): super(context)
+    constructor(context: Context, attrs: AttributeSet?): super(
         context, attrs
     )
 
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int): super(
         context, attrs, defStyleAttr
     )
 
