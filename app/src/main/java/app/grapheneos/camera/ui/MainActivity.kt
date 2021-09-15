@@ -12,8 +12,6 @@ import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
-import android.view.ScaleGestureDetector
-import android.view.GestureDetector
 import com.google.android.material.imageview.ShapeableImageView
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.core.app.ActivityCompat
@@ -24,7 +22,6 @@ import android.provider.MediaStore
 import androidx.core.content.ContextCompat
 import android.os.Bundle
 import android.view.GestureDetector.SimpleOnGestureListener
-import android.view.MotionEvent
 import android.animation.ValueAnimator
 import com.google.android.material.tabs.TabLayout
 import androidx.camera.view.PreviewView.StreamState
@@ -40,7 +37,7 @@ import android.renderscript.ScriptIntrinsicBlur
 import android.renderscript.Allocation
 import android.renderscript.Element
 import android.util.Log
-import android.view.View
+import android.view.*
 import android.view.animation.DecelerateInterpolator
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -490,6 +487,14 @@ class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener
 
     override fun onOrientationChange(orientation: Int) {
         var rotation = orientation
+
+        when (orientation) {
+            in 45..134 -> config.imageCapture?.targetRotation = Surface.ROTATION_270
+            in 135..224 -> config.imageCapture?.targetRotation = Surface.ROTATION_180
+            in 225..314 -> config.imageCapture?.targetRotation = Surface.ROTATION_90
+            else -> config.imageCapture?.targetRotation = Surface.ROTATION_0
+        }
+
         val d = abs(flashPager.rotation - rotation)
         if (d >= 90) rotation = 360 - rotation
         rotateView(flashPager, rotation.toFloat())
