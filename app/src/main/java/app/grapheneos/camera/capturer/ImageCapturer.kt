@@ -4,9 +4,7 @@ import app.grapheneos.camera.CamConfig.Companion.getExtension
 import app.grapheneos.camera.ui.MainActivity
 import androidx.camera.core.ImageCapture
 import androidx.core.content.ContextCompat
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.webkit.MimeTypeMap
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -48,9 +46,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     val imageUri = outputFileResults.savedUri
                     if (imageUri != null) {
                         val path = imageUri.encodedPath!!
-                        val bm = fixImagePreview(
-                            BitmapFactory.decodeFile(path)
-                        )
+                        val bm = BitmapFactory.decodeFile(path)
                         val file = File(path)
                         mActivity.config.setLatestFile(file)
                         val mimeType = MimeTypeMap.getSingleton()
@@ -83,11 +79,5 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
     companion object {
         private const val TAG = "ImageCapturer"
-        fun fixImagePreview(bInput: Bitmap): Bitmap {
-            val degrees = 90f
-            val matrix = Matrix()
-            matrix.setRotate(degrees)
-            return Bitmap.createBitmap(bInput, 0, 0, bInput.width, bInput.height, matrix, true)
-        }
     }
 }

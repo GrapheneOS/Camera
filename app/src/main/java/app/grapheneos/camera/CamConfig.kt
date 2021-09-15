@@ -75,7 +75,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     throwable.printStackTrace()
                     null
                 }
-            } else ImageCapturer.fixImagePreview(BitmapFactory.decodeFile(lastModifiedFile.absolutePath))
+            } else BitmapFactory.decodeFile(lastModifiedFile.absolutePath)
         }
 
     fun setLatestFile(latestFile: File?) {
