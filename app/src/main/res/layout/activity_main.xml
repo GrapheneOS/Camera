@@ -180,6 +180,23 @@
 
     </FrameLayout>
 
+    <FrameLayout
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true">
+
+        <ImageButton
+            android:id="@+id/settings_option"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:src="@drawable/settings_icon"
+            android:contentDescription="@string/capture_mode"/>
+
+    </FrameLayout>
+
     <TextView
         android:id="@+id/timer"
         android:layout_marginEnd="12dp"
