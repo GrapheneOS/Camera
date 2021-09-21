@@ -488,12 +488,15 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     override fun onOrientationChange(orientation: Int) {
         var rotation = orientation
 
-        when (orientation) {
-            in 45..134 -> config.imageCapture?.targetRotation = Surface.ROTATION_270
-            in 135..224 -> config.imageCapture?.targetRotation = Surface.ROTATION_180
-            in 225..314 -> config.imageCapture?.targetRotation = Surface.ROTATION_90
-            else -> config.imageCapture?.targetRotation = Surface.ROTATION_0
+        val tr = when (orientation) {
+            in 45..134 -> Surface.ROTATION_270
+            in 135..224 -> Surface.ROTATION_180
+            in 225..314 -> Surface.ROTATION_90
+            else -> Surface.ROTATION_0
         }
+
+        config.imageCapture?.targetRotation = tr
+        config.preview?.targetRotation = tr
 
         val d = abs(flashPager.rotation - rotation)
         if (d >= 90) rotation = 360 - rotation

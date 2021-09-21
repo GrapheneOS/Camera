@@ -22,6 +22,9 @@ class CamConfig(private val mActivity: MainActivity) {
     var imageCapture: ImageCapture? = null
         private set
 
+    var preview: Preview? = null
+        private set
+
     private var cameraSelector = CameraSelector.LENS_FACING_BACK
 
     var isVideoMode = false
@@ -149,7 +152,8 @@ class CamConfig(private val mActivity: MainActivity) {
     fun startCamera(forced: Boolean = false) {
         if (!forced && camera != null) return
 
-        val preview = Preview.Builder()
+        preview = Preview.Builder()
+            .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
             .build()
 
         val cameraSelector = CameraSelector.Builder()
@@ -165,7 +169,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .setFlashMode(flashMode)
             .build()
 
-        preview.setSurfaceProvider(mActivity.previewView.surfaceProvider)
+        preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
         mActivity.updateLastFrame()
 
         // Unbind/close all other camera(s) [if any]
