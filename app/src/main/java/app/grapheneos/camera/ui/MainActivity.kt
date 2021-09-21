@@ -2,54 +2,54 @@ package app.grapheneos.camera.ui
 
 import android.Manifest
 import android.animation.Animator
-import androidx.appcompat.app.AppCompatActivity
-import android.view.View.OnTouchListener
-import android.view.ScaleGestureDetector.OnScaleGestureListener
-import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
-import androidx.camera.view.PreviewView
-import android.graphics.Bitmap
-import androidx.viewpager2.widget.ViewPager2
-import app.grapheneos.camera.CamConfig
-import app.grapheneos.camera.capturer.ImageCapturer
-import app.grapheneos.camera.capturer.VideoCapturer
-import com.google.android.material.imageview.ShapeableImageView
-import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
-import androidx.core.app.ActivityCompat
-import android.content.pm.PackageManager
-import app.grapheneos.camera.R
-import android.content.Intent
-import android.provider.MediaStore
-import androidx.core.content.ContextCompat
-import android.os.Bundle
-import android.view.GestureDetector.SimpleOnGestureListener
-import android.animation.ValueAnimator
-import com.google.android.material.tabs.TabLayout
-import androidx.camera.view.PreviewView.StreamState
-import app.grapheneos.camera.adapter.FlashAdapter
-import android.animation.ObjectAnimator
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.DialogInterface
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.Settings
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicBlur
 import android.renderscript.Allocation
 import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
 import android.view.*
+import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.ScaleGestureDetector.OnScaleGestureListener
+import android.view.View.OnTouchListener
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import androidx.camera.core.MeteringPointFactory
-import androidx.camera.core.SurfaceOrientedMeteringPointFactory
-import androidx.camera.core.FocusMeteringAction
 import android.view.animation.LinearInterpolator
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.MeteringPointFactory
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
+import androidx.camera.view.PreviewView
+import androidx.camera.view.PreviewView.StreamState
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.viewpager2.widget.ViewPager2
+import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.R
+import app.grapheneos.camera.adapter.FlashAdapter
+import app.grapheneos.camera.capturer.ImageCapturer
+import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
+import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.tabs.TabLayout
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
+class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
@@ -148,7 +148,7 @@ class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener
             .setStartDelay(500)
             .setDuration(300)
             .alpha(0f)
-            .setListener(object: Animator.AnimatorListener {
+            .setListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(animation: Animator) {}
                 override fun onAnimationEnd(animator: Animator) {
                     focusRing.visibility = View.INVISIBLE
@@ -214,7 +214,7 @@ class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener
 
             // Setup the camera since the permission is available
             config.initializeCamera()
-        } else if(shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)){
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
 
             Log.i(TAG, "The user has default denied camera permission.")
 
@@ -297,7 +297,7 @@ class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener
         if (bitmap != null) imagePreview.setImageBitmap(bitmap)
         previewView = findViewById(R.id.camera)
         scaleGestureDetector = ScaleGestureDetector(this, this)
-        dbTapGestureDetector = GestureDetector(this, object: SimpleOnGestureListener() {
+        dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 Log.i(TAG, "===============Double tap detected.=========")
                 val zoomState = config.camera!!.cameraInfo.zoomState.value
@@ -388,7 +388,7 @@ class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener
 
         flashPager.setOnClickListener { config.toggleFlashMode() }
         captureModeView = findViewById(R.id.capture_mode)
-        captureModeView.setOnClickListener(object: View.OnClickListener {
+        captureModeView.setOnClickListener(object : View.OnClickListener {
             val SWITCH_ANIM_DURATION = 150
             override fun onClick(v: View) {
                 val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
@@ -399,7 +399,7 @@ class MainActivity: AppCompatActivity(), OnTouchListener, OnScaleGestureListener
                 oa2.interpolator = AccelerateDecelerateInterpolator()
                 oa1.duration = SWITCH_ANIM_DURATION.toLong()
                 oa2.duration = SWITCH_ANIM_DURATION.toLong()
-                oa1.addListener(object: AnimatorListenerAdapter() {
+                oa1.addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator) {
                         super.onAnimationEnd(animation)
                         captureModeView.setImageResource(imgID)

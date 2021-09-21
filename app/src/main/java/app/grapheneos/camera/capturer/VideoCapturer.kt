@@ -1,25 +1,24 @@
 package app.grapheneos.camera.capturer
 
 import android.Manifest
-
-import app.grapheneos.camera.CamConfig.Companion.getExtension
-import app.grapheneos.camera.CamConfig.Companion.getVideoThumbnail
-import app.grapheneos.camera.ui.MainActivity
 import android.annotation.SuppressLint
-import androidx.camera.core.VideoCapture
-import androidx.core.app.ActivityCompat
 import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import android.graphics.Bitmap
-import android.webkit.MimeTypeMap
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.camera.core.VideoCapture
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import app.grapheneos.camera.CamConfig.Companion.getExtension
+import app.grapheneos.camera.CamConfig.Companion.getVideoThumbnail
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -93,7 +92,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.config.videoCapture!!.startRecording(
                 outputOptions,
                 ContextCompat.getMainExecutor(mActivity),
-                object: VideoCapture.OnVideoSavedCallback {
+                object : VideoCapture.OnVideoSavedCallback {
                     override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
                         isRecording = false
                         mActivity.previewLoader.visibility = View.VISIBLE

@@ -1,16 +1,16 @@
 package app.grapheneos.camera.capturer
 
-import app.grapheneos.camera.CamConfig.Companion.getExtension
-import app.grapheneos.camera.ui.MainActivity
-import androidx.camera.core.ImageCapture
-import androidx.core.content.ContextCompat
 import android.graphics.BitmapFactory
-import android.webkit.MimeTypeMap
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.util.Log
 import android.view.View
+import android.webkit.MimeTypeMap
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.core.content.ContextCompat
+import app.grapheneos.camera.CamConfig.Companion.getExtension
+import app.grapheneos.camera.ui.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -40,7 +40,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         mActivity.config.imageCapture!!.takePicture(
             outputFileOptions,
             ContextCompat.getMainExecutor(mActivity),
-            object: ImageCapture.OnImageSavedCallback {
+            object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.i(TAG, "Image saved successfully!")
                     val imageUri = outputFileResults.savedUri

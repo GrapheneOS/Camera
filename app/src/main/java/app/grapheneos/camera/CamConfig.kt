@@ -1,19 +1,15 @@
 package app.grapheneos.camera
 
-import app.grapheneos.camera.ui.MainActivity
-import androidx.camera.lifecycle.ProcessCameraProvider
 import android.graphics.Bitmap
-import app.grapheneos.camera.capturer.ImageCapturer
 import android.graphics.BitmapFactory
-import android.widget.Toast
-import androidx.core.content.ContextCompat
-import kotlin.jvm.JvmOverloads
-import kotlin.Throws
 import android.media.MediaMetadataRetriever
 import android.util.Log
+import android.widget.Toast
 import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
+import app.grapheneos.camera.ui.MainActivity
 import java.io.File
-import java.lang.Exception
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
@@ -213,6 +209,7 @@ class CamConfig(private val mActivity: MainActivity) {
     companion object {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
+
         @JvmStatic
         @Throws(Throwable::class)
         fun getVideoThumbnail(p_videoPath: String?): Bitmap {
