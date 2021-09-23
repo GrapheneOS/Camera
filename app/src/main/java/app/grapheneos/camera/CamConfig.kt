@@ -26,7 +26,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var preview: Preview? = null
         private set
 
-    private var cameraSelector = CameraSelector.LENS_FACING_BACK
+    private var cameraSelectorValue = CameraSelector.LENS_FACING_BACK
 
     private val extensionsManager by lazy {
         ExtensionsManager.getInstance(mActivity).get()
@@ -127,8 +127,8 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun toggleCameraSelector() {
-        cameraSelector =
-            if (cameraSelector == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
+        cameraSelectorValue =
+            if (cameraSelectorValue == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
         startCamera(true)
     }
 
@@ -162,7 +162,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .build()
 
         val cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(cameraSelector)
+            .requireLensFacing(cameraSelectorValue)
             .build()
 
         val builder = ImageCapture.Builder()
