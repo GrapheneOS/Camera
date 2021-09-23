@@ -229,6 +229,35 @@ class CamConfig(private val mActivity: MainActivity) {
         )
     }
 
+    fun getAvailableModes(): ArrayList<String> {
+        val modes = arrayListOf<String>()
+
+        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.BOKEH)){
+            modes.add("NIGHT LIGHT")
+        }
+
+        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.BOKEH)){
+            modes.add("PORTRAIT")
+        }
+
+        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.HDR)){
+            modes.add("HDR")
+        }
+
+        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.BEAUTY)){
+            modes.add("BEAUTY")
+        }
+
+        val mid = modes.size/2
+        modes.add(mid, "CAMERA")
+
+        return modes
+    }
+
     companion object {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
