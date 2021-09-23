@@ -227,7 +227,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 mBitmap = mMediaMetadataRetriever.frameAtTime!!
             } catch (m_e: Exception) {
                 throw Throwable(
-                    "Exception in retriveVideoFrameFromVideo(String p_videoPath)"
+                    "Exception in retrieveVideoFrameFromVideo(String p_videoPath)"
                             + m_e.message
                 )
             } finally {
