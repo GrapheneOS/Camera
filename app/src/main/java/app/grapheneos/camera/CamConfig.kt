@@ -29,7 +29,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var lensFacing = CameraSelector.LENS_FACING_BACK
 
-    private var cameraMode = ExtensionMode.AUTO
+    private var cameraMode = ExtensionMode.NONE
 
     private lateinit var cameraSelector: CameraSelector
 
@@ -232,8 +232,8 @@ class CamConfig(private val mActivity: MainActivity) {
     companion object {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
-        private val extensionModes = arrayOf("None", "PORTRAIT", "HDR", "NIGHT LIGHT",
-            "BEAUTY", "CAMERA")
+        private val extensionModes = arrayOf("CAMERA", "PORTRAIT", "HDR", "NIGHT LIGHT",
+            "BEAUTY", "AUTO")
 
         @JvmStatic
         @Throws(Throwable::class)
