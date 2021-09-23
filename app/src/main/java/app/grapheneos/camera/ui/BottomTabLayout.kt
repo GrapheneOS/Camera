@@ -26,6 +26,9 @@ class BottomTabLayout : TabLayout {
     @RequiresApi(api = Build.VERSION_CODES.M)
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
+
+        if(tabCount==0) return
+
         val tabParent = getChildAt(0) as ViewGroup
         val firstTab = tabParent.getChildAt(0)
         val lastTab = tabParent.getChildAt(tabParent.childCount - 1)

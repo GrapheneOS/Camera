@@ -318,19 +318,9 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                 return super.onDoubleTap(e)
             }
         })
+
         tabLayout = findViewById(R.id.camera_mode_tabs)
-        var selected: TabLayout.Tab?
 
-        tabLayout.newTab().let { tabLayout.addTab(it.setText("Night Light")) } // NIGHT
-        tabLayout.newTab().let { tabLayout.addTab(it.setText("Portrait")) } // BOKEH
-        tabLayout.newTab().setText("Camera").also {
-            selected = it
-        }.let { tabLayout.addTab(it) } // AUTO
-        tabLayout.newTab().let { tabLayout.addTab(it.setText("HDR")) } // HDR
-        tabLayout.newTab().let { tabLayout.addTab(it.setText("Beauty")) } // Beauty
-        //        tabLayout.addTab(tabLayout.newTab().setText("AR Effects"));
-
-        selected?.select()
         timerView = findViewById(R.id.timer)
         val mainOverlay = findViewById<ImageView>(R.id.main_overlay)
         previewView.previewStreamState.observe(this, { state: StreamState ->

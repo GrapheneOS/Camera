@@ -207,6 +207,8 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
+        loadTabs()
+
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
         startAutoFocus()
@@ -229,7 +231,26 @@ class CamConfig(private val mActivity: MainActivity) {
         )
     }
 
-    fun getAvailableModes(): ArrayList<String> {
+    private var selectCenterTabOnLoad = true
+
+    private fun loadTabs(){
+
+        mActivity.tabLayout.removeAllTabs()
+
+        getAvailableModes().forEach { mode ->
+            mActivity.tabLayout.newTab().let {
+                mActivity.tabLayout.addTab(it.setText(mode))
+            }
+        }
+
+        if(selectCenterTabOnLoad){
+            val mid = mActivity.tabLayout.tabCount/2
+            mActivity.tabLayout.getTabAt(mid)?.select()
+            selectCenterTabOnLoad = false
+        }
+    }
+
+    private fun getAvailableModes(): ArrayList<String> {
         val modes = arrayListOf<String>()
 
         if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
