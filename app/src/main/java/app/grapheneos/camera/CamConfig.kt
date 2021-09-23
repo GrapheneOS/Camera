@@ -6,6 +6,7 @@ import android.media.MediaMetadataRetriever
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.*
+import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
@@ -27,6 +28,8 @@ class CamConfig(private val mActivity: MainActivity) {
         private set
 
     private var lensFacing = CameraSelector.LENS_FACING_BACK
+
+    private var cameraMode = ExtensionMode.AUTO
 
     private lateinit var cameraSelector: CameraSelector
 
