@@ -26,7 +26,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var preview: Preview? = null
         private set
 
-    private var cameraSelectorValue = CameraSelector.LENS_FACING_BACK
+    private var lensFacing = CameraSelector.LENS_FACING_BACK
 
     private lateinit var cameraSelector: CameraSelector
 
@@ -129,8 +129,8 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun toggleCameraSelector() {
-        cameraSelectorValue =
-            if (cameraSelectorValue == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
+        lensFacing =
+            if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
         startCamera(true)
     }
 
@@ -164,7 +164,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .build()
 
         cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(cameraSelectorValue)
+            .requireLensFacing(lensFacing)
             .build()
 
         val builder = ImageCapture.Builder()
