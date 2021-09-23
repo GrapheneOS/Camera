@@ -320,6 +320,19 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
         })
 
         tabLayout = findViewById(R.id.camera_mode_tabs)
+        tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
+
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                val mode = tab?.text.toString()
+                Log.i(TAG, "Selected Mode: $mode")
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+                val mode = tab?.text.toString()
+                Log.i(TAG, "Reselected Mode: $mode")
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+        })
 
         timerView = findViewById(R.id.timer)
         val mainOverlay = findViewById<ImageView>(R.id.main_overlay)

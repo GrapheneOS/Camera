@@ -279,6 +279,22 @@ class CamConfig(private val mActivity: MainActivity) {
         return modes
     }
 
+    fun switchMode(modeText: String){
+
+        cameraMode = ExtensionMode.NONE
+
+        if(modeText == "CAMERA"){
+            if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                    ExtensionMode.AUTO)){
+                cameraMode = ExtensionMode.AUTO
+            }
+        } else {
+            cameraMode = extensionModes.indexOf(modeText)
+        }
+
+        startCamera(true)
+    }
+
     companion object {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
