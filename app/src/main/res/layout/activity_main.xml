@@ -37,8 +37,9 @@
         android:layout_width="match_parent"
         android:orientation="horizontal"
         android:weightSum="3"
+        android:layout_alignParentBottom="true"
         android:layout_above="@id/camera_mode_tabs"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="32dp"
         android:baselineAligned="false">
 
         <FrameLayout
@@ -132,6 +133,7 @@
 
     <app.grapheneos.camera.ui.BottomTabLayout
         android:id="@+id/camera_mode_tabs"
+        android:visibility="gone"
         android:layout_alignParentBottom="true"
         android:layout_width="match_parent"
         android:layout_height="30dp"
