@@ -6,6 +6,7 @@ import android.media.MediaMetadataRetriever
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.*
+import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.MainActivity
@@ -26,6 +27,10 @@ class CamConfig(private val mActivity: MainActivity) {
         private set
 
     private var cameraSelector = CameraSelector.LENS_FACING_BACK
+
+    private val extensionsManager by lazy {
+        ExtensionsManager.getInstance(mActivity).get()
+    }
 
     var isVideoMode = false
         private set
