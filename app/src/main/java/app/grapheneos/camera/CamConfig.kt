@@ -28,6 +28,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var cameraSelectorValue = CameraSelector.LENS_FACING_BACK
 
+    private lateinit var cameraSelector: CameraSelector
+
     private val extensionsManager by lazy {
         ExtensionsManager.getInstance(mActivity).get()
     }
@@ -161,7 +163,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
             .build()
 
-        val cameraSelector = CameraSelector.Builder()
+        cameraSelector = CameraSelector.Builder()
             .requireLensFacing(cameraSelectorValue)
             .build()
 
