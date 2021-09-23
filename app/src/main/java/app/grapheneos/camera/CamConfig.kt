@@ -218,6 +218,8 @@ class CamConfig(private val mActivity: MainActivity) {
     companion object {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
+        private val extensionModes = arrayOf("None", "PORTRAIT", "HDR", "NIGHT LIGHT",
+            "BEAUTY", "CAMERA")
 
         @JvmStatic
         @Throws(Throwable::class)
