@@ -185,6 +185,15 @@ class CamConfig(private val mActivity: MainActivity) {
         // Unbind/close all other camera(s) [if any]
         cameraProvider!!.unbindAll()
 
+        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                cameraMode)){
+            cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
+                cameraProvider!!, cameraSelector, cameraMode
+            )
+        } else {
+            Log.i(TAG, "Auto mode isn't available for this device")
+        }
+
         // Get a camera instance bound to the lifecycle of this activity
         camera = if (isVideoMode) {
             cameraProvider!!.bindToLifecycle(
