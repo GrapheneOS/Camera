@@ -17,7 +17,9 @@ import android.graphics.drawable.Drawable
 import android.view.View
 
 import android.view.LayoutInflater
+import androidx.camera.core.ZoomState
 import app.grapheneos.camera.R
+import kotlin.math.roundToInt
 
 
 class ZoomBar : AppCompatSeekBar {
@@ -32,8 +34,10 @@ class ZoomBar : AppCompatSeekBar {
     private var thumbView: View = LayoutInflater.from(context)
         .inflate(R.layout.zoom_bar_thumb, null, false)
 
-    init {
-        thumb = getThumb(0)
+    private lateinit var mainActivity: MainActivity
+
+    fun setMainActivity(mainActivity: MainActivity){
+        this.mainActivity = mainActivity
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
@@ -42,8 +46,25 @@ class ZoomBar : AppCompatSeekBar {
         super.onSizeChanged(h, w, oldh, oldw)
     }
 
-    private fun getThumb(progress: Int): Drawable {
-        (thumbView.findViewById(R.id.progress) as TextView).text = progress.toString()
+    fun updateThumb() {
+        val zoomState: ZoomState? = mainActivity.config.camera?.cameraInfo?.zoomState
+            ?.value
+
+        var zoomRatio = 1.0f
+        var linearZoom = 0.0f
+
+        if(zoomState!=null){
+            zoomRatio = zoomState.zoomRatio
+            linearZoom = zoomState.linearZoom
+        }
+
+        progress = (linearZoom * 100).roundToInt()
+
+        val textView: TextView = thumbView.findViewById(R.id.progress) as TextView
+        val text = String.format("%.1fx", zoomRatio)
+
+        textView.text = text
+
         thumbView.measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED)
         val bitmap = Bitmap.createBitmap(
             thumbView.measuredWidth,
@@ -53,7 +74,8 @@ class ZoomBar : AppCompatSeekBar {
         val canvas = Canvas(bitmap)
         thumbView.layout(0, 0, thumbView.measuredWidth, thumbView.measuredHeight)
         thumbView.draw(canvas)
-        return BitmapDrawable(resources, bitmap)
+        thumb = BitmapDrawable(resources, bitmap)
+        onSizeChanged(width, height, 0, 0)
     }
 
     @Synchronized
@@ -75,10 +97,8 @@ class ZoomBar : AppCompatSeekBar {
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
-                progress = max - (max * event.y / height).toInt()
-                thumb = getThumb(progress)
-                Log.i("Progress", progress.toString() + "")
-                onSizeChanged(width, height, 0, 0)
+                val progress = max - (max * event.y / height).toInt()
+                mainActivity.config.camera?.cameraControl?.setLinearZoom(progress/100f)
             }
             MotionEvent.ACTION_CANCEL -> {
             }

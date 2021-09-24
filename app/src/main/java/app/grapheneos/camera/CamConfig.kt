@@ -209,6 +209,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
         loadTabs()
 
+        camera!!.cameraInfo.zoomState.observe(mActivity, {
+            mActivity.zoomBar.updateThumb()
+        })
+
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
         startAutoFocus()

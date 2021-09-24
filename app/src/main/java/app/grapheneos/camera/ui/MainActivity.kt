@@ -82,6 +82,8 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     lateinit var previewLoader: ProgressBar
     private var isZooming = false
 
+    lateinit var zoomBar: ZoomBar
+
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
@@ -419,6 +421,9 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                 }
             }
         })
+
+        zoomBar = findViewById(R.id.zoom_bar)
+        zoomBar.setMainActivity(this)
     }
 
     private fun blurRenderScript(smallBitmap: Bitmap): Bitmap {

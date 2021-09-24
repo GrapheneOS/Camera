@@ -12,6 +12,8 @@
         android:rotation="90"
         android:background="@drawable/thumb"
         android:gravity="center"
+        android:padding="4dp"
+        android:textSize="11sp"
         android:textColor="#808080"/>
 
 </LinearLayout>
