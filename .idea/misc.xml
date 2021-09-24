@@ -14,22 +14,27 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera_shutter_on.xml" value="0.1984375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/camera_shutter_pressed.xml" value="0.20208333333333334" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/circle.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/exposure_icon.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/flash_auto.xml" value="0.20208333333333334" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/flash_off.xml" value="0.20208333333333334" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/flash_on.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/outlined_progress.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/progress_bar_style.xml" value="0.18888888888888888" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/settings_icon.xml" value="0.234375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/settings_normal.xml" value="0.234375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/settings_pressed.xml" value="0.234375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/settings_unselected.xml" value="0.234375" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/stop_recording.xml" value="0.19114583333333332" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/thumb.xml" value="0.20104166666666667" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/timer.xml" value="0.19114583333333332" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/torch_off.xml" value="0.19114583333333332" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/torch_on.xml" value="0.19114583333333332" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/video_camera.xml" value="0.20208333333333334" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/video_shutter.xml" value="0.20208333333333334" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/zoom_in.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/drawable/zoom_out.xml" value="0.13229166666666667" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/layout/activity_main.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/grapheneos-camera/app/src/main/res/layout/zoom_bar_thumb.xml" value="0.1" />
       </map>
     </option>
   </component>
