@@ -151,7 +151,6 @@
             android:id="@+id/zoom_bar"
             android:layout_width="wrap_content"
             android:progressTint="@android:color/transparent"
-            android:thumbTint="@android:color/white"
             android:layout_height="250dp" />
 
         <ImageView
