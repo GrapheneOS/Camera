@@ -18,4 +18,6 @@
     <string name="capture_mode">Capture Mode</string>
     <string name="start_value_timer">00:00</string>
     <string name="toggle_torch">Toggle torch</string>
+    <string name="zoom_in">Zoom In</string>
+    <string name="zoom_out">Zoom Out</string>
 </resources>

@@ -131,6 +131,40 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="12dp"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/zoom_in"
+            android:layout_marginBottom="10dp"
+            android:contentDescription="@string/zoom_in"/>
+
+        <app.grapheneos.camera.ui.ZoomBar
+            android:id="@+id/zoom_bar"
+            android:layout_width="wrap_content"
+            android:progressTint="@android:color/transparent"
+            android:thumbTint="@android:color/white"
+            android:layout_height="250dp" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/zoom_out"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="32dp"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@string/zoom_out"/>
+
+    </LinearLayout>
+
     <app.grapheneos.camera.ui.BottomTabLayout
         android:id="@+id/camera_mode_tabs"
         android:visibility="gone"
