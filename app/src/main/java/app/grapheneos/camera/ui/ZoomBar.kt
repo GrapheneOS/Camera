@@ -4,22 +4,26 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
-import android.util.Log
+import android.os.Handler
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatSeekBar
 import android.graphics.drawable.BitmapDrawable
 
 import android.graphics.Bitmap
+import android.os.Looper
 
 import android.widget.TextView
 
-import android.graphics.drawable.Drawable
 import android.view.View
 
 import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.camera.core.ZoomState
 import app.grapheneos.camera.R
 import kotlin.math.roundToInt
+import androidx.transition.Fade
+import androidx.transition.Transition
+import androidx.transition.TransitionManager
 
 
 class ZoomBar : AppCompatSeekBar {
@@ -29,6 +33,16 @@ class ZoomBar : AppCompatSeekBar {
         attrs,
         defStyle
     )
+
+    companion object {
+        private const val PANEL_VISIBILITY_DURATION = 2000L
+    }
+
+    private val closePanelHandler: Handler = Handler(Looper.getMainLooper())
+
+    private val closePanelRunnable = Runnable {
+        hidePanel()
+    }
 
     @SuppressLint("InflateParams")
     private var thumbView: View = LayoutInflater.from(context)
@@ -40,6 +54,30 @@ class ZoomBar : AppCompatSeekBar {
         this.mainActivity = mainActivity
     }
 
+    private fun showPanel(){
+        togglePanel(View.VISIBLE)
+        closePanelHandler.removeCallbacks(closePanelRunnable)
+        closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
+    }
+
+    private fun hidePanel(){
+        togglePanel(View.GONE)
+    }
+
+    private fun togglePanel(visibility: Int) {
+        val transition: Transition = Fade()
+        if(visibility == View.GONE){
+            transition.duration = 300
+        } else {
+            transition.duration = 0
+        }
+        transition.addTarget(R.id.zoom_bar_panel)
+
+        TransitionManager.beginDelayedTransition(
+            mainActivity.window.decorView.rootView as ViewGroup, transition)
+        mainActivity.zoomBarPanel.visibility = visibility
+    }
+
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -49,6 +87,8 @@ class ZoomBar : AppCompatSeekBar {
     fun updateThumb() {
         val zoomState: ZoomState? = mainActivity.config.camera?.cameraInfo?.zoomState
             ?.value
+
+        showPanel()
 
         var zoomRatio = 1.0f
         var linearZoom = 0.0f
