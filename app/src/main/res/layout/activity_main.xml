@@ -149,7 +149,7 @@
             android:layout_marginBottom="10dp"
             android:contentDescription="@string/zoom_in"/>
 
-        <app.grapheneos.camera.ui.ZoomBar
+        <app.grapheneos.camera.ui.seekbar.ZoomBar
             android:id="@+id/zoom_bar"
             android:layout_width="wrap_content"
             android:progressTint="@android:color/transparent"

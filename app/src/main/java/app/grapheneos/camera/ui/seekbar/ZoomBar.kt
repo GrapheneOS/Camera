@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui
+package app.grapheneos.camera.ui.seekbar
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -24,6 +24,7 @@ import kotlin.math.roundToInt
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
+import app.grapheneos.camera.ui.MainActivity
 
 
 class ZoomBar : AppCompatSeekBar {
