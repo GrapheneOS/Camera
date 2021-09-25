@@ -57,7 +57,6 @@ class ExposureBar : AppCompatSeekBar {
                 exposureState.exposureCompensationIndex
 
         onSizeChanged(width, height, 0, 0)
-        hidePanel()
     }
 
     fun showPanel(){
