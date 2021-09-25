@@ -88,6 +88,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
     lateinit var zoomBarPanel: LinearLayout
 
     lateinit var exposureBar: ExposureBar
+    lateinit var exposureBarPanel: LinearLayout
 
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
@@ -434,6 +435,8 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
 
         exposureBar = findViewById(R.id.exposure_bar)
         exposureBar.setMainActivity(this)
+
+        exposureBarPanel = findViewById(R.id.exposure_bar_panel)
     }
 
     private fun blurRenderScript(smallBitmap: Bitmap): Bitmap {

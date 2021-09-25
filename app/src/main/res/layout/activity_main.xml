@@ -166,21 +166,40 @@
 
     </LinearLayout>
 
-    <FrameLayout
+    <LinearLayout
+        android:id="@+id/exposure_bar_panel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:layout_marginStart="12dp">
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/exposure_plus"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="@string/zoom_in"/>
 
         <app.grapheneos.camera.ui.seekbar.ExposureBar
             android:id="@+id/exposure_bar"
             android:layout_width="wrap_content"
-            android:layout_height="200dp"
+            android:progressTint="@android:color/transparent"
             android:thumb="@drawable/exposure_thumb"
-            android:progressTint="@android:color/transparent"/>
+            android:layout_height="250dp" />
 
-    </FrameLayout>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/exposure_neg"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="32dp"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@string/zoom_out"/>
+
+    </LinearLayout>
 
     <app.grapheneos.camera.ui.BottomTabLayout
         android:id="@+id/camera_mode_tabs"

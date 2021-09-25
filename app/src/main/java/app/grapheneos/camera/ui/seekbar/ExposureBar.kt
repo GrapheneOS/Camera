@@ -82,7 +82,7 @@ class ExposureBar : AppCompatSeekBar {
         TransitionManager.beginDelayedTransition(
             mainActivity.window.decorView.rootView as ViewGroup, transition)
 
-        mainActivity.exposureBar.visibility = visibility
+        mainActivity.exposureBarPanel.visibility = visibility
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
