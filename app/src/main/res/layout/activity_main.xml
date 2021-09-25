@@ -139,6 +139,7 @@
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:layout_marginEnd="16dp"
+        android:visibility="gone"
         android:orientation="vertical">
 
         <ImageView

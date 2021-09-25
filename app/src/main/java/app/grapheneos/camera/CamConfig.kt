@@ -210,7 +210,9 @@ class CamConfig(private val mActivity: MainActivity) {
         loadTabs()
 
         camera!!.cameraInfo.zoomState.observe(mActivity, {
-            mActivity.zoomBar.updateThumb()
+            if(it.linearZoom!=0f){
+                mActivity.zoomBar.updateThumb()
+            }
         })
 
         mActivity.exposureBar.setExposureConfig(camera!!.cameraInfo.exposureState)
