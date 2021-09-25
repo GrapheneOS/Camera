@@ -43,6 +43,7 @@ import app.grapheneos.camera.adapter.FlashAdapter
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
+import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.tabs.TabLayout
@@ -85,6 +86,8 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
 
     lateinit var zoomBar: ZoomBar
     lateinit var zoomBarPanel: LinearLayout
+
+    lateinit var exposureBar: ExposureBar
 
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
@@ -428,6 +431,9 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
         zoomBar.setMainActivity(this)
 
         zoomBarPanel = findViewById(R.id.zoom_bar_panel)
+
+        exposureBar = findViewById(R.id.exposure_bar)
+        exposureBar.setMainActivity(this)
     }
 
     private fun blurRenderScript(smallBitmap: Bitmap): Bitmap {
@@ -468,6 +474,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
                     FocusMeteringAction.FLAG_AF
                 ).disableAutoCancel().build()
             )
+            exposureBar.showPanel()
             return v.performClick()
         }
         return true

@@ -4,11 +4,21 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
+import android.os.Handler
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatSeekBar
 
+import android.os.Looper
 import android.util.Log
 
+import android.view.View
+
+import android.view.ViewGroup
+import androidx.camera.core.ExposureState
+import app.grapheneos.camera.R
+import androidx.transition.Fade
+import androidx.transition.Transition
+import androidx.transition.TransitionManager
 import app.grapheneos.camera.ui.MainActivity
 
 class ExposureBar : AppCompatSeekBar {
@@ -19,7 +29,61 @@ class ExposureBar : AppCompatSeekBar {
         defStyle
     )
 
+    companion object {
+        private const val PANEL_VISIBILITY_DURATION = 2000L
+    }
+
+    private val closePanelHandler: Handler = Handler(Looper.getMainLooper())
+
+    private val closePanelRunnable = Runnable {
+        hidePanel()
+    }
+
     private lateinit var mainActivity: MainActivity
+
+    fun setMainActivity(mainActivity: MainActivity){
+        this.mainActivity = mainActivity
+    }
+
+    fun setExposureConfig(exposureState: ExposureState){
+        max = exposureState.exposureCompensationRange.upper
+        min = exposureState.exposureCompensationRange.lower
+
+        incrementProgressBy(exposureState.exposureCompensationIndex)
+
+        Log.i("TAG", "Setting progress from setExposureConfig")
+        progress = (exposureState.exposureCompensationStep.numerator
+                /exposureState.exposureCompensationStep.denominator) *
+                exposureState.exposureCompensationIndex
+
+        onSizeChanged(width, height, 0, 0)
+        hidePanel()
+    }
+
+    fun showPanel(){
+        togglePanel(View.VISIBLE)
+        closePanelHandler.removeCallbacks(closePanelRunnable)
+        closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
+    }
+
+    private fun hidePanel(){
+        togglePanel(View.GONE)
+    }
+
+    private fun togglePanel(visibility: Int) {
+        val transition: Transition = Fade()
+        if(visibility == View.GONE){
+            transition.duration = 300
+        } else {
+            transition.duration = 0
+        }
+        transition.addTarget(R.id.exposure_bar)
+
+        TransitionManager.beginDelayedTransition(
+            mainActivity.window.decorView.rootView as ViewGroup, transition)
+
+        mainActivity.exposureBar.visibility = visibility
+    }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
@@ -53,6 +117,8 @@ class ExposureBar : AppCompatSeekBar {
 
                 mainActivity.config.camera?.cameraControl
                     ?.setExposureCompensationIndex(progress)
+
+                showPanel()
 
                 onSizeChanged(width, height, 0, 0)
             }
