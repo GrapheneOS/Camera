@@ -519,7 +519,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
         }
 
         config.imageCapture?.targetRotation = tr
-        config.preview?.targetRotation = tr
+//        config.preview?.targetRotation = tr
 
         val d = abs(flashPager.rotation - rotation)
         if (d >= 90) rotation = 360 - rotation
