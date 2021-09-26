@@ -305,6 +305,10 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add("BEAUTY")
         }
 
+        if(!isVideoMode){
+            modes.add("QR SCAN")
+        }
+
         val mid = modes.size/2
         modes.add(mid, "CAMERA")
 
