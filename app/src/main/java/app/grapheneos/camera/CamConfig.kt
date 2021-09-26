@@ -1,5 +1,6 @@
 package app.grapheneos.camera
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -158,12 +159,14 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     // Start the camera with latest hard configuration
+    @SuppressLint("RestrictedApi")
     @JvmOverloads
     fun startCamera(forced: Boolean = false) {
         if (!forced && camera != null) return
 
         preview = Preview.Builder()
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .build()
 
         cameraSelector = CameraSelector.Builder()
@@ -172,10 +175,15 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val builder = ImageCapture.Builder()
 
-        if (isVideoMode) videoCapture = VideoCapture.Builder().build()
+        if (isVideoMode)
+            videoCapture = VideoCapture
+                .Builder()
+                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                .build()
 
         imageCapture = builder
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .setFlashMode(flashMode)
             .build()
 
