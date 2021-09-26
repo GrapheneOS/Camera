@@ -37,6 +37,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val outputFileOptions = ImageCapture.OutputFileOptions.Builder(imageFile)
             .build()
         mActivity.previewLoader.visibility = View.VISIBLE
+        mActivity.config.snapPreview()
         mActivity.config.imageCapture!!.takePicture(
             outputFileOptions,
             ContextCompat.getMainExecutor(mActivity),
