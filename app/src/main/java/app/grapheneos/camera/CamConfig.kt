@@ -244,7 +244,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun snapPreview(){
         val animation: Animation = AlphaAnimation(1f, 0f)
-        animation.duration = 200
+        animation.duration = 100
         animation.interpolator = AccelerateDecelerateInterpolator()
         animation.repeatMode = Animation.REVERSE
         mActivity.imagePreview.startAnimation(animation)
