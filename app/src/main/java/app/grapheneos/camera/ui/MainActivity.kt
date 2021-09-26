@@ -304,6 +304,7 @@ class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListene
         val bitmap = config.latestPreview
         if (bitmap != null) imagePreview.setImageBitmap(bitmap)
         previewView = findViewById(R.id.camera)
+        previewView.scaleType = PreviewView.ScaleType.FIT_START
         scaleGestureDetector = ScaleGestureDetector(this, this)
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
