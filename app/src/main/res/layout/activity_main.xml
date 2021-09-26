@@ -103,6 +103,13 @@
             android:focusable="true"
             android:layout_gravity="center">
 
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/white_option_circle"
+                android:layout_gravity="center"
+                android:contentDescription="@string/flip_camera"/>
+
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/image_preview"
                 android:layout_width="64dp"
