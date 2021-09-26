@@ -15,6 +15,14 @@ import app.grapheneos.camera.ui.MainActivity
 import java.io.File
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
+
+import android.view.animation.AlphaAnimation
+
+
+
+
 
 class CamConfig(private val mActivity: MainActivity) {
 
@@ -232,6 +240,14 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.flashPager.currentItem = ImageCapture.FLASH_MODE_OFF
             flashMode = ImageCapture.FLASH_MODE_OFF
         }
+    }
+
+    fun snapPreview(){
+        val animation: Animation = AlphaAnimation(1f, 0f)
+        animation.duration = 200
+        animation.interpolator = AccelerateDecelerateInterpolator()
+        animation.repeatMode = Animation.REVERSE
+        mActivity.imagePreview.startAnimation(animation)
     }
 
     private fun startAutoFocus() {
