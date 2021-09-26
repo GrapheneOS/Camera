@@ -19,9 +19,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
-
-
-
+import kotlin.math.roundToInt
 
 
 class CamConfig(private val mActivity: MainActivity) {
@@ -309,7 +307,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add("QR SCAN")
         }
 
-        val mid = modes.size/2
+        val mid = (modes.size/2f).roundToInt()
         modes.add(mid, "CAMERA")
 
         return modes
