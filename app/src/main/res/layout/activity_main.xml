@@ -16,6 +16,7 @@
         <androidx.camera.view.PreviewView
             android:id="@+id/camera"
             android:layout_width="match_parent"
+            android:layout_marginTop="46dp"
             android:layout_height="match_parent"/>
 
         <ImageView
