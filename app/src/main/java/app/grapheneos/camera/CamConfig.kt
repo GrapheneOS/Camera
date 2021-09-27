@@ -49,6 +49,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var videoCapture: VideoCapture? = null
 
+    private var aspectRatio = AspectRatio.RATIO_16_9
+
     private var latestFile: File? = null
 
     private var flashMode: Int
@@ -172,7 +174,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         preview = Preview.Builder()
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
-            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+            .setTargetAspectRatio(aspectRatio)
             .build()
 
         cameraSelector = CameraSelector.Builder()
@@ -184,12 +186,12 @@ class CamConfig(private val mActivity: MainActivity) {
         if (isVideoMode)
             videoCapture = VideoCapture
                 .Builder()
-                .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                .setTargetAspectRatio(aspectRatio)
                 .build()
 
         imageCapture = builder
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
-            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+            .setTargetAspectRatio(aspectRatio)
             .setFlashMode(flashMode)
             .build()
 
