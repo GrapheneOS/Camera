@@ -1,11 +1,9 @@
 package app.grapheneos.camera.ui
 
 import android.content.Context
-import android.os.Build
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.RequiresApi
 import androidx.core.view.ViewCompat
 import com.google.android.material.tabs.TabLayout
 
@@ -23,7 +21,6 @@ class BottomTabLayout : TabLayout {
 
     private var sp = 0
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
