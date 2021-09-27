@@ -272,14 +272,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
         getAvailableModes().forEach { mode ->
             mActivity.tabLayout.newTab().let {
-                mActivity.tabLayout.addTab(it.setText(mode))
+                mActivity.tabLayout.addTab(it.setText(mode), false)
+                if(selectCenterTabOnLoad && mode=="CAMERA"){
+                    it.select()
+                }
             }
-        }
-
-        if(selectCenterTabOnLoad){
-            val mid = mActivity.tabLayout.tabCount/2
-            mActivity.tabLayout.getTabAt(mid)?.select()
-            selectCenterTabOnLoad = false
         }
     }
 
