@@ -334,6 +334,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val mode = tab?.text.toString()
+                config.switchMode(mode)
                 Log.i(TAG, "Selected Mode: $mode")
             }
 

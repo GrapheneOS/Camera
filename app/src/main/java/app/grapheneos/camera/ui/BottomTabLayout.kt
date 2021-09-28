@@ -20,6 +20,7 @@ class BottomTabLayout : TabLayout {
     )
 
     private var sp = 0
+    private var firstLoad = true
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
@@ -94,6 +95,18 @@ class BottomTabLayout : TabLayout {
     //    }
     private fun centerView(view: View) {
         scrollTo(getRelativeLeft(view) - sp - view.paddingLeft, 0)
+    }
+
+    fun getAllModes() : ArrayList<String> {
+        val modes = arrayListOf<String>()
+
+        for(index in 0..tabCount){
+            val tab = getTabAt(index)
+            if(tab!=null)
+                modes.add(tab.text.toString())
+        }
+
+        return modes
     }
 
     private fun getRelativeLeft(myView: View): Int {

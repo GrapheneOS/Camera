@@ -270,13 +270,32 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private fun loadTabs(){
 
+        val modes = getAvailableModes()
+        val cModes = mActivity.tabLayout.getAllModes()
+
+        var mae = true
+
+        if(modes.size==cModes.size){
+            for(index in 0 until modes.size){
+                if(modes[index]!=cModes[index]){
+                    mae = false
+                    break
+                }
+            }
+        } else mae = false
+
+        if(mae) return
+
+        Log.i(TAG, "Refreshing tabs...")
+
         mActivity.tabLayout.removeAllTabs()
 
-        getAvailableModes().forEach { mode ->
+        modes.forEach { mode ->
             mActivity.tabLayout.newTab().let {
                 mActivity.tabLayout.addTab(it.setText(mode), false)
                 if(selectCenterTabOnLoad && mode=="CAMERA"){
                     it.select()
+                    selectCenterTabOnLoad = false
                 }
             }
         }
@@ -326,6 +345,14 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         } else {
             cameraMode = extensionModes.indexOf(modeText)
+        }
+
+        if(modeText=="QR Scan"){
+
+            Log.i(TAG, "Switching to QR Mode...")
+
+            if(cameraMode==ExtensionMode.NONE
+                || cameraMode==ExtensionMode.AUTO) return
         }
 
         startCamera(true)
