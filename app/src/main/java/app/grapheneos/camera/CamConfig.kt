@@ -266,8 +266,6 @@ class CamConfig(private val mActivity: MainActivity) {
         )
     }
 
-    private var selectCenterTabOnLoad = true
-
     private fun loadTabs(){
 
         val modes = getAvailableModes()
@@ -293,9 +291,8 @@ class CamConfig(private val mActivity: MainActivity) {
         modes.forEach { mode ->
             mActivity.tabLayout.newTab().let {
                 mActivity.tabLayout.addTab(it.setText(mode), false)
-                if(selectCenterTabOnLoad && mode=="CAMERA"){
+                if(mode=="CAMERA"){
                     it.select()
-                    selectCenterTabOnLoad = false
                 }
             }
         }
@@ -351,8 +348,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
             Log.i(TAG, "Switching to QR Mode...")
 
-            if(cameraMode==ExtensionMode.NONE
-                || cameraMode==ExtensionMode.AUTO) return
         }
 
         startCamera(true)
