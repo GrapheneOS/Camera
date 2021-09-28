@@ -180,6 +180,8 @@ class CamConfig(private val mActivity: MainActivity) {
     fun startCamera(forced: Boolean = false) {
         if (!forced && camera != null) return
 
+        if (mActivity.isDestroyed || mActivity.isFinishing) return
+
         preview = Preview.Builder()
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
             .setTargetAspectRatio(aspectRatio)
