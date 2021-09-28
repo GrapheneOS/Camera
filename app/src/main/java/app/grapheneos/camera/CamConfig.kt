@@ -22,6 +22,7 @@ import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 
@@ -45,6 +46,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private val extensionsManager by lazy {
         ExtensionsManager.getInstance(mActivity).get()
+    }
+
+    private val cameraExecutor by lazy {
+        Executors.newSingleThreadExecutor()
     }
 
     var isVideoMode = false
@@ -231,8 +236,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     .setTargetResolution(Size(mActivity.previewView.width,
                         mActivity.previewView.height))
                     .build()
-            iAnalyzer!!.setAnalyzer(ContextCompat.getMainExecutor(mActivity),
-                qrAnalyzer!!)
+            iAnalyzer!!.setAnalyzer(cameraExecutor, qrAnalyzer!!)
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
