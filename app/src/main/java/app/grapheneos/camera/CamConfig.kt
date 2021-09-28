@@ -344,7 +344,7 @@ class CamConfig(private val mActivity: MainActivity) {
             cameraMode = extensionModes.indexOf(modeText)
         }
 
-        if(modeText=="QR Scan"){
+        if(modeText=="QR SCAN"){
 
             Log.i(TAG, "Switching to QR Mode...")
 
