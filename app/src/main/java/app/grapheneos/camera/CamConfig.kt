@@ -19,6 +19,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
+import app.grapheneos.camera.analyzer.QRAnalyzer
 import kotlin.math.roundToInt
 
 
@@ -51,6 +52,10 @@ class CamConfig(private val mActivity: MainActivity) {
         private set
 
     var videoCapture: VideoCapture? = null
+
+    var qrAnalyzer: QRAnalyzer? = null
+
+    var iAnalyzer: ImageAnalysis? = null
 
     private var aspectRatio = AspectRatio.RATIO_16_9
 
@@ -186,12 +191,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val builder = ImageCapture.Builder()
 
-        if (isVideoMode)
-            videoCapture = VideoCapture
-                .Builder()
-                .setTargetAspectRatio(aspectRatio)
-                .build()
-
         imageCapture = builder
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
             .setTargetAspectRatio(aspectRatio)
@@ -216,18 +215,36 @@ class CamConfig(private val mActivity: MainActivity) {
             Log.i(TAG, "Auto mode isn't available for this device")
         }
 
-        // Get a camera instance bound to the lifecycle of this activity
-        camera = if (isVideoMode) {
-            cameraProvider!!.bindToLifecycle(
-                mActivity, cameraSelector,
-                preview, imageCapture, videoCapture
-            )
+        val useCaseGroupBuilder = UseCaseGroup.Builder()
+
+        useCaseGroupBuilder.addUseCase(preview!!)
+
+        if(isQRMode){
+            qrAnalyzer = QRAnalyzer(mActivity)
+            iAnalyzer =
+                ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+            iAnalyzer!!.setAnalyzer(ContextCompat.getMainExecutor(mActivity),
+                qrAnalyzer!!)
+            useCaseGroupBuilder.addUseCase(iAnalyzer!!)
+
         } else {
-            cameraProvider!!.bindToLifecycle(
-                mActivity, cameraSelector,
-                preview, imageCapture
-            )
+            if(isVideoMode){
+                videoCapture = VideoCapture
+                    .Builder()
+                    .setTargetAspectRatio(aspectRatio)
+                    .build()
+
+                useCaseGroupBuilder.addUseCase(videoCapture!!)
+            }
+            useCaseGroupBuilder.addUseCase(imageCapture!!)
         }
+
+        camera = cameraProvider!!.bindToLifecycle(
+            mActivity, cameraSelector,
+            useCaseGroupBuilder.build()
+        )
 
         loadTabs()
 
