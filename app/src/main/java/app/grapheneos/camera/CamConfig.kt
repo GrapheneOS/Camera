@@ -47,6 +47,9 @@ class CamConfig(private val mActivity: MainActivity) {
     var isVideoMode = false
         private set
 
+    var isQRMode = false
+        private set
+
     var videoCapture: VideoCapture? = null
 
     private var aspectRatio = AspectRatio.RATIO_16_9
@@ -344,11 +347,7 @@ class CamConfig(private val mActivity: MainActivity) {
             cameraMode = extensionModes.indexOf(modeText)
         }
 
-        if(modeText=="QR SCAN"){
-
-            Log.i(TAG, "Switching to QR Mode...")
-
-        }
+        isQRMode = modeText=="QR SCAN"
 
         startCamera(true)
     }
