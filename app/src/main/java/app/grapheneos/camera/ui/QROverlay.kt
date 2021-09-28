@@ -31,11 +31,12 @@ class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
     fun setViewFinder() {
         val overlayWidth = width.toFloat()
         val overlayHeight = height.toFloat()
-        val boxWidth = overlayWidth * 80 / 100
-        val boxHeight = overlayHeight * 36 / 100
+
+        val boxDim = overlayHeight.coerceAtMost(overlayWidth) * 0.6f
+
         val cx = overlayWidth / 2
         val cy = overlayHeight / 2
-        boxRect = RectF(cx - boxWidth / 2, cy - boxHeight / 2, cx + boxWidth / 2, cy + boxHeight / 2)
+        boxRect = RectF(cx - boxDim / 2, cy - boxDim / 2, cx + boxDim / 2, cy + boxDim / 2)
 
         invalidate()
     }
