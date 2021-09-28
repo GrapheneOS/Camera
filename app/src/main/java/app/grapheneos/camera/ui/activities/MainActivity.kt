@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
+open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
