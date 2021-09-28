@@ -334,12 +334,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val mode = tab?.text.toString()
-
-                if(mode=="QR SCAN"){
-                    Toast.makeText(this@MainActivity,
-                        "QR Scanning is to be implemented", Toast.LENGTH_LONG).show()
-                }
-
                 Log.i(TAG, "Selected Mode: $mode")
             }
 
