@@ -349,7 +349,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         val mainOverlay = findViewById<ImageView>(R.id.main_overlay)
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
-                mainOverlay.visibility = View.GONE
+                mainOverlay.visibility = View.INVISIBLE
             } else {
                 if (lastFrame != null) {
                     mainOverlay.setImageBitmap(blurRenderScript(lastFrame!!))
