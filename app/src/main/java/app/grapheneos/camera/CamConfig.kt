@@ -374,8 +374,16 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if(isQRMode){
             mActivity.qrOverlay.visibility = View.VISIBLE
+            mActivity.threeButtons.visibility = View.INVISIBLE
+            mActivity.flashPager.visibility = View.INVISIBLE
+            mActivity.captureModeView.visibility = View.INVISIBLE
+            mActivity.settingsIcon.visibility = View.INVISIBLE
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
+            mActivity.threeButtons.visibility = View.VISIBLE
+            mActivity.flashPager.visibility = View.VISIBLE
+            mActivity.captureModeView.visibility = View.VISIBLE
+            mActivity.settingsIcon.visibility = View.VISIBLE
         }
 
         startCamera(true)
