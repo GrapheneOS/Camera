@@ -96,6 +96,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     lateinit var threeButtons: LinearLayout
 
+    lateinit var settingsIcon: ImageView
+
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
@@ -452,6 +454,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         }
 
         threeButtons = findViewById(R.id.three_buttons)
+        settingsIcon = findViewById(R.id.settings_option)
     }
 
     fun onScanResultSuccess(text: String){
