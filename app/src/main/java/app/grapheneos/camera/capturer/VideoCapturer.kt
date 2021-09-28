@@ -18,7 +18,7 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.CamConfig.Companion.getExtension
 import app.grapheneos.camera.CamConfig.Companion.getVideoThumbnail
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*

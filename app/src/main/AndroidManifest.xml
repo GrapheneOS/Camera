@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
         <activity
-            android:name="app.grapheneos.camera.ui.MainActivity"
+            android:name="app.grapheneos.camera.ui.activities.MainActivity"
             android:exported="true"
             android:screenOrientation="nosensor">
             <intent-filter>

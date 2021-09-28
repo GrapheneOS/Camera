@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:id="@+id/root"
     android:background="@color/black"
-    tools:context=".ui.MainActivity">
+    tools:context=".ui.activities.MainActivity">
 
     <FrameLayout
         android:layout_height="match_parent"

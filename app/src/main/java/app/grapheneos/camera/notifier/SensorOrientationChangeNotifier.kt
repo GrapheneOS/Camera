@@ -5,7 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import app.grapheneos.camera.ui.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity
 import java.lang.ref.WeakReference
 import java.util.*
 

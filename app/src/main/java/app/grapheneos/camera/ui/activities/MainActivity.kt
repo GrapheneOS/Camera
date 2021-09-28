@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui
+package app.grapheneos.camera.ui.activities
 
 import android.Manifest
 import android.animation.Animator
@@ -43,6 +43,7 @@ import app.grapheneos.camera.adapter.FlashAdapter
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
+import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView

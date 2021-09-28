@@ -11,7 +11,7 @@ import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import app.grapheneos.camera.ui.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit

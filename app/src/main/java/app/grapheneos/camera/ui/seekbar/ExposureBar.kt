@@ -19,7 +19,7 @@ import app.grapheneos.camera.R
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
-import app.grapheneos.camera.ui.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity
 
 class ExposureBar : AppCompatSeekBar {
     constructor(context: Context) : super(context)
