@@ -442,6 +442,10 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         exposureBarPanel = findViewById(R.id.exposure_bar_panel)
     }
 
+    fun onScanResultSuccess(text: String){
+        Log.i(TAG, "Result: $text")
+    }
+
     private fun blurRenderScript(smallBitmap: Bitmap): Bitmap {
         val defaultBitmapScale = 0.1f
         val width = (smallBitmap.width * defaultBitmapScale).roundToInt()
