@@ -44,6 +44,7 @@
     </FrameLayout>
 
     <LinearLayout
+        android:id="@+id/three_buttons"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:orientation="horizontal"

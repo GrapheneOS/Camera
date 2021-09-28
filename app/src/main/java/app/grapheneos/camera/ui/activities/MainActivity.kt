@@ -94,6 +94,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     lateinit var qrOverlay: QROverlay
 
+    lateinit var threeButtons: LinearLayout
+
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
@@ -448,6 +450,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         qrOverlay.post {
             qrOverlay.setViewFinder()
         }
+
+        threeButtons = findViewById(R.id.three_buttons)
     }
 
     fun onScanResultSuccess(text: String){
