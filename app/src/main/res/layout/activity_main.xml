@@ -20,6 +20,13 @@
             android:layout_marginBottom="40dp"
             android:layout_height="match_parent"/>
 
+        <app.grapheneos.camera.ui.QROverlay
+            android:id="@+id/qr_overlay"
+            android:visibility="invisible"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layerType="software"/>
+
         <ImageView
             android:layout_width="84dp"
             android:layout_height="84dp"

@@ -44,6 +44,7 @@ import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
+import app.grapheneos.camera.ui.QROverlay
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
@@ -90,6 +91,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     lateinit var exposureBar: ExposureBar
     lateinit var exposureBarPanel: LinearLayout
+
+    lateinit var qrOverlay: QROverlay
 
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
@@ -440,6 +443,11 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         exposureBar.setMainActivity(this)
 
         exposureBarPanel = findViewById(R.id.exposure_bar_panel)
+
+        qrOverlay = findViewById(R.id.qr_overlay)
+        qrOverlay.post {
+            qrOverlay.setViewFinder()
+        }
     }
 
     fun onScanResultSuccess(text: String){

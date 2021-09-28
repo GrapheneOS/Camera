@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.util.Log
+import android.util.Size
+import android.view.View
 import android.widget.Toast
 import androidx.camera.core.*
 import androidx.camera.extensions.ExtensionMode
@@ -226,6 +228,8 @@ class CamConfig(private val mActivity: MainActivity) {
             iAnalyzer =
                 ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setTargetResolution(Size(mActivity.previewView.width,
+                        mActivity.previewView.height))
                     .build()
             iAnalyzer!!.setAnalyzer(ContextCompat.getMainExecutor(mActivity),
                 qrAnalyzer!!)
@@ -367,6 +371,12 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         isQRMode = modeText=="QR SCAN"
+
+        if(isQRMode){
+            mActivity.qrOverlay.visibility = View.VISIBLE
+        } else {
+            mActivity.qrOverlay.visibility = View.INVISIBLE
+        }
 
         startCamera(true)
     }
