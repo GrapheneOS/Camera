@@ -9,9 +9,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingHorizontal="6dp"
         android:orientation="horizontal">
-        
-        <TextView 
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textStyle="bold"
@@ -43,13 +44,16 @@
                 android:contentDescription="@string/share_qr_text"/>
 
         </LinearLayout>
-        
+
     </LinearLayout>
 
     <TextView
         android:id="@+id/scan_result_text"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="6dp"
+        android:background="@drawable/qr_result_background"
         android:maxHeight="200dp"
         android:autoLink="all"
         android:scrollbars="vertical"
