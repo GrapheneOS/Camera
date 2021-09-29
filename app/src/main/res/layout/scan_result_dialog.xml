@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:paddingVertical="12dp"
     android:paddingHorizontal="16dp"
-    android:background="@color/white"
+    android:background="@drawable/qr_dialog"
     android:orientation="vertical">
     
     <LinearLayout
