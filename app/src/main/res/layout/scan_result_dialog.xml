@@ -53,7 +53,7 @@
         android:maxHeight="200dp"
         android:autoLink="all"
         android:scrollbars="vertical"
-        android:scrollbarAlwaysDrawVerticalTrack="true"
+        android:fadeScrollbars="false"
         android:overScrollMode="always"
         android:textIsSelectable="true"
         android:layout_width="match_parent" />
