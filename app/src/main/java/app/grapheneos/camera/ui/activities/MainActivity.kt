@@ -497,6 +497,20 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     private lateinit var dialog: Dialog
 
+    open fun bytesToHex(bytes: ByteArray): String {
+        val hexChars = CharArray(bytes.size * 3)
+        for (i in 0 until bytes.indices.last step 3) {
+            val v: Int = bytes[i].toInt() and 0xFF
+            hexChars[i] = hexArray[v ushr 4]
+            hexChars[i + 1] = hexArray[v and 0x0F]
+            hexChars[i + 2] = ' '
+        }
+        return String(hexChars)
+            .replace("............".toRegex(), "$0  ")
+            .replace("............................".toRegex(),
+                "$0\n")
+    }
+
     fun onScanResultSuccess(text: String){
         Log.i(TAG, "Result: $text")
 
@@ -639,5 +653,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     companion object {
         private const val TAG = "GOCam"
         private const val autoCenterFocusDuration = 2000L
+        private val hexArray = "0123456789ABCDEF".toCharArray()
     }
 }
