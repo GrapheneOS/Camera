@@ -7,4 +7,11 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
+
+    <style name="Theme_Dialog" parent="android:Theme.Holo.Dialog">
+        <item name="android:windowMinWidthMajor">80%</item>
+        <item name="android:windowMinWidthMinor">80%</item>
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>
