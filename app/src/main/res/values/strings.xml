@@ -20,4 +20,7 @@
     <string name="toggle_torch">Toggle torch</string>
     <string name="zoom_in">Zoom In</string>
     <string name="zoom_out">Zoom Out</string>
+    <string name="scan_result">Scan Result</string>
+    <string name="share_qr_text">Share QR Text</string>
+    <string name="copy_to_clipboard">Copy to Clipboard</string>
 </resources>
