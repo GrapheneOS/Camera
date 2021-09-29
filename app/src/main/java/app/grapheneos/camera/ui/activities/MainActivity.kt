@@ -511,11 +511,14 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 "$0\n")
     }
 
+    private var isQRDialogShowing = false
+
     fun onScanResultSuccess(text: String){
         Log.i(TAG, "Result: $text")
 
-        if(::dialog.isInitialized && dialog.isShowing)
-            return
+        if(isQRDialogShowing) return
+
+        isQRDialogShowing = true
 
         runOnUiThread {
             dialog = Dialog(this, R.style.Theme_Dialog)
@@ -552,6 +555,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             }
 
             dialog.setOnDismissListener {
+                isQRDialogShowing = false
                 config.startCamera(true)
             }
 
