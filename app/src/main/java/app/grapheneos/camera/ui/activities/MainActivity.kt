@@ -55,6 +55,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import android.widget.TextView
+import android.content.Intent
+
+
+
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -519,6 +523,16 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 Toast.makeText(this, "Copied to QR text to" +
                         " clipboard!",
                     Toast.LENGTH_LONG).show()
+            }
+
+            val sButton: ImageButton = dialog.findViewById(
+                R.id.share_qr_text)
+            sButton.setOnClickListener {
+                val sIntent = Intent(Intent.ACTION_SEND)
+                sIntent.type = "text/plain"
+                sIntent.putExtra(Intent.EXTRA_TEXT, text)
+                startActivity(Intent.createChooser(sIntent,
+                    "Share QR text via"))
             }
 
             dialog.setOnDismissListener {
