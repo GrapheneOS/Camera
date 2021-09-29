@@ -11,6 +11,8 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
 import android.renderscript.Allocation
@@ -97,6 +99,31 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     lateinit var threeButtons: LinearLayout
 
     lateinit var settingsIcon: ImageView
+
+    private val runnable = Runnable {
+        val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
+            previewView.width.toFloat(), previewView.height.toFloat()
+        )
+
+        val autoFocusPoint = factory.createPoint(previewView.width / 2.0f,
+            previewView.height / 2.0f, qrOverlay.size)
+
+        config.camera?.cameraControl?.startFocusAndMetering(
+            FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
+        )
+
+        startFocusTimer()
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    fun startFocusTimer() {
+        handler.postDelayed(runnable, autoCenterFocusDuration)
+    }
+
+    private fun cancelFocusTimer() {
+        handler.removeCallbacks(runnable)
+    }
 
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
@@ -292,11 +319,18 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         // after enabling/disabling the camera permission in Settings)
         // Will also be called by Android Lifecycle when the app starts up
         checkPermissions()
+
+        if (config.isQRMode) {
+            startFocusTimer()
+        }
     }
 
     override fun onPause() {
         super.onPause()
         SensorOrientationChangeNotifier.getInstance(this)?.remove(this)
+        if (config.isQRMode) {
+            cancelFocusTimer()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -552,5 +586,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     companion object {
         private const val TAG = "GOCam"
+        private const val autoCenterFocusDuration = 2000L
     }
 }

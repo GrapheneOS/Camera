@@ -230,6 +230,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if(isQRMode){
             qrAnalyzer = QRAnalyzer(mActivity)
+            mActivity.startFocusTimer()
             iAnalyzer =
                 ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
