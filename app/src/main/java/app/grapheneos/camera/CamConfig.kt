@@ -30,7 +30,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var camera: Camera? = null
 
-    private var cameraProvider: ProcessCameraProvider? = null
+    var cameraProvider: ProcessCameraProvider? = null
 
     var imageCapture: ImageCapture? = null
         private set
