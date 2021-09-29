@@ -209,7 +209,7 @@ class CamConfig(private val mActivity: MainActivity) {
         preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
         // To use the last frame instead of showing a blank screen when
-        // the camera that is being currently used gets unbing
+        // the camera that is being currently used gets unbind
         mActivity.updateLastFrame()
 
         // Unbind/close all other camera(s) [if any]
