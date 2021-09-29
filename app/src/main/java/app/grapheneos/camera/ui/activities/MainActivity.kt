@@ -508,9 +508,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             hexChars[i + 2] = ' '
         }
         return String(hexChars)
-            .replace("............".toRegex(), "$0  ")
-            .replace("............................".toRegex(),
-                "$0\n")
+            .replace("(.{12})".toRegex(), "$0  ")
+            .replace("(.{28})".toRegex(), "$0\n")
     }
 
     private var isQRDialogShowing = false
