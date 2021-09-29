@@ -56,9 +56,8 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import android.widget.TextView
 import android.content.Intent
-
-
-
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -508,6 +507,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             dialog = Dialog(this, R.style.Theme_Dialog)
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
             dialog.setContentView(R.layout.scan_result_dialog)
+            dialog.window?.setBackgroundDrawable(
+                ColorDrawable(Color.TRANSPARENT)
+            )
 
             val textView = dialog.findViewById<View>(R.id.scan_result_text)
                     as TextView
