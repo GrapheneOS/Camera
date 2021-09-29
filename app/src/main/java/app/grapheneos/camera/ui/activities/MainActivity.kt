@@ -514,7 +514,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     private var isQRDialogShowing = false
 
     fun onScanResultSuccess(text: String){
-        Log.i(TAG, "Result: $text")
 
         if(isQRDialogShowing) return
 
