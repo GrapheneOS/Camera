@@ -12,6 +12,7 @@ import com.google.zxing.PlanarYUVLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
 
 class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
 
@@ -32,6 +33,9 @@ class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
             return
         }
 
+        if(mActivity.qrOverlay.size==0f)
+            return
+
         isScanning.set(true)
 
         if (aFormats.contains(image.format) && image.planes.size == 3) {
@@ -40,13 +44,25 @@ class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
                 image.width, image.height)
             rotateImageArray(rotatedImage, image.imageInfo.rotationDegrees)
 
+
+            val iFact = if (mActivity.qrOverlay.width < mActivity.qrOverlay.height) {
+                rotatedImage.width /
+                        mActivity.qrOverlay.width.toFloat()
+            } else {
+                rotatedImage.height /
+                        mActivity.qrOverlay.height.toFloat()
+            }
+
+            val size = mActivity.qrOverlay.size * iFact
+
+            val left = (rotatedImage.width - size) / 2
+            val top = (rotatedImage.height - size) / 2
+
             val planarYUVLuminanceSource = PlanarYUVLuminanceSource(
                 rotatedImage.byteArray,
-                rotatedImage.width,
-                rotatedImage.height,
-                0, 0,
-                rotatedImage.width,
-                rotatedImage.height,
+                rotatedImage.width, rotatedImage.height,
+                left.roundToInt(), top.roundToInt(),
+                size.roundToInt(), size.roundToInt(),
                 false
             )
             val hybridBinarizer = HybridBinarizer(planarYUVLuminanceSource)
