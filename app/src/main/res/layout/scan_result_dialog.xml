@@ -52,6 +52,7 @@
         android:id="@+id/scan_result_text"
         android:layout_height="wrap_content"
         android:autoLink="all"
+        android:textIsSelectable="true"
         android:layout_width="match_parent" />
     
 </LinearLayout>
