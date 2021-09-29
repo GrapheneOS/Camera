@@ -6,8 +6,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.Dialog
-import android.content.DialogInterface
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -509,6 +508,18 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             val textView = dialog.findViewById<View>(R.id.scan_result_text)
                     as TextView
             textView.text = text
+
+            val ctc: ImageButton = dialog.findViewById(R.id.copy_qr_text)
+            ctc.setOnClickListener {
+                val clipboardManager = getSystemService(
+                    Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clipData = ClipData.newPlainText("text", text)
+                clipboardManager.setPrimaryClip(clipData)
+
+                Toast.makeText(this, "Copied to QR text to" +
+                        " clipboard!",
+                    Toast.LENGTH_LONG).show()
+            }
 
             dialog.setOnDismissListener {
                 config.startCamera(true)
