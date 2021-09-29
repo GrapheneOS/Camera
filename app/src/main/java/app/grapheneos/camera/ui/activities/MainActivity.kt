@@ -5,6 +5,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -54,6 +55,7 @@ import com.google.android.material.tabs.TabLayout
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import android.widget.TextView
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -491,8 +493,31 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         settingsIcon = findViewById(R.id.settings_option)
     }
 
+    private lateinit var dialog: Dialog
+
     fun onScanResultSuccess(text: String){
         Log.i(TAG, "Result: $text")
+
+        if(::dialog.isInitialized && dialog.isShowing)
+            return
+
+        runOnUiThread {
+            dialog = Dialog(this, R.style.Theme_Dialog)
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setContentView(R.layout.scan_result_dialog)
+
+            val textView = dialog.findViewById<View>(R.id.scan_result_text)
+                    as TextView
+            textView.text = text
+
+            dialog.setOnDismissListener {
+                config.startCamera(true)
+            }
+
+            config.cameraProvider?.unbindAll()
+
+            dialog.show()
+        }
     }
 
     private fun blurRenderScript(smallBitmap: Bitmap): Bitmap {
