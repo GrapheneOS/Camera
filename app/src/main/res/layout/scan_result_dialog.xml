@@ -51,6 +51,7 @@
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/encoding_tabs"
         app:tabMode="scrollable"
+        app:tabSelectedTextColor="@android:color/tab_indicator_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
