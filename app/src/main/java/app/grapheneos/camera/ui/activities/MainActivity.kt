@@ -227,11 +227,14 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         )
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                val name =
-                    cursor.getString(cursor.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME))
+                val dIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns
+                    .DISPLAY_NAME)
+                val name = cursor.getString(dIndex)
+
                 if (name == fileName) {
-                    mediaId =
-                        cursor.getString(cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID))
+                    val iIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns
+                        ._ID)
+                    mediaId = cursor.getString(iIndex)
                     break
                 }
             }
