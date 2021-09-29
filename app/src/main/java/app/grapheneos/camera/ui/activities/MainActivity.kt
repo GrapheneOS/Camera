@@ -60,6 +60,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.util.Linkify
 import java.nio.charset.StandardCharsets
+import java.util.*
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -500,7 +501,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     private lateinit var dialog: Dialog
 
     open fun bytesToHex(bytes: ByteArray): String {
-        val hexChars = CharArray(bytes.size * 3)
+        val hexChars = CharArray(bytes.size)
         for (i in 0 until bytes.indices.last step 3) {
             val v: Int = bytes[i].toInt() and 0xFF
             hexChars[i] = hexArray[v ushr 4]
