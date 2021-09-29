@@ -58,6 +58,8 @@ import android.widget.TextView
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.text.util.Linkify
+import java.nio.charset.StandardCharsets
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -513,11 +515,14 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     private var isQRDialogShowing = false
 
-    fun onScanResultSuccess(text: String){
+    fun onScanResultSuccess(rawText: String){
 
         if(isQRDialogShowing) return
 
         isQRDialogShowing = true
+
+        val hString = bytesToHex(
+            rawText.toByteArray(StandardCharsets.UTF_8))
 
         runOnUiThread {
             dialog = Dialog(this, R.style.Theme_Dialog)
@@ -527,15 +532,45 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 ColorDrawable(Color.TRANSPARENT)
             )
 
-            val textView = dialog.findViewById<View>(R.id.scan_result_text)
-                    as TextView
-            textView.text = text
+            val tabLayout: TabLayout = dialog.findViewById(R.id.encoding_tabs)
+
+            val textView = dialog.findViewById<View>(R.id.scan_result_text) as TextView
+
+            tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
+
+                override fun onTabSelected(tab: TabLayout.Tab?) {
+                    when(tab?.text.toString()){
+                        "Binary" -> {
+                            textView.autoLinkMask = 0
+                            textView.text = hString
+                        }
+
+                        "UTF-8" -> {
+                            textView.autoLinkMask = Linkify.ALL
+                            textView.text = rawText
+                        }
+                    }
+                }
+
+                override fun onTabReselected(tab: TabLayout.Tab?) {}
+
+                override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            })
+
+            tabLayout.addTab(tabLayout.newTab().apply {
+                text = "UTF-8"
+            })
+
+            tabLayout.addTab(tabLayout.newTab().apply {
+                text = "Binary"
+            })
 
             val ctc: ImageButton = dialog.findViewById(R.id.copy_qr_text)
             ctc.setOnClickListener {
                 val clipboardManager = getSystemService(
                     Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clipData = ClipData.newPlainText("text", text)
+                val clipData = ClipData.newPlainText("text",
+                    textView.text)
                 clipboardManager.setPrimaryClip(clipData)
 
                 Toast.makeText(this, "Copied to QR text to" +
@@ -548,7 +583,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             sButton.setOnClickListener {
                 val sIntent = Intent(Intent.ACTION_SEND)
                 sIntent.type = "text/plain"
-                sIntent.putExtra(Intent.EXTRA_TEXT, text)
+                sIntent.putExtra(Intent.EXTRA_TEXT, textView.text)
                 startActivity(Intent.createChooser(sIntent,
                     "Share QR text via"))
             }
