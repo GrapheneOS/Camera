@@ -45,4 +45,5 @@ dependencies {
     implementation("androidx.camera:camera-extensions:1.0.0-alpha28")
 
     implementation("com.google.zxing:core:3.4.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
 }
