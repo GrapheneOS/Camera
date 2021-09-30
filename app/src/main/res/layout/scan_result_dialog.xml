@@ -19,6 +19,7 @@
             android:textStyle="bold"
             android:textColor="@color/black"
             android:textSize="20sp"
+            android:layout_marginBottom="2sp"
             android:text="@string/scan_result"/>
 
         <LinearLayout
