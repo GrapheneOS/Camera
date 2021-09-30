@@ -501,7 +501,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     open fun bytesToHex(bytes: ByteArray): String {
         val hexChars = CharArray(bytes.size)
-        for (i in 0 until bytes.indices.last step 3) {
+        for (i in 0 until bytes.indices.last-1 step 3) {
             val v: Int = bytes[i].toInt() and 0xFF
             hexChars[i] = hexArray[v ushr 4]
             hexChars[i + 1] = hexArray[v and 0x0F]
