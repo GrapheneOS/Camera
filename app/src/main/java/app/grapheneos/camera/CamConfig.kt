@@ -60,9 +60,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var videoCapture: VideoCapture? = null
 
-    var qrAnalyzer: QRAnalyzer? = null
+    private var qrAnalyzer: QRAnalyzer? = null
 
-    var iAnalyzer: ImageAnalysis? = null
+    private var iAnalyzer: ImageAnalysis? = null
 
     private var aspectRatio = AspectRatio.RATIO_16_9
 
