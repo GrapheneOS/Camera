@@ -69,8 +69,9 @@ class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
             val binaryBitmap = BinaryBitmap(hybridBinarizer)
             try {
                 val rawResult = multiFormatReader.decodeWithState(binaryBitmap)
-                Log.d("Barcode:", rawResult.text)
-                mActivity.onScanResultSuccess(rawResult.text)
+                rawResult?.text?.let {
+                    mActivity.onScanResultSuccess(it)
+                }
             } catch (e: NotFoundException) {
                 e.printStackTrace()
             } finally {
