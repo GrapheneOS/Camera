@@ -375,6 +375,8 @@ class CamConfig(private val mActivity: MainActivity) {
             cameraMode = extensionModes.indexOf(modeText)
         }
 
+        mActivity.cancelFocusTimer()
+
         isQRMode = modeText=="QR SCAN"
 
         if(isQRMode){

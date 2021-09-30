@@ -124,7 +124,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
 
-    private fun cancelFocusTimer() {
+    fun cancelFocusTimer() {
         handler.removeCallbacks(runnable)
     }
 
