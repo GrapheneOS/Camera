@@ -54,9 +54,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.util.Linkify
-import com.hoko.ktblur.HokoBlur
-import com.hoko.ktblur.params.Mode
-import com.hoko.ktblur.params.Scheme
+import app.grapheneos.camera.BlurBitmap
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -602,13 +600,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     private fun blurBitmap(bitmap: Bitmap): Bitmap
     {
-        return HokoBlur.with(this)
-            .scheme(Scheme.OPENGL)
-            .mode(Mode.STACK)
-            .radius(4)
-            .sampleFactor(2.0f)
-            .processor()
-            .blur(bitmap)
+        return BlurBitmap.get(bitmap)
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
