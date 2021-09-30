@@ -2,8 +2,8 @@ package app.grapheneos.camera
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.util.Log
 import android.util.Size
 import android.view.View
@@ -98,18 +98,22 @@ class CamConfig(private val mActivity: MainActivity) {
             return parentDir
         }
 
-    val latestPreview: Bitmap?
-        get() {
-            val lastModifiedFile = latestMediaFile ?: return null
-            return if (getExtension(lastModifiedFile) == "mp4") {
-                try {
+    fun updatePreview(){
+        val lastModifiedFile = latestMediaFile ?: return
+        if (getExtension(lastModifiedFile) == "mp4") {
+            try {
+                mActivity.imagePreview.setImageBitmap(
                     getVideoThumbnail(lastModifiedFile.absolutePath)
-                } catch (throwable: Throwable) {
-                    throwable.printStackTrace()
-                    null
-                }
-            } else BitmapFactory.decodeFile(lastModifiedFile.absolutePath)
+                )
+            } catch (throwable: Throwable) {
+                throwable.printStackTrace()
+            }
+        } else {
+            mActivity.imagePreview.setImageURI(
+                Uri.parse(lastModifiedFile.absolutePath)
+            )
         }
+    }
 
     fun setLatestFile(latestFile: File?) {
         this.latestFile = latestFile

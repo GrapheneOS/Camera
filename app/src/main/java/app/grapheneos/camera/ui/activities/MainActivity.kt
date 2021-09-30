@@ -349,8 +349,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         thirdOption = findViewById(R.id.third_option)
         previewLoader = findViewById(R.id.preview_loading)
         imagePreview = findViewById(R.id.image_preview)
-        val bitmap = config.latestPreview
-        if (bitmap != null) imagePreview.setImageBitmap(bitmap)
+        config.updatePreview()
         previewView = findViewById(R.id.camera)
         previewView.scaleType = PreviewView.ScaleType.FIT_START
         scaleGestureDetector = ScaleGestureDetector(this, this)

@@ -65,7 +65,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             )
                             mActivity.runOnUiThread {
                                 mActivity.previewLoader.visibility = View.GONE
-                                mActivity.imagePreview.setImageBitmap(bm)
+                                mActivity.imagePreview.setImageURI(imageUri)
                             }
                         }
                     }
