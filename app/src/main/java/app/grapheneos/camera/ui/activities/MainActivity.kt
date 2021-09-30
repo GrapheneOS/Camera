@@ -15,10 +15,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
-import android.renderscript.Allocation
-import android.renderscript.Element
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicBlur
 import android.util.Log
 import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -53,12 +49,14 @@ import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.tabs.TabLayout
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
-import kotlin.math.roundToInt
 import android.widget.TextView
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.util.Linkify
+import com.hoko.ktblur.HokoBlur
+import com.hoko.ktblur.params.Mode
+import com.hoko.ktblur.params.Scheme
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -403,7 +401,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 mainOverlay.visibility = View.INVISIBLE
             } else {
                 if (lastFrame != null) {
-                    mainOverlay.setImageBitmap(blurRenderScript(lastFrame!!))
+                    mainOverlay.setImageBitmap(blurBitmap(lastFrame!!))
                     mainOverlay.visibility = View.VISIBLE
                 }
             }
@@ -602,21 +600,15 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         }
     }
 
-    private fun blurRenderScript(smallBitmap: Bitmap): Bitmap {
-        val defaultBitmapScale = 0.1f
-        val width = (smallBitmap.width * defaultBitmapScale).roundToInt()
-        val height = (smallBitmap.height * defaultBitmapScale).roundToInt()
-        val inputBitmap = Bitmap.createScaledBitmap(smallBitmap, width, height, false)
-        val outputBitmap = Bitmap.createBitmap(inputBitmap)
-        val renderScript = RenderScript.create(this)
-        val theIntrinsic = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
-        val tmpIn = Allocation.createFromBitmap(renderScript, inputBitmap)
-        val tmpOut = Allocation.createFromBitmap(renderScript, outputBitmap)
-        theIntrinsic.setRadius(4f)
-        theIntrinsic.setInput(tmpIn)
-        theIntrinsic.forEach(tmpOut)
-        tmpOut.copyTo(outputBitmap)
-        return outputBitmap
+    private fun blurBitmap(bitmap: Bitmap): Bitmap
+    {
+        return HokoBlur.with(this)
+            .scheme(Scheme.OPENGL)
+            .mode(Mode.STACK)
+            .radius(4)
+            .sampleFactor(2.0f)
+            .processor()
+            .blur(bitmap)
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
