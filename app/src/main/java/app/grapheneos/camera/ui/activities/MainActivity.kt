@@ -55,6 +55,8 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.util.Linkify
 import app.grapheneos.camera.BlurBitmap
+import java.io.File
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -422,6 +424,27 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 Log.i(TAG, "Attempting to open gallery...")
             }
         }
+
+        thirdCircle.setOnLongClickListener {
+
+            if (videoCapturer.isRecording) {
+                imageCapturer.takePicture()
+            } else {
+                if (imageCapturer.isTakingPicture) {
+                    Toast.makeText(
+                        this, "Please wait for the image to get " +
+                                "captured before attempting to share via long tap",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    shareLatestMedia()
+                }
+
+            }
+
+            return@setOnLongClickListener true
+        }
+
         captureButton = findViewById(R.id.capture_button)
         captureButton.setOnClickListener(View.OnClickListener {
             if (config.isVideoMode) {
@@ -494,6 +517,51 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
+    }
+
+    private fun shareLatestMedia(){
+
+        val file: File? = config.latestMediaFile
+
+        if(file==null){
+            Toast.makeText(this,
+                "Please capture a photo/video before attempting to share via long tap",
+                Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // We'll be using an temporary file to avoid storage permission related issue on the
+        // app where the user wants to share the media file but can't due to absence of
+        // storage related permission
+
+        val share = Intent(Intent.ACTION_SEND)
+        val values = ContentValues()
+        val uri: Uri?
+
+        if(file.extension=="mp4"){
+            // Share video file
+            share.type = "video/mp4"
+            values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+            uri = contentResolver.insert(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                values
+            )
+        } else {
+            // Share image file
+            share.type = "image/jpeg"
+            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            uri = contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                values
+            )
+        }
+
+        val outStream: OutputStream? = contentResolver.openOutputStream(uri!!)
+        outStream?.write(file.readBytes())
+        outStream?.close()
+
+        share.putExtra(Intent.EXTRA_STREAM, uri)
+        startActivity(Intent.createChooser(share, "Share Image"))
     }
 
     private lateinit var dialog: Dialog
