@@ -57,6 +57,7 @@ import java.io.File
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.*
+import android.view.MotionEvent
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -415,6 +416,34 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             }
         })
         flipCameraCircle = findViewById(R.id.flip_camera_circle)
+
+        var tapDownTimestamp: Long = 0
+        flipCameraCircle.setOnTouchListener { _, event ->
+            when (event?.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if(tapDownTimestamp==0L) {
+                        tapDownTimestamp = System.currentTimeMillis()
+                        Log.i(TAG, "I was called!")
+                        flipCameraCircle.animate().scaleXBy(0.1f).setDuration(400).start()
+                        flipCameraCircle.animate().scaleYBy(0.1f).setDuration(400).start()
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    val dif = System.currentTimeMillis() - tapDownTimestamp
+                    if(dif<300){
+                        flipCameraCircle.performClick()
+                    }
+
+                    tapDownTimestamp = 0
+                    flipCameraCircle.animate().cancel()
+                    flipCameraCircle.animate().scaleX(1f).setDuration(400).start()
+                    flipCameraCircle.animate().scaleY(1f).setDuration(400).start()
+                }
+                else -> {
+                }
+            }
+            true
+        }
         flipCameraCircle.setOnClickListener {
             val flipCameraIcon: ImageView = findViewById(R.id.flip_camera_icon)
             val rotation: Float = if (flipCameraIcon.rotation<180) {
