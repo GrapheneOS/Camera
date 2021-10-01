@@ -249,6 +249,7 @@
             android:id="@+id/flash_pager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="?actionBarItemBackground"
             android:orientation="vertical"
             android:contentDescription="@string/flash_mode"/>
 
@@ -266,6 +267,7 @@
             android:id="@+id/capture_mode"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="?actionBarItemBackground"
             android:src="@drawable/video_camera"
             android:contentDescription="@string/capture_mode"/>
 
