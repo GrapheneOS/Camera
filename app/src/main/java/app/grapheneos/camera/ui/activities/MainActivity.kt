@@ -20,9 +20,6 @@ import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.View.OnTouchListener
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.DecelerateInterpolator
-import android.view.animation.LinearInterpolator
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
@@ -54,6 +51,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.util.Linkify
+import android.view.animation.*
 import app.grapheneos.camera.BlurBitmap
 import java.io.File
 import java.io.OutputStream
@@ -417,7 +415,28 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             }
         })
         flipCameraCircle = findViewById(R.id.flip_camera_circle)
-        flipCameraCircle.setOnClickListener { config.toggleCameraSelector() }
+        flipCameraCircle.setOnClickListener {
+            val flipCameraIcon: ImageView = findViewById(R.id.flip_camera_icon)
+            val rotation: Float = if (flipCameraIcon.rotation<180) {
+                180f
+            } else {
+                360f
+            }
+
+            val rotate = RotateAnimation(
+                0F,
+                rotation,
+                Animation.RELATIVE_TO_SELF,
+                0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f
+            )
+            rotate.duration = 400
+            rotate.interpolator = LinearInterpolator()
+
+            it.startAnimation(rotate)
+            config.toggleCameraSelector()
+        }
         thirdCircle = findViewById(R.id.third_circle)
         thirdCircle.setOnClickListener {
             if (videoCapturer.isRecording) {
