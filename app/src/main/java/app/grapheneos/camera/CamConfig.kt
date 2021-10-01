@@ -48,6 +48,10 @@ class CamConfig(private val mActivity: MainActivity) {
         ExtensionsManager.getInstance(mActivity).get()
     }
 
+    init {
+        latestMediaFile
+    }
+
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
@@ -133,7 +137,8 @@ class CamConfig(private val mActivity: MainActivity) {
             for (file in files) {
                 if (lastModifiedFile.lastModified() < file.lastModified()) lastModifiedFile = file
             }
-            return lastModifiedFile
+            latestFile = lastModifiedFile
+            return latestFile
         }
 
     fun switchCameraMode() {

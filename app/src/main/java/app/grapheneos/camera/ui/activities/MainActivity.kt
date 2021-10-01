@@ -217,46 +217,42 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             return
         }
 
-        val fileName = latestMediaFile.name
-
-        var mediaId = ""
+        val mediaId: String
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME
         )
-        var mediaUri: Uri
-        mediaUri = if (videoCapturer.isLatestMediaVideo) {
+        var mediaUri: Uri = if (videoCapturer.isLatestMediaVideo) {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         } else {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
         val cursor = contentResolver.query(
-            mediaUri, projection, null, null, null
+            mediaUri,
+            projection,
+            MediaStore.Images.ImageColumns.DISPLAY_NAME + "=?",
+            arrayOf(latestMediaFile.name),
+            null
         )
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                val dIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns
-                    .DISPLAY_NAME)
-                val name = cursor.getString(dIndex)
 
-                if (name == fileName) {
-                    val iIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns
-                        ._ID)
-                    mediaId = cursor.getString(iIndex)
-                    break
-                }
-            }
+        if (cursor != null) {
+            cursor.moveToNext()
+
+            val iIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)
+            mediaId = cursor.getString(iIndex)
+
             cursor.close()
+
+            if (mediaId.isNotEmpty()) {
+                mediaUri = mediaUri.buildUpon()
+                    .authority("media")
+                    .appendPath(mediaId)
+                    .build()
+            }
+
+            val intent = Intent(Intent.ACTION_VIEW, mediaUri)
+            startActivity(intent)
         }
-        if (mediaId != "") {
-            mediaUri = mediaUri.buildUpon()
-                .authority("media")
-                .appendPath(mediaId)
-                .build()
-        }
-        Log.d("TagInfo", "Uri:  $mediaUri")
-        val intent = Intent(Intent.ACTION_VIEW, mediaUri)
-        startActivity(intent)
     }
 
     private fun checkPermissions() {
