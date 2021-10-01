@@ -16,11 +16,13 @@ import androidx.camera.core.VideoCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.CamConfig.Companion.getVideoThumbnail
-import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import android.animation.ValueAnimator
+import app.grapheneos.camera.R
+import android.graphics.drawable.GradientDrawable
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -157,8 +159,23 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
     }
 
+    private val dp16 = 16 * mActivity.resources.displayMetrics.density
+    private val dp8 =  8 * mActivity.resources.displayMetrics.density
+
     private fun beforeRecordingStarts() {
-        mActivity.captureButton.setImageResource(R.drawable.stop_recording)
+
+        val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
+
+        val animator = ValueAnimator.ofFloat(dp16, dp8)
+
+        animator.setDuration(300)
+            .addUpdateListener { animation ->
+                val value = animation.animatedValue as Float
+                gd.cornerRadius = value
+            }
+
+        animator.start()
+
         mActivity.flipCameraCircle.visibility = View.INVISIBLE
         mActivity.captureModeView.visibility = View.GONE
         mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
@@ -169,7 +186,19 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun afterRecordingStops() {
-        mActivity.captureButton.setImageResource(R.drawable.start_recording)
+
+        val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
+
+        val animator = ValueAnimator.ofFloat(dp8, dp16)
+
+        animator.setDuration(300)
+            .addUpdateListener { animation ->
+                val value = animation.animatedValue as Float
+                gd.cornerRadius = value
+            }
+
+        animator.start()
+
         mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
         mActivity.flipCameraCircle.visibility = View.VISIBLE
         mActivity.captureModeView.visibility = View.VISIBLE

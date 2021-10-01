@@ -97,7 +97,8 @@
                 android:layout_width="84dp"
                 android:layout_height="84dp"
                 android:layout_gravity="center"
-                android:background="@drawable/camera_shutter"
+                android:src="@drawable/camera_shutter"
+                android:background="@drawable/cbutton_bg"
                 android:contentDescription="@string/flip_camera" />
 
         </FrameLayout>

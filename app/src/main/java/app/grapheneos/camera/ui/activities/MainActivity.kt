@@ -550,11 +550,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 })
                 oa1.start()
                 if (config.isVideoMode) {
-                    captureButton.setBackgroundResource(0)
-                    captureButton.setImageResource(R.drawable.start_recording)
+                    captureButton.setImageResource(R.drawable.recording)
                 } else {
-                    captureButton.setBackgroundResource(R.drawable.camera_shutter)
-                    captureButton.setImageResource(0)
+                    captureButton.setImageResource(R.drawable.camera_shutter)
                 }
             }
         })
