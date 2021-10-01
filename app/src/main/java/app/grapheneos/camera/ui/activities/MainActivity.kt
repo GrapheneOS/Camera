@@ -208,12 +208,23 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     }
 
     private fun openGallery() {
+
+        val latestMediaFile: File? = config.latestMediaFile
+
+        if(latestMediaFile==null){
+            Toast.makeText(this,
+                "Please capture a image/video before trying to view it in gallery",
+                Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val fileName = latestMediaFile.name
+
         var mediaId = ""
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME
         )
-        val fileName = config.latestMediaFile!!.name
         var mediaUri: Uri
         mediaUri = if (videoCapturer.isLatestMediaVideo) {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
