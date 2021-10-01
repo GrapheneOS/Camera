@@ -1,7 +1,6 @@
 package app.grapheneos.camera.analyzer
 
 import android.graphics.ImageFormat
-import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.ui.activities.MainActivity

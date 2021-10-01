@@ -1,6 +1,5 @@
 package app.grapheneos.camera.capturer
 
-import android.graphics.BitmapFactory
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.util.Log
@@ -46,7 +45,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     val imageUri = outputFileResults.savedUri
                     if (imageUri != null) {
                         val path = imageUri.encodedPath!!
-                        val bm = BitmapFactory.decodeFile(path)
                         val file = File(path)
                         mActivity.config.setLatestFile(file)
                         val mimeType = MimeTypeMap.getSingleton()

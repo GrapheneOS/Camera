@@ -20,7 +20,6 @@ class BottomTabLayout : TabLayout {
     )
 
     private var sp = 0
-    private var firstLoad = true
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
