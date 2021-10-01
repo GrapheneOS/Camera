@@ -100,7 +100,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun updatePreview(){
         val lastModifiedFile = latestMediaFile ?: return
-        if (getExtension(lastModifiedFile) == "mp4") {
+        if (lastModifiedFile.extension == "mp4") {
             try {
                 mActivity.imagePreview.setImageBitmap(
                     getVideoThumbnail(lastModifiedFile.absolutePath)
@@ -125,7 +125,7 @@ class CamConfig(private val mActivity: MainActivity) {
             val dir = parentDir
             val files = dir!!.listFiles { file: File ->
                 if (!file.isFile) return@listFiles false
-                val ext = getExtension(file)
+                val ext = file.extension
                 ext == "jpg" || ext == "png" || ext == "mp4"
             }
             if (files == null || files.isEmpty()) return null
@@ -429,13 +429,6 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
             }
             return mBitmap
-        }
-
-        @JvmStatic
-        fun getExtension(file: File): String {
-            val fileName = file.name
-            val lastIndexOf = fileName.lastIndexOf(".")
-            return if (lastIndexOf == -1) "" else fileName.substring(lastIndexOf + 1)
         }
     }
 }

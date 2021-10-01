@@ -15,7 +15,6 @@ import android.widget.Toast
 import androidx.camera.core.VideoCapture
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import app.grapheneos.camera.CamConfig.Companion.getExtension
 import app.grapheneos.camera.CamConfig.Companion.getVideoThumbnail
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -110,7 +109,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             mActivity.config.setLatestFile(file)
                             val mimeType = MimeTypeMap.getSingleton()
                                 .getMimeTypeFromExtension(
-                                    getExtension(File(path))
+                                    file.extension
                                 )
                             val bm = tBm
                             MediaScannerConnection.scanFile(
@@ -187,7 +186,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     companion object {
         private const val TAG = "VideoCapturer"
         fun isVideo(file: File?): Boolean {
-            return getExtension(file!!) == "mp4"
+            return file?.extension == "mp4"
         }
     }
 }

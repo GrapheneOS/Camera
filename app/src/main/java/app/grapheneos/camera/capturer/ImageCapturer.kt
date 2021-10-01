@@ -9,7 +9,6 @@ import android.webkit.MimeTypeMap
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
-import app.grapheneos.camera.CamConfig.Companion.getExtension
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
@@ -52,9 +51,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                         mActivity.config.setLatestFile(file)
                         val mimeType = MimeTypeMap.getSingleton()
                             .getMimeTypeFromExtension(
-                                getExtension(
-                                    File(path)
-                                )
+                                File(path).extension
                             )
                         MediaScannerConnection.scanFile(
                             mActivity, arrayOf(file.parent), arrayOf(mimeType)
