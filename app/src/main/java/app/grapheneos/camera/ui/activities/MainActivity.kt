@@ -772,12 +772,16 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     }
 
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
+
     private fun rotateView(view: View?, angle: Float) {
-        view!!.animate()
-            .rotation(angle)
-            .setDuration(400)
-            .setInterpolator(LinearInterpolator())
-            .start()
+        if(view!=null){
+            view.animate().cancel()
+            view.animate()
+                .rotation(angle)
+                .setDuration(400)
+                .setInterpolator(LinearInterpolator())
+                .start()
+        }
     }
 
     override fun onOrientationChange(orientation: Int) {
