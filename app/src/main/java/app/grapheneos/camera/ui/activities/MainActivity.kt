@@ -424,8 +424,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                     if(tapDownTimestamp==0L) {
                         tapDownTimestamp = System.currentTimeMillis()
                         Log.i(TAG, "I was called!")
-                        flipCameraCircle.animate().scaleXBy(0.1f).setDuration(400).start()
-                        flipCameraCircle.animate().scaleYBy(0.1f).setDuration(400).start()
+                        flipCameraCircle.animate().scaleXBy(0.05f).setDuration(300).start()
+                        flipCameraCircle.animate().scaleYBy(0.05f).setDuration(300).start()
                     }
                 }
                 MotionEvent.ACTION_UP -> {
@@ -436,8 +436,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
                     tapDownTimestamp = 0
                     flipCameraCircle.animate().cancel()
-                    flipCameraCircle.animate().scaleX(1f).setDuration(400).start()
-                    flipCameraCircle.animate().scaleY(1f).setDuration(400).start()
+                    flipCameraCircle.animate().scaleX(1f).setDuration(300).start()
+                    flipCameraCircle.animate().scaleY(1f).setDuration(300).start()
                 }
                 else -> {
                 }
