@@ -207,6 +207,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     }
 
     private fun openGallery() {
+        config.snapPreview()
 
         val latestMediaFile: File? = config.latestMediaFile
 
