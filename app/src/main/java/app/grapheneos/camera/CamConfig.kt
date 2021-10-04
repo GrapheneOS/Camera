@@ -358,7 +358,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
                 ExtensionMode.FACE_RETOUCH)){
-            modes.add("BEAUTY")
+            modes.add("FACE RETOUCH")
         }
 
         if(!isVideoMode){
@@ -409,7 +409,7 @@ class CamConfig(private val mActivity: MainActivity) {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
         private val extensionModes = arrayOf("CAMERA", "PORTRAIT", "HDR", "NIGHT LIGHT",
-            "BEAUTY", "AUTO")
+            "FACE RETOUCH", "AUTO")
 
         @JvmStatic
         @Throws(Throwable::class)
