@@ -343,7 +343,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
                 ExtensionMode.BOKEH)){
-            modes.add("NIGHT LIGHT")
+            modes.add("NIGHT SIGHT")
         }
 
         if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
@@ -408,7 +408,7 @@ class CamConfig(private val mActivity: MainActivity) {
     companion object {
         private const val TAG = "CamConfig"
         const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
-        private val extensionModes = arrayOf("CAMERA", "PORTRAIT", "HDR", "NIGHT LIGHT",
+        private val extensionModes = arrayOf("CAMERA", "PORTRAIT", "HDR", "NIGHT SIGHT",
             "FACE RETOUCH", "AUTO")
 
         @JvmStatic
