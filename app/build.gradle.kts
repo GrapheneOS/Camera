@@ -67,8 +67,8 @@ dependencies {
     implementation("androidx.camera:camera-core:1.1.0-alpha09")
     implementation("androidx.camera:camera-camera2:1.1.0-alpha09")
     implementation("androidx.camera:camera-lifecycle:1.1.0-alpha09")
-    implementation("androidx.camera:camera-view:1.0.0-alpha28")
-    implementation("androidx.camera:camera-extensions:1.0.0-alpha28")
+    implementation("androidx.camera:camera-view:1.0.0-alpha29")
+    implementation("androidx.camera:camera-extensions:1.0.0-alpha29")
 
     implementation("com.google.zxing:core:3.4.1")
 }

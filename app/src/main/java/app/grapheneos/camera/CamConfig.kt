@@ -357,7 +357,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.BEAUTY)){
+                ExtensionMode.FACE_RETOUCH)){
             modes.add("BEAUTY")
         }
 
