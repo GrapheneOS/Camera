@@ -342,7 +342,7 @@ class CamConfig(private val mActivity: MainActivity) {
         val modes = arrayListOf<String>()
 
         if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.BOKEH)){
+                ExtensionMode.NIGHT)){
             modes.add("NIGHT SIGHT")
         }
 
