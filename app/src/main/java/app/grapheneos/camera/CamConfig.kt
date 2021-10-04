@@ -102,7 +102,7 @@ class CamConfig(private val mActivity: MainActivity) {
             return parentDir
         }
 
-    fun updatePreview(){
+    fun updatePreview() {
         val lastModifiedFile = latestMediaFile ?: return
         if (lastModifiedFile.extension == "mp4") {
             try {
@@ -224,8 +224,8 @@ class CamConfig(private val mActivity: MainActivity) {
         // Unbind/close all other camera(s) [if any]
         cameraProvider!!.unbindAll()
 
-        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                cameraMode)){
+        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                cameraMode)) {
             cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
                 cameraProvider!!, cameraSelector, cameraMode
             )
@@ -237,7 +237,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         useCaseGroupBuilder.addUseCase(preview!!)
 
-        if(isQRMode){
+        if (isQRMode) {
             qrAnalyzer = QRAnalyzer(mActivity)
             mActivity.startFocusTimer()
             iAnalyzer =
@@ -250,7 +250,7 @@ class CamConfig(private val mActivity: MainActivity) {
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
-            if(isVideoMode){
+            if (isVideoMode) {
                 videoCapture = VideoCapture
                     .Builder()
                     .setTargetAspectRatio(aspectRatio)
@@ -269,7 +269,7 @@ class CamConfig(private val mActivity: MainActivity) {
         loadTabs()
 
         camera!!.cameraInfo.zoomState.observe(mActivity, {
-            if(it.linearZoom!=0f){
+            if (it.linearZoom!=0f) {
                 mActivity.zoomBar.updateThumb()
             }
         })
@@ -285,7 +285,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    fun snapPreview(){
+    fun snapPreview() {
         val animation: Animation = AlphaAnimation(1f, 0f)
         animation.duration = 100
         animation.interpolator = AccelerateDecelerateInterpolator()
@@ -306,23 +306,23 @@ class CamConfig(private val mActivity: MainActivity) {
         )
     }
 
-    private fun loadTabs(){
+    private fun loadTabs() {
 
         val modes = getAvailableModes()
         val cModes = mActivity.tabLayout.getAllModes()
 
         var mae = true
 
-        if(modes.size==cModes.size){
-            for(index in 0 until modes.size){
-                if(modes[index]!=cModes[index]){
+        if (modes.size==cModes.size) {
+            for (index in 0 until modes.size) {
+                if (modes[index]!=cModes[index]) {
                     mae = false
                     break
                 }
             }
         } else mae = false
 
-        if(mae) return
+        if (mae) return
 
         Log.i(TAG, "Refreshing tabs...")
 
@@ -331,7 +331,7 @@ class CamConfig(private val mActivity: MainActivity) {
         modes.forEach { mode ->
             mActivity.tabLayout.newTab().let {
                 mActivity.tabLayout.addTab(it.setText(mode), false)
-                if(mode=="CAMERA"){
+                if (mode=="CAMERA") {
                     it.select()
                 }
             }
@@ -341,27 +341,27 @@ class CamConfig(private val mActivity: MainActivity) {
     private fun getAvailableModes(): ArrayList<String> {
         val modes = arrayListOf<String>()
 
-        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.NIGHT)){
+        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.NIGHT)) {
             modes.add("NIGHT SIGHT")
         }
 
-        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.BOKEH)){
+        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.BOKEH)) {
             modes.add("PORTRAIT")
         }
 
-        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.HDR)){
+        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.HDR)) {
             modes.add("HDR")
         }
 
-        if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.FACE_RETOUCH)){
+        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+                ExtensionMode.FACE_RETOUCH)) {
             modes.add("FACE RETOUCH")
         }
 
-        if(!isVideoMode){
+        if (!isVideoMode){
             modes.add("QR SCAN")
         }
 
@@ -375,8 +375,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         cameraMode = ExtensionMode.NONE
 
-        if(modeText == "CAMERA"){
-            if(extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
+        if (modeText == "CAMERA"){
+            if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
                     ExtensionMode.AUTO)){
                 cameraMode = ExtensionMode.AUTO
             }
@@ -388,7 +388,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         isQRMode = modeText=="QR SCAN"
 
-        if(isQRMode){
+        if (isQRMode){
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.threeButtons.visibility = View.INVISIBLE
             mActivity.flashPager.visibility = View.INVISIBLE

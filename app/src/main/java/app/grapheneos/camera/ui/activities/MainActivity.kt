@@ -211,7 +211,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
         val latestMediaFile: File? = config.latestMediaFile
 
-        if(latestMediaFile==null){
+        if (latestMediaFile==null) {
             Toast.makeText(this,
                 "Please capture a image/video before trying to view it in gallery",
                 Toast.LENGTH_LONG).show()
@@ -418,7 +418,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         flipCameraCircle.setOnTouchListener { _, event ->
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    if(tapDownTimestamp==0L) {
+                    if (tapDownTimestamp==0L) {
                         tapDownTimestamp = System.currentTimeMillis()
                         Log.i(TAG, "I was called!")
                         flipCameraCircle.animate().scaleXBy(0.05f).setDuration(300).start()
@@ -427,7 +427,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 }
                 MotionEvent.ACTION_UP -> {
                     val dif = System.currentTimeMillis() - tapDownTimestamp
-                    if(dif<300){
+                    if (dif<300) {
                         flipCameraCircle.performClick()
                     }
 
@@ -573,11 +573,11 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         settingsIcon = findViewById(R.id.settings_option)
     }
 
-    private fun shareLatestMedia(){
+    private fun shareLatestMedia() {
 
         val file: File? = config.latestMediaFile
 
-        if(file==null){
+        if (file==null) {
             Toast.makeText(this,
                 "Please capture a photo/video before attempting to share via long tap",
                 Toast.LENGTH_LONG).show()
@@ -592,7 +592,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         val values = ContentValues()
         val uri: Uri?
 
-        if(file.extension=="mp4"){
+        if (file.extension=="mp4") {
             // Share video file
             share.type = "video/mp4"
             values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
@@ -635,9 +635,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     private var isQRDialogShowing = false
 
-    fun onScanResultSuccess(rawText: String){
+    fun onScanResultSuccess(rawText: String) {
 
-        if(isQRDialogShowing) return
+        if (isQRDialogShowing) return
 
         isQRDialogShowing = true
 
@@ -659,7 +659,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
 
                 override fun onTabSelected(tab: TabLayout.Tab?) {
-                    when(tab?.text.toString()){
+                    when (tab?.text.toString()) {
                         "Binary" -> {
                             textView.autoLinkMask = 0
                             textView.text = hString
@@ -769,7 +769,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
 
     private fun rotateView(view: View?, angle: Float) {
-        if(view!=null){
+        if (view!=null) {
             view.animate().cancel()
             view.animate()
                 .rotation(angle)

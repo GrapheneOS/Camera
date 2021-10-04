@@ -41,11 +41,11 @@ class ExposureBar : AppCompatSeekBar {
 
     private lateinit var mainActivity: MainActivity
 
-    fun setMainActivity(mainActivity: MainActivity){
+    fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
     }
 
-    fun setExposureConfig(exposureState: ExposureState){
+    fun setExposureConfig(exposureState: ExposureState) {
         max = exposureState.exposureCompensationRange.upper
         min = exposureState.exposureCompensationRange.lower
 
@@ -59,19 +59,19 @@ class ExposureBar : AppCompatSeekBar {
         onSizeChanged(width, height, 0, 0)
     }
 
-    fun showPanel(){
+    fun showPanel() {
         togglePanel(View.VISIBLE)
         closePanelHandler.removeCallbacks(closePanelRunnable)
         closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
     }
 
-    private fun hidePanel(){
+    private fun hidePanel() {
         togglePanel(View.GONE)
     }
 
     private fun togglePanel(visibility: Int) {
         val transition: Transition = Fade()
-        if(visibility == View.GONE){
+        if (visibility == View.GONE) {
             transition.duration = 300
         } else {
             transition.duration = 0

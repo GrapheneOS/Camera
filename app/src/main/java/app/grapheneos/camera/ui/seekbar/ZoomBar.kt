@@ -51,23 +51,23 @@ class ZoomBar : AppCompatSeekBar {
 
     private lateinit var mainActivity: MainActivity
 
-    fun setMainActivity(mainActivity: MainActivity){
+    fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
     }
 
-    private fun showPanel(){
+    private fun showPanel() {
         togglePanel(View.VISIBLE)
         closePanelHandler.removeCallbacks(closePanelRunnable)
         closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
     }
 
-    private fun hidePanel(){
+    private fun hidePanel() {
         togglePanel(View.GONE)
     }
 
     private fun togglePanel(visibility: Int) {
         val transition: Transition = Fade()
-        if(visibility == View.GONE){
+        if (visibility == View.GONE) {
             transition.duration = 300
         } else {
             transition.duration = 0
@@ -94,7 +94,7 @@ class ZoomBar : AppCompatSeekBar {
         var zoomRatio = 1.0f
         var linearZoom = 0.0f
 
-        if(zoomState!=null){
+        if (zoomState!=null) {
             zoomRatio = zoomState.zoomRatio
             linearZoom = zoomState.linearZoom
         }

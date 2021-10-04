@@ -24,7 +24,7 @@ class BottomTabLayout : TabLayout {
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
-        if(tabCount==0) return
+        if (tabCount==0) return
 
         val tabParent = getChildAt(0) as ViewGroup
         val firstTab = tabParent.getChildAt(0)
@@ -51,7 +51,7 @@ class BottomTabLayout : TabLayout {
 //            widthC+=tabView.getWidth()/2 + 9;
 //        }
 //
-//        if(tabView!=null)
+//        if (tabView!=null)
 //            widthC+=(tabView.getWidth()/2 + 9);
 //
 //        snapPoints.add(widthC);
@@ -63,8 +63,8 @@ class BottomTabLayout : TabLayout {
     //    @Override
     //    protected void onScrollChanged(int x, int t, int oldX, int oldT) {
     //
-    //        if(Math.abs(oldX-x)<=1) {
-    //            if(isSelected()){
+    //        if (Math.abs(oldX-x)<=1) {
+    //            if (isSelected()) {
     //                View tabView = Objects.requireNonNull(getTabAt(getSelectedTabPosition())).view;
     //                centerView(tabView);
     //            }
@@ -73,15 +73,15 @@ class BottomTabLayout : TabLayout {
     //
     //        int i = 0;
     //
-    //        while(i<count){
+    //        while (i<count) {
     //            final int p = snapPoints.get(i);
     //            final int n = snapPoints.get(++i);
     //
     //            Log.i("i: P,L,N", i + ":"+p+","+x+","+n);
     //
-    //            if(x>=p && x<=n){
+    //            if (x>=p && x<=n) {
     //                --i;
-    //                if(getSelectedTabPosition()==i) return;
+    //                if (getSelectedTabPosition()==i) return;
     //                View tabView = Objects.requireNonNull(getTabAt(i)).view;
     //                Log.i("Selected", String.valueOf(Objects.requireNonNull(getTabAt(i)).getText()));
     //                tabView.performClick();
@@ -99,9 +99,9 @@ class BottomTabLayout : TabLayout {
     fun getAllModes() : ArrayList<String> {
         val modes = arrayListOf<String>()
 
-        for(index in 0..tabCount){
+        for (index in 0..tabCount) {
             val tab = getTabAt(index)
-            if(tab!=null)
+            if (tab!=null)
                 modes.add(tab.text.toString())
         }
 

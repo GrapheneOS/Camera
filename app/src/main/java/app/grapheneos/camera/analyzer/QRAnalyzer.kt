@@ -32,7 +32,7 @@ class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
             return
         }
 
-        if(mActivity.qrOverlay.size==0f)
+        if (mActivity.qrOverlay.size==0f)
             return
 
         isScanning.set(true)
