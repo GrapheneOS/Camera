@@ -87,7 +87,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     private lateinit var dbTapGestureDetector: GestureDetector
     lateinit var timerView: TextView
-    private lateinit var thirdOption: View
+    lateinit var thirdOption: View
     lateinit var imagePreview: ShapeableImageView
     lateinit var previewLoader: ProgressBar
     private var isZooming = false
