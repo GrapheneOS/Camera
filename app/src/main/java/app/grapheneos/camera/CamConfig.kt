@@ -217,8 +217,8 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         } else {
             Log.i(TAG, "The current mode isn't available for this device ")
-            Toast.makeText(mActivity, "The current mode isn't available for this device",
-                Toast.LENGTH_LONG).show()
+//            Toast.makeText(mActivity, "The current mode isn't available for this device",
+//                Toast.LENGTH_LONG).show()
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
