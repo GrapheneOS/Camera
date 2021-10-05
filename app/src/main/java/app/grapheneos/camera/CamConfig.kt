@@ -358,13 +358,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
         cameraMode = ExtensionMode.NONE
 
-        if (modeText == "CAMERA"){
-            if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                    ExtensionMode.AUTO)){
-                cameraMode = ExtensionMode.AUTO
-            }
+        cameraMode = if (modeText == "CAMERA"){
+            ExtensionMode.NONE
         } else {
-            cameraMode = extensionModes.indexOf(modeText)
+            extensionModes.indexOf(modeText)
         }
 
         mActivity.cancelFocusTimer()
