@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.TimeUnit
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
