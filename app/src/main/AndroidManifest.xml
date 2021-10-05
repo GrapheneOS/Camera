@@ -12,11 +12,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:screenOrientation="nosensor"
         android:theme="@style/Theme.App">
 
         <activity
             android:name="app.grapheneos.camera.ui.activities.MainActivity"
+            android:screenOrientation="nosensor"
+            android:configChanges="orientation|keyboardHidden"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,6 +30,7 @@
             android:name=".ui.activities.CaptureActivity"
             android:label="@string/app_name"
             android:screenOrientation="nosensor"
+            android:configChanges="orientation|keyboardHidden"
             android:exported="true">
 
             <intent-filter>
