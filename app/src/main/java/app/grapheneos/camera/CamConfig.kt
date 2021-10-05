@@ -197,11 +197,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (mActivity.isDestroyed || mActivity.isFinishing) return
 
-        preview = Preview.Builder()
-            .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
-            .setTargetAspectRatio(aspectRatio)
-            .build()
-
         cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
             .build()
@@ -229,8 +224,6 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
-
-        useCaseGroupBuilder.addUseCase(preview!!)
 
         if (isQRMode) {
             qrAnalyzer = QRAnalyzer(mActivity)
@@ -266,6 +259,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
             useCaseGroupBuilder.addUseCase(imageCapture!!)
         }
+
+        preview = Preview.Builder()
+            .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+            .setTargetAspectRatio(aspectRatio)
+            .build()
+
+        useCaseGroupBuilder.addUseCase(preview!!)
 
         camera = cameraProvider!!.bindToLifecycle(
             mActivity, cameraSelector,
