@@ -244,6 +244,9 @@ class CamConfig(private val mActivity: MainActivity) {
                     .setTargetResolution(Size(960, 960))
                     .build()
             iAnalyzer!!.setAnalyzer(cameraExecutor, qrAnalyzer!!)
+            cameraSelector = CameraSelector.Builder()
+                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .build()
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
