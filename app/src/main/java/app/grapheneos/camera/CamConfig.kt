@@ -229,7 +229,9 @@ class CamConfig(private val mActivity: MainActivity) {
                 cameraProvider!!, cameraSelector, cameraMode
             )
         } else {
-            Log.i(TAG, "Auto mode isn't available for this device")
+            Log.i(TAG, "The current mode isn't available for this device ")
+            Toast.makeText(mActivity, "The current mode isn't available for this device",
+                Toast.LENGTH_LONG).show()
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
@@ -278,10 +280,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
-        if (!isFlashAvailable) {
-            mActivity.flashPager.currentItem = ImageCapture.FLASH_MODE_OFF
-            flashMode = ImageCapture.FLASH_MODE_OFF
-        }
+//        if (!isFlashAvailable) {
+//            mActivity.flashPager.currentItem = ImageCapture.FLASH_MODE_OFF
+//            flashMode = ImageCapture.FLASH_MODE_OFF
+//        }
     }
 
     fun snapPreview() {
