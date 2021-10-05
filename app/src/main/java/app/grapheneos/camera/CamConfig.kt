@@ -72,6 +72,7 @@ class CamConfig(private val mActivity: MainActivity) {
         get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
         set(flashMode) {
             imageCapture!!.flashMode = flashMode
+            mActivity.flashPager.currentItem = flashMode
         }
     val parentDirPath: String
         get() = parentDir!!.absolutePath
