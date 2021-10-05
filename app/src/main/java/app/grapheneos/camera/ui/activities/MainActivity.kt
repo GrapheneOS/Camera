@@ -343,7 +343,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             startFocusTimer()
         }
 
-        config.latestMediaFile
+        if(config.latestMediaFile==null){
+            imagePreview.setImageResource(android.R.color.transparent)
+        }
     }
 
     override fun onPause() {
