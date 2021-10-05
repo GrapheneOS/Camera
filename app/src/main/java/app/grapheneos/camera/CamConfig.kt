@@ -262,6 +262,8 @@ class CamConfig(private val mActivity: MainActivity) {
                 .setFlashMode(flashMode)
                 .build()
 
+            flashMode = ImageCapture.FLASH_MODE_OFF
+
             useCaseGroupBuilder.addUseCase(imageCapture!!)
         }
 
