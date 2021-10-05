@@ -342,6 +342,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         if (config.isQRMode) {
             startFocusTimer()
         }
+
+        config.latestMediaFile
     }
 
     override fun onPause() {
