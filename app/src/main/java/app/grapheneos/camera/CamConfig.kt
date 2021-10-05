@@ -278,7 +278,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
-        startAutoFocus()
         if (!isFlashAvailable) {
             mActivity.flashPager.currentItem = ImageCapture.FLASH_MODE_OFF
             flashMode = ImageCapture.FLASH_MODE_OFF
@@ -291,19 +290,6 @@ class CamConfig(private val mActivity: MainActivity) {
         animation.interpolator = AccelerateDecelerateInterpolator()
         animation.repeatMode = Animation.REVERSE
         mActivity.imagePreview.startAnimation(animation)
-    }
-
-    private fun startAutoFocus() {
-        val autoFocusPoint = SurfaceOrientedMeteringPointFactory(1f, 1f)
-            .createPoint(.5f, .5f)
-        val autoFocusAction = FocusMeteringAction.Builder(
-            autoFocusPoint,
-            FocusMeteringAction.FLAG_AF
-        ).setAutoCancelDuration(AUTO_FOCUS_INTERVAL_IN_SECONDS.toLong(), TimeUnit.SECONDS).build()
-        camera!!.cameraControl.startFocusAndMetering(autoFocusAction).addListener(
-            { Log.i(TAG, "Auto-focusing every $AUTO_FOCUS_INTERVAL_IN_SECONDS seconds...") },
-            ContextCompat.getMainExecutor(mActivity)
-        )
     }
 
     private fun loadTabs() {
@@ -407,7 +393,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
     companion object {
         private const val TAG = "CamConfig"
-        const val AUTO_FOCUS_INTERVAL_IN_SECONDS = 2
         private val extensionModes = arrayOf("CAMERA", "PORTRAIT", "HDR", "NIGHT SIGHT",
             "FACE RETOUCH", "AUTO")
 
