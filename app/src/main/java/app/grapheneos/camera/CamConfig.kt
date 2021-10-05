@@ -225,6 +225,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
 
+        aspectRatio = AspectRatio.RATIO_4_3
+
         if (isQRMode) {
             qrAnalyzer = QRAnalyzer(mActivity)
             mActivity.startFocusTimer()
