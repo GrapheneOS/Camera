@@ -18,13 +18,6 @@ class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
     private var multiFormatReader: MultiFormatReader = MultiFormatReader()
     private var isScanning = AtomicBoolean(false)
 
-    companion object {
-        val aFormats = arrayOf(
-            ImageFormat.YUV_420_888, ImageFormat.YUV_422_888,
-            ImageFormat.YUV_444_888
-        )
-    }
-
     override fun analyze(image: ImageProxy) {
 
         if (isScanning.get()) {
@@ -37,49 +30,46 @@ class QRAnalyzer(private val mActivity: MainActivity) : ImageAnalysis.Analyzer {
 
         isScanning.set(true)
 
-        if (aFormats.contains(image.format) && image.planes.size == 3) {
-
-            val rotatedImage = RotatedImage(getLuminancePlaneData(image),
-                image.width, image.height)
-            rotateImageArray(rotatedImage, image.imageInfo.rotationDegrees)
+        val rotatedImage = RotatedImage(getLuminancePlaneData(image),
+            image.width, image.height)
+        rotateImageArray(rotatedImage, image.imageInfo.rotationDegrees)
 
 
-            val iFact = if (mActivity.qrOverlay.width < mActivity.qrOverlay.height) {
-                rotatedImage.width /
-                        mActivity.qrOverlay.width.toFloat()
-            } else {
-                rotatedImage.height /
-                        mActivity.qrOverlay.height.toFloat()
-            }
-
-            val size = mActivity.qrOverlay.size * iFact
-
-            val left = (rotatedImage.width - size) / 2
-            val top = (rotatedImage.height - size) / 2
-
-            val planarYUVLuminanceSource = PlanarYUVLuminanceSource(
-                rotatedImage.byteArray,
-                rotatedImage.width, rotatedImage.height,
-                left.roundToInt(), top.roundToInt(),
-                size.roundToInt(), size.roundToInt(),
-                false
-            )
-            val hybridBinarizer = HybridBinarizer(planarYUVLuminanceSource)
-            val binaryBitmap = BinaryBitmap(hybridBinarizer)
-            try {
-                val rawResult = multiFormatReader.decodeWithState(binaryBitmap)
-                rawResult?.text?.let {
-                    mActivity.onScanResultSuccess(it)
-                }
-            } catch (e: NotFoundException) {
-                e.printStackTrace()
-            } finally {
-                multiFormatReader.reset()
-                image.close()
-            }
-
-            isScanning.set(false)
+        val iFact = if (mActivity.qrOverlay.width < mActivity.qrOverlay.height) {
+            rotatedImage.width /
+                    mActivity.qrOverlay.width.toFloat()
+        } else {
+            rotatedImage.height /
+                    mActivity.qrOverlay.height.toFloat()
         }
+
+        val size = mActivity.qrOverlay.size * iFact
+
+        val left = (rotatedImage.width - size) / 2
+        val top = (rotatedImage.height - size) / 2
+
+        val planarYUVLuminanceSource = PlanarYUVLuminanceSource(
+            rotatedImage.byteArray,
+            rotatedImage.width, rotatedImage.height,
+            left.roundToInt(), top.roundToInt(),
+            size.roundToInt(), size.roundToInt(),
+            false
+        )
+        val hybridBinarizer = HybridBinarizer(planarYUVLuminanceSource)
+        val binaryBitmap = BinaryBitmap(hybridBinarizer)
+        try {
+            val rawResult = multiFormatReader.decodeWithState(binaryBitmap)
+            rawResult?.text?.let {
+                mActivity.onScanResultSuccess(it)
+            }
+        } catch (e: NotFoundException) {
+            e.printStackTrace()
+        } finally {
+            multiFormatReader.reset()
+            image.close()
+        }
+
+        isScanning.set(false)
     }
 
     // 90, 180. 270 rotation
