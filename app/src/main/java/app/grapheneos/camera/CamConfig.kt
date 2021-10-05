@@ -48,10 +48,6 @@ class CamConfig(private val mActivity: MainActivity) {
         ExtensionsManager.getInstance(mActivity).get()
     }
 
-    init {
-        latestMediaFile
-    }
-
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
