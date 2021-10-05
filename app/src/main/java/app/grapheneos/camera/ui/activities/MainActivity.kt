@@ -236,7 +236,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             null
         )
 
-        if (cursor != null) {
+        if (cursor != null && cursor.count==1) {
             cursor.moveToNext()
 
             val iIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)
@@ -253,6 +253,10 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
             val intent = Intent(Intent.ACTION_VIEW, mediaUri)
             startActivity(intent)
+        } else {
+            Toast.makeText(this,
+                "An unexpected error occurred while opening the gallery. (Image not found)",
+            Toast.LENGTH_LONG).show()
         }
     }
 
