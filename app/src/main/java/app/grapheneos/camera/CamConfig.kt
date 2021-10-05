@@ -210,6 +210,7 @@ class CamConfig(private val mActivity: MainActivity) {
         val builder = ImageCapture.Builder()
 
         imageCapture = builder
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
             .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
             .setTargetAspectRatio(aspectRatio)
             .setFlashMode(flashMode)
