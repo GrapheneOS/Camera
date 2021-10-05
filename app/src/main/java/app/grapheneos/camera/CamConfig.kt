@@ -126,7 +126,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val latestMediaFile: File?
         get() {
-            if (latestFile != null) return latestFile
+            if (latestFile != null && latestFile!!.exists()) return latestFile
             val dir = parentDir
             val files = dir!!.listFiles { file: File ->
                 if (!file.isFile) return@listFiles false
@@ -136,7 +136,8 @@ class CamConfig(private val mActivity: MainActivity) {
             if (files == null || files.isEmpty()) return null
             var lastModifiedFile = files[0]
             for (file in files) {
-                if (lastModifiedFile.lastModified() < file.lastModified()) lastModifiedFile = file
+                if (lastModifiedFile.lastModified() < file.lastModified())
+                    lastModifiedFile = file
             }
             latestFile = lastModifiedFile
             return latestFile
