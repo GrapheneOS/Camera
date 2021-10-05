@@ -748,10 +748,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             val autoFocusPoint = factory.createPoint(x, y)
             animateFocusRing(x, y)
             config.camera!!.cameraControl.startFocusAndMetering(
-                FocusMeteringAction.Builder(
-                    autoFocusPoint,
-                    FocusMeteringAction.FLAG_AF
-                ).disableAutoCancel().build()
+                FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
             )
             exposureBar.showPanel()
             return v.performClick()
