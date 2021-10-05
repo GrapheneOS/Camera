@@ -140,6 +140,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     lastModifiedFile = file
             }
             latestFile = lastModifiedFile
+            updatePreview()
             return latestFile
         }
 
