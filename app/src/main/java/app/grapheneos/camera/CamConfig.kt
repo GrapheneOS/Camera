@@ -203,8 +203,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val builder = ImageCapture.Builder()
 
-        preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
-
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
         mActivity.updateLastFrame()
@@ -269,6 +267,8 @@ class CamConfig(private val mActivity: MainActivity) {
             .build()
 
         useCaseGroupBuilder.addUseCase(preview!!)
+
+        preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
         camera = cameraProvider!!.bindToLifecycle(
             mActivity, cameraSelector,
