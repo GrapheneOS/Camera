@@ -242,6 +242,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         } else {
             if (isVideoMode) {
+                aspectRatio = AspectRatio.RATIO_16_9
                 videoCapture = VideoCapture
                     .Builder()
                     .setTargetAspectRatio(aspectRatio)
