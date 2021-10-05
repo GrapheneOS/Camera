@@ -354,6 +354,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         if (config.isQRMode) {
             cancelFocusTimer()
         }
+        lastFrame = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
