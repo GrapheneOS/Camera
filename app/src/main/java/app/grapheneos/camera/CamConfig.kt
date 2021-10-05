@@ -207,13 +207,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val builder = ImageCapture.Builder()
 
-        imageCapture = builder
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-            .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
-            .setTargetAspectRatio(aspectRatio)
-            .setFlashMode(flashMode)
-            .build()
-
         preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
         // To use the last frame instead of showing a blank screen when
@@ -260,6 +253,14 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
+
+            imageCapture = builder
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+                .setTargetAspectRatio(aspectRatio)
+                .setFlashMode(flashMode)
+                .build()
+
             useCaseGroupBuilder.addUseCase(imageCapture!!)
         }
 
