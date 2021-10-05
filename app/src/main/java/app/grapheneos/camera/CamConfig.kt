@@ -68,7 +68,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var iAnalyzer: ImageAnalysis? = null
 
-    private var aspectRatio = AspectRatio.RATIO_16_9
+    private var aspectRatio = AspectRatio.RATIO_4_3
 
     private var latestFile: File? = null
 
