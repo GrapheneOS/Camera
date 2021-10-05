@@ -21,6 +21,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
+import androidx.camera.view.PreviewView
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -243,9 +244,7 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.startFocusTimer()
             iAnalyzer =
                 ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .setTargetResolution(Size(mActivity.previewView.width,
-                        mActivity.previewView.height))
+                    .setTargetResolution(Size(960, 960))
                     .build()
             iAnalyzer!!.setAnalyzer(cameraExecutor, qrAnalyzer!!)
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
@@ -381,12 +380,14 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.flashPager.visibility = View.INVISIBLE
             mActivity.captureModeView.visibility = View.INVISIBLE
             mActivity.settingsIcon.visibility = View.INVISIBLE
+            mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.threeButtons.visibility = View.VISIBLE
             mActivity.flashPager.visibility = View.VISIBLE
             mActivity.captureModeView.visibility = View.VISIBLE
             mActivity.settingsIcon.visibility = View.VISIBLE
+            mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
         }
 
         startCamera(true)
