@@ -328,7 +328,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         }
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         if (!config.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
             keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
             captureButton.performClick()
