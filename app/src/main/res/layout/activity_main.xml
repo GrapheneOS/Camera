@@ -161,6 +161,7 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/zoom_in_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -175,6 +176,7 @@
             android:layout_height="250dp" />
 
         <ImageView
+            android:id="@+id/zoom_out_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/zoom_out"
@@ -196,6 +198,7 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/exposure_plus_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -211,6 +214,7 @@
             android:layout_height="300dp" />
 
         <ImageView
+            android:id="@+id/exposure_neg_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/exposure_neg"

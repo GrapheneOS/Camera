@@ -101,6 +101,12 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     lateinit var settingsIcon: ImageView
 
+    lateinit var exposurePlusIcon: ImageView
+    lateinit var exposureNegIcon: ImageView
+
+    lateinit var zoomInIcon: ImageView
+    lateinit var zoomOutIcon: ImageView
+
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
             previewView.width.toFloat(), previewView.height.toFloat()
@@ -600,6 +606,12 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
+
+        exposurePlusIcon = findViewById(R.id.exposure_plus_icon)
+        exposureNegIcon = findViewById(R.id.exposure_neg_icon)
+
+        zoomInIcon = findViewById(R.id.zoom_in_icon)
+        zoomOutIcon = findViewById(R.id.zoom_out_icon)
     }
 
     private fun shareLatestMedia() {
@@ -824,6 +836,11 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         rotateView(flipCameraCircle, rotation.toFloat())
         rotateView(captureModeView, rotation.toFloat())
         rotateView(thirdOption, rotation.toFloat())
+
+        rotateView(exposurePlusIcon, rotation.toFloat())
+        rotateView(exposureNegIcon, rotation.toFloat())
+        rotateView(zoomInIcon, rotation.toFloat())
+        rotateView(zoomOutIcon, rotation.toFloat())
     }
 
     companion object {
