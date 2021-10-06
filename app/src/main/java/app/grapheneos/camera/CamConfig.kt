@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.View
@@ -122,12 +123,17 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val latestMediaFile: File?
         get() {
-            if (latestFile != null && latestFile!!.exists()) return latestFile
+            if (latestFile != null && mediaExists(latestFile!!))
+                return latestFile
             val dir = parentDir
             val files = dir!!.listFiles { file: File ->
                 if (!file.isFile) return@listFiles false
                 val ext = file.extension
-                ext == "jpg" || ext == "png" || ext == "mp4"
+                if(ext == "jpg" || ext == "png" || ext == "mp4"){
+                    mediaExists(file)
+                } else {
+                    false
+                }
             }
             if (files == null || files.isEmpty()) return null
             var lastModifiedFile = files[0]
@@ -139,6 +145,30 @@ class CamConfig(private val mActivity: MainActivity) {
             updatePreview()
             return latestFile
         }
+
+    private fun mediaExists(file: File) : Boolean {
+
+        if(!file.exists()) return false
+
+        val projection = emptyArray<String>()
+
+        val mediaUri: Uri = if (file.extension == "mp4") {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+
+        mActivity.contentResolver.query(
+            mediaUri,
+            projection,
+            MediaStore.Images.ImageColumns.DISPLAY_NAME + "=?",
+            arrayOf(file.name),
+            null
+        ).use {
+            return@mediaExists it?.count==1
+        }
+
+    }
 
     fun switchCameraMode() {
         isVideoMode = !isVideoMode
