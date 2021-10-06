@@ -332,8 +332,17 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         if (!config.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
             keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
             captureButton.performClick()
+            return true
         }
-        return true
+        return super.onKeyUp(keyCode, event)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            // Pretend as if the event was handled by the app (avoid volume bar from appearing)
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun onResume() {
