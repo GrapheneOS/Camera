@@ -9,17 +9,21 @@ import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
+import android.text.util.Linkify
 import android.util.Log
 import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.View.OnTouchListener
+import android.view.animation.*
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
@@ -32,6 +36,7 @@ import androidx.camera.view.PreviewView.StreamState
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
+import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.adapter.FlashAdapter
@@ -44,20 +49,12 @@ import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.tabs.TabLayout
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.abs
-import android.widget.TextView
-import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.text.util.Linkify
-import android.view.animation.*
-import app.grapheneos.camera.BlurBitmap
 import java.io.File
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.*
-import android.view.MotionEvent
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.abs
 
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
@@ -329,6 +326,14 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 }
             }
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (!config.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+            keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
+            captureButton.performClick()
+        }
+        return true
     }
 
     override fun onResume() {
