@@ -24,4 +24,5 @@
     <string name="share_qr_text">Share QR Text</string>
     <string name="copy_to_clipboard">Copy to Clipboard</string>
     <string name="retake">Retake</string>
+    <string name="play_preview">Play Preview</string>
 </resources>

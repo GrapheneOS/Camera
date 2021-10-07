@@ -166,6 +166,15 @@
                 android:visibility="gone"
                 android:indeterminate="true" />
 
+            <ImageView
+                android:id="@+id/play_preview"
+                android:visibility="invisible"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/play"
+                android:layout_gravity="center"
+                android:contentDescription="@string/play_preview"/>
+
         </FrameLayout>
 
     </LinearLayout>
