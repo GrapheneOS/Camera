@@ -18,14 +18,27 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import java.nio.ByteBuffer
 import android.graphics.Bitmap.CompressFormat
+import android.widget.ImageButton
+import android.widget.ImageView
 import java.io.ByteArrayOutputStream
 
 class CaptureActivity: MainActivity() {
 
-    private lateinit var outputUri: Uri
+    lateinit var outputUri: Uri
+    lateinit var bitmap: Bitmap
+
+    lateinit var retakeIcon: ImageView
+
+    lateinit var flipCameraContent: ImageView
+    lateinit var confirmButton: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        retakeIcon = findViewById(R.id.retake_icon)
+        flipCameraContent = findViewById(R.id.flip_camera_icon_content)
+
+        confirmButton = findViewById(R.id.confirm_button)
 
         if (intent.extras?.containsKey(EXTRA_OUTPUT)==true) {
             outputUri = intent.extras?.get(EXTRA_OUTPUT) as Uri
@@ -77,66 +90,117 @@ class CaptureActivity: MainActivity() {
             takePicture()
         }
 
+        retakeIcon.setOnClickListener {
+            hidePreview()
+        }
+
+        confirmButton.setOnClickListener {
+            confirmImage()
+        }
+
         // Display the activity
     }
 
     private fun takePicture(){
+
+        previewLoader.visibility = View.VISIBLE
         config.imageCapture?.takePicture(
             ContextCompat.getMainExecutor(this),
             object: ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
                     super.onCaptureSuccess(image)
-
-                    val intent = Intent("inline-data")
-                    var bitmap = imageProxyToBitmap(image)
-
-                    if(::outputUri.isInitialized){
-
-                        val bos = ByteArrayOutputStream()
-
-                        val cf: CompressFormat =
-                            if(outputUri.path?.endsWith(".png")==true) {
-                            CompressFormat.PNG
-                        } else {
-                            CompressFormat.JPEG
-                        }
-
-                        bitmap.compress(cf, 100, bos)
-                        val bitmapData: ByteArray = bos.toByteArray()
-
-                        val oStream =
-                            contentResolver.openOutputStream(outputUri)
-
-                        if(oStream!=null){
-                            oStream.write(bitmapData)
-                            oStream.close()
-
-                            setResult(RESULT_OK)
-                        } else {
-                            setResult(RESULT_CANCELED)
-                        }
-
-                    } else {
-                        bitmap = resizeImage(bitmap)
-                        intent.putExtra("data", bitmap)
-                        setResult(RESULT_OK, intent)
-                    }
+                    bitmap = imageProxyToBitmap(image)
+                    showPreview()
+                    previewLoader.visibility = View.GONE
 
                     image.close()
-                    finish()
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     super.onError(exception)
                     exception.printStackTrace()
-                    Toast.makeText(baseContext, "Unable to capture image",
-                        Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@CaptureActivity,
+                        "Unable to capture image", Toast.LENGTH_LONG)
+                        .show()
 
                     finishActivity(RESULT_CANCELED)
                 }
             }
 
         )
+    }
+
+    private fun showPreview(){
+
+        config.cameraProvider?.unbindAll()
+
+        mainOverlay.setImageBitmap(bitmap)
+        mainOverlay.visibility = View.VISIBLE
+
+        settingsIcon.visibility = View.INVISIBLE
+        flashPager.visibility = View.INVISIBLE
+
+        flipCameraContent.visibility = View.INVISIBLE
+        retakeIcon.visibility = View.VISIBLE
+
+        captureButton.visibility = View.INVISIBLE
+        confirmButton.visibility = View.VISIBLE
+
+        previewView.visibility = View.INVISIBLE
+    }
+
+    private fun hidePreview(){
+        config.startCamera(true)
+
+        settingsIcon.visibility = View.VISIBLE
+        flashPager.visibility = View.VISIBLE
+
+        flipCameraContent.visibility = View.VISIBLE
+        retakeIcon.visibility = View.INVISIBLE
+
+        captureButton.visibility = View.VISIBLE
+        confirmButton.visibility = View.INVISIBLE
+
+        previewView.visibility = View.VISIBLE
+    }
+
+    private fun confirmImage() {
+
+        val resultIntent = Intent("inline-data")
+
+        if(::outputUri.isInitialized){
+
+            val bos = ByteArrayOutputStream()
+
+            val cf: CompressFormat =
+                if(outputUri.path?.endsWith(".png")==true) {
+                    CompressFormat.PNG
+                } else {
+                    CompressFormat.JPEG
+                }
+
+            bitmap.compress(cf, 100, bos)
+            val bitmapData: ByteArray = bos.toByteArray()
+
+            val oStream =
+                contentResolver.openOutputStream(outputUri)
+
+            if(oStream!=null){
+                oStream.write(bitmapData)
+                oStream.close()
+
+                setResult(RESULT_OK)
+            } else {
+                setResult(RESULT_CANCELED)
+            }
+
+        } else {
+            bitmap = resizeImage(bitmap)
+            resultIntent.putExtra("data", bitmap)
+            setResult(RESULT_OK, resultIntent)
+        }
+
+        finish()
     }
 
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap {

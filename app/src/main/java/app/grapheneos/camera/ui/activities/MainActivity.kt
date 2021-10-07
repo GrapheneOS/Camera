@@ -107,6 +107,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     lateinit var zoomInIcon: ImageView
     lateinit var zoomOutIcon: ImageView
 
+    lateinit var mainOverlay: ImageView
+
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
             previewView.width.toFloat(), previewView.height.toFloat()
@@ -388,6 +390,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         setContentView(R.layout.activity_main)
 
         config = CamConfig(this)
+        mainOverlay = findViewById(R.id.main_overlay)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = findViewById(R.id.third_option)
@@ -436,12 +439,11 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         })
 
         timerView = findViewById(R.id.timer)
-        val mainOverlay = findViewById<ImageView>(R.id.main_overlay)
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
             } else {
-                if (lastFrame != null) {
+                if (lastFrame != null && this !is CaptureActivity) {
                     mainOverlay.setImageBitmap(blurBitmap(lastFrame!!))
                     mainOverlay.visibility = View.VISIBLE
                 }
