@@ -30,6 +30,7 @@
             android:name=".ui.activities.CaptureActivity"
             android:label="@string/app_name"
             android:screenOrientation="nosensor"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:configChanges="orientation|keyboardHidden"
             android:exported="true">
 
