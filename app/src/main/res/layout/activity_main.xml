@@ -101,6 +101,16 @@
                 android:background="@drawable/cbutton_bg"
                 android:contentDescription="@string/flip_camera" />
 
+            <ImageButton
+                android:id="@+id/confirm_button"
+                android:visibility="invisible"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_gravity="center"
+                android:src="@drawable/done"
+                android:background="@drawable/cbutton_bg"
+                android:contentDescription="@string/flip_camera" />
+
         </FrameLayout>
 
         <FrameLayout
