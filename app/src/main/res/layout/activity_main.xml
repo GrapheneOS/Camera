@@ -78,11 +78,21 @@
                 android:contentDescription="@string/flip_camera"/>
 
             <ImageView
+                android:id="@+id/flip_camera_icon_content"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/flip_camera"
                 android:layout_gravity="center"
                 android:contentDescription="@string/flip_camera"/>
+
+            <ImageView
+                android:id="@+id/retake_icon"
+                android:visibility="invisible"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/retake"
+                android:layout_gravity="center"
+                android:contentDescription="@string/retake"/>
 
         </FrameLayout>
 
