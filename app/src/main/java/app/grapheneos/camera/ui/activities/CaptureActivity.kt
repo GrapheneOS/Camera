@@ -22,7 +22,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import java.io.ByteArrayOutputStream
 
-class CaptureActivity: MainActivity() {
+open class CaptureActivity: MainActivity() {
 
     lateinit var outputUri: Uri
     lateinit var bitmap: Bitmap
