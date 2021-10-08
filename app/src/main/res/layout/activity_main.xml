@@ -133,6 +133,7 @@
             android:layout_gravity="center">
 
             <ImageView
+                android:id="@+id/white_option_circle"
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/white_option_circle"
