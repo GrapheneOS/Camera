@@ -1,3 +1,79 @@
 package app.grapheneos.camera.ui.activities
 
-class VideoCaptureActivity : CaptureActivity()
+import android.net.Uri
+import android.os.Bundle
+import android.view.View
+import android.widget.ImageView
+import app.grapheneos.camera.R
+import android.content.Intent
+
+class VideoCaptureActivity : CaptureActivity() {
+
+    private lateinit var whiteOptionCircle: ImageView
+    private lateinit var playPreview: ImageView
+
+    private var savedUri: Uri? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        whiteOptionCircle = findViewById(R.id.white_option_circle)
+        playPreview = findViewById(R.id.play_preview)
+
+        captureButton.setImageResource(R.drawable.recording)
+
+        captureButton.setOnClickListener {
+            if(videoCapturer.isRecording){
+                videoCapturer.stopRecording()
+            } else {
+                videoCapturer.startRecording()
+            }
+        }
+
+        playPreview.setOnClickListener {
+            val i = Intent(this@VideoCaptureActivity,
+                VideoPlayer::class.java)
+            i.putExtra("videoUri", savedUri)
+            startActivity(i)
+        }
+
+        imagePreview.visibility = View.GONE
+        whiteOptionCircle.visibility = View.GONE
+        playPreview.visibility = View.VISIBLE
+
+        confirmButton.setOnClickListener {
+            confirmVideo()
+        }
+
+    }
+
+    fun afterRecording(savedUri: Uri?){
+
+        this.savedUri = savedUri
+
+        bitmap = previewView.bitmap!!
+
+        showPreview()
+    }
+
+    override fun showPreview(){
+        super.showPreview()
+        thirdOption.visibility = View.VISIBLE
+    }
+
+    private fun confirmVideo(){
+        if(savedUri==null){
+            setResult(RESULT_CANCELED)
+        } else {
+            val resultIntent = Intent()
+            resultIntent.data = savedUri
+            setResult(RESULT_OK, resultIntent)
+        }
+        finish()
+    }
+
+    override fun hidePreview() {
+        super.hidePreview()
+        thirdOption.visibility = View.INVISIBLE
+    }
+}
