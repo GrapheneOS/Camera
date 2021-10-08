@@ -72,6 +72,7 @@
 
         </activity>
 
+        <activity android:name=".ui.activities.VideoPlayer"/>
     </application>
 
 </manifest>
