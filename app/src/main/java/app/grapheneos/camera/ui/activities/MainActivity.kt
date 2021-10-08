@@ -73,7 +73,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     lateinit var config: CamConfig
 
     private lateinit var imageCapturer: ImageCapturer
-    private lateinit var videoCapturer: VideoCapturer
+    lateinit var videoCapturer: VideoCapturer
 
     lateinit var flipCameraCircle: View
     lateinit var captureModeView: ImageView
