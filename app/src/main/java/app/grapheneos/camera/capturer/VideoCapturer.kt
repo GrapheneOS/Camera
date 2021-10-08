@@ -217,11 +217,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         animator.start()
 
-        mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
-        mActivity.flipCameraCircle.visibility = View.VISIBLE
-        mActivity.captureModeView.visibility = View.VISIBLE
-        mActivity.tabLayout.visibility = View.VISIBLE
         mActivity.timerView.visibility = View.GONE
+        mActivity.flipCameraCircle.visibility = View.VISIBLE
+
+        if(mActivity !is VideoCaptureActivity) {
+            mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
+            mActivity.captureModeView.visibility = View.VISIBLE
+            mActivity.tabLayout.visibility = View.VISIBLE
+        }
         cancelTimer()
     }
 
