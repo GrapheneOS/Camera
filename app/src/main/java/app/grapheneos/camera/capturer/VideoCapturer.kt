@@ -114,6 +114,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 object : VideoCapture.OnVideoSavedCallback {
                     override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
                         isRecording = false
+
+                        if(mActivity is VideoCaptureActivity){
+                            mActivity.afterRecording(outputFileResults.savedUri)
+                            afterRecordingStops()
+                            return
+                        }
+
                         mActivity.previewLoader.visibility = View.VISIBLE
                         val videoUri = outputFileResults.savedUri
                         if (videoUri != null) {
