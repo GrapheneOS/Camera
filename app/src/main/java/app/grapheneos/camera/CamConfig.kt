@@ -23,6 +23,7 @@ import android.view.animation.Animation
 import android.view.animation.AlphaAnimation
 import androidx.camera.view.PreviewView
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -269,7 +270,7 @@ class CamConfig(private val mActivity: MainActivity) {
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
-            if (isVideoMode) {
+            if (isVideoMode || mActivity is VideoCaptureActivity) {
                 aspectRatio = AspectRatio.RATIO_16_9
                 videoCapture = VideoCapture
                     .Builder()
@@ -279,16 +280,18 @@ class CamConfig(private val mActivity: MainActivity) {
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
 
-            imageCapture = builder
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
-                .setTargetAspectRatio(aspectRatio)
-                .setFlashMode(flashMode)
-                .build()
+            if(mActivity !is VideoCaptureActivity) {
+                imageCapture = builder
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+                    .setTargetAspectRatio(aspectRatio)
+                    .setFlashMode(flashMode)
+                    .build()
 
-            flashMode = ImageCapture.FLASH_MODE_OFF
+                flashMode = ImageCapture.FLASH_MODE_OFF
 
-            useCaseGroupBuilder.addUseCase(imageCapture!!)
+                useCaseGroupBuilder.addUseCase(imageCapture!!)
+            }
         }
 
         preview = Preview.Builder()
