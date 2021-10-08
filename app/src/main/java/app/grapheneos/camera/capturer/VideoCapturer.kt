@@ -23,6 +23,8 @@ import java.util.*
 import android.animation.ValueAnimator
 import app.grapheneos.camera.R
 import android.graphics.drawable.GradientDrawable
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import java.io.FileDescriptor
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -79,9 +81,25 @@ class VideoCapturer(private val mActivity: MainActivity) {
     @SuppressLint("RestrictedApi")
     fun startRecording() {
         if (mActivity.config.camera == null) return
-        val videoFile = generateFileForVideo()
-        val outputOptions = VideoCapture.OutputFileOptions.Builder(videoFile)
-            .build()
+
+        val videoFile: Any? = if(mActivity is VideoCaptureActivity
+            && mActivity.isOutputUriAvailable()) {
+            mActivity.contentResolver.openFileDescriptor(
+                mActivity.outputUri,
+                "w"
+            )
+        } else {
+            generateFileForVideo()
+        }
+
+        val outputOptions = if(mActivity is VideoCaptureActivity
+            && mActivity.isOutputUriAvailable()){
+            VideoCapture.OutputFileOptions.Builder(videoFile as FileDescriptor)
+                .build()
+        } else {
+            VideoCapture.OutputFileOptions.Builder(videoFile as File)
+                .build()
+        }
 
         // Will always be true if we reach here
         if (ActivityCompat.checkSelfPermission(
