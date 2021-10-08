@@ -130,7 +130,7 @@ open class CaptureActivity: MainActivity() {
         )
     }
 
-    private fun showPreview(){
+    open fun showPreview(){
 
         config.cameraProvider?.unbindAll()
 
@@ -149,7 +149,7 @@ open class CaptureActivity: MainActivity() {
         previewView.visibility = View.INVISIBLE
     }
 
-    private fun hidePreview(){
+    open fun hidePreview(){
         config.startCamera(true)
 
         settingsIcon.visibility = View.VISIBLE
