@@ -59,7 +59,7 @@ import kotlin.math.abs
 open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
     SensorOrientationChangeNotifier.Listener {
 
-    private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
+    val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
     lateinit var previewView: PreviewView
@@ -135,7 +135,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     }
 
     // Used to request permission from the user
-    private val requestPermissionLauncher = registerForActivityResult(
+    val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
     ) { permissions: Map<String, Boolean> ->
         if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
