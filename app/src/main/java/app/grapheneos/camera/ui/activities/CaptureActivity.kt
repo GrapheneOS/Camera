@@ -32,6 +32,10 @@ open class CaptureActivity: MainActivity() {
     lateinit var flipCameraContent: ImageView
     lateinit var confirmButton: ImageButton
 
+    fun isOutputUriAvailable() : Boolean {
+        return ::outputUri.isInitialized
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
