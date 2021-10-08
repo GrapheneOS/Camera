@@ -59,6 +59,19 @@
 
         </activity-alias>
 
+        <activity
+            android:name=".ui.activities.VideoCaptureActivity"
+            android:label="Record Video"
+            android:screenOrientation="nosensor"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.media.action.VIDEO_CAPTURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+        </activity>
+
     </application>
 
 </manifest>
