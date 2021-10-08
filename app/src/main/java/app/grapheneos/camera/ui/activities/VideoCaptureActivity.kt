@@ -65,6 +65,8 @@ class VideoCaptureActivity : CaptureActivity() {
 
         bitmap = previewView.bitmap!!
 
+        captureModeView.visibility = View.VISIBLE
+
         showPreview()
     }
 
