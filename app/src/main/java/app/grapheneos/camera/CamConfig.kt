@@ -16,7 +16,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
-import java.util.concurrent.ExecutionException
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
@@ -209,14 +208,8 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity
         )
         cameraProviderFuture.addListener({
-            try {
-                cameraProvider = cameraProviderFuture.get()
-                startCamera()
-            } catch (e: ExecutionException) {
-                // No errors need to be handled for this Future.
-                // This should never be reached.
-            } catch (e: InterruptedException) {
-            }
+            cameraProvider = cameraProviderFuture.get()
+            startCamera()
         }, ContextCompat.getMainExecutor(mActivity))
     }
 
