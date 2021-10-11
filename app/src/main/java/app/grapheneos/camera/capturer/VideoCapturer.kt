@@ -140,12 +140,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                 )
                             val bm = tBm
                             MediaScannerConnection.scanFile(
-                                mActivity, arrayOf(file.parent), arrayOf(mimeType)
+                                mActivity, arrayOf(file.absolutePath), arrayOf(mimeType)
                             ) { _: String?, uri: Uri ->
                                 Log.d(
                                     TAG, "Image capture scanned" +
                                             " into media store: " + uri
                                 )
+                                mActivity.config.lastMediaUri = uri
                                 mActivity.runOnUiThread {
                                     mActivity.previewLoader.visibility = View.GONE
                                     if (bm != null) mActivity.imagePreview

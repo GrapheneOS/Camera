@@ -70,6 +70,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var latestFile: File? = null
 
+    var lastMediaUri: Uri? = null
+
     private var flashMode: Int
         get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
         set(flashMode) {

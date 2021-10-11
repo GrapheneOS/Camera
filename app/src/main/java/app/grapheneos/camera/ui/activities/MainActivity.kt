@@ -223,6 +223,12 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             return
         }
 
+        if(config.lastMediaUri!=null){
+            val intent = Intent(Intent.ACTION_VIEW, config.lastMediaUri)
+            startActivity(intent)
+            return
+        }
+
         val mediaId: String
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
