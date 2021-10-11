@@ -223,8 +223,21 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             return
         }
 
+        var mediaUri: Uri = if (videoCapturer.isLatestMediaVideo) {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+
         if(config.lastMediaUri!=null){
-            val intent = Intent(Intent.ACTION_VIEW, config.lastMediaUri)
+
+            mediaUri = mediaUri.buildUpon()
+                .authority("media")
+                .appendPath(config.lastMediaUri!!
+                    .lastPathSegment)
+                .build()
+
+            val intent = Intent(Intent.ACTION_VIEW, mediaUri)
             startActivity(intent)
             return
         }
@@ -234,11 +247,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME
         )
-        var mediaUri: Uri = if (videoCapturer.isLatestMediaVideo) {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
+
         val cursor = contentResolver.query(
             mediaUri,
             projection,
