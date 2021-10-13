@@ -17,6 +17,7 @@
             android:layout_height="32dp"
             android:textOn=""
             android:textOff=""
+            android:checked="false"
             android:background="@drawable/location"
             android:text="@string/toggle_button"/>
 
