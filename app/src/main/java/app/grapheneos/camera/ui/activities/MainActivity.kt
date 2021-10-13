@@ -623,6 +623,11 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
+        settingsIcon.setOnClickListener {
+            val dialog = Dialog(this)
+            dialog.setContentView(R.layout.settings)
+            dialog.show()
+        }
 
         exposurePlusIcon = findViewById(R.id.exposure_plus_icon)
         exposureNegIcon = findViewById(R.id.exposure_neg_icon)
