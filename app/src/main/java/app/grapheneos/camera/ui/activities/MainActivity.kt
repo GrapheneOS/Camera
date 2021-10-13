@@ -626,6 +626,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         settingsIcon.setOnClickListener {
             val dialog = Dialog(this)
             dialog.setContentView(R.layout.settings)
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
             dialog.show()
         }
 
