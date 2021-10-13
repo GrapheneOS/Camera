@@ -10,6 +10,7 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/copy_to_clipboard.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/delete.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/done.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/exposure_icon.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/exposure_neg.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/exposure_plus.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/focus_circle.xml" value="0.19479166666666667" />
@@ -26,6 +27,8 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/option_circle.xml" value="0.21979166666666666" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/play.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/retake.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/self_i_off.xml" value="0.13148148148148148" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/self_i_on.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/white_option_circle.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/video_player.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1" />
