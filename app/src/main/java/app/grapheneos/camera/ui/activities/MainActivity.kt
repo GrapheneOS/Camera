@@ -799,10 +799,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             }
             val x = event.x
             val y = event.y
-            val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
-                previewView.width.toFloat(), previewView.height.toFloat()
-            )
-            val autoFocusPoint = factory.createPoint(x, y)
+
+            val autoFocusPoint = previewView.meteringPointFactory.createPoint(x, y)
             animateFocusRing(x, y)
             config.camera!!.cameraControl.startFocusAndMetering(
                 FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
