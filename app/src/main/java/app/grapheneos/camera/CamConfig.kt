@@ -9,7 +9,6 @@ import android.util.Log
 import android.util.Size
 import android.view.View
 import android.widget.Toast
-import androidx.camera.core.*
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -20,6 +19,16 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -46,6 +55,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private lateinit var cameraSelector: CameraSelector
 
+    var videoQuality: QualitySelector = Recorder.DEFAULT_QUALITY_SELECTOR
+
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
@@ -56,7 +67,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var isQRMode = false
         private set
 
-    var videoCapture: VideoCapture? = null
+    var videoCapture: VideoCapture<Recorder>? = null
 
     private var qrAnalyzer: QRAnalyzer? = null
 
@@ -270,10 +281,12 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             if (isVideoMode || mActivity is VideoCaptureActivity) {
                 aspectRatio = AspectRatio.RATIO_16_9
-                videoCapture = VideoCapture
-                    .Builder()
-                    .setTargetAspectRatio(aspectRatio)
-                    .build()
+                videoCapture =
+                    VideoCapture.withOutput(
+                        Recorder.Builder()
+                            .setQualitySelector(videoQuality)
+                            .build()
+                    )
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }

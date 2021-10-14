@@ -1,9 +1,7 @@
 package app.grapheneos.camera.capturer
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
@@ -12,10 +10,7 @@ import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.Toast
-import androidx.camera.core.VideoCapture
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import app.grapheneos.camera.CamConfig.Companion.getVideoThumbnail
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
@@ -23,8 +18,10 @@ import java.util.*
 import android.animation.ValueAnimator
 import app.grapheneos.camera.R
 import android.graphics.drawable.GradientDrawable
+import androidx.camera.video.*
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import java.io.FileDescriptor
+import java.io.FileNotFoundException
+import java.lang.Exception
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -32,6 +29,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
         private set
 
     private val videoFileFormat = ".mp4"
+
+    var activeRecording: ActiveRecording? = null
+
+    var savedUri: Uri? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private var elapsedSeconds: Int = 0
@@ -78,109 +79,47 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.config.latestMediaFile
         )
 
-    @SuppressLint("RestrictedApi")
     fun startRecording() {
         if (mActivity.config.camera == null) return
 
-        val videoFile: Any? = if(mActivity is VideoCaptureActivity
-            && mActivity.isOutputUriAvailable()) {
-            mActivity.contentResolver.openFileDescriptor(
-                mActivity.outputUri,
-                "w"
-            )
-        } else {
-            generateFileForVideo()
-        }
 
-        val outputOptions = if(mActivity is VideoCaptureActivity
-            && mActivity.isOutputUriAvailable()){
-            VideoCapture.OutputFileOptions.Builder(videoFile as FileDescriptor)
-                .build()
-        } else {
-            VideoCapture.OutputFileOptions.Builder(videoFile as File)
-                .build()
-        }
-
-        // Will always be true if we reach here
         if (ActivityCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.RECORD_AUDIO
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             beforeRecordingStarts()
-            mActivity.config.videoCapture!!.startRecording(
-                outputOptions,
-                ContextCompat.getMainExecutor(mActivity),
-                object : VideoCapture.OnVideoSavedCallback {
-                    override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
-                        isRecording = false
 
-                        if(mActivity is VideoCaptureActivity){
-                            mActivity.afterRecording(outputFileResults.savedUri)
-                            afterRecordingStops()
-                            return
-                        }
+            val pendingRecording =
+                if(mActivity is VideoCaptureActivity && mActivity.isOutputUriAvailable()) {
 
-                        mActivity.previewLoader.visibility = View.VISIBLE
-                        val videoUri = outputFileResults.savedUri
-                        if (videoUri != null) {
-                            val path: String = videoUri.encodedPath!!
-                            var tBm: Bitmap? = null
-                            try {
-                                tBm = getVideoThumbnail(path)
-                            } catch (throwable: Throwable) {
-                                throwable.printStackTrace()
-                            }
+                savedUri = mActivity.outputUri
 
-                            val file = File(path)
-                            mActivity.config.setLatestFile(file)
-                            val mimeType = MimeTypeMap.getSingleton()
-                                .getMimeTypeFromExtension(
-                                    file.extension
-                                )
-                            val bm = tBm
-                            MediaScannerConnection.scanFile(
-                                mActivity, arrayOf(file.absolutePath), arrayOf(mimeType)
-                            ) { _: String?, uri: Uri ->
-                                Log.d(
-                                    TAG, "Image capture scanned" +
-                                            " into media store: " + uri
-                                )
-                                mActivity.config.lastMediaUri = uri
-                                mActivity.runOnUiThread {
-                                    mActivity.previewLoader.visibility = View.GONE
-                                    if (bm != null) mActivity.imagePreview
-                                        .setImageBitmap(bm)
-                                }
-                            }
-                        }
-                        afterRecordingStops()
-                    }
+                mActivity.config.videoCapture!!.output.prepareRecording(
+                    mActivity,
+                    FileDescriptorOutputOptions
+                        .Builder(
+                            mActivity.contentResolver.openFileDescriptor(
+                                mActivity.outputUri,
+                                "w"
+                            )!!
+                        ).build()
+                )
 
-                    override fun onError(
-                        videoCaptureError: Int,
-                        message: String,
-                        cause: Throwable?
-                    ) {
-                        isRecording = false
-                        afterRecordingStops()
-                        if (videoCaptureError == 6) {
-                            Toast.makeText(
-                                mActivity,
-                                "Video too short to be saved", Toast.LENGTH_LONG
-                            )
-                                .show()
-                            return
-                        }
-                        Toast.makeText(
-                            mActivity, """
-     Unable to save recording.
-     Error Code: $videoCaptureError
-     """.trimIndent(), Toast.LENGTH_LONG
-                        )
-                            .show()
-                    }
-                })
+            } else {
+
+                val file = generateFileForVideo()
+                savedUri = Uri.parse(file.absolutePath)
+
+                mActivity.config.videoCapture!!.output.prepareRecording(
+                    mActivity,
+                    FileOutputOptions
+                        .Builder(file)
+                        .build()
+                )
+            }
+
+            activeRecording = pendingRecording.start()
             isRecording = true
         }
     }
@@ -236,9 +175,58 @@ class VideoCapturer(private val mActivity: MainActivity) {
         cancelTimer()
     }
 
-    @SuppressLint("RestrictedApi")
     fun stopRecording() {
-        mActivity.config.videoCapture!!.stopRecording()
+
+        isRecording = false
+
+        try {
+            activeRecording?.stop()
+            activeRecording?.close()
+
+            if (savedUri==null || !File(savedUri?.encodedPath!!).exists()) {
+                throw FileNotFoundException()
+            }
+
+            if(mActivity is VideoCaptureActivity){
+                mActivity.afterRecording(savedUri)
+                afterRecordingStops()
+                return
+            }
+
+            mActivity.previewLoader.visibility = View.VISIBLE
+            val videoUri = savedUri
+            if (videoUri != null) {
+                val path: String = videoUri.encodedPath!!
+
+                val file = File(path)
+                mActivity.config.setLatestFile(file)
+                val mimeType = MimeTypeMap.getSingleton()
+                    .getMimeTypeFromExtension(
+                        file.extension
+                    )
+
+                MediaScannerConnection.scanFile(
+                    mActivity, arrayOf(savedUri!!.encodedPath), arrayOf(mimeType)
+                ) { _: String?, uri: Uri? ->
+                    Log.d(
+                        TAG, "Video capture scanned" +
+                                " into media store: " + uri
+                    )
+                    mActivity.config.lastMediaUri = uri
+                    mActivity.runOnUiThread {
+                        mActivity.previewLoader.visibility = View.GONE
+                        mActivity.config.updatePreview()
+                    }
+                }
+            }
+            afterRecordingStops()
+
+        } catch (exception: Exception) {
+            isRecording = false
+            afterRecordingStops()
+            Toast.makeText(mActivity, "Unable to save recording.", Toast.LENGTH_LONG)
+                .show()
+        }
     }
 
     companion object {
