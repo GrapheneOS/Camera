@@ -119,10 +119,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
             pendingRecording.withEventListener(
                 ContextCompat.getMainExecutor(mActivity),
                 {
-                    if(it is VideoRecordEvent.Finalize){
+                    if (it is VideoRecordEvent.Finalize) {
+                        isRecording = false
+                        afterRecordingStops()
+
                         if (it.hasError()) {
-                            isRecording = false
-                            afterRecordingStops()
 
                             if(it.error == 8) {
                                 Toast.makeText(mActivity,
@@ -139,7 +140,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                             if(mActivity is VideoCaptureActivity){
                                 mActivity.afterRecording(outputUri)
-                                afterRecordingStops()
                                 return@withEventListener
                             }
 
@@ -166,8 +166,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                     mActivity.config.updatePreview()
                                 }
                             }
-                            afterRecordingStops()
-
                         }
                     }
                 }
@@ -231,17 +229,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     fun stopRecording() {
 
-        isRecording = false
-
-        try {
-            activeRecording?.stop()
-            activeRecording?.close()
-
-
-
-        } catch (exception: Exception) {
-
-        }
+        activeRecording?.stop()
+        activeRecording?.close()
     }
 
     companion object {
