@@ -187,9 +187,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
         // Move the focus ring so that its center is at the tap location (x, y)
         val width = focusRing.width.toFloat()
-        val height = focusRing.height.toFloat()
         focusRing.x = x - width / 2
-        focusRing.y = y - height / 2
+        focusRing.y = y
 
         // Show focus ring
         focusRing.visibility = View.VISIBLE
