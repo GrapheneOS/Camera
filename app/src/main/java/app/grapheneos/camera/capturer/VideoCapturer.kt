@@ -34,6 +34,23 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     var audioEnabled: Boolean = true
 
+    var isPaused = false
+        set(value) {
+            if(isRecording) {
+                if(value) {
+                    activeRecording?.pause()
+                    pauseTimer()
+                    mActivity.flipCamIcon.setImageResource(R.drawable.play)
+                }
+                else {
+                    activeRecording?.resume()
+                    startTimer()
+                    mActivity.flipCamIcon.setImageResource(R.drawable.pause)
+                }
+            }
+            field = value
+        }
+
     private val handler = Handler(Looper.getMainLooper())
     private var elapsedSeconds: Int = 0
     private val runnable = Runnable {
@@ -60,6 +77,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private fun cancelTimer() {
         elapsedSeconds = 0
+        handler.removeCallbacks(runnable)
+    }
+
+    private fun pauseTimer(){
         handler.removeCallbacks(runnable)
     }
 
@@ -194,6 +215,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         animator.start()
 
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
+        isPaused = false
         mActivity.captureModeView.visibility = View.GONE
         mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
         mActivity.tabLayout.visibility = View.INVISIBLE

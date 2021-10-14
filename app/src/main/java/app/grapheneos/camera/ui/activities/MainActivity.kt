@@ -498,6 +498,12 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             true
         }
         flipCameraCircle.setOnClickListener {
+
+            if(videoCapturer.isRecording){
+                videoCapturer.isPaused = !videoCapturer.isPaused
+                return@setOnClickListener
+            }
+
             val flipCameraIcon: ImageView = findViewById(R.id.flip_camera_icon)
             val rotation: Float = if (flipCameraIcon.rotation<180) {
                 180f
