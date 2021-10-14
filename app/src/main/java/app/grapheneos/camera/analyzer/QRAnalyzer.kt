@@ -74,13 +74,21 @@ class QRAnalyzer(private val mActivity: MainActivity): Analyzer {
         )
 
         val binaryBitmap = BinaryBitmap(HybridBinarizer(source))
+        reader.reset()
         try {
             reader.decodeWithState(binaryBitmap).text?.let {
                 mActivity.onScanResultSuccess(it)
             }
         } catch (e: ReaderException) {
-        } finally {
+            val invertedSource = source.invert()
+            val invertedBinaryBitmap = BinaryBitmap(HybridBinarizer(invertedSource))
             reader.reset()
+            try {
+                reader.decodeWithState(invertedBinaryBitmap).text?.let {
+                    mActivity.onScanResultSuccess(it)
+                }
+            } catch (e: ReaderException) {
+            }
         }
 
         // Compute the FPS of the entire pipeline
