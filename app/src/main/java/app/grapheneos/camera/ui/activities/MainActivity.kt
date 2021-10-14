@@ -107,6 +107,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     lateinit var zoomInIcon: ImageView
     lateinit var zoomOutIcon: ImageView
 
+    lateinit var flipCamIcon: ImageView
+
     lateinit var mainOverlay: ImageView
 
     private val runnable = Runnable {
@@ -465,6 +467,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             }
         })
         flipCameraCircle = findViewById(R.id.flip_camera_circle)
+
+        flipCamIcon = findViewById(R.id.flip_camera_icon_content)
 
         var tapDownTimestamp: Long = 0
         flipCameraCircle.setOnTouchListener { _, event ->
