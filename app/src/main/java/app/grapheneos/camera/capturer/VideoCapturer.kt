@@ -34,6 +34,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     var savedUri: Uri? = null
 
+    var audioEnabled: Boolean = true
+
     private val handler = Handler(Looper.getMainLooper())
     private var elapsedSeconds: Int = 0
     private val runnable = Runnable {
@@ -118,6 +120,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         .build()
                 )
             }
+
+            if (audioEnabled)
+                pendingRecording.withAudioEnabled()
 
             activeRecording = pendingRecording.start()
             isRecording = true
