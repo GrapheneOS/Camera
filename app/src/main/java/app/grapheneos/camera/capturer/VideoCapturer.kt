@@ -19,8 +19,8 @@ import android.animation.ValueAnimator
 import app.grapheneos.camera.R
 import android.graphics.drawable.GradientDrawable
 import androidx.camera.video.*
+import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import java.io.FileNotFoundException
 import java.lang.Exception
 
 class VideoCapturer(private val mActivity: MainActivity) {
@@ -31,8 +31,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     var activeRecording: ActiveRecording? = null
-
-    var savedUri: Uri? = null
 
     var audioEnabled: Boolean = true
 
@@ -95,8 +93,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
             val pendingRecording =
                 if(mActivity is VideoCaptureActivity && mActivity.isOutputUriAvailable()) {
 
-                savedUri = mActivity.outputUri
-
                 mActivity.config.videoCapture!!.output.prepareRecording(
                     mActivity,
                     FileDescriptorOutputOptions
@@ -109,20 +105,73 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 )
 
             } else {
-
-                val file = generateFileForVideo()
-                savedUri = Uri.parse(file.absolutePath)
-
                 mActivity.config.videoCapture!!.output.prepareRecording(
                     mActivity,
                     FileOutputOptions
-                        .Builder(file)
+                        .Builder(generateFileForVideo())
                         .build()
                 )
             }
 
             if (audioEnabled)
                 pendingRecording.withAudioEnabled()
+
+            pendingRecording.withEventListener(
+                ContextCompat.getMainExecutor(mActivity),
+                {
+                    if(it is VideoRecordEvent.Finalize){
+                        if (it.hasError()) {
+                            isRecording = false
+                            afterRecordingStops()
+
+                            if(it.error == 8) {
+                                Toast.makeText(mActivity,
+                                    "Recording too short to be saved",
+                                    Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(mActivity,
+                                    "Unable to save recording (Error code: " +
+                                            "${it.error})", Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+
+                            val outputUri = it.outputResults.outputUri
+
+                            if(mActivity is VideoCaptureActivity){
+                                mActivity.afterRecording(outputUri)
+                                afterRecordingStops()
+                                return@withEventListener
+                            }
+
+                            mActivity.previewLoader.visibility = View.VISIBLE
+                            val path: String = outputUri.encodedPath!!
+
+                            val file = File(path)
+                            mActivity.config.setLatestFile(file)
+                            val mimeType = MimeTypeMap.getSingleton()
+                                .getMimeTypeFromExtension(
+                                    file.extension
+                                )
+
+                            MediaScannerConnection.scanFile(
+                                mActivity, arrayOf(outputUri.encodedPath), arrayOf(mimeType)
+                            ) { _: String?, uri: Uri? ->
+                                Log.d(
+                                    TAG, "Video capture scanned" +
+                                            " into media store: " + uri
+                                )
+                                mActivity.config.lastMediaUri = uri
+                                mActivity.runOnUiThread {
+                                    mActivity.previewLoader.visibility = View.GONE
+                                    mActivity.config.updatePreview()
+                                }
+                            }
+                            afterRecordingStops()
+
+                        }
+                    }
+                }
+            )
 
             activeRecording = pendingRecording.start()
             isRecording = true
@@ -188,49 +237,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
             activeRecording?.stop()
             activeRecording?.close()
 
-            if (savedUri==null || !File(savedUri?.encodedPath!!).exists()) {
-                throw FileNotFoundException()
-            }
 
-            if(mActivity is VideoCaptureActivity){
-                mActivity.afterRecording(savedUri)
-                afterRecordingStops()
-                return
-            }
-
-            mActivity.previewLoader.visibility = View.VISIBLE
-            val videoUri = savedUri
-            if (videoUri != null) {
-                val path: String = videoUri.encodedPath!!
-
-                val file = File(path)
-                mActivity.config.setLatestFile(file)
-                val mimeType = MimeTypeMap.getSingleton()
-                    .getMimeTypeFromExtension(
-                        file.extension
-                    )
-
-                MediaScannerConnection.scanFile(
-                    mActivity, arrayOf(savedUri!!.encodedPath), arrayOf(mimeType)
-                ) { _: String?, uri: Uri? ->
-                    Log.d(
-                        TAG, "Video capture scanned" +
-                                " into media store: " + uri
-                    )
-                    mActivity.config.lastMediaUri = uri
-                    mActivity.runOnUiThread {
-                        mActivity.previewLoader.visibility = View.GONE
-                        mActivity.config.updatePreview()
-                    }
-                }
-            }
-            afterRecordingStops()
 
         } catch (exception: Exception) {
-            isRecording = false
-            afterRecordingStops()
-            Toast.makeText(mActivity, "Unable to save recording.", Toast.LENGTH_LONG)
-                .show()
+
         }
     }
 
