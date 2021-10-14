@@ -32,6 +32,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var camera: Camera? = null
 
     var cameraProvider: ProcessCameraProvider? = null
+    private lateinit var extensionsManager: ExtensionsManager
 
     var imageCapture: ImageCapture? = null
         private set
@@ -44,10 +45,6 @@ class CamConfig(private val mActivity: MainActivity) {
     private var cameraMode = ExtensionMode.NONE
 
     private lateinit var cameraSelector: CameraSelector
-
-    private val extensionsManager by lazy {
-        ExtensionsManager.getInstance(mActivity).get()
-    }
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
@@ -206,12 +203,18 @@ class CamConfig(private val mActivity: MainActivity) {
             startCamera()
             return
         }
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(
-            mActivity
-        )
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(mActivity)
+        val extensionsManagerFuture = ExtensionsManager.getInstance(mActivity)
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
-            startCamera()
+            if (::extensionsManager.isInitialized) {
+                startCamera()
+            } else {
+                extensionsManagerFuture.addListener({
+                    extensionsManager = extensionsManagerFuture.get()
+                    startCamera()
+                }, ContextCompat.getMainExecutor(mActivity))
+            }
         }, ContextCompat.getMainExecutor(mActivity))
     }
 
