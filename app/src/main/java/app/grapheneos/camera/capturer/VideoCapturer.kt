@@ -150,7 +150,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         startTimer()
     }
 
-    fun afterRecordingStops() {
+    private fun afterRecordingStops() {
 
         val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
 
