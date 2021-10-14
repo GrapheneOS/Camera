@@ -335,6 +335,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         // dialog in this case)
         else {
             Log.i(TAG, "Requesting permission from user...")
+            requestPermissionLauncher.unregister()
             requestPermissionLauncher.launch(cameraPermission)
         }
 
