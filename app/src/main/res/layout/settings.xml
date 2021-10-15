@@ -42,6 +42,13 @@
             android:background="@drawable/torch"
             android:text="@string/aspect_ratio"/>
 
+        <ImageView
+            android:id="@+id/flash_toggle_option"
+            android:src="@drawable/flash_off_circle"
+            android:layout_width="@dimen/toggle_button_size"
+            android:layout_height="@dimen/toggle_button_size"
+            android:contentDescription="@string/toggle_flash" />
+
     </LinearLayout>
 
     <LinearLayout
