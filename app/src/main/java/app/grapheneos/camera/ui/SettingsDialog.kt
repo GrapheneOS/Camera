@@ -2,6 +2,8 @@ package app.grapheneos.camera.ui
 
 import android.app.Dialog
 import android.widget.ImageView
+import android.widget.ToggleButton
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -9,6 +11,8 @@ import app.grapheneos.camera.ui.activities.MainActivity
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
     private var flashToggle: ImageView
+    private var aRToggle: ToggleButton
+    private var torchToggle: ToggleButton
     var mActivity: MainActivity
 
     init {
@@ -37,6 +41,22 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
                 }
             }
         }
+
+        aRToggle = findViewById(R.id.aspect_ratio_toggle)
+        torchToggle = findViewById(R.id.torch_toggle_option)
     }
 
+    override fun show() {
+        flashToggle.setImageResource(
+            when(mActivity.config.flashMode) {
+                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_auto_circle
+                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_off_circle
+                else -> R.drawable.flash_on_circle
+            }
+        )
+
+        aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
+
+        super.show()
+    }
 }
