@@ -26,4 +26,5 @@
     <string name="retake">Retake</string>
     <string name="play_preview">Play Preview</string>
     <string name="toggle_button">Toggle Button</string>
+    <string name="aspect_ratio">Aspect Ratio</string>
 </resources>

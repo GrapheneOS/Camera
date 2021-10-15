@@ -20,6 +20,17 @@
             android:background="@drawable/location"
             android:text="@string/toggle_button"/>
 
+        <ToggleButton
+            android:id="@+id/aspect_ratio_toggle"
+            android:layout_width="@dimen/toggle_button_size"
+            android:layout_height="@dimen/toggle_button_size"
+            android:textOn=""
+            android:textOff=""
+            android:checked="false"
+            android:scaleType="centerCrop"
+            android:background="@drawable/aspect_ratio"
+            android:text="@string/aspect_ratio"/>
+
     </LinearLayout>
 
     <LinearLayout

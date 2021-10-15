@@ -4,13 +4,13 @@
 
     <stroke
         android:color="#fff"
-        android:width="0.75dp" />
+        android:width="1dp" />
 
     <corners
         android:radius="1dp"/>
 
     <size
-        android:height="24dp"
-        android:width="13.5dp" />
+        android:height="12dp"
+        android:width="7.75dp" />
 
 </shape>
