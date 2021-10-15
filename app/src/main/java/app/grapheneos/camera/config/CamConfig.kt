@@ -46,6 +46,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         GOLDEN_RATIO
     }
 
+    var gridType: Grid = Grid.NONE
+
     var camera: Camera? = null
 
     var cameraProvider: ProcessCameraProvider? = null
