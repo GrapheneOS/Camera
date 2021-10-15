@@ -8,13 +8,12 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/holo_blue_dark"
         android:orientation="horizontal">
 
         <ToggleButton
-            android:id="@+id/toggle_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:id="@+id/location_toggle"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:textOn=""
             android:textOff=""
             android:checked="false"

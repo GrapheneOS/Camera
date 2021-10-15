@@ -1,11 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <item
-        android:drawable="@drawable/location_off"
-        android:state_checked="true" />
-    <!-- When not selected, use white-->
-    <item android:drawable="@drawable/location_on"
-        android:state_checked="false"/>
-
+    <item android:state_checked="false">
+        <layer-list>
+            <item>
+                <shape android:shape="oval" android:padding="10dp">
+                    <solid android:color="@color/unselected_option_bg"/>
+                    <padding
+                        android:left="8dp"
+                        android:right="8dp"
+                        android:top="8dp"
+                        android:bottom="8dp"/>
+                </shape>
+            </item>
+            <item
+                android:drawable="@drawable/location_off" />
+        </layer-list>
+    </item>
+    <item android:state_checked="true">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@color/selected_option_bg"/>
+                    <padding
+                        android:left="8dp"
+                        android:right="8dp"
+                        android:top="8dp"
+                        android:bottom="8dp"/>
+                </shape>
+            </item>
+            <item
+                android:drawable="@drawable/location_on" />
+        </layer-list>
+    </item>
 </selector>

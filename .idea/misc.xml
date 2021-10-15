@@ -21,6 +21,7 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/grid_goldenratio.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/grid_off.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location.xml" value="0.12129629629629629" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location_off.xml" value="0.12916666666666668" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location_on.xml" value="0.12916666666666668" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/mode_indicator.xml" value="0.21979166666666666" />
@@ -30,6 +31,9 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/self_i_off.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/self_i_on.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/timer_off.xml" value="0.12916666666666668" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/torch_off.xml" value="0.12129629629629629" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/torch_on.xml" value="0.12129629629629629" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/video_camera.xml" value="0.12129629629629629" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/white_option_circle.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/video_player.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1" />
