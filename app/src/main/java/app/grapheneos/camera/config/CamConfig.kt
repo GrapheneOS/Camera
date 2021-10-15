@@ -204,6 +204,15 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
     }
 
+    fun toggleAspectRatio() {
+        aspectRatio = if (aspectRatio==AspectRatio.RATIO_16_9) {
+            AspectRatio.RATIO_4_3
+        } else {
+            AspectRatio.RATIO_16_9
+        }
+        startCamera(true)
+    }
+
     fun toggleCameraSelector() {
         lensFacing =
             if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
@@ -263,8 +272,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
-
-        aspectRatio = AspectRatio.RATIO_4_3
 
         if (isQRMode) {
             qrAnalyzer = QRAnalyzer(mActivity)

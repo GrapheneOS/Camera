@@ -43,6 +43,10 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         }
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
+        aRToggle.setOnClickListener {
+            mActivity.config.toggleAspectRatio()
+        }
+
         torchToggle = findViewById(R.id.torch_toggle_option)
     }
 
