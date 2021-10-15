@@ -14,6 +14,10 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/exposure_icon.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/exposure_neg.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/exposure_plus.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/flash_auto.xml" value="0.11296296296296296" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/flash_auto_circle.xml" value="0.11296296296296296" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/flash_off_circle.xml" value="0.11296296296296296" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/flash_on_circle.xml" value="0.11296296296296296" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/focus_circle.xml" value="0.19479166666666667" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/focus_ring.xml" value="0.19479166666666667" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/folder.xml" value="0.12916666666666668" />
