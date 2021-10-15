@@ -37,7 +37,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.BlurBitmap
-import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.adapter.FlashAdapter
 import app.grapheneos.camera.capturer.ImageCapturer

@@ -1,4 +1,4 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.config
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
@@ -30,6 +30,7 @@ import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
+import app.grapheneos.camera.R
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.util.concurrent.Executors
