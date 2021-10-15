@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="false">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@color/unselected_option_bg"/>
+                    <padding
+                        android:left="@dimen/toggle_button_padding"
+                        android:right="@dimen/toggle_button_padding"
+                        android:top="@dimen/toggle_button_padding"
+                        android:bottom="@dimen/toggle_button_padding"/>
+                </shape>
+            </item>
+            <item
+                android:gravity="center"
+                android:drawable="@drawable/torch_off" />
+        </layer-list>
+    </item>
+    <item android:state_checked="true">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@color/selected_option_bg"/>
+                    <padding
+                        android:left="@dimen/toggle_button_padding"
+                        android:right="@dimen/toggle_button_padding"
+                        android:top="@dimen/toggle_button_padding"
+                        android:bottom="@dimen/toggle_button_padding"/>
+                </shape>
+            </item>
+            <item
+                android:gravity="center"
+                android:drawable="@drawable/torch_on" />
+        </layer-list>
+    </item>
+</selector>
