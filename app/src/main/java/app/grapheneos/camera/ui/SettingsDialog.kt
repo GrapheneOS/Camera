@@ -60,9 +60,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
     override fun show() {
         flashToggle.setImageResource(
             when(mActivity.config.flashMode) {
-                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_auto_circle
-                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_off_circle
-                else -> R.drawable.flash_on_circle
+                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
+                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
+                else -> R.drawable.flash_off_circle
             }
         )
 
