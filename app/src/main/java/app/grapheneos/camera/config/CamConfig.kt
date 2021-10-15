@@ -39,6 +39,13 @@ import kotlin.math.roundToInt
 
 class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
+    enum class Grid {
+        NONE,
+        THREE_BY_THREE,
+        FOUR_BY_FOUR,
+        GOLDEN_RATIO
+    }
+
     var camera: Camera? = null
 
     var cameraProvider: ProcessCameraProvider? = null
