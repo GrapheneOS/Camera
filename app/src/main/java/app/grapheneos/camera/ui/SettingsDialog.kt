@@ -49,6 +49,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         }
 
         torchToggle = findViewById(R.id.torch_toggle_option)
+        torchToggle.setOnClickListener {
+            mActivity.config.camera?.cameraControl?.enableTorch(
+                mActivity.config.camera?.cameraInfo?.torchState?.value ==
+                        TorchState.OFF
+            )
+        }
     }
 
     override fun show() {
