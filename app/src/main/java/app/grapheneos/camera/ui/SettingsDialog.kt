@@ -9,10 +9,13 @@ import app.grapheneos.camera.ui.activities.MainActivity
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
     var flashToggle: ImageView
+    var mActivity: MainActivity
 
     init {
         setContentView(R.layout.settings)
         window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        this.mActivity = mActivity
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
