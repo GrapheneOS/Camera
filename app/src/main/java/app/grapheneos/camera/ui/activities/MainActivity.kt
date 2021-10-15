@@ -42,9 +42,11 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.adapter.FlashAdapter
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.config.SettingsConfig
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.QROverlay
+import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
@@ -110,6 +112,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     lateinit var flipCamIcon: ImageView
 
     lateinit var mainOverlay: ImageView
+
+    lateinit var settingsDialog: SettingsDialog
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -407,6 +411,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         setContentView(R.layout.activity_main)
 
         config = CamConfig(this)
+        settingsDialog = SettingsDialog(this)
         mainOverlay = findViewById(R.id.main_overlay)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
@@ -634,10 +639,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
         settingsIcon.setOnClickListener {
-            val dialog = Dialog(this)
-            dialog.setContentView(R.layout.settings)
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-            dialog.show()
+            settingsDialog.show()
         }
 
         exposurePlusIcon = findViewById(R.id.exposure_plus_icon)

@@ -37,7 +37,7 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 
-class CamConfig(private val mActivity: MainActivity) {
+class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var camera: Camera? = null
 
