@@ -8,7 +8,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
-    var flashToggle: ImageView
+    private var flashToggle: ImageView
     var mActivity: MainActivity
 
     init {
