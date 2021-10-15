@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="toggle_button_padding">8dp</dimen>
+    <dimen name="toggle_button_padding">10dp</dimen>
+    <dimen name="toggle_button_size">46dp</dimen>
 </resources>

@@ -3,13 +3,13 @@
     <item android:state_checked="false">
         <layer-list>
             <item>
-                <shape android:shape="oval" android:padding="10dp">
+                <shape android:shape="oval">
                     <solid android:color="@color/unselected_option_bg"/>
                     <padding
-                        android:left="8dp"
-                        android:right="8dp"
-                        android:top="8dp"
-                        android:bottom="8dp"/>
+                        android:left="@dimen/toggle_button_padding"
+                        android:right="@dimen/toggle_button_padding"
+                        android:top="@dimen/toggle_button_padding"
+                        android:bottom="@dimen/toggle_button_padding"/>
                 </shape>
             </item>
             <item
@@ -22,10 +22,10 @@
                 <shape android:shape="oval">
                     <solid android:color="@color/selected_option_bg"/>
                     <padding
-                        android:left="8dp"
-                        android:right="8dp"
-                        android:top="8dp"
-                        android:bottom="8dp"/>
+                        android:left="@dimen/toggle_button_padding"
+                        android:right="@dimen/toggle_button_padding"
+                        android:top="@dimen/toggle_button_padding"
+                        android:bottom="@dimen/toggle_button_padding"/>
                 </shape>
             </item>
             <item
