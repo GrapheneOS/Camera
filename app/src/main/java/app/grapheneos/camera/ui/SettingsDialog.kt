@@ -5,6 +5,7 @@ import android.widget.ImageView
 import android.widget.ToggleButton
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.TorchState
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 
@@ -60,6 +61,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         )
 
         aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
+        torchToggle.isChecked =
+            mActivity.config.camera?.cameraInfo?.torchState?.value == TorchState.ON
 
         super.show()
     }
