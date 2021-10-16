@@ -66,6 +66,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
                 CamConfig.Grid.FOUR_BY_FOUR -> CamConfig.Grid.GOLDEN_RATIO
                 CamConfig.Grid.GOLDEN_RATIO -> CamConfig.Grid.NONE
             }
+            mActivity.previewGrid.postInvalidate()
             updateGridToggleUI()
         }
     }

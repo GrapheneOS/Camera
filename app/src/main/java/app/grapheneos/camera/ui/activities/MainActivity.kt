@@ -42,9 +42,9 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.adapter.FlashAdapter
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
-import app.grapheneos.camera.config.SettingsConfig
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
+import app.grapheneos.camera.ui.CustomGrid
 import app.grapheneos.camera.ui.QROverlay
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
@@ -114,6 +114,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     lateinit var mainOverlay: ImageView
 
     lateinit var settingsDialog: SettingsDialog
+    lateinit var previewGrid: CustomGrid
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -464,7 +465,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
+                previewGrid.visibility = View.VISIBLE
             } else {
+                previewGrid.visibility = View.INVISIBLE
                 if (lastFrame != null && this !is CaptureActivity) {
                     mainOverlay.setImageBitmap(blurBitmap(lastFrame!!))
                     mainOverlay.visibility = View.VISIBLE
@@ -647,6 +650,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
         zoomInIcon = findViewById(R.id.zoom_in_icon)
         zoomOutIcon = findViewById(R.id.zoom_out_icon)
+
+        previewGrid = findViewById(R.id.preview_grid)
+        previewGrid.setMainActivity(this)
     }
 
     private fun shareLatestMedia() {
