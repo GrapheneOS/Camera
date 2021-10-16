@@ -29,6 +29,7 @@
             android:checked="false"
             android:scaleType="centerCrop"
             android:background="@drawable/aspect_ratio"
+            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
             android:text="@string/aspect_ratio"/>
 
         <ToggleButton
@@ -37,6 +38,7 @@
             android:layout_height="@dimen/toggle_button_size"
             android:textOn=""
             android:textOff=""
+            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
             android:checked="false"
             android:scaleType="centerCrop"
             android:background="@drawable/torch"
@@ -47,6 +49,7 @@
             android:src="@drawable/flash_off_circle"
             android:layout_width="@dimen/toggle_button_size"
             android:layout_height="@dimen/toggle_button_size"
+            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
             android:contentDescription="@string/toggle_flash" />
 
         <ImageView
@@ -54,6 +57,7 @@
             android:src="@drawable/grid_off_circle"
             android:layout_width="@dimen/toggle_button_size"
             android:layout_height="@dimen/toggle_button_size"
+            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
             android:contentDescription="@string/grid_toggle" />
 
     </LinearLayout>

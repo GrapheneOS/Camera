@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="toggle_button_padding">10dp</dimen>
-    <dimen name="toggle_button_size">46dp</dimen>
+    <dimen name="toggle_button_size">48dp</dimen>
 
     <dimen name="grid_on_toggle_button_padding">6dp</dimen>
     <dimen name="grid_off_toggle_button_padding">12dp</dimen>
+
+    <dimen name="settings_toggle_button_spacing">14dp</dimen>
 </resources>
