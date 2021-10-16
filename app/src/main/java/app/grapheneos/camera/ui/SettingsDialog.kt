@@ -12,6 +12,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
+    private var locToggle: ToggleButton
     private var flashToggle: ImageView
     private var aRToggle: ToggleButton
     private var torchToggle: ToggleButton
@@ -24,6 +25,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         window?.setDimAmount(0f)
 
         this.mActivity = mActivity
+
+        locToggle = findViewById(R.id.location_toggle)
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
