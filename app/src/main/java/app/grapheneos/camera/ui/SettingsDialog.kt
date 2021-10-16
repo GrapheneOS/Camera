@@ -7,6 +7,7 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import app.grapheneos.camera.R
+import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
@@ -14,6 +15,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
     private var flashToggle: ImageView
     private var aRToggle: ToggleButton
     private var torchToggle: ToggleButton
+    private var gridToggle: ImageView
     var mActivity: MainActivity
 
     init {
@@ -55,6 +57,28 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
                         TorchState.OFF
             )
         }
+
+        gridToggle = findViewById(R.id.grid_toggle_option)
+        gridToggle.setOnClickListener {
+            mActivity.config.gridType = when(mActivity.config.gridType){
+                CamConfig.Grid.NONE -> CamConfig.Grid.THREE_BY_THREE
+                CamConfig.Grid.THREE_BY_THREE -> CamConfig.Grid.FOUR_BY_FOUR
+                CamConfig.Grid.FOUR_BY_FOUR -> CamConfig.Grid.GOLDEN_RATIO
+                CamConfig.Grid.GOLDEN_RATIO -> CamConfig.Grid.NONE
+            }
+            updateGridToggleUI()
+        }
+    }
+
+    private fun updateGridToggleUI(){
+        gridToggle.setImageResource(
+            when(mActivity.config.gridType) {
+                CamConfig.Grid.NONE -> R.drawable.grid_off_circle
+                CamConfig.Grid.THREE_BY_THREE -> R.drawable.grid_3x3_circle
+                CamConfig.Grid.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
+                CamConfig.Grid.GOLDEN_RATIO -> R.drawable.grid_goldenratio_circle
+            }
+        )
     }
 
     override fun show() {
@@ -69,6 +93,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
         torchToggle.isChecked =
             mActivity.config.camera?.cameraInfo?.torchState?.value == TorchState.ON
+
+        updateGridToggleUI()
 
         super.show()
     }
