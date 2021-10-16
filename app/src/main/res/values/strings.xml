@@ -28,4 +28,5 @@
     <string name="toggle_button">Toggle Button</string>
     <string name="aspect_ratio">Aspect Ratio</string>
     <string name="toggle_flash">Toggle Flash</string>
+    <string name="grid_toggle">Grid Toggle</string>
 </resources>

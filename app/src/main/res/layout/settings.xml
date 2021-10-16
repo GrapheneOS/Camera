@@ -49,6 +49,13 @@
             android:layout_height="@dimen/toggle_button_size"
             android:contentDescription="@string/toggle_flash" />
 
+        <ImageView
+            android:id="@+id/grid_toggle_option"
+            android:src="@drawable/grid_off_circle"
+            android:layout_width="@dimen/toggle_button_size"
+            android:layout_height="@dimen/toggle_button_size"
+            android:contentDescription="@string/grid_toggle" />
+
     </LinearLayout>
 
     <LinearLayout
