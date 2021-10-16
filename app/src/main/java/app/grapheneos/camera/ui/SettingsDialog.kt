@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui
 
 import android.app.Dialog
+import android.view.View
 import android.widget.ImageView
 import android.widget.ToggleButton
 import androidx.camera.core.AspectRatio
@@ -23,6 +24,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         setContentView(R.layout.settings)
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
+        setOnDismissListener {
+            mActivity.settingsIcon.visibility = View.VISIBLE
+        }
 
         this.mActivity = mActivity
 
@@ -101,6 +105,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
         updateGridToggleUI()
 
+        mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
     }
 }
