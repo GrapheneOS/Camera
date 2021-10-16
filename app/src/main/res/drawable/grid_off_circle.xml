@@ -4,10 +4,10 @@
         <shape android:shape="oval">
             <solid android:color="@color/unselected_option_bg"/>
             <padding
-                android:left="@dimen/toggle_button_padding"
-                android:right="@dimen/toggle_button_padding"
-                android:top="@dimen/toggle_button_padding"
-                android:bottom="@dimen/toggle_button_padding"/>
+                android:left="@dimen/grid_off_toggle_button_padding"
+                android:right="@dimen/grid_off_toggle_button_padding"
+                android:top="@dimen/grid_off_toggle_button_padding"
+                android:bottom="@dimen/grid_off_toggle_button_padding"/>
         </shape>
     </item>
     <item
