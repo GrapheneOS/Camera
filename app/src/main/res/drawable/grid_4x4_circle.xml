@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <solid android:color="@color/selected_option_bg"/>
+            <padding
+                android:left="@dimen/grid_toggle_button_padding"
+                android:right="@dimen/grid_toggle_button_padding"
+                android:top="@dimen/grid_toggle_button_padding"
+                android:bottom="@dimen/grid_toggle_button_padding"/>
+        </shape>
+    </item>
+    <item
+        android:gravity="center"
+        android:drawable="@drawable/grid_4x4" />
+</layer-list>
