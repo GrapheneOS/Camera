@@ -16,7 +16,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
     private var aRToggle: ToggleButton
     private var torchToggle: ToggleButton
     private var gridToggle: ImageView
-    var mActivity: MainActivity
+    private var mActivity: MainActivity
 
     init {
         setContentView(R.layout.settings)
