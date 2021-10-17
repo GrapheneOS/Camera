@@ -777,7 +777,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
             sButton.setOnClickListener {
                 val sIntent = Intent(Intent.ACTION_SEND)
                 sIntent.type = "text/plain"
-                sIntent.putExtra(Intent.EXTRA_TEXT, textView.text)
+                sIntent.putExtra(Intent.EXTRA_TEXT, textView.text.toString())
                 startActivity(Intent.createChooser(sIntent,
                     "Share QR text via"))
             }
