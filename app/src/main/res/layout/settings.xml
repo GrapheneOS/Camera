@@ -83,12 +83,19 @@
             android:layout_height="wrap_content"
             android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
             android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-            android:orientation="horizontal" >
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
-                android:text="@string/image_format" />
+                android:layout_gravity="center_vertical"
+                android:text="@string/include_audio" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/include_audio_switch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"/>
 
         </LinearLayout>
 
