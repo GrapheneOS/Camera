@@ -5,12 +5,12 @@
     android:layout_height="match_parent"
     android:background="@drawable/settings_bg"
     android:paddingHorizontal="@dimen/settings_dialog_padding_horizontal"
+    android:paddingVertical="@dimen/settings_dialog_padding_vertical"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingVertical="@dimen/settings_dialog_padding_vertical"
         android:orientation="horizontal">
 
         <ToggleButton
@@ -21,6 +21,7 @@
             android:textOff=""
             android:checked="false"
             android:background="@drawable/location"
+            android:layout_marginStart="4dp"
             android:text="@string/toggle_button"/>
 
         <ToggleButton
@@ -66,6 +67,8 @@
     </LinearLayout>
 
     <View
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="4dp"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@android:color/darker_gray"/>
