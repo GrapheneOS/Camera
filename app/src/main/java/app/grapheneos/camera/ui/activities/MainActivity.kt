@@ -462,7 +462,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
-                previewGrid.visibility = View.VISIBLE
+                if(!config.isQRMode) previewGrid.visibility = View.VISIBLE
             } else {
                 previewGrid.visibility = View.INVISIBLE
                 if (lastFrame != null && this !is CaptureActivity) {
