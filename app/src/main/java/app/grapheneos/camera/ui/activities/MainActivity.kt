@@ -35,11 +35,9 @@ import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.R
-import app.grapheneos.camera.adapter.FlashAdapter
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
@@ -71,7 +69,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
     private var lastFrame: Bitmap? = null
-    lateinit var flashPager: ViewPager2
     lateinit var config: CamConfig
 
     private lateinit var imageCapturer: ImageCapturer
@@ -591,11 +588,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
                 imageCapturer.takePicture()
             }
         })
-        flashPager = findViewById(R.id.flash_pager)
-        flashPager.adapter = FlashAdapter()
-        flashPager.isUserInputEnabled = false
-
-        flashPager.setOnClickListener { config.toggleFlashMode() }
         captureModeView = findViewById(R.id.capture_mode)
         captureModeView.setOnClickListener(object : View.OnClickListener {
             val SWITCH_ANIM_DURATION = 150
@@ -869,9 +861,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         config.imageCapture?.targetRotation = tr
 //        config.iAnalyzer?.targetRotation = tr
 
-        val d = abs(flashPager.rotation - rotation)
+        val d = abs(flipCameraCircle.rotation - rotation)
         if (d >= 90) rotation = 360 - rotation
-        rotateView(flashPager, rotation.toFloat())
         rotateView(flipCameraCircle, rotation.toFloat())
         rotateView(captureModeView, rotation.toFloat())
         rotateView(thirdOption, rotation.toFloat())

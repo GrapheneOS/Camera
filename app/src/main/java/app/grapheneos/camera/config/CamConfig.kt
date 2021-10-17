@@ -93,7 +93,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
         set(flashMode) {
             imageCapture!!.flashMode = flashMode
-            mActivity.flashPager.currentItem = flashMode
         }
     val parentDirPath: String
         get() = parentDir!!.absolutePath
@@ -195,15 +194,30 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         startCamera(true)
     }
 
-    // Tells whether flash is available for the current mode
-    private val isFlashAvailable: Boolean
-        get() = camera!!.cameraInfo.hasFlashUnit()
 
     fun toggleFlashMode() {
         if (camera!!.cameraInfo.hasFlashUnit()) {
-            flashMode =
-                if (flashMode == ImageCapture.FLASH_MODE_OFF) ImageCapture.FLASH_MODE_AUTO else imageCapture!!.flashMode + 1
-            mActivity.flashPager.currentItem = flashMode
+
+            when(flashMode){
+
+                ImageCapture.FLASH_MODE_OFF -> {
+                    mActivity.settingsDialog.flashToggle.setImageResource(R.drawable.flash_on_circle)
+                    flashMode = ImageCapture.FLASH_MODE_ON
+                }
+
+                ImageCapture.FLASH_MODE_ON -> {
+                    mActivity.settingsDialog.flashToggle.setImageResource(R.drawable.flash_auto_circle)
+                    flashMode = ImageCapture.FLASH_MODE_AUTO
+                }
+
+                ImageCapture.FLASH_MODE_AUTO -> {
+                    mActivity.settingsDialog.flashToggle.setImageResource(R.drawable.flash_off_circle)
+                    flashMode = ImageCapture.FLASH_MODE_OFF
+                }
+            }
+
+//            flashMode =
+//                if (flashMode == ImageCapture.FLASH_MODE_OFF) ImageCapture.FLASH_MODE_AUTO else imageCapture!!.flashMode + 1
         } else {
             Toast.makeText(
                 mActivity, "Flash is unavailable" +
@@ -444,14 +458,12 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         if (isQRMode){
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.threeButtons.visibility = View.INVISIBLE
-            mActivity.flashPager.visibility = View.INVISIBLE
             mActivity.captureModeView.visibility = View.INVISIBLE
             mActivity.settingsIcon.visibility = View.INVISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.threeButtons.visibility = View.VISIBLE
-            mActivity.flashPager.visibility = View.VISIBLE
             mActivity.captureModeView.visibility = View.VISIBLE
             mActivity.settingsIcon.visibility = View.VISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START

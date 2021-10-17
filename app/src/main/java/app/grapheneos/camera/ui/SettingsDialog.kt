@@ -14,7 +14,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
     private var locToggle: ToggleButton
-    private var flashToggle: ImageView
+    var flashToggle: ImageView
     private var aRToggle: ToggleButton
     private var torchToggle: ToggleButton
     private var gridToggle: ImageView
@@ -35,23 +35,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
-            when(mActivity.config.flashMode){
-
-                ImageCapture.FLASH_MODE_OFF -> {
-                    flashToggle.setImageResource(R.drawable.flash_on_circle)
-                    mActivity.config.flashMode = ImageCapture.FLASH_MODE_ON
-                }
-
-                ImageCapture.FLASH_MODE_ON -> {
-                    flashToggle.setImageResource(R.drawable.flash_auto_circle)
-                    mActivity.config.flashMode = ImageCapture.FLASH_MODE_AUTO
-                }
-
-                ImageCapture.FLASH_MODE_AUTO -> {
-                    flashToggle.setImageResource(R.drawable.flash_off_circle)
-                    mActivity.config.flashMode = ImageCapture.FLASH_MODE_OFF
-                }
-            }
+            mActivity.config.toggleFlashMode()
         }
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)

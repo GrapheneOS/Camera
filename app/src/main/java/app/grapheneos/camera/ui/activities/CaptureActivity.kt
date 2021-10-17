@@ -142,7 +142,6 @@ open class CaptureActivity: MainActivity() {
         mainOverlay.visibility = View.VISIBLE
 
         settingsIcon.visibility = View.INVISIBLE
-        flashPager.visibility = View.INVISIBLE
 
         flipCameraContent.visibility = View.INVISIBLE
         retakeIcon.visibility = View.VISIBLE
@@ -157,7 +156,6 @@ open class CaptureActivity: MainActivity() {
         config.startCamera(true)
 
         settingsIcon.visibility = View.VISIBLE
-        flashPager.visibility = View.VISIBLE
 
         flipCameraContent.visibility = View.VISIBLE
         retakeIcon.visibility = View.INVISIBLE
