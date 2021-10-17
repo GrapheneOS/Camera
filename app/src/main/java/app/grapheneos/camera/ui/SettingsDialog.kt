@@ -24,6 +24,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         setContentView(R.layout.settings)
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
+        window?.attributes?.windowAnimations = R.style.SettingsDialogAnim
         setOnDismissListener {
             mActivity.settingsIcon.visibility = View.VISIBLE
         }
