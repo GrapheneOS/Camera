@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.App" parent="Theme.AppCompat.NoActionBar"/>
+    <style name="Theme.App" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorAccent">@color/selected_option_bg</item>
+    </style>
 
     <style name="ShapeAppearance.Image.PILL" parent="">
         <item name="cornerFamily">rounded</item>
