@@ -94,6 +94,10 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         set(flashMode) {
             imageCapture!!.flashMode = flashMode
         }
+
+    val isFlashAvailable: Boolean
+        get() = camera!!.cameraInfo.hasFlashUnit()
+
     val parentDirPath: String
         get() = parentDir!!.absolutePath
 

@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui
 import android.app.Dialog
 import android.view.View
 import android.widget.ImageView
+import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
@@ -45,10 +46,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
         torchToggle = findViewById(R.id.torch_toggle_option)
         torchToggle.setOnClickListener {
-            mActivity.config.camera?.cameraControl?.enableTorch(
-                mActivity.config.camera?.cameraInfo?.torchState?.value ==
-                        TorchState.OFF
-            )
+            if(mActivity.config.isFlashAvailable) {
+                mActivity.config.camera?.cameraControl?.enableTorch(
+                    mActivity.config.camera?.cameraInfo?.torchState?.value ==
+                            TorchState.OFF
+                )
+            } else {
+                torchToggle.isChecked = false
+                Toast.makeText(mActivity,
+                    "Flash/Torch is unavailable for this mode", Toast.LENGTH_LONG)
+                    .show()
+            }
         }
 
         gridToggle = findViewById(R.id.grid_toggle_option)
