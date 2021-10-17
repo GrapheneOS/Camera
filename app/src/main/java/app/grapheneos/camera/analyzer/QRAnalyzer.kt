@@ -87,8 +87,7 @@ class QRAnalyzer(private val mActivity: MainActivity): Analyzer {
                 reader.decodeWithState(invertedBinaryBitmap).text?.let {
                     mActivity.onScanResultSuccess(it)
                 }
-            } catch (e: ReaderException) {
-            }
+            } catch (e: ReaderException) {}
         }
 
         // Compute the FPS of the entire pipeline
