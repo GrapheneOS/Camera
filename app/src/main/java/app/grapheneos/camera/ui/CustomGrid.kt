@@ -25,7 +25,7 @@ class CustomGrid @JvmOverloads constructor(
 
     init {
         paint.isAntiAlias = true
-        paint.strokeWidth = 3f
+        paint.strokeWidth = 1f
         paint.style = Paint.Style.STROKE
         paint.color = Color.argb(255, 255, 255, 255)
     }
