@@ -16,7 +16,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
     private var locToggle: ToggleButton
     var flashToggle: ImageView
-    private var aRToggle: ToggleButton
+    var aRToggle: ToggleButton
     private var torchToggle: ToggleButton
     private var gridToggle: ImageView
     private var mActivity: MainActivity
@@ -43,7 +43,14 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
         aRToggle.setOnClickListener {
-            mActivity.config.toggleAspectRatio()
+            if(mActivity.config.isVideoMode){
+                aRToggle.isChecked = true
+                Toast.makeText(mActivity,
+                    "4:3 is not supported in video mode for now",
+                    Toast.LENGTH_LONG).show()
+            } else {
+                mActivity.config.toggleAspectRatio()
+            }
         }
 
         torchToggle = findViewById(R.id.torch_toggle_option)

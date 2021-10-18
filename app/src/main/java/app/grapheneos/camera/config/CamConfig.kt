@@ -315,7 +315,11 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         } else {
             if (isVideoMode || mActivity is VideoCaptureActivity) {
+
+                // Forcing 16:9 for now as 4:3 is not supported for output
+                mActivity.settingsDialog.aRToggle.isChecked = true
                 aspectRatio = AspectRatio.RATIO_16_9
+
                 videoCapture =
                     VideoCapture.withOutput(
                         Recorder.Builder()
