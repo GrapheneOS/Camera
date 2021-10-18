@@ -1,13 +1,13 @@
 package app.grapheneos.camera.ui
 
 import android.app.Dialog
+import android.util.Log
 import android.view.View
-import android.widget.ImageView
-import android.widget.Toast
-import android.widget.ToggleButton
+import android.widget.*
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
+import androidx.camera.video.QualitySelector
 import app.grapheneos.camera.R
 import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -20,6 +20,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
     private var torchToggle: ToggleButton
     private var gridToggle: ImageView
     private var mActivity: MainActivity
+    private var videoQualitySpinner : Spinner
+    private lateinit var vQAdapter: ArrayAdapter<String>
 
     init {
         setContentView(R.layout.settings)
@@ -70,6 +72,66 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
             mActivity.previewGrid.postInvalidate()
             updateGridToggleUI()
         }
+
+        videoQualitySpinner = findViewById(R.id.video_quality_spinner)
+
+        videoQualitySpinner.onItemSelectedListener =
+            object: AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+
+                    val choice = vQAdapter.getItem(position)
+
+                    val quality = when(choice){
+                        "2160p (UHD)" -> QualitySelector.QUALITY_UHD
+                        "1080p (FHD)" -> QualitySelector.QUALITY_FHD
+                        "720p (HD)" -> QualitySelector.QUALITY_HD
+                        "480p (SD)" -> QualitySelector.QUALITY_SD
+                        else -> {
+                            Log.i("TAG", "Unknown quality: $choice")
+                            QualitySelector.QUALITY_SD
+                        }
+                    }
+
+                    Log.i(choice, "quality: $quality")
+
+                    mActivity.config.videoQuality =
+                        QualitySelector.of(quality)
+
+                    mActivity.config.startCamera(true)
+                }
+
+                override fun onNothingSelected(p0: AdapterView<*>?) {}
+        }
+    }
+
+    private fun getAvailableQualities(): List<Int> {
+        return QualitySelector.getSupportedQualities(
+            mActivity.config.camera!!.cameraInfo)
+    }
+
+    private fun getAvailableQTitles(): List<String> {
+
+        val titles = arrayListOf<String>()
+
+        getAvailableQualities().forEach {
+            titles.add(getTitleFor(it))
+        }
+
+        return titles
+
+    }
+
+    private fun getTitleFor(quality: Int): String {
+        return when(quality){
+            QualitySelector.QUALITY_UHD -> "2160p (UHD)"
+            QualitySelector.QUALITY_FHD -> "1080p (FHD)"
+            QualitySelector.QUALITY_HD -> "720p (HD)"
+            QualitySelector.QUALITY_SD -> "480p (SD)"
+            else -> {
+                Log.i("TAG", "Unknown constant: $quality")
+                "Unknown"
+            }
+        }
     }
 
     private fun updateGridToggleUI(){
@@ -97,6 +159,19 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
             mActivity.config.camera?.cameraInfo?.torchState?.value == TorchState.ON
 
         updateGridToggleUI()
+
+        if(!::vQAdapter.isInitialized) {
+            vQAdapter = ArrayAdapter<String>(
+                mActivity,
+                android.R.layout.simple_spinner_item,
+                getAvailableQTitles()
+            )
+
+            vQAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item)
+
+            videoQualitySpinner.adapter = vQAdapter
+        }
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()

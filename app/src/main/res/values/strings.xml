@@ -31,4 +31,5 @@
     <string name="grid_toggle">Grid Toggle</string>
     <string name="image_format">Image Format</string>
     <string name="include_audio">Include Audio</string>
+    <string name="video_quality">Video Quality</string>
 </resources>
