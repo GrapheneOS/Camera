@@ -22,6 +22,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
     private var mActivity: MainActivity
     private var videoQualitySpinner : Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
+    var cmRadio: RadioButton
+    private var cmRadioGroup: RadioGroup
 
     init {
         setContentView(R.layout.settings)
@@ -108,6 +110,13 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
                 }
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
+        }
+
+        cmRadio = findViewById(R.id.quality_radio)
+
+        cmRadioGroup = findViewById(R.id.cm_radio_group)
+        cmRadioGroup.setOnCheckedChangeListener { _, _ ->
+            mActivity.config.startCamera(true)
         }
     }
 

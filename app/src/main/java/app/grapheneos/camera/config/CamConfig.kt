@@ -332,7 +332,13 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
             if(mActivity !is VideoCaptureActivity) {
                 imageCapture = builder
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .setCaptureMode(
+                        if(mActivity.settingsDialog.cmRadio.isChecked) {
+                            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+                        } else {
+                            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+                        }
+                    )
                     .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
                     .setTargetAspectRatio(aspectRatio)
                     .setFlashMode(flashMode)
