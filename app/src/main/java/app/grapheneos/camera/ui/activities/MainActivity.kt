@@ -841,7 +841,7 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         if (view!=null) {
             view.animate().cancel()
             view.animate()
-                .rotation(angle)
+                .rotationBy(angle)
                 .setDuration(400)
                 .setInterpolator(LinearInterpolator())
                 .start()
@@ -849,8 +849,6 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     }
 
     override fun onOrientationChange(orientation: Int) {
-        var rotation = orientation
-
         val tr = when (orientation) {
             in 45..134 -> Surface.ROTATION_270
             in 135..224 -> Surface.ROTATION_180
@@ -861,16 +859,20 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         config.imageCapture?.targetRotation = tr
 //        config.iAnalyzer?.targetRotation = tr
 
-        val d = abs(flipCameraCircle.rotation - rotation)
-        if (d >= 90) rotation = 360 - rotation
-        rotateView(flipCameraCircle, rotation.toFloat())
-        rotateView(captureModeView, rotation.toFloat())
-        rotateView(thirdOption, rotation.toFloat())
+        val iconOrientation = flipCameraCircle.rotation
+        val previousDeviceOrientation = (360 - iconOrientation) % 360
+        // The smallest rotation between the device's previous and current orientation
+        // e.g. -90 instead of +270
+        val deviceRotation = ((orientation - previousDeviceOrientation) + 180) % 360 - 180
+        val iconRotation = -deviceRotation
+        rotateView(flipCameraCircle, iconRotation.toFloat())
+        rotateView(captureModeView, iconRotation.toFloat())
+        rotateView(thirdOption, iconRotation.toFloat())
 
-        rotateView(exposurePlusIcon, rotation.toFloat())
-        rotateView(exposureNegIcon, rotation.toFloat())
-        rotateView(zoomInIcon, rotation.toFloat())
-        rotateView(zoomOutIcon, rotation.toFloat())
+        rotateView(exposurePlusIcon, iconRotation.toFloat())
+        rotateView(exposureNegIcon, iconRotation.toFloat())
+        rotateView(zoomInIcon, iconRotation.toFloat())
+        rotateView(zoomOutIcon, iconRotation.toFloat())
     }
 
     companion object {
