@@ -35,4 +35,5 @@
     <string name="emphasize_on">Emphasize on</string>
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>
+    <string name="preview">Preview</string>
 </resources>

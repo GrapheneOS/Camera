@@ -503,7 +503,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 mMediaMetadataRetriever.setDataSource(p_videoPath)
                 mBitmap = mMediaMetadataRetriever.frameAtTime!!
             } catch (m_e: Exception) {
-                throw Throwable(
+                throw Exception(
                     "Exception in retrieveVideoFrameFromVideo(String p_videoPath)"
                             + m_e.message
                 )

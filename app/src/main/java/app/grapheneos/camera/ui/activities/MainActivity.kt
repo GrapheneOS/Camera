@@ -215,72 +215,9 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     }
 
     private fun openGallery() {
-        config.snapPreview()
-
-        val latestMediaFile: File? = config.latestMediaFile
-
-        if (latestMediaFile==null) {
-            Toast.makeText(this,
-                "Please capture a image/video before trying to view it in gallery",
-                Toast.LENGTH_LONG).show()
-            return
-        }
-
-        var mediaUri: Uri = if (videoCapturer.isLatestMediaVideo) {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
-
-        if(config.lastMediaUri!=null){
-
-            mediaUri = mediaUri.buildUpon()
-                .authority("media")
-                .appendPath(config.lastMediaUri!!
-                    .lastPathSegment)
-                .build()
-
-            val intent = Intent(Intent.ACTION_VIEW, mediaUri)
-            startActivity(intent)
-            return
-        }
-
-        val mediaId: String
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DISPLAY_NAME
-        )
-
-        val cursor = contentResolver.query(
-            mediaUri,
-            projection,
-            MediaStore.Images.ImageColumns.DISPLAY_NAME + "=?",
-            arrayOf(latestMediaFile.name),
-            null
-        )
-
-        if (cursor != null && cursor.count==1) {
-            cursor.moveToNext()
-
-            val iIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)
-            mediaId = cursor.getString(iIndex)
-
-            cursor.close()
-
-            if (mediaId.isNotEmpty()) {
-                mediaUri = mediaUri.buildUpon()
-                    .authority("media")
-                    .appendPath(mediaId)
-                    .build()
-            }
-
-            val intent = Intent(Intent.ACTION_VIEW, mediaUri)
-            startActivity(intent)
-        } else {
-            Toast.makeText(this,
-                "An unexpected error occurred while opening the gallery. (Image not found)",
-            Toast.LENGTH_LONG).show()
-        }
+        val intent = Intent(this, InAppGallery::class.java)
+        intent.putExtra("folder_path", config.parentDirPath)
+        startActivity(intent)
     }
 
     private fun checkPermissions() {
