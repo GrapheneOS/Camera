@@ -21,7 +21,6 @@ import android.graphics.drawable.GradientDrawable
 import androidx.camera.video.*
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import java.lang.Exception
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -94,11 +93,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         fileName = "VID_$fileName$videoFileFormat"
         return File(mActivity.config.parentDirPath, fileName)
     }
-
-    val isLatestMediaVideo: Boolean
-        get() = isVideo(
-            mActivity.config.latestMediaFile
-        )
 
     fun startRecording() {
         if (mActivity.config.camera == null) return
