@@ -55,8 +55,14 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
+import android.widget.Toast
+import androidx.core.view.GestureDetectorCompat
 
-open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureListener,
+open class MainActivity : AppCompatActivity(),
+    OnTouchListener,
+    OnScaleGestureListener,
+    GestureDetector.OnGestureListener,
+    GestureDetector.OnDoubleTapListener,
     SensorOrientationChangeNotifier.Listener {
 
     val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
@@ -112,6 +118,8 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
 
     lateinit var settingsDialog: SettingsDialog
     lateinit var previewGrid: CustomGrid
+
+    private var isSwipingBottom = false
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -341,9 +349,16 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         lastFrame = null
     }
 
+    lateinit var gestureDetectorCompat: GestureDetectorCompat
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        gestureDetectorCompat = GestureDetectorCompat(
+            this,
+            this
+        )
 
         config = CamConfig(this)
         settingsDialog = SettingsDialog(this)
@@ -738,7 +753,15 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         dbTapGestureDetector.onTouchEvent(event)
         scaleGestureDetector.onTouchEvent(event)
+        gestureDetectorCompat.onTouchEvent(event)
+
         if (event.action == MotionEvent.ACTION_DOWN) return true else if (event.action == MotionEvent.ACTION_UP) {
+
+            if(isSwipingBottom) {
+                isSwipingBottom = false
+                return isSwipingBottom
+            }
+
             if (isZooming) {
                 isZooming = false
                 return true
@@ -814,5 +837,86 @@ open class MainActivity : AppCompatActivity(), OnTouchListener, OnScaleGestureLi
         private const val TAG = "GOCam"
         private const val autoCenterFocusDuration = 2000L
         private val hexArray = "0123456789ABCDEF".toCharArray()
+
+        private const val SWIPE_THRESHOLD = 100
+        private const val SWIPE_VELOCITY_THRESHOLD = 100
+    }
+
+    override fun onDown(p0: MotionEvent?): Boolean {
+        return false
+    }
+
+    override fun onShowPress(p0: MotionEvent?) {}
+
+    override fun onSingleTapUp(p0: MotionEvent?): Boolean {
+        return false
+    }
+
+    override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+        return false
+    }
+
+    override fun onLongPress(p0: MotionEvent?) {}
+
+    override fun onFling(e1: MotionEvent, e2: MotionEvent,
+                         velocityX: Float, velocityY: Float): Boolean {
+
+        var result = false
+        try {
+            val diffY = e2.y - e1.y
+            val diffX = e2.x - e1.x
+
+            if (abs(diffX) > abs(diffY)) {
+                if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                    if (diffX > 0) {
+                        onSwipeRight()
+                    } else {
+                        onSwipeLeft()
+                    }
+                    result = true
+                }
+            }
+            else if (abs(diffY) > SWIPE_THRESHOLD && abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
+                if (diffY > 0) {
+                    onSwipeBottom()
+                } else {
+                    onSwipeTop()
+                }
+                result = true
+            }
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+        }
+        return result
+    }
+
+    private fun onSwipeBottom(){
+//        Log.i(TAG, "onSwipeBottom")
+        isSwipingBottom = true
+        settingsIcon.performClick()
+    }
+
+    private fun onSwipeRight(){
+//        Log.i(TAG, "onSwipeRight")
+    }
+
+    private fun onSwipeTop(){
+//        Log.i(TAG, "onSwipeTop")
+    }
+
+    private fun onSwipeLeft(){
+//        Log.i(TAG, "onSwipeLeft")
+    }
+
+    override fun onSingleTapConfirmed(p0: MotionEvent?): Boolean {
+        return false
+    }
+
+    override fun onDoubleTap(p0: MotionEvent?): Boolean {
+        return false
+    }
+
+    override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
+        return false
     }
 }
