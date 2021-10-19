@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.R
 import java.io.File
@@ -20,6 +21,7 @@ class InAppGallery: AppCompatActivity() {
         setContentView(R.layout.gallery)
 
         gallerySlider = findViewById(R.id.gallery_slider)
+        gallerySlider.setPageTransformer(GSlideTransformer())
 
         val parentFilePath = intent.extras?.getString("folder_path")!!
         val parentDir = File(parentFilePath)
