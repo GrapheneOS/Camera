@@ -37,6 +37,16 @@
             android:background="?android:attr/actionBarItemBackground"
             android:contentDescription="@string/file_info"/>
 
+        <ImageView
+            android:id="@+id/share_icon"
+            android:layout_height="24dp"
+            android:layout_width="24dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginStart="6dp"
+            android:src="@drawable/share"
+            android:background="?android:attr/actionBarItemBackground"
+            android:contentDescription="@string/share_file"/>
+
     </LinearLayout>
 
 </RelativeLayout>

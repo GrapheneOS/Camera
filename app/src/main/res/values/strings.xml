@@ -38,4 +38,5 @@
     <string name="preview">Preview</string>
     <string name="go_back_to_camera">Go back to camera</string>
     <string name="file_info">File Info</string>
+    <string name="share_file">Share file</string>
 </resources>

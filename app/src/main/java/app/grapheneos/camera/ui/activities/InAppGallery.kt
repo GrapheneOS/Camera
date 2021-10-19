@@ -1,7 +1,11 @@
 package app.grapheneos.camera.ui.activities
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -13,6 +17,7 @@ import java.util.*
 
 import androidx.appcompat.app.AlertDialog
 import app.grapheneos.camera.R
+import java.io.OutputStream
 import java.text.Format
 import java.text.SimpleDateFormat
 
@@ -88,6 +93,42 @@ class InAppGallery: AppCompatActivity() {
 
             alertDialog.setPositiveButton("Ok", null)
             alertDialog.show()
+        }
+
+        val shareIcon : ImageView = findViewById(R.id.share_icon)
+        shareIcon.setOnClickListener {
+
+            val file = getCurrentFile()
+
+            val share = Intent(Intent.ACTION_SEND)
+            val values = ContentValues()
+            val uri: Uri?
+
+            if (file.extension=="mp4") {
+                // Share video file
+                share.type = "video/mp4"
+                values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                uri = contentResolver.insert(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    values
+                )
+            } else {
+                // Share image file
+                share.type = "image/jpeg"
+                values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                uri = contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    values
+                )
+            }
+
+            val outStream: OutputStream? = contentResolver.openOutputStream(uri!!)
+            outStream?.write(file.readBytes())
+            outStream?.close()
+
+            share.putExtra(Intent.EXTRA_STREAM, uri)
+            startActivity(Intent.createChooser(share, "Share Image"))
+
         }
     }
 
