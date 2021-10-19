@@ -20,10 +20,13 @@ import app.grapheneos.camera.R
 import java.io.OutputStream
 import java.text.Format
 import java.text.SimpleDateFormat
+import android.widget.Toast
+
+import android.util.Log
 
 class InAppGallery: AppCompatActivity() {
 
-    private lateinit var gallerySlider: ViewPager2
+    lateinit var gallerySlider: ViewPager2
     private lateinit var mediaFiles: Array<File>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,6 +45,17 @@ class InAppGallery: AppCompatActivity() {
             ext == "jpg" || ext == "png" || ext == "mp4"
         } ?: throw FileNotFoundException()
 
+        // Close gallery if no files are present
+        if (mediaFiles.isEmpty()) {
+            Toast.makeText(
+                this,
+                "Please capture a photo/video before trying to view" +
+                        " them.",
+                Toast.LENGTH_LONG
+            ).show()
+            finish()
+        }
+
         // Make sure the latest one is first
         Arrays.sort(mediaFiles) { f1, f2 ->
             java.lang.Long.valueOf(
@@ -49,9 +63,12 @@ class InAppGallery: AppCompatActivity() {
             ).compareTo(f1.lastModified())
         }
 
+        val mediaFileList = ArrayList<File>()
+        mediaFileList.addAll(mediaFiles)
+
         gallerySlider.adapter = GallerySliderAdapter(
             this,
-            mediaFiles
+            mediaFileList
         )
 
         val backButton : ImageView = findViewById(R.id.back_button)
@@ -61,6 +78,7 @@ class InAppGallery: AppCompatActivity() {
 
         val fIButton : ImageView = findViewById(R.id.file_info)
         fIButton.setOnClickListener {
+
             val file = getCurrentFile()
 
             val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this)
@@ -130,11 +148,44 @@ class InAppGallery: AppCompatActivity() {
             startActivity(Intent.createChooser(share, "Share Image"))
 
         }
+
+        val deleteIcon : ImageView = findViewById(R.id.delete_icon)
+        deleteIcon.setOnClickListener {
+
+            val file = getCurrentFile()
+
+            AlertDialog.Builder(this)
+                .setTitle("Are you sure?")
+                .setMessage("Do you really want to delete this file?")
+                .setPositiveButton("Delete") { _, _ ->
+
+                    Log.i("TAG","File Name: ${file.name}")
+
+                    if(file.delete()) {
+
+                        (gallerySlider.adapter as GallerySliderAdapter)
+                            .removeChildAt(gallerySlider.currentItem)
+
+                        Toast.makeText(this,
+                            "File deleted successfully",
+                            Toast.LENGTH_LONG).show()
+
+                    } else {
+                        Toast.makeText(this,
+                            "Unable to delete this file",
+                            Toast.LENGTH_LONG).show()
+                    }
+                }
+                .setNegativeButton("Cancel", null).show()
+
+
+
+        }
     }
 
     private fun getCurrentFile() : File {
-        val i = gallerySlider.currentItem
-        return mediaFiles[i]
+        return (gallerySlider.adapter as GallerySliderAdapter)
+            .getCurrentFile()
     }
 
     companion object {
