@@ -58,7 +58,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
                                 TAG, "Image capture scanned" +
                                         " into media store: " + uri
                             )
-                            mActivity.config.lastMediaUri = uri
                             mActivity.runOnUiThread {
                                 mActivity.previewLoader.visibility = View.GONE
                                 mActivity.imagePreview.setImageURI(imageUri)

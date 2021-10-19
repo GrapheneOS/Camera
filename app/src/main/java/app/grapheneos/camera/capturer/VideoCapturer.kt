@@ -181,7 +181,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                     TAG, "Video capture scanned" +
                                             " into media store: " + uri
                                 )
-                                mActivity.config.lastMediaUri = uri
                                 mActivity.runOnUiThread {
                                     mActivity.previewLoader.visibility = View.GONE
                                     mActivity.config.updatePreview()
