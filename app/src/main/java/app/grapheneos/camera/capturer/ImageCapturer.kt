@@ -51,17 +51,19 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             .getMimeTypeFromExtension(
                                 File(path).extension
                             )
+
+                        mActivity.previewLoader.visibility = View.GONE
+                        mActivity.imagePreview.setImageURI(imageUri)
+
                         MediaScannerConnection.scanFile(
-                            mActivity, arrayOf(file.absolutePath), arrayOf(mimeType)
+                            mActivity,
+                            arrayOf(file.absolutePath),
+                            arrayOf(mimeType)
                         ) { _: String?, uri: Uri ->
                             Log.d(
                                 TAG, "Image capture scanned" +
                                         " into media store: " + uri
                             )
-                            mActivity.runOnUiThread {
-                                mActivity.previewLoader.visibility = View.GONE
-                                mActivity.imagePreview.setImageURI(imageUri)
-                            }
                         }
                     }
                 }

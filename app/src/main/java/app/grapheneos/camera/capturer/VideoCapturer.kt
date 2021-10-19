@@ -135,7 +135,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 ContextCompat.getMainExecutor(mActivity),
                 {
                     if (it is VideoRecordEvent.Finalize) {
-                        isRecording = false
                         afterRecordingStops()
 
                         if (it.hasError()) {
@@ -168,6 +167,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                     file.extension
                                 )
 
+                            mActivity.previewLoader.visibility = View.GONE
+                            mActivity.config.updatePreview()
+
+                            isRecording = false
+
                             MediaScannerConnection.scanFile(
                                 mActivity, arrayOf(outputUri.encodedPath), arrayOf(mimeType)
                             ) { _: String?, uri: Uri? ->
@@ -175,10 +179,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                     TAG, "Video capture scanned" +
                                             " into media store: " + uri
                                 )
-                                mActivity.runOnUiThread {
-                                    mActivity.previewLoader.visibility = View.GONE
-                                    mActivity.config.updatePreview()
-                                }
                             }
                         }
                     }
