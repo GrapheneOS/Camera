@@ -119,7 +119,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var settingsDialog: SettingsDialog
     lateinit var previewGrid: CustomGrid
 
-    private var isSwipingBottom = false
+    private var wasSwiping = false
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -757,9 +757,9 @@ open class MainActivity : AppCompatActivity(),
 
         if (event.action == MotionEvent.ACTION_DOWN) return true else if (event.action == MotionEvent.ACTION_UP) {
 
-            if(isSwipingBottom) {
-                isSwipingBottom = false
-                return isSwipingBottom
+            if(wasSwiping) {
+                wasSwiping = false
+                return wasSwiping
             }
 
             if (isZooming) {
@@ -892,12 +892,20 @@ open class MainActivity : AppCompatActivity(),
 
     private fun onSwipeBottom(){
 //        Log.i(TAG, "onSwipeBottom")
-        isSwipingBottom = true
+        wasSwiping = true
         settingsIcon.performClick()
     }
 
     private fun onSwipeRight(){
-//        Log.i(TAG, "onSwipeRight")
+
+        wasSwiping = true
+
+        val i = tabLayout.selectedTabPosition - 1
+
+        Log.i(TAG, "onSwipeRight $i")
+        tabLayout.getTabAt(i)?.let{
+            tabLayout.selectTab(it)
+        }
     }
 
     private fun onSwipeTop(){
@@ -905,7 +913,11 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeLeft(){
-//        Log.i(TAG, "onSwipeLeft")
+        wasSwiping = true
+        val i = tabLayout.selectedTabPosition + 1
+        tabLayout.getTabAt(i)?.let{
+            tabLayout.selectTab(it)
+        }
     }
 
     override fun onSingleTapConfirmed(p0: MotionEvent?): Boolean {
