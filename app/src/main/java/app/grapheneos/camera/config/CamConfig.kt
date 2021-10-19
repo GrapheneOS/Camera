@@ -1,9 +1,9 @@
 package app.grapheneos.camera.config
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
@@ -265,10 +265,20 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     // Start the camera with latest hard configuration
-    @SuppressLint("RestrictedApi")
     @JvmOverloads
     fun startCamera(forced: Boolean = false) {
         if (!forced && camera != null) return
+
+        val rotation = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+            val display = mActivity.display
+            display?.rotation ?: 0
+        } else {
+            // We don't really have any option here, but this initialization
+            // ensures that the app doesn't break later when the below
+            // deprecated option gets removed post Android R
+            @Suppress("DEPRECATION")
+            mActivity.windowManager.defaultDisplay.rotation
+        }
 
         if (mActivity.isDestroyed || mActivity.isFinishing) return
 
@@ -337,7 +347,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                         }
                     )
-                    .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+                    .setTargetRotation(rotation)
                     .setTargetAspectRatio(aspectRatio)
                     .setFlashMode(flashMode)
                     .build()
@@ -349,7 +359,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
 
         preview = Preview.Builder()
-            .setTargetRotation(mActivity.windowManager.defaultDisplay.rotation)
+            .setTargetRotation(rotation)
             .setTargetAspectRatio(aspectRatio)
             .build()
 
