@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.activities
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.GSlideTransformer
@@ -40,7 +39,7 @@ class InAppGallery: AppCompatActivity() {
         }
 
         gallerySlider.adapter = GallerySliderAdapter(
-            LayoutInflater.from(this),
+            this,
             mediaFiles
         )
     }
