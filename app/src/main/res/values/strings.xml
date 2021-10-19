@@ -36,4 +36,5 @@
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>
     <string name="preview">Preview</string>
+    <string name="go_back_to_camera">Go back to camera</string>
 </resources>
