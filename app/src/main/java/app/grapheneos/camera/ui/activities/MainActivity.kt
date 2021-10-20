@@ -894,12 +894,14 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeBottom(){
-//        Log.i(TAG, "onSwipeBottom")
+        if(isZooming) return
         wasSwiping = true
         settingsIcon.performClick()
     }
 
     private fun onSwipeRight(){
+
+        if(isZooming) return
 
         wasSwiping = true
 
@@ -916,6 +918,8 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeLeft(){
+        if(isZooming) return
+
         wasSwiping = true
         val i = tabLayout.selectedTabPosition + 1
         tabLayout.getTabAt(i)?.let{
