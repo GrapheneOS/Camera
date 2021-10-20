@@ -770,6 +770,10 @@ open class MainActivity : AppCompatActivity(),
                 isZooming = false
                 return true
             }
+
+            if(config.isQRMode)
+                return false
+
             val x = event.x
             val y = event.y
 
