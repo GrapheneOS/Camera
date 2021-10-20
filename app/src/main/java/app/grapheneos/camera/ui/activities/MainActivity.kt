@@ -825,14 +825,14 @@ open class MainActivity : AppCompatActivity(),
         // e.g. -90 instead of +270
         val deviceRotation = ((orientation - previousDeviceOrientation) + 180) % 360 - 180
         val iconRotation = -deviceRotation
-        rotateView(flipCameraCircle, iconRotation.toFloat())
-        rotateView(captureModeView, iconRotation.toFloat())
-        rotateView(thirdOption, iconRotation.toFloat())
+        rotateView(flipCameraCircle, iconRotation)
+        rotateView(captureModeView, iconRotation)
+        rotateView(thirdOption, iconRotation)
 
-        rotateView(exposurePlusIcon, iconRotation.toFloat())
-        rotateView(exposureNegIcon, iconRotation.toFloat())
-        rotateView(zoomInIcon, iconRotation.toFloat())
-        rotateView(zoomOutIcon, iconRotation.toFloat())
+        rotateView(exposurePlusIcon, iconRotation)
+        rotateView(exposureNegIcon, iconRotation)
+        rotateView(zoomInIcon, iconRotation)
+        rotateView(zoomOutIcon, iconRotation)
     }
 
     companion object {
