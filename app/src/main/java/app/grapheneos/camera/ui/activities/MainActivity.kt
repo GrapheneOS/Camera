@@ -586,7 +586,8 @@ open class MainActivity : AppCompatActivity(),
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
         settingsIcon.setOnClickListener {
-            settingsDialog.show()
+            if(!config.isQRMode)
+                settingsDialog.show()
         }
 
         exposurePlusIcon = findViewById(R.id.exposure_plus_icon)
