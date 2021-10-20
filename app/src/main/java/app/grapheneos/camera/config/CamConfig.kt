@@ -328,10 +328,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 mActivity.settingsDialog.aRToggle.isChecked = true
                 aspectRatio = AspectRatio.RATIO_16_9
 
-                val quality = mActivity.settingsDialog.getHighestQuality()
-
-                videoQuality = QualitySelector.of(quality)
-
                 videoCapture =
                     VideoCapture.withOutput(
                         Recorder.Builder()
