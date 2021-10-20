@@ -57,6 +57,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import android.widget.Toast
 import androidx.core.view.GestureDetectorCompat
+import java.util.concurrent.TimeUnit
 
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
@@ -120,6 +121,8 @@ open class MainActivity : AppCompatActivity(),
     lateinit var previewGrid: CustomGrid
 
     private var wasSwiping = false
+
+    var focusTimeout = 5L
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -773,7 +776,10 @@ open class MainActivity : AppCompatActivity(),
             val autoFocusPoint = previewView.meteringPointFactory.createPoint(x, y)
             animateFocusRing(x, y)
             config.camera!!.cameraControl.startFocusAndMetering(
-                FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
+                FocusMeteringAction.Builder(autoFocusPoint)
+                    .setAutoCancelDuration(focusTimeout,
+                        TimeUnit.SECONDS)
+                    .build()
             )
             exposureBar.showPanel()
             return v.performClick()
