@@ -65,7 +65,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     private lateinit var cameraSelector: CameraSelector
 
-    var videoQuality: QualitySelector = Recorder.DEFAULT_QUALITY_SELECTOR
+    var videoQuality: QualitySelector = QualitySelector.of(QualitySelector.QUALITY_HIGHEST)
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
@@ -327,6 +327,10 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 // Forcing 16:9 for now as 4:3 is not supported for output
                 mActivity.settingsDialog.aRToggle.isChecked = true
                 aspectRatio = AspectRatio.RATIO_16_9
+
+                val quality = mActivity.settingsDialog.getHighestQuality()
+
+                videoQuality = QualitySelector.of(quality)
 
                 videoCapture =
                     VideoCapture.withOutput(

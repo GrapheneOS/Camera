@@ -130,7 +130,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
     private fun getAvailableQualities(): List<Int> {
         return QualitySelector.getSupportedQualities(
-            mActivity.config.camera!!.cameraInfo)
+            mActivity.config.camera!!.cameraInfo
+        )
+    }
+
+    fun getHighestQuality(): Int {
+        return getAvailableQualities()[0]
     }
 
     private fun getAvailableQTitles(): List<String> {
@@ -185,16 +190,25 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         updateGridToggleUI()
 
         if(!::vQAdapter.isInitialized) {
+
+            val titles = getAvailableQTitles()
+
             vQAdapter = ArrayAdapter<String>(
                 mActivity,
                 android.R.layout.simple_spinner_item,
-                getAvailableQTitles()
+                titles
             )
 
             vQAdapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item)
 
             videoQualitySpinner.adapter = vQAdapter
+
+            videoQualitySpinner.setSelection(
+                titles.indexOf(getTitleFor(
+                    getHighestQuality()
+                ))
+            )
         }
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
