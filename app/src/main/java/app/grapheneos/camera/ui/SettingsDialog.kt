@@ -84,9 +84,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
         videoQualitySpinner = findViewById(R.id.video_quality_spinner)
 
+        var avoidFirst = true
+
         videoQualitySpinner.onItemSelectedListener =
             object: AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+
+                    // Avoid listening to the first default event
+                    if(avoidFirst){
+                        avoidFirst = false
+                        return
+                    }
 
                     val choice = vQAdapter.getItem(position)
 
