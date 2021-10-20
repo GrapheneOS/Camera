@@ -15,10 +15,10 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
+import android.view.animation.LinearInterpolator
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -392,10 +392,29 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     fun snapPreview() {
         val animation: Animation = AlphaAnimation(1f, 0f)
-        animation.duration = 100
-        animation.interpolator = AccelerateDecelerateInterpolator()
+        animation.duration = 200
+        animation.interpolator = LinearInterpolator()
         animation.repeatMode = Animation.REVERSE
-        mActivity.imagePreview.startAnimation(animation)
+
+        mActivity.mainOverlay.setImageResource(android.R.color.black)
+
+        animation.setAnimationListener(
+            object: Animation.AnimationListener {
+                override fun onAnimationStart(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.VISIBLE
+                }
+
+                override fun onAnimationEnd(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.INVISIBLE
+                    mActivity.mainOverlay.setImageResource(android.R.color.transparent)
+                    mActivity.updateLastFrame()
+                }
+
+                override fun onAnimationRepeat(p0: Animation?) {}
+
+            }
+        )
+        mActivity.mainOverlay.startAnimation(animation)
     }
 
     private fun loadTabs() {
@@ -475,7 +494,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         mActivity.cancelFocusTimer()
 
-        isQRMode = modeText=="QR SCAN"
+        isQRMode = modeText == "QR SCAN"
 
         if (isQRMode){
             mActivity.qrOverlay.visibility = View.VISIBLE
