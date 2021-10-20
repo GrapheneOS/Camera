@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat
 import android.widget.Toast
 
 import android.util.Log
+import android.app.Activity
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 
 class InAppGallery: AppCompatActivity() {
 
@@ -180,6 +182,77 @@ class InAppGallery: AppCompatActivity() {
 
 
 
+        }
+
+        val editIcon : ImageView = findViewById(R.id.edit_icon)
+        editIcon.setOnClickListener {
+
+            val file = getCurrentFile()
+
+            val editIntent = Intent(Intent.ACTION_EDIT)
+            val values = ContentValues()
+            val uri: Uri?
+
+            if (file.extension=="mp4") {
+                // Share video file
+                editIntent.type = "video/mp4"
+                values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                uri = contentResolver.insert(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    values
+                )
+            } else {
+                // Share image file
+                editIntent.type = "image/jpeg"
+                values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                uri = contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    values
+                )
+            }
+
+            val outStream: OutputStream? = contentResolver.openOutputStream(uri!!)
+            outStream?.write(file.readBytes())
+            outStream?.close()
+
+            editIntent.putExtra(Intent.EXTRA_STREAM, uri)
+            editIntent.data = uri
+            editIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            editIntentLauncher.launch(
+                Intent.createChooser(editIntent, "Edit Image")
+            )
+        }
+    }
+
+    private val editIntentLauncher =
+        registerForActivityResult(StartActivityForResult())
+        { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // There are no request codes
+            val contentUri: Uri? = result.data?.data
+
+            if(contentUri!=null){
+                val inStream = contentResolver.openInputStream(
+                    contentUri
+                )
+
+                inStream?.readBytes()?.let {
+                    getCurrentFile().writeBytes(it)
+                    Toast.makeText(
+                        this,
+                        "Edit successful",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    recreate()
+                    return@registerForActivityResult
+                }
+            }
+
+            Toast.makeText(
+                this,
+                "An unexpected error occurred after editing.",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
