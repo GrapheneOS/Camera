@@ -8,7 +8,7 @@
         android:duration="@android:integer/config_shortAnimTime"
         android:fromXScale="1.0"
         android:fromYScale="1.0"
-        android:pivotX="60%"
+        android:pivotX="50%"
         android:pivotY="0%"
         android:toXScale="0.0"
         android:toYScale="0.0" />
@@ -17,6 +17,6 @@
         android:duration="@android:integer/config_shortAnimTime"
         android:fromYDelta="0"
         android:interpolator="@android:anim/accelerate_interpolator"
-        android:toYDelta="-80%"/>
+        android:toYDelta="-100%"/>
 
 </set>

@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui
 import android.app.Dialog
 import android.util.Log
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
@@ -12,8 +14,9 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 
-class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
+class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
 
+    private var dialog : View
     private var locToggle: ToggleButton
     var flashToggle: ImageView
     var aRToggle: ToggleButton
@@ -27,14 +30,22 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
     init {
         setContentView(R.layout.settings)
+
+        dialog = findViewById(R.id.settings_dialog)
+
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
-        window?.attributes?.windowAnimations = R.style.SettingsDialogAnim
+
         setOnDismissListener {
             mActivity.settingsIcon.visibility = View.VISIBLE
         }
 
         this.mActivity = mActivity
+
+        val background : View = findViewById(R.id.background)
+        background.setOnClickListener {
+            slideDialogUp()
+        }
 
         locToggle = findViewById(R.id.location_toggle)
 
@@ -128,6 +139,45 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
         }
     }
 
+    private val slideDownAnimation : Animation by lazy {
+        AnimationUtils.loadAnimation(
+            mActivity,
+            R.anim.slide_down
+        )
+    }
+
+    private val slideUpAnimation : Animation by lazy {
+        val anim = AnimationUtils.loadAnimation(
+            mActivity,
+            R.anim.slide_up
+        )
+
+        anim.setAnimationListener(
+            object: Animation.AnimationListener {
+
+                override fun onAnimationStart(p0: Animation?) {}
+
+                override fun onAnimationEnd(p0: Animation?) {
+                    dismiss()
+                }
+
+                override fun onAnimationRepeat(p0: Animation?)
+                {}
+
+            }
+        )
+
+        anim
+    }
+
+    private fun slideDialogDown() {
+        dialog.startAnimation(slideDownAnimation)
+    }
+
+    private fun slideDialogUp() {
+        dialog.startAnimation(slideUpAnimation)
+    }
+
     private fun getAvailableQualities(): List<Int> {
         return QualitySelector.getSupportedQualities(
             mActivity.config.camera!!.cameraInfo
@@ -213,5 +263,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity) {
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
+
+        slideDialogDown()
     }
 }

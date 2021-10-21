@@ -844,6 +844,10 @@ open class MainActivity : AppCompatActivity(),
         rotateView(exposureNegIcon, iconRotation)
         rotateView(zoomInIcon, iconRotation)
         rotateView(zoomOutIcon, iconRotation)
+        rotateView(
+            settingsDialog.findViewById(R.id.settings_dialog),
+            iconRotation
+        )
     }
 
     companion object {

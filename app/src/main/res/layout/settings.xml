@@ -1,182 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/settings_bg"
-    android:paddingHorizontal="@dimen/settings_dialog_padding_horizontal"
-    android:paddingVertical="@dimen/settings_dialog_padding_vertical"
-    android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <ToggleButton
-            android:id="@+id/location_toggle"
-            android:layout_width="@dimen/toggle_button_size"
-            android:layout_height="@dimen/toggle_button_size"
-            android:textOn=""
-            android:textOff=""
-            android:checked="false"
-            android:background="@drawable/location"
-            android:layout_marginStart="4dp"
-            android:text="@string/toggle_button"/>
-
-        <ToggleButton
-            android:id="@+id/aspect_ratio_toggle"
-            android:layout_width="@dimen/toggle_button_size"
-            android:layout_height="@dimen/toggle_button_size"
-            android:textOn=""
-            android:textOff=""
-            android:checked="false"
-            android:scaleType="centerCrop"
-            android:background="@drawable/aspect_ratio"
-            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-            android:text="@string/aspect_ratio"/>
-
-        <ToggleButton
-            android:id="@+id/torch_toggle_option"
-            android:layout_width="@dimen/toggle_button_size"
-            android:layout_height="@dimen/toggle_button_size"
-            android:textOn=""
-            android:textOff=""
-            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-            android:checked="false"
-            android:scaleType="centerCrop"
-            android:background="@drawable/torch"
-            android:text="@string/aspect_ratio"/>
-
-        <ImageView
-            android:id="@+id/flash_toggle_option"
-            android:src="@drawable/flash_off_circle"
-            android:layout_width="@dimen/toggle_button_size"
-            android:layout_height="@dimen/toggle_button_size"
-            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-            android:contentDescription="@string/toggle_flash" />
-
-        <ImageView
-            android:id="@+id/grid_toggle_option"
-            android:src="@drawable/grid_off_circle"
-            android:layout_width="@dimen/toggle_button_size"
-            android:layout_height="@dimen/toggle_button_size"
-            android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-            android:contentDescription="@string/grid_toggle" />
-
-    </LinearLayout>
+    android:layout_height="match_parent">
 
     <View
-        android:layout_marginTop="14dp"
-        android:layout_marginBottom="4dp"
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="@android:color/darker_gray"/>
+        android:id="@+id/background"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"/>
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/settings_dialog"
+        android:layout_marginHorizontal="8dp"
+        android:layout_gravity="center_vertical"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:background="@drawable/settings_bg"
+        android:paddingHorizontal="@dimen/settings_dialog_padding_horizontal"
+        android:paddingVertical="@dimen/settings_dialog_padding_vertical"
+        android:orientation="vertical"
+        tools:ignore="UselessParent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-            android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-            android:layout_gravity="end"
+            android:layout_height="match_parent"
             android:orientation="horizontal">
 
-            <TextView
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="@string/video_quality" />
+            <ToggleButton
+                android:id="@+id/location_toggle"
+                android:layout_width="@dimen/toggle_button_size"
+                android:layout_height="@dimen/toggle_button_size"
+                android:textOn=""
+                android:textOff=""
+                android:checked="false"
+                android:background="@drawable/location"
+                android:layout_marginStart="4dp"
+                android:text="@string/toggle_button"/>
 
-            <FrameLayout
-                android:layout_height="wrap_content"
-                android:padding="0dp"
-                android:layout_margin="0dp"
-                android:layout_width="match_parent">
+            <ToggleButton
+                android:id="@+id/aspect_ratio_toggle"
+                android:layout_width="@dimen/toggle_button_size"
+                android:layout_height="@dimen/toggle_button_size"
+                android:textOn=""
+                android:textOff=""
+                android:checked="false"
+                android:scaleType="centerCrop"
+                android:background="@drawable/aspect_ratio"
+                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
+                android:text="@string/aspect_ratio"/>
 
-                <Spinner
-                    android:id="@+id/video_quality_spinner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:padding="0dp"
-                    android:layout_margin="0dp"
-                    android:layout_gravity="end"/>
+            <ToggleButton
+                android:id="@+id/torch_toggle_option"
+                android:layout_width="@dimen/toggle_button_size"
+                android:layout_height="@dimen/toggle_button_size"
+                android:textOn=""
+                android:textOff=""
+                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
+                android:checked="false"
+                android:scaleType="centerCrop"
+                android:background="@drawable/torch"
+                android:text="@string/aspect_ratio"/>
 
-            </FrameLayout>
+            <ImageView
+                android:id="@+id/flash_toggle_option"
+                android:src="@drawable/flash_off_circle"
+                android:layout_width="@dimen/toggle_button_size"
+                android:layout_height="@dimen/toggle_button_size"
+                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
+                android:contentDescription="@string/toggle_flash" />
+
+            <ImageView
+                android:id="@+id/grid_toggle_option"
+                android:src="@drawable/grid_off_circle"
+                android:layout_width="@dimen/toggle_button_size"
+                android:layout_height="@dimen/toggle_button_size"
+                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
+                android:contentDescription="@string/grid_toggle" />
+
         </LinearLayout>
 
-        <RelativeLayout
+        <View
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="4dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-            android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:layout_gravity="center_vertical|start"
-                android:text="@string/emphasize_on" />
-
-            <RadioGroup
-                android:id="@+id/cm_radio_group"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:layout_gravity="center_vertical|end"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/quality_radio"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/quality"
-                    android:checked="true" />
-
-                <View
-                    android:layout_width="6dp"
-                    android:layout_height="0dp"/>
-
-                <RadioButton
-                    android:id="@+id/latency_radio"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/latency"
-                    android:checked="false" />
-
-            </RadioGroup>
-
-        </RelativeLayout>
+            android:layout_height="0.5dp"
+            android:background="@android:color/darker_gray"/>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-            android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-            android:orientation="horizontal">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_height="wrap_content"
-                android:layout_width="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="@string/include_audio" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/include_audio_switch"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:layout_gravity="end"/>
+                android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                android:layout_gravity="end"
+                android:orientation="horizontal">
 
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="@string/video_quality" />
+
+                <FrameLayout
+                    android:layout_height="wrap_content"
+                    android:padding="0dp"
+                    android:layout_margin="0dp"
+                    android:layout_width="match_parent">
+
+                    <Spinner
+                        android:id="@+id/video_quality_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:padding="0dp"
+                        android:layout_margin="0dp"
+                        android:layout_gravity="end"/>
+
+                </FrameLayout>
+            </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="center_vertical|start"
+                    android:text="@string/emphasize_on" />
+
+                <RadioGroup
+                    android:id="@+id/cm_radio_group"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="center_vertical|end"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/quality_radio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/quality"
+                        android:checked="true" />
+
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="0dp"/>
+
+                    <RadioButton
+                        android:id="@+id/latency_radio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/latency"
+                        android:checked="false" />
+
+                </RadioGroup>
+
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="@string/include_audio" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/include_audio_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:layout_gravity="end"/>
+
+            </LinearLayout>
         </LinearLayout>
+
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>
