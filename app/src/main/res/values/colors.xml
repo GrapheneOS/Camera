@@ -13,4 +13,6 @@
 
     <color name="selected_option_fg">#212121</color>
     <color name="unselected_option_fg">#C2C2C2</color>
+
+    <color name="self_illumination_light">#ffe8cf</color>
 </resources>

@@ -78,6 +78,8 @@ open class MainActivity : AppCompatActivity(),
     private var lastFrame: Bitmap? = null
     lateinit var config: CamConfig
 
+    lateinit var rootView : View
+
     private lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
 
@@ -601,6 +603,8 @@ open class MainActivity : AppCompatActivity(),
 
         previewGrid = findViewById(R.id.preview_grid)
         previewGrid.setMainActivity(this)
+
+        rootView = findViewById(R.id.root)
     }
 
     private fun shareLatestMedia() {

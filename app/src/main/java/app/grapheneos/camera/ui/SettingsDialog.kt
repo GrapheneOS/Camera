@@ -1,11 +1,14 @@
 package app.grapheneos.camera.ui
 
+import android.animation.ArgbEvaluator
 import android.app.Dialog
+import android.graphics.Color
 import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.*
+import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
@@ -13,6 +16,7 @@ import androidx.camera.video.QualitySelector
 import app.grapheneos.camera.R
 import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
+import android.animation.ValueAnimator
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
 
@@ -26,6 +30,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     private var videoQualitySpinner : Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
     var cmRadio: RadioButton
+
+    private var selfIlluminationToggle : SwitchCompat
+
     private var cmRadioGroup: RadioGroup
 
     init {
@@ -137,7 +144,68 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
             mActivity.config.startCamera(true)
         }
+
+        selfIlluminationToggle = findViewById(R.id.self_illumination_switch)
+        selfIlluminationToggle.setOnCheckedChangeListener { _, value ->
+//            selfIllumination(value)
+        }
     }
+
+//    fun selfIllumination(value: Boolean){
+//
+//        if(value) {
+//
+//            val colorFrom: Int = Color.BLACK
+//            val colorTo: Int = mActivity.getColor(R.color.self_illumination_light)
+//
+//            val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
+//            colorAnimation1.duration = 300
+//            colorAnimation1.addUpdateListener {
+//                    animator ->
+//                mActivity.previewView.setBackgroundColor(animator.animatedValue as Int)
+//                mActivity.rootView.setBackgroundColor(animator.animatedValue as Int)
+//            }
+//
+//            val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, Color.BLACK)
+//            colorAnimation2.duration = 300
+//            colorAnimation2.addUpdateListener {
+//                    animator ->
+//                mActivity.tabLayout.setTabTextColors(
+//                    animator.animatedValue as Int,
+//                    Color.WHITE
+//                )
+//            }
+//
+//            colorAnimation1.start()
+//            colorAnimation2.start()
+//
+//        } else {
+//
+//            val colorFrom: Int = mActivity.getColor(R.color.self_illumination_light)
+//            val colorTo: Int = Color.BLACK
+//
+//            val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
+//            colorAnimation1.duration = 300
+//            colorAnimation1.addUpdateListener {
+//                    animator ->
+//                mActivity.previewView.setBackgroundColor(animator.animatedValue as Int)
+//                mActivity.rootView.setBackgroundColor(animator.animatedValue as Int)
+//            }
+//
+//            val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, Color.WHITE)
+//            colorAnimation2.duration = 300
+//            colorAnimation2.addUpdateListener {
+//                    animator ->
+//                mActivity.tabLayout.setTabTextColors(
+//                    animator.animatedValue as Int,
+//                    Color.WHITE
+//                )
+//            }
+//
+//            colorAnimation1.start()
+//            colorAnimation2.start()
+//        }
+//    }
 
     private val slideDownAnimation : Animation by lazy {
         AnimationUtils.loadAnimation(
