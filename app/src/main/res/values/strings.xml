@@ -41,4 +41,5 @@
     <string name="share_file">Share file</string>
     <string name="delete_file">Delete file</string>
     <string name="edit">Edit</string>
+    <string name="self_illumination">Self Illumination</string>
 </resources>
