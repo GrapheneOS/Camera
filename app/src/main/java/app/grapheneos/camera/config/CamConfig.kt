@@ -271,7 +271,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         val rotation = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val display = mActivity.display
-            display?.rotation ?: 0
+            display?.rotation ?: @Suppress("DEPRECATION")
+            mActivity.windowManager.defaultDisplay.rotation
         } else {
             // We don't really have any option here, but this initialization
             // ensures that the app doesn't break later when the below
@@ -347,7 +348,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                         }
                     )
-                    .setTargetRotation(rotation)
+                    .setTargetRotation(imageCapture?.targetRotation
+                        ?: rotation)
                     .setTargetAspectRatio(aspectRatio)
                     .setFlashMode(flashMode)
                     .build()
@@ -359,7 +361,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
 
         preview = Preview.Builder()
-            .setTargetRotation(rotation)
+            .setTargetRotation(preview?.targetRotation
+                ?: rotation)
             .setTargetAspectRatio(aspectRatio)
             .build()
 
