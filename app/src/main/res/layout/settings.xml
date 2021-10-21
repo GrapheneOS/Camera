@@ -12,7 +12,7 @@
 
     <LinearLayout
         android:id="@+id/settings_dialog"
-        android:layout_marginHorizontal="8dp"
+        android:layout_marginHorizontal="12dp"
         android:layout_gravity="center_vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -25,58 +25,94 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:baselineAligned="false">
 
-            <ToggleButton
-                android:id="@+id/location_toggle"
-                android:layout_width="@dimen/toggle_button_size"
-                android:layout_height="@dimen/toggle_button_size"
-                android:textOn=""
-                android:textOff=""
-                android:checked="false"
-                android:background="@drawable/location"
-                android:layout_marginStart="4dp"
-                android:text="@string/toggle_button"/>
+            <FrameLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
 
-            <ToggleButton
-                android:id="@+id/aspect_ratio_toggle"
-                android:layout_width="@dimen/toggle_button_size"
-                android:layout_height="@dimen/toggle_button_size"
-                android:textOn=""
-                android:textOff=""
-                android:checked="false"
-                android:scaleType="centerCrop"
-                android:background="@drawable/aspect_ratio"
-                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-                android:text="@string/aspect_ratio"/>
+                <ToggleButton
+                    android:id="@+id/location_toggle"
+                    android:layout_width="@dimen/toggle_button_size"
+                    android:layout_height="@dimen/toggle_button_size"
+                    android:textOn=""
+                    android:textOff=""
+                    android:checked="false"
+                    android:layout_gravity="center"
+                    android:background="@drawable/location"
+                    android:text="@string/toggle_button"/>
 
-            <ToggleButton
-                android:id="@+id/torch_toggle_option"
-                android:layout_width="@dimen/toggle_button_size"
-                android:layout_height="@dimen/toggle_button_size"
-                android:textOn=""
-                android:textOff=""
-                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-                android:checked="false"
-                android:scaleType="centerCrop"
-                android:background="@drawable/torch"
-                android:text="@string/aspect_ratio"/>
+            </FrameLayout>
 
-            <ImageView
-                android:id="@+id/flash_toggle_option"
-                android:src="@drawable/flash_off_circle"
-                android:layout_width="@dimen/toggle_button_size"
-                android:layout_height="@dimen/toggle_button_size"
-                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-                android:contentDescription="@string/toggle_flash" />
+            <FrameLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
 
-            <ImageView
-                android:id="@+id/grid_toggle_option"
-                android:src="@drawable/grid_off_circle"
-                android:layout_width="@dimen/toggle_button_size"
-                android:layout_height="@dimen/toggle_button_size"
-                android:layout_marginStart="@dimen/settings_toggle_button_spacing"
-                android:contentDescription="@string/grid_toggle" />
+                <ToggleButton
+                    android:id="@+id/aspect_ratio_toggle"
+                    android:layout_gravity="center"
+                    android:layout_width="@dimen/toggle_button_size"
+                    android:layout_height="@dimen/toggle_button_size"
+                    android:textOn=""
+                    android:textOff=""
+                    android:checked="false"
+                    android:scaleType="centerCrop"
+                    android:background="@drawable/aspect_ratio"
+                    android:text="@string/aspect_ratio"/>
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
+
+                <ToggleButton
+                    android:id="@+id/torch_toggle_option"
+                    android:layout_width="@dimen/toggle_button_size"
+                    android:layout_height="@dimen/toggle_button_size"
+                    android:layout_gravity="center"
+                    android:textOn=""
+                    android:textOff=""
+                    android:checked="false"
+                    android:scaleType="centerCrop"
+                    android:background="@drawable/torch"
+                    android:text="@string/aspect_ratio"/>
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/flash_toggle_option"
+                    android:src="@drawable/flash_off_circle"
+                    android:layout_gravity="center"
+                    android:layout_width="@dimen/toggle_button_size"
+                    android:layout_height="@dimen/toggle_button_size"
+                    android:contentDescription="@string/toggle_flash" />
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/grid_toggle_option"
+                    android:src="@drawable/grid_off_circle"
+                    android:layout_gravity="center"
+                    android:layout_width="@dimen/toggle_button_size"
+                    android:layout_height="@dimen/toggle_button_size"
+                    android:contentDescription="@string/grid_toggle" />
+
+            </FrameLayout>
 
         </LinearLayout>
 
@@ -119,7 +155,7 @@
                         android:checked="true"
                         android:padding="0dp"
                         android:layout_margin="0dp"
-                        android:layout_gravity="end"/>
+                        android:layout_gravity="end" />
 
                 </FrameLayout>
             </LinearLayout>
