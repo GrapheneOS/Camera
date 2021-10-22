@@ -30,6 +30,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     private var videoQualitySpinner : Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
     private var focusTimeoutSpinner: Spinner
+    private var timerSpinner: Spinner
     var cmRadio: RadioButton
 
     private var selfIlluminationToggle : SwitchCompat
@@ -186,6 +187,43 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
             }
 
         focusTimeoutSpinner.setSelection(2)
+
+        timerSpinner = findViewById(R.id.timer_spinner)
+        timerSpinner.onItemSelectedListener =
+            object: AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+
+                    val selectedOption = timerSpinner.selectedItem.toString()
+
+                    if(selectedOption == "Off"){
+                        mActivity.timerDuration = 0
+                    } else {
+
+                        try {
+                            val durS = selectedOption.substring(0, selectedOption.length - 1)
+                            val dur = durS.toInt()
+
+                            mActivity.timerDuration = dur
+
+                            mActivity.cbText.text = selectedOption
+                            mActivity.cbText.visibility = View.VISIBLE
+
+                        } catch (exception: Exception) {
+
+                            Toast.makeText(
+                                mActivity,
+                                "An unexpected error occurred while setting focus timeout",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                        }
+
+                    }
+
+                }
+
+                override fun onNothingSelected(p0: AdapterView<*>?) {}
+            }
     }
 
 //    fun selfIllumination(value: Boolean){

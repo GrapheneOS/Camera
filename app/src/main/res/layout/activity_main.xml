@@ -20,6 +20,19 @@
             android:layout_marginBottom="40dp"
             android:layout_height="match_parent"/>
 
+        <app.grapheneos.camera.ui.CountDownTimerUI
+            android:id="@+id/c_timer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="46dp"
+            android:layout_marginBottom="40dp"
+            android:visibility="gone"
+            android:shadowColor="#000000"
+            android:shadowDx="1.5"
+            android:shadowDy="1.3"
+            android:shadowRadius="1.6"
+            android:textColor="@color/white"/>
+
         <app.grapheneos.camera.ui.CustomGrid
             android:id="@+id/preview_grid"
             android:layout_width="match_parent"
@@ -129,6 +142,25 @@
                 android:src="@drawable/done"
                 android:background="@drawable/cbutton_bg"
                 android:contentDescription="@string/flip_camera" />
+
+            <!-- Sp usage was ignore because -->
+            <TextView
+                android:id="@+id/capture_button_text"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="28dp"
+                android:textStyle="bold"
+                tools:ignore="SpUsage" />
+
+            <ImageView
+                android:id="@+id/capture_button_cross"
+                android:layout_height="36dp"
+                android:layout_width="36dp"
+                android:src="@drawable/cancel"
+                android:layout_gravity="center"
+                android:visibility="invisible"
+                android:contentDescription="@string/cancel_timer"/>
 
         </FrameLayout>
 

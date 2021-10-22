@@ -41,10 +41,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
-import app.grapheneos.camera.ui.BottomTabLayout
-import app.grapheneos.camera.ui.CustomGrid
-import app.grapheneos.camera.ui.QROverlay
-import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
@@ -57,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import android.widget.Toast
 import androidx.core.view.GestureDetectorCompat
+import app.grapheneos.camera.ui.*
 import java.util.concurrent.TimeUnit
 
 open class MainActivity : AppCompatActivity(),
@@ -80,7 +77,7 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var rootView : View
 
-    private lateinit var imageCapturer: ImageCapturer
+    lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
 
     lateinit var flipCameraCircle: View
@@ -125,6 +122,12 @@ open class MainActivity : AppCompatActivity(),
     private var wasSwiping = false
 
     var focusTimeout = 5L
+
+    lateinit var cdTimer : CountDownTimerUI
+    var timerDuration = 0
+
+    lateinit var cbText : TextView
+    lateinit var cbCross : ImageView
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -542,7 +545,15 @@ open class MainActivity : AppCompatActivity(),
                     videoCapturer.startRecording()
                 }
             } else {
-                imageCapturer.takePicture()
+                if(timerDuration == 0){
+                    imageCapturer.takePicture()
+                } else {
+                    if(cdTimer.isRunning){
+                        cdTimer.cancelTimer()
+                    } else {
+                        cdTimer.startTimer()
+                    }
+                }
             }
         })
         captureModeView = findViewById(R.id.capture_mode)
@@ -567,8 +578,12 @@ open class MainActivity : AppCompatActivity(),
                 oa1.start()
                 if (config.isVideoMode) {
                     captureButton.setImageResource(R.drawable.recording)
+                    cbText.visibility = View.INVISIBLE
                 } else {
                     captureButton.setImageResource(R.drawable.camera_shutter)
+                    if(timerDuration!=0) {
+                        cbText.visibility = View.VISIBLE
+                    }
                 }
             }
         })
@@ -605,6 +620,12 @@ open class MainActivity : AppCompatActivity(),
         previewGrid.setMainActivity(this)
 
         rootView = findViewById(R.id.root)
+
+        cdTimer = findViewById(R.id.c_timer)
+        cdTimer.setMainActivity(this)
+
+        cbText = findViewById(R.id.capture_button_text)
+        cbCross = findViewById(R.id.capture_button_cross)
     }
 
     private fun shareLatestMedia() {
@@ -917,14 +938,14 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeBottom(){
-        if(isZooming) return
+        if(isZooming || cdTimer.isRunning) return
         wasSwiping = true
         settingsIcon.performClick()
     }
 
     private fun onSwipeRight(){
 
-        if(isZooming) return
+        if(isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
 
@@ -941,7 +962,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeLeft(){
-        if(isZooming) return
+        if(isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
         val i = tabLayout.selectedTabPosition + 1
