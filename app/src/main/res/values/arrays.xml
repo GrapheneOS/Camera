@@ -3,7 +3,7 @@
 
     <array name="time_options">
         <item>Off</item>
-        <item>2s</item>
+        <item>3s</item>
         <item>5s</item>
         <item>8s</item>
         <item>10s</item>
