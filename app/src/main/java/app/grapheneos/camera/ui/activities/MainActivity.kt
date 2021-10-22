@@ -52,6 +52,7 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.GestureDetectorCompat
 import app.grapheneos.camera.ui.*
 import java.util.concurrent.TimeUnit
@@ -196,6 +197,32 @@ open class MainActivity : AppCompatActivity(),
             }
         }
         checkPermissions()
+    }
+
+    // Used to request permission from the user
+    var dirPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
+        { result ->
+
+            val data: Uri? = result.data?.data
+
+            if(data?.encodedPath!=null){
+                val file = File(data.encodedPath!!)
+                if (file.exists()) {
+                    Toast.makeText(
+                        this,
+                        "File exists: ${file.absolutePath}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "File does not exist :( ${data.encodedPath!!} ",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+
+            Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
     }
 
     fun updateLastFrame() {

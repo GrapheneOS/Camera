@@ -316,6 +316,48 @@
                 </FrameLayout>
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                android:layout_gravity="end"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:labelFor="@id/media_location_picker"
+                    android:text="@string/media_location" />
+
+                <FrameLayout
+                    android:layout_height="wrap_content"
+                    android:padding="0dp"
+                    android:layout_margin="0dp"
+                    android:layout_width="match_parent">
+
+                    <EditText
+                        android:id="@+id/media_location_picker"
+                        android:autofillHints="none"
+                        android:singleLine="true"
+                        android:layout_marginStart="32dp"
+                        android:ellipsize="end"
+                        android:textSize="16sp"
+                        android:drawablePadding="4dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scrollHorizontally="true"
+                        android:focusable="false"
+                        android:drawableStart="@drawable/folder"
+                        android:overScrollMode="ifContentScrolls"
+                        android:layout_gravity="end"
+                        android:inputType="none" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>

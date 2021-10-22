@@ -17,6 +17,9 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import android.animation.ValueAnimator
+import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
 
@@ -31,6 +34,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     private lateinit var vQAdapter: ArrayAdapter<String>
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
+    private var mLPicker: EditText
     var cmRadio: RadioButton
 
     private var selfIlluminationToggle : SwitchCompat
@@ -224,6 +228,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
+
+        mLPicker = findViewById(R.id.media_location_picker)
+        mLPicker.setText(mActivity.config.parentDirPath)
+        mLPicker.setOnClickListener {
+            val dpIntent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+            dpIntent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(
+                mActivity.config.parentDirPath
+            ))
+            dpIntent.addCategory(Intent.CATEGORY_DEFAULT)
+            mActivity.dirPicker.launch(dpIntent)
+        }
     }
 
 //    fun selfIllumination(value: Boolean){

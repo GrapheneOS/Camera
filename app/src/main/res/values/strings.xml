@@ -45,4 +45,5 @@
     <string name="focus_timeout">Focus Timeout</string>
     <string name="timer">Timer</string>
     <string name="cancel_timer">Cancel Timer</string>
+    <string name="media_location">Media Location</string>
 </resources>
