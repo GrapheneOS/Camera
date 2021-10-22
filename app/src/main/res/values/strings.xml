@@ -43,4 +43,5 @@
     <string name="edit">Edit</string>
     <string name="self_illumination">Self Illumination</string>
     <string name="focus_timeout">Focus Timeout</string>
+    <string name="timer">Timer</string>
 </resources>
