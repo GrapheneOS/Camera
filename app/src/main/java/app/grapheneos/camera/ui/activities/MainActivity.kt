@@ -783,12 +783,17 @@ open class MainActivity : AppCompatActivity(),
 
             val autoFocusPoint = previewView.meteringPointFactory.createPoint(x, y)
             animateFocusRing(x, y)
-            config.camera!!.cameraControl.startFocusAndMetering(
-                FocusMeteringAction.Builder(autoFocusPoint)
-                    .setAutoCancelDuration(focusTimeout,
-                        TimeUnit.SECONDS)
-                    .build()
-            )
+
+            val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
+
+            if (focusTimeout == 0L) {
+                focusBuilder.disableAutoCancel()
+            } else {
+                focusBuilder.setAutoCancelDuration(focusTimeout, TimeUnit.SECONDS)
+            }
+
+            config.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
+
             exposureBar.showPanel()
             return v.performClick()
         }
