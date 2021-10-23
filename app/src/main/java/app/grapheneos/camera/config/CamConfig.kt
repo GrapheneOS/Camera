@@ -1,9 +1,11 @@
 package app.grapheneos.camera.config
 
+import android.content.ContentValues
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.View
@@ -18,6 +20,7 @@ import android.view.animation.Animation
 
 import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
+import android.webkit.MimeTypeMap
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -164,6 +167,62 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         startCamera(true)
     }
 
+
+    private fun addToMediaStore(file: File, isVideo: Boolean): Uri? {
+
+        val values: ContentValues = getContentValuesForData(file, isVideo)
+
+        var uri: Uri? = null
+
+        try {
+
+            uri = if(isVideo)
+                mActivity.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+            else
+                mActivity.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+            Log.i(TAG, "Added image to media store!")
+        } catch (th: Throwable) {
+            if (uri != null) {
+                mActivity.contentResolver.delete(uri, null, null)
+            }
+
+        }
+        return uri
+    }
+
+    private fun getContentValuesForData(file: File, isVideo: Boolean): ContentValues {
+
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
+
+        val values = ContentValues()
+
+        if (isVideo) {
+
+            values.put(MediaStore.Video.Media.TITLE, file.nameWithoutExtension)
+            values.put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
+            values.put(MediaStore.Video.Media.MIME_TYPE, mimeType)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.put(MediaStore.Video.Media.DATE_TAKEN, file.lastModified())
+                values.put(MediaStore.Video.Media.RELATIVE_PATH, file.parent)
+                values.put(MediaStore.Video.Media.IS_PENDING, 0)
+            }
+
+        } else {
+            values.put(MediaStore.Images.Media.TITLE, file.nameWithoutExtension)
+            values.put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
+            values.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.put(MediaStore.Images.Media.DATE_TAKEN, file.lastModified())
+                values.put(MediaStore.Images.Media.RELATIVE_PATH, file.parent)
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            }
+        }
+
+        return values
+    }
 
     fun toggleFlashMode() {
         if (camera!!.cameraInfo.hasFlashUnit()) {
