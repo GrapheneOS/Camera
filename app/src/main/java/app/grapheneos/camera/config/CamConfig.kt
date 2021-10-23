@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.View
@@ -85,7 +84,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var aspectRatio = AspectRatio.RATIO_4_3
 
-    private var latestFile: File? = null
+    var latestFile: File? = null
 
     var flashMode: Int
         get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
@@ -122,7 +121,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
 
     fun updatePreview() {
-        val lastModifiedFile = latestMediaFile ?: return
+        val lastModifiedFile = latestFile ?: return
         if (lastModifiedFile.extension == "mp4") {
             try {
                 mActivity.imagePreview.setImageBitmap(
@@ -138,23 +137,15 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
     }
 
-    fun setLatestFile(latestFile: File?) {
-        this.latestFile = latestFile
-    }
-
     val latestMediaFile: File?
         get() {
-            if (latestFile != null && mediaExists(latestFile!!))
+            if (latestFile != null && latestFile!!.exists())
                 return latestFile
             val dir = parentDir
             val files = dir!!.listFiles { file: File ->
                 if (!file.isFile) return@listFiles false
                 val ext = file.extension
-                if(ext == "jpg" || ext == "png" || ext == "mp4"){
-                    mediaExists(file)
-                } else {
-                    false
-                }
+                ext == "jpg" || ext == "png" || ext == "mp4"
             }
             if (files == null || files.isEmpty()) return null
             var lastModifiedFile = files[0]
@@ -167,29 +158,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             return latestFile
         }
 
-    private fun mediaExists(file: File) : Boolean {
-
-        if(!file.exists()) return false
-
-        val projection = emptyArray<String>()
-
-        val mediaUri: Uri = if (file.extension == "mp4") {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
-
-        mActivity.contentResolver.query(
-            mediaUri,
-            projection,
-            MediaStore.Images.ImageColumns.DISPLAY_NAME + "=?",
-            arrayOf(file.name),
-            null
-        ).use {
-            return@mediaExists it?.count==1
-        }
-
-    }
 
     fun switchCameraMode() {
         isVideoMode = !isVideoMode

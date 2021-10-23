@@ -46,7 +46,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     if (imageUri != null) {
                         val path = imageUri.encodedPath!!
                         val file = File(path)
-                        mActivity.config.setLatestFile(file)
+                        mActivity.config.latestFile = file
                         val mimeType = MimeTypeMap.getSingleton()
                             .getMimeTypeFromExtension(
                                 File(path).extension

@@ -161,7 +161,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             val path: String = outputUri.encodedPath!!
 
                             val file = File(path)
-                            mActivity.config.setLatestFile(file)
+                            mActivity.config.latestFile = file
                             val mimeType = MimeTypeMap.getSingleton()
                                 .getMimeTypeFromExtension(
                                     file.extension
