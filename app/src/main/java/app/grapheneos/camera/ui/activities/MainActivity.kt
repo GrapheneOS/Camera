@@ -876,7 +876,16 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    override fun onOrientationChange(orientation: Int) {
+    override fun onOrientationChange(orientationValue: Int) {
+
+        val orientation = if (Settings.System.getInt(
+                contentResolver,
+                Settings.System.ACCELEROMETER_ROTATION, 0) == 1) {
+            orientationValue
+        } else {
+            0
+        }
+
         val tr = when (orientation) {
             in 45..134 -> Surface.ROTATION_270
             in 135..224 -> Surface.ROTATION_180
