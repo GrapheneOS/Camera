@@ -830,7 +830,7 @@ open class MainActivity : AppCompatActivity(),
 
     private val fTHandler : Handler = Handler(Looper.getMainLooper())
     private val fTRunnable : Runnable = Runnable {
-        config.playFocusCompleteSound()
+        config.mPlayer.playFocusCompleteSound()
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -861,7 +861,7 @@ open class MainActivity : AppCompatActivity(),
 
             val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
-            config.playFocusStartSound()
+            config.mPlayer.playFocusStartSound()
 
             if (focusTimeout == 0L) {
                 focusBuilder.disableAutoCancel()

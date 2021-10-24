@@ -3,7 +3,6 @@ package app.grapheneos.camera.config
 import android.content.ContentValues
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -34,6 +33,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import app.grapheneos.camera.R
+import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.util.concurrent.Executors
@@ -41,68 +41,6 @@ import kotlin.math.roundToInt
 
 
 class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
-
-    private val shutterPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.image_shot)
-
-    private val fSPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.focus_start)
-    private val fCPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.focus_complete)
-
-    private val tIPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.timer_increment)
-    private val tCPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.timer_final_second)
-
-    private val vRecPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.video_start)
-    private val vStopPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.video_stop)
-
-    private fun playShutterSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-        shutterPlayer.seekTo(0)
-        shutterPlayer.start()
-    }
-
-    fun playVRStartSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-        vRecPlayer.seekTo(0)
-        vRecPlayer.start()
-    }
-
-    fun playVRStopSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-        vStopPlayer.seekTo(0)
-        vStopPlayer.start()
-    }
-
-    fun playTimerIncrementSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-        tIPlayer.seekTo(0)
-        tIPlayer.start()
-    }
-
-    fun playTimerFinalSSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-        tCPlayer.seekTo(0)
-        tCPlayer.start()
-    }
-
-    fun playFocusStartSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-
-        fSPlayer.seekTo(0)
-        fSPlayer.start()
-    }
-
-    fun playFocusCompleteSound() {
-        if(!mActivity.settingsDialog.csSwitch.isChecked)
-            return
-
-        fCPlayer.seekTo(0)
-        fCPlayer.start()
-    }
 
     enum class Grid {
         NONE,
@@ -185,6 +123,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             }
             return parentDir
         }
+
+    val mPlayer : TunePlayer = TunePlayer(mActivity)
 
     fun updatePreview() {
         val lastModifiedFile = latestFile ?: return
@@ -508,7 +448,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             }
         )
 
-        playShutterSound()
+        mPlayer.playShutterSound()
         mActivity.mainOverlay.startAnimation(animation)
     }
 
