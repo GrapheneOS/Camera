@@ -62,9 +62,9 @@ class CountDownTimerUI @JvmOverloads constructor(
                 text = pendingS.toString()
 
                 if (text == "1") {
-                    mActivity.config.playTimerFinalSSound()
+                    mActivity.config.mPlayer.playTimerFinalSSound()
                 } else {
-                    mActivity.config.playTimerIncrementSound()
+                    mActivity.config.mPlayer.playTimerIncrementSound()
                 }
             }
 
