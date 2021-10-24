@@ -8,7 +8,7 @@ class TunePlayer(private val mActivity : MainActivity) {
     private val shutterPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.image_shot)
 
     private val fSPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.focus_start)
-    private val fCPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.focus_complete)
+//    private val fCPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.focus_complete)
 
     private val tIPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.timer_increment)
     private val tCPlayer: MediaPlayer = MediaPlayer.create(mActivity, R.raw.timer_final_second)
@@ -56,9 +56,9 @@ class TunePlayer(private val mActivity : MainActivity) {
         fSPlayer.start()
     }
 
-    fun playFocusCompleteSound() {
-        if(shouldNotPlayTune()) return
-        fCPlayer.seekTo(0)
-        fCPlayer.start()
-    }
+//    fun playFocusCompleteSound() {
+//        if(shouldNotPlayTune()) return
+//        fCPlayer.seekTo(0)
+//        fCPlayer.start()
+//    }
 }
