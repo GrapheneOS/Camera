@@ -35,6 +35,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     var cmRadio: RadioButton
 
     private var selfIlluminationToggle : SwitchCompat
+    var csSwitch: SwitchCompat
 
     private var cmRadioGroup: RadioGroup
 
@@ -228,6 +229,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         mScrollView = findViewById(R.id.settings_scrollview)
         mScrollViewContent = findViewById(R.id.settings_scrollview_content)
+
+        csSwitch = findViewById(R.id.camera_sounds_switch)
     }
 
 //    fun selfIllumination(value: Boolean){

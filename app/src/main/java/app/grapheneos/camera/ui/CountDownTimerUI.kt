@@ -60,6 +60,12 @@ class CountDownTimerUI @JvmOverloads constructor(
                 opacityAnimation.start()
 
                 text = pendingS.toString()
+
+                if (text == "1") {
+                    mActivity.config.playTimerFinalSSound()
+                } else {
+                    mActivity.config.playTimerIncrementSound()
+                }
             }
 
             override fun onFinish() {

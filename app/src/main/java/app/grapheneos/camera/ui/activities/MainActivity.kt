@@ -828,6 +828,11 @@ open class MainActivity : AppCompatActivity(),
         return BlurBitmap.get(bitmap)
     }
 
+    private val fTHandler : Handler = Handler(Looper.getMainLooper())
+    private val fTRunnable : Runnable = Runnable {
+        config.playFocusCompleteSound()
+    }
+
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         dbTapGestureDetector.onTouchEvent(event)
         scaleGestureDetector.onTouchEvent(event)
@@ -856,10 +861,14 @@ open class MainActivity : AppCompatActivity(),
 
             val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
+            config.playFocusStartSound()
+
             if (focusTimeout == 0L) {
                 focusBuilder.disableAutoCancel()
             } else {
                 focusBuilder.setAutoCancelDuration(focusTimeout, TimeUnit.SECONDS)
+                fTHandler.removeCallbacks(fTRunnable)
+                fTHandler.postDelayed(fTRunnable, focusTimeout * 1000)
             }
 
             config.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())

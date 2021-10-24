@@ -245,6 +245,28 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
+                            android:text="@string/camera_sounds" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/camera_sounds_switch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:layout_gravity="end"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center_vertical"
                             android:text="@string/include_audio" />
 
                         <androidx.appcompat.widget.SwitchCompat

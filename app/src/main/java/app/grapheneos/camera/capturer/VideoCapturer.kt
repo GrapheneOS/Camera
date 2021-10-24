@@ -137,6 +137,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (it is VideoRecordEvent.Finalize) {
                         afterRecordingStops()
 
+                        mActivity.config.playVRStopSound()
+
                         if (it.hasError()) {
 
                             if(it.error == 8) {
@@ -186,6 +188,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             )
 
             activeRecording = pendingRecording.start()
+            mActivity.config.playVRStartSound()
             isRecording = true
         }
     }
