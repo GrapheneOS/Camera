@@ -29,6 +29,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
 
+    var mScrollView: ScrollView
+    var mScrollViewContent: View
+
     var cmRadio: RadioButton
 
     private var selfIlluminationToggle : SwitchCompat
@@ -222,6 +225,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
+
+        mScrollView = findViewById(R.id.settings_scrollview)
+        mScrollViewContent = findViewById(R.id.settings_scrollview_content)
     }
 
 //    fun selfIllumination(value: Boolean){

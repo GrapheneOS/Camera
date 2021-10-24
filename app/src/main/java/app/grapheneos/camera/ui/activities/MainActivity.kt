@@ -56,6 +56,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.GestureDetectorCompat
 import app.grapheneos.camera.ui.*
 import java.util.concurrent.TimeUnit
+import android.view.ViewTreeObserver.OnGlobalLayoutListener
 
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
@@ -653,6 +654,27 @@ open class MainActivity : AppCompatActivity(),
 
         cbText = findViewById(R.id.capture_button_text)
         cbCross = findViewById(R.id.capture_button_cross)
+
+        settingsDialog.mScrollViewContent.viewTreeObserver.addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+
+                settingsDialog.mScrollViewContent.viewTreeObserver
+                    .removeOnGlobalLayoutListener(this)
+
+                val sdHM = resources.getDimension(R.dimen.settings_dialog_horizontal_margin)
+
+                val sH = (settingsDialog.mScrollViewContent.width - (sdHM * 4)).toInt()
+
+                Log.i(TAG, "sH: $sH")
+
+                val lp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    sH.coerceAtMost(settingsDialog.mScrollViewContent.height)
+                )
+
+                settingsDialog.mScrollView.layoutParams = lp
+            }
+        })
     }
 
     private fun shareLatestMedia() {
