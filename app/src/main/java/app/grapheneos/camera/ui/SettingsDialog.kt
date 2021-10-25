@@ -79,7 +79,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
             if(mActivity.config.isVideoMode){
                 aRToggle.isChecked = true
                 Toast.makeText(mActivity,
-                    "4:3 is not supported in video mode for now",
+                    "4:3 isn't supported in video mode",
                     Toast.LENGTH_LONG).show()
             } else {
                 mActivity.config.toggleAspectRatio()
