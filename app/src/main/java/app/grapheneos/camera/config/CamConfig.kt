@@ -126,6 +126,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     val mPlayer : TunePlayer = TunePlayer(mActivity)
 
+    lateinit var modeText : String
+
     fun updatePreview() {
         val lastModifiedFile = latestFile ?: return
         if (lastModifiedFile.extension == "mp4") {
@@ -518,6 +520,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     fun switchMode(modeText: String){
+
+        this.modeText = modeText
 
         cameraMode = ExtensionMode.NONE
 
