@@ -100,7 +100,6 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
                 CamConfig.Grid.FOUR_BY_FOUR -> CamConfig.Grid.GOLDEN_RATIO
                 CamConfig.Grid.GOLDEN_RATIO -> CamConfig.Grid.NONE
             }
-            mActivity.previewGrid.postInvalidate()
             updateGridToggleUI()
         }
 
@@ -364,6 +363,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     }
 
     private fun updateGridToggleUI(){
+        mActivity.previewGrid.postInvalidate()
         gridToggle.setImageResource(
             when(mActivity.config.gridType) {
                 CamConfig.Grid.NONE -> R.drawable.grid_off_circle
