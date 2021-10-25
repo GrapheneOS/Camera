@@ -390,10 +390,14 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     fun updateFlashMode() {
         flashToggle.setImageResource(
-            when (mActivity.config.flashMode) {
-                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
-                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
-                else -> R.drawable.flash_off_circle
+            if(mActivity.config.isFlashAvailable) {
+                when (mActivity.config.flashMode) {
+                    ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
+                    ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
+                    else -> R.drawable.flash_off_circle
+                }
+            } else {
+                R.drawable.flash_off_circle
             }
         )
     }
