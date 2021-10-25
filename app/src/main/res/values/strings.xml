@@ -32,7 +32,7 @@
     <string name="image_format">Image Format</string>
     <string name="include_audio">Include Audio</string>
     <string name="video_quality">Video Quality</string>
-    <string name="emphasize_on">Emphasize on Image</string>
+    <string name="emphasize_on">Emphasize on</string>
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>
     <string name="preview">Preview</string>
