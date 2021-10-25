@@ -123,8 +123,6 @@ open class MainActivity : AppCompatActivity(),
 
     private var wasSwiping = false
 
-    var focusTimeout = 5L
-
     lateinit var cdTimer : CountDownTimerUI
     var timerDuration = 0
 
@@ -869,10 +867,10 @@ open class MainActivity : AppCompatActivity(),
 
             config.mPlayer.playFocusStartSound()
 
-            if (focusTimeout == 0L) {
+            if (config.focusTimeout == 0L) {
                 focusBuilder.disableAutoCancel()
             } else {
-                focusBuilder.setAutoCancelDuration(focusTimeout, TimeUnit.SECONDS)
+                focusBuilder.setAutoCancelDuration(config.focusTimeout, TimeUnit.SECONDS)
 //                fTHandler.removeCallbacks(fTRunnable)
 //                fTHandler.postDelayed(fTRunnable, focusTimeout * 1000)
             }

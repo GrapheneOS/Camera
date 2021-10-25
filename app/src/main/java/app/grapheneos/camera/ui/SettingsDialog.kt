@@ -39,6 +39,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     private var cmRadioGroup: RadioGroup
 
+    private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
+
     init {
         setContentView(R.layout.settings)
 
@@ -159,28 +161,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
 
                     val selectedOption = focusTimeoutSpinner.selectedItem.toString()
-
-                    if(selectedOption == "Off"){
-                        mActivity.focusTimeout = 0
-                    } else {
-
-                        try {
-                            val durS = selectedOption.substring(0, selectedOption.length-1)
-                            val dur = durS.toLong()
-
-                            mActivity.focusTimeout = dur
-
-                        } catch (exception: Exception) {
-
-                            Toast.makeText(
-                                mActivity,
-                                "An unexpected error occurred while setting focus timeout",
-                                Toast.LENGTH_LONG
-                            ).show()
-
-                        }
-
-                    }
+                    updateFocusTimeout(selectedOption)
 
                 }
 
@@ -230,6 +211,32 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         mScrollViewContent = findViewById(R.id.settings_scrollview_content)
 
         csSwitch = findViewById(R.id.camera_sounds_switch)
+    }
+
+    fun updateFocusTimeout(selectedOption: String) {
+
+        if(selectedOption == "Off"){
+            mActivity.config.focusTimeout = 0
+        } else {
+
+            try {
+                val durS = selectedOption.substring(0, selectedOption.length-1)
+                val dur = durS.toLong()
+
+                mActivity.config.focusTimeout = dur
+
+            } catch (exception: Exception) {
+
+                Toast.makeText(
+                    mActivity,
+                    "An unexpected error occurred while setting focus timeout",
+                    Toast.LENGTH_LONG
+                ).show()
+
+            }
+        }
+
+        focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
     }
 
 //    fun selfIllumination(value: Boolean){

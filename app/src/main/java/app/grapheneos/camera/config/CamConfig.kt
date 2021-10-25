@@ -128,6 +128,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     lateinit var modeText : String
 
+    var focusTimeout = 5L
+
     fun getCurrentModeText() : String {
         val facing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
             "BACK"
