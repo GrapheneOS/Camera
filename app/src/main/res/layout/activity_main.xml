@@ -360,6 +360,7 @@
             android:id="@+id/settings_option"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:background="@null"
             android:src="@drawable/settings_icon"
             android:contentDescription="@string/capture_mode"/>

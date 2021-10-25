@@ -555,13 +555,11 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.threeButtons.visibility = View.INVISIBLE
             mActivity.captureModeView.visibility = View.INVISIBLE
-            mActivity.settingsIcon.visibility = View.INVISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.threeButtons.visibility = View.VISIBLE
             mActivity.captureModeView.visibility = View.VISIBLE
-            mActivity.settingsIcon.visibility = View.VISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
         }
 

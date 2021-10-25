@@ -450,11 +450,17 @@ open class MainActivity : AppCompatActivity(),
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
-                if(!config.isQRMode) previewGrid.visibility = View.VISIBLE
+                if(!config.isQRMode) {
+                    previewGrid.visibility = View.VISIBLE
+                    settingsIcon.visibility = View.VISIBLE
+                    settingsIcon.isEnabled = true
+                }
             } else {
                 previewGrid.visibility = View.INVISIBLE
                 if (lastFrame != null && this !is CaptureActivity) {
                     mainOverlay.setImageBitmap(blurBitmap(lastFrame!!))
+                    settingsIcon.visibility = View.INVISIBLE
+                    settingsIcon.isEnabled = false
                     mainOverlay.visibility = View.VISIBLE
                 }
             }
@@ -1007,7 +1013,9 @@ open class MainActivity : AppCompatActivity(),
     private fun onSwipeBottom(){
         if(isZooming || cdTimer.isRunning) return
         wasSwiping = true
-        settingsIcon.performClick()
+        if (settingsIcon.isEnabled){
+            settingsIcon.performClick()
+        }
     }
 
     private fun onSwipeRight(){
