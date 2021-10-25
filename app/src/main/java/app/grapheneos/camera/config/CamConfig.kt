@@ -1,6 +1,8 @@
 package app.grapheneos.camera.config
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
+import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -50,6 +52,13 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     var gridType: Grid = Grid.NONE
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putInt("grid", Grid.values().indexOf(value))
+            editor.apply()
+
+            field = value
+        }
 
     var camera: Camera? = null
 
@@ -126,9 +135,69 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     val mPlayer : TunePlayer = TunePlayer(mActivity)
 
-    lateinit var modeText : String
+    private lateinit var modeText : String
 
     var focusTimeout = 5L
+        set(value) {
+            val option =  if(value==0L) {
+                "Off"
+            } else {
+                "${value}s"
+            }
+
+            val editor = commonPref.edit()
+            editor.putString("focus_timeout", option)
+            editor.apply()
+
+            field = value
+        }
+
+    var enableCameraSounds : Boolean
+        get() {
+            return mActivity.settingsDialog.csSwitch.isChecked
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean("camera_sounds", value)
+            editor.apply()
+
+            mActivity.settingsDialog.csSwitch.isChecked = value
+        }
+
+    private val commonPref =
+        mActivity.getSharedPreferences("commons", Context.MODE_PRIVATE)
+
+    @SuppressLint("ApplySharedPref")
+    fun loadSettings(){
+
+        // Create common config. if it's not created
+        if(!commonPref.contains("camera_sounds")) {
+
+            Log.i(TAG, "Creating SP")
+
+            val editor = commonPref.edit()
+
+            editor.putBoolean("camera_sounds", true)
+
+            // Index for Grid.values() Default: NONE
+            editor.putInt("grid", 0)
+
+            editor.putString("focus_timeout", "5s")
+
+            editor.commit()
+        } else {
+            Log.i(TAG, "SP was already created.")
+        }
+
+        mActivity.settingsDialog.csSwitch.isChecked = commonPref.getBoolean("camera_sounds", true)
+
+        gridType = Grid.values()[commonPref.getInt("grid", 0)]
+        mActivity.settingsDialog.updateGridToggleUI()
+
+        commonPref.getString("focus_timeout", "5s")?.let {
+            mActivity.settingsDialog.updateFocusTimeout(it)
+        }
+    }
 
     fun getCurrentModeText() : String {
         val facing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {

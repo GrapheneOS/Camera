@@ -679,6 +679,8 @@ open class MainActivity : AppCompatActivity(),
                 settingsDialog.mScrollView.layoutParams = lp
             }
         })
+
+        config.loadSettings()
     }
 
     private fun shareLatestMedia() {

@@ -211,6 +211,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         mScrollViewContent = findViewById(R.id.settings_scrollview_content)
 
         csSwitch = findViewById(R.id.camera_sounds_switch)
+        csSwitch.setOnCheckedChangeListener { _, value ->
+            mActivity.config.enableCameraSounds = value
+        }
     }
 
     fun updateFocusTimeout(selectedOption: String) {
@@ -369,7 +372,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
     }
 
-    private fun updateGridToggleUI(){
+    fun updateGridToggleUI(){
         mActivity.previewGrid.postInvalidate()
         gridToggle.setImageResource(
             when(mActivity.config.gridType) {
