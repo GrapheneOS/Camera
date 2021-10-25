@@ -72,7 +72,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     var preview: Preview? = null
         private set
 
-    private var lensFacing = CameraSelector.LENS_FACING_BACK
+    var lensFacing = CameraSelector.LENS_FACING_BACK
 
     private var cameraMode = ExtensionMode.NONE
 
@@ -262,9 +262,9 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         flashMode = modePref.getInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
         requireLocation = modePref.getBoolean("location", false)
         selfIlluminate = modePref.getBoolean("self_illumination", false)
+
+        mActivity.settingsDialog.showOnlyRelevantSettings()
     }
-
-
 
     @SuppressLint("ApplySharedPref")
     fun loadSettings(){

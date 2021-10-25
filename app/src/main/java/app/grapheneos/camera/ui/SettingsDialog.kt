@@ -8,6 +8,7 @@ import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.video.QualitySelector
@@ -40,6 +41,10 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     private var cmRadioGroup: RadioGroup
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
+
+    private var includeAudioSetting : View
+    private var selfIlluminationSetting : View
+    private var videoQualitySetting : View
 
     init {
         setContentView(R.layout.settings)
@@ -193,7 +198,29 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         csSwitch.setOnCheckedChangeListener { _, value ->
             mActivity.config.enableCameraSounds = value
         }
+
+        includeAudioSetting = findViewById(R.id.include_audio_setting)
+        selfIlluminationSetting = findViewById(R.id.self_illumination_setting)
+        videoQualitySetting = findViewById(R.id.video_quality_setting)
     }
+
+    fun showOnlyRelevantSettings() {
+        if (mActivity.config.isVideoMode) {
+            includeAudioSetting.visibility = View.VISIBLE
+            videoQualitySetting.visibility = View.VISIBLE
+        } else {
+            includeAudioSetting.visibility = View.GONE
+            videoQualitySetting.visibility = View.GONE
+        }
+
+        selfIlluminationSetting.visibility =
+            if(mActivity.config.lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+    }
+
 
     fun updateFocusTimeout(selectedOption: String) {
 
@@ -415,6 +442,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         super.show()
 
         slideDialogDown()
+    }
+
+    fun showRelevantSettings() {
+
+
+
     }
 
     fun reloadQualities(qualityText : String = "") {
