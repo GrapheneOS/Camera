@@ -272,8 +272,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         // Create common config. if it's not created
         if(!commonPref.contains("camera_sounds")) {
 
-            Log.i(TAG, "Creating SP")
-
             val editor = commonPref.edit()
 
             editor.putBoolean("camera_sounds", true)
@@ -283,9 +281,9 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
             editor.putString("focus_timeout", "5s")
 
+            editor.putBoolean("emphasis_on_quality", true)
+
             editor.commit()
-        } else {
-            Log.i(TAG, "SP was already created.")
         }
 
         mActivity.settingsDialog.csSwitch.isChecked = commonPref.getBoolean("camera_sounds", true)
@@ -296,7 +294,23 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         commonPref.getString("focus_timeout", "5s")?.let {
             mActivity.settingsDialog.updateFocusTimeout(it)
         }
+
+        if (emphasisQuality) {
+            mActivity.settingsDialog.cmRadioGroup.check(R.id.quality_radio)
+        } else {
+            mActivity.settingsDialog.cmRadioGroup.check(R.id.latency_radio)
+        }
     }
+
+    var emphasisQuality: Boolean
+        get() {
+            return commonPref.getBoolean("emphasis_on_quality", true)
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean("emphasis_on_quality", value)
+            editor.commit()
+        }
 
     fun getCurrentModeText() : String {
 
@@ -545,7 +559,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             if(mActivity !is VideoCaptureActivity) {
                 imageCapture = builder
                     .setCaptureMode(
-                        if(mActivity.settingsDialog.cmRadio.isChecked) {
+                        if(emphasisQuality) {
                             ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                         } else {
                             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY

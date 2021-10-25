@@ -33,12 +33,11 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     var mScrollView: ScrollView
     var mScrollViewContent: View
 
+    var cmRadioGroup: RadioGroup
     var cmRadio: RadioButton
 
     var selfIlluminationToggle : SwitchCompat
     var csSwitch: SwitchCompat
-
-    private var cmRadioGroup: RadioGroup
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
@@ -130,7 +129,10 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         cmRadioGroup = findViewById(R.id.cm_radio_group)
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
-            mActivity.config.startCamera(true)
+            mActivity.config.emphasisQuality = cmRadio.isChecked
+            if (mActivity.config.cameraProvider != null) {
+                mActivity.config.startCamera(true)
+            }
         }
 
         selfIlluminationToggle = findViewById(R.id.self_illumination_switch)
