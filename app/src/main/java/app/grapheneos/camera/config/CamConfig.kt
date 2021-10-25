@@ -128,6 +128,22 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     lateinit var modeText : String
 
+    fun getCurrentModeText() : String {
+        val facing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+            "BACK"
+        } else {
+            "FRONT"
+        }
+
+        val vp = if (isVideoMode) {
+            "VIDEO"
+        } else {
+            "PHOTO"
+        }
+
+        return "$modeText-$vp-$facing"
+    }
+
     fun updatePreview() {
         val lastModifiedFile = latestFile ?: return
         if (lastModifiedFile.extension == "mp4") {
