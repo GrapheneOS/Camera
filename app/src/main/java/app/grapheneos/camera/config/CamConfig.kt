@@ -299,11 +299,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     fun getCurrentModeText() : String {
-        val facing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-            "BACK"
-        } else {
-            "FRONT"
-        }
 
         val vp = if (isVideoMode) {
             "VIDEO"
@@ -311,7 +306,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             "PHOTO"
         }
 
-        return "$modeText-$vp-$facing"
+        return "$modeText-$vp"
     }
 
     fun updatePreview() {
