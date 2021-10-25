@@ -3,6 +3,7 @@ package app.grapheneos.camera.config
 import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -41,7 +42,7 @@ import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
-
+@SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     enum class Grid {
@@ -77,7 +78,25 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     private lateinit var cameraSelector: CameraSelector
 
-    var videoQuality: QualitySelector = QualitySelector.of(QualitySelector.QUALITY_HIGHEST)
+    var videoQuality: Int = 0
+        get() {
+            return if (modePref.contains("video_quality")){
+                mActivity.settingsDialog.titleToQuality(
+                    modePref.getString("video_quality", "")!!
+                )
+            } else {
+                mActivity.settingsDialog.getHighestQuality()
+            }
+        }
+        set(value) {
+            val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
+
+            val editor = modePref.edit()
+            editor.putString("video_quality", option)
+            editor.commit()
+
+            field = value
+        }
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
@@ -101,8 +120,20 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var flashMode: Int
         get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
+
         set(flashMode) {
+
+            if(::modePref.isInitialized){
+                val editor = modePref.edit()
+                editor.putInt("flash_mode", flashMode)
+                editor.commit()
+
+                Log.i(TAG, "Selected mode: (${getCurrentModeText()})" +
+                        " ${modePref.getInt("flash_mode", -1)}")
+            }
+
             imageCapture!!.flashMode = flashMode
+            mActivity.settingsDialog.updateFlashMode()
         }
 
     val isFlashAvailable: Boolean
@@ -135,7 +166,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     val mPlayer : TunePlayer = TunePlayer(mActivity)
 
-    private lateinit var modeText : String
+    private var modeText : String = "CAMERA"
 
     var focusTimeout = 5L
         set(value) {
@@ -164,8 +195,76 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             mActivity.settingsDialog.csSwitch.isChecked = value
         }
 
+    var requireLocation : Boolean
+        get() {
+            return mActivity.settingsDialog.locToggle.isChecked
+        }
+        set(value) {
+            val editor = modePref.edit()
+            editor.putBoolean("location", value)
+            editor.apply()
+
+            mActivity.settingsDialog.locToggle.isChecked = value
+        }
+
+    var selfIlluminate : Boolean
+        get() {
+            return mActivity.settingsDialog.selfIlluminationToggle.isChecked
+        }
+        set(value) {
+            val editor = modePref.edit()
+            editor.putBoolean("self_illumination", value)
+            editor.commit()
+
+            mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
+        }
+
     private val commonPref =
         mActivity.getSharedPreferences("commons", Context.MODE_PRIVATE)
+
+    private lateinit var modePref : SharedPreferences
+
+    private fun updatePrefMode() {
+        val modeText = getCurrentModeText()
+        modePref = mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
+    }
+
+    fun reloadSettings() {
+
+        if(!modePref.contains("flash_mode")) {
+            // pref config needs to be created
+
+            val sEditor = modePref.edit()
+
+            if (isVideoMode) {
+                mActivity.settingsDialog.reloadQualities()
+                val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
+                sEditor.putString("video_quality", option)
+            }
+
+            if(lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                sEditor.putBoolean("self_illumination", false)
+            }
+
+            sEditor.putInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
+
+            sEditor.putBoolean("location", false)
+
+            // apply is async and commit waits until the data is written
+            sEditor.commit()
+
+        } else if (isVideoMode) {
+            modePref.getString("video_quality", null)?.let {
+                mActivity.settingsDialog.reloadQualities(it)
+            }
+        }
+
+        flashMode = modePref.getInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
+        requireLocation = modePref.getBoolean("location", false)
+        selfIlluminate = modePref.getBoolean("self_illumination", false)
+    }
+
+
 
     @SuppressLint("ApplySharedPref")
     fun loadSettings(){
@@ -319,22 +418,10 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     fun toggleFlashMode() {
         if (camera!!.cameraInfo.hasFlashUnit()) {
 
-            when(flashMode){
-
-                ImageCapture.FLASH_MODE_OFF -> {
-                    mActivity.settingsDialog.flashToggle.setImageResource(R.drawable.flash_on_circle)
-                    flashMode = ImageCapture.FLASH_MODE_ON
-                }
-
-                ImageCapture.FLASH_MODE_ON -> {
-                    mActivity.settingsDialog.flashToggle.setImageResource(R.drawable.flash_auto_circle)
-                    flashMode = ImageCapture.FLASH_MODE_AUTO
-                }
-
-                ImageCapture.FLASH_MODE_AUTO -> {
-                    mActivity.settingsDialog.flashToggle.setImageResource(R.drawable.flash_off_circle)
-                    flashMode = ImageCapture.FLASH_MODE_OFF
-                }
+            flashMode = when(flashMode){
+                ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
+                ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
+                else -> ImageCapture.FLASH_MODE_OFF
             }
 
 //            flashMode =
@@ -387,6 +474,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     @JvmOverloads
     fun startCamera(forced: Boolean = false) {
         if (!forced && camera != null) return
+
+        updatePrefMode()
 
         val rotation = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val display = mActivity.display
@@ -451,7 +540,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 videoCapture =
                     VideoCapture.withOutput(
                         Recorder.Builder()
-                            .setQualitySelector(videoQuality)
+                            .setQualitySelector(QualitySelector.of(videoQuality))
                             .build()
                     )
 
@@ -472,8 +561,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                     .setTargetAspectRatio(aspectRatio)
                     .setFlashMode(flashMode)
                     .build()
-
-                flashMode = ImageCapture.FLASH_MODE_OFF
 
                 useCaseGroupBuilder.addUseCase(imageCapture!!)
             }

@@ -448,6 +448,7 @@ open class MainActivity : AppCompatActivity(),
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
+                config.reloadSettings()
                 if(!config.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     settingsIcon.visibility = View.VISIBLE

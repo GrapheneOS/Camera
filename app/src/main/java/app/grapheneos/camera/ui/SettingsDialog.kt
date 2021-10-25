@@ -18,13 +18,13 @@ import app.grapheneos.camera.ui.activities.MainActivity
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
 
     private var dialog : View
-    private var locToggle: ToggleButton
+    var locToggle: ToggleButton
     var flashToggle: ImageView
     var aRToggle: ToggleButton
     private var torchToggle: ToggleButton
     private var gridToggle: ImageView
     private var mActivity: MainActivity
-    private var videoQualitySpinner : Spinner
+    var videoQualitySpinner : Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
@@ -34,7 +34,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     var cmRadio: RadioButton
 
-    private var selfIlluminationToggle : SwitchCompat
+    var selfIlluminationToggle : SwitchCompat
     var csSwitch: SwitchCompat
 
     private var cmRadioGroup: RadioGroup
@@ -61,6 +61,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
 
         locToggle = findViewById(R.id.location_toggle)
+        locToggle.setOnCheckedChangeListener { _, value ->
+            mActivity.config.requireLocation = value
+        }
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
@@ -107,37 +110,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         videoQualitySpinner = findViewById(R.id.video_quality_spinner)
 
-        var avoidFirst = true
-
         videoQualitySpinner.onItemSelectedListener =
             object: AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
 
-                    // Avoid listening to the first default event
-                    if(avoidFirst){
-                        avoidFirst = false
-                        return
-                    }
-
-                    val choice = vQAdapter.getItem(position)
-
-                    val quality = when(choice){
-                        "2160p (UHD)" -> QualitySelector.QUALITY_UHD
-                        "1080p (FHD)" -> QualitySelector.QUALITY_FHD
-                        "720p (HD)" -> QualitySelector.QUALITY_HD
-                        "480p (SD)" -> QualitySelector.QUALITY_SD
-                        else -> {
-                            Log.i("TAG", "Unknown quality: $choice")
-                            QualitySelector.QUALITY_SD
-                        }
-                    }
-
-                    Log.i(choice, "quality: $quality")
-
-                    mActivity.config.videoQuality =
-                        QualitySelector.of(quality)
-
-                    mActivity.config.startCamera(true)
+                    val choice = vQAdapter.getItem(position) as String
+                    updateVideoQuality(choice)
                 }
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
@@ -152,6 +130,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         selfIlluminationToggle = findViewById(R.id.self_illumination_switch)
         selfIlluminationToggle.setOnCheckedChangeListener { _, value ->
+            mActivity.config.selfIlluminate = value
 //            selfIllumination(value)
         }
 
@@ -240,6 +219,35 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
 
         focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
+    }
+
+    fun updateVideoQuality(choice: String, resCam: Boolean = true){
+
+        val quality = titleToQuality(choice)
+
+        if (quality == mActivity.config.videoQuality) return
+
+        mActivity.config.videoQuality = quality
+
+        if(resCam) {
+            mActivity.config.startCamera(true)
+        } else {
+            videoQualitySpinner.setSelection(getAvailableQTitles().indexOf(choice))
+
+        }
+    }
+
+    fun titleToQuality(title: String): Int {
+        return when(title) {
+            "2160p (UHD)" -> QualitySelector.QUALITY_UHD
+            "1080p (FHD)" -> QualitySelector.QUALITY_FHD
+            "720p (HD)" -> QualitySelector.QUALITY_HD
+            "480p (SD)" -> QualitySelector.QUALITY_SD
+            else -> {
+                Log.e("TAG", "Unknown quality: $title")
+                QualitySelector.QUALITY_SD
+            }
+        }
     }
 
 //    fun selfIllumination(value: Boolean){
@@ -384,14 +392,18 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         )
     }
 
-    override fun show() {
+    fun updateFlashMode() {
         flashToggle.setImageResource(
-            when(mActivity.config.flashMode) {
+            when (mActivity.config.flashMode) {
                 ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
                 ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
                 else -> R.drawable.flash_off_circle
             }
         )
+    }
+
+    override fun show() {
+        updateFlashMode()
 
         aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
         torchToggle.isChecked =
@@ -399,31 +411,33 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         updateGridToggleUI()
 
-        if(!::vQAdapter.isInitialized) {
-
-            val titles = getAvailableQTitles()
-
-            vQAdapter = ArrayAdapter<String>(
-                mActivity,
-                android.R.layout.simple_spinner_item,
-                titles
-            )
-
-            vQAdapter.setDropDownViewResource(
-                android.R.layout.simple_spinner_dropdown_item)
-
-            videoQualitySpinner.adapter = vQAdapter
-
-            videoQualitySpinner.setSelection(
-                titles.indexOf(getTitleFor(
-                    getHighestQuality()
-                ))
-            )
-        }
-
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
 
         slideDialogDown()
+    }
+
+    fun reloadQualities(qualityText : String = "") {
+
+        val titles = getAvailableQTitles()
+
+        vQAdapter = ArrayAdapter<String>(
+            mActivity,
+            android.R.layout.simple_spinner_item,
+            titles
+        )
+
+        vQAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item)
+
+        videoQualitySpinner.adapter = vQAdapter
+
+        val qt = if(qualityText.isEmpty()) {
+            getTitleFor(mActivity.config.videoQuality)
+        } else {
+            qualityText
+        }
+
+        videoQualitySpinner.setSelection(titles.indexOf(qt))
     }
 }
