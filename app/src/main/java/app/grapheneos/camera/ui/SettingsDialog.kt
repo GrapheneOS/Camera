@@ -351,10 +351,6 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         )
     }
 
-    fun getHighestQuality(): Int {
-        return getAvailableQualities()[0]
-    }
-
     private fun getAvailableQTitles(): List<String> {
 
         val titles = arrayListOf<String>()

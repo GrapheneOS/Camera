@@ -85,7 +85,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                     modePref.getString("video_quality", "")!!
                 )
             } else {
-                mActivity.settingsDialog.getHighestQuality()
+                QualitySelector.QUALITY_FHD
             }
         }
         set(value) {
