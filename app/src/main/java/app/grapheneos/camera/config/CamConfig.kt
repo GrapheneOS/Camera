@@ -24,13 +24,7 @@ import android.view.animation.Animation
 import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.Preview
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.*
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
