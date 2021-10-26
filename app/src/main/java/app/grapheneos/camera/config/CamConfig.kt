@@ -615,6 +615,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         mActivity.exposureBar.setExposureConfig(camera!!.cameraInfo.exposureState)
 
+        mActivity.settingsDialog.torchToggle.isChecked = false
+
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
 //        if (!isFlashAvailable) {
