@@ -91,20 +91,21 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
+        torchToggle = findViewById(R.id.torch_toggle_option)
         aRToggle.setOnClickListener {
-            if(mActivity.config.isVideoMode){
+            if (mActivity.config.isVideoMode) {
                 aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
                 Toast.makeText(mActivity,
                     "4:3 isn't supported in video mode",
                     Toast.LENGTH_LONG).show()
             } else {
+                torchToggle.isChecked = false
                 mActivity.config.toggleAspectRatio()
             }
         }
 
-        torchToggle = findViewById(R.id.torch_toggle_option)
         torchToggle.setOnClickListener {
-            if(mActivity.config.isFlashAvailable) {
+            if (mActivity.config.isFlashAvailable) {
                 mActivity.config.camera?.cameraControl?.enableTorch(
                     mActivity.config.camera?.cameraInfo?.torchState?.value ==
                             TorchState.OFF
@@ -135,6 +136,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
 
                     val choice = vQAdapter.getItem(position) as String
+                    torchToggle.isChecked = false
                     updateVideoQuality(choice)
                 }
 
@@ -145,6 +147,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         cmRadioGroup = findViewById(R.id.cm_radio_group)
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
+            torchToggle.isChecked = false
             mActivity.config.emphasisQuality = cmRadio.isChecked
             if (mActivity.config.cameraProvider != null) {
                 mActivity.config.startCamera(true)
