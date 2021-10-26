@@ -144,6 +144,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         cmRadioGroup = findViewById(R.id.cm_radio_group)
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
             mActivity.config.emphasisQuality = cmRadio.isChecked
+            torchToggle.isChecked = false
             if (mActivity.config.cameraProvider != null) {
                 mActivity.config.startCamera(true)
             }
