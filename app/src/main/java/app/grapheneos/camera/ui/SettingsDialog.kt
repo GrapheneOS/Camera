@@ -27,7 +27,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     var locToggle: ToggleButton
     var flashToggle: ImageView
     var aRToggle: ToggleButton
-    private var torchToggle: ToggleButton
+    var torchToggle: ToggleButton
     private var gridToggle: ImageView
     private var mActivity: MainActivity
     var videoQualitySpinner : Spinner

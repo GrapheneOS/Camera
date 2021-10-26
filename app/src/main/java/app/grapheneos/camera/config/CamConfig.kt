@@ -485,6 +485,9 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         if (!forced && camera != null) return
 
         updatePrefMode()
+        if (mActivity.settingsDialog.torchToggle.isChecked) {
+            mActivity.settingsDialog.torchToggle.isChecked = false
+        }
 
         val rotation = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             val display = mActivity.display
