@@ -225,6 +225,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         includeAudioToggle = findViewById(R.id.include_audio_switch)
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
+            torchToggle.isChecked = false
             mActivity.config.startCamera(true)
         }
     }
