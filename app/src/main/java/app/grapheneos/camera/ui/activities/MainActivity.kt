@@ -56,7 +56,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.GestureDetectorCompat
 import app.grapheneos.camera.ui.*
 import java.util.concurrent.TimeUnit
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
+import app.grapheneos.camera.CustomLocationListener
 
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
@@ -128,6 +128,8 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var cbText : TextView
     lateinit var cbCross : ImageView
+
+    lateinit var locationListener: CustomLocationListener
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -332,6 +334,18 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
+
+        locationListener.locationPermissionDialog?.let { dialog ->
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.ACCESS_FINE_LOCATION
+                ) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                if (dialog.isShowing) {
+                    dialog.dismiss()
+                }
+            }
+        }
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -372,6 +386,10 @@ open class MainActivity : AppCompatActivity(),
         if(config.latestMediaFile==null){
             imagePreview.setImageResource(android.R.color.transparent)
         }
+
+        if(config.requireLocation){
+            locationListener.start()
+        }
     }
 
     override fun onPause() {
@@ -381,6 +399,9 @@ open class MainActivity : AppCompatActivity(),
             cancelFocusTimer()
         }
         lastFrame = null
+
+        if(config.requireLocation)
+            locationListener.stop()
     }
 
     lateinit var gestureDetectorCompat: GestureDetectorCompat
@@ -661,6 +682,8 @@ open class MainActivity : AppCompatActivity(),
         cbCross = findViewById(R.id.capture_button_cross)
 
         config.loadSettings()
+
+        locationListener = CustomLocationListener(this)
     }
 
     private fun shareLatestMedia() {

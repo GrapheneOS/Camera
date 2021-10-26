@@ -73,6 +73,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         locToggle = findViewById(R.id.location_toggle)
         locToggle.setOnClickListener {
+
+            if(mActivity.config.isVideoMode) {
+                mActivity.config.requireLocation = false
+                Toast.makeText(
+                    mActivity,
+                    "Geo-tagging currently isn't supported for video mode",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
+            }
+
             if (mActivity.videoCapturer.isRecording) {
                 locToggle.isChecked = !locToggle.isChecked
                 Toast.makeText(

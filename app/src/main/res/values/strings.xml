@@ -11,6 +11,11 @@
         The app needs permission to access the audio to record video. Please provide the required permission via Settings in order to use this app.
     </string>
 
+    <string name="location_permission_dialog_title">Location permission required</string>
+    <string name="location_permission_dialog_message">
+        The app needs location permission for geo-tagging. Please provide the required permission via Settings in order to use this app.
+    </string>
+
     <string name="focus_ring">Focus Ring</string>
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>

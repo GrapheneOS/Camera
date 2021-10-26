@@ -200,9 +200,16 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             return mActivity.settingsDialog.locToggle.isChecked
         }
         set(value) {
+
+            if(value) {
+                mActivity.locationListener.start()
+            } else {
+                mActivity.locationListener.stop()
+            }
+
             val editor = modePref.edit()
             editor.putBoolean("location", value)
-            editor.apply()
+            editor.commit()
 
             mActivity.settingsDialog.locToggle.isChecked = value
         }

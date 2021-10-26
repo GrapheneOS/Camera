@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
@@ -32,8 +33,29 @@ class ImageCapturer(private val mActivity: MainActivity) {
     fun takePicture() {
         if (mActivity.config.camera == null) return
         val imageFile = generateFileForImage()
-        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(imageFile)
-            .build()
+        val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(imageFile)
+
+        if(mActivity.config.requireLocation) {
+
+            if (mActivity.locationListener.lastKnownLocation==null) {
+                Toast.makeText(
+                    mActivity,
+                    "Couldn't attach location to image " +
+                            "since it's currently unavailable",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                outputFileOptionsBuilder.setMetadata(
+                    ImageCapture.Metadata().apply {
+                        location = mActivity.locationListener.lastKnownLocation
+                        Log.i(TAG, "Location added to ${location?.latitude}")
+                    }
+                )
+            }
+        }
+
+        val outputFileOptions = outputFileOptionsBuilder.build()
+
         mActivity.previewLoader.visibility = View.VISIBLE
         mActivity.config.snapPreview()
         mActivity.config.imageCapture!!.takePicture(
