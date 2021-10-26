@@ -208,6 +208,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         animator.start()
 
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = false
+        mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
+
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
         isPaused = false
         mActivity.captureModeView.visibility = View.GONE
@@ -234,6 +237,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.timerView.visibility = View.GONE
         mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
+
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = true
+        mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
 
         if(mActivity !is VideoCaptureActivity) {
             mActivity.thirdCircle.setImageResource(R.drawable.option_circle)

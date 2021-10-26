@@ -70,8 +70,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
 
         locToggle = findViewById(R.id.location_toggle)
-        locToggle.setOnCheckedChangeListener { _, value ->
-            mActivity.config.requireLocation = value
+        locToggle.setOnClickListener {
+            if (mActivity.videoCapturer.isRecording) {
+                locToggle.isChecked = !locToggle.isChecked
+                Toast.makeText(
+                    mActivity,
+                    "Can't toggle geo-tagging for ongoing recording",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                mActivity.config.requireLocation = locToggle.isChecked
+            }
         }
 
         flashToggle = findViewById(R.id.flash_toggle_option)
