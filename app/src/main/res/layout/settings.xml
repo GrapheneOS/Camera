@@ -18,6 +18,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/settings_bg"
         android:paddingVertical="@dimen/settings_dialog_padding_vertical"
+        android:layout_marginBottom="32dp"
         android:orientation="vertical"
         tools:ignore="UselessParent">
 

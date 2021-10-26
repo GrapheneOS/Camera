@@ -6,6 +6,8 @@ import android.app.Dialog
 import android.graphics.Color
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.*
@@ -223,6 +225,27 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
             mActivity.config.startCamera(true)
         }
+    }
+
+    private fun resize() {
+        mScrollViewContent.viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+
+                mScrollViewContent.viewTreeObserver.removeOnGlobalLayoutListener(this)
+
+                val sdHM = mActivity.resources.getDimension(R.dimen.settings_dialog_horizontal_margin)
+
+                val sH = (mScrollViewContent.width - (sdHM * 8)).toInt()
+
+                val lp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    sH.coerceAtMost(mScrollViewContent.height)
+                )
+
+                mScrollView.layoutParams = lp
+            }
+        })
     }
 
     fun showOnlyRelevantSettings() {
@@ -451,6 +474,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     }
 
     override fun show() {
+
+        this.resize()
+
         updateFlashMode()
 
         aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
