@@ -31,8 +31,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     var activeRecording: ActiveRecording? = null
 
-    var audioEnabled: Boolean = true
-
     var isPaused = false
         set(value) {
             if(isRecording) {
@@ -128,7 +126,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 )
             }
 
-            if (audioEnabled)
+            if (mActivity.settingsDialog.includeAudioToggle.isChecked)
                 pendingRecording.withAudioEnabled()
 
             pendingRecording.withEventListener(

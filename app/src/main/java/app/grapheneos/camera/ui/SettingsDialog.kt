@@ -1,6 +1,9 @@
 package app.grapheneos.camera.ui
 
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.app.Dialog
+import android.graphics.Color
 import android.util.Log
 import android.view.View
 import android.view.animation.Animation
@@ -35,6 +38,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     var cmRadioGroup: RadioGroup
     var cmRadio: RadioButton
+
+    var includeAudioToggle : SwitchCompat
 
     var selfIlluminationToggle : SwitchCompat
     var csSwitch: SwitchCompat
@@ -138,7 +143,6 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         selfIlluminationToggle = findViewById(R.id.self_illumination_switch)
         selfIlluminationToggle.setOnCheckedChangeListener { _, value ->
             mActivity.config.selfIlluminate = value
-//            selfIllumination(value)
         }
 
         focusTimeoutSpinner = findViewById(R.id.focus_timeout_spinner)
@@ -204,6 +208,11 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         includeAudioSetting = findViewById(R.id.include_audio_setting)
         selfIlluminationSetting = findViewById(R.id.self_illumination_setting)
         videoQualitySetting = findViewById(R.id.video_quality_setting)
+
+        includeAudioToggle = findViewById(R.id.include_audio_switch)
+        includeAudioToggle.setOnCheckedChangeListener { _, _ ->
+            mActivity.config.startCamera(true)
+        }
     }
 
     fun showOnlyRelevantSettings() {
@@ -444,12 +453,6 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         super.show()
 
         slideDialogDown()
-    }
-
-    fun showRelevantSettings() {
-
-
-
     }
 
     fun reloadQualities(qualityText : String = "") {
