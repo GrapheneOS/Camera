@@ -131,7 +131,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         videoQualitySpinner.onItemSelectedListener =
             object: AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
-
+                    torchToggle.isChecked = false
                     val choice = vQAdapter.getItem(position) as String
                     updateVideoQuality(choice)
                 }
