@@ -20,22 +20,47 @@
 
         <activity
             android:name="app.grapheneos.camera.ui.activities.MainActivity"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.android.camera.CameraActivity"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
-            android:configChanges="orientation|keyboardHidden"
             android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity-alias
+            android:name="app.grapheneos.camera.ui.activities.CameraLauncher"
+            android:label="@string/app_name"
+            android:exported="true"
+            android:targetActivity="app.grapheneos.camera.ui.activities.MainActivity">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity-alias>
 
         <activity
             android:name=".ui.activities.CaptureActivity"
             android:label="@string/app_name"
             android:screenOrientation="nosensor"
+            android:configChanges="orientation|keyboardHidden|screenSize"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
-            android:configChanges="orientation|keyboardHidden"
+            android:visibleToInstantApps="true"
             android:exported="true">
 
             <intent-filter>
@@ -47,14 +72,19 @@
 
         <activity-alias
             android:name=".ui.activities.SecureCaptureActivity"
-            android:label="@string/app_name"
             android:clearTaskOnLaunch="true"
+            android:label="@string/app_name"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:excludeFromRecents="true"
             android:taskAffinity=".ui.activities.SecureCaptureActivity"
             android:exported="true"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:targetActivity=".ui.activities.CaptureActivity">
+
+            <intent-filter>
+                <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.media.action.IMAGE_CAPTURE_SECURE" />
@@ -68,6 +98,11 @@
             android:label="Record Video"
             android:screenOrientation="nosensor"
             android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.media.action.VIDEO_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.media.action.VIDEO_CAPTURE" />
