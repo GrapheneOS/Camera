@@ -109,8 +109,11 @@
         </activity>
 
         <activity android:name=".ui.activities.VideoPlayer"/>
+
         <activity
-            android:name=".ui.activities.InAppGallery"/>
+            android:name=".ui.activities.InAppGallery"
+            android:exported="false"/>
+
     </application>
 
 </manifest>
