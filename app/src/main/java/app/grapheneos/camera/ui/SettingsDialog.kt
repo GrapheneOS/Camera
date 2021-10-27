@@ -193,6 +193,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
                     if(selectedOption == "Off"){
                         mActivity.timerDuration = 0
+                        mActivity.cbText.visibility = View.INVISIBLE
                     } else {
 
                         try {
