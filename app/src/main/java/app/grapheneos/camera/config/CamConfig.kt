@@ -236,33 +236,39 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     fun reloadSettings() {
 
+        // pref config needs to be created
+        val sEditor = modePref.edit()
+
         if(!modePref.contains("flash_mode")) {
-            // pref config needs to be created
+            sEditor.putInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
+        }
 
-            val sEditor = modePref.edit()
+        if (isVideoMode) {
 
-            if (isVideoMode) {
+            if(!modePref.contains("video_quality")) {
                 mActivity.settingsDialog.reloadQualities()
                 val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
                 sEditor.putString("video_quality", option)
+            } else {
+                modePref.getString("video_quality", null)?.let {
+                    mActivity.settingsDialog.reloadQualities(it)
+                }
             }
+        }
 
+        if(!modePref.contains("self_illumination")){
             if(lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 sEditor.putBoolean("self_illumination", false)
             }
+        }
 
-            sEditor.putInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
-
-            sEditor.putBoolean("location", false)
-
-            // apply is async and commit waits until the data is written
-            sEditor.commit()
-
-        } else if (isVideoMode) {
-            modePref.getString("video_quality", null)?.let {
-                mActivity.settingsDialog.reloadQualities(it)
+        if(!modePref.contains("location")) {
+            if(lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                sEditor.putBoolean("location", false)
             }
         }
+
+        sEditor.commit()
 
         flashMode = modePref.getInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
         requireLocation = modePref.getBoolean("location", false)
