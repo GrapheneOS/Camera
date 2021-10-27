@@ -102,7 +102,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
-            if(mActivity.doesActionRequireOnlyVideo()){
+            if(mActivity.requiresVideoModeOnly){
                 Toast.makeText(
                     mActivity,
                     "Cannot switch flash mode in this mode",
@@ -167,7 +167,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         qRadio = findViewById(R.id.quality_radio)
         lRadio = findViewById(R.id.latency_radio)
 
-        if(mActivity.doesActionRequireOnlyVideo()) {
+        if(mActivity.requiresVideoModeOnly) {
             qRadio.isEnabled = false
             lRadio.isEnabled = false
         }

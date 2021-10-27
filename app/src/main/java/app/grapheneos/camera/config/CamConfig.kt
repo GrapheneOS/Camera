@@ -543,7 +543,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
-            if (isVideoMode || mActivity.doesActionRequireOnlyVideo()) {
+            if (isVideoMode || mActivity.requiresVideoModeOnly) {
 
                 videoCapture =
                     VideoCapture.withOutput(
@@ -555,7 +555,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
 
-            if(!mActivity.doesActionRequireOnlyVideo()) {
+            if(!mActivity.requiresVideoModeOnly) {
                 imageCapture = builder
                     .setCaptureMode(
                         if(emphasisQuality) {

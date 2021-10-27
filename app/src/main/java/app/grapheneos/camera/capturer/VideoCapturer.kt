@@ -217,7 +217,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         isPaused = false
         mActivity.captureModeView.visibility = View.GONE
 
-        if(mActivity.doesActionRequireOnlyVideo()) {
+        if(mActivity.requiresVideoModeOnly) {
             mActivity.thirdOption.visibility = View.INVISIBLE
         }
 
