@@ -275,23 +275,29 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     fun loadSettings(){
 
         // Create common config. if it's not created
+        val editor = commonPref.edit()
+
         if(!commonPref.contains("camera_sounds")) {
-
-            val editor = commonPref.edit()
-
             editor.putBoolean("camera_sounds", true)
-
-            // Index for Grid.values() Default: NONE
-            editor.putInt("grid", 0)
-
-            editor.putString("focus_timeout", "5s")
-
-            editor.putBoolean("emphasis_on_quality", true)
-
-            editor.commit()
         }
 
-        mActivity.settingsDialog.csSwitch.isChecked = commonPref.getBoolean("camera_sounds", true)
+        if(!commonPref.contains("grid")) {
+            // Index for Grid.values() Default: NONE
+            editor.putInt("grid", 0)
+        }
+
+        if(!commonPref.contains("focus_timeout")) {
+            editor.putString("focus_timeout", "5s")
+        }
+
+        if(!commonPref.contains("emphasis_on_quality")) {
+            editor.putBoolean("emphasis_on_quality", true)
+        }
+
+        editor.commit()
+
+        mActivity.settingsDialog.csSwitch.isChecked =
+            commonPref.getBoolean("camera_sounds", true)
 
         gridType = Grid.values()[commonPref.getInt("grid", 0)]
         mActivity.settingsDialog.updateGridToggleUI()
