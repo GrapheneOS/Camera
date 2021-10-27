@@ -936,6 +936,10 @@ open class MainActivity : AppCompatActivity(),
         config.imageCapture?.targetRotation = tr
 //        config.iAnalyzer?.targetRotation = tr
 
+        if(flipCameraCircle.rotation == 0f){
+            flipCameraCircle.rotation = 360f
+        }
+
         val iconOrientation = flipCameraCircle.rotation
         val previousDeviceOrientation = (360 - iconOrientation) % 360
         // The smallest rotation between the device's previous and current orientation
