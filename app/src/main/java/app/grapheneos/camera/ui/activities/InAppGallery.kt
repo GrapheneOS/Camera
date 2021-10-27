@@ -261,11 +261,6 @@ class InAppGallery: AppCompatActivity() {
             .getCurrentFile()
     }
 
-    override fun onPause() {
-        super.onPause()
-        finish()
-    }
-
     companion object {
         @SuppressLint("SimpleDateFormat")
         fun convertTime(time: Long): String {
