@@ -29,6 +29,10 @@ class GallerySliderAdapter(private val gActivity: InAppGallery,
         ))
     }
 
+    override fun getItemId(position: Int): Long {
+        return mediaFiles[position].hashCode().toLong()
+    }
+
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
 
         val mediaPreview: ImageView =
