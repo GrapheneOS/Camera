@@ -259,7 +259,7 @@ open class MainActivity : AppCompatActivity(),
             }).start()
     }
 
-    private fun openGallery() {
+    protected open fun openGallery() {
         val intent = Intent(this, InAppGallery::class.java)
         intent.putExtra("folder_path", config.parentDirPath)
         intent.putExtra("show_videos_only", this.requiresVideoModeOnly)

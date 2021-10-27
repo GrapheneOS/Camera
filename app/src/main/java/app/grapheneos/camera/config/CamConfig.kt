@@ -33,7 +33,9 @@ import androidx.camera.view.PreviewView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
-import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import app.grapheneos.camera.ui.activities.SecureMainActivity
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -328,6 +330,12 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     fun updatePreview() {
         val lastModifiedFile = latestFile ?: return
+
+        if(mActivity is SecureMainActivity) {
+            val lFCT = getCreationTimestamp(lastModifiedFile)
+            if(lFCT < mActivity.openedActivityAt) return
+        }
+
         if (lastModifiedFile.extension == "mp4") {
             try {
                 mActivity.imagePreview.setImageBitmap(
@@ -353,10 +361,12 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 val ext = file.extension
                 ext == "jpg" || ext == "png" || ext == "mp4"
             }
+
             if (files == null || files.isEmpty()) return null
+
             var lastModifiedFile = files[0]
             for (file in files) {
-                if (lastModifiedFile.lastModified() < file.lastModified())
+                if (getCreationTimestamp(lastModifiedFile) < getCreationTimestamp(file))
                     lastModifiedFile = file
             }
             latestFile = lastModifiedFile
@@ -407,7 +417,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             values.put(MediaStore.Video.Media.MIME_TYPE, mimeType)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.put(MediaStore.Video.Media.DATE_TAKEN, file.lastModified())
+                values.put(MediaStore.Video.Media.DATE_TAKEN, getCreationTimestamp(file))
                 values.put(MediaStore.Video.Media.RELATIVE_PATH, file.parent)
                 values.put(MediaStore.Video.Media.IS_PENDING, 0)
             }
@@ -418,7 +428,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             values.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.put(MediaStore.Images.Media.DATE_TAKEN, file.lastModified())
+                values.put(MediaStore.Images.Media.DATE_TAKEN, getCreationTimestamp(file))
                 values.put(MediaStore.Images.Media.RELATIVE_PATH, file.parent)
                 values.put(MediaStore.Images.Media.IS_PENDING, 0)
             }
@@ -811,6 +821,14 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 }
             }
             return mBitmap
+        }
+
+        fun getCreationTimestamp(file: File) : Long {
+            val attr: BasicFileAttributes = Files.readAttributes(
+                file.toPath(),
+                BasicFileAttributes::class.java
+            )
+            return attr.creationTime().toMillis()
         }
     }
 }

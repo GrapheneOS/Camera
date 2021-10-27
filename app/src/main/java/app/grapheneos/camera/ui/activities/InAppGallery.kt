@@ -25,6 +25,8 @@ import android.widget.Toast
 import android.util.Log
 import android.app.Activity
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 
 class InAppGallery: AppCompatActivity() {
 
@@ -42,14 +44,29 @@ class InAppGallery: AppCompatActivity() {
         val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
         val parentDir = File(parentFilePath)
 
+        val mActOpenAt = if(intent.extras?.containsKey("activity_opened_at")==true) {
+            intent.extras?.getLong("activity_opened_at") ?:
+                SecureMainActivity.DEFAULT_OPENED_AT_TIMESTAMP
+        } else {
+            SecureMainActivity.DEFAULT_OPENED_AT_TIMESTAMP
+        }
+
         mediaFiles = parentDir.listFiles { file: File ->
             if (!file.isFile) return@listFiles false
             val ext = file.extension
-            if(showVideosOnly) {
+
+            val res = if(showVideosOnly) {
                 ext == "mp4"
             } else {
                 ext == "jpg" || ext == "png" || ext == "mp4"
             }
+
+            if (mActOpenAt == SecureMainActivity.DEFAULT_OPENED_AT_TIMESTAMP) {
+                res
+            } else {
+                res && (getCreationTimestamp(file) > mActOpenAt)
+            }
+
         } ?: throw FileNotFoundException()
 
         // Close gallery if no files are present
@@ -273,6 +290,14 @@ class InAppGallery: AppCompatActivity() {
             val format: Format =
                 SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
             return format.format(date)
+        }
+
+        fun getCreationTimestamp(file: File): Long {
+            val attr: BasicFileAttributes = Files.readAttributes(
+                file.toPath(),
+                BasicFileAttributes::class.java
+            )
+            return attr.creationTime().toMillis()
         }
     }
 }
