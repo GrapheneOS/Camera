@@ -572,7 +572,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                         if(isVideoMode) {
                             AspectRatio.RATIO_16_9
                         } else {
-                            AspectRatio.RATIO_4_3
+                            aspectRatio
                         }
                     )
                     .setFlashMode(flashMode)
@@ -589,7 +589,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 if(isVideoMode) {
                     AspectRatio.RATIO_16_9
                 } else {
-                    AspectRatio.RATIO_4_3
+                    aspectRatio
                 }
             )
             .build()
