@@ -52,4 +52,5 @@
     <string name="cancel_timer">Cancel Timer</string>
     <string name="media_location">Media Location</string>
     <string name="camera_sounds">Camera Sounds</string>
+    <string name="video_capture_label">Record Video</string>
 </resources>

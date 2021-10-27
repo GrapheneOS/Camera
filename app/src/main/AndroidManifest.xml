@@ -18,6 +18,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
 
+
+        <!-- The main activity of the app (supports all modes) -->
         <activity
             android:name="app.grapheneos.camera.ui.activities.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -40,6 +42,9 @@
 
         </activity>
 
+        <!-- An extension of the MainActivity that completely enforces video mode
+        https://developer.android.com/reference/android/provider/MediaStore#INTENT_ACTION_VIDEO_CAMERA
+        -->
         <activity
             android:name="app.grapheneos.camera.ui.activities.VideoOnlyActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -56,6 +61,10 @@
 
         </activity>
 
+
+        <!-- Capture image that shall be sent to another app
+        https://developer.android.com/reference/android/provider/MediaStore#ACTION_IMAGE_CAPTURE
+        -->
         <activity
             android:name=".ui.activities.CaptureActivity"
             android:label="@string/app_name"
@@ -72,6 +81,9 @@
 
         </activity>
 
+        <!-- Capture image to be sent to another app (when the phone is in secure/locked state)
+         https://developer.android.com/reference/android/provider/MediaStore#ACTION_IMAGE_CAPTURE_SECURE
+         -->
         <activity-alias
             android:name=".ui.activities.SecureCaptureActivity"
             android:clearTaskOnLaunch="true"
@@ -95,9 +107,12 @@
 
         </activity-alias>
 
+        <!-- Deals with VideoCapture intent; To record a video to be sent to another app
+        https://developer.android.com/reference/android/provider/MediaStore#ACTION_VIDEO_CAPTURE
+             (No secure video capture intent is present/defined in Android)-->
         <activity
             android:name=".ui.activities.VideoCaptureActivity"
-            android:label="Record Video"
+            android:label="@string/video_capture_label"
             android:screenOrientation="nosensor"
             android:exported="true">
 
