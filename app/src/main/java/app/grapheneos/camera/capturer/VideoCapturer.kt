@@ -214,6 +214,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
         isPaused = false
         mActivity.captureModeView.visibility = View.GONE
+
+        if(mActivity.doesActionRequireOnlyVideo()) {
+            mActivity.thirdOption.visibility = View.INVISIBLE
+        }
+
         mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
@@ -241,6 +246,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = true
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
 
+        mActivity.thirdOption.visibility = View.VISIBLE
+
         if(mActivity !is VideoCaptureActivity) {
             mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
             mActivity.captureModeView.visibility = View.VISIBLE
@@ -250,7 +257,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun stopRecording() {
-
         activeRecording?.stop()
         activeRecording?.close()
     }

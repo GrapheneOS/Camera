@@ -39,12 +39,17 @@ class InAppGallery: AppCompatActivity() {
         gallerySlider.setPageTransformer(GSlideTransformer())
 
         val parentFilePath = intent.extras?.getString("folder_path")!!
+        val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
         val parentDir = File(parentFilePath)
 
         mediaFiles = parentDir.listFiles { file: File ->
             if (!file.isFile) return@listFiles false
             val ext = file.extension
-            ext == "jpg" || ext == "png" || ext == "mp4"
+            if(showVideosOnly) {
+                ext == "mp4"
+            } else {
+                ext == "jpg" || ext == "png" || ext == "mp4"
+            }
         } ?: throw FileNotFoundException()
 
         // Close gallery if no files are present

@@ -58,6 +58,7 @@ import app.grapheneos.camera.ui.*
 import java.util.concurrent.TimeUnit
 import app.grapheneos.camera.CustomLocationListener
 
+
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
     OnScaleGestureListener,
@@ -261,6 +262,7 @@ open class MainActivity : AppCompatActivity(),
     private fun openGallery() {
         val intent = Intent(this, InAppGallery::class.java)
         intent.putExtra("folder_path", config.parentDirPath)
+        intent.putExtra("show_videos_only", doesActionRequireOnlyVideo())
         startActivity(intent)
     }
 
@@ -392,6 +394,11 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    fun doesActionRequireOnlyVideo() : Boolean {
+        return intent.action == MediaStore.INTENT_ACTION_VIDEO_CAMERA ||
+                this is VideoCaptureActivity
+    }
+
     override fun onPause() {
         super.onPause()
         SensorOrientationChangeNotifier.getInstance(this)?.remove(this)
@@ -410,13 +417,24 @@ open class MainActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        Log.i(TAG, "intent.action: ${intent.action}")
+
+        config = CamConfig(this)
+        captureModeView = findViewById(R.id.capture_mode)
+        captureButton = findViewById(R.id.capture_button)
+
+        if(doesActionRequireOnlyVideo()) {
+            config.isVideoMode = true
+            captureButton.setImageResource(R.drawable.recording)
+            captureModeView.alpha = 0f
+        }
+
         gestureDetectorCompat = GestureDetectorCompat(
             this,
             this
         )
 
-        config = CamConfig(this)
-        settingsDialog = SettingsDialog(this)
+
         mainOverlay = findViewById(R.id.main_overlay)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
@@ -582,7 +600,7 @@ open class MainActivity : AppCompatActivity(),
             return@setOnLongClickListener true
         }
 
-        captureButton = findViewById(R.id.capture_button)
+
         captureButton.setOnClickListener(View.OnClickListener {
             if (config.isVideoMode) {
                 if (ActivityCompat.checkSelfPermission(
@@ -610,10 +628,14 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         })
-        captureModeView = findViewById(R.id.capture_mode)
+
         captureModeView.setOnClickListener(object : View.OnClickListener {
+
             val SWITCH_ANIM_DURATION = 150
             override fun onClick(v: View) {
+
+                if(doesActionRequireOnlyVideo()) return
+
                 val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
                 config.switchCameraMode()
                 val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
@@ -681,6 +703,7 @@ open class MainActivity : AppCompatActivity(),
         cbText = findViewById(R.id.capture_button_text)
         cbCross = findViewById(R.id.capture_button_cross)
 
+        settingsDialog = SettingsDialog(this)
         config.loadSettings()
 
         locationListener = CustomLocationListener(this)

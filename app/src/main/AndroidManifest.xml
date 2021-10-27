@@ -23,11 +23,15 @@
             android:clearTaskOnLaunch="true"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
-            android:launchMode="singleTask"
             android:taskAffinity="com.android.camera.CameraActivity"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.media.action.VIDEO_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
@@ -86,11 +90,6 @@
             android:label="Record Video"
             android:screenOrientation="nosensor"
             android:exported="true">
-
-            <intent-filter>
-                <action android:name="android.media.action.VIDEO_CAMERA" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.media.action.VIDEO_CAPTURE" />

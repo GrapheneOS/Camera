@@ -39,7 +39,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     var mScrollViewContent: View
 
     var cmRadioGroup: RadioGroup
-    var cmRadio: RadioButton
+    var qRadio: RadioButton
+    var lRadio: RadioButton
 
     var includeAudioToggle : SwitchCompat
 
@@ -100,7 +101,15 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
-            mActivity.config.toggleFlashMode()
+            if(mActivity.doesActionRequireOnlyVideo()){
+                Toast.makeText(
+                    mActivity,
+                    "Cannot switch flash mode in this mode",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                mActivity.config.toggleFlashMode()
+            }
         }
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
@@ -154,11 +163,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
         }
 
-        cmRadio = findViewById(R.id.quality_radio)
+        qRadio = findViewById(R.id.quality_radio)
+        lRadio = findViewById(R.id.latency_radio)
+
+        if(mActivity.doesActionRequireOnlyVideo()) {
+            qRadio.isEnabled = false
+            lRadio.isEnabled = false
+        }
 
         cmRadioGroup = findViewById(R.id.cm_radio_group)
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
-            mActivity.config.emphasisQuality = cmRadio.isChecked
+            mActivity.config.emphasisQuality = qRadio.isChecked
             if (mActivity.config.cameraProvider != null) {
                 mActivity.config.startCamera(true)
             }

@@ -25,7 +25,6 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import androidx.camera.core.*
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -99,7 +98,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     var isVideoMode = false
-        private set
 
     var isQRMode = false
         private set
@@ -128,7 +126,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                         " ${modePref.getInt("flash_mode", -1)}")
             }
 
-            imageCapture!!.flashMode = flashMode
+            imageCapture?.flashMode = flashMode
             mActivity.settingsDialog.updateFlashMode()
         }
 
@@ -545,7 +543,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
-            if (isVideoMode || mActivity is VideoCaptureActivity) {
+            if (isVideoMode || mActivity.doesActionRequireOnlyVideo()) {
 
                 videoCapture =
                     VideoCapture.withOutput(
@@ -557,7 +555,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
 
-            if(mActivity !is VideoCaptureActivity) {
+            if(!mActivity.doesActionRequireOnlyVideo()) {
                 imageCapture = builder
                     .setCaptureMode(
                         if(emphasisQuality) {
