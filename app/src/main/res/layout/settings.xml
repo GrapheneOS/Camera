@@ -319,6 +319,7 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/timer_setting"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"

@@ -52,6 +52,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     private var includeAudioSetting : View
     private var selfIlluminationSetting : View
     private var videoQualitySetting : View
+    private var timerSetting : View
 
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
@@ -248,6 +249,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         includeAudioSetting = findViewById(R.id.include_audio_setting)
         selfIlluminationSetting = findViewById(R.id.self_illumination_setting)
         videoQualitySetting = findViewById(R.id.video_quality_setting)
+        timerSetting = findViewById(R.id.timer_setting)
 
         includeAudioToggle = findViewById(R.id.include_audio_switch)
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
@@ -291,6 +293,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
             } else {
                 View.GONE
             }
+
+        timerSetting.visibility = if(mActivity.config.isVideoMode) {
+            View.GONE
+        } else {
+            View.VISIBLE
+        }
     }
 
 
