@@ -126,7 +126,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             mActivity,
                             arrayOf(file.absolutePath),
                             arrayOf(mimeType)
-                        ) { _: String?, uri: Uri ->
+                        ) { _: String?, uri: Uri? ->
                             Log.d(
                                 TAG, "Image capture scanned" +
                                         " into media store: " + uri
