@@ -196,6 +196,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private fun beforeRecordingStarts() {
 
+        mActivity.previewView.keepScreenOn = true
+
         val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
 
         val animator = ValueAnimator.ofFloat(dp16, dp8)
@@ -254,6 +256,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.tabLayout.visibility = View.VISIBLE
         }
         cancelTimer()
+
+        mActivity.previewView.keepScreenOn = false
     }
 
     fun stopRecording() {
