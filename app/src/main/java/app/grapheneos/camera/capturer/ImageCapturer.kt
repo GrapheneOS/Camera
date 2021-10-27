@@ -4,7 +4,11 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.util.Log
 import android.view.View
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -64,6 +68,47 @@ class ImageCapturer(private val mActivity: MainActivity) {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.i(TAG, "Image saved successfully!")
+                    mActivity.config.mPlayer.playShutterSound()
+
+                    if (mActivity.config.selfIlluminate) {
+
+                        val animation: Animation = AlphaAnimation(0.8f, 0f)
+                        animation.duration = 200
+                        animation.interpolator = LinearInterpolator()
+                        animation.fillAfter = true
+
+                        mActivity.mainOverlay.setImageResource(android.R.color.white)
+
+                        animation.setAnimationListener(
+                            object: Animation.AnimationListener {
+                                override fun onAnimationStart(p0: Animation?) {
+                                    mActivity.mainOverlay.visibility = View.VISIBLE
+                                }
+
+                                override fun onAnimationEnd(p0: Animation?) {
+                                    mActivity.mainOverlay.visibility = View.INVISIBLE
+                                    mActivity.mainOverlay.setImageResource(android.R.color.transparent)
+                                    mActivity.updateLastFrame()
+
+                                    mActivity.mainOverlay.layoutParams =
+                                        (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
+                                            this.setMargins(
+                                                leftMargin,
+                                                (46 * mActivity.resources.displayMetrics.density).toInt(), // topMargin
+                                                rightMargin,
+                                                (40 * mActivity.resources.displayMetrics.density).toInt() // bottomMargin
+                                            )
+                                        }
+                                }
+
+                                override fun onAnimationRepeat(p0: Animation?) {}
+
+                            }
+                        )
+
+                        mActivity.mainOverlay.startAnimation(animation)
+                    }
+
                     val imageUri = outputFileResults.savedUri
                     if (imageUri != null) {
                         val path = imageUri.encodedPath!!

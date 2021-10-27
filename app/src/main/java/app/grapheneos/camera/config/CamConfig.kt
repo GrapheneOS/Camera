@@ -24,6 +24,8 @@ import android.view.animation.Animation
 import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
+import android.widget.FrameLayout
+import android.widget.LinearLayout
 import androidx.camera.core.*
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -210,7 +212,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var selfIlluminate : Boolean
         get() {
-            return mActivity.settingsDialog.selfIlluminationToggle.isChecked
+            return modePref.getBoolean("self_illumination", false) &&
+                lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
             val editor = modePref.edit()
@@ -218,6 +221,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             editor.commit()
 
             mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
+            mActivity.settingsDialog.selfIllumination()
         }
 
     private val commonPref =
@@ -620,32 +624,69 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     fun snapPreview() {
-        val animation: Animation = AlphaAnimation(1f, 0f)
-        animation.duration = 200
-        animation.interpolator = LinearInterpolator()
-        animation.repeatMode = Animation.REVERSE
 
-        mActivity.mainOverlay.setImageResource(android.R.color.black)
+        if (mActivity.config.selfIlluminate) {
 
-        animation.setAnimationListener(
-            object: Animation.AnimationListener {
-                override fun onAnimationStart(p0: Animation?) {
-                    mActivity.mainOverlay.visibility = View.VISIBLE
-                }
-
-                override fun onAnimationEnd(p0: Animation?) {
-                    mActivity.mainOverlay.visibility = View.INVISIBLE
-                    mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                    mActivity.updateLastFrame()
-                }
-
-                override fun onAnimationRepeat(p0: Animation?) {}
-
+            mActivity.mainOverlay.layoutParams =
+                (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
+                    this.setMargins(
+                        leftMargin,
+                        0, // topMargin
+                        rightMargin,
+                        0 // bottomMargin
+                    )
             }
-        )
 
-        mPlayer.playShutterSound()
-        mActivity.mainOverlay.startAnimation(animation)
+            val animation: Animation = AlphaAnimation(0f, 0.8f)
+            animation.duration = 200
+            animation.interpolator = LinearInterpolator()
+            animation.fillAfter = true
+
+            mActivity.mainOverlay.setImageResource(android.R.color.white)
+
+            animation.setAnimationListener(
+                object: Animation.AnimationListener {
+                    override fun onAnimationStart(p0: Animation?) {
+                        mActivity.mainOverlay.visibility = View.VISIBLE
+                    }
+
+                    override fun onAnimationEnd(p0: Animation?) {}
+
+                    override fun onAnimationRepeat(p0: Animation?) {}
+
+                }
+            )
+
+            mActivity.mainOverlay.startAnimation(animation)
+
+        } else {
+
+            val animation: Animation = AlphaAnimation(1f, 0f)
+            animation.duration = 200
+            animation.interpolator = LinearInterpolator()
+            animation.repeatMode = Animation.REVERSE
+
+            mActivity.mainOverlay.setImageResource(android.R.color.black)
+
+            animation.setAnimationListener(
+                object: Animation.AnimationListener {
+                    override fun onAnimationStart(p0: Animation?) {
+                        mActivity.mainOverlay.visibility = View.VISIBLE
+                    }
+
+                    override fun onAnimationEnd(p0: Animation?) {
+                        mActivity.mainOverlay.visibility = View.INVISIBLE
+                        mActivity.mainOverlay.setImageResource(android.R.color.transparent)
+                        mActivity.updateLastFrame()
+                    }
+
+                    override fun onAnimationRepeat(p0: Animation?) {}
+
+                }
+            )
+
+            mActivity.mainOverlay.startAnimation(animation)
+        }
     }
 
     private fun loadTabs() {
