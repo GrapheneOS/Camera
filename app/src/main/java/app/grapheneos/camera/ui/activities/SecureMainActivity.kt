@@ -13,13 +13,14 @@ class SecureMainActivity : MainActivity() {
     }
 
     override fun openGallery() {
-        val intent = Intent(this, InAppGallery::class.java)
 
-        intent.putExtra("folder_path", config.parentDirPath)
-        intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
-        intent.putExtra("activity_opened_at", openedActivityAt)
-
-        startActivity(intent)
+//        val intent = Intent(this, InAppGallery::class.java)
+//
+//        intent.putExtra("folder_path", config.parentDirPath)
+//        intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
+//        intent.putExtra("activity_opened_at", openedActivityAt)
+//
+//        startActivity(intent)
     }
 
     companion object {
