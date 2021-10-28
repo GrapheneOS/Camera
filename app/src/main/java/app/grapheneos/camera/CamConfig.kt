@@ -280,7 +280,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
         set(value) {
             val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.FOCUS_TIMEOUT, value)
+            editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, value)
             editor.apply()
 
             mActivity.settingsDialog.csSwitch.isChecked = value
