@@ -8,7 +8,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
-import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide

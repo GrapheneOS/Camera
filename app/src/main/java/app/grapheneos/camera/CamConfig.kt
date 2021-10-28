@@ -1,4 +1,4 @@
-package app.grapheneos.camera.config
+package app.grapheneos.camera
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -33,12 +33,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import app.grapheneos.camera.R
-import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
-import app.grapheneos.camera.constants.CameraModes
-import app.grapheneos.camera.constants.GridType
-import app.grapheneos.camera.constants.SettingValues
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import java.io.File
@@ -49,6 +44,59 @@ import kotlin.math.roundToInt
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
+
+    enum class GridType {
+        NONE,
+        THREE_BY_THREE,
+        FOUR_BY_FOUR,
+        GOLDEN_RATIO
+    }
+
+    private object CameraModes {
+        const val CAMERA = R.string.camera
+        const val PORTRAIT = R.string.portrait_mode
+        const val HDR = R.string.hdr_mode
+        const val NIGHT_SIGHT = R.string.night_sight_mode
+        const val FACE_RETOUCH = R.string.face_retouch_mode
+        const val AUTO = R.string.auto_mode
+        const val QR_SCAN = R.string.qr_scan_mode
+    }
+
+    private object SettingValues {
+
+        object Key {
+            const val SELF_ILLUMINATION = "self_illumination"
+            const val GEO_TAGGING = "geo_tagging"
+            const val FLASH_MODE = "flash_mode"
+            const val GRID = "grid"
+            const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
+            const val FOCUS_TIMEOUT = "focus_timeout"
+            const val CAMERA_SOUNDS = "camera_sounds"
+            const val VIDEO_QUALITY = "video_quality"
+        }
+
+        object Default {
+
+            val GRID_TYPE = GridType.NONE
+            const val GRID_TYPE_INDEX = 0
+
+            const val ASPECT_RATIO = AspectRatio.RATIO_4_3
+
+            const val VIDEO_QUALITY = QualitySelector.QUALITY_FHD
+
+            const val SELF_ILLUMINATION = false
+
+            const val GEO_TAGGING = false
+
+            const val FLASH_MODE = ImageCapture.FLASH_MODE_OFF
+
+            const val EMPHASIS_ON_QUALITY = true
+
+            const val FOCUS_TIMEOUT = "5s"
+
+            const val CAMERA_SOUNDS = true
+        }
+    }
 
     companion object {
         private const val TAG = "CamConfig"

@@ -61,7 +61,7 @@ import app.grapheneos.camera.CustomLocationListener
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
-import app.grapheneos.camera.config.CamConfig
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
