@@ -18,7 +18,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.video.QualitySelector
 import app.grapheneos.camera.R
-import app.grapheneos.camera.config.CamConfig
+import app.grapheneos.camera.constants.GridType
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
@@ -147,10 +147,10 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         gridToggle = findViewById(R.id.grid_toggle_option)
         gridToggle.setOnClickListener {
             mActivity.config.gridType = when (mActivity.config.gridType) {
-                CamConfig.Grid.NONE -> CamConfig.Grid.THREE_BY_THREE
-                CamConfig.Grid.THREE_BY_THREE -> CamConfig.Grid.FOUR_BY_FOUR
-                CamConfig.Grid.FOUR_BY_FOUR -> CamConfig.Grid.GOLDEN_RATIO
-                CamConfig.Grid.GOLDEN_RATIO -> CamConfig.Grid.NONE
+                GridType.NONE -> GridType.THREE_BY_THREE
+                GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
+                GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
+                GridType.GOLDEN_RATIO -> GridType.NONE
             }
             updateGridToggleUI()
         }
@@ -539,10 +539,10 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         mActivity.previewGrid.postInvalidate()
         gridToggle.setImageResource(
             when (mActivity.config.gridType) {
-                CamConfig.Grid.NONE -> R.drawable.grid_off_circle
-                CamConfig.Grid.THREE_BY_THREE -> R.drawable.grid_3x3_circle
-                CamConfig.Grid.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
-                CamConfig.Grid.GOLDEN_RATIO -> R.drawable.grid_goldenratio_circle
+                GridType.NONE -> R.drawable.grid_off_circle
+                GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle
+                GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
+                GridType.GOLDEN_RATIO -> R.drawable.grid_goldenratio_circle
             }
         )
     }

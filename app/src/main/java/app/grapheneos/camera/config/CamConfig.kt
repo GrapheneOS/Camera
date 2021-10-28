@@ -30,6 +30,9 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.constants.CameraModes
+import app.grapheneos.camera.constants.GridType
+import app.grapheneos.camera.constants.SettingValues
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import java.io.File
@@ -39,23 +42,64 @@ import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 @SuppressLint("ApplySharedPref")
-class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
+class CamConfig(private val mActivity: MainActivity) {
 
-    enum class Grid {
-        NONE,
-        THREE_BY_THREE,
-        FOUR_BY_FOUR,
-        GOLDEN_RATIO
-    }
+    companion object {
+        private const val TAG = "CamConfig"
 
-    var gridType: Grid = Grid.NONE
-        set(value) {
-            val editor = commonPref.edit()
-            editor.putInt("grid", Grid.values().indexOf(value))
-            editor.apply()
+        private const val PREVIEW_SNAP_DURATION = 200L
+        private const val PREVIEW_SL_OVERLAY_DUR = 200L
 
-            field = value
+        const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
+
+        const val DEFAULT_EXTENSION_MODE = ExtensionMode.NONE
+
+        val extensionModes = arrayOf(
+            CameraModes.CAMERA,
+            CameraModes.PORTRAIT,
+            CameraModes.HDR,
+            CameraModes.NIGHT_SIGHT,
+            CameraModes.FACE_RETOUCH,
+            CameraModes.AUTO,
+        )
+
+        const val DEFAULT_CAMERA_MODE = CameraModes.CAMERA
+
+        const val COMMON_SP_NAME = "commons"
+
+        @JvmStatic
+        @Throws(Throwable::class)
+        fun getVideoThumbnail(p_videoPath: String?): Bitmap {
+
+            val mBitmap: Bitmap
+            var mMediaMetadataRetriever: MediaMetadataRetriever? = null
+
+            try {
+                mMediaMetadataRetriever = MediaMetadataRetriever()
+                mMediaMetadataRetriever.setDataSource(p_videoPath)
+                mBitmap = mMediaMetadataRetriever.frameAtTime!!
+            } catch (m_e: Exception) {
+                throw Exception(
+                    "Exception in retrieveVideoFrameFromVideo(String p_videoPath)"
+                            + m_e.message
+                )
+            } finally {
+                if (mMediaMetadataRetriever != null) {
+                    mMediaMetadataRetriever.release()
+                    mMediaMetadataRetriever.close()
+                }
+            }
+            return mBitmap
         }
+
+        fun getCreationTimestamp(file: File): Long {
+            val attr: BasicFileAttributes = Files.readAttributes(
+                file.toPath(),
+                BasicFileAttributes::class.java
+            )
+            return attr.creationTime().toMillis()
+        }
+    }
 
     var camera: Camera? = null
 
@@ -65,23 +109,63 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     var imageCapture: ImageCapture? = null
         private set
 
-    var preview: Preview? = null
+    private var preview: Preview? = null
+
+    private val cameraExecutor by lazy {
+        Executors.newSingleThreadExecutor()
+    }
+
+    var videoCapture: VideoCapture<Recorder>? = null
+
+    private var qrAnalyzer: QRAnalyzer? = null
+
+    private var iAnalyzer: ImageAnalysis? = null
+
+    var latestFile: File? = null
+
+    val mPlayer: TunePlayer = TunePlayer(mActivity)
+
+    private val commonPref =
+        mActivity.getSharedPreferences(COMMON_SP_NAME, Context.MODE_PRIVATE)
+
+    private lateinit var modePref: SharedPreferences
+
+
+    var isVideoMode = false
+
+    var isQRMode = false
         private set
 
-    var lensFacing = CameraSelector.LENS_FACING_BACK
+    val isFlashAvailable: Boolean
+        get() = camera!!.cameraInfo.hasFlashUnit()
 
-    private var cameraMode = ExtensionMode.NONE
+    private var modeText: String = DEFAULT_CAMERA_MODE
+
+    var aspectRatio = SettingValues.Default.ASPECT_RATIO
+
+    var lensFacing = DEFAULT_LENS_FACING
+
+    private var cameraMode = DEFAULT_EXTENSION_MODE
 
     private lateinit var cameraSelector: CameraSelector
 
-    var videoQuality: Int = 0
+    var gridType: GridType = SettingValues.Default.GRID_TYPE
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putInt(SettingValues.Key.GRID, GridType.values().indexOf(value))
+            editor.apply()
+
+            field = value
+        }
+
+    var videoQuality: Int = SettingValues.Default.VIDEO_QUALITY
         get() {
             return if (modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.titleToQuality(
                     modePref.getString(videoQualityKey, "")!!
                 )
             } else {
-                QualitySelector.QUALITY_FHD
+                SettingValues.Default.VIDEO_QUALITY
             }
         }
         set(value) {
@@ -103,49 +187,84 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 "BACK"
             }
 
-            return "video_quality_$pf"
+            return "${SettingValues.Key.VIDEO_QUALITY}_$pf"
         }
 
-    private val cameraExecutor by lazy {
-        Executors.newSingleThreadExecutor()
-    }
-
-    var isVideoMode = false
-
-    var isQRMode = false
-        private set
-
-    var videoCapture: VideoCapture<Recorder>? = null
-
-    private var qrAnalyzer: QRAnalyzer? = null
-
-    private var iAnalyzer: ImageAnalysis? = null
-
-    var aspectRatio = AspectRatio.RATIO_4_3
-
-    var latestFile: File? = null
-
     var flashMode: Int
-        get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
+        get() = if (imageCapture != null) imageCapture!!.flashMode else
+            SettingValues.Default.FLASH_MODE
         set(flashMode) {
 
             if (::modePref.isInitialized) {
                 val editor = modePref.edit()
-                editor.putInt("flash_mode", flashMode)
+                editor.putInt(SettingValues.Key.FLASH_MODE, flashMode)
                 editor.commit()
-
-                Log.i(
-                    TAG, "Selected mode: (${getCurrentModeText()})" +
-                            " ${modePref.getInt("flash_mode", -1)}"
-                )
             }
 
             imageCapture?.flashMode = flashMode
             mActivity.settingsDialog.updateFlashMode()
         }
 
-    val isFlashAvailable: Boolean
-        get() = camera!!.cameraInfo.hasFlashUnit()
+    var focusTimeout = 5L
+        set(value) {
+            val option = if (value == 0L) {
+                "Off"
+            } else {
+                "${value}s"
+            }
+
+            val editor = commonPref.edit()
+            editor.putString(SettingValues.Key.FOCUS_TIMEOUT, option)
+            editor.apply()
+
+            field = value
+        }
+
+    var enableCameraSounds: Boolean
+        get() {
+            return mActivity.settingsDialog.csSwitch.isChecked
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.FOCUS_TIMEOUT, value)
+            editor.apply()
+
+            mActivity.settingsDialog.csSwitch.isChecked = value
+        }
+
+    var requireLocation: Boolean
+        get() {
+            return mActivity.settingsDialog.locToggle.isChecked
+        }
+        set(value) {
+
+            if (value) {
+                mActivity.locationListener.start()
+            } else {
+                mActivity.locationListener.stop()
+            }
+
+            val editor = modePref.edit()
+            editor.putBoolean(SettingValues.Key.GEO_TAGGING, value)
+            editor.commit()
+
+            mActivity.settingsDialog.locToggle.isChecked = value
+        }
+
+    var selfIlluminate: Boolean
+        get() {
+            return modePref.getBoolean(SettingValues.Key.SELF_ILLUMINATION,
+                SettingValues.Default.SELF_ILLUMINATION)
+                    && lensFacing == CameraSelector.LENS_FACING_FRONT
+        }
+        set(value) {
+            val editor = modePref.edit()
+            editor.putBoolean(SettingValues.Key.SELF_ILLUMINATION, value)
+            editor.commit()
+
+            mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
+            mActivity.settingsDialog.selfIllumination()
+        }
 
     val parentDirPath: String
         get() = parentDir!!.absolutePath
@@ -172,75 +291,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             return parentDir
         }
 
-    val mPlayer: TunePlayer = TunePlayer(mActivity)
-
-    private var modeText: String = "CAMERA"
-
-    var focusTimeout = 5L
-        set(value) {
-            val option = if (value == 0L) {
-                "Off"
-            } else {
-                "${value}s"
-            }
-
-            val editor = commonPref.edit()
-            editor.putString("focus_timeout", option)
-            editor.apply()
-
-            field = value
-        }
-
-    var enableCameraSounds: Boolean
-        get() {
-            return mActivity.settingsDialog.csSwitch.isChecked
-        }
-        set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean("camera_sounds", value)
-            editor.apply()
-
-            mActivity.settingsDialog.csSwitch.isChecked = value
-        }
-
-    var requireLocation: Boolean
-        get() {
-            return mActivity.settingsDialog.locToggle.isChecked
-        }
-        set(value) {
-
-            if (value) {
-                mActivity.locationListener.start()
-            } else {
-                mActivity.locationListener.stop()
-            }
-
-            val editor = modePref.edit()
-            editor.putBoolean("location", value)
-            editor.commit()
-
-            mActivity.settingsDialog.locToggle.isChecked = value
-        }
-
-    var selfIlluminate: Boolean
-        get() {
-            return modePref.getBoolean("self_illumination", false) &&
-                    lensFacing == CameraSelector.LENS_FACING_FRONT
-        }
-        set(value) {
-            val editor = modePref.edit()
-            editor.putBoolean("self_illumination", value)
-            editor.commit()
-
-            mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
-            mActivity.settingsDialog.selfIllumination()
-        }
-
-    private val commonPref =
-        mActivity.getSharedPreferences("commons", Context.MODE_PRIVATE)
-
-    private lateinit var modePref: SharedPreferences
-
     private fun updatePrefMode() {
         val modeText = getCurrentModeText()
         modePref = mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
@@ -251,8 +301,8 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         // pref config needs to be created
         val sEditor = modePref.edit()
 
-        if (!modePref.contains("flash_mode")) {
-            sEditor.putInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
+        if (!modePref.contains(SettingValues.Key.FLASH_MODE)) {
+            sEditor.putInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
         }
 
         if (isVideoMode) {
@@ -268,23 +318,25 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             }
         }
 
-        if (!modePref.contains("self_illumination")) {
+        if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                sEditor.putBoolean("self_illumination", false)
+                sEditor.putBoolean(SettingValues.Key.SELF_ILLUMINATION, SettingValues.Default.SELF_ILLUMINATION)
             }
         }
 
-        if (!modePref.contains("location")) {
+        if (!modePref.contains(SettingValues.Key.GEO_TAGGING)) {
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                sEditor.putBoolean("location", false)
+                sEditor.putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
             }
         }
 
         sEditor.commit()
 
-        flashMode = modePref.getInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
-        requireLocation = modePref.getBoolean("location", false)
-        selfIlluminate = modePref.getBoolean("self_illumination", false)
+        flashMode = modePref.getInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
+        requireLocation = modePref.getBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
+        selfIlluminate = modePref.getBoolean(
+            SettingValues.Key.SELF_ILLUMINATION,
+            SettingValues.Default.SELF_ILLUMINATION)
 
         mActivity.settingsDialog.showOnlyRelevantSettings()
     }
@@ -295,32 +347,36 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         // Create common config. if it's not created
         val editor = commonPref.edit()
 
-        if (!commonPref.contains("camera_sounds")) {
-            editor.putBoolean("camera_sounds", true)
+        if (!commonPref.contains(SettingValues.Key.CAMERA_SOUNDS)) {
+            editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
         }
 
-        if (!commonPref.contains("grid")) {
+        if (!commonPref.contains(SettingValues.Key.GRID)) {
             // Index for Grid.values() Default: NONE
-            editor.putInt("grid", 0)
+            editor.putInt(SettingValues.Key.GRID, SettingValues.Default.GRID_TYPE_INDEX)
         }
 
-        if (!commonPref.contains("focus_timeout")) {
-            editor.putString("focus_timeout", "5s")
+        if (!commonPref.contains(SettingValues.Key.FOCUS_TIMEOUT)) {
+            editor.putString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)
         }
 
-        if (!commonPref.contains("emphasis_on_quality")) {
-            editor.putBoolean("emphasis_on_quality", true)
+        if (!commonPref.contains(SettingValues.Key.EMPHASIS_ON_QUALITY)) {
+            editor.putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY,
+                SettingValues.Default.EMPHASIS_ON_QUALITY)
         }
 
         editor.commit()
 
         mActivity.settingsDialog.csSwitch.isChecked =
-            commonPref.getBoolean("camera_sounds", true)
+            commonPref.getBoolean(SettingValues.Key.CAMERA_SOUNDS,
+                SettingValues.Default.CAMERA_SOUNDS)
 
-        gridType = Grid.values()[commonPref.getInt("grid", 0)]
+        gridType = GridType.values()[commonPref.getInt(SettingValues.Key.GRID,
+            SettingValues.Default.GRID_TYPE_INDEX)]
+
         mActivity.settingsDialog.updateGridToggleUI()
 
-        commonPref.getString("focus_timeout", "5s")?.let {
+        commonPref.getString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)?.let {
             mActivity.settingsDialog.updateFocusTimeout(it)
         }
 
@@ -333,11 +389,12 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var emphasisQuality: Boolean
         get() {
-            return commonPref.getBoolean("emphasis_on_quality", true)
+            return commonPref.getBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY,
+                SettingValues.Default.EMPHASIS_ON_QUALITY)
         }
         set(value) {
             val editor = commonPref.edit()
-            editor.putBoolean("emphasis_on_quality", value)
+            editor.putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, value)
             editor.commit()
         }
 
@@ -403,7 +460,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         isVideoMode = !isVideoMode
         startCamera(true)
     }
-
 
     private fun addToMediaStore(file: File, isVideo: Boolean): Uri? {
 
@@ -476,8 +532,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 else -> ImageCapture.FLASH_MODE_OFF
             }
 
-//            flashMode =
-//                if (flashMode == ImageCapture.FLASH_MODE_OFF) ImageCapture.FLASH_MODE_AUTO else imageCapture!!.flashMode + 1
         } else {
             Toast.makeText(
                 mActivity, "Flash is unavailable" +
@@ -662,10 +716,6 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
-//        if (!isFlashAvailable) {
-//            mActivity.flashPager.currentItem = ImageCapture.FLASH_MODE_OFF
-//            flashMode = ImageCapture.FLASH_MODE_OFF
-//        }
     }
 
     fun snapPreview() {
@@ -683,7 +733,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 }
 
             val animation: Animation = AlphaAnimation(0f, 0.8f)
-            animation.duration = 200
+            animation.duration = PREVIEW_SL_OVERLAY_DUR
             animation.interpolator = LinearInterpolator()
             animation.fillAfter = true
 
@@ -707,7 +757,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         } else {
 
             val animation: Animation = AlphaAnimation(1f, 0f)
-            animation.duration = 200
+            animation.duration = PREVIEW_SNAP_DURATION
             animation.interpolator = LinearInterpolator()
             animation.repeatMode = Animation.REVERSE
 
@@ -759,7 +809,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         modes.forEach { mode ->
             mActivity.tabLayout.newTab().let {
                 mActivity.tabLayout.addTab(it.setText(mode), false)
-                if (mode == "CAMERA") {
+                if (mode == DEFAULT_CAMERA_MODE) {
                     it.select()
                 }
             }
@@ -774,7 +824,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 ExtensionMode.NIGHT
             )
         ) {
-            modes.add("NIGHT SIGHT")
+            modes.add(CameraModes.NIGHT_SIGHT)
         }
 
         if (extensionsManager.isExtensionAvailable(
@@ -782,7 +832,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 ExtensionMode.BOKEH
             )
         ) {
-            modes.add("PORTRAIT")
+            modes.add(CameraModes.PORTRAIT)
         }
 
         if (extensionsManager.isExtensionAvailable(
@@ -790,7 +840,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 ExtensionMode.HDR
             )
         ) {
-            modes.add("HDR")
+            modes.add(CameraModes.HDR)
         }
 
         if (extensionsManager.isExtensionAvailable(
@@ -798,15 +848,15 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 ExtensionMode.FACE_RETOUCH
             )
         ) {
-            modes.add("FACE RETOUCH")
+            modes.add(CameraModes.FACE_RETOUCH)
         }
 
         if (!isVideoMode) {
-            modes.add("QR SCAN")
+            modes.add(CameraModes.QR_SCAN)
         }
 
         val mid = (modes.size / 2f).roundToInt()
-        modes.add(mid, "CAMERA")
+        modes.add(mid, CameraModes.CAMERA)
 
         return modes
     }
@@ -817,15 +867,11 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         cameraMode = ExtensionMode.NONE
 
-        cameraMode = if (modeText == "CAMERA") {
-            ExtensionMode.NONE
-        } else {
-            extensionModes.indexOf(modeText)
-        }
+        cameraMode = extensionModes.indexOf(modeText)
 
         mActivity.cancelFocusTimer()
 
-        isQRMode = modeText == "QR SCAN"
+        isQRMode = modeText == CameraModes.QR_SCAN
 
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
@@ -840,46 +886,5 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
 
         startCamera(true)
-    }
-
-    companion object {
-        private const val TAG = "CamConfig"
-        private val extensionModes = arrayOf(
-            "CAMERA", "PORTRAIT", "HDR", "NIGHT SIGHT",
-            "FACE RETOUCH", "AUTO"
-        )
-
-        @JvmStatic
-        @Throws(Throwable::class)
-        fun getVideoThumbnail(p_videoPath: String?): Bitmap {
-
-            val mBitmap: Bitmap
-            var mMediaMetadataRetriever: MediaMetadataRetriever? = null
-
-            try {
-                mMediaMetadataRetriever = MediaMetadataRetriever()
-                mMediaMetadataRetriever.setDataSource(p_videoPath)
-                mBitmap = mMediaMetadataRetriever.frameAtTime!!
-            } catch (m_e: Exception) {
-                throw Exception(
-                    "Exception in retrieveVideoFrameFromVideo(String p_videoPath)"
-                            + m_e.message
-                )
-            } finally {
-                if (mMediaMetadataRetriever != null) {
-                    mMediaMetadataRetriever.release()
-                    mMediaMetadataRetriever.close()
-                }
-            }
-            return mBitmap
-        }
-
-        fun getCreationTimestamp(file: File): Long {
-            val attr: BasicFileAttributes = Files.readAttributes(
-                file.toPath(),
-                BasicFileAttributes::class.java
-            )
-            return attr.creationTime().toMillis()
-        }
     }
 }
