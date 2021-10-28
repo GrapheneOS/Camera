@@ -76,9 +76,9 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var videoQuality: Int = 0
         get() {
-            return if (modePref.contains("video_quality")) {
+            return if (modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.titleToQuality(
-                    modePref.getString("video_quality", "")!!
+                    modePref.getString(videoQualityKey, "")!!
                 )
             } else {
                 QualitySelector.QUALITY_FHD
@@ -88,10 +88,22 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
 
             val editor = modePref.edit()
-            editor.putString("video_quality", option)
+            editor.putString(videoQualityKey, option)
             editor.commit()
 
             field = value
+        }
+
+    private val videoQualityKey : String
+        get() {
+
+            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT){
+                "FRONT"
+            } else {
+                "BACK"
+            }
+
+            return "video_quality_$pf"
         }
 
     private val cameraExecutor by lazy {
@@ -245,12 +257,12 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         if (isVideoMode) {
 
-            if (!modePref.contains("video_quality")) {
+            if (!modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.reloadQualities()
                 val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
-                sEditor.putString("video_quality", option)
+                sEditor.putString(videoQualityKey, option)
             } else {
-                modePref.getString("video_quality", null)?.let {
+                modePref.getString(videoQualityKey, null)?.let {
                     mActivity.settingsDialog.reloadQualities(it)
                 }
             }
