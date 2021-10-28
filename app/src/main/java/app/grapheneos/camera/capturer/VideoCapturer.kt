@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.io.File
 import java.text.SimpleDateFormat
@@ -187,6 +188,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                             " into media store: " + uri
                                 )
                             }
+
+                            if(mActivity is SecureMainActivity)
+                                mActivity.capturedFilePaths.add(path)
                         }
                     }
                 }

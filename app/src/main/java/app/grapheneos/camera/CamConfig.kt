@@ -481,8 +481,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun updatePreview() {
 
-        if(mActivity is SecureMainActivity) return
-
         val lastModifiedFile = latestFile ?: return
 
         if (mActivity is SecureMainActivity) {

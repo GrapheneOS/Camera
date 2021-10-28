@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.activities
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -43,30 +44,30 @@ class InAppGallery : AppCompatActivity() {
         val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
         val parentDir = File(parentFilePath)
 
-        val mActOpenAt = if (intent.extras?.containsKey("activity_opened_at") == true) {
-            intent.extras?.getLong("activity_opened_at")
-                ?: SecureMainActivity.DEFAULT_OPENED_AT_TIMESTAMP
+        if(intent.extras?.containsKey("fileSP") == true) {
+
+            val spName = intent.extras?.getString("fileSP")
+
+            val sp = getSharedPreferences(spName, Context.MODE_PRIVATE)
+
+            val filePaths = sp.getStringSet("filePaths", emptySet())!!
+
+            mediaFiles = filePaths.stream().map{ File(it) }.toArray { length ->
+                arrayOfNulls<File>(length) }
+
         } else {
-            SecureMainActivity.DEFAULT_OPENED_AT_TIMESTAMP
+            mediaFiles = parentDir.listFiles { file: File ->
+                if (!file.isFile) return@listFiles false
+                val ext = file.extension
+
+                if (showVideosOnly) {
+                    ext == "mp4"
+                } else {
+                    ext == "jpg" || ext == "png" || ext == "mp4"
+                }
+
+            } ?: throw FileNotFoundException()
         }
-
-        mediaFiles = parentDir.listFiles { file: File ->
-            if (!file.isFile) return@listFiles false
-            val ext = file.extension
-
-            val res = if (showVideosOnly) {
-                ext == "mp4"
-            } else {
-                ext == "jpg" || ext == "png" || ext == "mp4"
-            }
-
-            if (mActOpenAt == SecureMainActivity.DEFAULT_OPENED_AT_TIMESTAMP) {
-                res
-            } else {
-                res && (getCreationTimestamp(file) > mActOpenAt)
-            }
-
-        } ?: throw FileNotFoundException()
 
         // Close gallery if no files are present
         if (mediaFiles.isEmpty()) {

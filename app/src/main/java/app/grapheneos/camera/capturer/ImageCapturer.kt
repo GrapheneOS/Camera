@@ -14,6 +14,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.SecureMainActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -119,6 +120,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             .getMimeTypeFromExtension(
                                 File(path).extension
                             )
+
+                        if(mActivity is SecureMainActivity)
+                            mActivity.capturedFilePaths.add(path)
 
                         mActivity.previewLoader.visibility = View.GONE
                         mActivity.imagePreview.setImageURI(imageUri)
