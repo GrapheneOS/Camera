@@ -24,7 +24,8 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.text.Format
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Arrays
 
 class InAppGallery : AppCompatActivity() {
 

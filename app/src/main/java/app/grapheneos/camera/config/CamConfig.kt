@@ -18,7 +18,13 @@ import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.camera.core.*
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.UseCaseGroup
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -178,10 +184,10 @@ class CamConfig(private val mActivity: MainActivity) {
             field = value
         }
 
-    private val videoQualityKey : String
+    private val videoQualityKey: String
         get() {
 
-            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT){
+            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 "FRONT"
             } else {
                 "BACK"
@@ -253,8 +259,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var selfIlluminate: Boolean
         get() {
-            return modePref.getBoolean(SettingValues.Key.SELF_ILLUMINATION,
-                SettingValues.Default.SELF_ILLUMINATION)
+            return modePref.getBoolean(
+                SettingValues.Key.SELF_ILLUMINATION,
+                SettingValues.Default.SELF_ILLUMINATION
+            )
                     && lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
@@ -320,7 +328,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                sEditor.putBoolean(SettingValues.Key.SELF_ILLUMINATION, SettingValues.Default.SELF_ILLUMINATION)
+                sEditor.putBoolean(
+                    SettingValues.Key.SELF_ILLUMINATION,
+                    SettingValues.Default.SELF_ILLUMINATION
+                )
             }
         }
 
@@ -333,10 +344,12 @@ class CamConfig(private val mActivity: MainActivity) {
         sEditor.commit()
 
         flashMode = modePref.getInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
-        requireLocation = modePref.getBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
+        requireLocation =
+            modePref.getBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
         selfIlluminate = modePref.getBoolean(
             SettingValues.Key.SELF_ILLUMINATION,
-            SettingValues.Default.SELF_ILLUMINATION)
+            SettingValues.Default.SELF_ILLUMINATION
+        )
 
         mActivity.settingsDialog.showOnlyRelevantSettings()
     }
@@ -361,24 +374,31 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         if (!commonPref.contains(SettingValues.Key.EMPHASIS_ON_QUALITY)) {
-            editor.putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY,
-                SettingValues.Default.EMPHASIS_ON_QUALITY)
+            editor.putBoolean(
+                SettingValues.Key.EMPHASIS_ON_QUALITY,
+                SettingValues.Default.EMPHASIS_ON_QUALITY
+            )
         }
 
         editor.commit()
 
         mActivity.settingsDialog.csSwitch.isChecked =
-            commonPref.getBoolean(SettingValues.Key.CAMERA_SOUNDS,
-                SettingValues.Default.CAMERA_SOUNDS)
+            commonPref.getBoolean(
+                SettingValues.Key.CAMERA_SOUNDS,
+                SettingValues.Default.CAMERA_SOUNDS
+            )
 
-        gridType = GridType.values()[commonPref.getInt(SettingValues.Key.GRID,
-            SettingValues.Default.GRID_TYPE_INDEX)]
+        gridType = GridType.values()[commonPref.getInt(
+            SettingValues.Key.GRID,
+            SettingValues.Default.GRID_TYPE_INDEX
+        )]
 
         mActivity.settingsDialog.updateGridToggleUI()
 
-        commonPref.getString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)?.let {
-            mActivity.settingsDialog.updateFocusTimeout(it)
-        }
+        commonPref.getString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)
+            ?.let {
+                mActivity.settingsDialog.updateFocusTimeout(it)
+            }
 
         if (emphasisQuality) {
             mActivity.settingsDialog.cmRadioGroup.check(R.id.quality_radio)
@@ -389,8 +409,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var emphasisQuality: Boolean
         get() {
-            return commonPref.getBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY,
-                SettingValues.Default.EMPHASIS_ON_QUALITY)
+            return commonPref.getBoolean(
+                SettingValues.Key.EMPHASIS_ON_QUALITY,
+                SettingValues.Default.EMPHASIS_ON_QUALITY
+            )
         }
         set(value) {
             val editor = commonPref.edit()

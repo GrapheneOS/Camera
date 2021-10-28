@@ -12,7 +12,10 @@ import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.Toast
-import androidx.camera.video.*
+import androidx.camera.video.ActiveRecording
+import androidx.camera.video.FileDescriptorOutputOptions
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
@@ -20,7 +23,8 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class VideoCapturer(private val mActivity: MainActivity) {
 

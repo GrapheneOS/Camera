@@ -16,7 +16,8 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"

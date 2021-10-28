@@ -1,12 +1,23 @@
 package app.grapheneos.camera.analyzer
 
 import android.util.Log
+
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
+
 import app.grapheneos.camera.ui.activities.MainActivity
-import com.google.zxing.*
+
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.DecodeHintType
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.ReaderException
+
 import com.google.zxing.common.HybridBinarizer
-import java.util.*
+
+import java.util.EnumMap
+
 import kotlin.math.roundToInt
 
 class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {

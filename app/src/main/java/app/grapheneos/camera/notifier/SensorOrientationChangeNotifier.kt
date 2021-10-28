@@ -7,7 +7,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.lang.ref.WeakReference
-import java.util.*
+
 
 class SensorOrientationChangeNotifier private constructor(mainActivity: MainActivity) {
     private val mListeners = ArrayList<WeakReference<Listener?>>(3)

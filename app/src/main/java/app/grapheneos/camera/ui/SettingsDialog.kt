@@ -10,7 +10,16 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
-import android.widget.*
+import android.widget.ToggleButton
+import android.widget.ImageView
+import android.widget.Spinner
+import android.widget.ArrayAdapter
+import android.widget.ScrollView
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import android.widget.Toast
+import android.widget.AdapterView
+import android.widget.LinearLayout
 import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
