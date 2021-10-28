@@ -53,4 +53,13 @@
     <string name="media_location">Media Location</string>
     <string name="camera_sounds">Camera Sounds</string>
     <string name="video_capture_label">Record Video</string>
+
+    <string name="camera">CAMERA</string>
+    <string name="portrait_mode">PORTRAIT</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_sight_mode">NIGHT SIGHT</string>
+    <string name="face_retouch_mode">FACE RETOUCH</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">QR SCAN</string>
+
 </resources>

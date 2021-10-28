@@ -96,13 +96,13 @@ class BottomTabLayout : TabLayout {
         scrollTo(getRelativeLeft(view) - sp - view.paddingLeft, 0)
     }
 
-    fun getAllModes(): ArrayList<String> {
-        val modes = arrayListOf<String>()
+    fun getAllModes(): ArrayList<Int> {
+        val modes = arrayListOf<Int>()
 
         for (index in 0..tabCount) {
             val tab = getTabAt(index)
             if (tab != null)
-                modes.add(tab.text.toString())
+                modes.add(tab.id)
         }
 
         return modes

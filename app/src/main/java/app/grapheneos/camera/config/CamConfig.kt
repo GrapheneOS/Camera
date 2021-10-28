@@ -145,7 +145,7 @@ class CamConfig(private val mActivity: MainActivity) {
     val isFlashAvailable: Boolean
         get() = camera!!.cameraInfo.hasFlashUnit()
 
-    private var modeText: String = DEFAULT_CAMERA_MODE
+    private var modeText: Int = DEFAULT_CAMERA_MODE
 
     var aspectRatio = SettingValues.Default.ASPECT_RATIO
 
@@ -830,7 +830,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
         modes.forEach { mode ->
             mActivity.tabLayout.newTab().let {
-                mActivity.tabLayout.addTab(it.setText(mode), false)
+                mActivity.tabLayout.addTab(it.apply {
+                    setText(mode)
+                    id = mode
+                }, false)
                 if (mode == DEFAULT_CAMERA_MODE) {
                     it.select()
                 }
@@ -838,8 +841,8 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    private fun getAvailableModes(): ArrayList<String> {
-        val modes = arrayListOf<String>()
+    private fun getAvailableModes(): ArrayList<Int> {
+        val modes = arrayListOf<Int>()
 
         if (extensionsManager.isExtensionAvailable(
                 cameraProvider!!, cameraSelector,
@@ -883,7 +886,7 @@ class CamConfig(private val mActivity: MainActivity) {
         return modes
     }
 
-    fun switchMode(modeText: String) {
+    fun switchMode(modeText: Int) {
 
         this.modeText = modeText
 

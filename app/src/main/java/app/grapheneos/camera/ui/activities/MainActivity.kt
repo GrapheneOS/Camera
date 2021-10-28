@@ -480,7 +480,7 @@ open class MainActivity : AppCompatActivity(),
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
-                val mode = tab?.text.toString()
+                val mode = tab?.id!!
                 config.switchMode(mode)
                 Log.i(TAG, "Selected Mode: $mode")
             }

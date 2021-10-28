@@ -1,11 +1,13 @@
 package app.grapheneos.camera.constants
 
+import app.grapheneos.camera.R
+
 object CameraModes {
-    const val CAMERA = "CAMERA"
-    const val PORTRAIT = "PORTRAIT"
-    const val HDR = "HDR"
-    const val NIGHT_SIGHT = "NIGHT SIGHT"
-    const val FACE_RETOUCH = "FACE RETOUCH"
-    const val AUTO = "AUTO"
-    const val QR_SCAN = "QR SCAN"
+    const val CAMERA = R.string.camera
+    const val PORTRAIT = R.string.portrait_mode
+    const val HDR = R.string.hdr_mode
+    const val NIGHT_SIGHT = R.string.night_sight_mode
+    const val FACE_RETOUCH = R.string.face_retouch_mode
+    const val AUTO = R.string.auto_mode
+    const val QR_SCAN = R.string.qr_scan_mode
 }
