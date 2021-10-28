@@ -24,7 +24,7 @@
             android:name="app.grapheneos.camera.ui.activities.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
-            android:taskAffinity="com.android.camera.CameraActivity"
+            android:taskAffinity="app.grapheneos.camera.ui.activities.MainActivity"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:exported="true">
@@ -39,7 +39,7 @@
 
         <!-- Helps in supporting double-tap power button (in non-secure/unlocked phone state) -->
         <activity-alias
-            android:name="com.android.camera.CameraLauncher"
+            android:name="app.grapheneos.camera.ui.activities.CameraLauncher"
             android:label="@string/app_name"
             android:exported="true"
             android:targetActivity="app.grapheneos.camera.ui.activities.MainActivity">
@@ -75,7 +75,7 @@
             android:name="app.grapheneos.camera.ui.activities.VideoOnlyActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
-            android:taskAffinity="com.android.camera.CameraActivity"
+            android:taskAffinity="app.grapheneos.camera.ui.activities.VideoOnlyActivity"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:exported="true">
