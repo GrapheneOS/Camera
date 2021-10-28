@@ -10,7 +10,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -33,7 +32,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
     private val locationPermissionLauncher = mActivity.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        if(it){
+        if (it) {
             start()
         } else {
             mActivity.config.requireLocation = false
@@ -43,7 +42,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
     private val providerType =
         locationManager.getBestProvider(Criteria(), true) ?: LocationManager.GPS_PROVIDER
 
-    var locationPermissionDialog : AlertDialog? = null
+    var locationPermissionDialog: AlertDialog? = null
 
     fun stop() {
         locationManager.removeUpdates(this)
@@ -51,7 +50,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
 
     fun start() {
 
-        if(ActivityCompat.checkSelfPermission(
+        if (ActivityCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
@@ -59,12 +58,13 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
             ActivityCompat.checkSelfPermission(
                 mActivity,
                 Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED) {
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
 
-            if (lastKnownLocation==null){
+            if (lastKnownLocation == null) {
                 lastKnownLocation = locationManager.getLastKnownLocation(providerType)
 
-                if (lastKnownLocation==null) {
+                if (lastKnownLocation == null) {
 
                     Toast.makeText(
                         mActivity,
@@ -83,10 +83,12 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
                 }
             }
 
-            locationManager.requestLocationUpdates(providerType,
+            locationManager.requestLocationUpdates(
+                providerType,
                 2000,
                 10f,
-                this)
+                this
+            )
 
             Log.i(TAG, "Requested for location updates")
 
@@ -96,7 +98,9 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
             if (ActivityCompat.shouldShowRequestPermissionRationale(
                     mActivity, Manifest.permission.ACCESS_FINE_LOCATION
                 ) || ActivityCompat.shouldShowRequestPermissionRationale(
-                    mActivity, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                    mActivity, Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            ) {
 
                 val builder = AlertDialog.Builder(mActivity)
                 builder.setTitle(R.string.location_permission_dialog_title)
@@ -132,7 +136,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
     }
 
     override fun onLocationChanged(location: Location) {
-        if(lastKnownLocation == null) {
+        if (lastKnownLocation == null) {
             Toast.makeText(
                 mActivity,
                 "Fetched current location successfully!",

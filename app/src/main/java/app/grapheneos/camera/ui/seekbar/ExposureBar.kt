@@ -3,22 +3,19 @@ package app.grapheneos.camera.ui.seekbar
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
-import android.util.AttributeSet
 import android.os.Handler
-import android.view.MotionEvent
-import androidx.appcompat.widget.AppCompatSeekBar
-
 import android.os.Looper
+import android.util.AttributeSet
 import android.util.Log
-
+import android.view.MotionEvent
 import android.view.View
-
 import android.view.ViewGroup
+import androidx.appcompat.widget.AppCompatSeekBar
 import androidx.camera.core.ExposureState
-import app.grapheneos.camera.R
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class ExposureBar : AppCompatSeekBar {
@@ -53,7 +50,7 @@ class ExposureBar : AppCompatSeekBar {
 
         Log.i("TAG", "Setting progress from setExposureConfig")
         progress = (exposureState.exposureCompensationStep.numerator
-                /exposureState.exposureCompensationStep.denominator) *
+                / exposureState.exposureCompensationStep.denominator) *
                 exposureState.exposureCompensationIndex
 
         onSizeChanged(width, height, 0, 0)
@@ -79,7 +76,8 @@ class ExposureBar : AppCompatSeekBar {
         transition.addTarget(R.id.exposure_bar)
 
         TransitionManager.beginDelayedTransition(
-            mainActivity.window.decorView.rootView as ViewGroup, transition)
+            mainActivity.window.decorView.rootView as ViewGroup, transition
+        )
 
         mainActivity.exposureBarPanel.visibility = visibility
     }
@@ -109,7 +107,7 @@ class ExposureBar : AppCompatSeekBar {
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
-                progress = max - (max * event.y / (height/2)).toInt()
+                progress = max - (max * event.y / (height / 2)).toInt()
 
                 Log.i("progress", progress.toString())
                 Log.i("max", max.toString())

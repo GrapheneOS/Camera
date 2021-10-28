@@ -14,19 +14,23 @@ import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide
 import java.io.File
 
-class GallerySliderAdapter(private val gActivity: InAppGallery,
-                           private val mediaFiles: ArrayList<File>)
-    : RecyclerView.Adapter<GallerySlide>() {
+class GallerySliderAdapter(
+    private val gActivity: InAppGallery,
+    private val mediaFiles: ArrayList<File>
+) : RecyclerView.Adapter<GallerySlide>() {
 
     private val layoutInflater: LayoutInflater = LayoutInflater.from(
-        gActivity)
+        gActivity
+    )
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int):
             GallerySlide {
-        return GallerySlide(layoutInflater.inflate(
-            R.layout.gallery_slide,
-            parent, false
-        ))
+        return GallerySlide(
+            layoutInflater.inflate(
+                R.layout.gallery_slide,
+                parent, false
+            )
+        )
     }
 
     override fun getItemId(position: Int): Long {
@@ -38,11 +42,11 @@ class GallerySliderAdapter(private val gActivity: InAppGallery,
         val mediaPreview: ImageView =
             holder.itemView.findViewById(R.id.slide_preview)
 
-        if(mediaPreview.drawable != null) return
+        if (mediaPreview.drawable != null) return
 
         val mediaFile = mediaFiles[position]
 
-        if(mediaFile.extension == "mp4") {
+        if (mediaFile.extension == "mp4") {
             try {
                 mediaPreview.setImageBitmap(
                     CamConfig.getVideoThumbnail(
@@ -61,12 +65,15 @@ class GallerySliderAdapter(private val gActivity: InAppGallery,
                         gActivity,
                         VideoPlayer::class.java
                     )
-                    intent.putExtra("videoUri",
-                        Uri.parse(mediaFile.absolutePath))
+                    intent.putExtra(
+                        "videoUri",
+                        Uri.parse(mediaFile.absolutePath)
+                    )
                     gActivity.startActivity(intent)
                 }
 
-            } catch (exception: Exception) {}
+            } catch (exception: Exception) {
+            }
 
         } else {
             mediaPreview.setImageURI(Uri.parse(mediaFile.absolutePath))
@@ -89,7 +96,7 @@ class GallerySliderAdapter(private val gActivity: InAppGallery,
         notifyItemRemoved(index)
     }
 
-    fun getCurrentFile() : File {
+    fun getCurrentFile(): File {
         return mediaFiles[gActivity.gallerySlider.currentItem]
     }
 

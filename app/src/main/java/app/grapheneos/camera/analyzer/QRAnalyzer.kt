@@ -4,17 +4,12 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.ui.activities.MainActivity
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.BinaryBitmap
-import com.google.zxing.DecodeHintType
-import com.google.zxing.ReaderException
-import com.google.zxing.MultiFormatReader
-import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
-import java.util.EnumMap
+import java.util.*
 import kotlin.math.roundToInt
 
-class QRAnalyzer(private val mActivity: MainActivity): Analyzer {
+class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
     companion object {
         private const val TAG = "QRCodeImageAnalyzer"
     }
@@ -87,7 +82,8 @@ class QRAnalyzer(private val mActivity: MainActivity): Analyzer {
                 reader.decodeWithState(invertedBinaryBitmap).text?.let {
                     mActivity.onScanResultSuccess(it)
                 }
-            } catch (e: ReaderException) {}
+            } catch (e: ReaderException) {
+            }
         }
 
         // Compute the FPS of the entire pipeline

@@ -1,14 +1,14 @@
 package app.grapheneos.camera.ui.activities
 
 import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
-import app.grapheneos.camera.R
-import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
+import app.grapheneos.camera.R
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -26,7 +26,7 @@ class VideoCaptureActivity : CaptureActivity() {
         captureButton.setImageResource(R.drawable.recording)
 
         captureButton.setOnClickListener OnClickListener@{
-            if(videoCapturer.isRecording){
+            if (videoCapturer.isRecording) {
                 videoCapturer.stopRecording()
             } else {
                 if (ActivityCompat.checkSelfPermission(
@@ -43,8 +43,10 @@ class VideoCaptureActivity : CaptureActivity() {
         }
 
         playPreview.setOnClickListener {
-            val i = Intent(this@VideoCaptureActivity,
-                VideoPlayer::class.java)
+            val i = Intent(
+                this@VideoCaptureActivity,
+                VideoPlayer::class.java
+            )
             i.putExtra("videoUri", savedUri)
             startActivity(i)
         }
@@ -59,7 +61,7 @@ class VideoCaptureActivity : CaptureActivity() {
 
     }
 
-    fun afterRecording(savedUri: Uri?){
+    fun afterRecording(savedUri: Uri?) {
 
         this.savedUri = savedUri
 
@@ -70,13 +72,13 @@ class VideoCaptureActivity : CaptureActivity() {
         showPreview()
     }
 
-    override fun showPreview(){
+    override fun showPreview() {
         super.showPreview()
         thirdOption.visibility = View.VISIBLE
     }
 
-    private fun confirmVideo(){
-        if(savedUri==null){
+    private fun confirmVideo() {
+        if (savedUri == null) {
             setResult(RESULT_CANCELED)
         } else {
             val resultIntent = Intent()

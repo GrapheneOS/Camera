@@ -12,7 +12,7 @@ class SecureMainActivity : MainActivity() {
         openedActivityAt = System.currentTimeMillis()
     }
 
-    override fun openGallery(){
+    override fun openGallery() {
         val intent = Intent(this, InAppGallery::class.java)
 
         intent.putExtra("folder_path", config.parentDirPath)

@@ -1,22 +1,22 @@
 package app.grapheneos.camera.ui
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.Gravity
-import androidx.appcompat.widget.AppCompatTextView
-import android.os.CountDownTimer
 import android.view.View
-import app.grapheneos.camera.ui.activities.MainActivity
-import android.animation.ValueAnimator
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.camera.core.AspectRatio
+import app.grapheneos.camera.ui.activities.MainActivity
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : AppCompatTextView(context, attrs) {
 
-    private lateinit var timer : CountDownTimer
+    private lateinit var timer: CountDownTimer
     lateinit var mActivity: MainActivity
 
     companion object {
@@ -29,14 +29,14 @@ class CountDownTimerUI @JvmOverloads constructor(
     var isRunning = false
         private set
 
-    fun setMainActivity(mainActivity: MainActivity){
+    fun setMainActivity(mainActivity: MainActivity) {
         this.mActivity = mainActivity
     }
 
     fun startTimer() {
         cancelTimer()
 
-        timer = object: CountDownTimer(mActivity.timerDuration * 1000L, 1000L) {
+        timer = object : CountDownTimer(mActivity.timerDuration * 1000L, 1000L) {
             override fun onTick(pendingMs: Long) {
                 val pendingS = (pendingMs / 1000) + 1
 
@@ -81,7 +81,7 @@ class CountDownTimerUI @JvmOverloads constructor(
     }
 
     fun cancelTimer() {
-        if(::timer.isInitialized){
+        if (::timer.isInitialized) {
             timer.cancel()
             onTimerEnd()
         }
@@ -91,7 +91,7 @@ class CountDownTimerUI @JvmOverloads constructor(
 
         val params: ViewGroup.LayoutParams = layoutParams
         params.height = if (mActivity.config.aspectRatio == AspectRatio.RATIO_4_3) {
-            mActivity.previewView.width * 4/3
+            mActivity.previewView.width * 4 / 3
         } else {
             mActivity.previewView.height
         }

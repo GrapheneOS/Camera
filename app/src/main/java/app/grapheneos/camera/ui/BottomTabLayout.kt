@@ -24,7 +24,7 @@ class BottomTabLayout : TabLayout {
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
-        if (tabCount==0) return
+        if (tabCount == 0) return
 
         val tabParent = getChildAt(0) as ViewGroup
         val firstTab = tabParent.getChildAt(0)
@@ -96,12 +96,12 @@ class BottomTabLayout : TabLayout {
         scrollTo(getRelativeLeft(view) - sp - view.paddingLeft, 0)
     }
 
-    fun getAllModes() : ArrayList<String> {
+    fun getAllModes(): ArrayList<String> {
         val modes = arrayListOf<String>()
 
         for (index in 0..tabCount) {
             val tab = getTabAt(index)
-            if (tab!=null)
+            if (tab != null)
                 modes.add(tab.text.toString())
         }
 

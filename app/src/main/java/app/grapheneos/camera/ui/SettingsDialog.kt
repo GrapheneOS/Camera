@@ -23,14 +23,14 @@ import app.grapheneos.camera.ui.activities.MainActivity
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
 
-    private var dialog : View
+    private var dialog: View
     var locToggle: ToggleButton
     var flashToggle: ImageView
     var aRToggle: ToggleButton
     var torchToggle: ToggleButton
     private var gridToggle: ImageView
     private var mActivity: MainActivity
-    var videoQualitySpinner : Spinner
+    var videoQualitySpinner: Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
@@ -42,17 +42,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     var qRadio: RadioButton
     var lRadio: RadioButton
 
-    var includeAudioToggle : SwitchCompat
+    var includeAudioToggle: SwitchCompat
 
-    var selfIlluminationToggle : SwitchCompat
+    var selfIlluminationToggle: SwitchCompat
     var csSwitch: SwitchCompat
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
-    private var includeAudioSetting : View
-    private var selfIlluminationSetting : View
-    private var videoQualitySetting : View
-    private var timerSetting : View
+    private var includeAudioSetting: View
+    private var selfIlluminationSetting: View
+    private var videoQualitySetting: View
+    private var timerSetting: View
 
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
@@ -70,7 +70,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         this.mActivity = mActivity
 
-        val background : View = findViewById(R.id.background)
+        val background: View = findViewById(R.id.background)
         background.setOnClickListener {
             slideDialogUp()
         }
@@ -78,7 +78,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         locToggle = findViewById(R.id.location_toggle)
         locToggle.setOnClickListener {
 
-            if(mActivity.config.isVideoMode) {
+            if (mActivity.config.isVideoMode) {
                 mActivity.config.requireLocation = false
                 Toast.makeText(
                     mActivity,
@@ -102,7 +102,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
-            if(mActivity.requiresVideoModeOnly){
+            if (mActivity.requiresVideoModeOnly) {
                 Toast.makeText(
                     mActivity,
                     "Cannot switch flash mode in this mode",
@@ -115,11 +115,13 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
         aRToggle.setOnClickListener {
-            if(mActivity.config.isVideoMode){
+            if (mActivity.config.isVideoMode) {
                 aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
-                Toast.makeText(mActivity,
+                Toast.makeText(
+                    mActivity,
                     "4:3 isn't supported in video mode",
-                    Toast.LENGTH_LONG).show()
+                    Toast.LENGTH_LONG
+                ).show()
             } else {
                 mActivity.config.toggleAspectRatio()
             }
@@ -127,22 +129,24 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         torchToggle = findViewById(R.id.torch_toggle_option)
         torchToggle.setOnClickListener {
-            if(mActivity.config.isFlashAvailable) {
+            if (mActivity.config.isFlashAvailable) {
                 mActivity.config.camera?.cameraControl?.enableTorch(
                     mActivity.config.camera?.cameraInfo?.torchState?.value ==
                             TorchState.OFF
                 )
             } else {
                 torchToggle.isChecked = false
-                Toast.makeText(mActivity,
-                    "Flash/Torch is unavailable for this mode", Toast.LENGTH_LONG)
+                Toast.makeText(
+                    mActivity,
+                    "Flash/Torch is unavailable for this mode", Toast.LENGTH_LONG
+                )
                     .show()
             }
         }
 
         gridToggle = findViewById(R.id.grid_toggle_option)
         gridToggle.setOnClickListener {
-            mActivity.config.gridType = when(mActivity.config.gridType){
+            mActivity.config.gridType = when (mActivity.config.gridType) {
                 CamConfig.Grid.NONE -> CamConfig.Grid.THREE_BY_THREE
                 CamConfig.Grid.THREE_BY_THREE -> CamConfig.Grid.FOUR_BY_FOUR
                 CamConfig.Grid.FOUR_BY_FOUR -> CamConfig.Grid.GOLDEN_RATIO
@@ -154,20 +158,25 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         videoQualitySpinner = findViewById(R.id.video_quality_spinner)
 
         videoQualitySpinner.onItemSelectedListener =
-            object: AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    p0: AdapterView<*>?,
+                    p1: View?,
+                    position: Int,
+                    p3: Long
+                ) {
 
                     val choice = vQAdapter.getItem(position) as String
                     updateVideoQuality(choice)
                 }
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
-        }
+            }
 
         qRadio = findViewById(R.id.quality_radio)
         lRadio = findViewById(R.id.latency_radio)
 
-        if(mActivity.requiresVideoModeOnly) {
+        if (mActivity.requiresVideoModeOnly) {
             qRadio.isEnabled = false
             lRadio.isEnabled = false
         }
@@ -187,8 +196,13 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         focusTimeoutSpinner = findViewById(R.id.focus_timeout_spinner)
         focusTimeoutSpinner.onItemSelectedListener =
-            object: AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    p0: AdapterView<*>?,
+                    p1: View?,
+                    position: Int,
+                    p3: Long
+                ) {
 
                     val selectedOption = focusTimeoutSpinner.selectedItem.toString()
                     updateFocusTimeout(selectedOption)
@@ -202,12 +216,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         timerSpinner = findViewById(R.id.timer_spinner)
         timerSpinner.onItemSelectedListener =
-            object: AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, p3: Long) {
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    p0: AdapterView<*>?,
+                    p1: View?,
+                    position: Int,
+                    p3: Long
+                ) {
 
                     val selectedOption = timerSpinner.selectedItem.toString()
 
-                    if(selectedOption == "Off"){
+                    if (selectedOption == "Off") {
                         mActivity.timerDuration = 0
                         mActivity.cbText.visibility = View.INVISIBLE
                     } else {
@@ -264,7 +283,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
                 mScrollViewContent.viewTreeObserver.removeOnGlobalLayoutListener(this)
 
-                val sdHM = mActivity.resources.getDimension(R.dimen.settings_dialog_horizontal_margin)
+                val sdHM =
+                    mActivity.resources.getDimension(R.dimen.settings_dialog_horizontal_margin)
 
                 val sH = (mScrollViewContent.width - (sdHM * 8)).toInt()
 
@@ -288,13 +308,13 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
 
         selfIlluminationSetting.visibility =
-            if(mActivity.config.lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            if (mActivity.config.lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
 
-        timerSetting.visibility = if(mActivity.config.isVideoMode) {
+        timerSetting.visibility = if (mActivity.config.isVideoMode) {
             View.GONE
         } else {
             View.VISIBLE
@@ -304,12 +324,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     fun updateFocusTimeout(selectedOption: String) {
 
-        if(selectedOption == "Off"){
+        if (selectedOption == "Off") {
             mActivity.config.focusTimeout = 0
         } else {
 
             try {
-                val durS = selectedOption.substring(0, selectedOption.length-1)
+                val durS = selectedOption.substring(0, selectedOption.length - 1)
                 val dur = durS.toLong()
 
                 mActivity.config.focusTimeout = dur
@@ -328,7 +348,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
     }
 
-    fun updateVideoQuality(choice: String, resCam: Boolean = true){
+    fun updateVideoQuality(choice: String, resCam: Boolean = true) {
 
         val quality = titleToQuality(choice)
 
@@ -336,7 +356,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         mActivity.config.videoQuality = quality
 
-        if(resCam) {
+        if (resCam) {
             mActivity.config.startCamera(true)
         } else {
             videoQualitySpinner.setSelection(getAvailableQTitles().indexOf(choice))
@@ -345,7 +365,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     }
 
     fun titleToQuality(title: String): Int {
-        return when(title) {
+        return when (title) {
             "2160p (UHD)" -> QualitySelector.QUALITY_UHD
             "1080p (FHD)" -> QualitySelector.QUALITY_FHD
             "720p (HD)" -> QualitySelector.QUALITY_HD
@@ -359,7 +379,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     private var wasSelfIlluminationOn = false
 
-    fun selfIllumination(){
+    fun selfIllumination() {
 
 //        if (mActivity.config.lensFacing == CameraSelector.LENS_FACING_BACK) {
 //
@@ -373,23 +393,21 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 //            return
 //        }
 
-        if(mActivity.config.selfIlluminate) {
+        if (mActivity.config.selfIlluminate) {
 
             val colorFrom: Int = Color.BLACK
             val colorTo: Int = mActivity.getColor(R.color.self_illumination_light)
 
             val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
             colorAnimation1.duration = 300
-            colorAnimation1.addUpdateListener {
-                    animator ->
+            colorAnimation1.addUpdateListener { animator ->
                 mActivity.previewView.setBackgroundColor(animator.animatedValue as Int)
                 mActivity.rootView.setBackgroundColor(animator.animatedValue as Int)
             }
 
             val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, Color.BLACK)
             colorAnimation2.duration = 300
-            colorAnimation2.addUpdateListener {
-                    animator ->
+            colorAnimation2.addUpdateListener { animator ->
                 mActivity.tabLayout.setTabTextColors(
                     animator.animatedValue as Int,
                     Color.WHITE
@@ -398,8 +416,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
             val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), bgBlue, Color.BLACK)
             colorAnimation3.duration = 300
-            colorAnimation3.addUpdateListener {
-                    animator ->
+            colorAnimation3.addUpdateListener { animator ->
                 mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
             }
 
@@ -421,16 +438,14 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
             val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
             colorAnimation1.duration = 300
-            colorAnimation1.addUpdateListener {
-                    animator ->
+            colorAnimation1.addUpdateListener { animator ->
                 mActivity.previewView.setBackgroundColor(animator.animatedValue as Int)
                 mActivity.rootView.setBackgroundColor(animator.animatedValue as Int)
             }
 
             val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, Color.WHITE)
             colorAnimation2.duration = 300
-            colorAnimation2.addUpdateListener {
-                    animator ->
+            colorAnimation2.addUpdateListener { animator ->
                 mActivity.tabLayout.setTabTextColors(
                     animator.animatedValue as Int,
                     Color.WHITE
@@ -439,8 +454,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
             val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, bgBlue)
             colorAnimation3.duration = 300
-            colorAnimation3.addUpdateListener {
-                    animator ->
+            colorAnimation3.addUpdateListener { animator ->
                 mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
             }
 
@@ -452,21 +466,21 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         wasSelfIlluminationOn = mActivity.config.selfIlluminate
     }
 
-    private val slideDownAnimation : Animation by lazy {
+    private val slideDownAnimation: Animation by lazy {
         AnimationUtils.loadAnimation(
             mActivity,
             R.anim.slide_down
         )
     }
 
-    private val slideUpAnimation : Animation by lazy {
+    private val slideUpAnimation: Animation by lazy {
         val anim = AnimationUtils.loadAnimation(
             mActivity,
             R.anim.slide_up
         )
 
         anim.setAnimationListener(
-            object: Animation.AnimationListener {
+            object : Animation.AnimationListener {
 
                 override fun onAnimationStart(p0: Animation?) {}
 
@@ -474,8 +488,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
                     dismiss()
                 }
 
-                override fun onAnimationRepeat(p0: Animation?)
-                {}
+                override fun onAnimationRepeat(p0: Animation?) {}
 
             }
         )
@@ -510,7 +523,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
     }
 
     private fun getTitleFor(quality: Int): String {
-        return when(quality){
+        return when (quality) {
             QualitySelector.QUALITY_UHD -> "2160p (UHD)"
             QualitySelector.QUALITY_FHD -> "1080p (FHD)"
             QualitySelector.QUALITY_HD -> "720p (HD)"
@@ -522,10 +535,10 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         }
     }
 
-    fun updateGridToggleUI(){
+    fun updateGridToggleUI() {
         mActivity.previewGrid.postInvalidate()
         gridToggle.setImageResource(
-            when(mActivity.config.gridType) {
+            when (mActivity.config.gridType) {
                 CamConfig.Grid.NONE -> R.drawable.grid_off_circle
                 CamConfig.Grid.THREE_BY_THREE -> R.drawable.grid_3x3_circle
                 CamConfig.Grid.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
@@ -536,7 +549,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     fun updateFlashMode() {
         flashToggle.setImageResource(
-            if(mActivity.config.isFlashAvailable) {
+            if (mActivity.config.isFlashAvailable) {
                 when (mActivity.config.flashMode) {
                     ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
                     ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
@@ -566,7 +579,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         slideDialogDown()
     }
 
-    fun reloadQualities(qualityText : String = "") {
+    fun reloadQualities(qualityText: String = "") {
 
         val titles = getAvailableQTitles()
 
@@ -577,11 +590,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         )
 
         vQAdapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item)
+            android.R.layout.simple_spinner_dropdown_item
+        )
 
         videoQualitySpinner.adapter = vQAdapter
 
-        val qt = if(qualityText.isEmpty()) {
+        val qt = if (qualityText.isEmpty()) {
             getTitleFor(mActivity.config.videoQuality)
         } else {
             qualityText

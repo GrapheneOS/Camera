@@ -12,28 +12,27 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.View
-import android.widget.Toast
-import androidx.camera.extensions.ExtensionMode
-import androidx.camera.extensions.ExtensionsManager
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.core.content.ContextCompat
-import app.grapheneos.camera.ui.activities.MainActivity
-import java.io.File
-import android.view.animation.Animation
-
 import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.camera.core.*
+import androidx.camera.extensions.ExtensionMode
+import androidx.camera.extensions.ExtensionsManager
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.Executors
@@ -77,7 +76,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var videoQuality: Int = 0
         get() {
-            return if (modePref.contains("video_quality")){
+            return if (modePref.contains("video_quality")) {
                 mActivity.settingsDialog.titleToQuality(
                     modePref.getString("video_quality", "")!!
                 )
@@ -116,16 +115,17 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     var flashMode: Int
         get() = if (imageCapture != null) imageCapture!!.flashMode else ImageCapture.FLASH_MODE_OFF
-
         set(flashMode) {
 
-            if(::modePref.isInitialized){
+            if (::modePref.isInitialized) {
                 val editor = modePref.edit()
                 editor.putInt("flash_mode", flashMode)
                 editor.commit()
 
-                Log.i(TAG, "Selected mode: (${getCurrentModeText()})" +
-                        " ${modePref.getInt("flash_mode", -1)}")
+                Log.i(
+                    TAG, "Selected mode: (${getCurrentModeText()})" +
+                            " ${modePref.getInt("flash_mode", -1)}"
+                )
             }
 
             imageCapture?.flashMode = flashMode
@@ -160,13 +160,13 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             return parentDir
         }
 
-    val mPlayer : TunePlayer = TunePlayer(mActivity)
+    val mPlayer: TunePlayer = TunePlayer(mActivity)
 
-    private var modeText : String = "CAMERA"
+    private var modeText: String = "CAMERA"
 
     var focusTimeout = 5L
         set(value) {
-            val option =  if(value==0L) {
+            val option = if (value == 0L) {
                 "Off"
             } else {
                 "${value}s"
@@ -179,7 +179,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             field = value
         }
 
-    var enableCameraSounds : Boolean
+    var enableCameraSounds: Boolean
         get() {
             return mActivity.settingsDialog.csSwitch.isChecked
         }
@@ -191,13 +191,13 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             mActivity.settingsDialog.csSwitch.isChecked = value
         }
 
-    var requireLocation : Boolean
+    var requireLocation: Boolean
         get() {
             return mActivity.settingsDialog.locToggle.isChecked
         }
         set(value) {
 
-            if(value) {
+            if (value) {
                 mActivity.locationListener.start()
             } else {
                 mActivity.locationListener.stop()
@@ -210,10 +210,10 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             mActivity.settingsDialog.locToggle.isChecked = value
         }
 
-    var selfIlluminate : Boolean
+    var selfIlluminate: Boolean
         get() {
             return modePref.getBoolean("self_illumination", false) &&
-                lensFacing == CameraSelector.LENS_FACING_FRONT
+                    lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
             val editor = modePref.edit()
@@ -227,7 +227,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     private val commonPref =
         mActivity.getSharedPreferences("commons", Context.MODE_PRIVATE)
 
-    private lateinit var modePref : SharedPreferences
+    private lateinit var modePref: SharedPreferences
 
     private fun updatePrefMode() {
         val modeText = getCurrentModeText()
@@ -239,13 +239,13 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         // pref config needs to be created
         val sEditor = modePref.edit()
 
-        if(!modePref.contains("flash_mode")) {
+        if (!modePref.contains("flash_mode")) {
             sEditor.putInt("flash_mode", ImageCapture.FLASH_MODE_OFF)
         }
 
         if (isVideoMode) {
 
-            if(!modePref.contains("video_quality")) {
+            if (!modePref.contains("video_quality")) {
                 mActivity.settingsDialog.reloadQualities()
                 val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
                 sEditor.putString("video_quality", option)
@@ -256,14 +256,14 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             }
         }
 
-        if(!modePref.contains("self_illumination")){
-            if(lensFacing == CameraSelector.LENS_FACING_FRONT) {
+        if (!modePref.contains("self_illumination")) {
+            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 sEditor.putBoolean("self_illumination", false)
             }
         }
 
-        if(!modePref.contains("location")) {
-            if(lensFacing == CameraSelector.LENS_FACING_FRONT) {
+        if (!modePref.contains("location")) {
+            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 sEditor.putBoolean("location", false)
             }
         }
@@ -278,25 +278,25 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     @SuppressLint("ApplySharedPref")
-    fun loadSettings(){
+    fun loadSettings() {
 
         // Create common config. if it's not created
         val editor = commonPref.edit()
 
-        if(!commonPref.contains("camera_sounds")) {
+        if (!commonPref.contains("camera_sounds")) {
             editor.putBoolean("camera_sounds", true)
         }
 
-        if(!commonPref.contains("grid")) {
+        if (!commonPref.contains("grid")) {
             // Index for Grid.values() Default: NONE
             editor.putInt("grid", 0)
         }
 
-        if(!commonPref.contains("focus_timeout")) {
+        if (!commonPref.contains("focus_timeout")) {
             editor.putString("focus_timeout", "5s")
         }
 
-        if(!commonPref.contains("emphasis_on_quality")) {
+        if (!commonPref.contains("emphasis_on_quality")) {
             editor.putBoolean("emphasis_on_quality", true)
         }
 
@@ -329,7 +329,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             editor.commit()
         }
 
-    fun getCurrentModeText() : String {
+    fun getCurrentModeText(): String {
 
         val vp = if (isVideoMode) {
             "VIDEO"
@@ -343,9 +343,9 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     fun updatePreview() {
         val lastModifiedFile = latestFile ?: return
 
-        if(mActivity is SecureMainActivity) {
+        if (mActivity is SecureMainActivity) {
             val lFCT = getCreationTimestamp(lastModifiedFile)
-            if(lFCT < mActivity.openedActivityAt) return
+            if (lFCT < mActivity.openedActivityAt) return
         }
 
         if (lastModifiedFile.extension == "mp4") {
@@ -401,10 +401,16 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         try {
 
-            uri = if(isVideo)
-                mActivity.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values)
+            uri = if (isVideo)
+                mActivity.contentResolver.insert(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    values
+                )
             else
-                mActivity.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                mActivity.contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    values
+                )
 
             Log.i(TAG, "Added image to media store!")
         } catch (th: Throwable) {
@@ -452,7 +458,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     fun toggleFlashMode() {
         if (camera!!.cameraInfo.hasFlashUnit()) {
 
-            flashMode = when(flashMode){
+            flashMode = when (flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                 ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
                 else -> ImageCapture.FLASH_MODE_OFF
@@ -470,7 +476,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     }
 
     fun toggleAspectRatio() {
-        aspectRatio = if (aspectRatio==AspectRatio.RATIO_16_9) {
+        aspectRatio = if (aspectRatio == AspectRatio.RATIO_16_9) {
             AspectRatio.RATIO_4_3
         } else {
             AspectRatio.RATIO_16_9
@@ -511,7 +517,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         updatePrefMode()
 
-        val rotation = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val display = mActivity.display
             display?.rotation ?: @Suppress("DEPRECATION")
             mActivity.windowManager.defaultDisplay.rotation
@@ -538,8 +544,11 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         // Unbind/close all other camera(s) [if any]
         cameraProvider!!.unbindAll()
 
-        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                cameraMode)) {
+        if (extensionsManager.isExtensionAvailable(
+                cameraProvider!!, cameraSelector,
+                cameraMode
+            )
+        ) {
             cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
                 cameraProvider!!, cameraSelector, cameraMode
             )
@@ -577,19 +586,21 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
 
-            if(!mActivity.requiresVideoModeOnly) {
+            if (!mActivity.requiresVideoModeOnly) {
                 imageCapture = builder
                     .setCaptureMode(
-                        if(emphasisQuality) {
+                        if (emphasisQuality) {
                             ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                         } else {
                             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                         }
                     )
-                    .setTargetRotation(imageCapture?.targetRotation
-                        ?: rotation)
+                    .setTargetRotation(
+                        imageCapture?.targetRotation
+                            ?: rotation
+                    )
                     .setTargetAspectRatio(
-                        if(isVideoMode) {
+                        if (isVideoMode) {
                             AspectRatio.RATIO_16_9
                         } else {
                             aspectRatio
@@ -603,10 +614,12 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         }
 
         preview = Preview.Builder()
-            .setTargetRotation(preview?.targetRotation
-                ?: rotation)
+            .setTargetRotation(
+                preview?.targetRotation
+                    ?: rotation
+            )
             .setTargetAspectRatio(
-                if(isVideoMode) {
+                if (isVideoMode) {
                     AspectRatio.RATIO_16_9
                 } else {
                     aspectRatio
@@ -626,7 +639,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         loadTabs()
 
         camera!!.cameraInfo.zoomState.observe(mActivity, {
-            if (it.linearZoom!=0f) {
+            if (it.linearZoom != 0f) {
                 mActivity.zoomBar.updateThumb()
             }
         })
@@ -655,7 +668,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
                         rightMargin,
                         0 // bottomMargin
                     )
-            }
+                }
 
             val animation: Animation = AlphaAnimation(0f, 0.8f)
             animation.duration = 200
@@ -665,7 +678,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             mActivity.mainOverlay.setImageResource(android.R.color.white)
 
             animation.setAnimationListener(
-                object: Animation.AnimationListener {
+                object : Animation.AnimationListener {
                     override fun onAnimationStart(p0: Animation?) {
                         mActivity.mainOverlay.visibility = View.VISIBLE
                     }
@@ -689,7 +702,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             mActivity.mainOverlay.setImageResource(android.R.color.black)
 
             animation.setAnimationListener(
-                object: Animation.AnimationListener {
+                object : Animation.AnimationListener {
                     override fun onAnimationStart(p0: Animation?) {
                         mActivity.mainOverlay.visibility = View.VISIBLE
                     }
@@ -716,9 +729,9 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         var mae = true
 
-        if (modes.size==cModes.size) {
+        if (modes.size == cModes.size) {
             for (index in 0 until modes.size) {
-                if (modes[index]!=cModes[index]) {
+                if (modes[index] != cModes[index]) {
                     mae = false
                     break
                 }
@@ -734,7 +747,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
         modes.forEach { mode ->
             mActivity.tabLayout.newTab().let {
                 mActivity.tabLayout.addTab(it.setText(mode), false)
-                if (mode=="CAMERA") {
+                if (mode == "CAMERA") {
                     it.select()
                 }
             }
@@ -744,43 +757,55 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
     private fun getAvailableModes(): ArrayList<String> {
         val modes = arrayListOf<String>()
 
-        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.NIGHT)) {
+        if (extensionsManager.isExtensionAvailable(
+                cameraProvider!!, cameraSelector,
+                ExtensionMode.NIGHT
+            )
+        ) {
             modes.add("NIGHT SIGHT")
         }
 
-        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.BOKEH)) {
+        if (extensionsManager.isExtensionAvailable(
+                cameraProvider!!, cameraSelector,
+                ExtensionMode.BOKEH
+            )
+        ) {
             modes.add("PORTRAIT")
         }
 
-        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.HDR)) {
+        if (extensionsManager.isExtensionAvailable(
+                cameraProvider!!, cameraSelector,
+                ExtensionMode.HDR
+            )
+        ) {
             modes.add("HDR")
         }
 
-        if (extensionsManager.isExtensionAvailable(cameraProvider!!, cameraSelector,
-                ExtensionMode.FACE_RETOUCH)) {
+        if (extensionsManager.isExtensionAvailable(
+                cameraProvider!!, cameraSelector,
+                ExtensionMode.FACE_RETOUCH
+            )
+        ) {
             modes.add("FACE RETOUCH")
         }
 
-        if (!isVideoMode){
+        if (!isVideoMode) {
             modes.add("QR SCAN")
         }
 
-        val mid = (modes.size/2f).roundToInt()
+        val mid = (modes.size / 2f).roundToInt()
         modes.add(mid, "CAMERA")
 
         return modes
     }
 
-    fun switchMode(modeText: String){
+    fun switchMode(modeText: String) {
 
         this.modeText = modeText
 
         cameraMode = ExtensionMode.NONE
 
-        cameraMode = if (modeText == "CAMERA"){
+        cameraMode = if (modeText == "CAMERA") {
             ExtensionMode.NONE
         } else {
             extensionModes.indexOf(modeText)
@@ -790,7 +815,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
         isQRMode = modeText == "QR SCAN"
 
-        if (isQRMode){
+        if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.threeButtons.visibility = View.INVISIBLE
             mActivity.captureModeView.visibility = View.INVISIBLE
@@ -807,8 +832,10 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
 
     companion object {
         private const val TAG = "CamConfig"
-        private val extensionModes = arrayOf("CAMERA", "PORTRAIT", "HDR", "NIGHT SIGHT",
-            "FACE RETOUCH", "AUTO")
+        private val extensionModes = arrayOf(
+            "CAMERA", "PORTRAIT", "HDR", "NIGHT SIGHT",
+            "FACE RETOUCH", "AUTO"
+        )
 
         @JvmStatic
         @Throws(Throwable::class)
@@ -835,7 +862,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             return mBitmap
         }
 
-        fun getCreationTimestamp(file: File) : Long {
+        fun getCreationTimestamp(file: File): Long {
             val attr: BasicFileAttributes = Files.readAttributes(
                 file.toPath(),
                 BasicFileAttributes::class.java

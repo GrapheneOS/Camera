@@ -2,13 +2,12 @@ package app.grapheneos.camera.ui.activities
 
 import android.net.Uri
 import android.os.Bundle
+import android.widget.MediaController
+import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.R
 
-import android.widget.VideoView
-import android.widget.MediaController
-
-class VideoPlayer: AppCompatActivity() {
+class VideoPlayer : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

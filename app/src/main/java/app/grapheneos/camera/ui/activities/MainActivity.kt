@@ -4,7 +4,6 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
@@ -25,6 +24,7 @@ import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.View.OnTouchListener
 import android.view.animation.*
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -35,12 +35,15 @@ import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GestureDetectorCompat
 import app.grapheneos.camera.BlurBitmap
-import app.grapheneos.camera.config.CamConfig
+import app.grapheneos.camera.CustomLocationListener
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.config.CamConfig
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
+import app.grapheneos.camera.ui.*
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
@@ -49,14 +52,9 @@ import java.io.File
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.GestureDetectorCompat
-import app.grapheneos.camera.ui.*
-import java.util.concurrent.TimeUnit
-import app.grapheneos.camera.CustomLocationListener
 
 
 open class MainActivity : AppCompatActivity(),
@@ -78,7 +76,7 @@ open class MainActivity : AppCompatActivity(),
     private var lastFrame: Bitmap? = null
     lateinit var config: CamConfig
 
-    lateinit var rootView : View
+    lateinit var rootView: View
 
     lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
@@ -124,11 +122,11 @@ open class MainActivity : AppCompatActivity(),
 
     private var wasSwiping = false
 
-    lateinit var cdTimer : CountDownTimerUI
+    lateinit var cdTimer: CountDownTimerUI
     var timerDuration = 0
 
-    lateinit var cbText : TextView
-    lateinit var cbCross : ImageView
+    lateinit var cbText: TextView
+    lateinit var cbCross: ImageView
 
     lateinit var locationListener: CustomLocationListener
 
@@ -137,8 +135,10 @@ open class MainActivity : AppCompatActivity(),
             previewView.width.toFloat(), previewView.height.toFloat()
         )
 
-        val autoFocusPoint = factory.createPoint(previewView.width / 2.0f,
-            previewView.height / 2.0f, qrOverlay.size)
+        val autoFocusPoint = factory.createPoint(
+            previewView.width / 2.0f,
+            previewView.height / 2.0f, qrOverlay.size
+        )
 
         config.camera?.cameraControl?.startFocusAndMetering(
             FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
@@ -203,28 +203,28 @@ open class MainActivity : AppCompatActivity(),
 
     // Used to request permission from the user
     var dirPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
-        { result ->
+    { result ->
 
-            val data: Uri? = result.data?.data
+        val data: Uri? = result.data?.data
 
-            if(data?.encodedPath!=null){
-                val file = File(data.encodedPath!!)
-                if (file.exists()) {
-                    Toast.makeText(
-                        this,
-                        "File exists: ${file.absolutePath}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "File does not exist :( ${data.encodedPath!!} ",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+        if (data?.encodedPath != null) {
+            val file = File(data.encodedPath!!)
+            if (file.exists()) {
+                Toast.makeText(
+                    this,
+                    "File exists: ${file.absolutePath}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                Toast.makeText(
+                    this,
+                    "File does not exist :( ${data.encodedPath!!} ",
+                    Toast.LENGTH_LONG
+                ).show()
             }
+        }
 
-            Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
+        Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
     }
 
     fun updateLastFrame() {
@@ -352,13 +352,14 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
 
-        if(keyCode == KeyEvent.KEYCODE_BACK){
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
             finish()
             return true
         }
 
         if (!config.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
-            keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
+                    keyCode == KeyEvent.KEYCODE_VOLUME_UP)
+        ) {
             captureButton.performClick()
             return true
         }
@@ -385,16 +386,16 @@ open class MainActivity : AppCompatActivity(),
             startFocusTimer()
         }
 
-        if(config.latestMediaFile==null){
+        if (config.latestMediaFile == null) {
             imagePreview.setImageResource(android.R.color.transparent)
         }
 
-        if(config.requireLocation){
+        if (config.requireLocation) {
             locationListener.start()
         }
     }
 
-    val requiresVideoModeOnly : Boolean
+    val requiresVideoModeOnly: Boolean
         get() {
             return this is VideoOnlyActivity || this is VideoCaptureActivity
         }
@@ -407,7 +408,7 @@ open class MainActivity : AppCompatActivity(),
         }
         lastFrame = null
 
-        if(config.requireLocation)
+        if (config.requireLocation)
             locationListener.stop()
     }
 
@@ -453,7 +454,7 @@ open class MainActivity : AppCompatActivity(),
         })
 
         tabLayout = findViewById(R.id.camera_mode_tabs)
-        tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 val mode = tab?.text.toString()
@@ -465,6 +466,7 @@ open class MainActivity : AppCompatActivity(),
                 val mode = tab?.text.toString()
                 Log.i(TAG, "Reselected Mode: $mode")
             }
+
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
         })
 
@@ -473,7 +475,7 @@ open class MainActivity : AppCompatActivity(),
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
                 config.reloadSettings()
-                if(!config.isQRMode) {
+                if (!config.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     settingsIcon.visibility = View.VISIBLE
                     settingsIcon.isEnabled = true
@@ -496,7 +498,7 @@ open class MainActivity : AppCompatActivity(),
         flipCameraCircle.setOnTouchListener { _, event ->
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    if (tapDownTimestamp==0L) {
+                    if (tapDownTimestamp == 0L) {
                         tapDownTimestamp = System.currentTimeMillis()
                         Log.i(TAG, "I was called!")
                         flipCameraCircle.animate().scaleXBy(0.05f).setDuration(300).start()
@@ -505,7 +507,7 @@ open class MainActivity : AppCompatActivity(),
                 }
                 MotionEvent.ACTION_UP -> {
                     val dif = System.currentTimeMillis() - tapDownTimestamp
-                    if (dif<300) {
+                    if (dif < 300) {
                         flipCameraCircle.performClick()
                     }
 
@@ -521,13 +523,13 @@ open class MainActivity : AppCompatActivity(),
         }
         flipCameraCircle.setOnClickListener {
 
-            if(videoCapturer.isRecording){
+            if (videoCapturer.isRecording) {
                 videoCapturer.isPaused = !videoCapturer.isPaused
                 return@setOnClickListener
             }
 
             val flipCameraIcon: ImageView = findViewById(R.id.flip_camera_icon)
-            val rotation: Float = if (flipCameraIcon.rotation<180) {
+            val rotation: Float = if (flipCameraIcon.rotation < 180) {
                 180f
             } else {
                 360f
@@ -602,10 +604,10 @@ open class MainActivity : AppCompatActivity(),
                     videoCapturer.startRecording()
                 }
             } else {
-                if(timerDuration == 0){
+                if (timerDuration == 0) {
                     imageCapturer.takePicture()
                 } else {
-                    if(cdTimer.isRunning){
+                    if (cdTimer.isRunning) {
                         cdTimer.cancelTimer()
                     } else {
                         cdTimer.startTimer()
@@ -641,7 +643,7 @@ open class MainActivity : AppCompatActivity(),
                     cbText.visibility = View.INVISIBLE
                 } else {
                     captureButton.setImageResource(R.drawable.camera_shutter)
-                    if(timerDuration!=0) {
+                    if (timerDuration != 0) {
                         cbText.visibility = View.VISIBLE
                     }
                 }
@@ -666,7 +668,7 @@ open class MainActivity : AppCompatActivity(),
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
         settingsIcon.setOnClickListener {
-            if(!config.isQRMode)
+            if (!config.isQRMode)
                 settingsDialog.show()
         }
 
@@ -697,10 +699,12 @@ open class MainActivity : AppCompatActivity(),
 
         val file: File? = config.latestMediaFile
 
-        if (file==null) {
-            Toast.makeText(this,
+        if (file == null) {
+            Toast.makeText(
+                this,
                 "Please capture a photo/video before attempting to share via long tap",
-                Toast.LENGTH_LONG).show()
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
 
@@ -712,7 +716,7 @@ open class MainActivity : AppCompatActivity(),
         val values = ContentValues()
         val uri: Uri?
 
-        if (file.extension=="mp4") {
+        if (file.extension == "mp4") {
             // Share video file
             share.type = "video/mp4"
             values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
@@ -742,7 +746,7 @@ open class MainActivity : AppCompatActivity(),
 
     open fun bytesToHex(bytes: ByteArray): String {
         val hexChars = CharArray(bytes.size)
-        for (i in 0 until bytes.indices.last-1 step 3) {
+        for (i in 0 until bytes.indices.last - 1 step 3) {
             val v: Int = bytes[i].toInt() and 0xFF
             hexChars[i] = hexArray[v ushr 4]
             hexChars[i + 1] = hexArray[v and 0x0F]
@@ -762,7 +766,8 @@ open class MainActivity : AppCompatActivity(),
         isQRDialogShowing = true
 
         val hString = bytesToHex(
-            rawText.toByteArray(StandardCharsets.UTF_8))
+            rawText.toByteArray(StandardCharsets.UTF_8)
+        )
 
         runOnUiThread {
             dialog = Dialog(this, R.style.Theme_Dialog)
@@ -776,7 +781,7 @@ open class MainActivity : AppCompatActivity(),
 
             val textView = dialog.findViewById<View>(R.id.scan_result_text) as TextView
 
-            tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
+            tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 
                 override fun onTabSelected(tab: TabLayout.Tab?) {
                     when (tab?.text.toString()) {
@@ -808,24 +813,34 @@ open class MainActivity : AppCompatActivity(),
             val ctc: ImageButton = dialog.findViewById(R.id.copy_qr_text)
             ctc.setOnClickListener {
                 val clipboardManager = getSystemService(
-                    Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clipData = ClipData.newPlainText("text",
-                    textView.text)
+                    Context.CLIPBOARD_SERVICE
+                ) as ClipboardManager
+                val clipData = ClipData.newPlainText(
+                    "text",
+                    textView.text
+                )
                 clipboardManager.setPrimaryClip(clipData)
 
-                Toast.makeText(this, "Copied to QR text to" +
-                        " clipboard!",
-                    Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this, "Copied to QR text to" +
+                            " clipboard!",
+                    Toast.LENGTH_LONG
+                ).show()
             }
 
             val sButton: ImageButton = dialog.findViewById(
-                R.id.share_qr_text)
+                R.id.share_qr_text
+            )
             sButton.setOnClickListener {
                 val sIntent = Intent(Intent.ACTION_SEND)
                 sIntent.type = "text/plain"
                 sIntent.putExtra(Intent.EXTRA_TEXT, textView.text.toString())
-                startActivity(Intent.createChooser(sIntent,
-                    "Share QR text via"))
+                startActivity(
+                    Intent.createChooser(
+                        sIntent,
+                        "Share QR text via"
+                    )
+                )
             }
 
             dialog.setOnDismissListener {
@@ -839,8 +854,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    private fun blurBitmap(bitmap: Bitmap): Bitmap
-    {
+    private fun blurBitmap(bitmap: Bitmap): Bitmap {
         return BlurBitmap.get(bitmap)
     }
 
@@ -856,7 +870,7 @@ open class MainActivity : AppCompatActivity(),
 
         if (event.action == MotionEvent.ACTION_DOWN) return true else if (event.action == MotionEvent.ACTION_UP) {
 
-            if(wasSwiping) {
+            if (wasSwiping) {
                 wasSwiping = false
                 return wasSwiping
             }
@@ -866,7 +880,7 @@ open class MainActivity : AppCompatActivity(),
                 return true
             }
 
-            if(config.isQRMode)
+            if (config.isQRMode)
                 return false
 
             val x = event.x
@@ -913,7 +927,7 @@ open class MainActivity : AppCompatActivity(),
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
 
     private fun rotateView(view: View?, angle: Float) {
-        if (view!=null) {
+        if (view != null) {
             view.animate().cancel()
             view.animate()
                 .rotationBy(angle)
@@ -927,7 +941,9 @@ open class MainActivity : AppCompatActivity(),
 
         val orientation = if (Settings.System.getInt(
                 contentResolver,
-                Settings.System.ACCELEROMETER_ROTATION, 0) == 1) {
+                Settings.System.ACCELEROMETER_ROTATION, 0
+            ) == 1
+        ) {
             orientationValue
         } else {
             0
@@ -943,7 +959,7 @@ open class MainActivity : AppCompatActivity(),
         config.imageCapture?.targetRotation = tr
 //        config.iAnalyzer?.targetRotation = tr
 
-        if(flipCameraCircle.rotation == 0f){
+        if (flipCameraCircle.rotation == 0f) {
             flipCameraCircle.rotation = 360f
         }
 
@@ -992,8 +1008,10 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onLongPress(p0: MotionEvent?) {}
 
-    override fun onFling(e1: MotionEvent, e2: MotionEvent,
-                         velocityX: Float, velocityY: Float): Boolean {
+    override fun onFling(
+        e1: MotionEvent, e2: MotionEvent,
+        velocityX: Float, velocityY: Float
+    ): Boolean {
 
         var result = false
         try {
@@ -1009,8 +1027,7 @@ open class MainActivity : AppCompatActivity(),
                     }
                     result = true
                 }
-            }
-            else if (abs(diffY) > SWIPE_THRESHOLD && abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
+            } else if (abs(diffY) > SWIPE_THRESHOLD && abs(velocityY) > SWIPE_VELOCITY_THRESHOLD) {
                 if (diffY > 0) {
                     onSwipeBottom()
                 } else {
@@ -1024,38 +1041,38 @@ open class MainActivity : AppCompatActivity(),
         return result
     }
 
-    private fun onSwipeBottom(){
-        if(isZooming || cdTimer.isRunning) return
+    private fun onSwipeBottom() {
+        if (isZooming || cdTimer.isRunning) return
         wasSwiping = true
-        if (settingsIcon.isEnabled){
+        if (settingsIcon.isEnabled) {
             settingsIcon.performClick()
         }
     }
 
-    private fun onSwipeRight(){
+    private fun onSwipeRight() {
 
-        if(isZooming || cdTimer.isRunning) return
+        if (isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
 
         val i = tabLayout.selectedTabPosition - 1
 
         Log.i(TAG, "onSwipeRight $i")
-        tabLayout.getTabAt(i)?.let{
+        tabLayout.getTabAt(i)?.let {
             tabLayout.selectTab(it)
         }
     }
 
-    private fun onSwipeTop(){
+    private fun onSwipeTop() {
 //        Log.i(TAG, "onSwipeTop")
     }
 
-    private fun onSwipeLeft(){
-        if(isZooming || cdTimer.isRunning) return
+    private fun onSwipeLeft() {
+        if (isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
         val i = tabLayout.selectedTabPosition + 1
-        tabLayout.getTabAt(i)?.let{
+        tabLayout.getTabAt(i)?.let {
             tabLayout.selectTab(it)
         }
     }

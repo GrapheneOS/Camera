@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -10,19 +11,18 @@ import android.os.Looper
 import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
-import java.nio.ByteBuffer
-import android.graphics.Bitmap.CompressFormat
-import android.widget.ImageButton
-import android.widget.ImageView
 import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
 
-open class CaptureActivity: MainActivity() {
+open class CaptureActivity : MainActivity() {
 
     lateinit var outputUri: Uri
     lateinit var bitmap: Bitmap
@@ -32,7 +32,7 @@ open class CaptureActivity: MainActivity() {
     lateinit var flipCameraContent: ImageView
     lateinit var confirmButton: ImageButton
 
-    fun isOutputUriAvailable() : Boolean {
+    fun isOutputUriAvailable(): Boolean {
         return ::outputUri.isInitialized
     }
 
@@ -44,7 +44,7 @@ open class CaptureActivity: MainActivity() {
 
         confirmButton = findViewById(R.id.confirm_button)
 
-        if (intent.extras?.containsKey(EXTRA_OUTPUT)==true) {
+        if (intent.extras?.containsKey(EXTRA_OUTPUT) == true) {
             outputUri = intent.extras?.get(EXTRA_OUTPUT) as Uri
         }
 
@@ -105,12 +105,12 @@ open class CaptureActivity: MainActivity() {
         // Display the activity
     }
 
-    private fun takePicture(){
+    private fun takePicture() {
 
         previewLoader.visibility = View.VISIBLE
         config.imageCapture?.takePicture(
             ContextCompat.getMainExecutor(this),
-            object: ImageCapture.OnImageCapturedCallback() {
+            object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
                     super.onCaptureSuccess(image)
                     bitmap = imageProxyToBitmap(image)
@@ -123,8 +123,10 @@ open class CaptureActivity: MainActivity() {
                 override fun onError(exception: ImageCaptureException) {
                     super.onError(exception)
                     exception.printStackTrace()
-                    Toast.makeText(this@CaptureActivity,
-                        "Unable to capture image", Toast.LENGTH_LONG)
+                    Toast.makeText(
+                        this@CaptureActivity,
+                        "Unable to capture image", Toast.LENGTH_LONG
+                    )
                         .show()
 
                     finishActivity(RESULT_CANCELED)
@@ -134,7 +136,7 @@ open class CaptureActivity: MainActivity() {
         )
     }
 
-    open fun showPreview(){
+    open fun showPreview() {
 
         config.cameraProvider?.unbindAll()
 
@@ -152,7 +154,7 @@ open class CaptureActivity: MainActivity() {
         previewView.visibility = View.INVISIBLE
     }
 
-    open fun hidePreview(){
+    open fun hidePreview() {
         config.startCamera(true)
 
         settingsIcon.visibility = View.VISIBLE
@@ -170,12 +172,12 @@ open class CaptureActivity: MainActivity() {
 
         val resultIntent = Intent("inline-data")
 
-        if(::outputUri.isInitialized){
+        if (::outputUri.isInitialized) {
 
             val bos = ByteArrayOutputStream()
 
             val cf: CompressFormat =
-                if(outputUri.path?.endsWith(".png")==true) {
+                if (outputUri.path?.endsWith(".png") == true) {
                     CompressFormat.PNG
                 } else {
                     CompressFormat.JPEG
@@ -187,7 +189,7 @@ open class CaptureActivity: MainActivity() {
             val oStream =
                 contentResolver.openOutputStream(outputUri)
 
-            if(oStream!=null){
+            if (oStream != null) {
                 oStream.write(bitmapData)
                 oStream.close()
 

@@ -2,29 +2,25 @@ package app.grapheneos.camera.ui.seekbar
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Canvas
-import android.util.AttributeSet
-import android.os.Handler
-import android.view.MotionEvent
-import androidx.appcompat.widget.AppCompatSeekBar
-import android.graphics.drawable.BitmapDrawable
-
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.os.Handler
 import android.os.Looper
-
-import android.widget.TextView
-
-import android.view.View
-
+import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.appcompat.widget.AppCompatSeekBar
 import androidx.camera.core.ZoomState
-import app.grapheneos.camera.R
-import kotlin.math.roundToInt
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import kotlin.math.roundToInt
 
 
 class ZoomBar : AppCompatSeekBar {
@@ -75,7 +71,8 @@ class ZoomBar : AppCompatSeekBar {
         transition.addTarget(R.id.zoom_bar_panel)
 
         TransitionManager.beginDelayedTransition(
-            mainActivity.window.decorView.rootView as ViewGroup, transition)
+            mainActivity.window.decorView.rootView as ViewGroup, transition
+        )
         mainActivity.zoomBarPanel.visibility = visibility
     }
 
@@ -94,7 +91,7 @@ class ZoomBar : AppCompatSeekBar {
         var zoomRatio = 1.0f
         var linearZoom = 0.0f
 
-        if (zoomState!=null) {
+        if (zoomState != null) {
             zoomRatio = zoomState.zoomRatio
             linearZoom = zoomState.linearZoom
         }
@@ -139,7 +136,7 @@ class ZoomBar : AppCompatSeekBar {
         when (event.action) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
                 val progress = max - (max * event.y / height).toInt()
-                mainActivity.config.camera?.cameraControl?.setLinearZoom(progress/100f)
+                mainActivity.config.camera?.cameraControl?.setLinearZoom(progress / 100f)
             }
             MotionEvent.ACTION_CANCEL -> {
             }

@@ -1,7 +1,9 @@
 package app.grapheneos.camera.capturer
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.content.pm.PackageManager
+import android.graphics.drawable.GradientDrawable
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
@@ -10,17 +12,15 @@ import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.Toast
+import androidx.camera.video.*
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import android.animation.ValueAnimator
-import app.grapheneos.camera.R
-import android.graphics.drawable.GradientDrawable
-import androidx.camera.video.*
-import androidx.core.content.ContextCompat
-import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -33,13 +33,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     var isPaused = false
         set(value) {
-            if(isRecording) {
-                if(value) {
+            if (isRecording) {
+                if (value) {
                     activeRecording?.pause()
                     pauseTimer()
                     mActivity.flipCamIcon.setImageResource(R.drawable.play)
-                }
-                else {
+                } else {
                     activeRecording?.resume()
                     startTimer()
                     mActivity.flipCamIcon.setImageResource(R.drawable.pause)
@@ -77,7 +76,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         handler.removeCallbacks(runnable)
     }
 
-    private fun pauseTimer(){
+    private fun pauseTimer() {
         handler.removeCallbacks(runnable)
     }
 
@@ -104,27 +103,27 @@ class VideoCapturer(private val mActivity: MainActivity) {
             beforeRecordingStarts()
 
             val pendingRecording =
-                if(mActivity is VideoCaptureActivity && mActivity.isOutputUriAvailable()) {
+                if (mActivity is VideoCaptureActivity && mActivity.isOutputUriAvailable()) {
 
-                mActivity.config.videoCapture!!.output.prepareRecording(
-                    mActivity,
-                    FileDescriptorOutputOptions
-                        .Builder(
-                            mActivity.contentResolver.openFileDescriptor(
-                                mActivity.outputUri,
-                                "w"
-                            )!!
-                        ).build()
-                )
+                    mActivity.config.videoCapture!!.output.prepareRecording(
+                        mActivity,
+                        FileDescriptorOutputOptions
+                            .Builder(
+                                mActivity.contentResolver.openFileDescriptor(
+                                    mActivity.outputUri,
+                                    "w"
+                                )!!
+                            ).build()
+                    )
 
-            } else {
-                mActivity.config.videoCapture!!.output.prepareRecording(
-                    mActivity,
-                    FileOutputOptions
-                        .Builder(generateFileForVideo())
-                        .build()
-                )
-            }
+                } else {
+                    mActivity.config.videoCapture!!.output.prepareRecording(
+                        mActivity,
+                        FileOutputOptions
+                            .Builder(generateFileForVideo())
+                            .build()
+                    )
+                }
 
             if (mActivity.settingsDialog.includeAudioToggle.isChecked)
                 pendingRecording.withAudioEnabled()
@@ -139,20 +138,24 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                         if (it.hasError()) {
 
-                            if(it.error == 8) {
-                                Toast.makeText(mActivity,
+                            if (it.error == 8) {
+                                Toast.makeText(
+                                    mActivity,
                                     "Recording too short to be saved",
-                                    Toast.LENGTH_LONG).show()
+                                    Toast.LENGTH_LONG
+                                ).show()
                             } else {
-                                Toast.makeText(mActivity,
+                                Toast.makeText(
+                                    mActivity,
                                     "Unable to save recording (Error code: " +
-                                            "${it.error})", Toast.LENGTH_LONG).show()
+                                            "${it.error})", Toast.LENGTH_LONG
+                                ).show()
                             }
                         } else {
 
                             val outputUri = it.outputResults.outputUri
 
-                            if(mActivity is VideoCaptureActivity){
+                            if (mActivity is VideoCaptureActivity) {
                                 mActivity.afterRecording(outputUri)
                                 return@withEventListener
                             }
@@ -192,7 +195,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private val dp16 = 16 * mActivity.resources.displayMetrics.density
-    private val dp8 =  8 * mActivity.resources.displayMetrics.density
+    private val dp8 = 8 * mActivity.resources.displayMetrics.density
 
     private fun beforeRecordingStarts() {
 
@@ -217,7 +220,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         isPaused = false
         mActivity.captureModeView.visibility = View.GONE
 
-        if(mActivity.requiresVideoModeOnly) {
+        if (mActivity.requiresVideoModeOnly) {
             mActivity.thirdOption.visibility = View.INVISIBLE
         }
 
@@ -250,7 +253,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.thirdOption.visibility = View.VISIBLE
 
-        if(mActivity !is VideoCaptureActivity) {
+        if (mActivity !is VideoCaptureActivity) {
             mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
             mActivity.captureModeView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE

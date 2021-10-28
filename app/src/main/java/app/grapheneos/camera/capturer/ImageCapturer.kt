@@ -39,9 +39,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val imageFile = generateFileForImage()
         val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(imageFile)
 
-        if(mActivity.config.requireLocation) {
+        if (mActivity.config.requireLocation) {
 
-            if (mActivity.locationListener.lastKnownLocation==null) {
+            if (mActivity.locationListener.lastKnownLocation == null) {
                 Toast.makeText(
                     mActivity,
                     "Couldn't attach location to image " +
@@ -80,7 +80,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                         mActivity.mainOverlay.setImageResource(android.R.color.white)
 
                         animation.setAnimationListener(
-                            object: Animation.AnimationListener {
+                            object : Animation.AnimationListener {
                                 override fun onAnimationStart(p0: Animation?) {
                                     mActivity.mainOverlay.visibility = View.VISIBLE
                                 }
