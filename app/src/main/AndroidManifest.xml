@@ -61,6 +61,7 @@
             android:taskAffinity=".ui.activities.SecureMainActivity"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
+            android:excludeFromRecents="true"
             android:exported="true">
 
             <intent-filter>
