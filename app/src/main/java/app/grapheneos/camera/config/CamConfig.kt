@@ -341,7 +341,7 @@ class CamConfig(private val mActivity: MainActivity) : SettingsConfig() {
             editor.commit()
         }
 
-    fun getCurrentModeText(): String {
+    private fun getCurrentModeText(): String {
 
         val vp = if (isVideoMode) {
             "VIDEO"
