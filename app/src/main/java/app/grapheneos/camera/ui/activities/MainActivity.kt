@@ -433,21 +433,21 @@ open class MainActivity : AppCompatActivity(),
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 Log.i(TAG, "===============Double tap detected.=========")
-                val zoomState = config.camera!!.cameraInfo.zoomState.value
-                if (zoomState != null) {
-                    val start = zoomState.linearZoom
-                    var end = start * 1.5f
-                    if (end < 0.25f) end = 0.25f else if (end > zoomState.maxZoomRatio) end =
-                        zoomState.maxZoomRatio
-                    val animator = ValueAnimator.ofFloat(start, end)
-                    animator.duration = 300
-                    animator.addUpdateListener { valueAnimator: ValueAnimator ->
-                        config.camera!!.cameraControl.setLinearZoom(
-                            valueAnimator.animatedValue as Float
-                        )
-                    }
-                    animator.start()
-                }
+//                val zoomState = config.camera!!.cameraInfo.zoomState.value
+//                if (zoomState != null) {
+//                    val start = zoomState.linearZoom
+//                    var end = start * 1.5f
+//                    if (end < 0.25f) end = 0.25f else if (end > zoomState.maxZoomRatio) end =
+//                        zoomState.maxZoomRatio
+//                    val animator = ValueAnimator.ofFloat(start, end)
+//                    animator.duration = 300
+//                    animator.addUpdateListener { valueAnimator: ValueAnimator ->
+//                        config.camera!!.cameraControl.setLinearZoom(
+//                            valueAnimator.animatedValue as Float
+//                        )
+//                    }
+//                    animator.start()
+//                }
                 return super.onDoubleTap(e)
             }
         })
