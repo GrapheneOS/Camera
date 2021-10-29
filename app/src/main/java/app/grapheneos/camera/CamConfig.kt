@@ -1,14 +1,12 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
@@ -16,7 +14,6 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.camera.core.ImageCapture
@@ -36,12 +33,11 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.SecureMainActivity
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
+
+import android.content.ContentUris
+import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -118,20 +114,29 @@ class CamConfig(private val mActivity: MainActivity) {
             CameraModes.AUTO,
         )
 
+        val imageCollectionUri: Uri = MediaStore.Images.Media.getContentUri(
+            MediaStore.VOLUME_EXTERNAL_PRIMARY)!!
+
+        val videoCollectionUri: Uri = MediaStore.Video.Media.getContentUri(
+            MediaStore.VOLUME_EXTERNAL_PRIMARY)!!
+
+        val fileCollectionUri: Uri = MediaStore.Files.getContentUri(
+            MediaStore.VOLUME_EXTERNAL_PRIMARY)!!
+
         const val DEFAULT_CAMERA_MODE = CameraModes.CAMERA
 
         const val COMMON_SP_NAME = "commons"
 
         @JvmStatic
         @Throws(Throwable::class)
-        fun getVideoThumbnail(p_videoPath: String?): Bitmap {
+        fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap {
 
             val mBitmap: Bitmap
             var mMediaMetadataRetriever: MediaMetadataRetriever? = null
 
             try {
                 mMediaMetadataRetriever = MediaMetadataRetriever()
-                mMediaMetadataRetriever.setDataSource(p_videoPath)
+                mMediaMetadataRetriever.setDataSource(context, uri)
                 mBitmap = mMediaMetadataRetriever.frameAtTime!!
             } catch (m_e: Exception) {
                 throw Exception(
@@ -145,14 +150,6 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
             }
             return mBitmap
-        }
-
-        fun getCreationTimestamp(file: File): Long {
-            val attr: BasicFileAttributes = Files.readAttributes(
-                file.toPath(),
-                BasicFileAttributes::class.java
-            )
-            return attr.creationTime().toMillis()
         }
     }
 
@@ -176,7 +173,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var iAnalyzer: ImageAnalysis? = null
 
-    var latestFile: File? = null
+    var latestUri: Uri? = null
 
     val mPlayer: TunePlayer = TunePlayer(mActivity)
 
@@ -323,34 +320,6 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.settingsDialog.selfIllumination()
         }
 
-    val parentDirPath: String
-        get() = parentDir!!.absolutePath
-
-    private val parentDir: File?
-        get() {
-
-            return mActivity.getExternalFilesDir(Environment.DIRECTORY_DCIM)
-
-//            val dirs = mActivity.externalMediaDirs
-//            var parentDir: File? = null
-//            for (dir in dirs) {
-//                if (dir != null) {
-//                    parentDir = dir
-//                    break
-//                }
-//            }
-//            if (parentDir != null) {
-//                parentDir = File(
-//                    parentDir.absolutePath,
-//                    mActivity.resources.getString(R.string.app_name)
-//                )
-//                if (parentDir.mkdirs()) {
-//                    Log.i(TAG, "Parent directory was successfully created")
-//                }
-//            }
-//            return parentDir
-        }
-
     private fun updatePrefMode() {
         val modeText = getCurrentModeText()
         modePref = mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
@@ -485,49 +454,90 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun updatePreview() {
 
-        val lastModifiedFile = latestFile ?: return
+        if (latestUri==null) return
 
-        if (mActivity is SecureMainActivity) {
-            val lFCT = getCreationTimestamp(lastModifiedFile)
-            if (lFCT < mActivity.openedActivityAt) return
-        }
-
-        if (lastModifiedFile.extension == "mp4") {
+        if (isVideo(latestUri!!)) {
             try {
                 mActivity.imagePreview.setImageBitmap(
-                    getVideoThumbnail(lastModifiedFile.absolutePath)
+                    getVideoThumbnail(mActivity, latestUri)
                 )
             } catch (throwable: Throwable) {
                 throwable.printStackTrace()
             }
         } else {
-            mActivity.imagePreview.setImageURI(
-                Uri.parse(lastModifiedFile.absolutePath)
-            )
+            mActivity.imagePreview.setImageURI(latestUri)
         }
     }
 
-    val latestMediaFile: File?
+    val latestMediaFile: Uri?
         get() {
-            if (latestFile != null && latestFile!!.exists())
-                return latestFile
-            val dir = parentDir
-            val files = dir!!.listFiles { file: File ->
-                if (!file.isFile) return@listFiles false
-                val ext = file.extension
-                ext == "jpg" || ext == "png" || ext == "mp4"
+            if (latestUri != null) return latestUri
+
+            val imageCursor = mActivity.contentResolver.query(
+                imageCollectionUri,
+                arrayOf(
+                    MediaStore.Images.ImageColumns._ID,
+                    MediaStore.Images.ImageColumns.DATE_ADDED,
+                ),
+                null, null,
+                "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
+            )
+
+            var imageUri : Uri? = null
+            var imageAddedOn : Int = -1
+
+            if (imageCursor!=null) {
+                if (imageCursor.moveToFirst()) {
+                    imageUri = ContentUris
+                        .withAppendedId(
+                            imageCollectionUri,
+                            imageCursor.getInt(0).toLong()
+                        )
+
+                    imageAddedOn = imageCursor.getInt(1)
+                }
+                imageCursor.close()
             }
 
-            if (files == null || files.isEmpty()) return null
+            val videoCursor = mActivity.contentResolver.query(
+                videoCollectionUri,
+                arrayOf(
+                    MediaStore.Video.VideoColumns._ID,
+                    MediaStore.Video.VideoColumns.DATE_ADDED,
+                ),
+                null, null,
+                "${MediaStore.Video.VideoColumns.DATE_ADDED} DESC"
+            )
 
-            var lastModifiedFile = files[0]
-            for (file in files) {
-                if (getCreationTimestamp(lastModifiedFile) < getCreationTimestamp(file))
-                    lastModifiedFile = file
+            var videoUri : Uri? = null
+            var videoAddedOn : Int = -1
+
+            if (videoCursor!=null) {
+                if (videoCursor.moveToFirst()) {
+                    videoUri = ContentUris
+                        .withAppendedId(
+                            videoCollectionUri,
+                            videoCursor.getInt(0).toLong()
+                        )
+
+                    videoAddedOn = videoCursor.getInt(1)
+                }
+                videoCursor.close()
             }
-            latestFile = lastModifiedFile
+
+            if (imageAddedOn == 0 && videoAddedOn == 0)
+                return null
+
+            val mediaUri = if (imageAddedOn>videoAddedOn){
+                imageUri
+            } else {
+                videoUri
+            }
+
+            latestUri = mediaUri
             updatePreview()
-            return latestFile
+
+            return latestUri
         }
 
 
@@ -536,67 +546,9 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
-    private fun addToMediaStore(file: File, isVideo: Boolean): Uri? {
 
-        val values: ContentValues = getContentValuesForData(file, isVideo)
 
-        var uri: Uri? = null
 
-        try {
-
-            uri = if (isVideo)
-                mActivity.contentResolver.insert(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                    values
-                )
-            else
-                mActivity.contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    values
-                )
-
-            Log.i(TAG, "Added image to media store!")
-        } catch (th: Throwable) {
-            if (uri != null) {
-                mActivity.contentResolver.delete(uri, null, null)
-            }
-
-        }
-        return uri
-    }
-
-    private fun getContentValuesForData(file: File, isVideo: Boolean): ContentValues {
-
-        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
-
-        val values = ContentValues()
-
-        if (isVideo) {
-
-            values.put(MediaStore.Video.Media.TITLE, file.nameWithoutExtension)
-            values.put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
-            values.put(MediaStore.Video.Media.MIME_TYPE, mimeType)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.put(MediaStore.Video.Media.DATE_TAKEN, getCreationTimestamp(file))
-                values.put(MediaStore.Video.Media.RELATIVE_PATH, file.parent)
-                values.put(MediaStore.Video.Media.IS_PENDING, 0)
-            }
-
-        } else {
-            values.put(MediaStore.Images.Media.TITLE, file.nameWithoutExtension)
-            values.put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
-            values.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.put(MediaStore.Images.Media.DATE_TAKEN, getCreationTimestamp(file))
-                values.put(MediaStore.Images.Media.RELATIVE_PATH, file.parent)
-                values.put(MediaStore.Images.Media.IS_PENDING, 0)
-            }
-        }
-
-        return values
-    }
 
     fun toggleFlashMode() {
         if (camera!!.cameraInfo.hasFlashUnit()) {

@@ -21,16 +21,8 @@ class SecureMainActivity : MainActivity() {
         openedActivityAt = System.currentTimeMillis()
         fileSP = getSharedPreferences(getSPName(), Context.MODE_PRIVATE)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        } else {
-
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    or
-                    @Suppress("DEPRECATION")
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
-        }
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
     }
 
     private fun getSPName() : String {
@@ -44,7 +36,6 @@ class SecureMainActivity : MainActivity() {
         editor.putStringSet("filePaths", capturedFilePaths.toSet())
 
         if(editor.commit()){
-            intent.putExtra("folder_path", config.parentDirPath)
             intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
             intent.putExtra("fileSP", getSPName())
         } else {

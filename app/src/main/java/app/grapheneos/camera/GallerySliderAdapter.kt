@@ -8,14 +8,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide
-import java.io.File
 
 class GallerySliderAdapter(
     private val gActivity: InAppGallery,
-    private val mediaFiles: ArrayList<File>
+    private val mediaUris: ArrayList<Uri>
 ) : RecyclerView.Adapter<GallerySlide>() {
 
     private val layoutInflater: LayoutInflater = LayoutInflater.from(
@@ -33,7 +33,9 @@ class GallerySliderAdapter(
     }
 
     override fun getItemId(position: Int): Long {
-        return mediaFiles[position].hashCode().toLong()
+        val path = mediaUris[position].encodedPath
+        val lIS = path?.lastIndexOf('/') ?: -1
+        return path?.substring(lIS)?.toLong() ?: 0L
     }
 
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
@@ -43,13 +45,14 @@ class GallerySliderAdapter(
 
         if (mediaPreview.drawable != null) return
 
-        val mediaFile = mediaFiles[position]
+        val mediaUri = mediaUris[position]
 
-        if (mediaFile.extension == "mp4") {
+        if (VideoCapturer.isVideo(mediaUri)) {
             try {
                 mediaPreview.setImageBitmap(
                     CamConfig.getVideoThumbnail(
-                        mediaFile.absolutePath
+                        gActivity,
+                        mediaUri
                     )
                 )
 
@@ -65,9 +68,8 @@ class GallerySliderAdapter(
                         VideoPlayer::class.java
                     )
                     intent.putExtra(
-                        "videoUri",
-                        Uri.parse(mediaFile.absolutePath)
-                    )
+                        "videoUri", mediaUri)
+
                     gActivity.startActivity(intent)
                 }
 
@@ -75,15 +77,15 @@ class GallerySliderAdapter(
             }
 
         } else {
-            mediaPreview.setImageURI(Uri.parse(mediaFile.absolutePath))
+            mediaPreview.setImageURI(mediaUri)
         }
     }
 
     fun removeChildAt(index: Int) {
-        mediaFiles.removeAt(index)
+        mediaUris.removeAt(index)
 
         // Close gallery if no files are present
-        if (mediaFiles.isEmpty()) {
+        if (mediaUris.isEmpty()) {
             Toast.makeText(
                 gActivity,
                 "No image found. Exiting in-app gallery.",
@@ -95,11 +97,11 @@ class GallerySliderAdapter(
         notifyItemRemoved(index)
     }
 
-    fun getCurrentFile(): File {
-        return mediaFiles[gActivity.gallerySlider.currentItem]
+    fun getCurrentUri(): Uri {
+        return mediaUris[gActivity.gallerySlider.currentItem]
     }
 
     override fun getItemCount(): Int {
-        return mediaFiles.size
+        return mediaUris.size
     }
 }

@@ -1,7 +1,7 @@
 package app.grapheneos.camera.capturer
 
-import android.media.MediaScannerConnection
-import android.net.Uri
+import android.content.ContentValues
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.view.animation.AlphaAnimation
@@ -13,24 +13,46 @@ import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
-import java.io.File
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"
-    private fun generateFileForImage(): File {
+
+    private fun genOutputStreamForImage(): OutputStream {
+
         var fileName: String
+
         val sdf = SimpleDateFormat(
             "yyyyMMdd_HHmmss",
             Locale.US
-        ) /* w  ww .  j av  a  2s.  co  m*/
-        fileName = sdf.format(Date())
+        )
+        val date = Date()
+        fileName = sdf.format(date)
         fileName = "IMG_$fileName$imageFileFormat"
-        return File(mActivity.config.parentDirPath, fileName)
+
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat)
+
+        val resolver = mActivity.contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
+            put(MediaStore.MediaColumns.DATE_ADDED, date.time)
+            put(MediaStore.MediaColumns.DATE_TAKEN, date.time)
+            put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
+        }
+
+        val uri = resolver.insert(CamConfig.imageCollectionUri, contentValues)!!
+
+        mActivity.config.latestUri = uri
+
+        return resolver.openOutputStream(uri)!!
     }
 
     val isTakingPicture: Boolean
@@ -38,8 +60,8 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
     fun takePicture() {
         if (mActivity.config.camera == null) return
-        val imageFile = generateFileForImage()
-        val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(imageFile)
+        val outputStream = genOutputStreamForImage()
+        val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(outputStream)
 
         if (mActivity.config.requireLocation) {
 
@@ -54,7 +76,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
                 outputFileOptionsBuilder.setMetadata(
                     ImageCapture.Metadata().apply {
                         location = mActivity.locationListener.lastKnownLocation
-                        Log.i(TAG, "Location added to ${location?.latitude}")
                     }
                 )
             }
@@ -112,32 +133,16 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     }
 
                     val imageUri = outputFileResults.savedUri
+
                     if (imageUri != null) {
-                        val path = imageUri.encodedPath!!
-                        val file = File(path)
-                        mActivity.config.latestFile = file
-                        val mimeType = MimeTypeMap.getSingleton()
-                            .getMimeTypeFromExtension(
-                                File(path).extension
-                            )
-
-                        if(mActivity is SecureMainActivity)
+                        if(mActivity is SecureMainActivity) {
+                            val path = imageUri.encodedPath!!
                             mActivity.capturedFilePaths.add(path)
-
-                        mActivity.previewLoader.visibility = View.GONE
-                        mActivity.imagePreview.setImageURI(imageUri)
-
-                        MediaScannerConnection.scanFile(
-                            mActivity,
-                            arrayOf(file.absolutePath),
-                            arrayOf(mimeType)
-                        ) { _: String?, uri: Uri? ->
-                            Log.d(
-                                TAG, "Image capture scanned" +
-                                        " into media store: " + uri
-                            )
                         }
                     }
+
+                    mActivity.previewLoader.visibility = View.GONE
+                    mActivity.config.updatePreview()
                 }
 
                 override fun onError(exception: ImageCaptureException) {

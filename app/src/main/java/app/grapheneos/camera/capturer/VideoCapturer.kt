@@ -2,27 +2,27 @@ package app.grapheneos.camera.capturer
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.graphics.drawable.GradientDrawable
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
+import android.os.ParcelFileDescriptor
+import android.provider.MediaStore
 import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.camera.video.ActiveRecording
 import androidx.camera.video.FileDescriptorOutputOptions
-import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -85,15 +85,34 @@ class VideoCapturer(private val mActivity: MainActivity) {
         handler.removeCallbacks(runnable)
     }
 
-    private fun generateFileForVideo(): File {
+    private fun generateFileForVideo(): ParcelFileDescriptor {
         var fileName: String
         val sdf = SimpleDateFormat(
             "yyyyMMdd_HHmmss",
             Locale.US
-        ) /* w  ww .  j av  a  2s.  co  m*/
-        fileName = sdf.format(Date())
+        )
+
+        val date = Date()
+        fileName = sdf.format(date)
         fileName = "VID_$fileName$videoFileFormat"
-        return File(mActivity.config.parentDirPath, fileName)
+
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat)
+
+        val resolver = mActivity.contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
+            put(MediaStore.MediaColumns.DATE_ADDED, date.time)
+            put(MediaStore.MediaColumns.DATE_TAKEN, date.time)
+            put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
+        }
+
+        val uri = resolver.insert(CamConfig.videoCollectionUri, contentValues)!!
+
+        mActivity.config.latestUri = uri
+
+        return resolver.openFileDescriptor(uri, "w")!!
     }
 
     fun startRecording() {
@@ -124,7 +143,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 } else {
                     mActivity.config.videoCapture!!.output.prepareRecording(
                         mActivity,
-                        FileOutputOptions
+                        FileDescriptorOutputOptions
                             .Builder(generateFileForVideo())
                             .build()
                     )
@@ -166,31 +185,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             }
 
                             mActivity.previewLoader.visibility = View.VISIBLE
-                            val path: String = outputUri.encodedPath!!
-
-                            val file = File(path)
-                            mActivity.config.latestFile = file
-                            val mimeType = MimeTypeMap.getSingleton()
-                                .getMimeTypeFromExtension(
-                                    file.extension
-                                )
 
                             mActivity.previewLoader.visibility = View.GONE
                             mActivity.config.updatePreview()
 
                             isRecording = false
 
-                            MediaScannerConnection.scanFile(
-                                mActivity, arrayOf(outputUri.encodedPath), arrayOf(mimeType)
-                            ) { _: String?, uri: Uri? ->
-                                Log.d(
-                                    TAG, "Video capture scanned" +
-                                            " into media store: " + uri
-                                )
-                            }
-
-                            if(mActivity is SecureMainActivity)
+                            if(mActivity is SecureMainActivity) {
+                                val path: String = outputUri.encodedPath!!
                                 mActivity.capturedFilePaths.add(path)
+                            }
                         }
                     }
                 }
@@ -278,8 +282,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     companion object {
         private const val TAG = "VideoCapturer"
-        fun isVideo(file: File?): Boolean {
-            return file?.extension == "mp4"
+        fun isVideo(uri: Uri): Boolean {
+            return uri.encodedPath?.contains("video")==true
         }
     }
 }

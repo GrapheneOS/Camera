@@ -284,7 +284,7 @@ open class MainActivity : AppCompatActivity(),
 
     protected open fun openGallery() {
         val intent = Intent(this, InAppGallery::class.java)
-        intent.putExtra("folder_path", config.parentDirPath)
+
         intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
         startActivity(intent)
     }
@@ -716,13 +716,37 @@ open class MainActivity : AppCompatActivity(),
         config.loadSettings()
 
         locationListener = CustomLocationListener(this)
+
+        val cUri = MediaStore.Images.Media.getContentUri(
+            MediaStore.VOLUME_EXTERNAL_PRIMARY
+        )
+
+        val c = contentResolver.query(
+            cUri,
+            arrayOf(MediaStore.Images.ImageColumns.RELATIVE_PATH,
+                MediaStore.Images.ImageColumns.DISPLAY_NAME),
+            null, null,
+            "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
+        )
+
+        if(c!=null){
+
+            while(c.moveToNext()) {
+                val relativePath = c.getString(0)
+                val displayName = c.getString(1)
+
+                Log.i(TAG, "$relativePath/$displayName")
+            }
+
+            c.close()
+        }
     }
 
     private fun shareLatestMedia() {
 
-        val file: File? = config.latestMediaFile
+        val mediaUri = config.latestUri
 
-        if (file == null) {
+        if (mediaUri == null) {
             Toast.makeText(
                 this,
                 "Please capture a photo/video before attempting to share via long tap",
@@ -731,37 +755,15 @@ open class MainActivity : AppCompatActivity(),
             return
         }
 
-        // We'll be using an temporary file to avoid storage permission related issue on the
-        // app where the user wants to share the media file but can't due to absence of
-        // storage related permission
-
         val share = Intent(Intent.ACTION_SEND)
-        val values = ContentValues()
-        val uri: Uri?
-
-        if (file.extension == "mp4") {
-            // Share video file
-            share.type = "video/mp4"
-            values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-            uri = contentResolver.insert(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                values
-            )
+        share.data = mediaUri
+        share.putExtra(Intent.EXTRA_STREAM, mediaUri)
+        share.type = if (VideoCapturer.isVideo(mediaUri)) {
+            "video/*"
         } else {
-            // Share image file
-            share.type = "image/jpeg"
-            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            uri = contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                values
-            )
+            "image/*"
         }
 
-        val outStream: OutputStream? = contentResolver.openOutputStream(uri!!)
-        outStream?.write(file.readBytes())
-        outStream?.close()
-
-        share.putExtra(Intent.EXTRA_STREAM, uri)
         startActivity(Intent.createChooser(share, "Share Image"))
     }
 
