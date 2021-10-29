@@ -138,6 +138,7 @@
             android:name=".ui.activities.VideoCaptureActivity"
             android:label="@string/video_capture_label"
             android:screenOrientation="nosensor"
+            android:visibleToInstantApps="true"
             android:exported="true">
 
             <intent-filter>
