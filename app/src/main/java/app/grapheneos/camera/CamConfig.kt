@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
@@ -327,24 +328,27 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private val parentDir: File?
         get() {
-            val dirs = mActivity.externalMediaDirs
-            var parentDir: File? = null
-            for (dir in dirs) {
-                if (dir != null) {
-                    parentDir = dir
-                    break
-                }
-            }
-            if (parentDir != null) {
-                parentDir = File(
-                    parentDir.absolutePath,
-                    mActivity.resources.getString(R.string.app_name)
-                )
-                if (parentDir.mkdirs()) {
-                    Log.i(TAG, "Parent directory was successfully created")
-                }
-            }
-            return parentDir
+
+            return mActivity.getExternalFilesDir(Environment.DIRECTORY_DCIM)
+
+//            val dirs = mActivity.externalMediaDirs
+//            var parentDir: File? = null
+//            for (dir in dirs) {
+//                if (dir != null) {
+//                    parentDir = dir
+//                    break
+//                }
+//            }
+//            if (parentDir != null) {
+//                parentDir = File(
+//                    parentDir.absolutePath,
+//                    mActivity.resources.getString(R.string.app_name)
+//                )
+//                if (parentDir.mkdirs()) {
+//                    Log.i(TAG, "Parent directory was successfully created")
+//                }
+//            }
+//            return parentDir
         }
 
     private fun updatePrefMode() {
