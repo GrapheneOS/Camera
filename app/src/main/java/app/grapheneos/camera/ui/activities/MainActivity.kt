@@ -962,17 +962,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    override fun onOrientationChange(orientationValue: Int) {
-
-        val orientation = if (Settings.System.getInt(
-                contentResolver,
-                Settings.System.ACCELEROMETER_ROTATION, 0
-            ) == 1
-        ) {
-            orientationValue
-        } else {
-            0
-        }
+    override fun onOrientationChange(orientation: Int) {
 
         val tr = when (orientation) {
             in 45..134 -> Surface.ROTATION_270
@@ -992,8 +982,16 @@ open class MainActivity : AppCompatActivity(),
         val previousDeviceOrientation = (360 - iconOrientation) % 360
         // The smallest rotation between the device's previous and current orientation
         // e.g. -90 instead of +270
-        val deviceRotation = ((orientation - previousDeviceOrientation) + 180) % 360 - 180
-        val iconRotation = -deviceRotation
+
+        val iconRotation =
+            if(Settings.System.getInt(contentResolver,
+                Settings.System.ACCELEROMETER_ROTATION, 0) == 1) {
+                    val deviceRotation = ((orientation - previousDeviceOrientation) + 180) % 360 - 180
+                    -deviceRotation
+            } else {
+                -iconOrientation + 360
+            }
+
         rotateView(flipCameraCircle, iconRotation)
         rotateView(captureModeView, iconRotation)
         rotateView(thirdOption, iconRotation)
