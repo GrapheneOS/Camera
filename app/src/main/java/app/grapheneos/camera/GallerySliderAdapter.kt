@@ -33,17 +33,13 @@ class GallerySliderAdapter(
     }
 
     override fun getItemId(position: Int): Long {
-        val path = mediaUris[position].encodedPath
-        val lIS = path?.lastIndexOf('/') ?: -1
-        return path?.substring(lIS)?.toLong() ?: 0L
+        return mediaUris[position].hashCode().toLong()
     }
 
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
 
         val mediaPreview: ImageView =
             holder.itemView.findViewById(R.id.slide_preview)
-
-        if (mediaPreview.drawable != null) return
 
         val mediaUri = mediaUris[position]
 
