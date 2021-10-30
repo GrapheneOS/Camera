@@ -132,12 +132,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
             val pendingRecording =
                 if (mActivity is VideoCaptureActivity && mActivity.isOutputUriAvailable()) {
 
+                    outputUri = mActivity.outputUri
+
                     mActivity.config.videoCapture!!.output.prepareRecording(
                         mActivity,
                         FileDescriptorOutputOptions
                             .Builder(
                                 mActivity.contentResolver.openFileDescriptor(
-                                    mActivity.outputUri,
+                                    outputUri,
                                     "w"
                                 )!!
                             ).build()
