@@ -284,14 +284,17 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.settingsDialog.csSwitch.isChecked = value
         }
 
-    var requireLocation: Boolean
+    var requireLocation: Boolean = false
         get() {
             return mActivity.settingsDialog.locToggle.isChecked
         }
         set(value) {
 
             if (value) {
-                mActivity.locationListener.start()
+                // If location listener wasn't previously set
+                if(!field) {
+                    mActivity.locationListener.start()
+                }
             } else {
                 mActivity.locationListener.stop()
             }
@@ -301,6 +304,8 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.commit()
 
             mActivity.settingsDialog.locToggle.isChecked = value
+
+            field = value
         }
 
     var selfIlluminate: Boolean
