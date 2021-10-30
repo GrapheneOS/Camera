@@ -576,7 +576,12 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
         updateFlashMode()
 
-        aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
+        if(mActivity.config.isVideoMode) {
+            aRToggle.isChecked = true
+        } else {
+            aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
+        }
+
         torchToggle.isChecked =
             mActivity.config.camera?.cameraInfo?.torchState?.value == TorchState.ON
 
