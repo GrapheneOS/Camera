@@ -7,7 +7,6 @@ import android.animation.ObjectAnimator
 import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.ContentValues
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -73,7 +72,6 @@ import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.tabs.TabLayout
 import java.io.File
-import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -408,6 +406,8 @@ open class MainActivity : AppCompatActivity(),
         if (config.isQRMode) {
             startFocusTimer()
         }
+
+        config.latestUri = null
 
         if (config.latestMediaFile == null) {
             imagePreview.setImageResource(android.R.color.transparent)
