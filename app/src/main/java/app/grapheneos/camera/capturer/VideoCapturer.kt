@@ -187,9 +187,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                 return@withEventListener
                             }
 
-                            mActivity.previewLoader.visibility = View.VISIBLE
-
-                            mActivity.previewLoader.visibility = View.GONE
                             mActivity.config.updatePreview()
 
                             isRecording = false
