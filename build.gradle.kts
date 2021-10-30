@@ -11,14 +11,14 @@ buildscript {
 }
 
 plugins {
-  id "org.sonarqube" version "3.3"
+  id("org.sonarqube") version "3.3"
 }
 
 sonarqube {
   properties {
-    property "sonar.projectKey", "flawedworld_grapheneos-camera"
-    property "sonar.organization", "flawedworld"
-    property "sonar.host.url", "https://sonarcloud.io"
+    property("sonar.projectKey", "flawedworld_grapheneos-camera")
+    property("sonar.organization", "flawedworld")
+    property("sonar.host.url", "https://sonarcloud.io")
   }
 }
 
