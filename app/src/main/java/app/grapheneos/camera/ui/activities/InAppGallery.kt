@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.activities
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -12,7 +13,6 @@ import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.CamConfig
@@ -192,7 +192,7 @@ class InAppGallery : AppCompatActivity() {
 
                 mediaCursor.close()
 
-                val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this)
+                val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
 
                 alertDialog.setTitle("File Details")
 
@@ -272,7 +272,7 @@ class InAppGallery : AppCompatActivity() {
 
                 val mediaUri = getCurrentUri()
 
-                AlertDialog.Builder(this)
+                AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                     .setTitle("Are you sure?")
                     .setMessage("Do you really want to delete this file?")
                     .setPositiveButton("Delete") { _, _ ->

@@ -102,7 +102,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
                 )
             ) {
 
-                val builder = AlertDialog.Builder(mActivity)
+                val builder = AlertDialog.Builder(mActivity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 builder.setTitle(R.string.location_permission_dialog_title)
                 builder.setMessage(R.string.location_permission_dialog_message)
 

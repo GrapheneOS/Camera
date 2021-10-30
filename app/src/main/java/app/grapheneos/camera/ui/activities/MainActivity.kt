@@ -45,7 +45,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
-import androidx.appcompat.app.AlertDialog
+import android.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
@@ -189,7 +189,7 @@ open class MainActivity : AppCompatActivity(),
                 Log.i(TAG, "Permission granted for recording audio.")
             } else {
                 Log.i(TAG, "Permission denied for recording audio.")
-                val builder = AlertDialog.Builder(this)
+                val builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 builder.setTitle(R.string.audio_permission_dialog_title)
                 builder.setMessage(R.string.audio_permission_dialog_message)
 
@@ -309,7 +309,7 @@ open class MainActivity : AppCompatActivity(),
 
             // Don't build and show a new dialog if it's already visible
             if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) return
-            val builder = AlertDialog.Builder(this)
+            val builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             builder.setTitle(R.string.camera_permission_dialog_title)
             builder.setMessage(R.string.camera_permission_dialog_message)
             val positiveClicked = AtomicBoolean(false)
