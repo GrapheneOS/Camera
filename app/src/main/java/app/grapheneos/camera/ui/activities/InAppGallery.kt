@@ -198,7 +198,7 @@ class InAppGallery : AppCompatActivity() {
 
                 val detailsBuilder = StringBuilder()
 
-                detailsBuilder.append("File Name: \n")
+                detailsBuilder.append("\nFile Name: \n")
                 detailsBuilder.append(fileName)
                 detailsBuilder.append("\n\n")
 
