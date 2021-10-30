@@ -48,11 +48,16 @@ class ImageCapturer(private val mActivity: MainActivity) {
             put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
         }
 
-        val uri = resolver.insert(CamConfig.imageCollectionUri, contentValues)!!
+        val imageUri = resolver.insert(CamConfig.imageCollectionUri, contentValues)!!
 
-        mActivity.config.latestUri = uri
+        mActivity.config.latestUri = imageUri
 
-        return resolver.openOutputStream(uri)!!
+        if(mActivity is SecureMainActivity) {
+            val path = imageUri.encodedPath!!
+            mActivity.capturedFilePaths.add(path)
+        }
+
+        return resolver.openOutputStream(imageUri)!!
     }
 
     val isTakingPicture: Boolean
@@ -130,15 +135,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
                         )
 
                         mActivity.mainOverlay.startAnimation(animation)
-                    }
-
-                    val imageUri = outputFileResults.savedUri
-
-                    if (imageUri != null) {
-                        if(mActivity is SecureMainActivity) {
-                            val path = imageUri.encodedPath!!
-                            mActivity.capturedFilePaths.add(path)
-                        }
                     }
 
                     mActivity.previewLoader.visibility = View.GONE

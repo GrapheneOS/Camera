@@ -36,6 +36,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     var activeRecording: ActiveRecording? = null
 
+    private lateinit var outputUri : Uri
+
     var isPaused = false
         set(value) {
             if (isRecording) {
@@ -108,11 +110,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
             put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
         }
 
-        val uri = resolver.insert(CamConfig.videoCollectionUri, contentValues)!!
+        val videoUri = resolver.insert(CamConfig.videoCollectionUri, contentValues)!!
 
-        mActivity.config.latestUri = uri
+        mActivity.config.latestUri = videoUri
+        outputUri = videoUri
 
-        return resolver.openFileDescriptor(uri, "w")!!
+        return resolver.openFileDescriptor(videoUri, "w")!!
     }
 
     fun startRecording() {
@@ -176,8 +179,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                 ).show()
                             }
                         } else {
-
-                            val outputUri = it.outputResults.outputUri
 
                             if (mActivity is VideoCaptureActivity) {
                                 mActivity.afterRecording(outputUri)
