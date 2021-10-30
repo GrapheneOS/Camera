@@ -285,14 +285,14 @@ class InAppGallery : AppCompatActivity() {
 
                         if (res) {
 
-                            (gallerySlider.adapter as GallerySliderAdapter)
-                                .removeChildAt(gallerySlider.currentItem)
-
                             Toast.makeText(
                                 this,
                                 "File deleted successfully",
                                 Toast.LENGTH_LONG
                             ).show()
+
+                            (gallerySlider.adapter as GallerySliderAdapter)
+                                .removeChildAt(gallerySlider.currentItem)
 
                         } else {
                             Toast.makeText(
