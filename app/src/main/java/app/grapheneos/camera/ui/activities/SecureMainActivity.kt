@@ -29,6 +29,15 @@ class SecureMainActivity : MainActivity() {
     }
 
     override fun openGallery() {
+
+        if(capturedFilePaths.isEmpty()){
+            showMessage(
+                "Please capture a photo/video before trying to view" +
+                        " them."
+            )
+            return
+        }
+
         val intent = Intent(this, InAppGallery::class.java)
 
         val editor = fileSP.edit()

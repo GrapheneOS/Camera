@@ -277,6 +277,15 @@ open class MainActivity : AppCompatActivity(),
     }
 
     protected open fun openGallery() {
+
+        if(config.latestMediaFile==null){
+            showMessage(
+                "Please capture a photo/video before trying to view" +
+                        " them."
+            )
+            return
+        }
+
         val intent = Intent(this, InAppGallery::class.java)
 
         intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
