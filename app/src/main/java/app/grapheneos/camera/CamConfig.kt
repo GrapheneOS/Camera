@@ -494,6 +494,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 throwable.printStackTrace()
             }
         } else {
+            mActivity.imagePreview.setImageBitmap(null)
             mActivity.imagePreview.setImageURI(latestUri)
         }
     }
