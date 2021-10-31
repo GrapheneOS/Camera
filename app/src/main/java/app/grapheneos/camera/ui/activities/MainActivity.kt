@@ -720,30 +720,6 @@ open class MainActivity : AppCompatActivity(),
 
         locationListener = CustomLocationListener(this)
 
-        val cUri = MediaStore.Images.Media.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY
-        )
-
-        val c = contentResolver.query(
-            cUri,
-            arrayOf(MediaStore.Images.ImageColumns.RELATIVE_PATH,
-                MediaStore.Images.ImageColumns.DISPLAY_NAME),
-            null, null,
-            "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
-        )
-
-        if(c!=null){
-
-            while(c.moveToNext()) {
-                val relativePath = c.getString(0)
-                val displayName = c.getString(1)
-
-                Log.i(TAG, "$relativePath/$displayName")
-            }
-
-            c.close()
-        }
-
         snackBar = Snackbar.make(
             previewView,
             "",
