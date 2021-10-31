@@ -38,6 +38,7 @@ import kotlin.math.roundToInt
 
 import android.content.ContentUris
 import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
+import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -501,30 +502,32 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             if (latestUri != null) return latestUri
 
-            val imageCursor = mActivity.contentResolver.query(
-                imageCollectionUri,
-                arrayOf(
-                    MediaStore.Images.ImageColumns._ID,
-                    MediaStore.Images.ImageColumns.DATE_ADDED,
-                ),
-                null, null,
-                "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
-            )
-
             var imageUri : Uri? = null
             var imageAddedOn : Int = -1
 
-            if (imageCursor!=null) {
-                if (imageCursor.moveToFirst()) {
-                    imageUri = ContentUris
-                        .withAppendedId(
-                            imageCollectionUri,
-                            imageCursor.getInt(0).toLong()
-                        )
+            if (mActivity !is VideoOnlyActivity) {
+                val imageCursor = mActivity.contentResolver.query(
+                    imageCollectionUri,
+                    arrayOf(
+                        MediaStore.Images.ImageColumns._ID,
+                        MediaStore.Images.ImageColumns.DATE_ADDED,
+                    ),
+                    null, null,
+                    "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
+                )
 
-                    imageAddedOn = imageCursor.getInt(1)
+                if (imageCursor!=null) {
+                    if (imageCursor.moveToFirst()) {
+                        imageUri = ContentUris
+                            .withAppendedId(
+                                imageCollectionUri,
+                                imageCursor.getInt(0).toLong()
+                            )
+
+                        imageAddedOn = imageCursor.getInt(1)
+                    }
+                    imageCursor.close()
                 }
-                imageCursor.close()
             }
 
             val videoCursor = mActivity.contentResolver.query(
