@@ -38,6 +38,7 @@ import kotlin.math.roundToInt
 
 import android.content.ContentUris
 import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
+import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 
 @SuppressLint("ApplySharedPref")
@@ -502,70 +503,81 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             if (latestUri != null) return latestUri
 
-            var imageUri : Uri? = null
-            var imageAddedOn : Int = -1
+            if (mActivity is SecureMainActivity) {
 
-            if (mActivity !is VideoOnlyActivity) {
-                val imageCursor = mActivity.contentResolver.query(
-                    imageCollectionUri,
+                if (mActivity.capturedFilePaths.isNotEmpty()){
+                    latestUri = Uri.parse(
+                        mActivity.capturedFilePaths.last()
+                    )
+                }
+
+            } else {
+                var imageUri : Uri? = null
+                var imageAddedOn : Int = -1
+
+                if (mActivity !is VideoOnlyActivity) {
+                    val imageCursor = mActivity.contentResolver.query(
+                        imageCollectionUri,
+                        arrayOf(
+                            MediaStore.Images.ImageColumns._ID,
+                            MediaStore.Images.ImageColumns.DATE_ADDED,
+                        ),
+                        null, null,
+                        "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
+                    )
+
+                    if (imageCursor!=null) {
+                        if (imageCursor.moveToFirst()) {
+                            imageUri = ContentUris
+                                .withAppendedId(
+                                    imageCollectionUri,
+                                    imageCursor.getInt(0).toLong()
+                                )
+
+                            imageAddedOn = imageCursor.getInt(1)
+                        }
+                        imageCursor.close()
+                    }
+                }
+
+                val videoCursor = mActivity.contentResolver.query(
+                    videoCollectionUri,
                     arrayOf(
-                        MediaStore.Images.ImageColumns._ID,
-                        MediaStore.Images.ImageColumns.DATE_ADDED,
+                        MediaStore.Video.VideoColumns._ID,
+                        MediaStore.Video.VideoColumns.DATE_ADDED,
                     ),
                     null, null,
-                    "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
+                    "${MediaStore.Video.VideoColumns.DATE_ADDED} DESC"
                 )
 
-                if (imageCursor!=null) {
-                    if (imageCursor.moveToFirst()) {
-                        imageUri = ContentUris
+                var videoUri : Uri? = null
+                var videoAddedOn : Int = -1
+
+                if (videoCursor!=null) {
+                    if (videoCursor.moveToFirst()) {
+                        videoUri = ContentUris
                             .withAppendedId(
-                                imageCollectionUri,
-                                imageCursor.getInt(0).toLong()
+                                videoCollectionUri,
+                                videoCursor.getInt(0).toLong()
                             )
 
-                        imageAddedOn = imageCursor.getInt(1)
+                        videoAddedOn = videoCursor.getInt(1)
                     }
-                    imageCursor.close()
+                    videoCursor.close()
                 }
-            }
 
-            val videoCursor = mActivity.contentResolver.query(
-                videoCollectionUri,
-                arrayOf(
-                    MediaStore.Video.VideoColumns._ID,
-                    MediaStore.Video.VideoColumns.DATE_ADDED,
-                ),
-                null, null,
-                "${MediaStore.Video.VideoColumns.DATE_ADDED} DESC"
-            )
+                if (imageAddedOn == 0 && videoAddedOn == 0)
+                    return null
 
-            var videoUri : Uri? = null
-            var videoAddedOn : Int = -1
-
-            if (videoCursor!=null) {
-                if (videoCursor.moveToFirst()) {
-                    videoUri = ContentUris
-                        .withAppendedId(
-                            videoCollectionUri,
-                            videoCursor.getInt(0).toLong()
-                        )
-
-                    videoAddedOn = videoCursor.getInt(1)
+                val mediaUri = if (imageAddedOn>videoAddedOn){
+                    imageUri
+                } else {
+                    videoUri
                 }
-                videoCursor.close()
+
+                latestUri = mediaUri
             }
 
-            if (imageAddedOn == 0 && videoAddedOn == 0)
-                return null
-
-            val mediaUri = if (imageAddedOn>videoAddedOn){
-                imageUri
-            } else {
-                videoUri
-            }
-
-            latestUri = mediaUri
             updatePreview()
 
             return latestUri
