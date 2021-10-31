@@ -67,9 +67,6 @@ class InAppGallery : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
-        setShowWhenLocked(true)
-        setTurnScreenOn(true)
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.gallery)
 
