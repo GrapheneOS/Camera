@@ -170,6 +170,8 @@ open class MainActivity : AppCompatActivity(),
 
     private val handler = Handler(Looper.getMainLooper())
 
+    private var snackBar : Snackbar? = null
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -732,6 +734,12 @@ open class MainActivity : AppCompatActivity(),
 
             c.close()
         }
+
+        snackBar = Snackbar.make(
+            previewView,
+            "",
+            Snackbar.LENGTH_LONG
+        )
     }
 
     private fun shareLatestMedia() {
@@ -1101,11 +1109,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     fun showMessage(msg: String) {
-
-        Snackbar.make(
-            previewView,
-            msg,
-            Snackbar.LENGTH_LONG
-        ).show()
+        snackBar?.setText(msg)
+        snackBar?.show()
     }
 }

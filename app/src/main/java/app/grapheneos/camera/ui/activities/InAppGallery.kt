@@ -29,6 +29,7 @@ class InAppGallery : AppCompatActivity() {
 
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
+    private var snackBar : Snackbar? = null
 
     private fun getCurrentUri(): Uri {
         return (gallerySlider.adapter as GallerySliderAdapter).getCurrentUri()
@@ -312,7 +313,15 @@ class InAppGallery : AppCompatActivity() {
                 )
             }
 
-//    companion object {
+        snackBar = Snackbar.make(
+            gallerySlider,
+            "",
+            Snackbar.LENGTH_LONG
+        )
+
+    }
+
+    //    companion object {
 //        @SuppressLint("SimpleDateFormat")
 //        fun convertTime(time: Long): String {
 //            val date = Date(time)
@@ -329,22 +338,10 @@ class InAppGallery : AppCompatActivity() {
 //            return attr.creationTime().toMillis()
 //        }
 //    }
-    }
 
     fun showMessage(msg: String) {
-
-        Snackbar.make(
-            gallerySlider,
-            msg,
-            Snackbar.LENGTH_LONG
-        ).show()
-
-//        Toast.makeText(
-//            this,
-//            msg,
-//            Toast.LENGTH_LONG
-//        ).show()
-
+        snackBar?.setText(msg)
+        snackBar?.show()
     }
 
     companion object {
