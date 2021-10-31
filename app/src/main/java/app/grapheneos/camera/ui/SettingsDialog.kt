@@ -10,24 +10,24 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
-import android.widget.ToggleButton
-import android.widget.ImageView
-import android.widget.Spinner
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.ScrollView
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.Toast
-import android.widget.AdapterView
-import android.widget.LinearLayout
+import android.widget.ToggleButton
 import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.video.QualitySelector
-import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {

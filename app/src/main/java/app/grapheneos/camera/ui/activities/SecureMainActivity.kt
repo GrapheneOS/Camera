@@ -3,9 +3,7 @@ package app.grapheneos.camera.ui.activities
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import android.widget.Toast
 
 class SecureMainActivity : MainActivity() {
