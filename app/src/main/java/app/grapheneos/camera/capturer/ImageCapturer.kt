@@ -63,6 +63,14 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
     fun takePicture() {
         if (mActivity.config.camera == null) return
+
+        if(isTakingPicture){
+            mActivity.showMessage(
+                "Please wait for the last image to get processed..."
+            )
+            return
+        }
+
         val outputStream = genOutputStreamForImage()
         val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(outputStream)
 
