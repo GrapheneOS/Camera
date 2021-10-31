@@ -186,8 +186,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                             mActivity.config.updatePreview()
 
-                            isRecording = false
-
                             if(mActivity is SecureMainActivity) {
                                 mActivity.capturedFilePaths.add(outputUri.toString())
                             }
@@ -269,6 +267,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         cancelTimer()
 
         mActivity.previewView.keepScreenOn = false
+        isRecording = false
     }
 
     fun stopRecording() {
