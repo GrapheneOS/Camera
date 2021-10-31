@@ -53,8 +53,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         mActivity.config.latestUri = imageUri
 
         if(mActivity is SecureMainActivity) {
-            val path = imageUri.encodedPath!!
-            mActivity.capturedFilePaths.add(path)
+            mActivity.capturedFilePaths.add(imageUri.toString())
         }
 
         return resolver.openOutputStream(imageUri)!!

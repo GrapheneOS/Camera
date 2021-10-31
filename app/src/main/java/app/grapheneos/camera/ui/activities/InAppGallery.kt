@@ -136,6 +136,7 @@ class InAppGallery : AppCompatActivity() {
 
                 cursor.close()
             }
+        }
 
             // Close gallery if no files are present
             if (mediaUris.isEmpty()) {
@@ -321,8 +322,6 @@ class InAppGallery : AppCompatActivity() {
                     Intent.createChooser(editIntent, "Edit Image")
                 )
             }
-        }
-
 
 //    companion object {
 //        @SuppressLint("SimpleDateFormat")

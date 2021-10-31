@@ -192,8 +192,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             isRecording = false
 
                             if(mActivity is SecureMainActivity) {
-                                val path: String = outputUri.encodedPath!!
-                                mActivity.capturedFilePaths.add(path)
+                                mActivity.capturedFilePaths.add(outputUri.toString())
                             }
                         }
                     }

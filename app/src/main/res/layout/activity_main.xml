@@ -282,7 +282,7 @@
             android:layout_width="wrap_content"
             android:progressTint="@android:color/transparent"
             android:thumb="@drawable/exposure_thumb"
-            android:layout_height="300dp" />
+            android:layout_height="250dp" />
 
         <ImageView
             android:id="@+id/exposure_neg_icon"
