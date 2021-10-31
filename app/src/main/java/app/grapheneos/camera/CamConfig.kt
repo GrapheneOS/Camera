@@ -70,6 +70,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val FOCUS_TIMEOUT = "focus_timeout"
             const val CAMERA_SOUNDS = "camera_sounds"
             const val VIDEO_QUALITY = "video_quality"
+            const val ASPECT_RATIO = "aspect_ratio"
         }
 
         object Default {
@@ -193,7 +194,19 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var modeText: Int = DEFAULT_CAMERA_MODE
 
-    var aspectRatio = SettingValues.Default.ASPECT_RATIO
+    var aspectRatio : Int
+        get() {
+            return commonPref.getInt(
+                SettingValues.Key.ASPECT_RATIO,
+                SettingValues.Default.ASPECT_RATIO
+            )
+        }
+
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putInt(SettingValues.Key.ASPECT_RATIO, value)
+            editor.apply()
+        }
 
     var lensFacing = DEFAULT_LENS_FACING
 
@@ -406,6 +419,11 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
+        if (!commonPref.contains(SettingValues.Key.ASPECT_RATIO)) {
+            editor.putInt(SettingValues.Key.ASPECT_RATIO,
+                SettingValues.Default.ASPECT_RATIO)
+        }
+
         editor.commit()
 
         mActivity.settingsDialog.csSwitch.isChecked =
@@ -431,6 +449,11 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             mActivity.settingsDialog.cmRadioGroup.check(R.id.latency_radio)
         }
+
+        aspectRatio = commonPref.getInt(
+            SettingValues.Key.ASPECT_RATIO,
+            SettingValues.Default.ASPECT_RATIO
+        )
     }
 
     var emphasisQuality: Boolean
