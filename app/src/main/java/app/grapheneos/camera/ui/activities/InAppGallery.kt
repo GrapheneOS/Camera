@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -20,6 +19,7 @@ import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.VideoCapturer
+import com.google.android.material.snackbar.Snackbar
 import java.io.OutputStream
 import java.text.Format
 import java.text.SimpleDateFormat
@@ -333,11 +333,17 @@ class InAppGallery : AppCompatActivity() {
 
     fun showMessage(msg: String) {
 
-        Toast.makeText(
-            this,
+        Snackbar.make(
+            gallerySlider,
             msg,
-            Toast.LENGTH_LONG
+            Snackbar.LENGTH_LONG
         ).show()
+
+//        Toast.makeText(
+//            this,
+//            msg,
+//            Toast.LENGTH_LONG
+//        ).show()
 
     }
 

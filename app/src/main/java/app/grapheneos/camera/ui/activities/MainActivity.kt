@@ -43,7 +43,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AppCompatActivity
@@ -70,6 +69,7 @@ import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -1101,10 +1101,11 @@ open class MainActivity : AppCompatActivity(),
     }
 
     fun showMessage(msg: String) {
-        Toast.makeText(
-            this,
+
+        Snackbar.make(
+            previewView,
             msg,
-            Toast.LENGTH_LONG
+            Snackbar.LENGTH_LONG
         ).show()
     }
 }
