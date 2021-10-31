@@ -15,12 +15,13 @@ class SecureMainActivity : MainActivity() {
     private lateinit var fileSP : SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        openedActivityAt = System.currentTimeMillis()
-        fileSP = getSharedPreferences(getSPName(), Context.MODE_PRIVATE)
 
         setShowWhenLocked(true)
         setTurnScreenOn(true)
+
+        super.onCreate(savedInstanceState)
+        openedActivityAt = System.currentTimeMillis()
+        fileSP = getSharedPreferences(getSPName(), Context.MODE_PRIVATE)
     }
 
     private fun getSPName() : String {
