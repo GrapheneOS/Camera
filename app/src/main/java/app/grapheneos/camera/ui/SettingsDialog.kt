@@ -125,7 +125,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
         aRToggle.setOnClickListener {
             if (mActivity.config.isVideoMode) {
-                aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
+                aRToggle.isChecked = true
                 Toast.makeText(
                     mActivity,
                     "4:3 isn't supported in video mode",
