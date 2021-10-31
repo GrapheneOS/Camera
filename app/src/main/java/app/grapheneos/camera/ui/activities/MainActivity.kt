@@ -231,17 +231,11 @@ open class MainActivity : AppCompatActivity(),
         if (data?.encodedPath != null) {
             val file = File(data.encodedPath!!)
             if (file.exists()) {
-                Toast.makeText(
-                    this,
-                    "File exists: ${file.absolutePath}",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage("File exists: ${file.absolutePath}")
             } else {
-                Toast.makeText(
-                    this,
-                    "File does not exist :( ${data.encodedPath!!} ",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage(
+                    "File does not exist :( ${data.encodedPath!!} "
+                )
             }
         }
 
@@ -578,11 +572,10 @@ open class MainActivity : AppCompatActivity(),
                 imageCapturer.takePicture()
             } else {
                 if (imageCapturer.isTakingPicture) {
-                    Toast.makeText(
-                        this, "Please wait for the image to get " +
-                                "captured before trying to open the gallery.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showMessage(
+                        "Please wait for the image to get captured " +
+                                "before trying to open the gallery."
+                    )
                 } else {
                     openGallery()
                 }
@@ -596,11 +589,10 @@ open class MainActivity : AppCompatActivity(),
                 imageCapturer.takePicture()
             } else {
                 if (imageCapturer.isTakingPicture) {
-                    Toast.makeText(
-                        this, "Please wait for the image to get " +
-                                "captured before attempting to share via long tap",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showMessage(
+                        "Please wait for the image to get " +
+                                "captured before attempting to share via long tap"
+                    )
                 } else {
                     shareLatestMedia()
                 }
@@ -747,11 +739,9 @@ open class MainActivity : AppCompatActivity(),
         val mediaUri = config.latestUri
 
         if (mediaUri == null) {
-            Toast.makeText(
-                this,
-                "Please capture a photo/video before attempting to share via long tap",
-                Toast.LENGTH_LONG
-            ).show()
+            showMessage(
+                "Please capture a photo/video before attempting to share via long tap"
+            )
             return
         }
 
@@ -846,11 +836,9 @@ open class MainActivity : AppCompatActivity(),
                 )
                 clipboardManager.setPrimaryClip(clipData)
 
-                Toast.makeText(
-                    this, "Copied to QR text to" +
-                            " clipboard!",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage(
+                    "Copied to QR text to clipboard!"
+                )
             }
 
             val sButton: ImageButton = dialog.findViewById(
@@ -1110,5 +1098,13 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
         return false
+    }
+
+    fun showMessage(msg: String) {
+        Toast.makeText(
+            this,
+            msg,
+            Toast.LENGTH_LONG
+        ).show()
     }
 }

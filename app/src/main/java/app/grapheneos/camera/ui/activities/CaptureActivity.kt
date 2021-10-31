@@ -13,7 +13,6 @@ import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -123,11 +122,9 @@ open class CaptureActivity : MainActivity() {
                 override fun onError(exception: ImageCaptureException) {
                     super.onError(exception)
                     exception.printStackTrace()
-                    Toast.makeText(
-                        this@CaptureActivity,
-                        "Unable to capture image", Toast.LENGTH_LONG
+                    showMessage(
+                        "Unable to capture image"
                     )
-                        .show()
 
                     finishActivity(RESULT_CANCELED)
                 }

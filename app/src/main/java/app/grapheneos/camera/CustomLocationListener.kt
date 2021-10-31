@@ -13,7 +13,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -66,19 +65,15 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
 
                 if (lastKnownLocation == null) {
 
-                    Toast.makeText(
-                        mActivity,
-                        "Fetching location... This might take a while",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    mActivity.showMessage(
+                        "Fetching location... This might take a while"
+                    )
 
                 } else {
 
-                    Toast.makeText(
-                        mActivity,
-                        "Fetched current location successfully!",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    mActivity.showMessage(
+                        "Fetched current location successfully!"
+                    )
 
                 }
             }
@@ -137,11 +132,9 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
 
     override fun onLocationChanged(location: Location) {
         if (lastKnownLocation == null) {
-            Toast.makeText(
-                mActivity,
-                "Fetched current location successfully!",
-                Toast.LENGTH_LONG,
-            ).show()
+            mActivity.showMessage(
+                "Fetched current location successfully!"
+            )
         }
         lastKnownLocation = location
     }
@@ -151,11 +144,9 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
     override fun onProviderEnabled(provider: String) {}
 
     override fun onProviderDisabled(provider: String) {
-        Toast.makeText(
-            mActivity,
-            "Please enable the location access in your device settings",
-            Toast.LENGTH_LONG
-        ).show()
+        mActivity.showMessage(
+            "Please enable the location access in your device settings"
+        )
 
         // Revert settings
         mActivity.config.requireLocation = false

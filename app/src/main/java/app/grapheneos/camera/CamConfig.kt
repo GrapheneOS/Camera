@@ -602,11 +602,9 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
         } else {
-            Toast.makeText(
-                mActivity, "Flash is unavailable" +
-                        " for the current mode.",
-                Toast.LENGTH_LONG
-            ).show()
+            mActivity.showMessage(
+                "Flash is unavailable for the current mode."
+            )
         }
     }
 
@@ -689,7 +687,7 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         } else {
             Log.i(TAG, "The current mode isn't available for this device ")
-//            Toast.makeText(mActivity, "The current mode isn't available for this device",
+//            showMessage(mActivity, "The current mode isn't available for this device",
 //                Toast.LENGTH_LONG).show()
         }
 

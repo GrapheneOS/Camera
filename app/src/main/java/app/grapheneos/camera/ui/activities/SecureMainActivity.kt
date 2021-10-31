@@ -38,11 +38,9 @@ class SecureMainActivity : MainActivity() {
             intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
             intent.putExtra("fileSP", getSPName())
         } else {
-            Toast.makeText(
-                this,
+            showMessage(
                 "An unexpected error occurred while opening the gallery",
-                Toast.LENGTH_LONG
-            ).show()
+            )
         }
 
         startActivity(intent)

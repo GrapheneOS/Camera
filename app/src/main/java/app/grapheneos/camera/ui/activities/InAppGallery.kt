@@ -53,21 +53,14 @@ class InAppGallery : AppCompatActivity() {
                         outStream?.write(it)
                         outStream?.close()
 
-                        Toast.makeText(
-                            this,
-                            "Edit successful",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        showMessage("Edit successful")
+
                         recreate()
                         return@registerForActivityResult
                     }
                 }
 
-                Toast.makeText(
-                    this,
-                    "An unexpected error occurred after editing.",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage("An unexpected error occurred after editing.")
             }
         }
 
@@ -144,12 +137,10 @@ class InAppGallery : AppCompatActivity() {
 
             // Close gallery if no files are present
             if (mediaUris.isEmpty()) {
-                Toast.makeText(
-                    this,
+                showMessage(
                     "Please capture a photo/video before trying to view" +
-                            " them.",
-                    Toast.LENGTH_LONG
-                ).show()
+                            " them."
+                )
                 finish()
             }
 
@@ -179,11 +170,9 @@ class InAppGallery : AppCompatActivity() {
                 )
 
                 if (mediaCursor?.moveToFirst() != true) {
-                    Toast.makeText(
-                        this,
-                        "An unexpected error occurred",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showMessage(
+                        "An unexpected error occurred"
+                    )
 
                     mediaCursor?.close()
                     return@setOnClickListener
@@ -290,21 +279,17 @@ class InAppGallery : AppCompatActivity() {
 
                         if (res) {
 
-                            Toast.makeText(
-                                this,
-                                "File deleted successfully",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            showMessage(
+                                "File deleted successfully"
+                            )
 
                             (gallerySlider.adapter as GallerySliderAdapter)
                                 .removeChildAt(gallerySlider.currentItem)
 
                         } else {
-                            Toast.makeText(
-                                this,
-                                "Unable to delete this file",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            showMessage(
+                                "Unable to delete this file"
+                            )
                         }
                     }
                     .setNegativeButton("Cancel", null).show()
@@ -344,6 +329,16 @@ class InAppGallery : AppCompatActivity() {
 //            return attr.creationTime().toMillis()
 //        }
 //    }
+    }
+
+    fun showMessage(msg: String) {
+
+        Toast.makeText(
+            this,
+            msg,
+            Toast.LENGTH_LONG
+        ).show()
+
     }
 
     companion object {
