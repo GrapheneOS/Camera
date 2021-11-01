@@ -505,7 +505,9 @@ open class MainActivity : AppCompatActivity(),
                 config.reloadSettings()
                 if (!config.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
-                    settingsIcon.visibility = View.VISIBLE
+                    if(!settingsDialog.isShowing) {
+                        settingsIcon.visibility = View.VISIBLE
+                    }
                     settingsIcon.isEnabled = true
                 }
             } else {
