@@ -957,6 +957,8 @@ open class MainActivity : AppCompatActivity(),
         config.imageCapture?.targetRotation = tr
 //        config.iAnalyzer?.targetRotation = tr
 
+        if (videoCapturer.isRecording) return
+
         if (flipCameraCircle.rotation == 0f) {
             flipCameraCircle.rotation = 360f
         }
