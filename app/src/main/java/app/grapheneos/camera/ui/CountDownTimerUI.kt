@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.camera.core.AspectRatio
+import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class CountDownTimerUI @JvmOverloads constructor(
@@ -70,7 +71,11 @@ class CountDownTimerUI @JvmOverloads constructor(
 
             override fun onFinish() {
                 onTimerEnd()
-                mActivity.imageCapturer.takePicture()
+                if(mActivity is CaptureActivity) {
+                    (mActivity as CaptureActivity).takePicture()
+                } else {
+                    mActivity.imageCapturer.takePicture()
+                }
             }
 
         }
