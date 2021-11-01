@@ -277,12 +277,24 @@
             android:layout_marginBottom="8dp"
             android:contentDescription="@string/zoom_in"/>
 
-        <app.grapheneos.camera.ui.seekbar.ExposureBar
-            android:id="@+id/exposure_bar"
+        <FrameLayout
             android:layout_width="wrap_content"
-            android:progressTint="@android:color/transparent"
-            android:thumb="@drawable/exposure_thumb"
-            android:layout_height="250dp" />
+            android:layout_height="250dp">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="1dp"
+                android:layout_gravity="center"
+                android:background="#99ffffff"/>
+
+            <app.grapheneos.camera.ui.seekbar.ExposureBar
+                android:id="@+id/exposure_bar"
+                android:layout_width="wrap_content"
+                android:progressTint="@android:color/transparent"
+                android:thumb="@drawable/exposure_thumb"
+                android:layout_height="250dp" />
+
+        </FrameLayout>
 
         <ImageView
             android:id="@+id/exposure_neg_icon"
