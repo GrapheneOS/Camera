@@ -168,17 +168,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         if (it.hasError()) {
 
                             if (it.error == 8) {
-                                Toast.makeText(
-                                    mActivity,
-                                    "Recording too short to be saved",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                mActivity.showMessage(
+                                    "Recording too short to be saved"
+                                )
                             } else {
-                                Toast.makeText(
-                                    mActivity,
+                                mActivity.showMessage(
                                     "Unable to save recording (Error code: " +
-                                            "${it.error})", Toast.LENGTH_LONG
-                                ).show()
+                                            "${it.error})"
+                                )
                             }
                         } else {
 
@@ -188,8 +185,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             }
 
                             mActivity.config.updatePreview()
-
-                            isRecording = false
 
                             if(mActivity is SecureMainActivity) {
                                 mActivity.capturedFilePaths.add(outputUri.toString())
@@ -272,6 +267,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         cancelTimer()
 
         mActivity.previewView.keepScreenOn = false
+        isRecording = false
     }
 
     fun stopRecording() {

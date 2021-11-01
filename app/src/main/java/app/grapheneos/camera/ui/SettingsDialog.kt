@@ -17,7 +17,6 @@ import android.widget.ArrayAdapter
 import android.widget.ScrollView
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import android.widget.Toast
 import android.widget.AdapterView
 import android.widget.LinearLayout
 import androidx.appcompat.widget.SwitchCompat
@@ -89,21 +88,17 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
             if (mActivity.config.isVideoMode) {
                 mActivity.config.requireLocation = false
-                Toast.makeText(
-                    mActivity,
-                    "Geo-tagging currently isn't supported for video mode",
-                    Toast.LENGTH_LONG
-                ).show()
+                mActivity.showMessage(
+                    "Geo-tagging currently isn't supported for video mode"
+                )
                 return@setOnClickListener
             }
 
             if (mActivity.videoCapturer.isRecording) {
                 locToggle.isChecked = !locToggle.isChecked
-                Toast.makeText(
-                    mActivity,
-                    "Can't toggle geo-tagging for ongoing recording",
-                    Toast.LENGTH_LONG
-                ).show()
+                mActivity.showMessage(
+                    "Can't toggle geo-tagging for ongoing recording"
+                )
             } else {
                 mActivity.config.requireLocation = locToggle.isChecked
             }
@@ -112,11 +107,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         flashToggle = findViewById(R.id.flash_toggle_option)
         flashToggle.setOnClickListener {
             if (mActivity.requiresVideoModeOnly) {
-                Toast.makeText(
-                    mActivity,
-                    "Cannot switch flash mode in this mode",
-                    Toast.LENGTH_LONG
-                ).show()
+                mActivity.showMessage(
+                    "Cannot switch flash mode in this mode"
+                )
             } else {
                 mActivity.config.toggleFlashMode()
             }
@@ -126,11 +119,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         aRToggle.setOnClickListener {
             if (mActivity.config.isVideoMode) {
                 aRToggle.isChecked = true
-                Toast.makeText(
-                    mActivity,
-                    "4:3 isn't supported in video mode",
-                    Toast.LENGTH_LONG
-                ).show()
+                mActivity.showMessage(
+                    "4:3 isn't supported in video mode"
+                )
             } else {
                 mActivity.config.toggleAspectRatio()
             }
@@ -145,11 +136,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
                 )
             } else {
                 torchToggle.isChecked = false
-                Toast.makeText(
-                    mActivity,
-                    "Flash/Torch is unavailable for this mode", Toast.LENGTH_LONG
+                mActivity.showMessage(
+                    "Flash/Torch is unavailable for this mode"
                 )
-                    .show()
             }
         }
 
@@ -251,11 +240,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
                         } catch (exception: Exception) {
 
-                            Toast.makeText(
-                                mActivity,
-                                "An unexpected error occurred while setting focus timeout",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            mActivity.showMessage(
+                                "An unexpected error occurred while setting focus timeout"
+                            )
 
                         }
 
@@ -345,11 +332,9 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
             } catch (exception: Exception) {
 
-                Toast.makeText(
-                    mActivity,
-                    "An unexpected error occurred while setting focus timeout",
-                    Toast.LENGTH_LONG
-                ).show()
+                mActivity.showMessage(
+                    "An unexpected error occurred while setting focus timeout"
+                )
 
             }
         }

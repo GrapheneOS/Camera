@@ -255,7 +255,7 @@
                         android:layout_height="wrap_content"
                         android:layout_width="wrap_content"
                         android:layout_gravity="center_vertical|start"
-                        android:text="@string/emphasize_on" />
+                        android:text="@string/optimize_for" />
 
                     <RadioGroup
                         android:id="@+id/cm_radio_group"

@@ -1,6 +1,7 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
+import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
@@ -16,12 +17,12 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.Preview
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
@@ -32,14 +33,12 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
-import app.grapheneos.camera.ui.activities.MainActivity
-import java.util.concurrent.Executors
-import kotlin.math.roundToInt
-
-import android.content.ContentUris
 import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
+import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -495,6 +494,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 throwable.printStackTrace()
             }
         } else {
+            mActivity.imagePreview.setImageBitmap(null)
             mActivity.imagePreview.setImageURI(latestUri)
         }
     }
@@ -603,11 +603,9 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
         } else {
-            Toast.makeText(
-                mActivity, "Flash is unavailable" +
-                        " for the current mode.",
-                Toast.LENGTH_LONG
-            ).show()
+            mActivity.showMessage(
+                "Flash is unavailable for the current mode."
+            )
         }
     }
 
@@ -690,7 +688,7 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         } else {
             Log.i(TAG, "The current mode isn't available for this device ")
-//            Toast.makeText(mActivity, "The current mode isn't available for this device",
+//            showMessage(mActivity, "The current mode isn't available for this device",
 //                Toast.LENGTH_LONG).show()
         }
 

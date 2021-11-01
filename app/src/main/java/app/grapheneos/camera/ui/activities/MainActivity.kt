@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
+import android.app.AlertDialog
 import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -42,10 +43,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
-import android.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
@@ -56,11 +55,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import app.grapheneos.camera.BlurBitmap
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CustomLocationListener
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -70,6 +69,7 @@ import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -170,6 +170,8 @@ open class MainActivity : AppCompatActivity(),
 
     private val handler = Handler(Looper.getMainLooper())
 
+    private var snackBar : Snackbar? = null
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -231,17 +233,11 @@ open class MainActivity : AppCompatActivity(),
         if (data?.encodedPath != null) {
             val file = File(data.encodedPath!!)
             if (file.exists()) {
-                Toast.makeText(
-                    this,
-                    "File exists: ${file.absolutePath}",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage("File exists: ${file.absolutePath}")
             } else {
-                Toast.makeText(
-                    this,
-                    "File does not exist :( ${data.encodedPath!!} ",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage(
+                    "File does not exist :( ${data.encodedPath!!} "
+                )
             }
         }
 
@@ -281,6 +277,15 @@ open class MainActivity : AppCompatActivity(),
     }
 
     protected open fun openGallery() {
+
+        if(config.latestMediaFile==null){
+            showMessage(
+                "Please capture a photo/video before trying to view" +
+                        " them."
+            )
+            return
+        }
+
         val intent = Intent(this, InAppGallery::class.java)
 
         intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
@@ -578,11 +583,10 @@ open class MainActivity : AppCompatActivity(),
                 imageCapturer.takePicture()
             } else {
                 if (imageCapturer.isTakingPicture) {
-                    Toast.makeText(
-                        this, "Please wait for the image to get " +
-                                "captured before trying to open the gallery.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showMessage(
+                        "Please wait for the image to get captured " +
+                                "before trying to open the gallery."
+                    )
                 } else {
                     openGallery()
                 }
@@ -596,11 +600,10 @@ open class MainActivity : AppCompatActivity(),
                 imageCapturer.takePicture()
             } else {
                 if (imageCapturer.isTakingPicture) {
-                    Toast.makeText(
-                        this, "Please wait for the image to get " +
-                                "captured before attempting to share via long tap",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showMessage(
+                        "Please wait for the image to get " +
+                                "captured before attempting to share via long tap"
+                    )
                 } else {
                     shareLatestMedia()
                 }
@@ -717,29 +720,11 @@ open class MainActivity : AppCompatActivity(),
 
         locationListener = CustomLocationListener(this)
 
-        val cUri = MediaStore.Images.Media.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY
+        snackBar = Snackbar.make(
+            previewView,
+            "",
+            Snackbar.LENGTH_LONG
         )
-
-        val c = contentResolver.query(
-            cUri,
-            arrayOf(MediaStore.Images.ImageColumns.RELATIVE_PATH,
-                MediaStore.Images.ImageColumns.DISPLAY_NAME),
-            null, null,
-            "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
-        )
-
-        if(c!=null){
-
-            while(c.moveToNext()) {
-                val relativePath = c.getString(0)
-                val displayName = c.getString(1)
-
-                Log.i(TAG, "$relativePath/$displayName")
-            }
-
-            c.close()
-        }
     }
 
     private fun shareLatestMedia() {
@@ -747,11 +732,9 @@ open class MainActivity : AppCompatActivity(),
         val mediaUri = config.latestUri
 
         if (mediaUri == null) {
-            Toast.makeText(
-                this,
-                "Please capture a photo/video before attempting to share via long tap",
-                Toast.LENGTH_LONG
-            ).show()
+            showMessage(
+                "Please capture a photo/video before attempting to share via long tap"
+            )
             return
         }
 
@@ -846,11 +829,9 @@ open class MainActivity : AppCompatActivity(),
                 )
                 clipboardManager.setPrimaryClip(clipData)
 
-                Toast.makeText(
-                    this, "Copied to QR text to" +
-                            " clipboard!",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage(
+                    "Copied to QR text to clipboard!"
+                )
             }
 
             val sButton: ImageButton = dialog.findViewById(
@@ -1110,5 +1091,10 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
         return false
+    }
+
+    fun showMessage(msg: String) {
+        snackBar?.setText(msg)
+        snackBar?.show()
     }
 }

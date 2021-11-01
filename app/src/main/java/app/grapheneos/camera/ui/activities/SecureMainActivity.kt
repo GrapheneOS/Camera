@@ -3,9 +3,7 @@ package app.grapheneos.camera.ui.activities
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import android.widget.Toast
 
 class SecureMainActivity : MainActivity() {
@@ -20,9 +18,6 @@ class SecureMainActivity : MainActivity() {
         super.onCreate(savedInstanceState)
         openedActivityAt = System.currentTimeMillis()
         fileSP = getSharedPreferences(getSPName(), Context.MODE_PRIVATE)
-
-        setShowWhenLocked(true)
-        setTurnScreenOn(true)
     }
 
     private fun getSPName() : String {
@@ -30,6 +25,15 @@ class SecureMainActivity : MainActivity() {
     }
 
     override fun openGallery() {
+
+        if(capturedFilePaths.isEmpty()){
+            showMessage(
+                "Please capture a photo/video before trying to view" +
+                        " them."
+            )
+            return
+        }
+
         val intent = Intent(this, InAppGallery::class.java)
 
         val editor = fileSP.edit()
@@ -39,11 +43,9 @@ class SecureMainActivity : MainActivity() {
             intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
             intent.putExtra("fileSP", getSPName())
         } else {
-            Toast.makeText(
-                this,
+            showMessage(
                 "An unexpected error occurred while opening the gallery",
-                Toast.LENGTH_LONG
-            ).show()
+            )
         }
 
         startActivity(intent)

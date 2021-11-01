@@ -9,7 +9,6 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
@@ -64,18 +63,24 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
     fun takePicture() {
         if (mActivity.config.camera == null) return
+
+        if(isTakingPicture){
+            mActivity.showMessage(
+                "Please wait for the last image to get processed..."
+            )
+            return
+        }
+
         val outputStream = genOutputStreamForImage()
         val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(outputStream)
 
         if (mActivity.config.requireLocation) {
 
             if (mActivity.locationListener.lastKnownLocation == null) {
-                Toast.makeText(
-                    mActivity,
-                    "Couldn't attach location to image " +
-                            "since it's currently unavailable",
-                    Toast.LENGTH_LONG
-                ).show()
+                mActivity.showMessage(
+                    "Couldn't attach location to image since it's" +
+                            " currently unavailable"
+                )
             } else {
                 outputFileOptionsBuilder.setMetadata(
                     ImageCapture.Metadata().apply {

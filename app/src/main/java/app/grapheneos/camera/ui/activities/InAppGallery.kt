@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -20,6 +19,7 @@ import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.VideoCapturer
+import com.google.android.material.snackbar.Snackbar
 import java.io.OutputStream
 import java.text.Format
 import java.text.SimpleDateFormat
@@ -29,6 +29,7 @@ class InAppGallery : AppCompatActivity() {
 
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
+    private var snackBar : Snackbar? = null
 
     private fun getCurrentUri(): Uri {
         return (gallerySlider.adapter as GallerySliderAdapter).getCurrentUri()
@@ -53,25 +54,19 @@ class InAppGallery : AppCompatActivity() {
                         outStream?.write(it)
                         outStream?.close()
 
-                        Toast.makeText(
-                            this,
-                            "Edit successful",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        showMessage("Edit successful")
+
                         recreate()
                         return@registerForActivityResult
                     }
                 }
 
-                Toast.makeText(
-                    this,
-                    "An unexpected error occurred after editing.",
-                    Toast.LENGTH_LONG
-                ).show()
+                showMessage("An unexpected error occurred after editing.")
             }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.gallery)
 
@@ -140,12 +135,10 @@ class InAppGallery : AppCompatActivity() {
 
             // Close gallery if no files are present
             if (mediaUris.isEmpty()) {
-                Toast.makeText(
-                    this,
+                showMessage(
                     "Please capture a photo/video before trying to view" +
-                            " them.",
-                    Toast.LENGTH_LONG
-                ).show()
+                            " them."
+                )
                 finish()
             }
 
@@ -175,11 +168,9 @@ class InAppGallery : AppCompatActivity() {
                 )
 
                 if (mediaCursor?.moveToFirst() != true) {
-                    Toast.makeText(
-                        this,
-                        "An unexpected error occurred",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showMessage(
+                        "An unexpected error occurred"
+                    )
 
                     mediaCursor?.close()
                     return@setOnClickListener
@@ -286,21 +277,17 @@ class InAppGallery : AppCompatActivity() {
 
                         if (res) {
 
-                            Toast.makeText(
-                                this,
-                                "File deleted successfully",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            showMessage(
+                                "File deleted successfully"
+                            )
 
                             (gallerySlider.adapter as GallerySliderAdapter)
                                 .removeChildAt(gallerySlider.currentItem)
 
                         } else {
-                            Toast.makeText(
-                                this,
-                                "Unable to delete this file",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            showMessage(
+                                "Unable to delete this file"
+                            )
                         }
                     }
                     .setNegativeButton("Cancel", null).show()
@@ -323,7 +310,15 @@ class InAppGallery : AppCompatActivity() {
                 )
             }
 
-//    companion object {
+        snackBar = Snackbar.make(
+            gallerySlider,
+            "",
+            Snackbar.LENGTH_LONG
+        )
+
+    }
+
+    //    companion object {
 //        @SuppressLint("SimpleDateFormat")
 //        fun convertTime(time: Long): String {
 //            val date = Date(time)
@@ -340,6 +335,10 @@ class InAppGallery : AppCompatActivity() {
 //            return attr.creationTime().toMillis()
 //        }
 //    }
+
+    fun showMessage(msg: String) {
+        snackBar?.setText(msg)
+        snackBar?.show()
     }
 
     companion object {

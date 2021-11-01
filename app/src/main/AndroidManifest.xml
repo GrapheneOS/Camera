@@ -58,6 +58,8 @@
             android:name=".ui.activities.SecureMainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
+            android:showWhenLocked="true"
+            android:showOnLockScreen="true"
             android:taskAffinity=".ui.activities.SecureMainActivity"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
@@ -117,6 +119,8 @@
             android:name=".ui.activities.SecureCaptureActivity"
             android:clearTaskOnLaunch="true"
             android:label="@string/app_name"
+            android:showWhenLocked="true"
+            android:showOnLockScreen="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:excludeFromRecents="true"
             android:taskAffinity=".ui.activities.SecureCaptureActivity"
@@ -154,6 +158,8 @@
 
         <activity
             android:name=".ui.activities.InAppGallery"
+            android:showWhenLocked="true"
+            android:showOnLockScreen="true"
             android:exported="false"/>
 
     </application>

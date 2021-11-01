@@ -82,11 +82,9 @@ class GallerySliderAdapter(
 
         // Close gallery if no files are present
         if (mediaUris.isEmpty()) {
-            Toast.makeText(
-                gActivity,
-                "No image found. Exiting in-app gallery.",
-                Toast.LENGTH_LONG
-            ).show()
+            gActivity.showMessage(
+                "No image found. Exiting in-app gallery."
+            )
             gActivity.finish()
         }
 
