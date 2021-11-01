@@ -65,6 +65,11 @@ class InAppGallery : AppCompatActivity() {
             }
         }
 
+    private val isSecureMode : Boolean
+        get() {
+            return intent.extras?.containsKey("fileSP") == true
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -75,7 +80,7 @@ class InAppGallery : AppCompatActivity() {
 
         val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
 
-        if (intent.extras?.containsKey("fileSP") == true) {
+        if (isSecureMode) {
 
             val spName = intent.extras?.getString("fileSP")
 
@@ -242,6 +247,13 @@ class InAppGallery : AppCompatActivity() {
             val shareIcon: ImageView = findViewById(R.id.share_icon)
             shareIcon.setOnClickListener {
 
+                if (isSecureMode) {
+                    showMessage(
+                        "Sharing images in secure mode isn't allowed."
+                    )
+                    return@setOnClickListener
+                }
+
                 val mediaUri = getCurrentUri()
 
                 val share = Intent(Intent.ACTION_SEND)
@@ -296,6 +308,13 @@ class InAppGallery : AppCompatActivity() {
 
             val editIcon: ImageView = findViewById(R.id.edit_icon)
             editIcon.setOnClickListener {
+
+                if (isSecureMode){
+                    showMessage(
+                        "Editing images in secure mode isn't allowed."
+                    )
+                    return@setOnClickListener
+                }
 
                 val mediaUri = getCurrentUri()
 
