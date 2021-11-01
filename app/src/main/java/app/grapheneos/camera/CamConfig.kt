@@ -209,10 +209,14 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var aspectRatio : Int
         get() {
-            return commonPref.getInt(
-                SettingValues.Key.ASPECT_RATIO,
-                SettingValues.Default.ASPECT_RATIO
-            )
+            return if (isVideoMode) {
+                AspectRatio.RATIO_16_9
+            } else {
+                commonPref.getInt(
+                    SettingValues.Key.ASPECT_RATIO,
+                    SettingValues.Default.ASPECT_RATIO
+                )
+            }
         }
 
         set(value) {
@@ -757,13 +761,7 @@ class CamConfig(private val mActivity: MainActivity) {
                         imageCapture?.targetRotation
                             ?: rotation
                     )
-                    .setTargetAspectRatio(
-                        if (isVideoMode) {
-                            AspectRatio.RATIO_16_9
-                        } else {
-                            aspectRatio
-                        }
-                    )
+                    .setTargetAspectRatio(aspectRatio)
                     .setFlashMode(flashMode)
                     .build()
 
@@ -776,13 +774,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 preview?.targetRotation
                     ?: rotation
             )
-            .setTargetAspectRatio(
-                if (isVideoMode) {
-                    AspectRatio.RATIO_16_9
-                } else {
-                    aspectRatio
-                }
-            )
+            .setTargetAspectRatio(aspectRatio)
             .build()
 
         useCaseGroupBuilder.addUseCase(preview!!)
