@@ -35,6 +35,7 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.SecureCaptureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import java.util.concurrent.Executors
@@ -179,8 +180,19 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val mPlayer: TunePlayer = TunePlayer(mActivity)
 
-    private val commonPref =
-        mActivity.getSharedPreferences(COMMON_SP_NAME, Context.MODE_PRIVATE)
+    private val commonPref = when (mActivity) {
+        is SecureMainActivity -> {
+            mActivity.getSharedPreferences(COMMON_SP_NAME
+                    + mActivity.openedActivityAt, Context.MODE_PRIVATE)
+        }
+        is SecureCaptureActivity -> {
+            mActivity.getSharedPreferences(COMMON_SP_NAME
+                    + mActivity.openedActivityAt, Context.MODE_PRIVATE)
+        }
+        else -> {
+            mActivity.getSharedPreferences(COMMON_SP_NAME, Context.MODE_PRIVATE)
+        }
+    }
 
     private lateinit var modePref: SharedPreferences
 
@@ -341,7 +353,19 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private fun updatePrefMode() {
         val modeText = getCurrentModeText()
-        modePref = mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
+        modePref = when (mActivity) {
+            is SecureCaptureActivity -> {
+                mActivity.getSharedPreferences(modeText + mActivity.openedActivityAt,
+                    Context.MODE_PRIVATE)
+            }
+            is SecureMainActivity -> {
+                mActivity.getSharedPreferences(modeText + mActivity.openedActivityAt,
+                    Context.MODE_PRIVATE)
+            }
+            else -> {
+                mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
+            }
+        }
     }
 
     fun reloadSettings() {
