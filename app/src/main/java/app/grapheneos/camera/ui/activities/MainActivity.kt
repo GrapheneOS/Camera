@@ -421,6 +421,8 @@ open class MainActivity : AppCompatActivity(),
         if (config.requireLocation) {
             locationListener.start()
         }
+
+        config.startCamera(true)
     }
 
     val requiresVideoModeOnly: Boolean

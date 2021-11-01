@@ -647,7 +647,7 @@ class CamConfig(private val mActivity: MainActivity) {
     // Start the camera with latest hard configuration
     @JvmOverloads
     fun startCamera(forced: Boolean = false) {
-        if (!forced && camera != null) return
+        if ((!forced && camera != null) || cameraProvider==null) return
 
         updatePrefMode()
 
