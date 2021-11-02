@@ -8,13 +8,13 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.view.View
 import android.webkit.MimeTypeMap
-import android.widget.Toast
 import androidx.camera.video.ActiveRecording
 import androidx.camera.video.FileDescriptorOutputOptions
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.PendingRecording
 import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -35,8 +35,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     var activeRecording: ActiveRecording? = null
-
-    private lateinit var outputUri : Uri
 
     var isPaused = false
         set(value) {
@@ -87,7 +85,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         handler.removeCallbacks(runnable)
     }
 
-    private fun generateFileForVideo(): ParcelFileDescriptor {
+    private fun genPendingRecording(): PendingRecording {
         var fileName: String
         val sdf = SimpleDateFormat(
             "yyyyMMdd_HHmmss",
@@ -100,22 +98,37 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat)
 
-        val resolver = mActivity.contentResolver
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
-            put(MediaStore.MediaColumns.DATE_ADDED, date.time)
-            put(MediaStore.MediaColumns.DATE_TAKEN, date.time)
-            put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
         }
 
-        val videoUri = resolver.insert(CamConfig.videoCollectionUri, contentValues)!!
+        if (mActivity is VideoCaptureActivity
+            && mActivity.isOutputUriAvailable()) {
 
-        mActivity.config.latestUri = videoUri
-        outputUri = videoUri
+            return mActivity.config.videoCapture!!.output.prepareRecording(
+                mActivity,
+                FileDescriptorOutputOptions
+                    .Builder(
+                        mActivity.contentResolver.openFileDescriptor(
+                            mActivity.outputUri,
+                            "w"
+                        )!!
+                    ).build()
+            )
 
-        return resolver.openFileDescriptor(videoUri, "w")!!
+        } else {
+
+            return mActivity.config.videoCapture!!.output.prepareRecording(
+                mActivity,
+                MediaStoreOutputOptions.Builder(
+                    mActivity.contentResolver,
+                    CamConfig.videoCollectionUri
+                ).setContentValues(contentValues)
+                    .build()
+            )
+        }
     }
 
     fun startRecording() {
@@ -129,30 +142,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         ) {
             beforeRecordingStarts()
 
-            val pendingRecording =
-                if (mActivity is VideoCaptureActivity && mActivity.isOutputUriAvailable()) {
-
-                    outputUri = mActivity.outputUri
-
-                    mActivity.config.videoCapture!!.output.prepareRecording(
-                        mActivity,
-                        FileDescriptorOutputOptions
-                            .Builder(
-                                mActivity.contentResolver.openFileDescriptor(
-                                    outputUri,
-                                    "w"
-                                )!!
-                            ).build()
-                    )
-
-                } else {
-                    mActivity.config.videoCapture!!.output.prepareRecording(
-                        mActivity,
-                        FileDescriptorOutputOptions
-                            .Builder(generateFileForVideo())
-                            .build()
-                    )
-                }
+            val pendingRecording = genPendingRecording()
 
             if (mActivity.settingsDialog.includeAudioToggle.isChecked)
                 pendingRecording.withAudioEnabled()
@@ -178,6 +168,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                 )
                             }
                         } else {
+
+                            val outputUri = it.outputResults.outputUri
+
+                            mActivity.config.latestUri = outputUri
 
                             if (mActivity is VideoCaptureActivity) {
                                 mActivity.afterRecording(outputUri)
