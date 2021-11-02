@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.ClipData
@@ -947,6 +948,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun onOrientationChange(orientation: Int) {
 
         val tr = when (orientation) {
@@ -957,7 +959,7 @@ open class MainActivity : AppCompatActivity(),
         }
 
         config.imageCapture?.targetRotation = tr
-//        config.iAnalyzer?.targetRotation = tr
+        config.videoCapture?.targetRotation = tr
 
         if (videoCapturer.isRecording) return
 
