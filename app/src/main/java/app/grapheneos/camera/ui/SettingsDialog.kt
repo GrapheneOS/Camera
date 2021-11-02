@@ -33,8 +33,8 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
 
     private var dialog: View
     var locToggle: ToggleButton
-    var flashToggle: ImageView
-    var aRToggle: ToggleButton
+    private var flashToggle: ImageView
+    private var aRToggle: ToggleButton
     var torchToggle: ToggleButton
     private var gridToggle: ImageView
     private var mActivity: MainActivity

@@ -278,7 +278,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     companion object {
-        private const val TAG = "VideoCapturer"
+//        private const val TAG = "VideoCapturer"
         fun isVideo(uri: Uri): Boolean {
             return uri.encodedPath?.contains("video")==true
         }

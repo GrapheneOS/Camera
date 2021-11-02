@@ -26,9 +26,9 @@ open class CaptureActivity : MainActivity() {
     lateinit var outputUri: Uri
     lateinit var bitmap: Bitmap
 
-    lateinit var retakeIcon: ImageView
+    private lateinit var retakeIcon: ImageView
 
-    lateinit var flipCameraContent: ImageView
+    private lateinit var flipCameraContent: ImageView
     lateinit var confirmButton: ImageButton
 
     fun isOutputUriAvailable(): Boolean {

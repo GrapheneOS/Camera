@@ -20,7 +20,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.provider.Settings
 import android.text.util.Linkify
 import android.util.Log
@@ -129,11 +128,11 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var settingsIcon: ImageView
 
-    lateinit var exposurePlusIcon: ImageView
-    lateinit var exposureNegIcon: ImageView
+    private lateinit var exposurePlusIcon: ImageView
+    private lateinit var exposureNegIcon: ImageView
 
-    lateinit var zoomInIcon: ImageView
-    lateinit var zoomOutIcon: ImageView
+    private lateinit var zoomInIcon: ImageView
+    private lateinit var zoomOutIcon: ImageView
 
     lateinit var flipCamIcon: ImageView
 
