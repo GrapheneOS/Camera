@@ -230,6 +230,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.thirdOption.visibility = View.INVISIBLE
         }
 
+        mActivity.settingsDialog.lRadio.isEnabled = false
+        mActivity.settingsDialog.qRadio.isEnabled = false
+
         mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
@@ -258,6 +261,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
 
         mActivity.thirdOption.visibility = View.VISIBLE
+
+        if (!mActivity.requiresVideoModeOnly) {
+            mActivity.settingsDialog.lRadio.isEnabled = false
+            mActivity.settingsDialog.qRadio.isEnabled = false
+        }
 
         if (mActivity !is VideoCaptureActivity) {
             mActivity.thirdCircle.setImageResource(R.drawable.option_circle)

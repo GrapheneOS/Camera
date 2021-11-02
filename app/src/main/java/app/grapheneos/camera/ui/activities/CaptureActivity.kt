@@ -90,7 +90,15 @@ open class CaptureActivity : MainActivity() {
         thirdOption.visibility = View.INVISIBLE
 
         captureButton.setOnClickListener {
-            takePicture()
+            if (timerDuration==0){
+                takePicture()
+            } else {
+                if (cdTimer.isRunning) {
+                    cdTimer.cancelTimer()
+                } else {
+                    cdTimer.startTimer()
+                }
+            }
         }
 
         retakeIcon.setOnClickListener {
@@ -104,7 +112,7 @@ open class CaptureActivity : MainActivity() {
         // Display the activity
     }
 
-    private fun takePicture() {
+    fun takePicture() {
 
         previewLoader.visibility = View.VISIBLE
         config.imageCapture?.takePicture(

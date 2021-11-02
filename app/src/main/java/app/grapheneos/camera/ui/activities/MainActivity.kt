@@ -421,6 +421,8 @@ open class MainActivity : AppCompatActivity(),
         if (config.requireLocation) {
             locationListener.start()
         }
+
+        config.startCamera(true)
     }
 
     val requiresVideoModeOnly: Boolean
@@ -505,7 +507,9 @@ open class MainActivity : AppCompatActivity(),
                 config.reloadSettings()
                 if (!config.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
-                    settingsIcon.visibility = View.VISIBLE
+                    if(!settingsDialog.isShowing) {
+                        settingsIcon.visibility = View.VISIBLE
+                    }
                     settingsIcon.isEnabled = true
                 }
             } else {
@@ -954,6 +958,8 @@ open class MainActivity : AppCompatActivity(),
 
         config.imageCapture?.targetRotation = tr
 //        config.iAnalyzer?.targetRotation = tr
+
+        if (videoCapturer.isRecording) return
 
         if (flipCameraCircle.rotation == 0f) {
             flipCameraCircle.rotation = 360f
