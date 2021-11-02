@@ -937,7 +937,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.FACE_RETOUCH)
         }
 
-        if (!isVideoMode) {
+        if (mActivity !is SecureMainActivity && !isVideoMode) {
             modes.add(CameraModes.QR_SCAN)
         }
 
