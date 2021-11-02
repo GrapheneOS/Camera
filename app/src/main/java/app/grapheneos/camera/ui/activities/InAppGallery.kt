@@ -26,6 +26,7 @@ import java.io.OutputStream
 import java.text.Format
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.TimeZone
 
 class InAppGallery : AppCompatActivity() {
 
@@ -416,6 +417,7 @@ class InAppGallery : AppCompatActivity() {
         fun convertTime(time: String): String {
 
             val dateFormat = SimpleDateFormat("yyyyMMdd'T'hhmmss.SSS'Z'")
+            dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val parsedDate = dateFormat.parse(time)
             return convertTime(parsedDate?.time ?: 0)
         }
