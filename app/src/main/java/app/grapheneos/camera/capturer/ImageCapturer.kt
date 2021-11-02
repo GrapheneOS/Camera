@@ -41,9 +41,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
-//            put(MediaStore.MediaColumns.DATE_ADDED, date.time)
-//            put(MediaStore.MediaColumns.DATE_TAKEN, date.time)
-//            put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
         }
 
         return ImageCapture.OutputFileOptions.Builder(
