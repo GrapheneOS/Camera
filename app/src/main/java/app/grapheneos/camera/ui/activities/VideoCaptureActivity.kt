@@ -80,7 +80,7 @@ class VideoCaptureActivity : CaptureActivity() {
     private fun confirmVideo() {
         if (savedUri == null) {
             setResult(RESULT_CANCELED)
-        } else {
+        } else if (!isOutputUriAvailable()) {
             val resultIntent = Intent()
             resultIntent.data = savedUri
             setResult(RESULT_OK, resultIntent)
