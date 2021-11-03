@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -120,7 +121,7 @@ open class CaptureActivity : MainActivity() {
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
                     super.onCaptureSuccess(image)
-                    bitmap = imageProxyToBitmap(image)
+                    bitmap = imageProxyToBitmap(image, image.imageInfo.rotationDegrees.toFloat())
                     showPreview()
                     previewLoader.visibility = View.GONE
 
@@ -212,12 +213,12 @@ open class CaptureActivity : MainActivity() {
         finish()
     }
 
-    private fun imageProxyToBitmap(image: ImageProxy): Bitmap {
+    private fun imageProxyToBitmap(image: ImageProxy, rotation : Float): Bitmap {
         val planeProxy = image.planes[0]
         val buffer: ByteBuffer = planeProxy.buffer
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size).rotate(rotation)
     }
 
     private fun resizeImage(image: Bitmap): Bitmap {
@@ -232,5 +233,10 @@ open class CaptureActivity : MainActivity() {
             return image
 
         return Bitmap.createScaledBitmap(image, scaleWidth, scaleHeight, false)
+    }
+
+    private fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 }
