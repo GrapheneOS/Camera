@@ -431,7 +431,10 @@ open class MainActivity : AppCompatActivity(),
             locationListener.start()
         }
 
-        config.startCamera(true)
+        // If the preview of video capture activity isn't showing
+        if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
+            config.startCamera(true)
+        }
     }
 
     val requiresVideoModeOnly: Boolean
