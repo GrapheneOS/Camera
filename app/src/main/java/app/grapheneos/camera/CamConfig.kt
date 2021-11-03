@@ -793,6 +793,8 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         })
 
+        mActivity.zoomBar.updateThumb(false)
+
         mActivity.exposureBar.setExposureConfig(camera!!.cameraInfo.exposureState)
 
         mActivity.settingsDialog.torchToggle.isChecked = false

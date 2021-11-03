@@ -914,6 +914,7 @@ open class MainActivity : AppCompatActivity(),
             config.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
 
             exposureBar.showPanel()
+            zoomBar.showPanel()
             return v.performClick()
         }
         return true

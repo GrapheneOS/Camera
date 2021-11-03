@@ -51,7 +51,7 @@ class ZoomBar : AppCompatSeekBar {
         this.mainActivity = mainActivity
     }
 
-    private fun showPanel() {
+    fun showPanel() {
         togglePanel(View.VISIBLE)
         closePanelHandler.removeCallbacks(closePanelRunnable)
         closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
@@ -82,11 +82,13 @@ class ZoomBar : AppCompatSeekBar {
         super.onSizeChanged(h, w, oldh, oldw)
     }
 
-    fun updateThumb() {
+    fun updateThumb(shouldShowPanel : Boolean = true) {
         val zoomState: ZoomState? = mainActivity.config.camera?.cameraInfo?.zoomState
             ?.value
 
-        showPanel()
+        if(shouldShowPanel) {
+            showPanel()
+        }
 
         var zoomRatio = 1.0f
         var linearZoom = 0.0f
