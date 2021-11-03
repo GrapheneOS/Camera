@@ -58,14 +58,19 @@ class GallerySliderAdapter(
                 val rootView: View =
                     holder.itemView.findViewById(R.id.root)
                 rootView.setOnClickListener {
-                    val intent = Intent(
-                        gActivity,
-                        VideoPlayer::class.java
-                    )
-                    intent.putExtra(
-                        "videoUri", mediaUri)
 
-                    gActivity.startActivity(intent)
+                    val mUri = getCurrentUri()
+
+                    if (VideoCapturer.isVideo(mUri)) {
+                        val intent = Intent(
+                            gActivity,
+                            VideoPlayer::class.java
+                        )
+                        intent.putExtra(
+                            "videoUri", mUri)
+
+                        gActivity.startActivity(intent)
+                    }
                 }
 
             } catch (exception: Exception) {
