@@ -115,6 +115,10 @@ open class CaptureActivity : MainActivity() {
 
     fun takePicture() {
 
+        showMessage(
+            "Capturing Image..."
+        )
+
         previewLoader.visibility = View.VISIBLE
         config.imageCapture?.takePicture(
             ContextCompat.getMainExecutor(this),
@@ -124,6 +128,7 @@ open class CaptureActivity : MainActivity() {
                     bitmap = imageProxyToBitmap(image, image.imageInfo.rotationDegrees.toFloat())
                     showPreview()
                     previewLoader.visibility = View.GONE
+                    showMessage("Image captured successfully")
 
                     image.close()
                 }
