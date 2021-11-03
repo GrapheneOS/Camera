@@ -9,9 +9,13 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import java.lang.ref.WeakReference
 
 
-class SensorOrientationChangeNotifier private constructor(mainActivity: MainActivity) {
+class SensorOrientationChangeNotifier private constructor(
+        private val mainActivity: MainActivity) {
+
+    var mOrientation = mainActivity.getRotation()
+        private set
+
     private val mListeners = ArrayList<WeakReference<Listener?>>(3)
-    private var mOrientation = 0
     private val mSensorEventListener: SensorEventListener
     private val mSensorManager: SensorManager
 
@@ -24,6 +28,7 @@ class SensorOrientationChangeNotifier private constructor(mainActivity: MainActi
             mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
             SensorManager.SENSOR_DELAY_NORMAL
         )
+        notifyListeners(true)
     }
 
     /**
@@ -82,7 +87,12 @@ class SensorOrientationChangeNotifier private constructor(mainActivity: MainActi
         return null
     }
 
-    private fun notifyListeners() {
+    fun notifyListeners(manualUpdate : Boolean = false) {
+
+        if(manualUpdate){
+           mOrientation = mainActivity.getRotation()
+        }
+
         val deadLinksArr = ArrayList<WeakReference<Listener?>>()
         for (wr in mListeners) {
             if (wr.get() == null) deadLinksArr.add(wr) else wr.get()!!

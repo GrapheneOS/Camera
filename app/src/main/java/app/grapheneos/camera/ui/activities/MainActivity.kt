@@ -13,10 +13,12 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -171,6 +173,13 @@ open class MainActivity : AppCompatActivity(),
     private val handler = Handler(Looper.getMainLooper())
 
     private var snackBar : Snackbar? = null
+
+    private val autoRotateSettingObserver =
+            object: ContentObserver(Handler(Looper.myLooper()!!)) {
+        override fun onChange(selfChange: Boolean) {
+            forceUpdateOrientationSensor()
+        }
+    }
 
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
@@ -402,7 +411,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-        SensorOrientationChangeNotifier.getInstance(this)?.addListener(this)
+        resumeOrientationSensor()
         // Check camera permission again if the user switches back to the app (maybe
         // after enabling/disabling the camera permission in Settings)
         // Will also be called by Android Lifecycle when the app starts up
@@ -432,7 +441,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
-        SensorOrientationChangeNotifier.getInstance(this)?.remove(this)
+        pauseOrientationSensor()
         if (config.isQRMode) {
             cancelFocusTimer()
         }
@@ -445,6 +454,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var gestureDetectorCompat: GestureDetectorCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -728,6 +738,12 @@ open class MainActivity : AppCompatActivity(),
             previewView,
             "",
             Snackbar.LENGTH_LONG
+        )
+
+        contentResolver.registerContentObserver(
+            Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
+            true,
+            autoRotateSettingObserver
         )
     }
 
@@ -1104,5 +1120,36 @@ open class MainActivity : AppCompatActivity(),
     fun showMessage(msg: String) {
         snackBar?.setText(msg)
         snackBar?.show()
+    }
+
+    private fun pauseOrientationSensor() {
+        SensorOrientationChangeNotifier
+            .getInstance(this)?.remove(this)
+    }
+
+    private fun resumeOrientationSensor() {
+        SensorOrientationChangeNotifier
+            .getInstance(this)?.addListener(this)
+    }
+
+    fun forceUpdateOrientationSensor() {
+        SensorOrientationChangeNotifier.getInstance(this)?.notifyListeners(true)
+    }
+
+    fun getRotation() : Int {
+        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display?.rotation ?: @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.rotation
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.rotation
+        }
+
+        return when (rotation) {
+            Surface.ROTATION_90 -> 270
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 90
+            else -> 0
+        }
     }
 }

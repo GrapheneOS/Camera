@@ -270,6 +270,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.previewView.keepScreenOn = false
         isRecording = false
+
+        mActivity.forceUpdateOrientationSensor()
     }
 
     fun stopRecording() {

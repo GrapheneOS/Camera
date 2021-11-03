@@ -780,6 +780,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
+        mActivity.forceUpdateOrientationSensor()
+
         camera = cameraProvider!!.bindToLifecycle(
             mActivity, cameraSelector,
             useCaseGroupBuilder.build()
