@@ -331,8 +331,7 @@ class InAppGallery : AppCompatActivity() {
                                 "File deleted successfully"
                             )
 
-                            (gallerySlider.adapter as GallerySliderAdapter)
-                                .removeChildAt(gallerySlider.currentItem)
+                            (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
 
                         } else {
                             showMessage(

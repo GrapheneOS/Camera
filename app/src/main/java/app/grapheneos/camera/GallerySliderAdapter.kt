@@ -42,6 +42,12 @@ class GallerySliderAdapter(
 
         val mediaUri = mediaUris[position]
 
+        val playButton: ImageView =
+            holder.itemView.findViewById(R.id.play_button)
+
+        val rootView: View =
+            holder.itemView.findViewById(R.id.root)
+
         if (VideoCapturer.isVideo(mediaUri)) {
             try {
                 mediaPreview.setImageBitmap(
@@ -51,12 +57,8 @@ class GallerySliderAdapter(
                     )
                 )
 
-                val playButton: ImageView =
-                    holder.itemView.findViewById(R.id.play_button)
                 playButton.visibility = View.VISIBLE
 
-                val rootView: View =
-                    holder.itemView.findViewById(R.id.root)
                 rootView.setOnClickListener {
 
                     val mUri = getCurrentUri()
@@ -77,11 +79,17 @@ class GallerySliderAdapter(
             }
 
         } else {
+            playButton.visibility = View.INVISIBLE
+            rootView.setOnClickListener(null)
             mediaPreview.setImageURI(mediaUri)
         }
     }
 
-    fun removeChildAt(index: Int) {
+    fun removeUri(uri: Uri) {
+        removeChildAt(mediaUris.indexOf(uri))
+    }
+
+    private fun removeChildAt(index: Int) {
         mediaUris.removeAt(index)
 
         // Close gallery if no files are present
