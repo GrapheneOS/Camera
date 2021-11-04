@@ -36,6 +36,7 @@ import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureCaptureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -197,6 +198,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
 
     var isVideoMode = false
+        private set
+        get() {
+            return field || mActivity is VideoCaptureActivity || mActivity is VideoOnlyActivity
+        }
 
     var isQRMode = false
         private set

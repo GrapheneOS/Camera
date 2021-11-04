@@ -8,8 +8,6 @@ class VideoOnlyActivity : MainActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        config.isVideoMode = true
-
         captureButton.setImageResource(R.drawable.recording)
 
         captureModeView.alpha = 0f
