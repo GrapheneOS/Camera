@@ -257,8 +257,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.thirdOption.visibility = View.VISIBLE
 
         if (!mActivity.requiresVideoModeOnly) {
-            mActivity.settingsDialog.lRadio.isEnabled = false
-            mActivity.settingsDialog.qRadio.isEnabled = false
+            mActivity.settingsDialog.lRadio.isEnabled = true
+            mActivity.settingsDialog.qRadio.isEnabled = true
         }
 
         if (mActivity !is VideoCaptureActivity) {
