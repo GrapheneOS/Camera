@@ -254,7 +254,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = true
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
 
-        mActivity.thirdOption.visibility = View.VISIBLE
+        if (mActivity !is VideoCaptureActivity) {
+            mActivity.thirdOption.visibility = View.VISIBLE
+        }
 
         if (!mActivity.requiresVideoModeOnly) {
             mActivity.settingsDialog.lRadio.isEnabled = true
