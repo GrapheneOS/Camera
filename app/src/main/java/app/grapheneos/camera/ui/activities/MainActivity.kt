@@ -181,6 +181,8 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    private lateinit var focusRing : ImageView
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -258,7 +260,6 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun animateFocusRing(x: Float, y: Float) {
-        val focusRing = findViewById<ImageView>(R.id.focusRing)
 
         // Move the focus ring so that its center is at the tap location (x, y)
         val width = focusRing.width.toFloat()
@@ -275,12 +276,24 @@ open class MainActivity : AppCompatActivity(),
             .setDuration(300)
             .alpha(0f)
             .setListener(object : Animator.AnimatorListener {
+
+                var isCancelled = false
+
                 override fun onAnimationStart(animation: Animator) {}
+
                 override fun onAnimationEnd(animator: Animator) {
-                    focusRing.visibility = View.INVISIBLE
+
+                    if(!isCancelled) {
+                        focusRing.visibility = View.INVISIBLE
+                    }
+
+                    isCancelled = false
                 }
 
-                override fun onAnimationCancel(animation: Animator) {}
+                override fun onAnimationCancel(animation: Animator) {
+                    isCancelled = true
+                }
+
                 override fun onAnimationRepeat(animation: Animator) {}
             }).start()
     }
@@ -748,6 +761,8 @@ open class MainActivity : AppCompatActivity(),
             true,
             autoRotateSettingObserver
         )
+
+        focusRing = findViewById(R.id.focusRing)
     }
 
     private fun shareLatestMedia() {
