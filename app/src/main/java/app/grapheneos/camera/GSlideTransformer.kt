@@ -2,6 +2,7 @@ package app.grapheneos.camera
 
 import android.view.View
 import androidx.viewpager2.widget.ViewPager2
+import kotlin.math.abs
 
 private const val MIN_SCALE = 0.75f
 
@@ -30,7 +31,7 @@ class GSlideTransformer : ViewPager2.PageTransformer {
                     translationX = pageWidth * -position
 
                     // Scale the page down (between MIN_SCALE and 1)
-                    val scaleFactor = (MIN_SCALE + (1 - MIN_SCALE) * (1 - Math.abs(position)))
+                    val scaleFactor = (MIN_SCALE + (1 - MIN_SCALE) * (1 - abs(position)))
                     scaleX = scaleFactor
                     scaleY = scaleFactor
                 }

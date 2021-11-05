@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -13,6 +14,7 @@ import android.util.Log
 import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.exifinterface.media.ExifInterface
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.GSlideTransformer
@@ -24,6 +26,7 @@ import java.io.OutputStream
 import java.text.Format
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.TimeZone
 
 class InAppGallery : AppCompatActivity() {
 
@@ -164,9 +167,7 @@ class InAppGallery : AppCompatActivity() {
                     arrayOf(
                         MediaStore.MediaColumns.RELATIVE_PATH,
                         MediaStore.MediaColumns.DISPLAY_NAME,
-                        MediaStore.MediaColumns.SIZE,
-                        MediaStore.MediaColumns.DATE_ADDED,
-                        MediaStore.MediaColumns.DATE_MODIFIED,
+                        MediaStore.MediaColumns.SIZE
                     ),
                     null,
                     null,
@@ -184,10 +185,47 @@ class InAppGallery : AppCompatActivity() {
                 val relativePath = mediaCursor.getString(0)
                 val fileName = mediaCursor.getString(1)
                 val size = mediaCursor.getInt(2)
-                val dateAdded = mediaCursor.getLong(3)
-                val dateModified = mediaCursor.getLong(4)
 
                 mediaCursor.close()
+
+                val dateAdded : String?
+                val dateModified : String?
+
+                if (VideoCapturer.isVideo(mediaUri)) {
+
+                    val mediaMetadataRetriever = MediaMetadataRetriever()
+                    mediaMetadataRetriever.setDataSource(
+                        this,
+                        mediaUri
+                    )
+
+                    val date =
+                        convertTime(
+                            mediaMetadataRetriever.extractMetadata(
+                                MediaMetadataRetriever.METADATA_KEY_DATE
+                            )!!
+                        )
+
+                    dateAdded = date
+                    dateModified = date
+
+                } else {
+                    val iStream = contentResolver.openInputStream(
+                        mediaUri
+                    )
+                    val eInterface = ExifInterface(iStream!!)
+
+                    dateAdded = eInterface.getAttribute(
+                        "DateTimeOriginal"
+                    )
+
+                    dateModified = eInterface.getAttribute(
+                        "DateTime"
+                    )
+
+                    iStream.close()
+                }
+
 
                 val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
 
@@ -221,19 +259,19 @@ class InAppGallery : AppCompatActivity() {
                 Log.i("TAG", "Date added: $dateAdded")
 
                 detailsBuilder.append("File Created On: \n")
-                if(dateAdded==0L){
-                    detailsBuilder.append("Loading...")
+                if(dateAdded==null){
+                    detailsBuilder.append("Not found")
                 } else {
-                    detailsBuilder.append(convertTime(dateAdded))
+                    detailsBuilder.append(dateAdded)
                 }
 
                 detailsBuilder.append("\n\n")
 
                 detailsBuilder.append("Last Modified On: \n")
-                if(dateAdded==0L){
-                    detailsBuilder.append("Loading...")
+                if(dateModified==null){
+                    detailsBuilder.append("Not found")
                 } else {
-                    detailsBuilder.append(convertTime(dateModified))
+                    detailsBuilder.append(dateModified)
                 }
 
                 alertDialog.setMessage(detailsBuilder)
@@ -249,7 +287,7 @@ class InAppGallery : AppCompatActivity() {
 
                 if (isSecureMode) {
                     showMessage(
-                        "Sharing images in secure mode isn't allowed."
+                        "Sharing images in secure mode is not allowed."
                     )
                     return@setOnClickListener
                 }
@@ -293,8 +331,7 @@ class InAppGallery : AppCompatActivity() {
                                 "File deleted successfully"
                             )
 
-                            (gallerySlider.adapter as GallerySliderAdapter)
-                                .removeChildAt(gallerySlider.currentItem)
+                            (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
 
                         } else {
                             showMessage(
@@ -311,7 +348,7 @@ class InAppGallery : AppCompatActivity() {
 
                 if (isSecureMode){
                     showMessage(
-                        "Editing images in secure mode isn't allowed."
+                        "Editing images in secure mode is not allowed."
                     )
                     return@setOnClickListener
                 }
@@ -373,6 +410,15 @@ class InAppGallery : AppCompatActivity() {
             Log.i("TAG", "convertTime: $res")
 
             return res
+        }
+
+        @SuppressLint("SimpleDateFormat")
+        fun convertTime(time: String): String {
+
+            val dateFormat = SimpleDateFormat("yyyyMMdd'T'hhmmss.SSS'Z'")
+            dateFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val parsedDate = dateFormat.parse(time)
+            return convertTime(parsedDate?.time ?: 0)
         }
 
     }

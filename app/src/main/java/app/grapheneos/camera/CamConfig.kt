@@ -16,7 +16,6 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -37,6 +36,7 @@ import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureCaptureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -198,6 +198,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
 
     var isVideoMode = false
+        private set
+        get() {
+            return field || mActivity is VideoCaptureActivity || mActivity is VideoOnlyActivity
+        }
 
     var isQRMode = false
         private set
@@ -781,6 +785,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
+        mActivity.forceUpdateOrientationSensor()
+
         camera = cameraProvider!!.bindToLifecycle(
             mActivity, cameraSelector,
             useCaseGroupBuilder.build()
@@ -793,6 +799,8 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.zoomBar.updateThumb()
             }
         })
+
+        mActivity.zoomBar.updateThumb(false)
 
         mActivity.exposureBar.setExposureConfig(camera!!.cameraInfo.exposureState)
 
@@ -938,7 +946,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.FACE_RETOUCH)
         }
 
-        if (!isVideoMode) {
+        if (mActivity !is SecureMainActivity && !isVideoMode) {
             modes.add(CameraModes.QR_SCAN)
         }
 

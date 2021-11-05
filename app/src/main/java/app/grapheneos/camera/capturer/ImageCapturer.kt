@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
-import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -23,7 +22,8 @@ import java.util.Locale
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"
 
-    private fun genOutputStreamForImage(): OutputStream {
+    private fun genOutputBuilderForImage():
+            ImageCapture.OutputFileOptions.Builder {
 
         var fileName: String
 
@@ -37,25 +37,17 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat)
 
-        val resolver = mActivity.contentResolver
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
-            put(MediaStore.MediaColumns.DATE_ADDED, date.time)
-            put(MediaStore.MediaColumns.DATE_TAKEN, date.time)
-            put(MediaStore.MediaColumns.DATE_MODIFIED, date.time)
         }
 
-        val imageUri = resolver.insert(CamConfig.imageCollectionUri, contentValues)!!
-
-        mActivity.config.latestUri = imageUri
-
-        if(mActivity is SecureMainActivity) {
-            mActivity.capturedFilePaths.add(imageUri.toString())
-        }
-
-        return resolver.openOutputStream(imageUri)!!
+        return ImageCapture.OutputFileOptions.Builder(
+            mActivity.contentResolver,
+            CamConfig.imageCollectionUri,
+            contentValues
+        )
     }
 
     val isTakingPicture: Boolean
@@ -71,8 +63,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        val outputStream = genOutputStreamForImage()
-        val outputFileOptionsBuilder = ImageCapture.OutputFileOptions.Builder(outputStream)
+        val outputFileOptionsBuilder = genOutputBuilderForImage()
 
         if (mActivity.config.requireLocation) {
 
@@ -139,6 +130,14 @@ class ImageCapturer(private val mActivity: MainActivity) {
                         )
 
                         mActivity.mainOverlay.startAnimation(animation)
+                    }
+
+                    val imageUri = outputFileResults.savedUri
+
+                    mActivity.config.latestUri = imageUri
+
+                    if(mActivity is SecureMainActivity) {
+                        mActivity.capturedFilePaths.add(imageUri.toString())
                     }
 
                     mActivity.previewLoader.visibility = View.GONE

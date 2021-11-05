@@ -88,7 +88,7 @@ class CountDownTimerUI @JvmOverloads constructor(
     fun cancelTimer() {
         if (::timer.isInitialized) {
             timer.cancel()
-            onTimerEnd()
+            onTimerEnd(true)
         }
     }
 
@@ -114,14 +114,19 @@ class CountDownTimerUI @JvmOverloads constructor(
         isRunning = true
     }
 
-    private fun onTimerEnd() {
+    private fun onTimerEnd(isCancelled : Boolean = false) {
         mActivity.settingsIcon.visibility = View.VISIBLE
-        mActivity.thirdOption.visibility = View.VISIBLE
         mActivity.flipCameraCircle.visibility = View.VISIBLE
-        mActivity.tabLayout.visibility = View.VISIBLE
         mActivity.captureModeView.visibility = View.VISIBLE
-        mActivity.cbText.visibility = View.VISIBLE
         mActivity.cbCross.visibility = View.INVISIBLE
+
+        if (mActivity !is CaptureActivity) {
+            mActivity.cbText.visibility = View.VISIBLE
+            mActivity.tabLayout.visibility = View.VISIBLE
+            mActivity.thirdOption.visibility = View.VISIBLE
+        } else if (isCancelled) {
+            mActivity.cbText.visibility = View.VISIBLE
+        }
 
         visibility = View.GONE
         isRunning = false

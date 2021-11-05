@@ -80,9 +80,10 @@ class VideoCaptureActivity : CaptureActivity() {
     private fun confirmVideo() {
         if (savedUri == null) {
             setResult(RESULT_CANCELED)
-        } else {
+        } else if (!isOutputUriAvailable()) {
             val resultIntent = Intent()
             resultIntent.data = savedUri
+            resultIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
             setResult(RESULT_OK, resultIntent)
         }
         finish()

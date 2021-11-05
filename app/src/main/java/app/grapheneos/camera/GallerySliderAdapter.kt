@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.ui.activities.InAppGallery
@@ -43,6 +42,12 @@ class GallerySliderAdapter(
 
         val mediaUri = mediaUris[position]
 
+        val playButton: ImageView =
+            holder.itemView.findViewById(R.id.play_button)
+
+        val rootView: View =
+            holder.itemView.findViewById(R.id.root)
+
         if (VideoCapturer.isVideo(mediaUri)) {
             try {
                 mediaPreview.setImageBitmap(
@@ -52,32 +57,39 @@ class GallerySliderAdapter(
                     )
                 )
 
-                val playButton: ImageView =
-                    holder.itemView.findViewById(R.id.play_button)
                 playButton.visibility = View.VISIBLE
 
-                val rootView: View =
-                    holder.itemView.findViewById(R.id.root)
                 rootView.setOnClickListener {
-                    val intent = Intent(
-                        gActivity,
-                        VideoPlayer::class.java
-                    )
-                    intent.putExtra(
-                        "videoUri", mediaUri)
 
-                    gActivity.startActivity(intent)
+                    val mUri = getCurrentUri()
+
+                    if (VideoCapturer.isVideo(mUri)) {
+                        val intent = Intent(
+                            gActivity,
+                            VideoPlayer::class.java
+                        )
+                        intent.putExtra(
+                            "videoUri", mUri)
+
+                        gActivity.startActivity(intent)
+                    }
                 }
 
             } catch (exception: Exception) {
             }
 
         } else {
+            playButton.visibility = View.INVISIBLE
+            rootView.setOnClickListener(null)
             mediaPreview.setImageURI(mediaUri)
         }
     }
 
-    fun removeChildAt(index: Int) {
+    fun removeUri(uri: Uri) {
+        removeChildAt(mediaUris.indexOf(uri))
+    }
+
+    private fun removeChildAt(index: Int) {
         mediaUris.removeAt(index)
 
         // Close gallery if no files are present

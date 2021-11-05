@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.ClipData
@@ -12,14 +13,15 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.provider.Settings
 import android.text.util.Linkify
 import android.util.Log
@@ -128,11 +130,11 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var settingsIcon: ImageView
 
-    lateinit var exposurePlusIcon: ImageView
-    lateinit var exposureNegIcon: ImageView
+    private lateinit var exposurePlusIcon: ImageView
+    private lateinit var exposureNegIcon: ImageView
 
-    lateinit var zoomInIcon: ImageView
-    lateinit var zoomOutIcon: ImageView
+    private lateinit var zoomInIcon: ImageView
+    private lateinit var zoomOutIcon: ImageView
 
     lateinit var flipCamIcon: ImageView
 
@@ -171,6 +173,13 @@ open class MainActivity : AppCompatActivity(),
     private val handler = Handler(Looper.getMainLooper())
 
     private var snackBar : Snackbar? = null
+
+    private val autoRotateSettingObserver =
+            object: ContentObserver(Handler(Looper.myLooper()!!)) {
+        override fun onChange(selfChange: Boolean) {
+            forceUpdateOrientationSensor()
+        }
+    }
 
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
@@ -402,7 +411,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-        SensorOrientationChangeNotifier.getInstance(this)?.addListener(this)
+        resumeOrientationSensor()
         // Check camera permission again if the user switches back to the app (maybe
         // after enabling/disabling the camera permission in Settings)
         // Will also be called by Android Lifecycle when the app starts up
@@ -422,7 +431,10 @@ open class MainActivity : AppCompatActivity(),
             locationListener.start()
         }
 
-        config.startCamera(true)
+        // If the preview of video capture activity isn't showing
+        if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
+            config.startCamera(true)
+        }
     }
 
     val requiresVideoModeOnly: Boolean
@@ -432,7 +444,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
-        SensorOrientationChangeNotifier.getInstance(this)?.remove(this)
+        pauseOrientationSensor()
         if (config.isQRMode) {
             cancelFocusTimer()
         }
@@ -445,6 +457,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var gestureDetectorCompat: GestureDetectorCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -729,6 +742,12 @@ open class MainActivity : AppCompatActivity(),
             "",
             Snackbar.LENGTH_LONG
         )
+
+        contentResolver.registerContentObserver(
+            Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
+            true,
+            autoRotateSettingObserver
+        )
     }
 
     private fun shareLatestMedia() {
@@ -914,6 +933,7 @@ open class MainActivity : AppCompatActivity(),
             config.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
 
             exposureBar.showPanel()
+            zoomBar.showPanel()
             return v.performClick()
         }
         return true
@@ -947,6 +967,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun onOrientationChange(orientation: Int) {
 
         val tr = when (orientation) {
@@ -957,7 +978,7 @@ open class MainActivity : AppCompatActivity(),
         }
 
         config.imageCapture?.targetRotation = tr
-//        config.iAnalyzer?.targetRotation = tr
+        config.videoCapture?.targetRotation = tr
 
         if (videoCapturer.isRecording) return
 
@@ -1102,5 +1123,36 @@ open class MainActivity : AppCompatActivity(),
     fun showMessage(msg: String) {
         snackBar?.setText(msg)
         snackBar?.show()
+    }
+
+    private fun pauseOrientationSensor() {
+        SensorOrientationChangeNotifier
+            .getInstance(this)?.remove(this)
+    }
+
+    private fun resumeOrientationSensor() {
+        SensorOrientationChangeNotifier
+            .getInstance(this)?.addListener(this)
+    }
+
+    fun forceUpdateOrientationSensor() {
+        SensorOrientationChangeNotifier.getInstance(this)?.notifyListeners(true)
+    }
+
+    fun getRotation() : Int {
+        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display?.rotation ?: @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.rotation
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.rotation
+        }
+
+        return when (rotation) {
+            Surface.ROTATION_90 -> 270
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 90
+            else -> 0
+        }
     }
 }
