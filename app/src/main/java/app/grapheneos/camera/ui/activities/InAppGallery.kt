@@ -287,7 +287,7 @@ class InAppGallery : AppCompatActivity() {
 
                 if (isSecureMode) {
                     showMessage(
-                        "Sharing images in secure mode isn't allowed."
+                        "Sharing images in secure mode is not allowed."
                     )
                     return@setOnClickListener
                 }
@@ -348,7 +348,7 @@ class InAppGallery : AppCompatActivity() {
 
                 if (isSecureMode){
                     showMessage(
-                        "Editing images in secure mode isn't allowed."
+                        "Editing images in secure mode is not allowed."
                     )
                     return@setOnClickListener
                 }

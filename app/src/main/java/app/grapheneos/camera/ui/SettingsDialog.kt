@@ -89,7 +89,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
             if (mActivity.config.isVideoMode) {
                 mActivity.config.requireLocation = false
                 mActivity.showMessage(
-                    "Geo-tagging currently isn't supported for video mode"
+                    "Geo-tagging currently is not supported for video mode"
                 )
                 return@setOnClickListener
             }
@@ -120,7 +120,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
             if (mActivity.config.isVideoMode) {
                 aRToggle.isChecked = true
                 mActivity.showMessage(
-                    "4:3 isn't supported in video mode"
+                    "4:3 is not supported in video mode"
                 )
             } else {
                 mActivity.config.toggleAspectRatio()
