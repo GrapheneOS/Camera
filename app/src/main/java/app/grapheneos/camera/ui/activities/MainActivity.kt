@@ -2,8 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.Manifest
 import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
@@ -35,9 +33,7 @@ import android.view.Surface
 import android.view.View
 import android.view.View.OnTouchListener
 import android.view.Window
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
 import android.widget.ImageButton
@@ -105,7 +101,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var videoCapturer: VideoCapturer
 
     lateinit var flipCameraCircle: View
-    lateinit var captureModeView: ImageView
+    lateinit var cancelButtonView: ImageView
     lateinit var tabLayout: BottomTabLayout
     lateinit var thirdCircle: ImageView
     lateinit var captureButton: ImageButton
@@ -672,39 +668,7 @@ open class MainActivity : AppCompatActivity(),
             }
         })
 
-        captureModeView = findViewById(R.id.capture_mode)
-        captureModeView.setOnClickListener(object : View.OnClickListener {
-
-            val SWITCH_ANIM_DURATION = 150
-            override fun onClick(v: View) {
-
-                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
-                config.switchCameraMode()
-                val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
-                val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
-                oa1.interpolator = DecelerateInterpolator()
-                oa2.interpolator = AccelerateDecelerateInterpolator()
-                oa1.duration = SWITCH_ANIM_DURATION.toLong()
-                oa2.duration = SWITCH_ANIM_DURATION.toLong()
-                oa1.addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        super.onAnimationEnd(animation)
-                        captureModeView.setImageResource(imgID)
-                        oa2.start()
-                    }
-                })
-                oa1.start()
-                if (config.isVideoMode) {
-                    captureButton.setImageResource(R.drawable.recording)
-                    cbText.visibility = View.INVISIBLE
-                } else {
-                    captureButton.setImageResource(R.drawable.camera_shutter)
-                    if (timerDuration != 0) {
-                        cbText.visibility = View.VISIBLE
-                    }
-                }
-            }
-        })
+        cancelButtonView = findViewById(R.id.cancel_button)
 
         zoomBar = findViewById(R.id.zoom_bar)
         zoomBar.setMainActivity(this)
@@ -1016,7 +980,7 @@ open class MainActivity : AppCompatActivity(),
             }
 
         rotateView(flipCameraCircle, iconRotation)
-        rotateView(captureModeView, iconRotation)
+        rotateView(cancelButtonView, iconRotation)
         rotateView(thirdOption, iconRotation)
 
         rotateView(exposurePlusIcon, iconRotation)

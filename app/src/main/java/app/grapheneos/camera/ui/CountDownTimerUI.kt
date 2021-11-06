@@ -106,7 +106,7 @@ class CountDownTimerUI @JvmOverloads constructor(
         mActivity.thirdOption.visibility = View.INVISIBLE
         mActivity.flipCameraCircle.visibility = View.INVISIBLE
         mActivity.tabLayout.visibility = View.INVISIBLE
-        mActivity.captureModeView.visibility = View.INVISIBLE
+        mActivity.cancelButtonView.visibility = View.INVISIBLE
         mActivity.cbText.visibility = View.INVISIBLE
         mActivity.cbCross.visibility = View.VISIBLE
 
@@ -117,7 +117,7 @@ class CountDownTimerUI @JvmOverloads constructor(
     private fun onTimerEnd(isCancelled : Boolean = false) {
         mActivity.settingsIcon.visibility = View.VISIBLE
         mActivity.flipCameraCircle.visibility = View.VISIBLE
-        mActivity.captureModeView.visibility = View.VISIBLE
+        mActivity.cancelButtonView.visibility = View.VISIBLE
         mActivity.cbCross.visibility = View.INVISIBLE
 
         if (mActivity !is CaptureActivity) {

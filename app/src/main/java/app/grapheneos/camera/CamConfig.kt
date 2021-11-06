@@ -53,6 +53,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private object CameraModes {
         const val CAMERA = R.string.camera
+        const val VIDEO = R.string.video
         const val PORTRAIT = R.string.portrait_mode
         const val HDR = R.string.hdr_mode
         const val NIGHT_SIGHT = R.string.night_sight_mode
@@ -615,16 +616,6 @@ class CamConfig(private val mActivity: MainActivity) {
             return latestUri
         }
 
-
-    fun switchCameraMode() {
-        isVideoMode = !isVideoMode
-        startCamera(true)
-    }
-
-
-
-
-
     fun toggleFlashMode() {
         if (camera!!.cameraInfo.hasFlashUnit()) {
 
@@ -914,6 +905,10 @@ class CamConfig(private val mActivity: MainActivity) {
     private fun getAvailableModes(): ArrayList<Int> {
         val modes = arrayListOf<Int>()
 
+        if (mActivity !is SecureMainActivity) {
+            modes.add(CameraModes.QR_SCAN)
+        }
+
         if (extensionsManager.isExtensionAvailable(
                 cameraProvider!!, cameraSelector,
                 ExtensionMode.NIGHT
@@ -946,21 +941,18 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.FACE_RETOUCH)
         }
 
-        if (mActivity !is SecureMainActivity && !isVideoMode) {
-            modes.add(CameraModes.QR_SCAN)
-        }
+        modes.add(CameraModes.CAMERA)
 
-        val mid = (modes.size / 2f).roundToInt()
-        modes.add(mid, CameraModes.CAMERA)
+        modes.add(CameraModes.VIDEO)
 
         return modes
     }
 
     fun switchMode(modeText: Int) {
 
-        this.modeText = modeText
+        if (this.modeText == modeText) return
 
-        cameraMode = ExtensionMode.NONE
+        this.modeText = modeText
 
         cameraMode = extensionModes.indexOf(modeText)
 
@@ -968,16 +960,28 @@ class CamConfig(private val mActivity: MainActivity) {
 
         isQRMode = modeText == CameraModes.QR_SCAN
 
+        isVideoMode = modeText == CameraModes.VIDEO
+
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.threeButtons.visibility = View.INVISIBLE
-            mActivity.captureModeView.visibility = View.INVISIBLE
+            mActivity.cancelButtonView.visibility = View.INVISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.threeButtons.visibility = View.VISIBLE
-            mActivity.captureModeView.visibility = View.VISIBLE
+            mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
+        }
+
+        if (isVideoMode) {
+            mActivity.captureButton.setImageResource(R.drawable.recording)
+            mActivity.cbText.visibility = View.INVISIBLE
+        } else {
+            mActivity.captureButton.setImageResource(R.drawable.camera_shutter)
+            if (mActivity.timerDuration != 0) {
+                mActivity.cbText.visibility = View.VISIBLE
+            }
         }
 
         startCamera(true)

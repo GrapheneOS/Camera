@@ -352,11 +352,10 @@
         android:layout_alignParentEnd="true">
 
         <ImageView
-            android:id="@+id/capture_mode"
+            android:id="@+id/cancel_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="?actionBarItemBackground"
-            android:src="@drawable/video_camera"
             android:contentDescription="@string/capture_mode"/>
 
     </FrameLayout>

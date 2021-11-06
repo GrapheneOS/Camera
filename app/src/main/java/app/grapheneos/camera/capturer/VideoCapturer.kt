@@ -218,7 +218,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
         isPaused = false
-        mActivity.captureModeView.visibility = View.GONE
+        mActivity.cancelButtonView.visibility = View.GONE
 
         if (mActivity.requiresVideoModeOnly) {
             mActivity.thirdOption.visibility = View.INVISIBLE
@@ -265,7 +265,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         if (mActivity !is VideoCaptureActivity) {
             mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
-            mActivity.captureModeView.visibility = View.VISIBLE
+            mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE
         }
         cancelTimer()

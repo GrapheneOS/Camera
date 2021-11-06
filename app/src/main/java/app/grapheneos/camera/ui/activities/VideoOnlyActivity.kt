@@ -9,10 +9,6 @@ class VideoOnlyActivity : MainActivity() {
         super.onCreate(savedInstanceState)
 
         captureButton.setImageResource(R.drawable.recording)
-
-        captureModeView.alpha = 0f
-        captureModeView.setOnClickListener(null)
-        captureModeView.background = null
     }
 
 }
