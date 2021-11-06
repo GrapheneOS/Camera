@@ -162,6 +162,7 @@
 
         <activity
             android:name=".ui.activities.InAppGallery"
+            android:theme="@style/OverlayActionBar"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:showWhenLocked="true"
             android:showOnLockScreen="true"
