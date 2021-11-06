@@ -2,6 +2,7 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root_view"
+    android:background="@color/unselected_option_bg"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
