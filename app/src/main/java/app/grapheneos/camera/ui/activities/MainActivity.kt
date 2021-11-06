@@ -193,7 +193,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     // Used to request permission from the user
-    val requestPermissionLauncher = registerForActivityResult(
+    private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
     ) { permissions: Map<String, Boolean> ->
         if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
@@ -667,14 +667,6 @@ open class MainActivity : AppCompatActivity(),
         captureButton = findViewById(R.id.capture_button)
         captureButton.setOnClickListener(View.OnClickListener {
             if (config.isVideoMode) {
-                if (ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.RECORD_AUDIO
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    requestPermissionLauncher.launch(audioPermission)
-                    return@OnClickListener
-                }
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
@@ -784,6 +776,10 @@ open class MainActivity : AppCompatActivity(),
         )
 
         focusRing = findViewById(R.id.focusRing)
+    }
+
+    fun requestAudioPermission() {
+        requestPermissionLauncher.launch(audioPermission)
     }
 
     private fun shareLatestMedia() {
