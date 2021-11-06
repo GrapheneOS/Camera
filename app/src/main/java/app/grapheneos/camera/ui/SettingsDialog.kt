@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.app.Dialog
 import android.graphics.Color
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -29,7 +30,8 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 
-class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_App) {
+class SettingsDialog(mActivity: MainActivity) :
+    Dialog(mActivity, R.style.Theme_App) {
 
     private var dialog: View
     var locToggle: ToggleButton
@@ -83,6 +85,24 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         background.setOnClickListener {
             slideDialogUp()
         }
+
+        val rootView = findViewById<SettingsFrameLayout>(R.id.root)
+        rootView.setOnInterceptTouchEventListener(
+            object: SettingsFrameLayout.OnInterceptTouchEventListener {
+
+                override fun onInterceptTouchEvent(
+                    view: SettingsFrameLayout?,
+                    ev: MotionEvent?,
+                    disallowIntercept: Boolean
+                ): Boolean {
+                    return mActivity.gestureDetectorCompat.onTouchEvent(ev)
+                }
+
+                override fun onTouchEvent(view: SettingsFrameLayout?, event: MotionEvent?): Boolean {
+                    return false
+                }
+            }
+        )
 
         locToggle = findViewById(R.id.location_toggle)
         locToggle.setOnClickListener {
@@ -495,7 +515,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         dialog.startAnimation(slideDownAnimation)
     }
 
-    private fun slideDialogUp() {
+    fun slideDialogUp() {
         dialog.startAnimation(slideUpAnimation)
     }
 

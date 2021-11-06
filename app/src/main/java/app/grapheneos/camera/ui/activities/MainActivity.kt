@@ -1111,6 +1111,8 @@ open class MainActivity : AppCompatActivity(),
     private fun onSwipeBottom() {
         if (isZooming || cdTimer.isRunning) return
         wasSwiping = true
+        if (settingsDialog.isShowing) return
+
         if (settingsIcon.isEnabled) {
             settingsIcon.performClick()
         }
@@ -1121,6 +1123,8 @@ open class MainActivity : AppCompatActivity(),
         if (isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
+        if (settingsDialog.isShowing) return
+
 
         val i = tabLayout.selectedTabPosition - 1
 
@@ -1131,13 +1135,17 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeTop() {
-//        Log.i(TAG, "onSwipeTop")
+        if (isZooming || cdTimer.isRunning) return
+        wasSwiping = true
+        settingsDialog.slideDialogUp()
     }
 
     private fun onSwipeLeft() {
         if (isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
+        if (settingsDialog.isShowing) return
+
         val i = tabLayout.selectedTabPosition + 1
         tabLayout.getTabAt(i)?.let {
             tabLayout.selectTab(it)
