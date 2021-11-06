@@ -218,6 +218,11 @@ open class MainActivity : AppCompatActivity(),
                     startActivity(intent)
                 }
                 builder.setNegativeButton("Cancel", null)
+
+                builder.setNeutralButton("Disable Audio") { _: DialogInterface?, _: Int ->
+                    settingsDialog.includeAudioToggle.isChecked = false
+                }
+
                 audioPermissionDialog = builder.show()
             }
         }

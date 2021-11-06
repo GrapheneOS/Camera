@@ -7,7 +7,7 @@
     </string>
 
     <string name="audio_permission_dialog_title">Audio permission required</string>
-    <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just turn off the "Include Audio" toggle in the settings menu.</string>
+    <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record a video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just disable it (and enable it back later in the settings).</string>
 
     <string name="location_permission_dialog_title">Location permission required</string>
     <string name="location_permission_dialog_message">
