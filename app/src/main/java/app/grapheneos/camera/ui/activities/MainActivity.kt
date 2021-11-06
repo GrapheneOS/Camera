@@ -233,7 +233,6 @@ open class MainActivity : AppCompatActivity(),
                 Log.i(TAG, "Permission denied for camera.")
             }
         }
-        checkPermissions()
     }
 
     // Used to request permission from the user
@@ -390,7 +389,7 @@ open class MainActivity : AppCompatActivity(),
         // dialog in this case)
         else {
             Log.i(TAG, "Requesting permission from user...")
-            requestPermissionLauncher.unregister()
+
             requestPermissionLauncher.launch(cameraPermission)
         }
 
