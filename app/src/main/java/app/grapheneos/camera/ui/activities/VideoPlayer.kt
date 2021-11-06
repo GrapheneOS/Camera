@@ -1,10 +1,11 @@
 package app.grapheneos.camera.ui.activities
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
@@ -18,9 +19,10 @@ class VideoPlayer : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.video_player)
 
-        val backArrow = findViewById<View>(R.id.back_button)
-        backArrow.setOnClickListener {
-            finish()
+        supportActionBar?.let {
+            it.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            it.setDisplayShowTitleEnabled(false)
+            it.setDisplayHomeAsUpEnabled(true)
         }
 
         if (intent.extras?.containsKey("videoUri") != true) {
@@ -43,5 +45,10 @@ class VideoPlayer : AppCompatActivity() {
             { mediaController.show(0) },
             100
         )
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }
