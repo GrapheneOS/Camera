@@ -179,6 +179,11 @@ open class MainActivity : AppCompatActivity(),
 
     private lateinit var focusRing : ImageView
 
+    private val focusRingHandler: Handler = Handler(Looper.getMainLooper())
+    private val focusRingCallback: Runnable = Runnable {
+        focusRing.visibility = View.INVISIBLE
+    }
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -266,32 +271,52 @@ open class MainActivity : AppCompatActivity(),
         focusRing.visibility = View.VISIBLE
         focusRing.alpha = 1f
 
-        // Animate the focus ring to disappear
-        focusRing.animate()
-            .setStartDelay(500)
-            .setDuration(300)
-            .alpha(0f)
-            .setListener(object : Animator.AnimatorListener {
+        if(areSystemAnimationsEnabled()) {
+            // Animate the focus ring to disappear
+            focusRing.animate()
+                .setStartDelay(500)
+                .setDuration(300)
+                .alpha(0f)
+                .setListener(object : Animator.AnimatorListener {
 
-                var isCancelled = false
+                    var isCancelled = false
 
-                override fun onAnimationStart(animation: Animator) {}
+                    override fun onAnimationStart(animation: Animator) {}
 
-                override fun onAnimationEnd(animator: Animator) {
+                    override fun onAnimationEnd(animator: Animator) {
 
-                    if(!isCancelled) {
-                        focusRing.visibility = View.INVISIBLE
+                        if(!isCancelled) {
+                            focusRing.visibility = View.INVISIBLE
+                        }
+
+                        isCancelled = false
                     }
 
-                    isCancelled = false
-                }
+                    override fun onAnimationCancel(animation: Animator) {
+                        isCancelled = true
+                    }
 
-                override fun onAnimationCancel(animation: Animator) {
-                    isCancelled = true
-                }
+                    override fun onAnimationRepeat(animation: Animator) {}
+                }).start()
+        } else {
+            focusRingHandler.removeCallbacks(focusRingCallback)
+            focusRingHandler.postDelayed(focusRingCallback, 800)
+        }
+    }
 
-                override fun onAnimationRepeat(animation: Animator) {}
-            }).start()
+    private fun areSystemAnimationsEnabled(): Boolean {
+
+        val duration: Float = Settings.Global.getFloat(
+            contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+        )
+
+        val transition: Float = Settings.Global.getFloat(
+            contentResolver,
+            Settings.Global.TRANSITION_ANIMATION_SCALE, 1f
+        )
+
+        return duration != 0f && transition != 0f
     }
 
     protected open fun openGallery() {
@@ -669,6 +694,38 @@ open class MainActivity : AppCompatActivity(),
         })
 
         cancelButtonView = findViewById(R.id.cancel_button)
+//        cancelButtonView.setOnClickListener(object : View.OnClickListener {
+//
+//            val SWITCH_ANIM_DURATION = 150
+//            override fun onClick(v: View) {
+//
+//                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
+//                config.switchCameraMode()
+//                val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
+//                val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
+//                oa1.interpolator = DecelerateInterpolator()
+//                oa2.interpolator = AccelerateDecelerateInterpolator()
+//                oa1.duration = SWITCH_ANIM_DURATION.toLong()
+//                oa2.duration = SWITCH_ANIM_DURATION.toLong()
+//                oa1.addListener(object : AnimatorListenerAdapter() {
+//                    override fun onAnimationEnd(animation: Animator) {
+//                        super.onAnimationEnd(animation)
+//                        cancelButtonView.setImageResource(imgID)
+//                        oa2.start()
+//                    }
+//                })
+//                oa1.start()
+//                if (config.isVideoMode) {
+//                    captureButton.setImageResource(R.drawable.recording)
+//                    cbText.visibility = View.INVISIBLE
+//                } else {
+//                    captureButton.setImageResource(R.drawable.camera_shutter)
+//                    if (timerDuration != 0) {
+//                        cbText.visibility = View.VISIBLE
+//                    }
+//                }
+//            }
+//        })
 
         zoomBar = findViewById(R.id.zoom_bar)
         zoomBar.setMainActivity(this)
