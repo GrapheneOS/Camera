@@ -68,6 +68,7 @@ class SettingsDialog(mActivity: MainActivity) : Dialog(mActivity, R.style.Theme_
         setContentView(R.layout.settings)
 
         dialog = findViewById(R.id.settings_dialog)
+        dialog.setOnClickListener {}
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
