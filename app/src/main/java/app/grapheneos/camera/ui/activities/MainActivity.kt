@@ -54,6 +54,10 @@ import androidx.camera.view.PreviewView.StreamState
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CustomLocationListener
@@ -76,6 +80,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
+import android.graphics.Rect
 
 
 open class MainActivity : AppCompatActivity(),
@@ -759,6 +764,45 @@ open class MainActivity : AppCompatActivity(),
 
         rootView = findViewById(R.id.root)
 
+        val mainFrame = findViewById<View>(R.id.main_frame)
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            view.layoutParams = (view.layoutParams as ViewGroup.MarginLayoutParams).let {
+                it.setMargins(
+                    insets.left,
+                    0,
+                    insets.right,
+                    insets.bottom,
+                )
+
+                it
+            }
+
+            if (insets.top != 0) {
+                mainFrame.layoutParams = (mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
+                    it.setMargins(
+                        it.leftMargin,
+                        insets.top,
+                        it.rightMargin,
+                        it.bottomMargin,
+                    )
+
+                    it
+                }
+            }
+
+            WindowInsetsCompat.CONSUMED
+        }
+
+        WindowInsetsControllerCompat(window, rootView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.statusBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         cdTimer = findViewById(R.id.c_timer)
         cdTimer.setMainActivity(this)
 
@@ -783,6 +827,12 @@ open class MainActivity : AppCompatActivity(),
         )
 
         focusRing = findViewById(R.id.focusRing)
+    }
+
+    private fun getStatusBarHeight(): Int {
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (resourceId > 0) resources.getDimensionPixelSize(resourceId)
+        else Rect().apply { window.decorView.getWindowVisibleDisplayFrame(this) }.top
     }
 
     private fun repositionThreeButtons() {
