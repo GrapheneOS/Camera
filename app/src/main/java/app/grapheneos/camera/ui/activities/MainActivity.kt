@@ -32,6 +32,7 @@ import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.Surface
 import android.view.View
 import android.view.View.OnTouchListener
+import android.view.ViewGroup
 import android.view.Window
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
@@ -44,6 +45,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -562,6 +564,7 @@ open class MainActivity : AppCompatActivity(),
                         settingsIcon.visibility = View.VISIBLE
                     }
                     settingsIcon.isEnabled = true
+                    repositionThreeButtons()
                 }
             } else {
                 previewGrid.visibility = View.INVISIBLE
@@ -780,6 +783,44 @@ open class MainActivity : AppCompatActivity(),
         )
 
         focusRing = findViewById(R.id.focusRing)
+    }
+
+    private fun repositionThreeButtons() {
+
+        threeButtons.visibility = View.VISIBLE
+
+        threeButtons.layoutParams =
+            (threeButtons.layoutParams as ViewGroup.MarginLayoutParams).let {
+
+                val previewHeight = if (config.aspectRatio == AspectRatio.RATIO_16_9) {
+                    previewView.width * 16 / 9
+                } else {
+                    previewView.width * 4 / 3
+                }
+
+                val spaceForTB =
+                    threeButtons.height + (12 * resources.displayMetrics.density)
+
+                val extraHeight = previewView.height - previewHeight
+
+                if (spaceForTB <= extraHeight) {
+                    it.setMargins(
+                        it.leftMargin,
+                        0,
+                        it.rightMargin,
+                        it.bottomMargin
+                    )
+                }
+                else {
+                    it.setMargins(
+                        it.leftMargin,
+                        previewHeight - (78 * resources.displayMetrics.density).toInt(),
+                        it.rightMargin,
+                        it.bottomMargin
+                    )
+                }
+                it
+            }
     }
 
     fun requestAudioPermission() {
