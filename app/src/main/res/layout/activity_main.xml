@@ -11,21 +11,19 @@
 
     <FrameLayout
         android:layout_height="match_parent"
-        android:layout_width="match_parent">
+        android:layout_width="match_parent"
+        android:layout_marginTop="46dp"
+        android:layout_marginBottom="40dp">
 
         <androidx.camera.view.PreviewView
             android:id="@+id/camera"
             android:layout_width="match_parent"
-            android:layout_marginTop="46dp"
-            android:layout_marginBottom="40dp"
             android:layout_height="match_parent"/>
 
         <app.grapheneos.camera.ui.CountDownTimerUI
             android:id="@+id/c_timer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="46dp"
-            android:layout_marginBottom="40dp"
             android:visibility="gone"
             android:shadowColor="#000000"
             android:shadowDx="1.5"
@@ -36,9 +34,7 @@
         <app.grapheneos.camera.ui.CustomGrid
             android:id="@+id/preview_grid"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="46dp"
-            android:layout_marginBottom="40dp" />
+            android:layout_height="match_parent" />
 
         <app.grapheneos.camera.ui.QROverlay
             android:id="@+id/qr_overlay"
@@ -59,8 +55,6 @@
             android:id="@+id/main_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="46dp"
-            android:layout_marginBottom="40dp"
             android:contentDescription="@string/loading_camera"/>
 
     </FrameLayout>
