@@ -73,6 +73,7 @@
         android:weightSum="3"
         android:layout_above="@id/camera_mode_tabs"
         android:layout_marginBottom="12dp"
+        android:visibility="invisible"
         android:baselineAligned="false">
 
         <FrameLayout
@@ -352,11 +353,10 @@
         android:layout_alignParentEnd="true">
 
         <ImageView
-            android:id="@+id/capture_mode"
+            android:id="@+id/cancel_button"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="?actionBarItemBackground"
-            android:src="@drawable/video_camera"
             android:contentDescription="@string/capture_mode"/>
 
     </FrameLayout>

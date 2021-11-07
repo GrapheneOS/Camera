@@ -38,7 +38,7 @@ class CustomGrid @JvmOverloads constructor(
         }
 
         val previewHeight = if (mActivity.config.aspectRatio == AspectRatio.RATIO_16_9) {
-            height
+            mActivity.previewView.width * 16 / 9
         } else {
             mActivity.previewView.width * 4 / 3
         }

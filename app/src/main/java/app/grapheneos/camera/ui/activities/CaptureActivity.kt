@@ -79,11 +79,11 @@ open class CaptureActivity : MainActivity() {
         }
 
         // Change the drawable to cancel mode
-        captureModeView.setImageResource(R.drawable.cancel)
+        cancelButtonView.setImageResource(R.drawable.cancel)
 
         // Overwrite the existing listener to just close the existing activity
         // (in this case)
-        captureModeView.setOnClickListener {
+        cancelButtonView.setOnClickListener {
             finish()
         }
 

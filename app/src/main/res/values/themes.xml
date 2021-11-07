@@ -21,4 +21,14 @@
         <item name="android:windowEnterAnimation">@anim/slide_down</item>
         <item name="android:windowExitAnimation">@anim/slide_up</item>
     </style>
+
+    <style name="OverlayActionBar" parent="Theme.AppCompat.DayNight.DarkActionBar">
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowActionBar">true</item>
+
+        <item name="windowActionModeOverlay">true</item>
+        <item name="windowActionBarOverlay">true</item>
+        <item name="windowActionBar">true</item>
+    </style>
 </resources>

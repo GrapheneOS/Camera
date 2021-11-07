@@ -1,13 +1,10 @@
 package app.grapheneos.camera.ui.activities
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
-import androidx.core.app.ActivityCompat
 import app.grapheneos.camera.R
 
 class VideoCaptureActivity : CaptureActivity() {
@@ -29,16 +26,7 @@ class VideoCaptureActivity : CaptureActivity() {
             if (videoCapturer.isRecording) {
                 videoCapturer.stopRecording()
             } else {
-                if (ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.RECORD_AUDIO
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    requestPermissionLauncher.launch(audioPermission)
-                    return@OnClickListener
-                } else {
-                    videoCapturer.startRecording()
-                }
+                videoCapturer.startRecording()
             }
         }
 
@@ -67,7 +55,7 @@ class VideoCaptureActivity : CaptureActivity() {
 
         bitmap = previewView.bitmap!!
 
-        captureModeView.visibility = View.VISIBLE
+        cancelButtonView.visibility = View.VISIBLE
 
         showPreview()
     }

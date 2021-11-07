@@ -7,9 +7,7 @@
     </string>
 
     <string name="audio_permission_dialog_title">Audio permission required</string>
-    <string name="audio_permission_dialog_message">
-        The app needs permission to access the audio to record video. Please provide the required permission via Settings in order to use this app.
-    </string>
+    <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record a video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just disable it (and enable it back later in the settings).</string>
 
     <string name="location_permission_dialog_title">Location permission required</string>
     <string name="location_permission_dialog_message">
@@ -55,6 +53,7 @@
     <string name="video_capture_label">Record Video</string>
 
     <string name="camera">CAMERA</string>
+    <string name="video">VIDEO</string>
     <string name="portrait_mode">PORTRAIT</string>
     <string name="hdr_mode">HDR</string>
     <string name="night_sight_mode">NIGHT SIGHT</string>
@@ -64,5 +63,7 @@
     <string name="aspect_ratio_16_9">16:9</string>
     <string name="aspect_ratio_4_3">4:3</string>
     <string name="go_back_to_gallery">Go back to Gallery</string>
+    <string name="delete">Delete</string>
+    <string name="share_media">Share Media</string>
 
 </resources>

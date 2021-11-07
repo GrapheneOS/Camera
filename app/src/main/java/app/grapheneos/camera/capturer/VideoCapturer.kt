@@ -134,64 +134,65 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun startRecording() {
         if (mActivity.config.camera == null) return
 
+        val pendingRecording = genPendingRecording()
 
-        if (ActivityCompat.checkSelfPermission(
-                mActivity,
-                Manifest.permission.RECORD_AUDIO
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            beforeRecordingStarts()
-
-            val pendingRecording = genPendingRecording()
-
-            if (mActivity.settingsDialog.includeAudioToggle.isChecked)
+        if (mActivity.settingsDialog.includeAudioToggle.isChecked) {
+            if (ActivityCompat.checkSelfPermission(
+                    mActivity,
+                    Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED
+            ) {
                 pendingRecording.withAudioEnabled()
+            } else {
+                mActivity.requestAudioPermission()
+                return
+            }
+        }
 
-            pendingRecording.withEventListener(
-                ContextCompat.getMainExecutor(mActivity),
-                {
-                    if (it is VideoRecordEvent.Finalize) {
-                        afterRecordingStops()
+        pendingRecording.withEventListener(
+            ContextCompat.getMainExecutor(mActivity),
+            {
+                if (it is VideoRecordEvent.Finalize) {
+                    afterRecordingStops()
 
-                        mActivity.config.mPlayer.playVRStopSound()
+                    mActivity.config.mPlayer.playVRStopSound()
 
-                        if (it.hasError()) {
+                    if (it.hasError()) {
 
-                            if (it.error == 8) {
-                                mActivity.showMessage(
-                                    "Recording too short to be saved"
-                                )
-                            } else {
-                                mActivity.showMessage(
-                                    "Unable to save recording (Error code: " +
-                                            "${it.error})"
-                                )
-                            }
+                        if (it.error == 8) {
+                            mActivity.showMessage(
+                                "Recording too short to be saved"
+                            )
                         } else {
+                            mActivity.showMessage(
+                                "Unable to save recording (Error code: " +
+                                        "${it.error})"
+                            )
+                        }
+                    } else {
 
-                            val outputUri = it.outputResults.outputUri
+                        val outputUri = it.outputResults.outputUri
 
-                            mActivity.config.latestUri = outputUri
+                        mActivity.config.latestUri = outputUri
 
-                            if (mActivity is VideoCaptureActivity) {
-                                mActivity.afterRecording(outputUri)
-                                return@withEventListener
-                            }
+                        if (mActivity is VideoCaptureActivity) {
+                            mActivity.afterRecording(outputUri)
+                            return@withEventListener
+                        }
 
-                            mActivity.config.updatePreview()
+                        mActivity.config.updatePreview()
 
-                            if(mActivity is SecureMainActivity) {
-                                mActivity.capturedFilePaths.add(outputUri.toString())
-                            }
+                        if(mActivity is SecureMainActivity) {
+                            mActivity.capturedFilePaths.add(outputUri.toString())
                         }
                     }
                 }
-            )
+            }
+        )
 
-            activeRecording = pendingRecording.start()
-            mActivity.config.mPlayer.playVRStartSound()
-            isRecording = true
-        }
+        beforeRecordingStarts()
+        activeRecording = pendingRecording.start()
+        isRecording = true
     }
 
     private val dp16 = 16 * mActivity.resources.displayMetrics.density
@@ -200,6 +201,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private fun beforeRecordingStarts() {
 
         mActivity.previewView.keepScreenOn = true
+
+        mActivity.config.mPlayer.playVRStartSound()
 
         val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
 
@@ -218,7 +221,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
         isPaused = false
-        mActivity.captureModeView.visibility = View.GONE
+        mActivity.cancelButtonView.visibility = View.GONE
 
         if (mActivity.requiresVideoModeOnly) {
             mActivity.thirdOption.visibility = View.INVISIBLE
@@ -265,7 +268,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         if (mActivity !is VideoCaptureActivity) {
             mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
-            mActivity.captureModeView.visibility = View.VISIBLE
+            mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE
         }
         cancelTimer()

@@ -2,8 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.Manifest
 import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
@@ -34,10 +32,9 @@ import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.Surface
 import android.view.View
 import android.view.View.OnTouchListener
+import android.view.ViewGroup
 import android.view.Window
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Animation
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
 import android.widget.ImageButton
@@ -48,6 +45,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -105,7 +103,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var videoCapturer: VideoCapturer
 
     lateinit var flipCameraCircle: View
-    lateinit var captureModeView: ImageView
+    lateinit var cancelButtonView: ImageView
     lateinit var tabLayout: BottomTabLayout
     lateinit var thirdCircle: ImageView
     lateinit var captureButton: ImageButton
@@ -181,6 +179,13 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    private lateinit var focusRing : ImageView
+
+    private val focusRingHandler: Handler = Handler(Looper.getMainLooper())
+    private val focusRingCallback: Runnable = Runnable {
+        focusRing.visibility = View.INVISIBLE
+    }
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -190,7 +195,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     // Used to request permission from the user
-    val requestPermissionLauncher = registerForActivityResult(
+    private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
     ) { permissions: Map<String, Boolean> ->
         if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
@@ -215,6 +220,11 @@ open class MainActivity : AppCompatActivity(),
                     startActivity(intent)
                 }
                 builder.setNegativeButton("Cancel", null)
+
+                builder.setNeutralButton("Disable Audio") { _: DialogInterface?, _: Int ->
+                    settingsDialog.includeAudioToggle.isChecked = false
+                }
+
                 audioPermissionDialog = builder.show()
             }
         }
@@ -230,7 +240,6 @@ open class MainActivity : AppCompatActivity(),
                 Log.i(TAG, "Permission denied for camera.")
             }
         }
-        checkPermissions()
     }
 
     // Used to request permission from the user
@@ -258,7 +267,6 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun animateFocusRing(x: Float, y: Float) {
-        val focusRing = findViewById<ImageView>(R.id.focusRing)
 
         // Move the focus ring so that its center is at the tap location (x, y)
         val width = focusRing.width.toFloat()
@@ -269,20 +277,52 @@ open class MainActivity : AppCompatActivity(),
         focusRing.visibility = View.VISIBLE
         focusRing.alpha = 1f
 
-        // Animate the focus ring to disappear
-        focusRing.animate()
-            .setStartDelay(500)
-            .setDuration(300)
-            .alpha(0f)
-            .setListener(object : Animator.AnimatorListener {
-                override fun onAnimationStart(animation: Animator) {}
-                override fun onAnimationEnd(animator: Animator) {
-                    focusRing.visibility = View.INVISIBLE
-                }
+        if(areSystemAnimationsEnabled()) {
+            // Animate the focus ring to disappear
+            focusRing.animate()
+                .setStartDelay(500)
+                .setDuration(300)
+                .alpha(0f)
+                .setListener(object : Animator.AnimatorListener {
 
-                override fun onAnimationCancel(animation: Animator) {}
-                override fun onAnimationRepeat(animation: Animator) {}
-            }).start()
+                    var isCancelled = false
+
+                    override fun onAnimationStart(animation: Animator) {}
+
+                    override fun onAnimationEnd(animator: Animator) {
+
+                        if(!isCancelled) {
+                            focusRing.visibility = View.INVISIBLE
+                        }
+
+                        isCancelled = false
+                    }
+
+                    override fun onAnimationCancel(animation: Animator) {
+                        isCancelled = true
+                    }
+
+                    override fun onAnimationRepeat(animation: Animator) {}
+                }).start()
+        } else {
+            focusRingHandler.removeCallbacks(focusRingCallback)
+            focusRingHandler.postDelayed(focusRingCallback, 800)
+        }
+    }
+
+    private fun areSystemAnimationsEnabled(): Boolean {
+
+        val duration: Float = Settings.Global.getFloat(
+            contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+        )
+
+        val transition: Float = Settings.Global.getFloat(
+            contentResolver,
+            Settings.Global.TRANSITION_ANIMATION_SCALE, 1f
+        )
+
+        return duration != 0f && transition != 0f
     }
 
     protected open fun openGallery() {
@@ -356,7 +396,7 @@ open class MainActivity : AppCompatActivity(),
         // dialog in this case)
         else {
             Log.i(TAG, "Requesting permission from user...")
-            requestPermissionLauncher.unregister()
+
             requestPermissionLauncher.launch(cameraPermission)
         }
 
@@ -524,6 +564,7 @@ open class MainActivity : AppCompatActivity(),
                         settingsIcon.visibility = View.VISIBLE
                     }
                     settingsIcon.isEnabled = true
+                    repositionThreeButtons()
                 }
             } else {
                 previewGrid.visibility = View.INVISIBLE
@@ -633,14 +674,6 @@ open class MainActivity : AppCompatActivity(),
         captureButton = findViewById(R.id.capture_button)
         captureButton.setOnClickListener(View.OnClickListener {
             if (config.isVideoMode) {
-                if (ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.RECORD_AUDIO
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    requestPermissionLauncher.launch(audioPermission)
-                    return@OnClickListener
-                }
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
@@ -659,39 +692,39 @@ open class MainActivity : AppCompatActivity(),
             }
         })
 
-        captureModeView = findViewById(R.id.capture_mode)
-        captureModeView.setOnClickListener(object : View.OnClickListener {
-
-            val SWITCH_ANIM_DURATION = 150
-            override fun onClick(v: View) {
-
-                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
-                config.switchCameraMode()
-                val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
-                val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
-                oa1.interpolator = DecelerateInterpolator()
-                oa2.interpolator = AccelerateDecelerateInterpolator()
-                oa1.duration = SWITCH_ANIM_DURATION.toLong()
-                oa2.duration = SWITCH_ANIM_DURATION.toLong()
-                oa1.addListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        super.onAnimationEnd(animation)
-                        captureModeView.setImageResource(imgID)
-                        oa2.start()
-                    }
-                })
-                oa1.start()
-                if (config.isVideoMode) {
-                    captureButton.setImageResource(R.drawable.recording)
-                    cbText.visibility = View.INVISIBLE
-                } else {
-                    captureButton.setImageResource(R.drawable.camera_shutter)
-                    if (timerDuration != 0) {
-                        cbText.visibility = View.VISIBLE
-                    }
-                }
-            }
-        })
+        cancelButtonView = findViewById(R.id.cancel_button)
+//        cancelButtonView.setOnClickListener(object : View.OnClickListener {
+//
+//            val SWITCH_ANIM_DURATION = 150
+//            override fun onClick(v: View) {
+//
+//                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
+//                config.switchCameraMode()
+//                val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
+//                val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
+//                oa1.interpolator = DecelerateInterpolator()
+//                oa2.interpolator = AccelerateDecelerateInterpolator()
+//                oa1.duration = SWITCH_ANIM_DURATION.toLong()
+//                oa2.duration = SWITCH_ANIM_DURATION.toLong()
+//                oa1.addListener(object : AnimatorListenerAdapter() {
+//                    override fun onAnimationEnd(animation: Animator) {
+//                        super.onAnimationEnd(animation)
+//                        cancelButtonView.setImageResource(imgID)
+//                        oa2.start()
+//                    }
+//                })
+//                oa1.start()
+//                if (config.isVideoMode) {
+//                    captureButton.setImageResource(R.drawable.recording)
+//                    cbText.visibility = View.INVISIBLE
+//                } else {
+//                    captureButton.setImageResource(R.drawable.camera_shutter)
+//                    if (timerDuration != 0) {
+//                        cbText.visibility = View.VISIBLE
+//                    }
+//                }
+//            }
+//        })
 
         zoomBar = findViewById(R.id.zoom_bar)
         zoomBar.setMainActivity(this)
@@ -748,6 +781,50 @@ open class MainActivity : AppCompatActivity(),
             true,
             autoRotateSettingObserver
         )
+
+        focusRing = findViewById(R.id.focusRing)
+    }
+
+    private fun repositionThreeButtons() {
+
+        threeButtons.visibility = View.VISIBLE
+
+        threeButtons.layoutParams =
+            (threeButtons.layoutParams as ViewGroup.MarginLayoutParams).let {
+
+                val previewHeight = if (config.aspectRatio == AspectRatio.RATIO_16_9) {
+                    previewView.width * 16 / 9
+                } else {
+                    previewView.width * 4 / 3
+                }
+
+                val spaceForTB =
+                    threeButtons.height + (12 * resources.displayMetrics.density)
+
+                val extraHeight = previewView.height - previewHeight
+
+                if (spaceForTB <= extraHeight) {
+                    it.setMargins(
+                        it.leftMargin,
+                        0,
+                        it.rightMargin,
+                        it.bottomMargin
+                    )
+                }
+                else {
+                    it.setMargins(
+                        it.leftMargin,
+                        previewHeight - (78 * resources.displayMetrics.density).toInt(),
+                        it.rightMargin,
+                        it.bottomMargin
+                    )
+                }
+                it
+            }
+    }
+
+    fun requestAudioPermission() {
+        requestPermissionLauncher.launch(audioPermission)
     }
 
     private fun shareLatestMedia() {
@@ -1001,7 +1078,7 @@ open class MainActivity : AppCompatActivity(),
             }
 
         rotateView(flipCameraCircle, iconRotation)
-        rotateView(captureModeView, iconRotation)
+        rotateView(cancelButtonView, iconRotation)
         rotateView(thirdOption, iconRotation)
 
         rotateView(exposurePlusIcon, iconRotation)
@@ -1075,6 +1152,8 @@ open class MainActivity : AppCompatActivity(),
     private fun onSwipeBottom() {
         if (isZooming || cdTimer.isRunning) return
         wasSwiping = true
+        if (settingsDialog.isShowing) return
+
         if (settingsIcon.isEnabled) {
             settingsIcon.performClick()
         }
@@ -1085,6 +1164,8 @@ open class MainActivity : AppCompatActivity(),
         if (isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
+        if (settingsDialog.isShowing) return
+
 
         val i = tabLayout.selectedTabPosition - 1
 
@@ -1095,13 +1176,17 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeTop() {
-//        Log.i(TAG, "onSwipeTop")
+        if (isZooming || cdTimer.isRunning) return
+        wasSwiping = true
+        settingsDialog.slideDialogUp()
     }
 
     private fun onSwipeLeft() {
         if (isZooming || cdTimer.isRunning) return
 
         wasSwiping = true
+        if (settingsDialog.isShowing) return
+
         val i = tabLayout.selectedTabPosition + 1
         tabLayout.getTabAt(i)?.let {
             tabLayout.selectTab(it)
