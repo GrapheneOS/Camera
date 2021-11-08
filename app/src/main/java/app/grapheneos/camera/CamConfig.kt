@@ -214,13 +214,19 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var aspectRatio : Int
         get() {
-            return if (isVideoMode) {
-                AspectRatio.RATIO_16_9
-            } else {
-                commonPref.getInt(
-                    SettingValues.Key.ASPECT_RATIO,
-                    SettingValues.Default.ASPECT_RATIO
-                )
+            return when {
+                isVideoMode -> {
+                    AspectRatio.RATIO_16_9
+                }
+                isQRMode -> {
+                    AspectRatio.RATIO_4_3
+                }
+                else -> {
+                    commonPref.getInt(
+                        SettingValues.Key.ASPECT_RATIO,
+                        SettingValues.Default.ASPECT_RATIO
+                    )
+                }
             }
         }
 
