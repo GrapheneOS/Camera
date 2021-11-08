@@ -677,13 +677,22 @@ open class MainActivity : AppCompatActivity(),
         }
 
         captureButton = findViewById(R.id.capture_button)
-        captureButton.setOnClickListener(View.OnClickListener {
+        captureButton.setOnClickListener {
             if (config.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
                     videoCapturer.startRecording()
                 }
+            } else if (config.isQRMode) {
+                config.toggleTorchState()
+                captureButton.setImageResource(
+                    if (config.isTorchOn) {
+                        R.drawable.torch_on_button
+                    } else {
+                        R.drawable.torch_off_button
+                    }
+                )
             } else {
                 if (timerDuration == 0) {
                     imageCapturer.takePicture()
@@ -695,7 +704,7 @@ open class MainActivity : AppCompatActivity(),
                     }
                 }
             }
-        })
+        }
 
         cancelButtonView = findViewById(R.id.cancel_button)
 //        cancelButtonView.setOnClickListener(object : View.OnClickListener {

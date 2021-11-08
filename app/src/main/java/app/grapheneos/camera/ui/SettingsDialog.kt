@@ -151,10 +151,7 @@ class SettingsDialog(mActivity: MainActivity) :
         torchToggle = findViewById(R.id.torch_toggle_option)
         torchToggle.setOnClickListener {
             if (mActivity.config.isFlashAvailable) {
-                mActivity.config.camera?.cameraControl?.enableTorch(
-                    mActivity.config.camera?.cameraInfo?.torchState?.value ==
-                            TorchState.OFF
-                )
+                mActivity.config.toggleTorchState()
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(
@@ -588,8 +585,7 @@ class SettingsDialog(mActivity: MainActivity) :
             aRToggle.isChecked = mActivity.config.aspectRatio == AspectRatio.RATIO_16_9
         }
 
-        torchToggle.isChecked =
-            mActivity.config.camera?.cameraInfo?.torchState?.value == TorchState.ON
+        torchToggle.isChecked = mActivity.config.isTorchOn
 
         updateGridToggleUI()
 

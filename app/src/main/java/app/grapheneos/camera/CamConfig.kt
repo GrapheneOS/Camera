@@ -22,6 +22,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
@@ -39,7 +40,6 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import java.util.concurrent.Executors
-import kotlin.math.roundToInt
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -209,6 +209,19 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val isFlashAvailable: Boolean
         get() = camera!!.cameraInfo.hasFlashUnit()
+
+    var isTorchOn : Boolean = false
+        get(){
+            return camera?.cameraInfo?.torchState?.value == TorchState.ON
+        }
+        set(value) {
+            field = if(isFlashAvailable) {
+                camera?.cameraControl?.enableTorch(value)
+                value
+            } else {
+                false
+            }
+        }
 
     private var modeText: Int = DEFAULT_CAMERA_MODE
 
@@ -509,6 +522,10 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.commit()
         }
 
+    fun toggleTorchState() {
+        isTorchOn = !isTorchOn
+    }
+
     private fun getCurrentModeText(): String {
 
         val vp = if (isVideoMode) {
@@ -623,7 +640,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
     fun toggleFlashMode() {
-        if (camera!!.cameraInfo.hasFlashUnit()) {
+        if (isFlashAvailable) {
 
             flashMode = when (flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
@@ -970,24 +987,34 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
-            mActivity.threeButtons.visibility = View.INVISIBLE
+            mActivity.thirdOption.visibility = View.INVISIBLE
+            mActivity.flipCameraCircle.visibility = View.INVISIBLE
             mActivity.cancelButtonView.visibility = View.INVISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
+
+            mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
+            mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
-            mActivity.threeButtons.visibility = View.VISIBLE
+            mActivity.thirdOption.visibility = View.VISIBLE
+            mActivity.flipCameraCircle.visibility = View.VISIBLE
             mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
+
+            mActivity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
+            mActivity.captureButton.setImageResource(
+                if(isVideoMode) {
+                    R.drawable.recording
+                } else {
+                    R.drawable.camera_shutter
+                }
+            )
         }
 
-        if (isVideoMode) {
-            mActivity.captureButton.setImageResource(R.drawable.recording)
-            mActivity.cbText.visibility = View.INVISIBLE
-        } else {
-            mActivity.captureButton.setImageResource(R.drawable.camera_shutter)
-            if (mActivity.timerDuration != 0) {
-                mActivity.cbText.visibility = View.VISIBLE
-            }
+        mActivity.cbText.visibility = if (isVideoMode || mActivity.timerDuration == 0) {
+             View.INVISIBLE
+        } else  {
+            View.VISIBLE
         }
 
         startCamera(true)
