@@ -11,6 +11,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Permission to restrict components to OS only -->
+    <permission
+        android:name="app.grapheneos.camera.ONLY_OS"
+        android:protectionLevel="system|signature" />
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -44,6 +49,7 @@
             android:name=".ui.activities.CameraLauncher"
             android:label="@string/app_name"
             android:targetActivity=".ui.activities.MainActivity"
+            android:permission="app.grapheneos.camera.ONLY_OS"
             android:exported="true">
 
             <intent-filter>
@@ -125,6 +131,7 @@
             android:showWhenLocked="true"
             android:showOnLockScreen="true"
             android:excludeFromRecents="true"
+            android:permission="app.grapheneos.camera.ONLY_OS"
             android:exported="true">
 
             <intent-filter>
