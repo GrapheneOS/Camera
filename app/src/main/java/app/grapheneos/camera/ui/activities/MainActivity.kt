@@ -345,6 +345,7 @@ open class MainActivity : AppCompatActivity(),
         val intent = Intent(this, InAppGallery::class.java)
 
         intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
+        intent.putExtra("is_secure_mode", false)
         startActivity(intent)
     }
 

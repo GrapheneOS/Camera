@@ -339,6 +339,15 @@ class InAppGallery : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
+
+        val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
+        val isSecureMode = intent.extras?.getBoolean("is_secure_mode") == true
+
+        if (isSecureMode) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        }
+
         setContentView(R.layout.gallery)
 
         supportActionBar?.let {
@@ -349,8 +358,6 @@ class InAppGallery : AppCompatActivity() {
 
         gallerySlider = findViewById(R.id.gallery_slider)
         gallerySlider.setPageTransformer(GSlideTransformer())
-
-        val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
 
         if (isSecureMode) {
             val spName = intent.extras?.getString("fileSP")

@@ -41,13 +41,13 @@ class SecureMainActivity : MainActivity() {
         if(editor.commit()){
             intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
             intent.putExtra("fileSP", getSPName())
+            intent.putExtra("is_secure_mode", true)
+            startActivity(intent)
         } else {
             showMessage(
                 "An unexpected error occurred while opening the gallery",
             )
         }
-
-        startActivity(intent)
     }
 
     override fun onDestroy() {
