@@ -66,5 +66,6 @@
     <string name="delete">Delete</string>
     <string name="share_media">Share Media</string>
     <string name="rec_without_audio">Start recording without audio</string>
+    <string name="save_image_as_preview">Save Image as Previewed</string>
 
 </resources>

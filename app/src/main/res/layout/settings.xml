@@ -166,6 +166,29 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/save_image_as_preview_setting"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                    android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_height="wrap_content"
+                        android:layout_width="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="@string/save_image_as_preview" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/save_image_as_preview_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="false"
+                        android:layout_gravity="end"/>
+
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/video_quality_setting"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

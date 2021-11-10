@@ -64,6 +64,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
         }
 
         val outputFileOptionsBuilder = genOutputBuilderForImage()
+        val imageMetadata = ImageCapture.Metadata()
+
+        imageMetadata.isReversedHorizontal = mActivity.config.saveImageAsPreviewed
 
         if (mActivity.config.requireLocation) {
 
@@ -73,13 +76,12 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             " currently unavailable"
                 )
             } else {
-                outputFileOptionsBuilder.setMetadata(
-                    ImageCapture.Metadata().apply {
-                        location = mActivity.locationListener.lastKnownLocation
-                    }
-                )
+                imageMetadata.location =
+                    mActivity.locationListener.lastKnownLocation
             }
         }
+
+        outputFileOptionsBuilder.setMetadata(imageMetadata)
 
         val outputFileOptions = outputFileOptionsBuilder.build()
 

@@ -75,6 +75,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val VIDEO_QUALITY = "video_quality"
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
+            const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
         }
 
         object Default {
@@ -99,6 +100,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val INCLUDE_AUDIO = true
+            const val SAVE_IMAGE_AS_PREVIEW = false
         }
     }
 
@@ -355,6 +357,18 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.settingsDialog.includeAudioToggle.isChecked = value
         }
 
+    var saveImageAsPreviewed: Boolean
+        get() {
+            return mActivity.settingsDialog.sIAPToggle.isChecked && lensFacing == CameraSelector.LENS_FACING_FRONT
+        }
+        set(value) {
+            val editor = modePref.edit()
+            editor.putBoolean(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW, value)
+            editor.apply()
+
+            mActivity.settingsDialog.sIAPToggle.isChecked = value
+        }
+
     var requireLocation: Boolean = false
         get() {
             return mActivity.settingsDialog.locToggle.isChecked
@@ -422,6 +436,10 @@ class CamConfig(private val mActivity: MainActivity) {
             sEditor.putInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
         }
 
+        if (!modePref.contains(SettingValues.Key.GEO_TAGGING)) {
+            sEditor.putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
+        }
+
         if (isVideoMode) {
 
             if (!modePref.contains(videoQualityKey)) {
@@ -435,18 +453,19 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-        if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
-            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+        if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
                 sEditor.putBoolean(
                     SettingValues.Key.SELF_ILLUMINATION,
                     SettingValues.Default.SELF_ILLUMINATION
                 )
             }
-        }
 
-        if (!modePref.contains(SettingValues.Key.GEO_TAGGING)) {
-            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                sEditor.putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
+            if (!modePref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
+                sEditor.putBoolean(
+                    SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
+                    SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
+                )
             }
         }
 
@@ -465,6 +484,11 @@ class CamConfig(private val mActivity: MainActivity) {
         selfIlluminate = modePref.getBoolean(
             SettingValues.Key.SELF_ILLUMINATION,
             SettingValues.Default.SELF_ILLUMINATION
+        )
+
+        saveImageAsPreviewed = modePref.getBoolean(
+            SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
+            SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
         )
 
         mActivity.settingsDialog.showOnlyRelevantSettings()
