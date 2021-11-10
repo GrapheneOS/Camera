@@ -1224,7 +1224,8 @@ open class MainActivity : AppCompatActivity(),
 
     private fun onSwipeRight() {
 
-        if (isZooming || cdTimer.isRunning) return
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording)
+            return
 
         wasSwiping = true
         if (settingsDialog.isShowing) return
@@ -1239,7 +1240,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeTop() {
-        if (isZooming || cdTimer.isRunning) return
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording) return
         wasSwiping = true
         settingsDialog.slideDialogUp()
     }
