@@ -285,6 +285,9 @@ class SettingsDialog(mActivity: MainActivity) :
         timerSetting = findViewById(R.id.timer_setting)
 
         includeAudioToggle = findViewById(R.id.include_audio_switch)
+        includeAudioToggle.setOnClickListener {
+            mActivity.config.includeAudio = includeAudioToggle.isChecked
+        }
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
             mActivity.config.startCamera(true)
         }

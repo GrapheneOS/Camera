@@ -74,6 +74,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = "camera_sounds"
             const val VIDEO_QUALITY = "video_quality"
             const val ASPECT_RATIO = "aspect_ratio"
+            const val INCLUDE_AUDIO = "include_audio"
         }
 
         object Default {
@@ -96,6 +97,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val FOCUS_TIMEOUT = "5s"
 
             const val CAMERA_SOUNDS = true
+
+            const val INCLUDE_AUDIO = true
         }
     }
 
@@ -201,7 +204,9 @@ class CamConfig(private val mActivity: MainActivity) {
     var isVideoMode = false
         private set
         get() {
-            return field || mActivity is VideoCaptureActivity || mActivity is VideoOnlyActivity
+            return field ||
+                    mActivity is VideoCaptureActivity ||
+                    mActivity is VideoOnlyActivity
         }
 
     var isQRMode = false
@@ -338,6 +343,18 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.settingsDialog.csSwitch.isChecked = value
         }
 
+    var includeAudio: Boolean
+        get() {
+            return mActivity.settingsDialog.includeAudioToggle.isChecked
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.INCLUDE_AUDIO, value)
+            editor.apply()
+
+            mActivity.settingsDialog.includeAudioToggle.isChecked = value
+        }
+
     var requireLocation: Boolean = false
         get() {
             return mActivity.settingsDialog.locToggle.isChecked
@@ -435,9 +452,16 @@ class CamConfig(private val mActivity: MainActivity) {
 
         sEditor.commit()
 
-        flashMode = modePref.getInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
-        requireLocation =
-            modePref.getBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
+        flashMode = modePref.getInt(
+            SettingValues.Key.FLASH_MODE,
+            SettingValues.Default.FLASH_MODE
+        )
+
+        requireLocation = modePref.getBoolean(
+                SettingValues.Key.GEO_TAGGING,
+                SettingValues.Default.GEO_TAGGING
+            )
+
         selfIlluminate = modePref.getBoolean(
             SettingValues.Key.SELF_ILLUMINATION,
             SettingValues.Default.SELF_ILLUMINATION
@@ -469,6 +493,13 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.putBoolean(
                 SettingValues.Key.EMPHASIS_ON_QUALITY,
                 SettingValues.Default.EMPHASIS_ON_QUALITY
+            )
+        }
+
+        if (!commonPref.contains(SettingValues.Key.INCLUDE_AUDIO)) {
+            editor.putBoolean(
+                SettingValues.Key.INCLUDE_AUDIO,
+                SettingValues.Default.INCLUDE_AUDIO
             )
         }
 
@@ -506,6 +537,11 @@ class CamConfig(private val mActivity: MainActivity) {
         aspectRatio = commonPref.getInt(
             SettingValues.Key.ASPECT_RATIO,
             SettingValues.Default.ASPECT_RATIO
+        )
+
+        includeAudio = commonPref.getBoolean(
+            SettingValues.Key.INCLUDE_AUDIO,
+            SettingValues.Default.INCLUDE_AUDIO
         )
     }
 
@@ -754,7 +790,14 @@ class CamConfig(private val mActivity: MainActivity) {
             useCaseGroupBuilder.addUseCase(iAnalyzer!!)
 
         } else {
-            if (isVideoMode || mActivity.requiresVideoModeOnly) {
+            if (isVideoMode) {
+
+                mActivity.micOffIcon.visibility =
+                    if (mActivity.config.includeAudio) {
+                        View.GONE
+                    } else {
+                        View.VISIBLE
+                    }
 
                 videoCapture =
                     VideoCapture.withOutput(
@@ -994,6 +1037,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
             mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
+
+            mActivity.micOffIcon.visibility = View.GONE
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
@@ -1002,13 +1047,13 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
 
             mActivity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
-            mActivity.captureButton.setImageResource(
-                if(isVideoMode) {
-                    R.drawable.recording
-                } else {
-                    R.drawable.camera_shutter
-                }
-            )
+
+            if (isVideoMode) {
+                mActivity.captureButton.setImageResource(R.drawable.recording)
+            } else {
+                mActivity.captureButton.setImageResource(R.drawable.camera_shutter)
+                mActivity.micOffIcon.visibility = View.GONE
+            }
         }
 
         mActivity.cbText.visibility = if (isVideoMode || mActivity.timerDuration == 0) {

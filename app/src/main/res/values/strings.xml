@@ -65,5 +65,6 @@
     <string name="go_back_to_gallery">Go back to Gallery</string>
     <string name="delete">Delete</string>
     <string name="share_media">Share Media</string>
+    <string name="rec_without_audio">Start recording without audio</string>
 
 </resources>

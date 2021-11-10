@@ -191,6 +191,8 @@ open class MainActivity : AppCompatActivity(),
         focusRing.visibility = View.INVISIBLE
     }
 
+    lateinit var micOffIcon : ImageView
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -227,7 +229,7 @@ open class MainActivity : AppCompatActivity(),
                 builder.setNegativeButton("Cancel", null)
 
                 builder.setNeutralButton("Disable Audio") { _: DialogInterface?, _: Int ->
-                    settingsDialog.includeAudioToggle.isChecked = false
+                    config.includeAudio = false
                 }
 
                 audioPermissionDialog = builder.show()
@@ -836,6 +838,8 @@ open class MainActivity : AppCompatActivity(),
         )
 
         focusRing = findViewById(R.id.focusRing)
+
+        micOffIcon = findViewById(R.id.mic_off)
     }
 
     private fun getStatusBarHeight(): Int {

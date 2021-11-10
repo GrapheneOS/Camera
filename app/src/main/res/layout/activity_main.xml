@@ -162,6 +162,16 @@
                     android:visibility="invisible"
                     android:contentDescription="@string/cancel_timer"/>
 
+                <ImageView
+                    android:id="@+id/mic_off"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:src="@drawable/mic_off"
+                    android:alpha="0.8"
+                    android:visibility="gone"
+                    android:contentDescription="@string/rec_without_audio"/>
+
             </FrameLayout>
 
             <FrameLayout

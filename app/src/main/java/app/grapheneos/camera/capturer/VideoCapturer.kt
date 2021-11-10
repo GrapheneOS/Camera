@@ -202,6 +202,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.previewView.keepScreenOn = true
 
+        // TODO: Uncomment this once the main indicator UI gets implemented
+        // mActivity.micOffIcon.visibility = View.GONE
         mActivity.config.mPlayer.playVRStartSound()
 
         val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
@@ -274,6 +276,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         cancelTimer()
 
         mActivity.previewView.keepScreenOn = false
+
+        // TODO: Uncomment this once the main indicator UI gets implemented
+        // if (!mActivity.config.includeAudio)
+        //   mActivity.micOffIcon.visibility = View.VISIBLE
+
         isRecording = false
 
         mActivity.forceUpdateOrientationSensor()
