@@ -731,9 +731,9 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
-    fun initializeCamera() {
+    fun initializeCamera(forced : Boolean = false) {
         if (cameraProvider != null) {
-            startCamera()
+            startCamera(forced = forced)
             return
         }
         val cameraProviderFuture = ProcessCameraProvider.getInstance(mActivity)
@@ -741,11 +741,11 @@ class CamConfig(private val mActivity: MainActivity) {
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
             if (::extensionsManager.isInitialized) {
-                startCamera()
+                startCamera(forced = forced)
             } else {
                 extensionsManagerFuture.addListener({
                     extensionsManager = extensionsManagerFuture.get()
-                    startCamera()
+                    startCamera(forced = forced)
                 }, ContextCompat.getMainExecutor(mActivity))
             }
         }, ContextCompat.getMainExecutor(mActivity))
