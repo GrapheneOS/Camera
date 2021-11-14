@@ -81,6 +81,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import android.graphics.Rect
+import android.view.ViewTreeObserver
 
 
 open class MainActivity : AppCompatActivity(),
@@ -103,6 +104,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var config: CamConfig
 
     lateinit var rootView: View
+    lateinit var mainFrame: View
 
     lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
@@ -278,7 +280,7 @@ open class MainActivity : AppCompatActivity(),
         // Move the focus ring so that its center is at the tap location (x, y)
         val width = focusRing.width.toFloat()
         focusRing.x = x - width / 2
-        focusRing.y = y
+        focusRing.y = y - width / 2
 
         // Show focus ring
         focusRing.visibility = View.VISIBLE
@@ -568,7 +570,6 @@ open class MainActivity : AppCompatActivity(),
                         settingsIcon.visibility = View.VISIBLE
                     }
                     settingsIcon.isEnabled = true
-                    repositionThreeButtons()
                 }
             } else {
                 previewGrid.visibility = View.INVISIBLE
@@ -772,7 +773,7 @@ open class MainActivity : AppCompatActivity(),
 
         rootView = findViewById(R.id.root)
 
-        val mainFrame = findViewById<View>(R.id.main_frame)
+        mainFrame = findViewById<View>(R.id.main_frame)
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -837,6 +838,16 @@ open class MainActivity : AppCompatActivity(),
         focusRing = findViewById(R.id.focusRing)
 
         micOffIcon = findViewById(R.id.mic_off)
+
+        previewView.viewTreeObserver.addOnPreDrawListener(
+            object: ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    previewView.viewTreeObserver.removeOnPreDrawListener(this)
+                    repositionTabLayout()
+                    return true
+                }
+            }
+        )
     }
 
     private fun getStatusBarHeight(): Int {
@@ -845,42 +856,41 @@ open class MainActivity : AppCompatActivity(),
         else Rect().apply { window.decorView.getWindowVisibleDisplayFrame(this) }.top
     }
 
-    private fun repositionThreeButtons() {
+    private fun repositionTabLayout() {
 
         threeButtons.visibility = View.VISIBLE
 
-        threeButtons.layoutParams =
-            (threeButtons.layoutParams as ViewGroup.MarginLayoutParams).let {
+        tabLayout.viewTreeObserver.addOnPreDrawListener(
+            object: ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
 
-                val previewHeight = if (config.aspectRatio == AspectRatio.RATIO_16_9) {
-                    previewView.width * 16 / 9
-                } else {
-                    previewView.width * 4 / 3
-                }
-
-                val spaceForTB =
-                    threeButtons.height + (12 * resources.displayMetrics.density)
-
-                val extraHeight = previewView.height - previewHeight
-
-                if (spaceForTB <= extraHeight) {
-                    it.setMargins(
-                        it.leftMargin,
-                        0,
-                        it.rightMargin,
-                        it.bottomMargin
+                    tabLayout.viewTreeObserver
+                        .removeOnPreDrawListener(
+                        this
                     )
+
+                    tabLayout.layoutParams =
+                        (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
+
+                            val previewHeight = previewView.width * 16 / 9
+
+                            val extraHeight = previewView.height -
+                                    previewHeight -
+                                    tabLayout.height -
+                                    10 * resources.displayMetrics.density.toInt()
+
+                            it.setMargins(
+                                it.leftMargin,
+                                it.topMargin,
+                                it.rightMargin,
+                                extraHeight
+                            )
+                            it
+                        }
+                    return true
                 }
-                else {
-                    it.setMargins(
-                        it.leftMargin,
-                        previewHeight - (78 * resources.displayMetrics.density).toInt(),
-                        it.rightMargin,
-                        it.bottomMargin
-                    )
-                }
-                it
-            }
+
+            })
     }
 
     fun finalizeMode(tab: TabLayout.Tab? = null) {

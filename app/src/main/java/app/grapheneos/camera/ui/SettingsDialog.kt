@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.ToggleButton
@@ -24,7 +25,6 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.TorchState
 import androidx.camera.video.QualitySelector
 import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
@@ -300,6 +300,11 @@ class SettingsDialog(mActivity: MainActivity) :
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
             mActivity.config.startCamera(true)
         }
+
+        window?.setFlags(
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        )
     }
 
     private fun resize() {

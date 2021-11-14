@@ -18,12 +18,12 @@
             android:id="@+id/main_frame"
             android:layout_height="match_parent"
             android:layout_width="match_parent"
-            android:layout_marginBottom="40dp">
+            android:paddingTop="8dp">
 
             <androidx.camera.view.PreviewView
                 android:id="@+id/camera"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent" />
 
             <app.grapheneos.camera.ui.CountDownTimerUI
                 android:id="@+id/c_timer"
@@ -378,14 +378,14 @@
             android:layout_height="wrap_content"
             android:visibility="gone"
             android:background="@null"
-            android:layout_marginTop="14dp"
             android:src="@drawable/settings_icon"
+            android:layout_marginTop="16dp"
             android:contentDescription="@string/capture_mode"/>
 
         <TextView
             android:id="@+id/timer"
             android:layout_marginEnd="12dp"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:paddingHorizontal="8dp"
             android:background="@drawable/timer"
             android:layout_width="wrap_content"
