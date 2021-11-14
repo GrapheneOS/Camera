@@ -45,7 +45,6 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -883,7 +882,11 @@ open class MainActivity : AppCompatActivity(),
                                 it.leftMargin,
                                 it.topMargin,
                                 it.rightMargin,
-                                extraHeight
+                                if(extraHeight > 0) {
+                                    extraHeight
+                                } else {
+                                    it.bottomMargin
+                                }
                             )
                             it
                         }
