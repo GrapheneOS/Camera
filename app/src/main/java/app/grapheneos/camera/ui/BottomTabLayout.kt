@@ -2,7 +2,7 @@ package app.grapheneos.camera.ui
 
 import android.content.Context
 import android.util.AttributeSet
-import android.view.View
+import android.util.Log
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import com.google.android.material.tabs.TabLayout
@@ -21,79 +21,112 @@ class BottomTabLayout : TabLayout {
 
     private var sp = 0
 
+    private val snapPoints : ArrayList<Int> = arrayListOf()
+
+    private lateinit var tabParent: ViewGroup
+
+    val selectedTab : Tab?
+        get() {
+            return getTabAt(selectedTabPosition)
+        }
+
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
         if (tabCount == 0) return
 
-        val tabParent = getChildAt(0) as ViewGroup
+        tabParent = getChildAt(0) as ViewGroup
         val firstTab = tabParent.getChildAt(0)
         val lastTab = tabParent.getChildAt(tabParent.childCount - 1)
         sp = width / 2 - firstTab.width / 2
-        ViewCompat.setPaddingRelative(getChildAt(0), sp, 0, width / 2 - lastTab.width / 2, 0)
-        val centerTab = tabParent.getChildAt(tabParent.childCount / 2)
-        centerView(centerTab)
+        ViewCompat.setPaddingRelative(
+            getChildAt(0),
+            sp,
+            0,
+            width / 2 - lastTab.width / 2,
+            0
+        )
 
-//        count = getTabCount();
-//
-//        snapPoints.clear();
-//
-//        int widthC = 0;
-//
-//        snapPoints.add(0);
-//
-//        View tabView = null;
-//
-//        for (int i = 0; i < count; ++i) {
-//            tabView = tabParent.getChildAt(i);
-//            widthC+=tabView.getWidth()/2 + 10;
-//            snapPoints.add(widthC);
-//            widthC+=tabView.getWidth()/2 + 9;
-//        }
-//
-//        if (tabView!=null)
-//            widthC+=(tabView.getWidth()/2 + 9);
-//
-//        snapPoints.add(widthC);
-//
-//        Log.i("SNAPS", Arrays.toString(snapPoints.toArray()));
+        snapPoints.clear()
+
+        for (tabIndex in 0 until tabCount) {
+            snapPoints.add(calculateScrollXStartForTab(tabIndex))
+            snapPoints.add(calculateScrollXEndForTab(tabIndex))
+        }
+
+        centerSelectedTab()
     }
 
-    // TODO: Implement snapping behavior for TabLayout's tabs
-    //    @Override
-    //    protected void onScrollChanged(int x, int t, int oldX, int oldT) {
-    //
-    //        if (Math.abs(oldX-x)<=1) {
-    //            if (isSelected()) {
-    //                View tabView = Objects.requireNonNull(getTabAt(getSelectedTabPosition())).view;
-    //                centerView(tabView);
-    //            }
-    //            return;
-    //        }
-    //
-    //        int i = 0;
-    //
-    //        while (i<count) {
-    //            final int p = snapPoints.get(i);
-    //            final int n = snapPoints.get(++i);
-    //
-    //            Log.i("i: P,L,N", i + ":"+p+","+x+","+n);
-    //
-    //            if (x>=p && x<=n) {
-    //                --i;
-    //                if (getSelectedTabPosition()==i) return;
-    //                View tabView = Objects.requireNonNull(getTabAt(i)).view;
-    //                Log.i("Selected", String.valueOf(Objects.requireNonNull(getTabAt(i)).getText()));
-    //                tabView.performClick();
-    //                return;
-    //            }
-    //
-    //        }
-    //
-    //        super.onScrollChanged(x, t, oldX, oldT);
-    //    }
-    private fun centerView(view: View) {
-        scrollTo(getRelativeLeft(view) - sp - view.paddingLeft, 0)
+    private fun centerSelectedTab() {
+        getTabAt(selectedTabPosition)?.let {
+            centerTab(it)
+        }
+    }
+
+    override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
+        super.onScrollChanged(x, y, oldX, oldY)
+
+        if (snapPoints.last()!=0) {
+
+            for (i in 0 until snapPoints.size step 2) {
+
+                val start = snapPoints[i]
+                val end = snapPoints[i+1]
+
+                if (x in start..end) {
+                    val index = i / 2
+                    if (selectedTabPosition != index) {
+                        return selectTab(getTabAt(index))
+                    }
+                }
+
+            }
+        }
+    }
+
+    fun getTabAtX(x: Int) : Tab? {
+        for (i in 0 until snapPoints.size step 2) {
+
+            val start = snapPoints[i]
+            val end = snapPoints[i+1]
+
+            if (x in start..end) {
+                val index = i / 2
+                if (selectedTabPosition != index) {
+                    return getTabAt(index)
+                }
+            }
+
+        }
+        return null
+    }
+
+    fun centerTab(tab: Tab) {
+        val targetScrollX = calculateScrollXForTab(tab.position)
+
+        if (scrollX != targetScrollX)
+            smoothScrollTo(targetScrollX, 0)
+    }
+
+    private fun calculateScrollXForTab(position: Int): Int {
+        val selectedChild = tabParent.getChildAt(position) ?: return 0
+        val selectedWidth = selectedChild.width
+
+        return selectedChild.left + selectedWidth / 2 - width / 2
+    }
+
+    private fun calculateScrollXStartForTab(position: Int): Int {
+        val selectedChild = tabParent.getChildAt(position) ?: return 0
+        val selectedWidth = selectedChild.width
+
+        return selectedChild.left + selectedWidth / 2 - width / 2
+    }
+
+    private fun calculateScrollXEndForTab(position: Int): Int {
+        val selectedChild = tabParent.getChildAt(position) ?: return 0
+        val selectedWidth = selectedChild.width
+
+        return selectedChild.left + selectedWidth - width / 2
     }
 
     fun getAllModes(): ArrayList<Int> {
@@ -106,11 +139,5 @@ class BottomTabLayout : TabLayout {
         }
 
         return modes
-    }
-
-    private fun getRelativeLeft(myView: View): Int {
-        return if (myView.parent === myView.rootView) myView.left else myView.left + getRelativeLeft(
-            myView.parent as View
-        )
     }
 }

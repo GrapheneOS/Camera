@@ -11,6 +11,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
+import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -957,6 +958,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun loadTabs() {
 
         val modes = getAvailableModes()
@@ -983,6 +985,13 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.tabLayout.newTab().let {
                 mActivity.tabLayout.addTab(it.apply {
                     setText(mode)
+                    val tab = it
+                    it.view.setOnTouchListener { _, e ->
+                        if (e.action == MotionEvent.ACTION_UP) {
+                            mActivity.finalizeMode(tab)
+                        }
+                        false
+                    }
                     id = mode
                 }, false)
                 if (mode == DEFAULT_CAMERA_MODE) {

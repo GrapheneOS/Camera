@@ -504,6 +504,7 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var gestureDetectorCompat: GestureDetectorCompat
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -545,21 +546,16 @@ open class MainActivity : AppCompatActivity(),
         })
 
         tabLayout = findViewById(R.id.camera_mode_tabs)
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                val mode = tab?.id!!
-                config.switchMode(mode)
-                Log.i(TAG, "Selected Mode: $mode")
+        tabLayout.setOnTouchListener { _, motionEvent ->
+            if (motionEvent.action == MotionEvent.ACTION_UP) {
+                val tab = tabLayout.getTabAtX(motionEvent.x.toInt())
+                finalizeMode(tab)
+                return@setOnTouchListener true
             }
 
-            override fun onTabReselected(tab: TabLayout.Tab?) {
-                val mode = tab?.text.toString()
-                Log.i(TAG, "Reselected Mode: $mode")
-            }
-
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-        })
+            return@setOnTouchListener false
+        }
 
         timerView = findViewById(R.id.timer)
         previewView.previewStreamState.observe(this, { state: StreamState ->
@@ -885,6 +881,17 @@ open class MainActivity : AppCompatActivity(),
                 }
                 it
             }
+    }
+
+    fun finalizeMode(tab: TabLayout.Tab? = null) {
+
+        val selectedTab = tab ?: tabLayout.selectedTab
+        if (selectedTab != null) {
+            val mode = selectedTab.id
+            tabLayout.centerTab(selectedTab)
+            tab?.let { tabLayout.centerTab(it) }
+            config.switchMode(mode)
+        }
     }
 
     fun requestAudioPermission() {
@@ -1236,7 +1243,7 @@ open class MainActivity : AppCompatActivity(),
 
         Log.i(TAG, "onSwipeRight $i")
         tabLayout.getTabAt(i)?.let {
-            tabLayout.selectTab(it)
+            finalizeMode(it)
         }
     }
 
@@ -1254,7 +1261,7 @@ open class MainActivity : AppCompatActivity(),
 
         val i = tabLayout.selectedTabPosition + 1
         tabLayout.getTabAt(i)?.let {
-            tabLayout.selectTab(it)
+            finalizeMode(it)
         }
     }
 
