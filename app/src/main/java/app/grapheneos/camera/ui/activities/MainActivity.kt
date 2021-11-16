@@ -81,6 +81,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import android.graphics.Rect
 import android.view.ViewTreeObserver
+import app.grapheneos.camera.ui.QRToggle
+import com.google.zxing.BarcodeFormat
 
 
 open class MainActivity : AppCompatActivity(),
@@ -90,7 +92,7 @@ open class MainActivity : AppCompatActivity(),
     GestureDetector.OnDoubleTapListener,
     SensorOrientationChangeNotifier.Listener {
 
-    val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
+    private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
     lateinit var previewView: PreviewView
@@ -104,6 +106,14 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var rootView: View
     lateinit var mainFrame: View
+
+    lateinit var qrScanToggles: View
+    lateinit var moreOptionsToggle: View
+
+    lateinit var qrToggle: QRToggle
+    lateinit var dmToggle: QRToggle
+    lateinit var mxToggle: QRToggle
+    lateinit var azToggle: QRToggle
 
     lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
@@ -772,7 +782,11 @@ open class MainActivity : AppCompatActivity(),
 
         rootView = findViewById(R.id.root)
 
-        mainFrame = findViewById<View>(R.id.main_frame)
+        mainFrame = findViewById(R.id.main_frame)
+
+        qrScanToggles = findViewById(R.id.qr_scan_toggles)
+
+        var isInsetSet = false
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -788,7 +802,7 @@ open class MainActivity : AppCompatActivity(),
                 it
             }
 
-            if (insets.top != 0) {
+            if (insets.top != 0 && !isInsetSet) {
                 mainFrame.layoutParams = (mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
                     it.setMargins(
                         it.leftMargin,
@@ -799,6 +813,20 @@ open class MainActivity : AppCompatActivity(),
 
                     it
                 }
+
+                qrScanToggles.layoutParams = (qrScanToggles.layoutParams as ViewGroup.MarginLayoutParams).let {
+                    it.setMargins(
+                        it.leftMargin,
+                        (16 * resources.displayMetrics.density.toInt()) +
+                                insets.top,
+                        it.rightMargin,
+                        it.bottomMargin,
+                    )
+
+                    it
+                }
+
+                isInsetSet = true
             }
 
             WindowInsetsCompat.CONSUMED
@@ -818,7 +846,6 @@ open class MainActivity : AppCompatActivity(),
         cbCross = findViewById(R.id.capture_button_cross)
 
         settingsDialog = SettingsDialog(this)
-        config.loadSettings()
 
         locationListener = CustomLocationListener(this)
 
@@ -847,6 +874,29 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         )
+
+        moreOptionsToggle = findViewById(R.id.more_options)
+        moreOptionsToggle.setOnClickListener {
+            config.showMoreOptionsForQR()
+        }
+
+        qrToggle = findViewById(R.id.qr_scan_toggle)
+        qrToggle.mActivity = this
+        qrToggle.key = BarcodeFormat.QR_CODE.name
+
+        dmToggle = findViewById(R.id.data_matrix_toggle)
+        dmToggle.mActivity = this
+        dmToggle.key = BarcodeFormat.DATA_MATRIX.name
+
+        mxToggle = findViewById(R.id.maxicode_toggle)
+        mxToggle.mActivity = this
+        mxToggle.key = BarcodeFormat.MAXICODE.name
+
+        azToggle = findViewById(R.id.aztec_toggle)
+        azToggle.mActivity = this
+        azToggle.key = BarcodeFormat.AZTEC.name
+
+        config.loadSettings()
     }
 
     private fun getStatusBarHeight(): Int {
@@ -868,28 +918,43 @@ open class MainActivity : AppCompatActivity(),
                         this
                     )
 
+                    val previewHeight169 = previewView.width * 16 / 9
+
+                    val previewHeight43 = previewView.width * 4 / 3
+
+                    val extraHeight169 = previewView.height -
+                            previewHeight169 -
+                            tabLayout.height -
+                            10 * resources.displayMetrics.density.toInt()
+
+                    val halfOfExtraHeight = (previewView.height -
+                            previewHeight43) / 2
+
                     tabLayout.layoutParams =
                         (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
-
-                            val previewHeight = previewView.width * 16 / 9
-
-                            val extraHeight = previewView.height -
-                                    previewHeight -
-                                    tabLayout.height -
-                                    10 * resources.displayMetrics.density.toInt()
 
                             it.setMargins(
                                 it.leftMargin,
                                 it.topMargin,
                                 it.rightMargin,
-                                if(extraHeight > 0) {
-                                    extraHeight
+                                if(extraHeight169 > 0) {
+                                    extraHeight169
                                 } else {
                                     it.bottomMargin
                                 }
                             )
+
                             it
                         }
+
+                    qrScanToggles.layoutParams =
+                        (qrScanToggles.layoutParams as ViewGroup.MarginLayoutParams).let {
+
+                            it.height = halfOfExtraHeight
+
+                            it
+                        }
+
                     return true
                 }
 
@@ -1140,6 +1205,7 @@ open class MainActivity : AppCompatActivity(),
 
         config.imageCapture?.targetRotation = tr
         config.videoCapture?.targetRotation = tr
+        config.iAnalyzer?.targetRotation = tr
 
         if (videoCapturer.isRecording) return
 
@@ -1238,8 +1304,12 @@ open class MainActivity : AppCompatActivity(),
         wasSwiping = true
         if (settingsDialog.isShowing) return
 
-        if (settingsIcon.isEnabled) {
-            settingsIcon.performClick()
+        if (config.isQRMode) {
+            config.showMoreOptionsForQR()
+        } else {
+            if (settingsIcon.isEnabled) {
+                settingsIcon.performClick()
+            }
         }
     }
 

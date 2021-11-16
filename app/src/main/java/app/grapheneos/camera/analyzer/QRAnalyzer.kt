@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.ui.activities.MainActivity
-import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
@@ -26,10 +25,19 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
     private var imageData = ByteArray(0)
 
     init {
+        refreshHints()
+    }
+
+    fun refreshHints() {
         val supportedHints: MutableMap<DecodeHintType, Any> = EnumMap(
             DecodeHintType::class.java
         )
-        supportedHints[DecodeHintType.POSSIBLE_FORMATS] = listOf(BarcodeFormat.QR_CODE)
+
+        Log.i(TAG, "allowedFormats: ${mActivity.config.allowedFormats}")
+
+        supportedHints[DecodeHintType.POSSIBLE_FORMATS] =
+            mActivity.config.allowedFormats
+
         reader.setHints(supportedHints)
     }
 
@@ -41,17 +49,18 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         if (imageData.size != byteBuffer.capacity()) {
             imageData = ByteArray(byteBuffer.capacity())
         }
-        byteBuffer[imageData]
+        byteBuffer.get(imageData)
 
         val previewWidth: Int
         val previewHeight: Int
 
         if (rotationDegrees == 0 || rotationDegrees == 180) {
-            previewWidth = mActivity.previewView.width
-            previewHeight = mActivity.previewView.height
-        } else {
             previewWidth = mActivity.previewView.height
             previewHeight = mActivity.previewView.width
+        } else {
+            imageData = fixOrientation(imageData, plane.rowStride, image.height)
+            previewWidth = mActivity.previewView.width
+            previewHeight = mActivity.previewView.height
         }
 
         val iFact = if (previewWidth < previewHeight) {
@@ -103,5 +112,17 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         }
 
         image.close()
+    }
+
+    private fun fixOrientation(data: ByteArray, imageWidth: Int, imageHeight: Int): ByteArray {
+        val yuv = ByteArray(imageWidth * imageHeight)
+        var i = 0
+        for (x in 0 until imageWidth) {
+            for (y in imageHeight - 1 downTo 0) {
+                yuv[i++] = data[y * imageWidth + x]
+            }
+        }
+
+        return yuv
     }
 }

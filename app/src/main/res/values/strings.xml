@@ -67,5 +67,11 @@
     <string name="share_media">Share Media</string>
     <string name="rec_without_audio">Start recording without audio</string>
     <string name="save_image_as_preview">Save Image as Previewed</string>
+    <string name="qr_scan_toggle">QR Scan toggle</string>
+    <string name="qr_scan">QR Scan</string>
+    <string name="data_matrix">Data Matrix</string>
+    <string name="aztec_code">Aztec Code</string>
+    <string name="maxicode">Maxi Code</string>
+    <string name="more_options">More Options</string>
 
 </resources>

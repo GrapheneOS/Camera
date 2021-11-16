@@ -1,6 +1,7 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
@@ -40,7 +41,9 @@ import app.grapheneos.camera.ui.activities.SecureCaptureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executors
+import android.widget.Button
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -77,6 +80,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
+            const val SCAN = "scan"
         }
 
         object Default {
@@ -114,6 +118,13 @@ class CamConfig(private val mActivity: MainActivity) {
         const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
 
         const val DEFAULT_EXTENSION_MODE = ExtensionMode.NONE
+
+        val commonFormats = arrayOf(
+            BarcodeFormat.AZTEC,
+            BarcodeFormat.QR_CODE,
+            BarcodeFormat.DATA_MATRIX,
+            BarcodeFormat.MAXICODE,
+        )
 
         val extensionModes = arrayOf(
             CameraModes.CAMERA,
@@ -173,6 +184,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var preview: Preview? = null
 
+    val allowedFormats : ArrayList<BarcodeFormat> = arrayListOf()
+
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
@@ -181,13 +194,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var qrAnalyzer: QRAnalyzer? = null
 
-    private var iAnalyzer: ImageAnalysis? = null
+    var iAnalyzer: ImageAnalysis? = null
 
     var latestUri: Uri? = null
 
     val mPlayer: TunePlayer = TunePlayer(mActivity)
 
-    private val commonPref = when (mActivity) {
+    val commonPref = when (mActivity) {
         is SecureMainActivity -> {
             mActivity.getSharedPreferences(COMMON_SP_NAME
                     + mActivity.openedActivityAt, Context.MODE_PRIVATE)
@@ -428,6 +441,28 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    fun setQRScanningFor(format: String, selected: Boolean) {
+
+        val formatSRep = "${SettingValues.Key.SCAN}_$format"
+
+        val editor = mActivity.config.commonPref.edit()
+        editor.putBoolean(
+            formatSRep,
+            selected
+        )
+        editor.commit()
+
+        if(selected) {
+            if (BarcodeFormat.valueOf(format) !in allowedFormats) {
+                allowedFormats.add(BarcodeFormat.valueOf(format))
+            }
+        } else {
+            allowedFormats.remove(BarcodeFormat.valueOf(format))
+        }
+
+        qrAnalyzer?.refreshHints()
+    }
+
     fun reloadSettings() {
 
         // pref config needs to be created
@@ -533,6 +568,25 @@ class CamConfig(private val mActivity: MainActivity) {
                 SettingValues.Default.ASPECT_RATIO)
         }
 
+        val qrRep = "${SettingValues.Key.SCAN}_${BarcodeFormat.QR_CODE.name}"
+
+        if (!commonPref.contains(qrRep)) {
+            for (format in BarcodeFormat.values()) {
+                val formatSRep = "${SettingValues.Key.SCAN}_${format.name}"
+
+                editor.putBoolean(
+                    formatSRep,
+                    false
+                )
+            }
+
+            editor.putBoolean(
+                qrRep,
+                true
+            )
+        }
+
+
         editor.commit()
 
         mActivity.settingsDialog.csSwitch.isChecked =
@@ -568,6 +622,41 @@ class CamConfig(private val mActivity: MainActivity) {
             SettingValues.Key.INCLUDE_AUDIO,
             SettingValues.Default.INCLUDE_AUDIO
         )
+
+        allowedFormats.clear()
+
+        for (format in BarcodeFormat.values()) {
+            val formatSRep = "${SettingValues.Key.SCAN}_${format.name}"
+
+            val isEnabled = commonPref.getBoolean(
+                formatSRep,
+                false
+            )
+
+            if (isEnabled) {
+                if (format !in allowedFormats) {
+                    allowedFormats.add(format)
+                }
+
+                if(format == BarcodeFormat.QR_CODE) {
+                    mActivity.qrToggle.isSelected = true
+                }
+
+                if(format == BarcodeFormat.AZTEC) {
+                    mActivity.azToggle.isSelected = true
+                }
+
+                if(format == BarcodeFormat.MAXICODE) {
+                    mActivity.mxToggle.isSelected = true
+                }
+
+                if(format == BarcodeFormat.DATA_MATRIX) {
+                    mActivity.dmToggle.isSelected = true
+                }
+            }
+        }
+
+        qrAnalyzer?.refreshHints()
     }
 
     var emphasisQuality: Boolean
@@ -1068,6 +1157,8 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.cancelButtonView.visibility = View.INVISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
 
+            mActivity.qrScanToggles.visibility = View.VISIBLE
+
             mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
             mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
 
@@ -1078,6 +1169,8 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.flipCameraCircle.visibility = View.VISIBLE
             mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
+
+            mActivity.qrScanToggles.visibility = View.GONE
 
             mActivity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
 
@@ -1096,5 +1189,77 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         startCamera(true)
+    }
+
+    fun showMoreOptionsForQR() {
+        val builder = AlertDialog.Builder(mActivity)
+        builder.setTitle(mActivity.resources.getString(R.string.more_options))
+
+        val optionNames = arrayListOf<String>()
+        val optionValues = arrayListOf<Boolean>()
+
+        for (format in BarcodeFormat.values()) {
+
+            if (format in commonFormats) continue
+
+            optionNames.add(format.name)
+
+            val formatSRep = "${SettingValues.Key.SCAN}_$format"
+            optionValues.add(
+                commonPref.getBoolean(
+                    formatSRep,
+                    false
+                )
+            )
+        }
+
+        builder.setMultiChoiceItems(optionNames.toArray(arrayOf<String>()), optionValues.toBooleanArray()) { _, index, isChecked ->
+            optionValues[index] = isChecked
+        }
+
+        // Add OK and Cancel buttons
+        builder.setPositiveButton("OK") { _, _ ->
+
+            val editor = commonPref.edit()
+
+            for (index in 0 until optionNames.size) {
+
+                val optionName = optionNames[index]
+                val optionValue = optionValues[index]
+
+                val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
+
+                editor.putBoolean(
+                    formatSRep,
+                    optionValue
+                )
+
+                val format = BarcodeFormat.valueOf(optionName)
+
+                if (optionValue) {
+                    allowedFormats.add(format)
+                } else {
+                    allowedFormats.remove(format)
+                }
+            }
+
+            editor.commit()
+
+            qrAnalyzer?.refreshHints()
+        }
+
+        builder.setNegativeButton("Cancel", null)
+
+        // Create and show the alert dialog
+        val dialog = builder.create()
+
+        dialog.setOnShowListener {
+            val button: Button = (dialog as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
+            button.setOnClickListener {
+
+            }
+        }
+
+        dialog.show()
     }
 }

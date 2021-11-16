@@ -398,8 +398,159 @@
             android:textSize="16sp"
             android:text="@string/start_value_timer"/>
 
+        <LinearLayout
+            android:id="@+id/qr_scan_toggles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginHorizontal="@dimen/settings_dialog_padding_horizontal"
+            android:gravity="center"
+            android:visibility="gone"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                    <app.grapheneos.camera.ui.QRToggle
+                        android:id="@+id/qr_scan_toggle"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        android:layout_gravity="center"
+                        android:src="@drawable/qr_code"
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+
+                    <TextView
+                        android:alpha="0.8"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        android:layout_marginTop="8dp"
+                        android:textAlignment="center"
+                        android:layout_gravity="center"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:text="@string/qr_scan"
+                        android:textColor="@android:color/white"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                    <app.grapheneos.camera.ui.QRToggle
+                        android:id="@+id/data_matrix_toggle"
+                        android:layout_gravity="center"
+                        android:src="@drawable/data_matrix"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                        android:contentDescription="@string/qr_scan_toggle"/>
+
+                    <TextView
+                        android:alpha="0.8"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        android:textAlignment="center"
+                        android:layout_marginTop="8dp"
+                        android:layout_gravity="center"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:text="@string/data_matrix"
+                        android:textColor="@android:color/white"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                    <app.grapheneos.camera.ui.QRToggle
+                        android:id="@+id/aztec_toggle"
+                        android:layout_gravity="center"
+                        android:src="@drawable/aztec"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL" />
+
+                    <TextView
+                        android:alpha="0.8"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        android:textAlignment="center"
+                        android:layout_marginTop="8dp"
+                        android:layout_gravity="center"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:text="@string/aztec_code"
+                        android:textColor="@android:color/white"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <app.grapheneos.camera.ui.QRToggle
+                    android:id="@+id/maxicode_toggle"
+                    android:layout_gravity="center"
+                    android:src="@drawable/maxicode"
+                    android:layout_width="@dimen/qr_toggle_button_size"
+                    android:layout_height="@dimen/qr_toggle_button_size"
+                    app:shapeAppearance="@style/ShapeAppearance.Image.PILL" />
+
+                <TextView
+                    android:alpha="0.8"
+                    android:layout_width="@dimen/qr_toggle_button_size"
+                    android:layout_height="@dimen/qr_toggle_button_size"
+                    android:textAlignment="center"
+                    android:layout_marginTop="8dp"
+                    android:layout_gravity="center"
+                    android:textStyle="bold"
+                    android:textSize="13sp"
+                    android:text="@string/maxicode"
+                    android:textColor="@android:color/white"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/more_options"
+                        android:src="@drawable/more_options"
+                        android:layout_gravity="center"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        android:contentDescription="@string/grid_toggle" />
+
+                    <TextView
+                        android:alpha="0.8"
+                        android:layout_width="@dimen/qr_toggle_button_size"
+                        android:layout_height="@dimen/qr_toggle_button_size"
+                        android:layout_marginTop="8dp"
+                        android:textAlignment="center"
+                        android:layout_gravity="center"
+                        android:textStyle="bold"
+                        android:textSize="13sp"
+                        android:text="@string/more_options"
+                        android:textColor="@android:color/white"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     </RelativeLayout>
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,10 +1,25 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?attr/colorControlNormal">
-  <path
-      android:fillColor="@android:color/white"
-      android:pathData="M6,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2zM18,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2zM12,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z"/>
-</vector>
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <item>
+
+    <shape
+        android:shape="oval">
+
+      <solid android:color="#fff"/>
+
+      <padding
+          android:bottom="2dp"
+          android:left="2dp"
+          android:right="2dp"
+          android:top="2dp" />
+
+    </shape>
+
+  </item>
+
+  <item
+      android:drawable="@drawable/more_options_raw" />
+
+</layer-list>
