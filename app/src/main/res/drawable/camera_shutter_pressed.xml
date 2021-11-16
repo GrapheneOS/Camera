@@ -8,7 +8,7 @@
         android:width="6dp"/>
 
     <solid
-        android:color="#58A0C4"/>
+        android:color="@color/system_accent1_100"/>
 
     <size
         android:width="84dp"
