@@ -54,29 +54,39 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         val previewWidth: Int
         val previewHeight: Int
 
+        val imageWidth : Int
+        val imageHeight : Int
+
+        imageData = fixOrientation(imageData, image.width, image.height, rotationDegrees)
+
         if (rotationDegrees == 0 || rotationDegrees == 180) {
             previewWidth = mActivity.previewView.height
             previewHeight = mActivity.previewView.width
+
+            imageWidth = plane.rowStride
+            imageHeight = image.height
         } else {
-            imageData = fixOrientation(imageData, plane.rowStride, image.height)
             previewWidth = mActivity.previewView.width
             previewHeight = mActivity.previewView.height
+
+            imageWidth = image.height
+            imageHeight = image.width
         }
 
         val iFact = if (previewWidth < previewHeight) {
-            image.width / previewWidth.toFloat()
+            imageWidth / previewWidth.toFloat()
         } else {
-            image.height / previewHeight.toFloat()
+            imageHeight / previewHeight.toFloat()
         }
 
         val size = mActivity.qrOverlay.size * iFact
 
-        val left = (image.width - size) / 2
-        val top = (image.height - size) / 2
+        val left = (imageWidth - size) / 2
+        val top = (imageHeight - size) / 2
 
         val source = PlanarYUVLuminanceSource(
             imageData,
-            plane.rowStride, image.height,
+            imageWidth, imageHeight,
             left.roundToInt(), top.roundToInt(),
             size.roundToInt(), size.roundToInt(),
             false
@@ -114,7 +124,26 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         image.close()
     }
 
-    private fun fixOrientation(data: ByteArray, imageWidth: Int, imageHeight: Int): ByteArray {
+    private fun fixOrientation(
+        data: ByteArray,
+        imageWidth: Int,
+        imageHeight: Int,
+        rotation: Int
+    ): ByteArray {
+        return when(rotation) {
+            90 -> rotate90(data, imageWidth, imageHeight)
+            180 -> rotate180(data, imageWidth, imageHeight)
+            270 -> rotate270(data, imageWidth, imageHeight)
+            else -> imageData
+        }
+    }
+
+    private fun rotate90(
+        data: ByteArray,
+        imageWidth: Int,
+        imageHeight: Int
+    ) : ByteArray {
+
         val yuv = ByteArray(imageWidth * imageHeight)
         var i = 0
         for (x in 0 until imageWidth) {
@@ -124,5 +153,32 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         }
 
         return yuv
+    }
+
+    private fun rotate180(
+        data: ByteArray,
+        imageWidth: Int,
+        imageHeight: Int
+    ): ByteArray {
+        val yuv = ByteArray(imageWidth * imageHeight)
+        var count = 0
+        var i: Int = imageWidth * imageHeight - 1
+        while (i >= 0) {
+            yuv[count] = data[i]
+            count++
+            i--
+        }
+
+        return yuv
+    }
+
+    private fun rotate270(
+        data: ByteArray, imageWidth: Int,
+        imageHeight: Int
+    ): ByteArray {
+        return rotate180(
+            rotate90(data, imageWidth, imageHeight),
+            imageWidth, imageHeight
+        )
     }
 }
