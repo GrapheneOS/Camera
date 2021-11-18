@@ -88,6 +88,8 @@ class ZoomBar : AppCompatSeekBar {
 
         if(shouldShowPanel) {
             showPanel()
+        } else {
+            hidePanel()
         }
 
         var zoomRatio = 1.0f

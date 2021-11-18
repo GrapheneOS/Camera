@@ -62,7 +62,7 @@ class ExposureBar : AppCompatSeekBar {
         closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
     }
 
-    private fun hidePanel() {
+    fun hidePanel() {
         togglePanel(View.GONE)
     }
 

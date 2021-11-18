@@ -845,6 +845,7 @@ class CamConfig(private val mActivity: MainActivity) {
     fun startCamera(forced: Boolean = false) {
         if ((!forced && camera != null) || cameraProvider==null) return
 
+        mActivity.exposureBar.hidePanel()
         updatePrefMode()
 
         val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
