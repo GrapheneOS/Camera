@@ -623,6 +623,11 @@ open class MainActivity : AppCompatActivity(),
         }
         flipCameraCircle.setOnClickListener {
 
+            if (config.isQRMode) {
+                config.scanAllCodes = !config.scanAllCodes
+                return@setOnClickListener
+            }
+
             if (videoCapturer.isRecording) {
                 videoCapturer.isPaused = !videoCapturer.isPaused
                 return@setOnClickListener

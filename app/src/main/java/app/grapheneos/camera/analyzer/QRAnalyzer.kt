@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.ui.activities.MainActivity
+import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
@@ -36,7 +37,11 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         Log.i(TAG, "allowedFormats: ${mActivity.config.allowedFormats}")
 
         supportedHints[DecodeHintType.POSSIBLE_FORMATS] =
-            mActivity.config.allowedFormats
+            if(mActivity.config.scanAllCodes) {
+                BarcodeFormat.values().asList()
+            } else {
+                mActivity.config.allowedFormats
+            }
 
         reader.setHints(supportedHints)
     }

@@ -81,6 +81,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val INCLUDE_AUDIO = "include_audio"
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
             const val SCAN = "scan"
+            const val SCAN_ALL_CODES = "scan_all_codes"
         }
 
         object Default {
@@ -105,7 +106,10 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val INCLUDE_AUDIO = true
+
             const val SAVE_IMAGE_AS_PREVIEW = false
+
+            const val SCAN_ALL_CODES = false
         }
     }
 
@@ -200,7 +204,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val mPlayer: TunePlayer = TunePlayer(mActivity)
 
-    val commonPref = when (mActivity) {
+    private val commonPref = when (mActivity) {
         is SecureMainActivity -> {
             mActivity.getSharedPreferences(COMMON_SP_NAME
                     + mActivity.openedActivityAt, Context.MODE_PRIVATE)
@@ -357,6 +361,35 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
 
             mActivity.settingsDialog.csSwitch.isChecked = value
+        }
+
+    var scanAllCodes: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.SCAN_ALL_CODES,
+                SettingValues.Default.SCAN_ALL_CODES
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.SCAN_ALL_CODES, value)
+            editor.apply()
+
+            if (isQRMode) {
+                if (value) {
+                    mActivity.flipCamIcon.setImageResource(
+                        R.drawable.cancel
+                    )
+                    mActivity.qrScanToggles.visibility = View.GONE
+                } else {
+                    mActivity.flipCamIcon.setImageResource(
+                        R.drawable.auto
+                    )
+                    mActivity.qrScanToggles.visibility = View.VISIBLE
+                }
+            }
+
+            qrAnalyzer?.refreshHints()
         }
 
     var includeAudio: Boolean
@@ -566,6 +599,13 @@ class CamConfig(private val mActivity: MainActivity) {
         if (!commonPref.contains(SettingValues.Key.ASPECT_RATIO)) {
             editor.putInt(SettingValues.Key.ASPECT_RATIO,
                 SettingValues.Default.ASPECT_RATIO)
+        }
+
+        if (!commonPref.contains(SettingValues.Key.SCAN_ALL_CODES)) {
+            editor.putBoolean(
+                SettingValues.Key.SCAN_ALL_CODES,
+                SettingValues.Default.SCAN_ALL_CODES
+            )
         }
 
         val qrRep = "${SettingValues.Key.SCAN}_${BarcodeFormat.QR_CODE.name}"
@@ -1154,11 +1194,21 @@ class CamConfig(private val mActivity: MainActivity) {
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.thirdOption.visibility = View.INVISIBLE
-            mActivity.flipCameraCircle.visibility = View.INVISIBLE
+
+            if (scanAllCodes) {
+                mActivity.flipCamIcon.setImageResource(
+                    R.drawable.cancel
+                )
+                mActivity.qrScanToggles.visibility = View.GONE
+            } else {
+                mActivity.flipCamIcon.setImageResource(
+                    R.drawable.auto
+                )
+                mActivity.qrScanToggles.visibility = View.VISIBLE
+            }
+
             mActivity.cancelButtonView.visibility = View.INVISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
-
-            mActivity.qrScanToggles.visibility = View.VISIBLE
 
             mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
             mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
@@ -1167,7 +1217,7 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
-            mActivity.flipCameraCircle.visibility = View.VISIBLE
+            mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
             mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
 
