@@ -31,7 +31,15 @@ class QRToggle @JvmOverloads constructor(
     override fun setSelected(selected: Boolean) {
         super.setSelected(selected)
 
-        mActivity.config.setQRScanningFor(key, selected)
+        if (!selected && mActivity.config.allowedFormats.size == 1) {
+            mActivity.showMessage(
+                "Couldn't exclude $key format. " +
+                        "Please ensure at least one format is selected in manual mode."
+            )
+            isSelected = true
+        } else {
+            mActivity.config.setQRScanningFor(key, selected)
+        }
 
         refreshToggleUI()
     }

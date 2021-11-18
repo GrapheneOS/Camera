@@ -490,7 +490,14 @@ class CamConfig(private val mActivity: MainActivity) {
                 allowedFormats.add(BarcodeFormat.valueOf(format))
             }
         } else {
-            allowedFormats.remove(BarcodeFormat.valueOf(format))
+            if (allowedFormats.size == 1) {
+                mActivity.showMessage(
+                    "Please ensure that at least one barcode is " +
+                            "selected in manual mode"
+                )
+            } else {
+                allowedFormats.remove(BarcodeFormat.valueOf(format))
+            }
         }
 
         qrAnalyzer?.refreshHints()
@@ -1280,17 +1287,29 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
 
-                editor.putBoolean(
-                    formatSRep,
-                    optionValue
-                )
-
                 val format = BarcodeFormat.valueOf(optionName)
 
                 if (optionValue) {
                     allowedFormats.add(format)
-                } else {
-                    allowedFormats.remove(format)
+
+                    editor.putBoolean(
+                        formatSRep,
+                        true
+                    )
+                } else if (format in allowedFormats) {
+                    if (allowedFormats.size == 1) {
+                        mActivity.showMessage(
+                            "Please ensure that at least one barcode is " +
+                                    "selected in manual mode"
+                        )
+                    } else {
+                        allowedFormats.remove(format)
+
+                        editor.putBoolean(
+                            formatSRep,
+                            false
+                        )
+                    }
                 }
             }
 
