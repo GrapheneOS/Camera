@@ -86,21 +86,21 @@ class ZoomBar : AppCompatSeekBar {
         val zoomState: ZoomState? = mainActivity.config.camera?.cameraInfo?.zoomState
             ?.value
 
+        var zoomRatio = 1.0f
         if(shouldShowPanel) {
             showPanel()
         } else {
             hidePanel()
         }
 
-        var zoomRatio = 1.0f
-        var linearZoom = 0.0f
-
         if (zoomState != null) {
             zoomRatio = zoomState.zoomRatio
-            linearZoom = zoomState.linearZoom
+
+            min = (zoomState.minZoomRatio * 100).roundToInt()
+            max = (zoomState.maxZoomRatio * 100).roundToInt()
         }
 
-        progress = (linearZoom * 100).roundToInt()
+        progress = (zoomRatio * 100).roundToInt()
 
         val textView: TextView = thumbView.findViewById(R.id.progress) as TextView
         val text = String.format("%.1fx", zoomRatio)
@@ -138,9 +138,13 @@ class ZoomBar : AppCompatSeekBar {
             return false
         }
         when (event.action) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
-                val progress = max - (max * event.y / height).toInt()
-                mainActivity.config.camera?.cameraControl?.setLinearZoom(progress / 100f)
+
+            MotionEvent.ACTION_MOVE -> {
+
+                val progress = (max - (max * (event.y / height))) / (100f)
+
+                mainActivity.config.camera?.cameraControl?.setZoomRatio(progress)
+
             }
             MotionEvent.ACTION_CANCEL -> {
             }
