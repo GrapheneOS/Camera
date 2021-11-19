@@ -9,10 +9,12 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="system_accent1_100">#cbe2ff</color>
+    <color name="system_accent1_500">#1b69c5</color>
+
     <color name="system_neutral1_100">#dde2e9</color>
     <color name="system_neutral1_900">#181c1f</color>
 
-    <color name="selected_option_bg">#0053a3</color>
+    <color name="selected_option_bg">@color/system_accent1_500</color>
     <color name="unselected_option_bg">#2d3034</color>
 
     <color name="selected_option_fg">#212121</color>
