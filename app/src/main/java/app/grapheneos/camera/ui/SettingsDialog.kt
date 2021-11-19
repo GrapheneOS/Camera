@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.ViewTreeObserver.OnPreDrawListener
 import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -67,6 +68,8 @@ class SettingsDialog(mActivity: MainActivity) :
     private var videoQualitySetting: View
     private var timerSetting: View
 
+    private var settingsFrame: View
+
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
     init {
@@ -75,6 +78,8 @@ class SettingsDialog(mActivity: MainActivity) :
         dialog = findViewById(R.id.settings_dialog)
         dialog.setOnClickListener {}
 
+        window?.setBackgroundDrawableResource(android.R.color.transparent)
+        window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
 
@@ -103,6 +108,25 @@ class SettingsDialog(mActivity: MainActivity) :
 
                 override fun onTouchEvent(view: SettingsFrameLayout?, event: MotionEvent?): Boolean {
                     return false
+                }
+            }
+        )
+
+        settingsFrame = findViewById(R.id.settings_frame)
+
+        rootView.viewTreeObserver.addOnPreDrawListener(
+            object: OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    rootView.viewTreeObserver.removeOnPreDrawListener(this)
+
+                    settingsFrame.layoutParams =
+                                (settingsFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
+                                    val marginTop = (mActivity.rootView.layoutParams as ViewGroup.MarginLayoutParams).topMargin
+                                    it.height = (marginTop + (rootView.measuredWidth * 4/3))
+                                    it
+                                }
+
+                    return true
                 }
             }
         )
