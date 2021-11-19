@@ -500,9 +500,9 @@
                 android:layout_height="wrap_content">
 
                 <app.grapheneos.camera.ui.QRToggle
-                    android:id="@+id/maxicode_toggle"
+                    android:id="@+id/codabar_toggle"
                     android:layout_gravity="center"
-                    android:src="@drawable/maxicode"
+                    android:src="@drawable/codabar"
                     android:layout_width="@dimen/qr_toggle_button_size"
                     android:layout_height="@dimen/qr_toggle_button_size"
                     app:shapeAppearance="@style/ShapeAppearance.Image.PILL" />
@@ -516,7 +516,7 @@
                     android:layout_gravity="center"
                     android:textStyle="bold"
                     android:textSize="13sp"
-                    android:text="@string/maxicode"
+                    android:text="@string/codabar"
                     android:textColor="@android:color/white"/>
 
             </LinearLayout>

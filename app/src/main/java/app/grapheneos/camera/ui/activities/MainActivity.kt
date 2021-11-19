@@ -112,7 +112,7 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var qrToggle: QRToggle
     lateinit var dmToggle: QRToggle
-    lateinit var mxToggle: QRToggle
+    lateinit var cBToggle: QRToggle
     lateinit var azToggle: QRToggle
 
     lateinit var imageCapturer: ImageCapturer
@@ -893,9 +893,9 @@ open class MainActivity : AppCompatActivity(),
         dmToggle.mActivity = this
         dmToggle.key = BarcodeFormat.DATA_MATRIX.name
 
-        mxToggle = findViewById(R.id.maxicode_toggle)
-        mxToggle.mActivity = this
-        mxToggle.key = BarcodeFormat.MAXICODE.name
+        cBToggle = findViewById(R.id.codabar_toggle)
+        cBToggle.mActivity = this
+        cBToggle.key = BarcodeFormat.CODABAR.name
 
         azToggle = findViewById(R.id.aztec_toggle)
         azToggle.mActivity = this

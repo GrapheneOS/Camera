@@ -127,7 +127,7 @@ class CamConfig(private val mActivity: MainActivity) {
             BarcodeFormat.AZTEC,
             BarcodeFormat.QR_CODE,
             BarcodeFormat.DATA_MATRIX,
-            BarcodeFormat.MAXICODE,
+            BarcodeFormat.CODABAR,
         )
 
         val extensionModes = arrayOf(
@@ -693,8 +693,8 @@ class CamConfig(private val mActivity: MainActivity) {
                     mActivity.azToggle.isSelected = true
                 }
 
-                if(format == BarcodeFormat.MAXICODE) {
-                    mActivity.mxToggle.isSelected = true
+                if(format == BarcodeFormat.CODABAR) {
+                    mActivity.cBToggle.isSelected = true
                 }
 
                 if(format == BarcodeFormat.DATA_MATRIX) {
