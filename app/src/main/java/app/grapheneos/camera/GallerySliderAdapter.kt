@@ -48,6 +48,21 @@ class GallerySliderAdapter(
         val rootView: View =
             holder.itemView.findViewById(R.id.root)
 
+        rootView.setOnClickListener {
+
+            val mUri = getCurrentUri()
+
+            if (VideoCapturer.isVideo(mUri)) {
+                val intent = Intent(
+                    gActivity,
+                    VideoPlayer::class.java
+                )
+                intent.putExtra("videoUri", mUri)
+
+                gActivity.startActivity(intent)
+            }
+        }
+
         if (VideoCapturer.isVideo(mediaUri)) {
             try {
                 mediaPreview.setImageBitmap(
@@ -59,28 +74,11 @@ class GallerySliderAdapter(
 
                 playButton.visibility = View.VISIBLE
 
-                rootView.setOnClickListener {
-
-                    val mUri = getCurrentUri()
-
-                    if (VideoCapturer.isVideo(mUri)) {
-                        val intent = Intent(
-                            gActivity,
-                            VideoPlayer::class.java
-                        )
-                        intent.putExtra(
-                            "videoUri", mUri)
-
-                        gActivity.startActivity(intent)
-                    }
-                }
-
             } catch (exception: Exception) {
             }
 
         } else {
             playButton.visibility = View.INVISIBLE
-            rootView.setOnClickListener(null)
             mediaPreview.setImageURI(mediaUri)
         }
     }
