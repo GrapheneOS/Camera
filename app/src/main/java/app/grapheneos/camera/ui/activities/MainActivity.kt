@@ -1310,7 +1310,9 @@ open class MainActivity : AppCompatActivity(),
         if (settingsDialog.isShowing) return
 
         if (config.isQRMode) {
-            config.showMoreOptionsForQR()
+            if (!config.scanAllCodes) {
+                config.showMoreOptionsForQR()
+            }
         } else {
             if (settingsIcon.isEnabled) {
                 settingsIcon.performClick()
