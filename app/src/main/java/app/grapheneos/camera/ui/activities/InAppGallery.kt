@@ -15,6 +15,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -357,6 +358,11 @@ class InAppGallery : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
+        val rootView = findViewById<View>(R.id.root_view)
+        rootView.setOnClickListener {
+            toggleActionBarState()
+        }
+
         gallerySlider = findViewById(R.id.gallery_slider)
         gallerySlider.setPageTransformer(GSlideTransformer())
 
@@ -430,6 +436,21 @@ class InAppGallery : AppCompatActivity() {
             Snackbar.LENGTH_LONG
         )
 
+    }
+
+    fun toggleActionBarState() {
+        supportActionBar?.let {
+            if (it.isShowing) {
+                it.hide()
+            }  else {
+                it.show()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        supportActionBar?.show()
     }
 
     fun showMessage(msg: String) {

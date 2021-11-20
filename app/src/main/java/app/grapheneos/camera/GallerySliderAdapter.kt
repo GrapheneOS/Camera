@@ -60,6 +60,8 @@ class GallerySliderAdapter(
                 intent.putExtra("videoUri", mUri)
 
                 gActivity.startActivity(intent)
+            } else {
+                gActivity.toggleActionBarState()
             }
         }
 

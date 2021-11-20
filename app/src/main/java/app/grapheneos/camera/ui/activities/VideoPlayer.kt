@@ -34,7 +34,17 @@ class VideoPlayer : AppCompatActivity() {
 
         val videoView = findViewById<VideoView>(R.id.video_player)
 
-        val mediaController = MediaController(this)
+        val mediaController = object: MediaController(this) {
+            override fun show() {
+                super.show()
+                supportActionBar?.show()
+            }
+
+            override fun hide() {
+                super.hide()
+                supportActionBar?.hide()
+            }
+        }
         mediaController.setAnchorView(videoView)
 
         videoView.setMediaController(mediaController)
@@ -51,5 +61,10 @@ class VideoPlayer : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        supportActionBar?.show()
     }
 }
