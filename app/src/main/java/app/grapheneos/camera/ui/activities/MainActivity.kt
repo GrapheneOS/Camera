@@ -893,9 +893,9 @@ open class MainActivity : AppCompatActivity(),
         dmToggle.mActivity = this
         dmToggle.key = BarcodeFormat.DATA_MATRIX.name
 
-        cBToggle = findViewById(R.id.codabar_toggle)
+        cBToggle = findViewById(R.id.pdf417_toggle)
         cBToggle.mActivity = this
-        cBToggle.key = BarcodeFormat.CODABAR.name
+        cBToggle.key = BarcodeFormat.PDF_417.name
 
         azToggle = findViewById(R.id.aztec_toggle)
         azToggle.mActivity = this

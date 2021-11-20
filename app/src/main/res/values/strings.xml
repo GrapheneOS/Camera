@@ -74,5 +74,6 @@
     <string name="maxicode">Maxi Code</string>
     <string name="more_options">More Options</string>
     <string name="codabar">Codabar</string>
+    <string name="pdf_417">PDF 417</string>
 
 </resources>
