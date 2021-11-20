@@ -17,6 +17,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.CamConfig
@@ -351,7 +352,7 @@ class InAppGallery : AppCompatActivity() {
         setContentView(R.layout.gallery)
 
         supportActionBar?.let {
-            it.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            it.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.appbar)))
             it.setDisplayShowTitleEnabled(false)
             it.setDisplayHomeAsUpEnabled(true)
         }

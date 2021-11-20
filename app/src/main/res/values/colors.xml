@@ -16,6 +16,7 @@
 
     <color name="selected_option_bg">@color/system_accent1_500</color>
     <color name="unselected_option_bg">#2d3034</color>
+    <color name="appbar">#77000000</color>
 
     <color name="selected_option_fg">#212121</color>
     <color name="unselected_option_fg">#C2C2C2</color>
