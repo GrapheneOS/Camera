@@ -9,6 +9,7 @@ import android.os.Looper
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 
 class VideoPlayer : AppCompatActivity() {
@@ -20,7 +21,7 @@ class VideoPlayer : AppCompatActivity() {
         setContentView(R.layout.video_player)
 
         supportActionBar?.let {
-            it.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            it.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.appbar)))
             it.setDisplayShowTitleEnabled(false)
             it.setDisplayHomeAsUpEnabled(true)
         }
