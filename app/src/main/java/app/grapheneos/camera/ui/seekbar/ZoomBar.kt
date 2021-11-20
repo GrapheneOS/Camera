@@ -8,6 +8,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -139,12 +140,16 @@ class ZoomBar : AppCompatSeekBar {
         }
         when (event.action) {
 
-            MotionEvent.ACTION_MOVE -> {
+            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_DOWN -> {
 
-                val progress = (max - (max * (event.y / height))) / (100f)
+                var progress = (max - (max * (event.y / height))) / (100f)
+                val max = max / 100f
+
+                if (progress > max) progress = max
+
+                Log.i("TAG", "progress: $progress")
 
                 mainActivity.config.camera?.cameraControl?.setZoomRatio(progress)
-
             }
             MotionEvent.ACTION_CANCEL -> {
             }
