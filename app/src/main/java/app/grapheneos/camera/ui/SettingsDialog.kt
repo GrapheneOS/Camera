@@ -79,8 +79,6 @@ class SettingsDialog(mActivity: MainActivity) :
         dialog.setOnClickListener {}
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
-        window?.setBackgroundDrawableResource(android.R.color.transparent)
-        window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
 
         setOnDismissListener {
@@ -461,8 +459,10 @@ class SettingsDialog(mActivity: MainActivity) :
             val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
             colorAnimation1.duration = 300
             colorAnimation1.addUpdateListener { animator ->
-                mActivity.previewView.setBackgroundColor(animator.animatedValue as Int)
-                mActivity.rootView.setBackgroundColor(animator.animatedValue as Int)
+                val color = animator.animatedValue as Int
+                mActivity.previewView.setBackgroundColor(color)
+                mActivity.rootView.setBackgroundColor(color)
+                window?.statusBarColor = color
             }
 
             val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, Color.BLACK)
@@ -499,8 +499,10 @@ class SettingsDialog(mActivity: MainActivity) :
             val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
             colorAnimation1.duration = 300
             colorAnimation1.addUpdateListener { animator ->
-                mActivity.previewView.setBackgroundColor(animator.animatedValue as Int)
-                mActivity.rootView.setBackgroundColor(animator.animatedValue as Int)
+                val color = animator.animatedValue as Int
+                mActivity.previewView.setBackgroundColor(color)
+                mActivity.rootView.setBackgroundColor(color)
+                window?.statusBarColor = color
             }
 
             val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, Color.WHITE)
