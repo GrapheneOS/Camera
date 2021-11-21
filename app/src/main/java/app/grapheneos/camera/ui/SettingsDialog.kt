@@ -30,6 +30,8 @@ import androidx.camera.video.QualitySelector
 import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
+import android.provider.Settings
+
 
 class SettingsDialog(mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
@@ -484,6 +486,8 @@ class SettingsDialog(mActivity: MainActivity) :
             colorAnimation2.start()
             colorAnimation3.start()
 
+            setBrightness(1f)
+
         } else if (wasSelfIlluminationOn) {
 
 //            mActivity.previewView.setBackgroundColor(Color.BLACK)
@@ -523,6 +527,8 @@ class SettingsDialog(mActivity: MainActivity) :
             colorAnimation1.start()
             colorAnimation2.start()
             colorAnimation3.start()
+
+            setBrightness(getSystemBrightness())
         }
 
         wasSelfIlluminationOn = mActivity.config.selfIlluminate
@@ -556,6 +562,28 @@ class SettingsDialog(mActivity: MainActivity) :
         )
 
         anim
+    }
+
+    private fun getSystemBrightness(): Float {
+        return Settings.System.getInt(
+            context.contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS,
+            -1
+        ) / 255f
+    }
+
+    private fun setBrightness(brightness: Float) {
+
+        val layout = mActivity.window.attributes
+        layout.screenBrightness = brightness
+        mActivity.window.attributes = layout
+
+        window?.let {
+            val dialogLayout = it.attributes
+            dialogLayout.screenBrightness = brightness
+            it.attributes = dialogLayout
+        }
+
     }
 
     private fun slideDialogDown() {
