@@ -141,7 +141,11 @@ class ZoomBar : AppCompatSeekBar {
 
             MotionEvent.ACTION_MOVE, MotionEvent.ACTION_DOWN -> {
 
-                val progress = max - (max * event.y / height).toInt()
+                var progress = max - (max * event.y / height).toInt()
+
+                if (progress<1) progress = 1
+                if (progress>100) progress = 100
+
                 mainActivity.config.camera?.cameraControl?.setLinearZoom(progress / 100f)
 
             }
