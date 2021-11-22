@@ -14,6 +14,7 @@ import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Point
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
@@ -83,6 +84,8 @@ import android.graphics.Rect
 import android.view.ViewTreeObserver
 import app.grapheneos.camera.ui.QRToggle
 import com.google.zxing.BarcodeFormat
+import android.view.WindowInsets
+import android.widget.RelativeLayout
 
 
 open class MainActivity : AppCompatActivity(),
@@ -775,6 +778,32 @@ open class MainActivity : AppCompatActivity(),
             if (!config.isQRMode)
                 settingsDialog.show()
         }
+
+        settingsIcon.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    rootView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    val displayCutout = window.decorView.rootWindowInsets.displayCutout
+                    val layoutParams = (settingsIcon.layoutParams as RelativeLayout.LayoutParams)
+
+                    val rect = if (displayCutout?.boundingRects?.isNotEmpty() == true)
+                        displayCutout.boundingRects.first() else null
+                    
+                    val windowsSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        windowManager.currentWindowMetrics.bounds
+                    } else {
+                        val size = Point()
+                        windowManager.defaultDisplay.getRealSize(size)
+                        Rect(0, 0, size.x, size.y)
+                    }
+
+                    if(rect == null || rect.left == 0 || rect.right == windowsSize.right){
+                        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
+                    } else{
+                        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
+                    }
+                }
+            })
 
         exposurePlusIcon = findViewById(R.id.exposure_plus_icon)
         exposureNegIcon = findViewById(R.id.exposure_neg_icon)
