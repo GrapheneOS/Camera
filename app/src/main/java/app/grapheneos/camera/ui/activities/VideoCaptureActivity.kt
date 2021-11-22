@@ -20,6 +20,8 @@ class VideoCaptureActivity : CaptureActivity() {
         whiteOptionCircle = findViewById(R.id.white_option_circle)
         playPreview = findViewById(R.id.play_preview)
 
+        captureButton.setImageResource(R.drawable.recording)
+
         captureButton.setOnClickListener OnClickListener@{
             if (videoCapturer.isRecording) {
                 videoCapturer.stopRecording()
