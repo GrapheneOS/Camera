@@ -562,7 +562,7 @@ open class MainActivity : AppCompatActivity(),
 
         tabLayout.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
-                val tab = tabLayout.getTabAtX(motionEvent.x.toInt())
+                val tab = tabLayout.getTabAtX(tabLayout.scrollX)
                 finalizeMode(tab)
                 return@setOnTouchListener true
             }
