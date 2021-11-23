@@ -329,7 +329,7 @@
             app:tabIndicatorFullWidth="false"
             app:tabMode="auto"
             app:tabIndicator="@drawable/mode_indicator"
-            app:tabGravity="fill"
+            android:overScrollMode="never"
             app:tabIndicatorHeight="30dp"
             android:background="@android:color/transparent"
             android:layout_marginTop="12dp"
