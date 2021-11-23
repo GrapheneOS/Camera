@@ -84,7 +84,6 @@ import android.graphics.Rect
 import android.view.ViewTreeObserver
 import app.grapheneos.camera.ui.QRToggle
 import com.google.zxing.BarcodeFormat
-import android.view.WindowInsets
 import android.widget.RelativeLayout
 
 

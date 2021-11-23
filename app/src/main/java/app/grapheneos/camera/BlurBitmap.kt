@@ -1,7 +1,6 @@
 package app.grapheneos.camera
 
 import android.graphics.Bitmap
-// import android.util.Log
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

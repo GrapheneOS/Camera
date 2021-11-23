@@ -10,11 +10,17 @@ class SettingsFrameLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
+    companion object {
+        private val dummyListener: OnInterceptTouchEventListener =
+            DummyInterceptTouchEventListener()
+    }
+
     private var mDisallowIntercept = false
 
     interface OnInterceptTouchEventListener {
         /**
-         * If disallowIntercept is true the touch event can't be stealed and the return value is ignored.
+         * If disallowIntercept is true the touch event can't be stolen and the return value
+         * is ignored.
          * @see android.view.ViewGroup.onInterceptTouchEvent
          */
         fun onInterceptTouchEvent(
@@ -44,9 +50,7 @@ class SettingsFrameLayout @JvmOverloads constructor(
         }
     }
 
-    private val DUMMY_LISTENER: OnInterceptTouchEventListener = DummyInterceptTouchEventListener()
-
-    private var mInterceptTouchEventListener = DUMMY_LISTENER
+    private var mInterceptTouchEventListener = dummyListener
 
     override fun requestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
         parent.requestDisallowInterceptTouchEvent(disallowIntercept)
@@ -54,7 +58,7 @@ class SettingsFrameLayout @JvmOverloads constructor(
     }
 
     fun setOnInterceptTouchEventListener(interceptTouchEventListener: OnInterceptTouchEventListener?) {
-        mInterceptTouchEventListener = interceptTouchEventListener ?: DUMMY_LISTENER
+        mInterceptTouchEventListener = interceptTouchEventListener ?: dummyListener
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {

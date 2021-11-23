@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.activities
 
-import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
