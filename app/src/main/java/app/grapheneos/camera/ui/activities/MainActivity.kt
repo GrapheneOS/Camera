@@ -787,7 +787,7 @@ open class MainActivity : AppCompatActivity(),
 
                     val rect = if (displayCutout?.boundingRects?.isNotEmpty() == true)
                         displayCutout.boundingRects.first() else null
-                    
+
                     val windowsSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         windowManager.currentWindowMetrics.bounds
                     } else {
