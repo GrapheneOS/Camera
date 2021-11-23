@@ -1114,9 +1114,7 @@ open class MainActivity : AppCompatActivity(),
                 )
                 clipboardManager.setPrimaryClip(clipData)
 
-                showMessage(
-                    "Copied to QR text to clipboard!"
-                )
+                showMessage("Copied text to clipboard!")
             }
 
             val sButton: ImageButton = dialog.findViewById(
