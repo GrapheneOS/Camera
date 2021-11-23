@@ -1127,7 +1127,7 @@ open class MainActivity : AppCompatActivity(),
                 startActivity(
                     Intent.createChooser(
                         sIntent,
-                        "Share QR text via"
+                        "Share text via"
                     )
                 )
             }
