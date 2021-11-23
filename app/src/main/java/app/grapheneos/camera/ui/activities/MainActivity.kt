@@ -793,6 +793,9 @@ open class MainActivity : AppCompatActivity(),
                         windowManager.currentWindowMetrics.bounds
                     } else {
                         val size = Point()
+                        // defaultDisplay isn't deprecated below API 30 as highlighted by the IDE
+                        // and this code would only execute if it is (Hint: enclosing if-block)
+                        @Suppress("DEPRECATION")
                         windowManager.defaultDisplay.getRealSize(size)
                         Rect(0, 0, size.x, size.y)
                     }
