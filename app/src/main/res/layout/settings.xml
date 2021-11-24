@@ -11,13 +11,14 @@
         android:layout_height="match_parent"
         android:layout_width="match_parent"/>
 
-    <FrameLayout
+    <RelativeLayout
         android:id="@+id/settings_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
             android:id="@+id/settings_dialog"
+            android:layout_centerInParent="true"
             android:layout_marginHorizontal="@dimen/settings_dialog_horizontal_margin"
             android:layout_gravity="center_vertical"
             android:layout_width="match_parent"
@@ -390,6 +391,21 @@
 
         </LinearLayout>
 
-    </FrameLayout>
+        <TextView
+            android:id="@+id/more_settings"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_below="@id/settings_dialog"
+            android:layout_alignParentEnd="true"
+            android:textColor="@color/white"
+            android:background="@drawable/settings_bg"
+            android:foreground="@drawable/more_settings_bg"
+            android:layout_marginEnd="@dimen/settings_dialog_horizontal_margin"
+            android:layout_marginTop="8dp"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="10dp"
+            android:text="@string/more_settings" />
+
+    </RelativeLayout>
 
 </app.grapheneos.camera.ui.SettingsFrameLayout>

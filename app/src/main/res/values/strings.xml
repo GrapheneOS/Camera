@@ -75,5 +75,7 @@
     <string name="more_options">More Options</string>
     <string name="codabar">Codabar</string>
     <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">More Settings</string>
+    <string name="additional_settings">Additional Settings</string>
 
 </resources>

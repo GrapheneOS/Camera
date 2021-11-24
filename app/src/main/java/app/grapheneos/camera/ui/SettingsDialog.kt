@@ -72,6 +72,8 @@ class SettingsDialog(mActivity: MainActivity) :
 
     private var settingsFrame: View
 
+    private var moreSettingsButton: View
+
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
     init {
@@ -79,6 +81,11 @@ class SettingsDialog(mActivity: MainActivity) :
 
         dialog = findViewById(R.id.settings_dialog)
         dialog.setOnClickListener {}
+
+        moreSettingsButton = findViewById(R.id.more_settings)
+        moreSettingsButton.setOnClickListener {
+
+        }
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setDimAmount(0f)
