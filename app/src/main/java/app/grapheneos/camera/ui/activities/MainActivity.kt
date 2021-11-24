@@ -494,7 +494,9 @@ open class MainActivity : AppCompatActivity(),
 
         // If the preview of video capture activity isn't showing
         if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
-            config.initializeCamera(true)
+            if (!isQRDialogShowing) {
+                config.initializeCamera(true)
+            }
         }
     }
 
