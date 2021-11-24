@@ -42,7 +42,7 @@
                 android:layout_width="wrap_content"
                 android:background="?selectableItemBackgroundBorderless"
                 android:id="@+id/share_qr_text"
-                android:src="@drawable/share"
+                android:src="@drawable/share_grey"
                 android:contentDescription="@string/share_qr_text"/>
 
         </LinearLayout>
