@@ -542,10 +542,23 @@ class SettingsDialog(mActivity: MainActivity) :
     }
 
     private val slideDownAnimation: Animation by lazy {
-        AnimationUtils.loadAnimation(
+        val anim = AnimationUtils.loadAnimation(
             mActivity,
             R.anim.slide_down
         )
+
+        anim.setAnimationListener(object: Animation.AnimationListener {
+            override fun onAnimationStart(p0: Animation?) {}
+
+            override fun onAnimationEnd(p0: Animation?) {
+                moreSettingsButton.visibility = View.VISIBLE
+            }
+
+            override fun onAnimationRepeat(p0: Animation?) {}
+
+        })
+
+        anim
     }
 
     private val slideUpAnimation: Animation by lazy {
@@ -557,7 +570,9 @@ class SettingsDialog(mActivity: MainActivity) :
         anim.setAnimationListener(
             object : Animation.AnimationListener {
 
-                override fun onAnimationStart(p0: Animation?) {}
+                override fun onAnimationStart(p0: Animation?) {
+                    moreSettingsButton.visibility = View.GONE
+                }
 
                 override fun onAnimationEnd(p0: Animation?) {
                     dismiss()
