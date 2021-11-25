@@ -168,6 +168,13 @@
             android:excludeFromRecents="true"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.activities.MoreSettings"
+            android:theme="@style/OverlayActionBar"
+            android:taskAffinity=".ui.activities.InAppGallery"
+            android:excludeFromRecents="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>
