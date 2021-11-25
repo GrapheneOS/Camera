@@ -10,6 +10,11 @@ class MoreSettings : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.more_settings)
         setTitle(R.string.more_settings)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
 }
