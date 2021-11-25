@@ -86,8 +86,12 @@ class SettingsDialog(mActivity: MainActivity) :
 
         moreSettingsButton = findViewById(R.id.more_settings)
         moreSettingsButton.setOnClickListener {
-            val mSIntent = Intent(mActivity, MoreSettings::class.java)
-            mActivity.startActivity(mSIntent)
+            if (!mActivity.videoCapturer.isRecording) {
+                val mSIntent = Intent(mActivity, MoreSettings::class.java)
+                mActivity.startActivity(mSIntent)
+            } else {
+                mActivity.showMessage("Cannot switch activities when recording")
+            }
         }
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
