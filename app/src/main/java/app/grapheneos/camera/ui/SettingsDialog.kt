@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.Dialog
+import android.content.Intent
 import android.graphics.Color
 import android.util.Log
 import android.view.MotionEvent
@@ -31,6 +32,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import android.provider.Settings
+import app.grapheneos.camera.ui.activities.MoreSettings
 
 
 class SettingsDialog(mActivity: MainActivity) :
@@ -84,7 +86,8 @@ class SettingsDialog(mActivity: MainActivity) :
 
         moreSettingsButton = findViewById(R.id.more_settings)
         moreSettingsButton.setOnClickListener {
-
+            val mSIntent = Intent(mActivity, MoreSettings::class.java)
+            mActivity.startActivity(mSIntent)
         }
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
