@@ -9,6 +9,7 @@ class MoreSettings : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.more_settings)
+        setTitle(R.string.more_settings)
     }
 
 }
