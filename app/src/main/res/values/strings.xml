@@ -78,4 +78,12 @@
     <string name="more_settings">More Settings</string>
     <string name="additional_settings">Additional Settings</string>
 
+    <string name="general">General</string>
+
+    <string name="save_image_as_previewed">Save image as previewed</string>
+    <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion)</string>
+
+    <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
+    <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
+
 </resources>
