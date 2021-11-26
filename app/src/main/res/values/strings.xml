@@ -86,4 +86,9 @@
     <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
     <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
 
+    <string name="storage">Storage</string>
+    <string name="storage_location">Storage Location</string>
+    <string name="image_file_name_format">Image File Name Format</string>
+    <string name="video_file_name_format">Video File Name Format</string>
+
 </resources>

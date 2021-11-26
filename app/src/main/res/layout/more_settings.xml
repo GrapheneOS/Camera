@@ -136,4 +136,178 @@
 
     </LinearLayout>
 
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/storage"
+        android:textColor="?android:colorAccent"
+        android:layout_marginStart="68dp"
+        android:layout_marginVertical="12dp"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/storage_location_setting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/selectableItemBackground"
+        android:focusable="true"
+        android:clickable="true"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="6dp" >
+
+        <ImageView
+            android:id="@+id/storage_location_icon"
+            android:src="@drawable/storage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/save_image_as_previewed"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/storage_location_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/storage_location"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/storage_location_field"
+                android:labelFor="@id/storage_location_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="false"
+                android:paddingStart="10dp"
+                android:paddingEnd="0dp"
+                android:textSize="14sp"
+                android:drawableStart="@drawable/folder"
+                android:importantForAutofill="no"
+                android:inputType="text" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/image_format_setting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="?android:attr/selectableItemBackground"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="6dp"
+        android:clickable="true"
+        android:focusable="true" >
+
+        <ImageView
+            android:id="@+id/image_format_setting_icon"
+            android:src="@drawable/rename"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/image_file_name_format"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/image_format_setting_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/image_file_name_format"
+                android:layout_marginStart="10dp"
+                android:paddingBottom="2dp"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+
+            <AutoCompleteTextView
+                android:id="@+id/image_format_setting_field"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:labelFor="@id/image_format_setting_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="10dp"
+                android:paddingEnd="0dp"
+                android:textSize="14sp"
+                tools:ignore="LabelFor" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/video_format_setting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="?android:attr/selectableItemBackground"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="6dp"
+        android:clickable="true"
+        android:focusable="true" >
+
+        <ImageView
+            android:id="@+id/video_format_setting_icon"
+            android:src="@drawable/rename"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/video_file_name_format"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/video_format_setting_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/video_file_name_format"
+                android:layout_marginStart="10dp"
+                android:paddingBottom="2dp"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+
+            <AutoCompleteTextView
+                android:id="@+id/video_format_setting_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@id/video_format_setting_title"
+                android:importantForAutofill="no"
+                android:inputType="text"
+                android:paddingStart="10dp"
+                android:paddingEnd="0dp"
+                android:textSize="14sp"
+                tools:ignore="LabelFor" />
+
+        </LinearLayout>
+    </LinearLayout>
+
 </LinearLayout>
