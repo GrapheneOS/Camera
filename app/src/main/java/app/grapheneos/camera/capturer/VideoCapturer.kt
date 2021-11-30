@@ -23,6 +23,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -176,7 +177,28 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         mActivity.config.latestUri = outputUri
 
                         if (mActivity is VideoCaptureActivity) {
-                            mActivity.afterRecording(outputUri)
+
+                            // Sometimes the uri passed by CameraX is invalid
+                            // For e.g. when the uri is explicitly passed
+                            //
+                            // So to deal with those cases, we're ensuring
+                            // the passed uri actually exists by the below
+                            // try-catch logic
+                            try {
+
+                                val stream = mActivity.contentResolver
+                                    .openInputStream(
+                                        outputUri
+                                    ) ?: throw NullPointerException()
+
+                                stream.close()
+
+                                mActivity.afterRecording(outputUri)
+
+                            } catch (exception : Exception) {
+                                mActivity.afterRecording(mActivity.outputUri)
+                            }
+
                             return@withEventListener
                         }
 
