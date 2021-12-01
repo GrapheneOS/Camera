@@ -85,6 +85,7 @@ import android.view.ViewTreeObserver
 import app.grapheneos.camera.ui.QRToggle
 import com.google.zxing.BarcodeFormat
 import android.widget.RelativeLayout
+import androidx.constraintlayout.widget.ConstraintLayout
 
 
 open class MainActivity : AppCompatActivity(),
@@ -98,6 +99,7 @@ open class MainActivity : AppCompatActivity(),
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
     lateinit var previewView: PreviewView
+    lateinit var previewContainer: ConstraintLayout
 
     // Hold a reference to the manual permission dialog to avoid re-creating it if it
     // is already visible and to dismiss it if the permission gets granted.
@@ -535,8 +537,9 @@ open class MainActivity : AppCompatActivity(),
         previewLoader = findViewById(R.id.preview_loading)
         imagePreview = findViewById(R.id.image_preview)
         config.updatePreview()
-        previewView = findViewById(R.id.camera)
+        previewView = findViewById(R.id.preview)
         previewView.scaleType = PreviewView.ScaleType.FIT_START
+        previewContainer = findViewById(R.id.preview_container)
         scaleGestureDetector = ScaleGestureDetector(this, this)
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -956,16 +959,16 @@ open class MainActivity : AppCompatActivity(),
                         this
                     )
 
-                    val previewHeight169 = previewView.width * 16 / 9
+                    val previewHeight169 = previewContainer.width * 16 / 9
 
-                    val previewHeight43 = previewView.width * 4 / 3
+                    val previewHeight43 = previewContainer.width * 4 / 3
 
-                    val extraHeight169 = previewView.height -
+                    val extraHeight169 = previewContainer.height -
                             previewHeight169 -
                             tabLayout.height -
                             10 * resources.displayMetrics.density.toInt()
 
-                    val halfOfExtraHeight = (previewView.height -
+                    val halfOfExtraHeight = (previewContainer.height -
                             previewHeight43) / 2
 
                     tabLayout.layoutParams =
