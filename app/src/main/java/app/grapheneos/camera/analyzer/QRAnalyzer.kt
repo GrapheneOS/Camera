@@ -34,13 +34,13 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
             DecodeHintType::class.java
         )
 
-        Log.i(TAG, "allowedFormats: ${mActivity.config.allowedFormats}")
+        Log.i(TAG, "allowedFormats: ${MainActivity.camConfig.allowedFormats}")
 
         supportedHints[DecodeHintType.POSSIBLE_FORMATS] =
-            if(mActivity.config.scanAllCodes) {
+            if(MainActivity.camConfig.scanAllCodes) {
                 BarcodeFormat.values().asList()
             } else {
-                mActivity.config.allowedFormats
+                MainActivity.camConfig.allowedFormats
             }
 
         reader.setHints(supportedHints)

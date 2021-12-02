@@ -63,9 +63,9 @@ class CountDownTimerUI @JvmOverloads constructor(
                 text = pendingS.toString()
 
                 if (text == "1") {
-                    mActivity.config.mPlayer.playTimerFinalSSound()
+                    MainActivity.camConfig.mPlayer.playTimerFinalSSound()
                 } else {
-                    mActivity.config.mPlayer.playTimerIncrementSound()
+                    MainActivity.camConfig.mPlayer.playTimerIncrementSound()
                 }
             }
 
@@ -95,7 +95,7 @@ class CountDownTimerUI @JvmOverloads constructor(
     private fun beforeTimeStarts() {
 
         val params: ViewGroup.LayoutParams = layoutParams
-        params.height = if (mActivity.config.aspectRatio == AspectRatio.RATIO_4_3) {
+        params.height = if (MainActivity.camConfig.aspectRatio == AspectRatio.RATIO_4_3) {
             mActivity.previewView.width * 4 / 3
         } else {
             mActivity.previewView.height

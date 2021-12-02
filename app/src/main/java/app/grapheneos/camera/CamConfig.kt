@@ -478,7 +478,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val formatSRep = "${SettingValues.Key.SCAN}_$format"
 
-        val editor = mActivity.config.commonPref.edit()
+        val editor = commonPref.edit()
         editor.putBoolean(
             formatSRep,
             selected
@@ -955,7 +955,7 @@ class CamConfig(private val mActivity: MainActivity) {
             if (isVideoMode) {
 
                 mActivity.micOffIcon.visibility =
-                    if (mActivity.config.includeAudio) {
+                    if (includeAudio) {
                         View.GONE
                     } else {
                         View.VISIBLE
@@ -1031,7 +1031,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun snapPreview() {
 
-        if (mActivity.config.selfIlluminate) {
+        if (selfIlluminate) {
 
             mActivity.mainOverlay.layoutParams =
                 (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {

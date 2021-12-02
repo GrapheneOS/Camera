@@ -106,7 +106,6 @@ open class MainActivity : AppCompatActivity(),
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
     private var lastFrame: Bitmap? = null
-    lateinit var config: CamConfig
 
     lateinit var rootView: View
     lateinit var mainFrame: View
@@ -181,7 +180,7 @@ open class MainActivity : AppCompatActivity(),
             previewView.height / 2.0f, qrOverlay.size
         )
 
-        config.camera?.cameraControl?.startFocusAndMetering(
+        camConfig.camera?.cameraControl?.startFocusAndMetering(
             FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
         )
 
@@ -244,7 +243,7 @@ open class MainActivity : AppCompatActivity(),
                 builder.setNegativeButton("Cancel", null)
 
                 builder.setNeutralButton("Disable Audio") { _: DialogInterface?, _: Int ->
-                    config.includeAudio = false
+                    camConfig.includeAudio = false
                 }
 
                 audioPermissionDialog = builder.show()
@@ -349,7 +348,7 @@ open class MainActivity : AppCompatActivity(),
 
     protected open fun openGallery() {
 
-        if(config.latestMediaFile==null){
+        if(camConfig.latestMediaFile==null){
             showMessage(
                 "Please capture a photo/video before trying to view" +
                         " them."
@@ -379,7 +378,7 @@ open class MainActivity : AppCompatActivity(),
             Log.i(TAG, "Permission granted.")
 
             // Setup the camera since the permission is available
-            config.initializeCamera()
+            camConfig.initializeCamera()
         } else if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
 
             Log.i(TAG, "The user has default denied camera permission.")
@@ -455,7 +454,7 @@ open class MainActivity : AppCompatActivity(),
             return true
         }
 
-        if (!config.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+        if (!camConfig.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
                     keyCode == KeyEvent.KEYCODE_VOLUME_UP)
         ) {
             captureButton.performClick()
@@ -480,24 +479,24 @@ open class MainActivity : AppCompatActivity(),
         // Will also be called by Android Lifecycle when the app starts up
         checkPermissions()
 
-        if (config.isQRMode) {
+        if (camConfig.isQRMode) {
             startFocusTimer()
         }
 
-        config.latestUri = null
+        camConfig.latestUri = null
 
-        if (config.latestMediaFile == null) {
+        if (camConfig.latestMediaFile == null) {
             imagePreview.setImageResource(android.R.color.transparent)
         }
 
-        if (config.requireLocation) {
+        if (camConfig.requireLocation) {
             locationListener.start()
         }
 
         // If the preview of video capture activity isn't showing
         if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
             if (!isQRDialogShowing) {
-                config.initializeCamera(true)
+                camConfig.initializeCamera(true)
             }
         }
     }
@@ -510,12 +509,12 @@ open class MainActivity : AppCompatActivity(),
     override fun onPause() {
         super.onPause()
         pauseOrientationSensor()
-        if (config.isQRMode) {
+        if (camConfig.isQRMode) {
             cancelFocusTimer()
         }
         lastFrame = null
 
-        if (config.requireLocation)
+        if (camConfig.requireLocation)
             locationListener.stop()
     }
 
@@ -529,14 +528,14 @@ open class MainActivity : AppCompatActivity(),
 
         gestureDetectorCompat = GestureDetectorCompat(this, this)
 
-        config = CamConfig(this)
+        camConfig = CamConfig(this)
         mainOverlay = findViewById(R.id.main_overlay)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = findViewById(R.id.third_option)
         previewLoader = findViewById(R.id.preview_loading)
         imagePreview = findViewById(R.id.image_preview)
-        config.updatePreview()
+        camConfig.updatePreview()
         previewView = findViewById(R.id.preview)
         previewView.scaleType = PreviewView.ScaleType.FIT_START
         previewContainer = findViewById(R.id.preview_container)
@@ -579,8 +578,8 @@ open class MainActivity : AppCompatActivity(),
         previewView.previewStreamState.observe(this, { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
-                config.reloadSettings()
-                if (!config.isQRMode) {
+                camConfig.reloadSettings()
+                if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     if(!settingsDialog.isShowing) {
                         settingsIcon.visibility = View.VISIBLE
@@ -630,8 +629,8 @@ open class MainActivity : AppCompatActivity(),
         }
         flipCameraCircle.setOnClickListener {
 
-            if (config.isQRMode) {
-                config.scanAllCodes = !config.scanAllCodes
+            if (camConfig.isQRMode) {
+                camConfig.scanAllCodes = !camConfig.scanAllCodes
                 return@setOnClickListener
             }
 
@@ -659,7 +658,7 @@ open class MainActivity : AppCompatActivity(),
             rotate.interpolator = LinearInterpolator()
 
             it.startAnimation(rotate)
-            config.toggleCameraSelector()
+            camConfig.toggleCameraSelector()
         }
         thirdCircle = findViewById(R.id.third_circle)
         thirdCircle.setOnClickListener {
@@ -699,16 +698,16 @@ open class MainActivity : AppCompatActivity(),
 
         captureButton = findViewById(R.id.capture_button)
         captureButton.setOnClickListener {
-            if (config.isVideoMode) {
+            if (camConfig.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
                     videoCapturer.startRecording()
                 }
-            } else if (config.isQRMode) {
-                config.toggleTorchState()
+            } else if (camConfig.isQRMode) {
+                camConfig.toggleTorchState()
                 captureButton.setImageResource(
-                    if (config.isTorchOn) {
+                    if (camConfig.isTorchOn) {
                         R.drawable.torch_on_button
                     } else {
                         R.drawable.torch_off_button
@@ -779,7 +778,7 @@ open class MainActivity : AppCompatActivity(),
         threeButtons = findViewById(R.id.three_buttons)
         settingsIcon = findViewById(R.id.settings_option)
         settingsIcon.setOnClickListener {
-            if (!config.isQRMode)
+            if (!camConfig.isQRMode)
                 settingsDialog.show()
         }
 
@@ -918,7 +917,7 @@ open class MainActivity : AppCompatActivity(),
 
         moreOptionsToggle = findViewById(R.id.more_options)
         moreOptionsToggle.setOnClickListener {
-            config.showMoreOptionsForQR()
+            camConfig.showMoreOptionsForQR()
         }
 
         qrToggle = findViewById(R.id.qr_scan_toggle)
@@ -937,7 +936,7 @@ open class MainActivity : AppCompatActivity(),
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
-        config.loadSettings()
+        camConfig.loadSettings()
     }
 
     private fun getStatusBarHeight(): Int {
@@ -1009,7 +1008,7 @@ open class MainActivity : AppCompatActivity(),
             val mode = selectedTab.id
             tabLayout.centerTab(selectedTab)
             tab?.let { tabLayout.centerTab(it) }
-            config.switchMode(mode)
+            camConfig.switchMode(mode)
         }
     }
 
@@ -1019,7 +1018,7 @@ open class MainActivity : AppCompatActivity(),
 
     private fun shareLatestMedia() {
 
-        val mediaUri = config.latestUri
+        val mediaUri = camConfig.latestUri
 
         if (mediaUri == null) {
             showMessage(
@@ -1139,10 +1138,10 @@ open class MainActivity : AppCompatActivity(),
 
             dialog.setOnDismissListener {
                 isQRDialogShowing = false
-                config.startCamera(true)
+                camConfig.startCamera(true)
             }
 
-            config.cameraProvider?.unbindAll()
+            camConfig.cameraProvider?.unbindAll()
 
             dialog.show()
         }
@@ -1174,7 +1173,7 @@ open class MainActivity : AppCompatActivity(),
                 return true
             }
 
-            if (config.isQRMode)
+            if (camConfig.isQRMode)
                 return false
 
             val x = event.x
@@ -1185,17 +1184,17 @@ open class MainActivity : AppCompatActivity(),
 
             val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
-            config.mPlayer.playFocusStartSound()
+            camConfig.mPlayer.playFocusStartSound()
 
-            if (config.focusTimeout == 0L) {
+            if (camConfig.focusTimeout == 0L) {
                 focusBuilder.disableAutoCancel()
             } else {
-                focusBuilder.setAutoCancelDuration(config.focusTimeout, TimeUnit.SECONDS)
+                focusBuilder.setAutoCancelDuration(camConfig.focusTimeout, TimeUnit.SECONDS)
 //                fTHandler.removeCallbacks(fTRunnable)
 //                fTHandler.postDelayed(fTRunnable, focusTimeout * 1000)
             }
 
-            config.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
+            camConfig.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
 
             exposureBar.showPanel()
             zoomBar.showPanel()
@@ -1206,12 +1205,12 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
-        val zoomState = config.camera!!.cameraInfo.zoomState.value
+        val zoomState = camConfig.camera!!.cameraInfo.zoomState.value
         var scale = 1f
         if (zoomState != null) {
             scale = zoomState.zoomRatio * detector.scaleFactor
         }
-        config.camera!!.cameraControl.setZoomRatio(scale)
+        camConfig.camera!!.cameraControl.setZoomRatio(scale)
         return true
     }
 
@@ -1242,9 +1241,9 @@ open class MainActivity : AppCompatActivity(),
             else -> Surface.ROTATION_0
         }
 
-        config.imageCapture?.targetRotation = tr
-        config.videoCapture?.targetRotation = tr
-        config.iAnalyzer?.targetRotation = tr
+        camConfig.imageCapture?.targetRotation = tr
+        camConfig.videoCapture?.targetRotation = tr
+        camConfig.iAnalyzer?.targetRotation = tr
 
         if (videoCapturer.isRecording) return
 
@@ -1284,6 +1283,8 @@ open class MainActivity : AppCompatActivity(),
         private const val TAG = "GOCam"
         private const val autoCenterFocusDuration = 2000L
         private val hexArray = "0123456789ABCDEF".toCharArray()
+
+        lateinit var camConfig: CamConfig
 
         private const val SWIPE_THRESHOLD = 100
         private const val SWIPE_VELOCITY_THRESHOLD = 100
@@ -1343,9 +1344,9 @@ open class MainActivity : AppCompatActivity(),
         wasSwiping = true
         if (settingsDialog.isShowing) return
 
-        if (config.isQRMode) {
-            if (!config.scanAllCodes) {
-                config.showMoreOptionsForQR()
+        if (camConfig.isQRMode) {
+            if (!camConfig.scanAllCodes) {
+                camConfig.showMoreOptionsForQR()
             }
         } else {
             if (settingsIcon.isEnabled) {

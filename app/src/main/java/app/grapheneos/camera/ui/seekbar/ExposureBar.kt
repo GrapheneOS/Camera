@@ -112,7 +112,7 @@ class ExposureBar : AppCompatSeekBar {
                 Log.i("progress", progress.toString())
                 Log.i("max", max.toString())
 
-                mainActivity.config.camera?.cameraControl
+                MainActivity.camConfig.camera?.cameraControl
                     ?.setExposureCompensationIndex(progress)
 
                 showPanel()

@@ -54,7 +54,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         get() = mActivity.previewLoader.visibility == View.VISIBLE
 
     fun takePicture() {
-        if (mActivity.config.camera == null) return
+        if (MainActivity.camConfig.camera == null) return
 
         if(isTakingPicture){
             mActivity.showMessage(
@@ -66,9 +66,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val outputFileOptionsBuilder = genOutputBuilderForImage()
         val imageMetadata = ImageCapture.Metadata()
 
-        imageMetadata.isReversedHorizontal = mActivity.config.saveImageAsPreviewed
+        imageMetadata.isReversedHorizontal = MainActivity.camConfig.saveImageAsPreviewed
 
-        if (mActivity.config.requireLocation) {
+        if (MainActivity.camConfig.requireLocation) {
 
             if (mActivity.locationListener.lastKnownLocation == null) {
                 mActivity.showMessage(
@@ -86,16 +86,16 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val outputFileOptions = outputFileOptionsBuilder.build()
 
         mActivity.previewLoader.visibility = View.VISIBLE
-        mActivity.config.snapPreview()
-        mActivity.config.imageCapture!!.takePicture(
+        MainActivity.camConfig.snapPreview()
+        MainActivity.camConfig.imageCapture!!.takePicture(
             outputFileOptions,
             ContextCompat.getMainExecutor(mActivity),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.i(TAG, "Image saved successfully!")
-                    mActivity.config.mPlayer.playShutterSound()
+                    MainActivity.camConfig.mPlayer.playShutterSound()
 
-                    if (mActivity.config.selfIlluminate) {
+                    if (MainActivity.camConfig.selfIlluminate) {
 
                         val animation: Animation = AlphaAnimation(0.8f, 0f)
                         animation.duration = 200
@@ -136,14 +136,14 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
                     val imageUri = outputFileResults.savedUri
 
-                    mActivity.config.latestUri = imageUri
+                    MainActivity.camConfig.latestUri = imageUri
 
                     if(mActivity is SecureMainActivity) {
                         mActivity.capturedFilePaths.add(imageUri.toString())
                     }
 
                     mActivity.previewLoader.visibility = View.GONE
-                    mActivity.config.updatePreview()
+                    MainActivity.camConfig.updatePreview()
                 }
 
                 override fun onError(exception: ImageCaptureException) {

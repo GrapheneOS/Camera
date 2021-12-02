@@ -33,17 +33,17 @@ class CustomGrid @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        if (mActivity.config.gridType == CamConfig.GridType.NONE) {
+        if (MainActivity.camConfig.gridType == CamConfig.GridType.NONE) {
             return
         }
 
-        val previewHeight = if (mActivity.config.aspectRatio == AspectRatio.RATIO_16_9) {
+        val previewHeight = if (MainActivity.camConfig.aspectRatio == AspectRatio.RATIO_16_9) {
             mActivity.previewView.width * 16 / 9
         } else {
             mActivity.previewView.width * 4 / 3
         }
 
-        if (mActivity.config.gridType == CamConfig.GridType.GOLDEN_RATIO) {
+        if (MainActivity.camConfig.gridType == CamConfig.GridType.GOLDEN_RATIO) {
 
             val cx = width / 2f
             val cy = previewHeight / 2f
@@ -58,7 +58,7 @@ class CustomGrid @JvmOverloads constructor(
 
         } else {
 
-            val seed = if (mActivity.config.gridType == CamConfig.GridType.THREE_BY_THREE) {
+            val seed = if (MainActivity.camConfig.gridType == CamConfig.GridType.THREE_BY_THREE) {
                 3f
             } else {
                 4f

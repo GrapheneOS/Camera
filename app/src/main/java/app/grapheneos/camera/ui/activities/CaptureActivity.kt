@@ -120,7 +120,7 @@ open class CaptureActivity : MainActivity() {
         )
 
         previewLoader.visibility = View.VISIBLE
-        config.imageCapture?.takePicture(
+        camConfig.imageCapture?.takePicture(
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
@@ -149,7 +149,7 @@ open class CaptureActivity : MainActivity() {
 
     open fun showPreview() {
 
-        config.cameraProvider?.unbindAll()
+        camConfig.cameraProvider?.unbindAll()
 
         mainOverlay.setImageBitmap(bitmap)
         mainOverlay.visibility = View.VISIBLE
@@ -166,7 +166,7 @@ open class CaptureActivity : MainActivity() {
     }
 
     open fun hidePreview() {
-        config.startCamera(true)
+        camConfig.startCamera(true)
 
         settingsIcon.visibility = View.VISIBLE
 

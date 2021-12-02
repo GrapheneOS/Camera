@@ -34,7 +34,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
         if (it) {
             start()
         } else {
-            mActivity.config.requireLocation = false
+            MainActivity.camConfig.requireLocation = false
         }
     }
 
@@ -118,7 +118,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
                             mActivity, Manifest.permission.ACCESS_FINE_LOCATION
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
-                        mActivity.config.requireLocation = false
+                        MainActivity.camConfig.requireLocation = false
                     }
                 }
 
@@ -149,7 +149,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
         )
 
         // Revert settings
-        mActivity.config.requireLocation = false
+        MainActivity.camConfig.requireLocation = false
     }
 
     companion object {
