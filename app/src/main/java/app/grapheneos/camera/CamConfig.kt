@@ -79,9 +79,9 @@ class CamConfig(private val mActivity: MainActivity) {
             const val VIDEO_QUALITY = "video_quality"
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
-            const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
             const val SCAN = "scan"
             const val SCAN_ALL_CODES = "scan_all_codes"
+            const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
         }
 
         object Default {
@@ -107,9 +107,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val INCLUDE_AUDIO = true
 
-            const val SAVE_IMAGE_AS_PREVIEW = false
-
             const val SCAN_ALL_CODES = false
+            const val SAVE_IMAGE_AS_PREVIEW = false
         }
     }
 
@@ -406,14 +405,15 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var saveImageAsPreviewed: Boolean
         get() {
-            return mActivity.settingsDialog.sIAPToggle.isChecked && lensFacing == CameraSelector.LENS_FACING_FRONT
+            return commonPref.getBoolean(
+                SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
+                SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
+            )
         }
         set(value) {
-            val editor = modePref.edit()
+            val editor = commonPref.edit()
             editor.putBoolean(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW, value)
             editor.apply()
-
-            mActivity.settingsDialog.sIAPToggle.isChecked = value
         }
 
     var requireLocation: Boolean = false
@@ -536,13 +536,6 @@ class CamConfig(private val mActivity: MainActivity) {
                     SettingValues.Default.SELF_ILLUMINATION
                 )
             }
-
-            if (!modePref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
-                sEditor.putBoolean(
-                    SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
-                    SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
-                )
-            }
         }
 
         sEditor.commit()
@@ -562,11 +555,6 @@ class CamConfig(private val mActivity: MainActivity) {
             SettingValues.Default.SELF_ILLUMINATION
         )
 
-        saveImageAsPreviewed = modePref.getBoolean(
-            SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
-            SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
-        )
-
         mActivity.settingsDialog.showOnlyRelevantSettings()
     }
 
@@ -578,6 +566,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (!commonPref.contains(SettingValues.Key.CAMERA_SOUNDS)) {
             editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
+        }
+
+        if (!commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
+            editor.putBoolean(
+                SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
+                SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
+            )
         }
 
         if (!commonPref.contains(SettingValues.Key.GRID)) {

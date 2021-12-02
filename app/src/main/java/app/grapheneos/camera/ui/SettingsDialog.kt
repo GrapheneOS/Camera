@@ -62,13 +62,10 @@ class SettingsDialog(mActivity: MainActivity) :
     var selfIlluminationToggle: SwitchCompat
     var csSwitch: SwitchCompat
 
-    var sIAPToggle: SwitchCompat
-
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
     private var includeAudioSetting: View
     private var selfIlluminationSetting: View
-    private var sIAPSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
 
@@ -251,11 +248,6 @@ class SettingsDialog(mActivity: MainActivity) :
             MainActivity.camConfig.selfIlluminate = selfIlluminationToggle.isChecked
         }
 
-        sIAPToggle = findViewById(R.id.save_image_as_preview_switch)
-        sIAPToggle.setOnClickListener {
-            MainActivity.camConfig.saveImageAsPreviewed = sIAPToggle.isChecked
-        }
-
         focusTimeoutSpinner = findViewById(R.id.focus_timeout_spinner)
         focusTimeoutSpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
@@ -327,7 +319,6 @@ class SettingsDialog(mActivity: MainActivity) :
 
         includeAudioSetting = findViewById(R.id.include_audio_setting)
         selfIlluminationSetting = findViewById(R.id.self_illumination_setting)
-        sIAPSetting = findViewById(R.id.save_image_as_preview_setting)
         videoQualitySetting = findViewById(R.id.video_quality_setting)
         timerSetting = findViewById(R.id.timer_setting)
 
@@ -378,13 +369,6 @@ class SettingsDialog(mActivity: MainActivity) :
 
         selfIlluminationSetting.visibility =
             if (MainActivity.camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-
-        sIAPSetting.visibility =
-            if (!mActivity.requiresVideoModeOnly && MainActivity.camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 View.VISIBLE
             } else {
                 View.GONE
