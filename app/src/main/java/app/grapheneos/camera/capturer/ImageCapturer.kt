@@ -9,6 +9,7 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
@@ -66,7 +67,10 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val outputFileOptionsBuilder = genOutputBuilderForImage()
         val imageMetadata = ImageCapture.Metadata()
 
-        imageMetadata.isReversedHorizontal = MainActivity.camConfig.saveImageAsPreviewed
+        imageMetadata.isReversedHorizontal =
+                MainActivity.camConfig.lensFacing ==
+                    CameraSelector.LENS_FACING_FRONT &&
+                MainActivity.camConfig.saveImageAsPreviewed
 
         if (MainActivity.camConfig.requireLocation) {
 
