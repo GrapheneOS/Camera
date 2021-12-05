@@ -92,4 +92,10 @@
     <string name="video_file_name_format">Video File Name Format</string>
     <string name="revert_back_to_dcim">Revert back to DCIM</string>
 
+    <string name="image_quality">Image Quality</string>
+    <string name="image_quality_desc">Alter the quality of image to reduce the space taken by each image or enhance image quality</string>
+    <string name="photo">Photo</string>
+    <string name="increase_quality">Increase Quality</string>
+    <string name="decrease_quality">Decrease Quality</string>
+
 </resources>
