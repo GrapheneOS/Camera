@@ -231,7 +231,8 @@
         android:paddingStart="10dp"
         android:paddingEnd="6dp"
         android:clickable="true"
-        android:focusable="true" >
+        android:focusable="true"
+        android:visibility="gone" >
 
         <ImageView
             android:id="@+id/image_format_setting_icon"
@@ -286,7 +287,8 @@
         android:paddingStart="10dp"
         android:paddingEnd="6dp"
         android:clickable="true"
-        android:focusable="true" >
+        android:focusable="true"
+        android:visibility="gone" >
 
         <ImageView
             android:id="@+id/video_format_setting_icon"
