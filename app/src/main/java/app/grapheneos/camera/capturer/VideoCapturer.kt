@@ -18,6 +18,7 @@ import androidx.camera.video.PendingRecording
 import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -97,7 +98,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         fileName = sdf.format(date)
         fileName = "VID_$fileName$videoFileFormat"
 
-        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat)
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat) ?: "video/mp4"
 
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
@@ -121,14 +122,38 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         } else {
 
-            return MainActivity.camConfig.videoCapture!!.output.prepareRecording(
-                mActivity,
-                MediaStoreOutputOptions.Builder(
-                    mActivity.contentResolver,
-                    CamConfig.videoCollectionUri
-                ).setContentValues(contentValues)
-                    .build()
-            )
+            if (MainActivity.camConfig.storageLocation.isEmpty()) {
+                return MainActivity.camConfig.videoCapture!!.output.prepareRecording(
+                    mActivity,
+                    MediaStoreOutputOptions.Builder(
+                        mActivity.contentResolver,
+                        CamConfig.videoCollectionUri
+                    ).setContentValues(contentValues)
+                        .build()
+                )
+            } else {
+
+                val parent = DocumentFile.fromTreeUri(mActivity, Uri.parse(
+                    MainActivity.camConfig.storageLocation
+                ))!!
+
+                val child = parent.createFile(
+                    mimeType,
+                    fileName
+                )!!
+
+                val fd = mActivity.contentResolver.openFileDescriptor(
+                    child.uri,
+                    "w"
+                )!!
+
+                MainActivity.camConfig.addToGallery(child.uri)
+
+                return MainActivity.camConfig.videoCapture!!.output.prepareRecording(
+                    mActivity,
+                    FileDescriptorOutputOptions.Builder(fd).build()
+                )
+            }
         }
     }
 
@@ -174,32 +199,28 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                         val outputUri = it.outputResults.outputUri
 
-                        MainActivity.camConfig.latestUri = outputUri
+                        try {
 
-                        if (mActivity is VideoCaptureActivity) {
+                            val stream = mActivity.contentResolver
+                                .openInputStream(
+                                    outputUri
+                                ) ?: throw NullPointerException()
 
-                            // Sometimes the uri passed by CameraX is invalid
-                            // For e.g. when the uri is explicitly passed
-                            //
-                            // So to deal with those cases, we're ensuring
-                            // the passed uri actually exists by the below
-                            // try-catch logic
-                            try {
+                            stream.close()
 
-                                val stream = mActivity.contentResolver
-                                    .openInputStream(
-                                        outputUri
-                                    ) ?: throw NullPointerException()
-
-                                stream.close()
-
+                            if (mActivity is VideoCaptureActivity) {
                                 mActivity.afterRecording(outputUri)
-
-                            } catch (exception : Exception) {
-                                mActivity.afterRecording(mActivity.outputUri)
+                                return@withEventListener
+                            } else {
+                                MainActivity.camConfig.addToGallery(outputUri)
                             }
 
-                            return@withEventListener
+                        } catch (exception : Exception) {
+
+                            if (mActivity is VideoCaptureActivity) {
+                                mActivity.afterRecording(mActivity.outputUri)
+                                return@withEventListener
+                            }
                         }
 
                         MainActivity.camConfig.updatePreview()
@@ -316,7 +337,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     companion object {
 //        private const val TAG = "VideoCapturer"
         fun isVideo(uri: Uri): Boolean {
-            return uri.encodedPath?.contains("video")==true
+            return uri.encodedPath?.contains("video") == true ||
+                    uri.encodedPath?.endsWith(".mp4") == true
         }
     }
 }

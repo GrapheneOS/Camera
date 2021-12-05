@@ -1,6 +1,7 @@
 package app.grapheneos.camera.capturer
 
 import android.content.ContentValues
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -13,6 +14,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
@@ -36,19 +38,46 @@ class ImageCapturer(private val mActivity: MainActivity) {
         fileName = sdf.format(date)
         fileName = "IMG_$fileName$imageFileFormat"
 
-        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat)
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
 
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
         }
 
-        return ImageCapture.OutputFileOptions.Builder(
-            mActivity.contentResolver,
-            CamConfig.imageCollectionUri,
-            contentValues
-        )
+        if (MainActivity.camConfig.storageLocation.isEmpty()) {
+
+            contentValues.put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                "DCIM/Camera"
+            )
+
+            return ImageCapture.OutputFileOptions.Builder(
+                mActivity.contentResolver,
+                CamConfig.imageCollectionUri,
+                contentValues
+            )
+
+        } else {
+
+            val parent = DocumentFile.fromTreeUri(mActivity,
+                Uri.parse(
+                    MainActivity.camConfig.storageLocation
+                )
+            )!!
+
+            val child = parent.createFile(
+                mimeType,
+                fileName
+            )!!
+
+            val oStream = mActivity.contentResolver
+                .openOutputStream(child.uri)!!
+
+            MainActivity.camConfig.addToGallery(child.uri)
+
+            return ImageCapture.OutputFileOptions.Builder(oStream)
+        }
     }
 
     val isTakingPicture: Boolean
@@ -140,10 +169,12 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
                     val imageUri = outputFileResults.savedUri
 
-                    MainActivity.camConfig.latestUri = imageUri
+                    if (imageUri != null) {
+                        MainActivity.camConfig.addToGallery(imageUri)
+                    }
 
                     if(mActivity is SecureMainActivity) {
-                        mActivity.capturedFilePaths.add(imageUri.toString())
+                        mActivity.capturedFilePaths.add(MainActivity.camConfig.latestUri.toString())
                     }
 
                     mActivity.previewLoader.visibility = View.GONE

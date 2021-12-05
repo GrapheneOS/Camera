@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -184,18 +185,36 @@
                 android:textColor="@color/white"
                 android:textSize="16sp" />
 
-            <EditText
-                android:id="@+id/storage_location_field"
-                android:labelFor="@id/storage_location_title"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:focusable="false"
-                android:paddingStart="10dp"
-                android:paddingEnd="0dp"
-                android:textSize="14sp"
-                android:drawableStart="@drawable/folder"
-                android:importantForAutofill="no"
-                android:inputType="text" />
+                android:orientation="horizontal">
+
+                <EditText
+                    android:layout_weight="1"
+                    android:id="@+id/storage_location_field"
+                    android:labelFor="@id/storage_location_title"
+                    android:layout_width="0dp"
+                    android:cursorVisible="false"
+                    android:layout_height="wrap_content"
+                    android:focusable="false"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="0dp"
+                    android:textSize="14sp"
+                    android:drawableStart="@drawable/folder"
+                    android:drawablePadding="6dp"
+                    android:importantForAutofill="no"
+                    android:inputType="textNoSuggestions" />
+
+                <ImageButton
+                    android:id="@+id/refresh_storage_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/refresh"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/revert_back_to_dcim"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 

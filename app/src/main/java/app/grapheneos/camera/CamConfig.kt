@@ -82,6 +82,9 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SCAN = "scan"
             const val SCAN_ALL_CODES = "scan_all_codes"
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
+
+            const val STORAGE_LOCATION = "storage_location"
+            const val MEDIA_URIS = "media_uri_s"
         }
 
         object Default {
@@ -108,7 +111,11 @@ class CamConfig(private val mActivity: MainActivity) {
             const val INCLUDE_AUDIO = true
 
             const val SCAN_ALL_CODES = false
+
             const val SAVE_IMAGE_AS_PREVIEW = false
+
+            const val STORAGE_LOCATION = ""
+            val MEDIA_URIS = ""
         }
     }
 
@@ -139,13 +146,12 @@ class CamConfig(private val mActivity: MainActivity) {
         )
 
         val imageCollectionUri: Uri = MediaStore.Images.Media.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY)!!
+            MediaStore.VOLUME_EXTERNAL_PRIMARY
+        )!!
 
         val videoCollectionUri: Uri = MediaStore.Video.Media.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY)!!
-
-        val fileCollectionUri: Uri = MediaStore.Files.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY)!!
+            MediaStore.VOLUME_EXTERNAL_PRIMARY
+        )!!
 
         const val DEFAULT_CAMERA_MODE = CameraModes.CAMERA
 
@@ -175,6 +181,8 @@ class CamConfig(private val mActivity: MainActivity) {
             }
             return mBitmap
         }
+
+        const val PATH_SEPARATOR = ";"
     }
 
     var camera: Camera? = null
@@ -415,6 +423,78 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.putBoolean(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW, value)
             editor.apply()
         }
+
+    var storageLocation: String
+        get() {
+            return commonPref.getString(
+                SettingValues.Key.STORAGE_LOCATION,
+                SettingValues.Default.STORAGE_LOCATION
+            )!!
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putString(SettingValues.Key.STORAGE_LOCATION, value)
+            editor.apply()
+        }
+
+    val mediaUris : List<Uri>
+        get() {
+            val uriPaths = commonPref.getString(
+                SettingValues.Key.MEDIA_URIS,
+                SettingValues.Default.MEDIA_URIS
+            )!!.split(PATH_SEPARATOR)
+
+            val uris = uriPaths.map {
+                Uri.parse(it)
+            }
+
+            return uris
+        }
+
+    @SuppressLint("MutatingSharedPrefs")
+    fun addToGallery(uri: Uri) {
+
+        val path = uri.toString()
+
+        val uriPathData = commonPref.getString(
+            SettingValues.Key.MEDIA_URIS,
+            SettingValues.Default.MEDIA_URIS
+        )!!
+
+        val resultData = if (uriPathData.isEmpty()) {
+            path
+        } else {
+            "$path$PATH_SEPARATOR$uriPathData"
+        }
+
+        MainActivity.camConfig.latestUri = uri
+
+        val editor = commonPref.edit()
+        editor.putString(SettingValues.Key.MEDIA_URIS, resultData)
+        editor.commit()
+    }
+
+    @SuppressLint("MutatingSharedPrefs")
+    fun removeFromGallery(uri: Uri) {
+
+        val path = uri.toString()
+
+        val uriPathData = commonPref.getString(
+            SettingValues.Key.MEDIA_URIS,
+            SettingValues.Default.MEDIA_URIS
+        )!!
+
+        val uriPaths = ArrayList<String>()
+        uriPaths.addAll(uriPathData.split(PATH_SEPARATOR))
+        uriPaths.remove(path)
+
+        val editor = commonPref.edit()
+        editor.putString(
+            SettingValues.Key.MEDIA_URIS,
+            uriPaths.joinToString(PATH_SEPARATOR)
+        )
+        editor.commit()
+    }
 
     var requireLocation: Boolean = false
         get() {

@@ -27,6 +27,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.VideoCapturer
 import com.google.android.material.snackbar.Snackbar
 import java.io.OutputStream
+import java.net.URLDecoder
 import java.text.Format
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -88,6 +89,26 @@ class InAppGallery : AppCompatActivity() {
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val parsedDate = dateFormat.parse(time)
             return convertTime(parsedDate?.time ?: 0)
+        }
+
+        fun getRelativePath(uri: Uri, path: String?, fileName: String) : String {
+
+            if (path==null) {
+                val dPath = URLDecoder.decode(
+                    uri.lastPathSegment,
+                    "UTF-8"
+                )
+
+                val sType = dPath.substring(0, 7).replaceFirstChar {
+                    it.uppercase()
+                }
+
+                val rPath = dPath.substring(8)
+
+                return "($sType Storage) $rPath"
+            }
+
+            return "(Primary Storage) $path$fileName"
         }
 
     }
@@ -163,25 +184,13 @@ class InAppGallery : AppCompatActivity() {
             .setMessage("Do you really want to delete this file?")
             .setPositiveButton("Delete") { _, _ ->
 
-                val res = contentResolver.delete(
-                    mediaUri,
-                    null,
-                    null
-                ) == 1
+                MainActivity.camConfig.removeFromGallery(mediaUri)
 
-                if (res) {
+                showMessage(
+                    "File deleted successfully"
+                )
 
-                    showMessage(
-                        "File deleted successfully"
-                    )
-
-                    (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
-
-                } else {
-                    showMessage(
-                        "Unable to delete this file"
-                    )
-                }
+                (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
             }
             .setNegativeButton("Cancel", null).show()
 
@@ -266,7 +275,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Path: \n")
-        detailsBuilder.append("$relativePath$fileName")
+        detailsBuilder.append(getRelativePath(mediaUri, relativePath, fileName))
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Size: \n")
@@ -377,45 +386,9 @@ class InAppGallery : AppCompatActivity() {
             mediaUris.addAll(mediaFileArray)
         } else {
 
-            val cursor = contentResolver.query(
-                CamConfig.fileCollectionUri,
-                arrayOf(
-                    MediaStore.Files.FileColumns._ID,
-                    MediaStore.Files.FileColumns.DISPLAY_NAME,
-                ),
-                null, null,
-                "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
-            )
+            mediaUris.addAll(MainActivity.camConfig.mediaUris)
 
-            if (cursor != null) {
 
-                val index = cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID)
-
-                if (index >= 0) {
-
-                    while (cursor.moveToNext()) {
-
-                        val dName = cursor.getString(1)
-
-                        val tUri = if (dName.endsWith(".mp4")) {
-                            CamConfig.videoCollectionUri
-                        } else {
-                            if(showVideosOnly) continue
-                            CamConfig.imageCollectionUri
-                        }
-
-                        val mediaUri = ContentUris
-                            .withAppendedId(
-                                tUri,
-                                cursor.getInt(index).toLong()
-                            )
-                        mediaUris.add(mediaUri)
-                    }
-
-                }
-
-                cursor.close()
-            }
         }
 
         // Close gallery if no files are present
