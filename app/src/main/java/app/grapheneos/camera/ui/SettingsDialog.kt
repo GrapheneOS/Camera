@@ -32,7 +32,10 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import android.provider.Settings
+import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.SecureMainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 
 
 class SettingsDialog(mActivity: MainActivity) :
@@ -85,6 +88,12 @@ class SettingsDialog(mActivity: MainActivity) :
         moreSettingsButton.setOnClickListener {
             if (!mActivity.videoCapturer.isRecording) {
                 val mSIntent = Intent(mActivity, MoreSettings::class.java)
+                mSIntent.putExtra(
+                    "show_storage_settings",
+                    !(mActivity is SecureMainActivity ||
+                            (mActivity is CaptureActivity &&
+                                    mActivity !is VideoCaptureActivity))
+                )
                 mActivity.startActivity(mSIntent)
             } else {
                 mActivity.showMessage("Cannot switch activities when recording")

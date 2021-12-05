@@ -78,6 +78,9 @@ class MoreSettings : AppCompatActivity() {
         setTitle(R.string.more_settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        val showStorageSettings = intent.extras?.
+                        getBoolean("show_storage_settings") == true
+
         val sIAPToggle = findViewById<SwitchCompat>(
             R.id.save_image_as_preview_toggle
         )
@@ -126,6 +129,13 @@ class MoreSettings : AppCompatActivity() {
 
             dialog.setNegativeButton("No", null)
             dialog.show()
+        }
+
+        val sLS = findViewById<View>(R.id.storage_location_setting)
+        sLS.visibility = if (showStorageSettings) {
+            View.VISIBLE
+        } else {
+            View.GONE
         }
     }
 
