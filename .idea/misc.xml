@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/add.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/ar_16_9.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/ar_19_9.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/ar_4_3.xml" value="0.13148148148148148" />
@@ -35,6 +36,7 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/grid_off_circle.xml" value="0.10925925925925926" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/image_preview.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/image_quality.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/info.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location.xml" value="0.12129629629629629" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location_off.xml" value="0.12916666666666668" />
@@ -44,6 +46,7 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/option_circle.xml" value="0.21979166666666666" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/play.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/play_button_circle.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/remove.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/retake.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/self_i_off.xml" value="0.13148148148148148" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/self_i_on.xml" value="0.13148148148148148" />
