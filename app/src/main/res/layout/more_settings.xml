@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -193,7 +194,7 @@
                 <EditText
                     android:layout_weight="1"
                     android:id="@+id/storage_location_field"
-                    android:labelFor="@id/storage_location_title"
+                    android:hint="@string/storage_location"
                     android:layout_width="0dp"
                     android:cursorVisible="false"
                     android:layout_height="wrap_content"
@@ -329,6 +330,113 @@
                 tools:ignore="LabelFor" />
 
         </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/photo"
+        android:textColor="?android:colorAccent"
+        android:layout_marginStart="68dp"
+        android:layout_marginVertical="12dp"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/photo_quality_setting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="?android:attr/selectableItemBackground"
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="6dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/photo_quality_icon"
+            android:src="@drawable/image_quality"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/image_quality"
+            android:paddingStart="4dp"
+            android:paddingEnd="8dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/photo_quality_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/image_quality"
+                android:layout_marginStart="10dp"
+                android:paddingBottom="2dp"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/photo_quality_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/image_quality_desc"
+                android:paddingStart="10dp"
+                android:textSize="14sp"
+                tools:ignore="RtlSymmetry" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/increase_photo_quality"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/remove"
+                android:layout_gravity="center"
+                android:contentDescription="@string/decrease_quality" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_height="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_gravity="center"
+                app:boxBackgroundMode="none">
+
+            <EditText
+                android:id="@+id/photo_quality"
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="2dp"
+                android:paddingTop="15dp"
+                android:textSize="16sp"
+                android:maxLength="3"
+                android:labelFor="@id/photo_quality_setting"
+                android:textAlignment="center"
+                android:layout_gravity="center"
+                android:importantForAutofill="no"
+                android:inputType="number" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <ImageView
+                android:id="@+id/decrease_photo_quality"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/add"
+                android:layout_gravity="center"
+                android:contentDescription="@string/increase_quality" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>
