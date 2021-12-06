@@ -22,6 +22,7 @@ import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import java.lang.NullPointerException
@@ -109,7 +110,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         if (mActivity is VideoCaptureActivity
             && mActivity.isOutputUriAvailable()) {
 
-            return MainActivity.camConfig.videoCapture!!.output.prepareRecording(
+            return camConfig.videoCapture!!.output.prepareRecording(
                 mActivity,
                 FileDescriptorOutputOptions
                     .Builder(
@@ -122,8 +123,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         } else {
 
-            if (MainActivity.camConfig.storageLocation.isEmpty()) {
-                return MainActivity.camConfig.videoCapture!!.output.prepareRecording(
+            if (camConfig.storageLocation.isEmpty()) {
+                return camConfig.videoCapture!!.output.prepareRecording(
                     mActivity,
                     MediaStoreOutputOptions.Builder(
                         mActivity.contentResolver,
@@ -134,7 +135,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             } else {
 
                 val parent = DocumentFile.fromTreeUri(mActivity, Uri.parse(
-                    MainActivity.camConfig.storageLocation
+                    camConfig.storageLocation
                 ))!!
 
                 val child = parent.createFile(
@@ -147,9 +148,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     "w"
                 )!!
 
-                MainActivity.camConfig.addToGallery(child.uri)
+                camConfig.addToGallery(child.uri)
 
-                return MainActivity.camConfig.videoCapture!!.output.prepareRecording(
+                return camConfig.videoCapture!!.output.prepareRecording(
                     mActivity,
                     FileDescriptorOutputOptions.Builder(fd).build()
                 )
@@ -158,7 +159,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun startRecording() {
-        if (MainActivity.camConfig.camera == null) return
+        if (camConfig.camera == null) return
 
         val pendingRecording = genPendingRecording()
 
@@ -181,7 +182,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 if (it is VideoRecordEvent.Finalize) {
                     afterRecordingStops()
 
-                    MainActivity.camConfig.mPlayer.playVRStopSound()
+                    camConfig.mPlayer.playVRStopSound()
 
                     if (it.hasError()) {
 
@@ -212,7 +213,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                 mActivity.afterRecording(outputUri)
                                 return@withEventListener
                             } else {
-                                MainActivity.camConfig.addToGallery(outputUri)
+                                camConfig.addToGallery(outputUri)
                             }
 
                         } catch (exception : Exception) {
@@ -223,7 +224,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             }
                         }
 
-                        MainActivity.camConfig.updatePreview()
+                        camConfig.updatePreview()
 
                         if(mActivity is SecureMainActivity) {
                             mActivity.capturedFilePaths.add(outputUri.toString())
@@ -247,7 +248,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         // TODO: Uncomment this once the main indicator UI gets implemented
         // mActivity.micOffIcon.visibility = View.GONE
-        MainActivity.camConfig.mPlayer.playVRStartSound()
+        camConfig.mPlayer.playVRStartSound()
 
         val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
 

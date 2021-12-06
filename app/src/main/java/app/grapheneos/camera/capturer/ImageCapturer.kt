@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,7 +46,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
         }
 
-        if (MainActivity.camConfig.storageLocation.isEmpty()) {
+        if (camConfig.storageLocation.isEmpty()) {
 
             contentValues.put(
                 MediaStore.MediaColumns.RELATIVE_PATH,
@@ -62,7 +63,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
             val parent = DocumentFile.fromTreeUri(mActivity,
                 Uri.parse(
-                    MainActivity.camConfig.storageLocation
+                    camConfig.storageLocation
                 )
             )!!
 
@@ -74,7 +75,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
             val oStream = mActivity.contentResolver
                 .openOutputStream(child.uri)!!
 
-            MainActivity.camConfig.addToGallery(child.uri)
+            camConfig.addToGallery(child.uri)
 
             return ImageCapture.OutputFileOptions.Builder(oStream)
         }
@@ -84,7 +85,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         get() = mActivity.previewLoader.visibility == View.VISIBLE
 
     fun takePicture() {
-        if (MainActivity.camConfig.camera == null) return
+        if (camConfig.camera == null) return
 
         if(isTakingPicture){
             mActivity.showMessage(
@@ -97,11 +98,11 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val imageMetadata = ImageCapture.Metadata()
 
         imageMetadata.isReversedHorizontal =
-                MainActivity.camConfig.lensFacing ==
+                camConfig.lensFacing ==
                     CameraSelector.LENS_FACING_FRONT &&
-                MainActivity.camConfig.saveImageAsPreviewed
+                camConfig.saveImageAsPreviewed
 
-        if (MainActivity.camConfig.requireLocation) {
+        if (camConfig.requireLocation) {
 
             if (mActivity.locationListener.lastKnownLocation == null) {
                 mActivity.showMessage(
@@ -119,16 +120,16 @@ class ImageCapturer(private val mActivity: MainActivity) {
         val outputFileOptions = outputFileOptionsBuilder.build()
 
         mActivity.previewLoader.visibility = View.VISIBLE
-        MainActivity.camConfig.snapPreview()
-        MainActivity.camConfig.imageCapture!!.takePicture(
+        camConfig.snapPreview()
+        camConfig.imageCapture!!.takePicture(
             outputFileOptions,
             ContextCompat.getMainExecutor(mActivity),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.i(TAG, "Image saved successfully!")
-                    MainActivity.camConfig.mPlayer.playShutterSound()
+                    camConfig.mPlayer.playShutterSound()
 
-                    if (MainActivity.camConfig.selfIlluminate) {
+                    if (camConfig.selfIlluminate) {
 
                         val animation: Animation = AlphaAnimation(0.8f, 0f)
                         animation.duration = 200
@@ -170,15 +171,15 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     val imageUri = outputFileResults.savedUri
 
                     if (imageUri != null) {
-                        MainActivity.camConfig.addToGallery(imageUri)
+                        camConfig.addToGallery(imageUri)
                     }
 
                     if(mActivity is SecureMainActivity) {
-                        mActivity.capturedFilePaths.add(MainActivity.camConfig.latestUri.toString())
+                        mActivity.capturedFilePaths.add(camConfig.latestUri.toString())
                     }
 
                     mActivity.previewLoader.visibility = View.GONE
-                    MainActivity.camConfig.updatePreview()
+                    camConfig.updatePreview()
                 }
 
                 override fun onError(exception: ImageCaptureException) {

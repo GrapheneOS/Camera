@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
@@ -20,11 +19,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.viewpager2.widget.ViewPager2
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
 import java.io.OutputStream
 import java.net.URLDecoder
@@ -184,7 +183,7 @@ class InAppGallery : AppCompatActivity() {
             .setMessage("Do you really want to delete this file?")
             .setPositiveButton("Delete") { _, _ ->
 
-                MainActivity.camConfig.removeFromGallery(mediaUri)
+                camConfig.removeFromGallery(mediaUri)
 
                 showMessage(
                     "File deleted successfully"
@@ -386,7 +385,7 @@ class InAppGallery : AppCompatActivity() {
             mediaUris.addAll(mediaFileArray)
         } else {
 
-            mediaUris.addAll(MainActivity.camConfig.mediaUris)
+            mediaUris.addAll(camConfig.mediaUris)
 
 
         }

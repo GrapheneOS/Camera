@@ -12,6 +12,7 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.camera.core.AspectRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -63,9 +64,9 @@ class CountDownTimerUI @JvmOverloads constructor(
                 text = pendingS.toString()
 
                 if (text == "1") {
-                    MainActivity.camConfig.mPlayer.playTimerFinalSSound()
+                    camConfig.mPlayer.playTimerFinalSSound()
                 } else {
-                    MainActivity.camConfig.mPlayer.playTimerIncrementSound()
+                    camConfig.mPlayer.playTimerIncrementSound()
                 }
             }
 
@@ -95,7 +96,7 @@ class CountDownTimerUI @JvmOverloads constructor(
     private fun beforeTimeStarts() {
 
         val params: ViewGroup.LayoutParams = layoutParams
-        params.height = if (MainActivity.camConfig.aspectRatio == AspectRatio.RATIO_4_3) {
+        params.height = if (camConfig.aspectRatio == AspectRatio.RATIO_4_3) {
             mActivity.previewView.width * 4 / 3
         } else {
             mActivity.previewView.height

@@ -13,7 +13,7 @@ import app.grapheneos.camera.R
 
 class VideoPlayer : AppCompatActivity() {
 
-    var handler: Handler = Handler(Looper.myLooper()!!)
+    private var handler: Handler = Handler(Looper.myLooper()!!)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

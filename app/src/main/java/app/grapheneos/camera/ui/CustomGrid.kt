@@ -9,6 +9,7 @@ import android.view.View
 import androidx.camera.core.AspectRatio
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 class CustomGrid @JvmOverloads constructor(
     context: Context,
@@ -33,17 +34,17 @@ class CustomGrid @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        if (MainActivity.camConfig.gridType == CamConfig.GridType.NONE) {
+        if (camConfig.gridType == CamConfig.GridType.NONE) {
             return
         }
 
-        val previewHeight = if (MainActivity.camConfig.aspectRatio == AspectRatio.RATIO_16_9) {
+        val previewHeight = if (camConfig.aspectRatio == AspectRatio.RATIO_16_9) {
             mActivity.previewView.width * 16 / 9
         } else {
             mActivity.previewView.width * 4 / 3
         }
 
-        if (MainActivity.camConfig.gridType == CamConfig.GridType.GOLDEN_RATIO) {
+        if (camConfig.gridType == CamConfig.GridType.GOLDEN_RATIO) {
 
             val cx = width / 2f
             val cy = previewHeight / 2f
@@ -58,7 +59,7 @@ class CustomGrid @JvmOverloads constructor(
 
         } else {
 
-            val seed = if (MainActivity.camConfig.gridType == CamConfig.GridType.THREE_BY_THREE) {
+            val seed = if (camConfig.gridType == CamConfig.GridType.THREE_BY_THREE) {
                 3f
             } else {
                 4f

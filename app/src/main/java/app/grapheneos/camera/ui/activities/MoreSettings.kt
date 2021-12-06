@@ -1,9 +1,7 @@
 package app.grapheneos.camera.ui.activities
 
-import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
@@ -12,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
 import java.net.URLDecoder
 
@@ -46,7 +45,7 @@ class MoreSettings : AppCompatActivity() {
                     Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
             val path = URLDecoder.decode(uri.toString(), "UTF-8")
-            MainActivity.camConfig.storageLocation = uri.toString()
+            camConfig.storageLocation = uri.toString()
 
             val dPath = cleanPath(path)
             sLField.setText(dPath)
@@ -87,20 +86,20 @@ class MoreSettings : AppCompatActivity() {
             R.id.save_image_as_preview_toggle
         )
 
-        sIAPToggle.isChecked = MainActivity.camConfig.saveImageAsPreviewed
+        sIAPToggle.isChecked = camConfig.saveImageAsPreviewed
 
         sIAPToggle.setOnClickListener {
-            MainActivity.camConfig.saveImageAsPreviewed =
+            camConfig.saveImageAsPreviewed =
                 sIAPToggle.isChecked
         }
 
         rootView = findViewById(R.id.root_view)
 
-        sLField = findViewById<EditText>(
+        sLField = findViewById(
             R.id.storage_location_field
         )
 
-        sLField.setText(cleanPath(MainActivity.camConfig.storageLocation))
+        sLField.setText(cleanPath(camConfig.storageLocation))
 
         sLField.setOnClickListener {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -126,12 +125,12 @@ class MoreSettings : AppCompatActivity() {
                 val path = "DCIM/Camera"
                 sLField.setText(path)
 
-                if (MainActivity.camConfig.storageLocation.isNotEmpty()) {
+                if (camConfig.storageLocation.isNotEmpty()) {
                     showMessage(
                         "Switched back to the default storage location"
                     )
 
-                    MainActivity.camConfig.storageLocation = ""
+                    camConfig.storageLocation = ""
                 } else {
                     showMessage(
                         "Already using the default storage location"

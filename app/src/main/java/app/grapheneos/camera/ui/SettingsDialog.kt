@@ -33,6 +33,7 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import android.provider.Settings
 import app.grapheneos.camera.ui.activities.CaptureActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -154,8 +155,8 @@ class SettingsDialog(mActivity: MainActivity) :
         locToggle = findViewById(R.id.location_toggle)
         locToggle.setOnClickListener {
 
-            if (MainActivity.camConfig.isVideoMode) {
-                MainActivity.camConfig.requireLocation = false
+            if (camConfig.isVideoMode) {
+                camConfig.requireLocation = false
                 mActivity.showMessage(
                     "Geo-tagging currently is not supported for video mode"
                 )
@@ -168,7 +169,7 @@ class SettingsDialog(mActivity: MainActivity) :
                     "Can't toggle geo-tagging for ongoing recording"
                 )
             } else {
-                MainActivity.camConfig.requireLocation = locToggle.isChecked
+                camConfig.requireLocation = locToggle.isChecked
             }
         }
 
@@ -179,26 +180,26 @@ class SettingsDialog(mActivity: MainActivity) :
                     "Cannot switch flash mode in this mode"
                 )
             } else {
-                MainActivity.camConfig.toggleFlashMode()
+                camConfig.toggleFlashMode()
             }
         }
 
         aRToggle = findViewById(R.id.aspect_ratio_toggle)
         aRToggle.setOnClickListener {
-            if (MainActivity.camConfig.isVideoMode) {
+            if (camConfig.isVideoMode) {
                 aRToggle.isChecked = true
                 mActivity.showMessage(
                     "4:3 is not supported in video mode"
                 )
             } else {
-                MainActivity.camConfig.toggleAspectRatio()
+                camConfig.toggleAspectRatio()
             }
         }
 
         torchToggle = findViewById(R.id.torch_toggle_option)
         torchToggle.setOnClickListener {
-            if (MainActivity.camConfig.isFlashAvailable) {
-                MainActivity.camConfig.toggleTorchState()
+            if (camConfig.isFlashAvailable) {
+                camConfig.toggleTorchState()
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(
@@ -209,7 +210,7 @@ class SettingsDialog(mActivity: MainActivity) :
 
         gridToggle = findViewById(R.id.grid_toggle_option)
         gridToggle.setOnClickListener {
-            MainActivity.camConfig.gridType = when (MainActivity.camConfig.gridType) {
+            camConfig.gridType = when (camConfig.gridType) {
                 CamConfig.GridType.NONE -> CamConfig.GridType.THREE_BY_THREE
                 CamConfig.GridType.THREE_BY_THREE -> CamConfig.GridType.FOUR_BY_FOUR
                 CamConfig.GridType.FOUR_BY_FOUR -> CamConfig.GridType.GOLDEN_RATIO
@@ -246,15 +247,15 @@ class SettingsDialog(mActivity: MainActivity) :
 
         cmRadioGroup = findViewById(R.id.cm_radio_group)
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
-            MainActivity.camConfig.emphasisQuality = qRadio.isChecked
-            if (MainActivity.camConfig.cameraProvider != null) {
-                MainActivity.camConfig.startCamera(true)
+            camConfig.emphasisQuality = qRadio.isChecked
+            if (camConfig.cameraProvider != null) {
+                camConfig.startCamera(true)
             }
         }
 
         selfIlluminationToggle = findViewById(R.id.self_illumination_switch)
         selfIlluminationToggle.setOnClickListener {
-            MainActivity.camConfig.selfIlluminate = selfIlluminationToggle.isChecked
+            camConfig.selfIlluminate = selfIlluminationToggle.isChecked
         }
 
         focusTimeoutSpinner = findViewById(R.id.focus_timeout_spinner)
@@ -323,7 +324,7 @@ class SettingsDialog(mActivity: MainActivity) :
 
         csSwitch = findViewById(R.id.camera_sounds_switch)
         csSwitch.setOnCheckedChangeListener { _, value ->
-            MainActivity.camConfig.enableCameraSounds = value
+            camConfig.enableCameraSounds = value
         }
 
         includeAudioSetting = findViewById(R.id.include_audio_setting)
@@ -333,10 +334,10 @@ class SettingsDialog(mActivity: MainActivity) :
 
         includeAudioToggle = findViewById(R.id.include_audio_switch)
         includeAudioToggle.setOnClickListener {
-            MainActivity.camConfig.includeAudio = includeAudioToggle.isChecked
+            camConfig.includeAudio = includeAudioToggle.isChecked
         }
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
-            MainActivity.camConfig.startCamera(true)
+            camConfig.startCamera(true)
         }
 
         window?.setFlags(
@@ -368,7 +369,7 @@ class SettingsDialog(mActivity: MainActivity) :
     }
 
     fun showOnlyRelevantSettings() {
-        if (MainActivity.camConfig.isVideoMode) {
+        if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
             videoQualitySetting.visibility = View.VISIBLE
         } else {
@@ -377,13 +378,13 @@ class SettingsDialog(mActivity: MainActivity) :
         }
 
         selfIlluminationSetting.visibility =
-            if (MainActivity.camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            if (camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
 
-        timerSetting.visibility = if (MainActivity.camConfig.isVideoMode) {
+        timerSetting.visibility = if (camConfig.isVideoMode) {
             View.GONE
         } else {
             View.VISIBLE
@@ -394,14 +395,14 @@ class SettingsDialog(mActivity: MainActivity) :
     fun updateFocusTimeout(selectedOption: String) {
 
         if (selectedOption == "Off") {
-            MainActivity.camConfig.focusTimeout = 0
+            camConfig.focusTimeout = 0
         } else {
 
             try {
                 val durS = selectedOption.substring(0, selectedOption.length - 1)
                 val dur = durS.toLong()
 
-                MainActivity.camConfig.focusTimeout = dur
+                camConfig.focusTimeout = dur
 
             } catch (exception: Exception) {
 
@@ -419,12 +420,12 @@ class SettingsDialog(mActivity: MainActivity) :
 
         val quality = titleToQuality(choice)
 
-        if (quality == MainActivity.camConfig.videoQuality) return
+        if (quality == camConfig.videoQuality) return
 
-        MainActivity.camConfig.videoQuality = quality
+        camConfig.videoQuality = quality
 
         if (resCam) {
-            MainActivity.camConfig.startCamera(true)
+            camConfig.startCamera(true)
         } else {
             videoQualitySpinner.setSelection(getAvailableQTitles().indexOf(choice))
 
@@ -460,7 +461,7 @@ class SettingsDialog(mActivity: MainActivity) :
 //            return
 //        }
 
-        if (MainActivity.camConfig.selfIlluminate) {
+        if (camConfig.selfIlluminate) {
 
             val colorFrom: Int = Color.BLACK
             val colorTo: Int = mActivity.getColor(R.color.self_illumination_light)
@@ -538,7 +539,7 @@ class SettingsDialog(mActivity: MainActivity) :
             setBrightness(getSystemBrightness())
         }
 
-        wasSelfIlluminationOn = MainActivity.camConfig.selfIlluminate
+        wasSelfIlluminationOn = camConfig.selfIlluminate
     }
 
     private val slideDownAnimation: Animation by lazy {
@@ -618,7 +619,7 @@ class SettingsDialog(mActivity: MainActivity) :
 
     private fun getAvailableQualities(): List<Int> {
         return QualitySelector.getSupportedQualities(
-            MainActivity.camConfig.camera!!.cameraInfo
+            camConfig.camera!!.cameraInfo
         )
     }
 
@@ -650,7 +651,7 @@ class SettingsDialog(mActivity: MainActivity) :
     fun updateGridToggleUI() {
         mActivity.previewGrid.postInvalidate()
         gridToggle.setImageResource(
-            when (MainActivity.camConfig.gridType) {
+            when (camConfig.gridType) {
                 CamConfig.GridType.NONE -> R.drawable.grid_off_circle
                 CamConfig.GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle
                 CamConfig.GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
@@ -661,8 +662,8 @@ class SettingsDialog(mActivity: MainActivity) :
 
     fun updateFlashMode() {
         flashToggle.setImageResource(
-            if (MainActivity.camConfig.isFlashAvailable) {
-                when (MainActivity.camConfig.flashMode) {
+            if (camConfig.isFlashAvailable) {
+                when (camConfig.flashMode) {
                     ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
                     ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
                     else -> R.drawable.flash_off_circle
@@ -679,13 +680,13 @@ class SettingsDialog(mActivity: MainActivity) :
 
         updateFlashMode()
 
-        if(MainActivity.camConfig.isVideoMode) {
+        if(camConfig.isVideoMode) {
             aRToggle.isChecked = true
         } else {
-            aRToggle.isChecked = MainActivity.camConfig.aspectRatio == AspectRatio.RATIO_16_9
+            aRToggle.isChecked = camConfig.aspectRatio == AspectRatio.RATIO_16_9
         }
 
-        torchToggle.isChecked = MainActivity.camConfig.isTorchOn
+        torchToggle.isChecked = camConfig.isTorchOn
 
         updateGridToggleUI()
 
@@ -712,7 +713,7 @@ class SettingsDialog(mActivity: MainActivity) :
         videoQualitySpinner.adapter = vQAdapter
 
         val qt = if (qualityText.isEmpty()) {
-            getTitleFor(MainActivity.camConfig.videoQuality)
+            getTitleFor(camConfig.videoQuality)
         } else {
             qualityText
         }

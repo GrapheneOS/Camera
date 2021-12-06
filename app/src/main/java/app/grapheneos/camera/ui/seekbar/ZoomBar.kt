@@ -20,6 +20,7 @@ import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import kotlin.math.roundToInt
 
 
@@ -83,7 +84,7 @@ class ZoomBar : AppCompatSeekBar {
     }
 
     fun updateThumb(shouldShowPanel : Boolean = true) {
-        val zoomState: ZoomState? = MainActivity.camConfig.camera?.cameraInfo?.zoomState
+        val zoomState: ZoomState? = camConfig.camera?.cameraInfo?.zoomState
             ?.value
 
         if(shouldShowPanel) {
@@ -146,7 +147,7 @@ class ZoomBar : AppCompatSeekBar {
                 if (progress<1) progress = 1
                 if (progress>100) progress = 100
 
-                MainActivity.camConfig.camera?.cameraControl?.setLinearZoom(progress / 100f)
+                camConfig.camera?.cameraControl?.setLinearZoom(progress / 100f)
 
             }
             MotionEvent.ACTION_CANCEL -> {

@@ -18,6 +18,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 class CustomLocationListener(private val mActivity: MainActivity) : LocationListener {
 
@@ -34,7 +35,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
         if (it) {
             start()
         } else {
-            MainActivity.camConfig.requireLocation = false
+            camConfig.requireLocation = false
         }
     }
 
@@ -118,7 +119,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
                             mActivity, Manifest.permission.ACCESS_FINE_LOCATION
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
-                        MainActivity.camConfig.requireLocation = false
+                        camConfig.requireLocation = false
                     }
                 }
 
@@ -149,7 +150,7 @@ class CustomLocationListener(private val mActivity: MainActivity) : LocationList
         )
 
         // Revert settings
-        MainActivity.camConfig.requireLocation = false
+        camConfig.requireLocation = false
     }
 
     companion object {

@@ -44,6 +44,7 @@ import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executors
 import android.widget.Button
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -115,7 +116,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SAVE_IMAGE_AS_PREVIEW = false
 
             const val STORAGE_LOCATION = ""
-            val MEDIA_URIS = ""
+            const val MEDIA_URIS = ""
         }
     }
 
@@ -467,7 +468,7 @@ class CamConfig(private val mActivity: MainActivity) {
             "$path$PATH_SEPARATOR$uriPathData"
         }
 
-        MainActivity.camConfig.latestUri = uri
+        camConfig.latestUri = uri
 
         val editor = commonPref.edit()
         editor.putString(SettingValues.Key.MEDIA_URIS, resultData)
