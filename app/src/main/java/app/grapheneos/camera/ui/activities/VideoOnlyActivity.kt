@@ -14,14 +14,14 @@ class VideoOnlyActivity : MainActivity() {
         tabLayout.alpha = 0f
         tabLayout.isClickable = false
         tabLayout.isEnabled = false
-        (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
-            it.setMargins(it.leftMargin, it.height, it.rightMargin, it.bottomMargin)
-            it.height = 0
-        }
-
-        (previewView.layoutParams as ViewGroup.MarginLayoutParams).let {
-            it.setMargins(it.leftMargin, it.topMargin, it.rightMargin, 0)
-        }
+//        (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
+//            it.setMargins(it.leftMargin, it.height, it.rightMargin, it.bottomMargin)
+//            it.height = 0
+//        }
+//
+//        (previewView.layoutParams as ViewGroup.MarginLayoutParams).let {
+//            it.setMargins(it.leftMargin, it.topMargin, it.rightMargin, 0)
+//        }
     }
 
 }
