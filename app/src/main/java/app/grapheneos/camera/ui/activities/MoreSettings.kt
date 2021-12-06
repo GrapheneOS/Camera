@@ -1,10 +1,17 @@
 package app.grapheneos.camera.ui.activities
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -16,7 +23,7 @@ import com.google.android.material.snackbar.Snackbar
 import java.net.URLDecoder
 
 
-class MoreSettings : AppCompatActivity() {
+class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     private lateinit var snackBar: Snackbar
 
@@ -27,6 +34,8 @@ class MoreSettings : AppCompatActivity() {
     private lateinit var rootView: View
 
     private lateinit var pQField : EditText
+    private lateinit var iFField : EditText
+    private lateinit var vFField : EditText
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -154,15 +163,53 @@ class MoreSettings : AppCompatActivity() {
 
         pQField = findViewById(R.id.photo_quality)
         pQField.filters = arrayOf(NumInputFilter(this))
+        pQField.setOnEditorActionListener(this)
+
+        iFField = findViewById(R.id.image_format_setting_field)
+        iFField.setOnEditorActionListener(this)
+
+        vFField = findViewById(R.id.video_format_setting_field)
+        vFField.setOnEditorActionListener(this)
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        
+        if (event.action == MotionEvent.ACTION_UP) {
+            val v: View? = currentFocus
+            if (v is EditText) {
+                val outRect = Rect()
+                v.getGlobalVisibleRect(outRect)
+                if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
+                    clearFocus()
+                }
+            }
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
+    private fun clearFocus() {
+        val view = currentFocus
+        if (view != null) {
+            view.clearFocus()
+            val imm: InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+    }
+
+    override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {
+        return if (id == EditorInfo.IME_ACTION_DONE) {
+            clearFocus()
+            true
+        } else false
     }
 
     fun showMessage(msg: String) {
         snackBar.setText(msg)
         snackBar.show()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }
