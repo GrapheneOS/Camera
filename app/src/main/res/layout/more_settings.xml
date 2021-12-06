@@ -61,7 +61,7 @@
                     android:text="@string/gyroscope_suggestions"
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
-                    android:textColor="@color/white"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="16sp" />
 
                 <TextView
@@ -121,7 +121,7 @@
                     android:text="@string/image_file_name_format"
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
-                    android:textColor="@color/white"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="16sp" />
 
                 <AutoCompleteTextView
@@ -177,7 +177,7 @@
                     android:text="@string/video_file_name_format"
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
-                    android:textColor="@color/white"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="16sp" />
 
                 <AutoCompleteTextView
@@ -241,7 +241,7 @@
                     android:text="@string/save_image_as_previewed"
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
-                    android:textColor="@color/white"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="16sp" />
 
                 <TextView
@@ -300,7 +300,7 @@
                     android:text="@string/image_quality"
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
-                    android:textColor="@color/white"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="16sp" />
 
                 <TextView
@@ -408,7 +408,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/storage_location"
                     android:layout_marginStart="10dp"
-                    android:textColor="@color/white"
+                    android:textColor="?android:textColorPrimary"
                     android:textSize="16sp" />
 
                 <LinearLayout
