@@ -51,6 +51,8 @@ class MoreSettings : AppCompatActivity() {
             val dPath = cleanPath(path)
             sLField.setText(dPath)
 
+            showMessage("Storage location successfully updated to $dPath")
+
         } else {
             showMessage(
             "No directory was selected by" +
@@ -124,7 +126,17 @@ class MoreSettings : AppCompatActivity() {
                 val path = "DCIM/Camera"
                 sLField.setText(path)
 
-                MainActivity.camConfig.storageLocation = ""
+                if (MainActivity.camConfig.storageLocation.isNotEmpty()) {
+                    showMessage(
+                        "Switched back to the default storage location"
+                    )
+
+                    MainActivity.camConfig.storageLocation = ""
+                } else {
+                    showMessage(
+                        "Already using the default storage location"
+                    )
+                }
             }
 
             dialog.setNegativeButton("No", null)
