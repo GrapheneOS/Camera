@@ -236,7 +236,8 @@
                         android:textAlignment="center"
                         android:layout_gravity="center"
                         android:importantForAutofill="no"
-                        android:inputType="number" />
+                        android:inputType="number"
+                        android:imeOptions="actionDone" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -385,6 +386,7 @@
                     android:paddingStart="10dp"
                     android:paddingEnd="0dp"
                     android:textSize="14sp"
+                    android:imeOptions="actionDone"
                     tools:ignore="LabelFor" />
 
             </LinearLayout>
@@ -441,6 +443,7 @@
                     android:paddingStart="10dp"
                     android:paddingEnd="0dp"
                     android:textSize="14sp"
+                    android:imeOptions="actionDone"
                     tools:ignore="LabelFor" />
 
             </LinearLayout>
