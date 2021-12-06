@@ -175,6 +175,35 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         vFField = findViewById(R.id.video_format_setting_field)
         vFField.setOnEditorActionListener(this)
+
+        val iPQButton = findViewById<View>(R.id.increase_photo_quality)
+        iPQButton.setOnClickListener {
+
+            if (camConfig.photoQuality != NumInputFilter.max) {
+                ++camConfig.photoQuality
+                pQField.setText(camConfig.photoQuality.toString())
+            } else {
+                showMessage(
+                    "Photo quality can only be between ${NumInputFilter.min} and ${NumInputFilter.max}"
+                )
+            }
+        }
+
+        val dPQButton = findViewById<View>(R.id.decrease_photo_quality)
+        dPQButton.setOnClickListener {
+            if (camConfig.photoQuality >= NumInputFilter.min) {
+                --camConfig.photoQuality
+
+                if (camConfig.photoQuality >= NumInputFilter.min) {
+                    pQField.setText(camConfig.photoQuality.toString())
+                } else {
+                    pQField.setText("")
+                    showMessage(
+                        "Photo quality was set to auto mode"
+                    )
+                }
+            }
+        }
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -207,6 +236,10 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         // Dump state of photo quality
         if (pQField.text.isEmpty()) {
             camConfig.photoQuality = -1
+
+            showMessage(
+                "Photo quality was set to auto mode"
+            )
         } else {
             try {
 
