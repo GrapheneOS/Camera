@@ -385,7 +385,15 @@ class InAppGallery : AppCompatActivity() {
             mediaUris.addAll(mediaFileArray)
         } else {
 
-            mediaUris.addAll(camConfig.mediaUris)
+            if (showVideosOnly) {
+                for (mediaUri in camConfig.mediaUris) {
+                    if (VideoCapturer.isVideo(mediaUri)) {
+                        mediaUris.add(mediaUri)
+                    }
+                }
+            } else {
+                mediaUris.addAll(camConfig.mediaUris)
+            }
 
 
         }
