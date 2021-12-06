@@ -1360,6 +1360,8 @@ open class MainActivity : AppCompatActivity(),
         if (isZooming || cdTimer.isRunning || videoCapturer.isRecording)
             return
 
+        if (this is VideoOnlyActivity) return
+
         wasSwiping = true
         if (settingsDialog.isShowing) return
 
@@ -1380,6 +1382,8 @@ open class MainActivity : AppCompatActivity(),
 
     private fun onSwipeLeft() {
         if (isZooming || cdTimer.isRunning) return
+
+        if (this is VideoOnlyActivity) return
 
         wasSwiping = true
         if (settingsDialog.isShowing) return
