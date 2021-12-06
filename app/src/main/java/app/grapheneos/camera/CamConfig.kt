@@ -1103,21 +1103,30 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             if (!mActivity.requiresVideoModeOnly) {
-                imageCapture = builder
-                    .setCaptureMode(
+                imageCapture = builder.let {
+                    it.setCaptureMode(
                         if (emphasisQuality) {
                             ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                         } else {
                             ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                         }
                     )
-                    .setTargetRotation(
+
+                    it.setTargetRotation(
                         imageCapture?.targetRotation
                             ?: rotation
                     )
-                    .setTargetAspectRatio(aspectRatio)
-                    .setFlashMode(flashMode)
-                    .build()
+
+                    it.setTargetAspectRatio(aspectRatio)
+
+                    it.setFlashMode(flashMode)
+
+                    if (photoQuality != SettingValues.Default.PHOTO_QUALITY) {
+                        it.setJpegQuality(photoQuality)
+                    }
+
+                    it.build()
+                }
 
                 useCaseGroupBuilder.addUseCase(imageCapture!!)
             }
