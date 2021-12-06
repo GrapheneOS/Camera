@@ -86,6 +86,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val STORAGE_LOCATION = "storage_location"
             const val MEDIA_URIS = "media_uri_s"
+
+            const val PHOTO_QUALITY = "photo_quality"
+
+            // const val IMAGE_FILE_FORMAT = "image_quality"
+            // const val VIDEO_FILE_FORMAT = "video_quality"
         }
 
         object Default {
@@ -117,6 +122,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val STORAGE_LOCATION = ""
             const val MEDIA_URIS = ""
+
+            const val PHOTO_QUALITY = -1
+
+            // const val IMAGE_FILE_FORMAT = ""
+            // const val VIDEO_FILE_FORMAT = ""
         }
     }
 
@@ -451,6 +461,51 @@ class CamConfig(private val mActivity: MainActivity) {
 
             return uris
         }
+
+    var photoQuality : Int
+        get() {
+            return commonPref.getInt(
+                SettingValues.Key.PHOTO_QUALITY,
+                SettingValues.Default.PHOTO_QUALITY
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putInt(SettingValues.Key.PHOTO_QUALITY, value)
+            editor.apply()
+        }
+
+//    var imageFormat : String
+//        get() {
+//            return commonPref.getString(
+//                SettingValues.Key.IMAGE_FILE_FORMAT,
+//                SettingValues.Default.IMAGE_FILE_FORMAT
+//            )!!
+//        }
+//        set(value) {
+//            val editor = commonPref.edit()
+//            editor.putString(
+//                SettingValues.Key.IMAGE_FILE_FORMAT,
+//                value
+//            )
+//            editor.apply()
+//        }
+//
+//    var videoFormat : String
+//        get() {
+//            return commonPref.getString(
+//                SettingValues.Key.VIDEO_FILE_FORMAT,
+//                SettingValues.Default.VIDEO_FILE_FORMAT
+//            )!!
+//        }
+//        set(value) {
+//            val editor = commonPref.edit()
+//            editor.putString(
+//                SettingValues.Key.VIDEO_FILE_FORMAT,
+//                value
+//            )
+//            editor.apply()
+//        }
 
     @SuppressLint("MutatingSharedPrefs")
     fun addToGallery(uri: Uri) {

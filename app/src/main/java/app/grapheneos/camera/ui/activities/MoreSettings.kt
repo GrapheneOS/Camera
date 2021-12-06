@@ -162,6 +162,11 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
 
         pQField = findViewById(R.id.photo_quality)
+
+        if (camConfig.photoQuality != -1) {
+            pQField.setText(camConfig.photoQuality.toString())
+        }
+
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
 
@@ -181,6 +186,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 v.getGlobalVisibleRect(outRect)
                 if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
                     clearFocus()
+                    dumpData()
                 }
             }
         }
@@ -196,9 +202,35 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
     }
 
+    private fun dumpData() {
+
+        // Dump state of photo quality
+        if (pQField.text.isEmpty()) {
+            camConfig.photoQuality = -1
+        } else {
+            try {
+
+                camConfig.photoQuality =
+                    Integer.parseInt(pQField.text.toString())
+
+            } catch (exception : Exception) {
+
+                camConfig.photoQuality = -1
+
+            }
+        }
+
+//        // Dump state of image format
+//        camConfig.imageFormat = iFField.text.toString()
+//
+//        // Dump state of video format
+//        camConfig.videoFormat = vFField.text.toString()
+    }
+
     override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {
         return if (id == EditorInfo.IME_ACTION_DONE) {
             clearFocus()
+            dumpData()
             true
         } else false
     }
