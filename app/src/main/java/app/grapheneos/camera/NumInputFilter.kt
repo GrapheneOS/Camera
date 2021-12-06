@@ -27,7 +27,7 @@ class NumInputFilter(private val mActivity : MoreSettings) : InputFilter {
     }
 
     companion object {
-        const val min = 0
+        const val min = 1
         const val max = 100
     }
 }

@@ -163,7 +163,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         pQField = findViewById(R.id.photo_quality)
 
-        if (camConfig.photoQuality != -1) {
+        if (camConfig.photoQuality != 0) {
             pQField.setText(camConfig.photoQuality.toString())
         }
 
@@ -235,7 +235,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         // Dump state of photo quality
         if (pQField.text.isEmpty()) {
-            camConfig.photoQuality = -1
+            camConfig.photoQuality = 0
 
             showMessage(
                 "Photo quality was set to auto mode"
@@ -248,7 +248,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
             } catch (exception : Exception) {
 
-                camConfig.photoQuality = -1
+                camConfig.photoQuality = 0
 
             }
         }

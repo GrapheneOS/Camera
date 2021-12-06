@@ -123,7 +123,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val STORAGE_LOCATION = ""
             const val MEDIA_URIS = ""
 
-            const val PHOTO_QUALITY = -1
+            const val PHOTO_QUALITY = 0
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
