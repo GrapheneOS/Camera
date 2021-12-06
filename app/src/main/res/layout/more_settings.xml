@@ -85,148 +85,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/save_image_as_preview_setting"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="?android:attr/selectableItemBackground"
-            android:paddingTop="8dp"
-            android:paddingBottom="10dp"
-            android:paddingStart="10dp"
-            android:paddingEnd="6dp"
-            android:clickable="true"
-            android:focusable="true" >
-
-            <ImageView
-                android:id="@+id/save_image_as_preview_icon"
-                android:src="@drawable/selfie_preview"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/save_image_as_previewed"
-                android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/save_image_as_preview_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/save_image_as_previewed"
-                    android:layout_marginStart="10dp"
-                    android:paddingBottom="2dp"
-                    android:textColor="@color/white"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/save_image_as_preview_subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/save_as_image_preview_desc"
-                    android:paddingStart="10dp"
-                    android:textSize="14sp"
-                    tools:ignore="RtlSymmetry" />
-
-            </LinearLayout>
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/save_image_as_preview_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="0dp" />
-
-        </LinearLayout>
-
-        <TextView
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:text="@string/storage"
-            android:textColor="?android:colorAccent"
-            android:layout_marginStart="68dp"
-            android:layout_marginVertical="12dp"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:id="@+id/storage_location_setting"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:attr/selectableItemBackground"
-            android:focusable="true"
-            android:clickable="true"
-            android:orientation="horizontal"
-            android:paddingTop="8dp"
-            android:paddingBottom="10dp"
-            android:paddingStart="10dp"
-            android:paddingEnd="6dp" >
-
-            <ImageView
-                android:id="@+id/storage_location_icon"
-                android:src="@drawable/storage"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/save_image_as_previewed"
-                android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/storage_location_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/storage_location"
-                    android:layout_marginStart="10dp"
-                    android:textColor="@color/white"
-                    android:textSize="16sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <EditText
-                        android:layout_weight="1"
-                        android:id="@+id/storage_location_field"
-                        android:hint="@string/storage_location"
-                        android:layout_width="0dp"
-                        android:cursorVisible="false"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="0dp"
-                        android:textSize="14sp"
-                        android:drawableStart="@drawable/folder"
-                        android:drawablePadding="6dp"
-                        android:importantForAutofill="no"
-                        android:inputType="textNoSuggestions" />
-
-                    <ImageButton
-                        android:id="@+id/refresh_storage_location"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/refresh"
-                        android:layout_gravity="center_vertical"
-                        android:contentDescription="@string/revert_back_to_dcim"/>
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
             android:id="@+id/image_format_setting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -348,6 +206,65 @@
             android:textStyle="bold" />
 
         <LinearLayout
+            android:id="@+id/save_image_as_preview_setting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="6dp"
+            android:clickable="true"
+            android:focusable="true" >
+
+            <ImageView
+                android:id="@+id/save_image_as_preview_icon"
+                android:src="@drawable/selfie_preview"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/save_image_as_previewed"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/save_image_as_preview_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/save_image_as_previewed"
+                    android:layout_marginStart="10dp"
+                    android:paddingBottom="2dp"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/save_image_as_preview_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/save_as_image_preview_desc"
+                    android:paddingStart="10dp"
+                    android:textSize="14sp"
+                    tools:ignore="RtlSymmetry" />
+
+            </LinearLayout>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/save_image_as_preview_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="0dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@+id/photo_quality_setting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -441,6 +358,89 @@
                     android:src="@drawable/add"
                     android:layout_gravity="center"
                     android:contentDescription="@string/increase_quality" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:text="@string/storage"
+            android:textColor="?android:colorAccent"
+            android:layout_marginStart="68dp"
+            android:layout_marginVertical="12dp"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/storage_location_setting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:focusable="true"
+            android:clickable="true"
+            android:orientation="horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="6dp" >
+
+            <ImageView
+                android:id="@+id/storage_location_icon"
+                android:src="@drawable/storage"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/save_image_as_previewed"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/storage_location_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/storage_location"
+                    android:layout_marginStart="10dp"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <EditText
+                        android:layout_weight="1"
+                        android:id="@+id/storage_location_field"
+                        android:hint="@string/storage_location"
+                        android:layout_width="0dp"
+                        android:cursorVisible="false"
+                        android:layout_height="wrap_content"
+                        android:focusable="false"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="0dp"
+                        android:textSize="14sp"
+                        android:drawableStart="@drawable/folder"
+                        android:drawablePadding="6dp"
+                        android:importantForAutofill="no"
+                        android:inputType="textNoSuggestions" />
+
+                    <ImageButton
+                        android:id="@+id/refresh_storage_location"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/refresh"
+                        android:layout_gravity="center_vertical"
+                        android:contentDescription="@string/revert_back_to_dcim"/>
+
+                </LinearLayout>
 
             </LinearLayout>
 
