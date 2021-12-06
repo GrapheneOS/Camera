@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
@@ -24,6 +25,8 @@ class MoreSettings : AppCompatActivity() {
     private lateinit var rSLocation: ImageView
 
     private lateinit var rootView: View
+
+    private lateinit var pQField : EditText
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -148,6 +151,9 @@ class MoreSettings : AppCompatActivity() {
         } else {
             View.GONE
         }
+
+        pQField = findViewById(R.id.photo_quality)
+        pQField.filters = arrayOf(NumInputFilter(this))
     }
 
     override fun onSupportNavigateUp(): Boolean {
