@@ -73,6 +73,8 @@ class InAppGallery : AppCompatActivity() {
             }
         }
 
+    lateinit var rootView : View
+
     companion object {
         @SuppressLint("SimpleDateFormat")
         fun convertTime(time: Long): String {
@@ -365,7 +367,7 @@ class InAppGallery : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
-        val rootView = findViewById<View>(R.id.root_view)
+        rootView = findViewById<View>(R.id.root_view)
         rootView.setOnClickListener {
             toggleActionBarState()
         }

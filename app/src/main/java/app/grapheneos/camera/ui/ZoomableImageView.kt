@@ -1,6 +1,9 @@
 package app.grapheneos.camera.ui
 
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Matrix
 
 import android.view.ScaleGestureDetector
@@ -13,6 +16,7 @@ import android.util.Log
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.InAppGallery
 import kotlin.math.abs
@@ -112,18 +116,6 @@ class ZoomableImageView @JvmOverloads constructor(
             return true
         }
 
-        override fun onScaleEnd(detector: ScaleGestureDetector?) {
-            super.onScaleEnd(detector)
-
-            if (saveScale == 1f) {
-                gActivity.supportActionBar?.show()
-                gActivity.gallerySlider.isUserInputEnabled = true
-            } else {
-                gActivity.supportActionBar?.hide()
-                gActivity.gallerySlider.isUserInputEnabled = false
-            }
-        }
-
         override fun onScale(detector: ScaleGestureDetector): Boolean {
 
             var mScaleFactor = detector.scaleFactor
@@ -148,8 +140,64 @@ class ZoomableImageView @JvmOverloads constructor(
             )
 
             fixTrans()
+
+            if (saveScale == 1f) {
+                moveOutOfZoomMode()
+            } else {
+                moveIntoZoomMode()
+            }
+
             return true
         }
+    }
+
+    private var isInZoomMode = false
+
+    fun moveIntoZoomMode() {
+
+        if (isInZoomMode) return
+
+        isInZoomMode = true
+
+        val bgColorAnim = ValueAnimator.ofObject(
+            ArgbEvaluator(),
+            ContextCompat.getColor(gActivity, R.color.system_neutral1_900),
+            Color.BLACK
+        )
+        bgColorAnim.duration = 300
+        bgColorAnim.addUpdateListener { animator ->
+            val color = animator.animatedValue as Int
+            gActivity.rootView.setBackgroundColor(color)
+        }
+        bgColorAnim.start()
+
+        gActivity.supportActionBar?.hide()
+
+        gActivity.gallerySlider.isUserInputEnabled = false
+    }
+
+    fun moveOutOfZoomMode() {
+
+        if (!isInZoomMode) return
+
+        isInZoomMode = false
+
+        val bgColorAnim = ValueAnimator.ofObject(
+            ArgbEvaluator(),
+            Color.BLACK,
+            ContextCompat.getColor(gActivity, R.color.system_neutral1_900),
+        )
+        bgColorAnim.duration = 300
+        bgColorAnim.addUpdateListener { animator ->
+            val color = animator.animatedValue as Int
+            gActivity.rootView.setBackgroundColor(color)
+        }
+        bgColorAnim.start()
+
+        gActivity.supportActionBar?.show()
+
+        gActivity.rootView
+        gActivity.gallerySlider.isUserInputEnabled = true
     }
 
     fun fixTrans() {
