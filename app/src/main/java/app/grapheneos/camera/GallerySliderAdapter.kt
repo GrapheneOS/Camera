@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.ui.ZoomableImageView
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide
@@ -37,8 +38,10 @@ class GallerySliderAdapter(
 
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
 
-        val mediaPreview: ImageView =
+        val mediaPreview: ZoomableImageView =
             holder.itemView.findViewById(R.id.slide_preview)
+
+        mediaPreview.setGalleryActivity(gActivity)
 
         val mediaUri = mediaUris[position]
 
