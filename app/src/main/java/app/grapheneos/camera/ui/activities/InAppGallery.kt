@@ -34,12 +34,14 @@ import java.text.Format
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
+import kotlin.properties.Delegates
 
 class InAppGallery : AppCompatActivity() {
 
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
     private var snackBar : Snackbar? = null
+    var ogColor by Delegates.notNull<Int>()
 
     private val isSecureMode : Boolean
         get() {
@@ -323,10 +325,17 @@ class InAppGallery : AppCompatActivity() {
         alertDialog.show()
     }
 
-    fun animateBackgroundToBlack() {
+    private fun animateBackgroundToBlack() {
+
+        val cBgColor = (rootView.background as ColorDrawable).color
+
+        if (cBgColor == Color.BLACK) {
+            return
+        }
+
         val bgColorAnim = ValueAnimator.ofObject(
             ArgbEvaluator(),
-            ContextCompat.getColor(this, R.color.system_neutral1_900),
+            ogColor,
             Color.BLACK
         )
         bgColorAnim.duration = 300
@@ -337,11 +346,18 @@ class InAppGallery : AppCompatActivity() {
         bgColorAnim.start()
     }
 
-    fun animateBackgroundToOriginal() {
+    private fun animateBackgroundToOriginal() {
+
+        val cBgColor = (rootView.background as ColorDrawable).color
+
+        if (cBgColor == ogColor) {
+            return
+        }
+
         val bgColorAnim = ValueAnimator.ofObject(
             ArgbEvaluator(),
             Color.BLACK,
-            ContextCompat.getColor(this, R.color.system_neutral1_900),
+            ogColor,
         )
         bgColorAnim.duration = 300
         bgColorAnim.addUpdateListener { animator ->
@@ -389,6 +405,8 @@ class InAppGallery : AppCompatActivity() {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
         }
+
+        ogColor = ContextCompat.getColor(this, R.color.system_neutral1_900)
 
         setContentView(R.layout.gallery)
 
