@@ -41,6 +41,8 @@ class GallerySliderAdapter(
         val mediaPreview: ZoomableImageView =
             holder.itemView.findViewById(R.id.slide_preview)
 
+        mediaPreview.disableZooming()
+
         mediaPreview.setGalleryActivity(gActivity)
 
         val mediaUri = mediaUris[position]
@@ -84,6 +86,7 @@ class GallerySliderAdapter(
 
         } else {
             playButton.visibility = View.INVISIBLE
+            mediaPreview.enableZooming()
             mediaPreview.setImageURI(mediaUri)
         }
     }

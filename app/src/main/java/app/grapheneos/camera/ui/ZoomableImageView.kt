@@ -43,6 +43,8 @@ class ZoomableImageView @JvmOverloads constructor(
     private var oldMeasuredHeight = 0
     private var mScaleDetector: ScaleGestureDetector? = null
 
+    private var isZoomingDisabled = true
+
     lateinit var gActivity : InAppGallery
 
     init {
@@ -59,6 +61,14 @@ class ZoomableImageView @JvmOverloads constructor(
         this.gActivity = gActivity
     }
 
+    fun enableZooming() {
+        isZoomingDisabled = false
+    }
+
+    fun disableZooming() {
+        isZoomingDisabled = true
+    }
+
     private fun sharedConstructing() {
         super.setClickable(true)
         mScaleDetector = ScaleGestureDetector(context, ScaleListener())
@@ -67,6 +77,13 @@ class ZoomableImageView @JvmOverloads constructor(
         scaleType = ScaleType.MATRIX
 
         setOnTouchListener { _, event ->
+
+            if (currentInstance.isZoomingDisabled) {
+                if (event.action == MotionEvent.ACTION_UP) {
+                    return@setOnTouchListener performClick()
+                }
+                return@setOnTouchListener false
+            }
 
             currentInstance.mScaleDetector!!.onTouchEvent(event)
             val curr = PointF(event.x, event.y)
