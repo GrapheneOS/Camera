@@ -453,18 +453,30 @@ class InAppGallery : AppCompatActivity() {
     fun toggleActionBarState() {
         supportActionBar?.let {
             if (it.isShowing) {
-                it.hide()
-                animateBackgroundToBlack()
+                hideActionBar()
             }  else {
-                it.show()
-                animateBackgroundToOriginal()
+                showActionBar()
             }
+        }
+    }
+
+    fun showActionBar() {
+        supportActionBar?.let {
+            it.show()
+            animateBackgroundToOriginal()
+        }
+    }
+
+    fun hideActionBar() {
+        supportActionBar?.let {
+            it.hide()
+            animateBackgroundToBlack()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        supportActionBar?.show()
+        showActionBar()
     }
 
     fun showMessage(msg: String) {

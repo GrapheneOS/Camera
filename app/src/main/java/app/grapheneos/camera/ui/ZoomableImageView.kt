@@ -173,8 +173,7 @@ class ZoomableImageView @JvmOverloads constructor(
         isInZoomMode = true
 
         gActivity.let {
-            it.animateBackgroundToBlack()
-            it.supportActionBar?.hide()
+            it.hideActionBar()
             it.gallerySlider.isUserInputEnabled = false
         }
     }
@@ -186,8 +185,7 @@ class ZoomableImageView @JvmOverloads constructor(
         isInZoomMode = false
 
         gActivity.let {
-            it.animateBackgroundToOriginal()
-            it.supportActionBar?.show()
+            it.showActionBar()
             it.gallerySlider.isUserInputEnabled = true
         }
 
