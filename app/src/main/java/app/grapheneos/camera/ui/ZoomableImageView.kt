@@ -1,9 +1,6 @@
 package app.grapheneos.camera.ui
 
-import android.animation.ArgbEvaluator
-import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Matrix
 
 import android.view.ScaleGestureDetector
@@ -16,7 +13,6 @@ import android.util.Log
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.InAppGallery
 import kotlin.math.abs
@@ -176,21 +172,11 @@ class ZoomableImageView @JvmOverloads constructor(
 
         isInZoomMode = true
 
-        val bgColorAnim = ValueAnimator.ofObject(
-            ArgbEvaluator(),
-            ContextCompat.getColor(gActivity, R.color.system_neutral1_900),
-            Color.BLACK
-        )
-        bgColorAnim.duration = 300
-        bgColorAnim.addUpdateListener { animator ->
-            val color = animator.animatedValue as Int
-            gActivity.rootView.setBackgroundColor(color)
+        gActivity.let {
+            it.animateBackgroundToBlack()
+            it.supportActionBar?.hide()
+            it.gallerySlider.isUserInputEnabled = false
         }
-        bgColorAnim.start()
-
-        gActivity.supportActionBar?.hide()
-
-        gActivity.gallerySlider.isUserInputEnabled = false
     }
 
     fun moveOutOfZoomMode() {
@@ -199,22 +185,12 @@ class ZoomableImageView @JvmOverloads constructor(
 
         isInZoomMode = false
 
-        val bgColorAnim = ValueAnimator.ofObject(
-            ArgbEvaluator(),
-            Color.BLACK,
-            ContextCompat.getColor(gActivity, R.color.system_neutral1_900),
-        )
-        bgColorAnim.duration = 300
-        bgColorAnim.addUpdateListener { animator ->
-            val color = animator.animatedValue as Int
-            gActivity.rootView.setBackgroundColor(color)
+        gActivity.let {
+            it.animateBackgroundToOriginal()
+            it.supportActionBar?.show()
+            it.gallerySlider.isUserInputEnabled = true
         }
-        bgColorAnim.start()
 
-        gActivity.supportActionBar?.show()
-
-        gActivity.rootView
-        gActivity.gallerySlider.isUserInputEnabled = true
     }
 
     fun fixTrans() {

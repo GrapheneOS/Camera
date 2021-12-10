@@ -1,10 +1,13 @@
 package app.grapheneos.camera.ui.activities
 
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -320,6 +323,34 @@ class InAppGallery : AppCompatActivity() {
         alertDialog.show()
     }
 
+    fun animateBackgroundToBlack() {
+        val bgColorAnim = ValueAnimator.ofObject(
+            ArgbEvaluator(),
+            ContextCompat.getColor(this, R.color.system_neutral1_900),
+            Color.BLACK
+        )
+        bgColorAnim.duration = 300
+        bgColorAnim.addUpdateListener { animator ->
+            val color = animator.animatedValue as Int
+            rootView.setBackgroundColor(color)
+        }
+        bgColorAnim.start()
+    }
+
+    fun animateBackgroundToOriginal() {
+        val bgColorAnim = ValueAnimator.ofObject(
+            ArgbEvaluator(),
+            Color.BLACK,
+            ContextCompat.getColor(this, R.color.system_neutral1_900),
+        )
+        bgColorAnim.duration = 300
+        bgColorAnim.addUpdateListener { animator ->
+            val color = animator.animatedValue as Int
+            this.rootView.setBackgroundColor(color)
+        }
+        bgColorAnim.start()
+    }
+
     private fun shareCurrentMedia() {
 
         if (isSecureMode) {
@@ -423,8 +454,10 @@ class InAppGallery : AppCompatActivity() {
         supportActionBar?.let {
             if (it.isShowing) {
                 it.hide()
+                animateBackgroundToBlack()
             }  else {
                 it.show()
+                animateBackgroundToOriginal()
             }
         }
     }
