@@ -50,10 +50,7 @@ class GallerySliderAdapter(
         val playButton: ImageView =
             holder.itemView.findViewById(R.id.play_button)
 
-        val rootView: View =
-            holder.itemView.findViewById(R.id.root)
-
-        rootView.setOnClickListener {
+        mediaPreview.setOnClickListener {
 
             val mUri = getCurrentUri()
 
