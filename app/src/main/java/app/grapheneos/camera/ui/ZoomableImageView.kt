@@ -74,6 +74,8 @@ class ZoomableImageView @JvmOverloads constructor(
 
         setOnTouchListener { _, event ->
 
+            currentInstance.mScaleDetector!!.onTouchEvent(event)
+
             if (currentInstance.isZoomingDisabled) {
                 if (event.action == MotionEvent.ACTION_UP) {
                     return@setOnTouchListener performClick()
@@ -81,7 +83,6 @@ class ZoomableImageView @JvmOverloads constructor(
                 return@setOnTouchListener false
             }
 
-            currentInstance.mScaleDetector!!.onTouchEvent(event)
             val curr = PointF(event.x, event.y)
 
             when (event.action) {
@@ -126,10 +127,17 @@ class ZoomableImageView @JvmOverloads constructor(
     private inner class ScaleListener : SimpleOnScaleGestureListener() {
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             mode = ZOOM
+
+            if (isZoomingDisabled) {
+                gActivity.showActionBar()
+            }
+
             return true
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
+
+            if (isZoomingDisabled) return true
 
             var mScaleFactor = detector.scaleFactor
             val origScale = saveScale
