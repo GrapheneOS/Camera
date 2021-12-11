@@ -16,6 +16,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
@@ -177,6 +178,8 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     if(mActivity is SecureMainActivity) {
                         mActivity.capturedFilePaths.add(camConfig.latestUri.toString())
                     }
+
+                    clearExif(mActivity, camConfig.latestUri!!)
 
                     mActivity.previewLoader.visibility = View.GONE
                     camConfig.updatePreview()

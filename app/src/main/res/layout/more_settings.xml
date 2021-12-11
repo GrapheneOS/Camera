@@ -255,6 +255,65 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/remove_exif_setting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="6dp"
+            android:clickable="true"
+            android:focusable="true" >
+
+            <ImageView
+                android:id="@+id/remove_exif_icon"
+                android:src="@drawable/info"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/save_image_as_previewed"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/remove_exif_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/remove_exif_title"
+                    android:layout_marginStart="10dp"
+                    android:paddingBottom="2dp"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/remove_exif_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/remove_exif_subtitle"
+                    android:paddingStart="10dp"
+                    android:textSize="14sp"
+                    tools:ignore="RtlSymmetry" />
+
+            </LinearLayout>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/remove_exif_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="0dp" />
+
+        </LinearLayout>
+
         <TextView
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"

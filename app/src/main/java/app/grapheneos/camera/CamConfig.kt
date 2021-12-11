@@ -44,6 +44,7 @@ import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executors
 import android.widget.Button
+import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 @SuppressLint("ApplySharedPref")
@@ -89,6 +90,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val PHOTO_QUALITY = "photo_quality"
 
+            const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -124,6 +127,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val MEDIA_URIS = ""
 
             const val PHOTO_QUALITY = 0
+
+            const val REMOVE_EXIF_AFTER_CAPTURE = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -473,6 +478,27 @@ class CamConfig(private val mActivity: MainActivity) {
             val editor = commonPref.edit()
             editor.putInt(SettingValues.Key.PHOTO_QUALITY, value)
             editor.apply()
+        }
+
+    var removeExifAfterCapture : Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
+                SettingValues.Default.REMOVE_EXIF_AFTER_CAPTURE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(
+                SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
+                value
+            )
+            editor.apply()
+        }
+
+    val isInCaptureMode : Boolean
+        get() {
+            return mActivity is CaptureActivity
         }
 
 //    var imageFormat : String
