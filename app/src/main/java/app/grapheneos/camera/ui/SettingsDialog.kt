@@ -73,7 +73,7 @@ class SettingsDialog(mActivity: MainActivity) :
     private var videoQualitySetting: View
     private var timerSetting: View
 
-    private var settingsFrame: View
+    var settingsFrame: View
 
     private var moreSettingsButton: View
 

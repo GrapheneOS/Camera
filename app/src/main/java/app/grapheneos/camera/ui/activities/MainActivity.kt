@@ -1271,7 +1271,7 @@ open class MainActivity : AppCompatActivity(),
         rotateView(zoomInIcon, iconRotation)
         rotateView(zoomOutIcon, iconRotation)
         rotateView(
-            settingsDialog.findViewById(R.id.settings_dialog),
+            settingsDialog.settingsFrame,
             iconRotation
         )
     }
