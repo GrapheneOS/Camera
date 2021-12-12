@@ -1223,8 +1223,16 @@ open class MainActivity : AppCompatActivity(),
     private fun rotateView(view: View?, angle: Float) {
         if (view != null) {
             view.animate().cancel()
+
+            // Ensuring that the rotation seems continuous
+            if (view.rotation == 0f && angle == 270f)
+                view.rotation = 360f
+
+            if (view.rotation == 270f && angle == 0f)
+                view.rotation = -90f
+
             view.animate()
-                .rotationBy(angle)
+                .rotation(angle)
                 .setDuration(400)
                 .setInterpolator(LinearInterpolator())
                 .start()
@@ -1247,23 +1255,12 @@ open class MainActivity : AppCompatActivity(),
 
         if (videoCapturer.isRecording) return
 
-        if (flipCameraCircle.rotation == 0f) {
-            flipCameraCircle.rotation = 360f
-        }
-
-        val iconOrientation = flipCameraCircle.rotation
-        val previousDeviceOrientation = (360 - iconOrientation) % 360
-        // The smallest rotation between the device's previous and current orientation
-        // e.g. -90 instead of +270
-
-        val iconRotation =
-            if(Settings.System.getInt(contentResolver,
+        val iconRotation = if(Settings.System.getInt(contentResolver,
                 Settings.System.ACCELEROMETER_ROTATION, 0) == 1) {
-                    val deviceRotation = ((orientation - previousDeviceOrientation) + 180) % 360 - 180
-                    -deviceRotation
-            } else {
-                -iconOrientation + 360
-            }
+            (360f - orientation) % 360
+        } else {
+            0f
+        }
 
         rotateView(flipCameraCircle, iconRotation)
         rotateView(cancelButtonView, iconRotation)
