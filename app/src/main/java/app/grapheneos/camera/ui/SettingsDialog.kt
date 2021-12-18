@@ -451,18 +451,6 @@ class SettingsDialog(mActivity: MainActivity) :
 
     fun selfIllumination() {
 
-//        if (mActivity.config.lensFacing == CameraSelector.LENS_FACING_BACK) {
-//
-//            mActivity.previewView.setBackgroundColor(Color.BLACK)
-//            mActivity.rootView.setBackgroundColor(Color.BLACK)
-//
-//            mActivity.tabLayout.setTabTextColors(Color.WHITE, Color.WHITE)
-//
-//            mActivity.tabLayout.setSelectedTabIndicatorColor(bgBlue)
-//
-//            return
-//        }
-
         if (camConfig.selfIlluminate) {
 
             val colorFrom: Int = Color.BLACK
@@ -499,13 +487,6 @@ class SettingsDialog(mActivity: MainActivity) :
             setBrightness(1f)
 
         } else if (wasSelfIlluminationOn) {
-
-//            mActivity.previewView.setBackgroundColor(Color.BLACK)
-//            mActivity.rootView.setBackgroundColor(Color.BLACK)
-//
-//            mActivity.tabLayout.setTabTextColors(Color.WHITE, Color.WHITE)
-//
-//            mActivity.tabLayout.setSelectedTabIndicatorColor(bgBlue)
 
             val colorFrom: Int = mActivity.getColor(R.color.self_illumination_light)
             val colorTo: Int = Color.BLACK

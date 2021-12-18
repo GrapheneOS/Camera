@@ -41,7 +41,7 @@ class InAppGallery : AppCompatActivity() {
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
     private var snackBar : Snackbar? = null
-    var ogColor by Delegates.notNull<Int>()
+    private var ogColor by Delegates.notNull<Int>()
 
     private val isSecureMode : Boolean
         get() {
@@ -78,7 +78,7 @@ class InAppGallery : AppCompatActivity() {
             }
         }
 
-    lateinit var rootView : View
+    private lateinit var rootView : View
 
     companion object {
         @SuppressLint("SimpleDateFormat")
@@ -416,7 +416,7 @@ class InAppGallery : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
-        rootView = findViewById<View>(R.id.root_view)
+        rootView = findViewById(R.id.root_view)
         rootView.setOnClickListener {
             toggleActionBarState()
         }

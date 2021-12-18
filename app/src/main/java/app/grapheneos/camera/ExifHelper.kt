@@ -222,7 +222,7 @@ fun clearExif(context: Context, uri : Uri) {
 //    // Metering mode
 //    exifInterface.removeAttribute(ExifInterface.TAG_METERING_MODE)
 //
-//    // ISO equi.
+//    // ISO equiv.
 //    exifInterface.removeAttribute(ExifInterface.TAG_RW2_ISO)
 //
 //    // Flash used
