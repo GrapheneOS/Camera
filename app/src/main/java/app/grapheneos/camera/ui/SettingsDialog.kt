@@ -5,6 +5,8 @@ import android.animation.ValueAnimator
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -562,6 +564,11 @@ class SettingsDialog(mActivity: MainActivity) :
         anim
     }
 
+    val dismissHandler = Handler(Looper.myLooper()!!)
+    val dismissCallback = Runnable {
+        dismiss()
+    }
+
     private val slideUpAnimation: Animation by lazy {
         val anim = AnimationUtils.loadAnimation(
             mActivity,
@@ -576,7 +583,10 @@ class SettingsDialog(mActivity: MainActivity) :
                 }
 
                 override fun onAnimationEnd(p0: Animation?) {
-                    dismiss()
+                    dismissHandler.removeCallbacks(dismissCallback)
+                    dismissHandler.post(
+                        dismissCallback
+                    )
                 }
 
                 override fun onAnimationRepeat(p0: Animation?) {}
