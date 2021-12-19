@@ -92,6 +92,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
 
+            const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -129,6 +131,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val PHOTO_QUALITY = 0
 
             const val REMOVE_EXIF_AFTER_CAPTURE = false
+
+            const val GYROSCOPE_SUGGESTIONS = true
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -491,6 +495,22 @@ class CamConfig(private val mActivity: MainActivity) {
             val editor = commonPref.edit()
             editor.putBoolean(
                 SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
+                value
+            )
+            editor.apply()
+        }
+
+    var gSuggestions : Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.GYROSCOPE_SUGGESTIONS,
+                SettingValues.Default.GYROSCOPE_SUGGESTIONS
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(
+                SettingValues.Key.GYROSCOPE_SUGGESTIONS,
                 value
             )
             editor.apply()

@@ -230,6 +230,12 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         exifToggle.setOnClickListener {
             camConfig.removeExifAfterCapture = exifToggle.isChecked
         }
+
+        val gSwitch = findViewById<SwitchCompat>(R.id.gyroscope_setting_switch)
+        gSwitch.isChecked = camConfig.gSuggestions
+        gSwitch.setOnClickListener {
+            camConfig.gSuggestions = gSwitch.isChecked
+        }
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
