@@ -22,4 +22,6 @@
     <color name="unselected_option_fg">#C2C2C2</color>
 
     <color name="self_illumination_light">#ffe8cf</color>
+
+    <color name="z_yellow">#ffdf00</color>
 </resources>

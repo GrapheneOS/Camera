@@ -81,7 +81,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import android.graphics.Rect
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.view.ViewTreeObserver
+import android.widget.FrameLayout
 import app.grapheneos.camera.ui.QRToggle
 import com.google.zxing.BarcodeFormat
 import android.widget.RelativeLayout
@@ -167,6 +170,17 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var cbText: TextView
     lateinit var cbCross: ImageView
+
+    lateinit var gCircleFrame : FrameLayout
+
+    lateinit var gAngleTextView: TextView
+    lateinit var gCircle : LinearLayout
+
+    lateinit var gLineX : View
+    lateinit var gLineZ : View
+
+    lateinit var gLeftDash : View
+    lateinit var gRightDash : View
 
     lateinit var locationListener: CustomLocationListener
 
@@ -491,6 +505,12 @@ open class MainActivity : AppCompatActivity(),
 
         if (camConfig.requireLocation) {
             locationListener.start()
+        }
+
+        gCircleFrame.visibility = if (camConfig.gSuggestions) {
+            View.VISIBLE
+        } else {
+            View.INVISIBLE
         }
 
         // If the preview of video capture activity isn't showing
@@ -937,6 +957,17 @@ open class MainActivity : AppCompatActivity(),
         azToggle.key = BarcodeFormat.AZTEC.name
 
         camConfig.loadSettings()
+
+        gCircle = findViewById(R.id.g_circle)
+        gAngleTextView = findViewById(R.id.g_circle_text)
+
+        gLineX = findViewById(R.id.g_circle_line_x)
+        gLineZ = findViewById(R.id.g_circle_line_z)
+
+        gLeftDash = findViewById(R.id.g_circle_left_dash)
+        gRightDash = findViewById(R.id.g_circle_right_dash)
+
+        gCircleFrame = findViewById(R.id.g_circle_frame)
     }
 
     private fun getStatusBarHeight(): Int {
@@ -1274,6 +1305,10 @@ open class MainActivity : AppCompatActivity(),
             settingsDialog.settingsFrame,
             iconRotation
         )
+        rotateView(
+            gCircleFrame,
+            iconRotation
+        )
     }
 
     companion object {
@@ -1437,5 +1472,97 @@ open class MainActivity : AppCompatActivity(),
             Surface.ROTATION_270 -> 90
             else -> 0
         }
+    }
+
+    fun onDeviceAngleChange(xAngle: Float, zAngle: Float) {
+        // If we are in photo mode and the countdown timer isn't running
+        if (!(camConfig.isVideoMode || camConfig.isVideoMode || cdTimer.isRunning)) {
+
+            if (gCircle.rotation != xAngle) {
+                gCircle.rotation = xAngle
+                gLineZ.rotation = xAngle
+                gAngleTextView.text = getString(R.string.degree_format, abs(xAngle).toInt())
+                if (xAngle == 0f) {
+                    setThicknessOfGLines(4)
+                    vibrateDevice()
+                } else {
+                    setThicknessOfGLines(2)
+                }
+            }
+
+            Log.i(TAG, "zAngle: $zAngle")
+
+            val lzAngle = when {
+                zAngle < - 45 -> {
+                    -45
+                }
+                zAngle > 45 -> {
+                    45
+                }
+                else -> {
+                    zAngle
+                }
+            }.toFloat()
+
+            if (zAngle.toInt() == 0) {
+                gLineX.setBackgroundResource(R.drawable.yellow_shadow_rect)
+                gLineZ.visibility = View.GONE
+
+                gLeftDash.setBackgroundResource(R.drawable.yellow_shadow_rect)
+                gRightDash.setBackgroundResource(R.drawable.yellow_shadow_rect)
+
+                gAngleTextView.setTextColor(ContextCompat.getColor(this, R.color.z_yellow))
+
+            } else {
+                gLineX.setBackgroundResource(R.drawable.white_shadow_rect)
+                gLineZ.visibility = View.VISIBLE
+
+                gLeftDash.setBackgroundResource(R.drawable.white_shadow_rect)
+                gRightDash.setBackgroundResource(R.drawable.white_shadow_rect)
+
+                gAngleTextView.setTextColor(ContextCompat.getColor(this, R.color.white))
+            }
+
+            val zOffset = (lzAngle / 45) * dp42
+
+            gLineZ.layoutParams = (gLineZ.layoutParams as ViewGroup.MarginLayoutParams).let {
+                it.setMargins(
+                    it.leftMargin,
+                    it.topMargin,
+                    it.rightMargin,
+                    zOffset.toInt(),
+                )
+                it
+            }
+        }
+    }
+
+    private val dp42 by lazy {
+        42 * resources.displayMetrics.density
+    }
+
+    private fun setThicknessOfGLines(dp: Int) {
+        val t = dp * resources.displayMetrics.density
+
+        gLeftDash.layoutParams = gLeftDash.layoutParams.let {
+            it.height = t.toInt()
+            it
+        }
+
+        gRightDash.layoutParams = gRightDash.layoutParams.let {
+            it.height = t.toInt()
+            it
+        }
+
+        gLineX.layoutParams = gLineX.layoutParams.let {
+            it.height = t.toInt()
+            it
+        }
+    }
+
+    // Vibrates the device for 100 milliseconds.
+    private fun vibrateDevice() {
+        val vibrator = getSystemService(Vibrator::class.java)
+        vibrator?.vibrate(VibrationEffect.createOneShot(50, 10))
     }
 }

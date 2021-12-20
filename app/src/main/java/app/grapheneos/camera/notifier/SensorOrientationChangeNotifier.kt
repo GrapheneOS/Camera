@@ -6,7 +6,12 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import java.lang.ref.WeakReference
+import kotlin.math.abs
+import kotlin.math.atan
+import kotlin.math.atan2
+import kotlin.math.round
 
 
 class SensorOrientationChangeNotifier private constructor(
@@ -42,17 +47,40 @@ class SensorOrientationChangeNotifier private constructor(
         override fun onSensorChanged(event: SensorEvent) {
             val x = event.values[0]
             val y = event.values[1]
+            val z = event.values[2]
+
             var newOrientation = mOrientation
             if (x < 5 && x > -5 && y > 5) newOrientation =
                 0 else if (x < -5 && y < 5 && y > -5) newOrientation =
                 90 else if (x < 5 && x > -5 && y < -5) newOrientation =
                 180 else if (x > 5 && y < 5 && y > -5) newOrientation = 270
 
-            //Log.e(TAG,"mOrientation="+mOrientation+"   ["+event.values[0]+","+event.values[1]+","+event.values[2]+"]");
             if (mOrientation != newOrientation) {
                 mOrientation = newOrientation
                 notifyListeners()
             }
+
+            if (!camConfig.gSuggestions)  return
+
+            val dAngle = if (mainActivity.gCircleFrame.rotation == 270f) {
+                90f
+            } else {
+                mainActivity.gCircleFrame.rotation
+            }
+
+            val hAngle = atan2(x, y) / (Math.PI / 180)
+            val aAngle = abs(hAngle)
+            val rAngle = (round(aAngle) - dAngle) % 90
+
+            val fAngle = if (hAngle < 0) {
+                -rAngle
+            } else {
+                rAngle
+            }.toFloat()
+
+            val vAngle = atan(z) / (Math.PI / 180)
+
+            mainActivity.onDeviceAngleChange(fAngle, vAngle.toFloat())
         }
 
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
