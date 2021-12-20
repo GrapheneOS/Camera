@@ -34,6 +34,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
 import android.provider.Settings
+import androidx.camera.video.Quality
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -434,15 +435,15 @@ class SettingsDialog(mActivity: MainActivity) :
         }
     }
 
-    fun titleToQuality(title: String): Int {
+    fun titleToQuality(title: String): Quality {
         return when (title) {
-            "2160p (UHD)" -> QualitySelector.QUALITY_UHD
-            "1080p (FHD)" -> QualitySelector.QUALITY_FHD
-            "720p (HD)" -> QualitySelector.QUALITY_HD
-            "480p (SD)" -> QualitySelector.QUALITY_SD
+            "2160p (UHD)" -> Quality.UHD
+            "1080p (FHD)" -> Quality.FHD
+            "720p (HD)" -> Quality.HD
+            "480p (SD)" -> Quality.SD
             else -> {
                 Log.e("TAG", "Unknown quality: $title")
-                QualitySelector.QUALITY_SD
+                Quality.SD
             }
         }
     }
@@ -608,7 +609,7 @@ class SettingsDialog(mActivity: MainActivity) :
         dialog.startAnimation(slideUpAnimation)
     }
 
-    private fun getAvailableQualities(): List<Int> {
+    private fun getAvailableQualities(): List<Quality> {
         return QualitySelector.getSupportedQualities(
             camConfig.camera!!.cameraInfo
         )
@@ -626,12 +627,12 @@ class SettingsDialog(mActivity: MainActivity) :
 
     }
 
-    private fun getTitleFor(quality: Int): String {
+    private fun getTitleFor(quality: Quality): String {
         return when (quality) {
-            QualitySelector.QUALITY_UHD -> "2160p (UHD)"
-            QualitySelector.QUALITY_FHD -> "1080p (FHD)"
-            QualitySelector.QUALITY_HD -> "720p (HD)"
-            QualitySelector.QUALITY_SD -> "480p (SD)"
+            Quality.UHD -> "2160p (UHD)"
+            Quality.FHD -> "1080p (FHD)"
+            Quality.HD -> "720p (HD)"
+            Quality.SD -> "480p (SD)"
             else -> {
                 Log.i("TAG", "Unknown constant: $quality")
                 "Unknown"
@@ -704,7 +705,7 @@ class SettingsDialog(mActivity: MainActivity) :
         videoQualitySpinner.adapter = vQAdapter
 
         val qt = if (qualityText.isEmpty()) {
-            getTitleFor(camConfig.videoQuality)
+            camConfig.videoQuality?.let { getTitleFor(it) }
         } else {
             qualityText
         }

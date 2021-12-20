@@ -11,7 +11,7 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.view.View
 import android.webkit.MimeTypeMap
-import androidx.camera.video.ActiveRecording
+import androidx.camera.video.Recording
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
@@ -37,17 +37,17 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val videoFileFormat = ".mp4"
 
-    var activeRecording: ActiveRecording? = null
+    var recording: Recording? = null
 
     var isPaused = false
         set(value) {
             if (isRecording) {
                 if (value) {
-                    activeRecording?.pause()
+                    recording?.pause()
                     pauseTimer()
                     mActivity.flipCamIcon.setImageResource(R.drawable.play)
                 } else {
-                    activeRecording?.resume()
+                    recording?.resume()
                     startTimer()
                     mActivity.flipCamIcon.setImageResource(R.drawable.pause)
                 }
@@ -176,7 +176,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
             }
         }
 
-        pendingRecording.withEventListener(
+        beforeRecordingStarts()
+
+        recording = pendingRecording.start(
             ContextCompat.getMainExecutor(mActivity),
             {
                 if (it is VideoRecordEvent.Finalize) {
@@ -211,7 +213,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                             if (mActivity is VideoCaptureActivity) {
                                 mActivity.afterRecording(outputUri)
-                                return@withEventListener
+                                return@start
                             } else {
                                 camConfig.addToGallery(outputUri)
                             }
@@ -220,7 +222,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                             if (mActivity is VideoCaptureActivity) {
                                 mActivity.afterRecording(mActivity.outputUri)
-                                return@withEventListener
+                                return@start
                             }
                         }
 
@@ -234,8 +236,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
             }
         )
 
-        beforeRecordingStarts()
-        activeRecording = pendingRecording.start()
         isRecording = true
     }
 
@@ -331,8 +331,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun stopRecording() {
-        activeRecording?.stop()
-        activeRecording?.close()
+        recording?.stop()
+        recording?.close()
     }
 
     companion object {
