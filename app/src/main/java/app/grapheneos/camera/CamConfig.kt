@@ -133,7 +133,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val REMOVE_EXIF_AFTER_CAPTURE = false
 
-            const val GYROSCOPE_SUGGESTIONS = true
+            const val GYROSCOPE_SUGGESTIONS = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
