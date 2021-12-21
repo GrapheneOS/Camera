@@ -1118,6 +1118,7 @@ class CamConfig(private val mActivity: MainActivity) {
             iAnalyzer =
                 ImageAnalysis.Builder()
                     .setTargetResolution(Size(960, 960))
+                    .setOutputImageRotationEnabled(true)
                     .build()
             iAnalyzer!!.setAnalyzer(cameraExecutor, qrAnalyzer!!)
             cameraSelector = CameraSelector.Builder()
