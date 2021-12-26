@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.view.View
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import java.lang.ref.WeakReference
@@ -16,6 +17,39 @@ import kotlin.math.round
 
 class SensorOrientationChangeNotifier private constructor(
         private val mainActivity: MainActivity) {
+
+    companion object {
+        private var mInstance: SensorOrientationChangeNotifier? = null
+        fun getInstance(mActivity: MainActivity): SensorOrientationChangeNotifier? {
+            if (mInstance == null) mInstance = SensorOrientationChangeNotifier(mActivity)
+            return mInstance
+        }
+
+        // Greater the threshold (in degrees), more the chances of the gyroscope being
+        // visible via the ENTRY_CRITERIA
+        private const val X_THRESHOLD = 5
+
+        // The gyroscope shall be explicitly made visible only if it's within the ENTRY_
+        // CRITERIA and if the device isn't moving too fast i.e. (lastX - currentX) is below
+        // threshold
+        private const val X_ENTRY_MIN = -10F
+        private const val X_ENTRY_MAX = 10F
+
+        // If the current angle for a given axis is beyond the EXIT_CRITERIA the listener
+        // will just hide the gyroscope (and just return the control back from the method as
+        // executing further statements won't make sense)
+        private const val X_EXIT_MIN = -45F
+        private const val X_EXIT_MAX = 45F
+
+
+        private const val Z_THRESHOLD = 5
+
+        private const val Z_ENTRY_MIN = -60F
+        private const val Z_ENTRY_MAX = 60F
+
+        private const val Z_EXIT_MIN = -60F
+        private const val Z_EXIT_MAX = 60F
+    }
 
     var mOrientation = mainActivity.getRotation()
         private set
@@ -44,6 +78,10 @@ class SensorOrientationChangeNotifier private constructor(
     }
 
     private inner class NotifierSensorEventListener : SensorEventListener {
+
+        var lastX = 0f
+        var lastZ = 0f
+
         override fun onSensorChanged(event: SensorEvent) {
             val x = event.values[0]
             val y = event.values[1]
@@ -60,12 +98,19 @@ class SensorOrientationChangeNotifier private constructor(
                 notifyListeners()
             }
 
-            if (!camConfig.gSuggestions)  return
+            if (!camConfig.shouldShowGyroscope())  return
 
             val dAngle = if (mainActivity.gCircleFrame.rotation == 270f) {
                 90f
             } else {
                 mainActivity.gCircleFrame.rotation
+            }
+
+            val zAngle = (atan(z) / (Math.PI / 180)).toFloat()
+
+            if (zAngle < Z_EXIT_MIN || zAngle > Z_EXIT_MAX) {
+                mainActivity.gCircleFrame.visibility = View.GONE
+                return
             }
 
             val hAngle = atan2(x, y) / (Math.PI / 180)
@@ -78,9 +123,26 @@ class SensorOrientationChangeNotifier private constructor(
                 rAngle
             }.toFloat()
 
-            val vAngle = atan(z) / (Math.PI / 180)
 
-            mainActivity.onDeviceAngleChange(fAngle, vAngle.toFloat())
+            if (fAngle < X_EXIT_MIN || fAngle > X_EXIT_MAX) {
+                mainActivity.gCircleFrame.visibility = View.GONE
+                return
+            }
+
+            if (fAngle in X_ENTRY_MIN..X_ENTRY_MAX) {
+                if (abs(fAngle - lastX) < X_THRESHOLD) {
+                    if (zAngle in Z_ENTRY_MIN..Z_ENTRY_MAX) {
+                        if (abs(zAngle - lastZ) < Z_THRESHOLD) {
+                            mainActivity.gCircleFrame.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
+
+            mainActivity.onDeviceAngleChange(fAngle, zAngle)
+
+            lastX = fAngle
+            lastZ = zAngle
         }
 
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
@@ -130,14 +192,6 @@ class SensorOrientationChangeNotifier private constructor(
         // remove dead references
         for (wr in deadLinksArr) {
             mListeners.remove(wr)
-        }
-    }
-
-    companion object {
-        private var mInstance: SensorOrientationChangeNotifier? = null
-        fun getInstance(mActivity: MainActivity): SensorOrientationChangeNotifier? {
-            if (mInstance == null) mInstance = SensorOrientationChangeNotifier(mActivity)
-            return mInstance
         }
     }
 

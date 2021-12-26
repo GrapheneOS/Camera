@@ -517,6 +517,15 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
+    fun shouldShowGyroscope() : Boolean {
+        return isInPhotoMode && gSuggestions
+    }
+
+    private val isInPhotoMode : Boolean
+        get() {
+            return !(isQRMode || isVideoMode)
+        }
+
     val isInCaptureMode : Boolean
         get() {
             return mActivity is CaptureActivity
@@ -1211,6 +1220,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
+
+        mActivity.gCircleFrame.visibility = View.GONE
     }
 
     fun snapPreview() {

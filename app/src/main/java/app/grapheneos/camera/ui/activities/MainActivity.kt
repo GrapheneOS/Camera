@@ -1523,7 +1523,7 @@ open class MainActivity : AppCompatActivity(),
                 gAngleTextView.setTextColor(ContextCompat.getColor(this, R.color.white))
             }
 
-            val zOffset = (lzAngle / 45) * dp42
+            val zOffset = (lzAngle / 60) * dp32
 
             gLineZ.layoutParams = (gLineZ.layoutParams as ViewGroup.MarginLayoutParams).let {
                 it.setMargins(
@@ -1537,8 +1537,8 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    private val dp42 by lazy {
-        42 * resources.displayMetrics.density
+    private val dp32 by lazy {
+        32 * resources.displayMetrics.density
     }
 
     private fun setThicknessOfGLines(dp: Int) {
