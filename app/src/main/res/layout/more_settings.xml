@@ -210,6 +210,7 @@
 
                 <ImageView
                     android:id="@+id/decrease_photo_quality"
+                    android:visibility="gone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/remove"
@@ -229,7 +230,7 @@
                         android:id="@+id/photo_quality"
                         android:layout_width="36dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginHorizontal="2dp"
+                        android:layout_marginStart="2dp"
                         android:paddingTop="15dp"
                         android:textSize="16sp"
                         android:maxLength="3"
@@ -242,8 +243,17 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/percent_symbol"
+                    android:textSize="16sp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_gravity="center_vertical" />
+
                 <ImageView
                     android:id="@+id/increase_photo_quality"
+                    android:visibility="gone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:src="@drawable/add"

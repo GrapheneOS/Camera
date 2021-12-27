@@ -100,5 +100,6 @@
     <string name="remove_exif_title">Remove EXIF data after capture</string>
     <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
     <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
 
 </resources>
