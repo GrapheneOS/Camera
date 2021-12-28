@@ -130,6 +130,8 @@ class ZoomableImageView @JvmOverloads constructor(
 
             if (isZoomingDisabled) {
                 gActivity.showActionBar()
+            } else {
+                gActivity.gallerySlider.isUserInputEnabled = false
             }
 
             return true
@@ -170,6 +172,13 @@ class ZoomableImageView @JvmOverloads constructor(
 
             return true
         }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector?) {
+            super.onScaleEnd(detector)
+            if (saveScale == 1f) {
+                gActivity.gallerySlider.isUserInputEnabled = true
+            }
+        }
     }
 
     private var isInZoomMode = false
@@ -194,7 +203,7 @@ class ZoomableImageView @JvmOverloads constructor(
 
         gActivity.let {
             it.showActionBar()
-            it.gallerySlider.isUserInputEnabled = true
+//            it.gallerySlider.isUserInputEnabled = true
         }
 
     }
