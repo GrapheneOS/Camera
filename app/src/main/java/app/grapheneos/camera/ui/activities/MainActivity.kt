@@ -1449,13 +1449,17 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun resumeOrientationSensor() {
-        SensorOrientationChangeNotifier
-            .getInstance(this)?.addListener(this)
+        sensorNotifier?.addListener(this)
     }
 
     fun forceUpdateOrientationSensor() {
-        SensorOrientationChangeNotifier.getInstance(this)?.notifyListeners(true)
+        sensorNotifier?.notifyListeners(true)
     }
+
+    val sensorNotifier : SensorOrientationChangeNotifier?
+        get() {
+            return SensorOrientationChangeNotifier.getInstance(this)
+        }
 
     fun getRotation() : Int {
         val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

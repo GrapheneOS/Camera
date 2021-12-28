@@ -55,7 +55,7 @@ class SensorOrientationChangeNotifier private constructor(
         private set
 
     private val mListeners = ArrayList<WeakReference<Listener?>>(3)
-    private val mSensorEventListener: SensorEventListener
+    private val mSensorEventListener: NotifierSensorEventListener
     private val mSensorManager: SensorManager
 
     /**
@@ -77,7 +77,7 @@ class SensorOrientationChangeNotifier private constructor(
         mSensorManager.unregisterListener(mSensorEventListener)
     }
 
-    private inner class NotifierSensorEventListener : SensorEventListener {
+    inner class NotifierSensorEventListener : SensorEventListener {
 
         var lastX = 0f
         var lastZ = 0f
@@ -139,6 +139,10 @@ class SensorOrientationChangeNotifier private constructor(
                 }
             }
 
+            updateGyro(fAngle, zAngle)
+        }
+
+        fun updateGyro(fAngle : Float, zAngle : Float) {
             mainActivity.onDeviceAngleChange(fAngle, zAngle)
 
             lastX = fAngle
@@ -146,6 +150,12 @@ class SensorOrientationChangeNotifier private constructor(
         }
 
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+    }
+
+    fun forceUpdateGyro() {
+        mSensorEventListener.let {
+            it.updateGyro(it.lastX, it.lastZ)
+        }
     }
 
     interface Listener {

@@ -1221,7 +1221,11 @@ class CamConfig(private val mActivity: MainActivity) {
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
 
-        mActivity.gCircleFrame.visibility = View.GONE
+        if (isInPhotoMode) {
+            mActivity.sensorNotifier?.forceUpdateGyro()
+        } else {
+            mActivity.gCircleFrame.visibility = View.GONE
+        }
     }
 
     fun snapPreview() {
