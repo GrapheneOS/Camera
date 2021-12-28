@@ -38,6 +38,7 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/image_preview.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/image_quality.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/info.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/info_adaptable.xml" value="0.1037037037037037" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location.xml" value="0.12129629629629629" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location_off.xml" value="0.12916666666666668" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/drawable/location_on.xml" value="0.12916666666666668" />
@@ -71,6 +72,7 @@
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/gallery.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/gallery_slide.xml" value="0.1" />
+        <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/icon_64.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/settings.xml" value="0.25" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/settings_activity.xml" value="0.1" />
         <entry key="..\:/Users/admin/AndroidStudioProjects/Camera/app/src/main/res/layout/video_player.xml" value="0.1" />

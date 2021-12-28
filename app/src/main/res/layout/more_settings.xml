@@ -282,7 +282,7 @@
 
             <ImageView
                 android:id="@+id/remove_exif_icon"
-                android:src="@drawable/info"
+                android:src="@drawable/info_adaptable"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:contentDescription="@string/save_image_as_previewed"
