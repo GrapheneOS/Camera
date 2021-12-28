@@ -93,7 +93,7 @@
     <string name="revert_back_to_dcim">Revert back to DCIM</string>
 
     <string name="image_quality">Image Quality</string>
-    <string name="image_quality_desc">Adjust the quality of an image captured by the app from 1% to 100%. This field can be left empty to avoid explicitly setting the image quality.</string>
+    <string name="image_quality_desc" formatted="false">Adjust the quality of an image captured by the app from 1% to 100%. This field can be left empty to avoid explicitly setting the image quality.</string>
     <string name="photo">Photo</string>
     <string name="increase_quality">Increase Quality</string>
     <string name="decrease_quality">Decrease Quality</string>
