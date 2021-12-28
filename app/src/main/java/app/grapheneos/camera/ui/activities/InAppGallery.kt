@@ -90,8 +90,14 @@ class InAppGallery : AppCompatActivity() {
         }
 
         @SuppressLint("SimpleDateFormat")
-        fun convertTime(time: String): String {
-            val dateFormat = SimpleDateFormat("yyyyMMdd'T'hhmmss.SSS'Z'")
+        fun convertTime(time: String, isVideo : Boolean = false): String {
+            val dateFormat = SimpleDateFormat(
+                if (isVideo) {
+                    "yyyyMMdd'T'hhmmss.SSS'Z'"
+                } else {
+                    "yyyy:MM:dd hh:mm:ss"
+                }
+            )
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val parsedDate = dateFormat.parse(time)
             return convertTime(parsedDate?.time ?: 0)
@@ -231,8 +237,8 @@ class InAppGallery : AppCompatActivity() {
 
         mediaCursor.close()
 
-        val dateAdded : String?
-        val dateModified : String?
+        var dateAdded : String? = null
+        var dateModified : String? = null
 
         if (VideoCapturer.isVideo(mediaUri)) {
 
@@ -258,13 +264,23 @@ class InAppGallery : AppCompatActivity() {
             )
             val eInterface = ExifInterface(iStream!!)
 
-            dateAdded = eInterface.getAttribute(
-                "DateTimeOriginal"
-            )
+            if (eInterface.hasAttribute("DateTimeOriginal")) {
+                dateAdded = convertTime(
+                    eInterface.getAttribute(
+                        "DateTimeOriginal"
+                    )!!,
+                    false
+                )
+            }
 
-            dateModified = eInterface.getAttribute(
-                "DateTime"
-            )
+            if (eInterface.hasAttribute("DateTime")) {
+                dateModified = convertTime(
+                    eInterface.getAttribute(
+                        "DateTime"
+                    )!!,
+                    false
+                )
+            }
 
             iStream.close()
         }
@@ -298,8 +314,6 @@ class InAppGallery : AppCompatActivity() {
         }
 
         detailsBuilder.append("\n\n")
-
-        Log.i("TAG", "Date added: $dateAdded")
 
         detailsBuilder.append("File Created On: \n")
         if(dateAdded==null){
