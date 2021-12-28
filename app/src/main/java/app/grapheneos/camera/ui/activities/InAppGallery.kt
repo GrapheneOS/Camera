@@ -196,13 +196,18 @@ class InAppGallery : AppCompatActivity() {
             .setMessage("Do you really want to delete this file?")
             .setPositiveButton("Delete") { _, _ ->
 
-                camConfig.removeFromGallery(mediaUri)
+                val res = contentResolver.delete(mediaUri, null, null)
 
-                showMessage(
-                    "File deleted successfully"
-                )
-
-                (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
+                if (res == 1) {
+                    camConfig.removeFromGallery(mediaUri)
+                    showMessage("File deleted successfully")
+                    (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
+                } else {
+                    showMessage(
+                        "An unexpected error occurred while deleting this file" +
+                            "\n(Error Code: $res)"
+                    )
+                }
             }
             .setNegativeButton("Cancel", null).show()
 
