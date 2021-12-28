@@ -25,6 +25,10 @@ class SensorOrientationChangeNotifier private constructor(
             return mInstance
         }
 
+        fun clearInstance() {
+            mInstance = null
+        }
+
         // Greater the threshold (in degrees), more the chances of the gyroscope being
         // visible via the ENTRY_CRITERIA
         private const val X_THRESHOLD = 5

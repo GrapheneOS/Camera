@@ -1569,4 +1569,9 @@ open class MainActivity : AppCompatActivity(),
         val vibrator = getSystemService(Vibrator::class.java)
         vibrator?.vibrate(VibrationEffect.createOneShot(50, 10))
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SensorOrientationChangeNotifier.clearInstance()
+    }
 }
