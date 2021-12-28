@@ -460,10 +460,18 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val mediaUris : List<Uri>
         get() {
-            val uriPaths = commonPref.getString(
+            val data = commonPref.getString(
                 SettingValues.Key.MEDIA_URIS,
                 SettingValues.Default.MEDIA_URIS
-            )!!.split(PATH_SEPARATOR)
+            )!!
+
+            // This branching was done because
+            // string.split returns [""] even if the main string is empty
+            val uriPaths = if (data.isEmpty()) {
+                emptyList()
+            } else {
+                data.split(PATH_SEPARATOR)
+            }
 
             val uris = uriPaths.map {
                 Uri.parse(it)
