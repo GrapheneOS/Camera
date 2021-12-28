@@ -1286,13 +1286,20 @@ open class MainActivity : AppCompatActivity(),
 
         if (videoCapturer.isRecording) return
 
-        val iconRotation = if(Settings.System.getInt(contentResolver,
-                Settings.System.ACCELEROMETER_ROTATION, 0) == 1) {
-            (360f - orientation) % 360
-        } else {
-            0f
+        var iconRotation = (360f - orientation) % 360
+
+        // Rotate views that should rotate irrespective of the auto-rotate setting
+        rotateView(gCircleFrame, iconRotation)
+
+        // Set iconRotation to 0
+        if(Settings.System.getInt(contentResolver,
+                Settings.System.ACCELEROMETER_ROTATION, 0) != 1) {
+            iconRotation = 0f
         }
 
+        // Rotate views that shouldn't be affected by the auto rotate setting
+        // (Rotates back to 0 when the auto rotate gets toggled to off when the app
+        // is running)
         rotateView(flipCameraCircle, iconRotation)
         rotateView(cancelButtonView, iconRotation)
         rotateView(thirdOption, iconRotation)
@@ -1301,14 +1308,7 @@ open class MainActivity : AppCompatActivity(),
         rotateView(exposureNegIcon, iconRotation)
         rotateView(zoomInIcon, iconRotation)
         rotateView(zoomOutIcon, iconRotation)
-        rotateView(
-            settingsDialog.settingsFrame,
-            iconRotation
-        )
-        rotateView(
-            gCircleFrame,
-            iconRotation
-        )
+        rotateView(settingsDialog.settingsFrame, iconRotation)
     }
 
     companion object {
