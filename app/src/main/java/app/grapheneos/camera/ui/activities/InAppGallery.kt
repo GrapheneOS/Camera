@@ -90,7 +90,7 @@ class InAppGallery : AppCompatActivity() {
         }
 
         @SuppressLint("SimpleDateFormat")
-        fun convertTime(time: String, isVideo : Boolean = false): String {
+        fun convertTime(time: String, isVideo : Boolean = true): String {
             val dateFormat = SimpleDateFormat(
                 if (isVideo) {
                     "yyyyMMdd'T'hhmmss.SSS'Z'"
