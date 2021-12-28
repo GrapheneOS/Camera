@@ -963,6 +963,9 @@ class CamConfig(private val mActivity: MainActivity) {
                 val uris = mediaUris
 
                 if (uris.isNotEmpty()) {
+                    uris.first { uri ->
+                        mActivity !is VideoOnlyActivity || isVideo(uri)
+                    }
                     latestUri = uris.first()
                 }
             }
