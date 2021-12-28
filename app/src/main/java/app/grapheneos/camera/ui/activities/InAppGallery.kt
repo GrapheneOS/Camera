@@ -85,7 +85,7 @@ class InAppGallery : AppCompatActivity() {
         fun convertTime(time: Long): String {
 
             val date = Date(time)
-            val format: Format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+            val format: Format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
             return format.format(date)
         }
 
