@@ -11,7 +11,7 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_BITS_PER_SAMPLE,
     ExifInterface.TAG_COMPRESSION,
     ExifInterface.TAG_PHOTOMETRIC_INTERPRETATION,
-    ExifInterface.TAG_ORIENTATION,
+//    ExifInterface.TAG_ORIENTATION,
     ExifInterface.TAG_SAMPLES_PER_PIXEL,
     ExifInterface.TAG_PLANAR_CONFIGURATION,
     ExifInterface.TAG_Y_CB_CR_SUB_SAMPLING,
