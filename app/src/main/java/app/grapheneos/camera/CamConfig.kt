@@ -106,7 +106,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ASPECT_RATIO = AspectRatio.RATIO_4_3
 
-            val VIDEO_QUALITY = Quality.UHD
+            val VIDEO_QUALITY = Quality.FHD
 
             const val SELF_ILLUMINATION = false
 
