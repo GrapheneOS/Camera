@@ -35,6 +35,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
 import kotlin.properties.Delegates
+import androidx.documentfile.provider.DocumentFile
 
 class InAppGallery : AppCompatActivity() {
 
@@ -196,17 +197,31 @@ class InAppGallery : AppCompatActivity() {
             .setMessage("Do you really want to delete this file?")
             .setPositiveButton("Delete") { _, _ ->
 
-                val res = contentResolver.delete(mediaUri, null, null)
+                val res : Boolean
 
-                if (res == 1) {
+                if (mediaUri.authority == "media") {
+
+                    res = contentResolver.delete(
+                            mediaUri,
+                            null,
+                            null
+                        ) == 1
+
+                } else {
+                    val doc = DocumentFile.fromSingleUri(
+                        this,
+                        mediaUri
+                    )!!
+
+                    res = doc.delete()
+                }
+
+                if (res) {
                     camConfig.removeFromGallery(mediaUri)
                     showMessage("File deleted successfully")
                     (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
                 } else {
-                    showMessage(
-                        "An unexpected error occurred while deleting this file" +
-                            "\n(Error Code: $res)"
-                    )
+                    showMessage("An unexpected error occurred while deleting this file")
                 }
             }
             .setNegativeButton("Cancel", null).show()
