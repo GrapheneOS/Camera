@@ -458,7 +458,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    val mediaUris : List<Uri>
+    val mediaUris : ArrayList<Uri>
         get() {
             val data = commonPref.getString(
                 SettingValues.Key.MEDIA_URIS,
@@ -473,12 +473,81 @@ class CamConfig(private val mActivity: MainActivity) {
                 data.split(PATH_SEPARATOR)
             }
 
-            val uris = uriPaths.map {
-                Uri.parse(it)
+            val uris = arrayListOf<Uri>().let {
+                it.addAll(uriPaths.map { path ->
+                    Uri.parse(path)
+                })
+
+                for (oldPath in getOldPaths()) {
+                    if (!it.contains(oldPath)) {
+                        it.add(oldPath)
+                    }
+                }
+
+                it
             }
 
             return uris
         }
+
+    private fun getOldPaths() : List<Uri> {
+
+        val pathData : ArrayList<Pair<Uri, Int>> = arrayListOf()
+
+        val imageCursor = mActivity.contentResolver.query(
+            imageCollectionUri,
+            arrayOf(
+                MediaStore.Images.ImageColumns._ID,
+                MediaStore.Images.ImageColumns.DATE_ADDED,
+            ),
+            null, null,
+            "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
+        )
+
+        if (imageCursor != null) {
+            while (imageCursor.moveToNext()) {
+                val imageUri = ContentUris
+                    .withAppendedId(
+                        imageCollectionUri,
+                        imageCursor.getInt(0).toLong()
+                    )
+
+                val imageAddedOn = imageCursor.getInt(1)
+
+                pathData.add(Pair(imageUri, imageAddedOn))
+            }
+            imageCursor.close()
+        }
+
+        val videoCursor = mActivity.contentResolver.query(
+            videoCollectionUri,
+            arrayOf(
+                MediaStore.Video.VideoColumns._ID,
+                MediaStore.Video.VideoColumns.DATE_ADDED,
+            ),
+            null, null,
+            "${MediaStore.Video.VideoColumns.DATE_ADDED} DESC"
+        )
+
+        if (videoCursor!=null) {
+            while (videoCursor.moveToNext()) {
+                val videoUri = ContentUris
+                    .withAppendedId(
+                        videoCollectionUri,
+                        videoCursor.getInt(0).toLong()
+                    )
+
+                val videoAddedOn = videoCursor.getInt(1)
+
+                pathData.add(Pair(videoUri, videoAddedOn))
+            }
+            videoCursor.close()
+        }
+
+        pathData.sortWith(compareBy { -it.second })
+
+        return pathData.map { it.first }
+    }
 
     var photoQuality : Int
         get() {
