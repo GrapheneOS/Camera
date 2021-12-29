@@ -15,7 +15,7 @@ import app.grapheneos.camera.ui.fragment.GallerySlide
 
 class GallerySliderAdapter(
     private val gActivity: InAppGallery,
-    private val mediaUris: ArrayList<Uri>
+    val mediaUris: ArrayList<Uri>
 ) : RecyclerView.Adapter<GallerySlide>() {
 
     private val layoutInflater: LayoutInflater = LayoutInflater.from(

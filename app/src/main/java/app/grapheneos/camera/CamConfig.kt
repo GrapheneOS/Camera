@@ -47,6 +47,7 @@ import android.widget.Button
 import androidx.camera.video.Quality
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
+import androidx.documentfile.provider.DocumentFile
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
@@ -474,9 +475,29 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             val uris = arrayListOf<Uri>().let {
-                it.addAll(uriPaths.map { path ->
+                val newUris = uriPaths.map { path ->
                     Uri.parse(path)
-                })
+                }
+
+                var hasDelUris = false
+
+                for (newUri in newUris) {
+                    val doc = DocumentFile.fromSingleUri(mActivity, newUri)!!
+                    if (doc.exists()) {
+                        it.add(newUri)
+                    } else {
+                        hasDelUris = true
+                    }
+                }
+
+                if (hasDelUris) {
+                    val editor = commonPref.edit()
+                    editor.putString(
+                        SettingValues.Key.MEDIA_URIS,
+                        it.joinToString(PATH_SEPARATOR)
+                    )
+                    editor.commit()
+                }
 
                 for (oldPath in getOldPaths()) {
                     if (!it.contains(oldPath)) {

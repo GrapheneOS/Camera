@@ -528,6 +528,23 @@ class InAppGallery : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        val gsaUris = (gallerySlider.adapter as GallerySliderAdapter).mediaUris
+        val newUris = camConfig.mediaUris
+
+        var urisHaveChanged = false
+
+        for (mediaUri in gsaUris) {
+            if (!newUris.contains(mediaUri)) {
+                urisHaveChanged = true
+                break
+            }
+        }
+
+        if (urisHaveChanged) {
+            gallerySlider.adapter = GallerySliderAdapter(this, newUris)
+        }
+
         showActionBar()
     }
 
