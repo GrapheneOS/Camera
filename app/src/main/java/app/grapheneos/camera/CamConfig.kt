@@ -1573,4 +1573,20 @@ class CamConfig(private val mActivity: MainActivity) {
 
         dialog.show()
     }
+
+    fun onStorageLocationNotFound() {
+        // Reverting back to DCIM
+        camConfig.storageLocation = ""
+
+        val builder = AlertDialog.Builder(mActivity)
+        builder.setTitle("Storage location not found")
+        builder.setMessage("Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).")
+        builder.setPositiveButton("Ok", null)
+        builder.setNeutralButton("More Settings") { dialogInterface, which ->
+            mActivity.settingsDialog.openMoreSettings()
+        }
+        val alertDialog: AlertDialog = builder.create()
+        alertDialog.setCancelable(false)
+        alertDialog.show()
+    }
 }

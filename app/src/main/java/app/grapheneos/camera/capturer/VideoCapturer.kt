@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.provider.MediaStore
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -29,6 +30,7 @@ import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.FileNotFoundException
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -133,27 +135,31 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         .build()
                 )
             } else {
+                try {
+                    val parent = DocumentFile.fromTreeUri(mActivity, Uri.parse(
+                        camConfig.storageLocation
+                    ))!!
 
-                val parent = DocumentFile.fromTreeUri(mActivity, Uri.parse(
-                    camConfig.storageLocation
-                ))!!
+                    val child = parent.createFile(
+                        mimeType,
+                        fileName
+                    )!!
 
-                val child = parent.createFile(
-                    mimeType,
-                    fileName
-                )!!
+                    val fd = mActivity.contentResolver.openFileDescriptor(
+                        child.uri,
+                        "w"
+                    )!!
 
-                val fd = mActivity.contentResolver.openFileDescriptor(
-                    child.uri,
-                    "w"
-                )!!
+                    camConfig.addToGallery(child.uri)
 
-                camConfig.addToGallery(child.uri)
+                    return camConfig.videoCapture!!.output.prepareRecording(
+                        mActivity,
+                        FileDescriptorOutputOptions.Builder(fd).build()
+                    )
 
-                return camConfig.videoCapture!!.output.prepareRecording(
-                    mActivity,
-                    FileDescriptorOutputOptions.Builder(fd).build()
-                )
+                } catch (exception : NullPointerException) {
+                    throw FileNotFoundException()
+                }
             }
         }
     }
@@ -161,7 +167,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun startRecording() {
         if (camConfig.camera == null) return
 
-        val pendingRecording = genPendingRecording()
+        var pendingRecording : PendingRecording? = null
+
+        try {
+            pendingRecording = genPendingRecording()
+        } catch (exception : Exception) {
+            camConfig.onStorageLocationNotFound()
+            return
+        }
 
         if (mActivity.settingsDialog.includeAudioToggle.isChecked) {
             if (ActivityCompat.checkSelfPermission(

@@ -23,6 +23,8 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.FileNotFoundException
+import android.app.AlertDialog
 
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"
@@ -61,24 +63,27 @@ class ImageCapturer(private val mActivity: MainActivity) {
             )
 
         } else {
+            try {
+                val parent = DocumentFile.fromTreeUri(mActivity,
+                    Uri.parse(
+                        camConfig.storageLocation
+                    )
+                )!!
 
-            val parent = DocumentFile.fromTreeUri(mActivity,
-                Uri.parse(
-                    camConfig.storageLocation
-                )
-            )!!
+                val child = parent.createFile(
+                    mimeType,
+                    fileName
+                )!!
 
-            val child = parent.createFile(
-                mimeType,
-                fileName
-            )!!
+                val oStream = mActivity.contentResolver
+                    .openOutputStream(child.uri)!!
 
-            val oStream = mActivity.contentResolver
-                .openOutputStream(child.uri)!!
+                camConfig.addToGallery(child.uri)
 
-            camConfig.addToGallery(child.uri)
-
-            return ImageCapture.OutputFileOptions.Builder(oStream)
+                return ImageCapture.OutputFileOptions.Builder(oStream)
+            } catch (exception : NullPointerException) {
+                throw FileNotFoundException("The default storage location seems to have been deleted.")
+            }
         }
     }
 
@@ -95,7 +100,15 @@ class ImageCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        val outputFileOptionsBuilder = genOutputBuilderForImage()
+        var outputFileOptionsBuilder : ImageCapture.OutputFileOptions.Builder? = null
+
+        try {
+            outputFileOptionsBuilder = genOutputBuilderForImage()
+        } catch (exception : FileNotFoundException) {
+            camConfig.onStorageLocationNotFound()
+            return
+        }
+
         val imageMetadata = ImageCapture.Metadata()
 
         imageMetadata.isReversedHorizontal =
@@ -116,9 +129,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
             }
         }
 
-        outputFileOptionsBuilder.setMetadata(imageMetadata)
+        outputFileOptionsBuilder!!.setMetadata(imageMetadata)
 
-        val outputFileOptions = outputFileOptionsBuilder.build()
+        val outputFileOptions = outputFileOptionsBuilder!!.build()
 
         mActivity.previewLoader.visibility = View.VISIBLE
         camConfig.snapPreview()

@@ -91,14 +91,7 @@ class SettingsDialog(mActivity: MainActivity) :
         moreSettingsButton = findViewById(R.id.more_settings)
         moreSettingsButton.setOnClickListener {
             if (!mActivity.videoCapturer.isRecording) {
-                val mSIntent = Intent(mActivity, MoreSettings::class.java)
-                mSIntent.putExtra(
-                    "show_storage_settings",
-                    !(mActivity is SecureMainActivity ||
-                            (mActivity is CaptureActivity &&
-                                    mActivity !is VideoCaptureActivity))
-                )
-                mActivity.startActivity(mSIntent)
+                openMoreSettings()
             } else {
                 mActivity.showMessage("Cannot switch activities when recording")
             }
@@ -711,5 +704,16 @@ class SettingsDialog(mActivity: MainActivity) :
         }
 
         videoQualitySpinner.setSelection(titles.indexOf(qt))
+    }
+
+    fun openMoreSettings() {
+        val mSIntent = Intent(mActivity, MoreSettings::class.java)
+        mSIntent.putExtra(
+            "show_storage_settings",
+            !(mActivity is SecureMainActivity ||
+                    (mActivity is CaptureActivity &&
+                            mActivity !is VideoCaptureActivity))
+        )
+        mActivity.startActivity(mSIntent)
     }
 }
