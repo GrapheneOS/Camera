@@ -83,9 +83,15 @@ class InAppGallery : AppCompatActivity() {
 
     companion object {
         @SuppressLint("SimpleDateFormat")
-        fun convertTime(time: Long): String {
+        fun convertTime(time: Long, showTimeZone: Boolean = true): String {
             val date = Date(time)
-            val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
+            val format = SimpleDateFormat(
+                if (showTimeZone) {
+                    "yyyy-MM-dd HH:mm:ss z"
+                } else {
+                    "yyyy-MM-dd HH:mm:ss"
+                }
+            )
             format.timeZone = TimeZone.getDefault()
             return format.format(date)
         }
@@ -116,7 +122,7 @@ class InAppGallery : AppCompatActivity() {
                 dateFormat.timeZone = TimeZone.getDefault()
             }
             val parsedDate = dateFormat.parse(timestamp)
-            return convertTime(parsedDate?.time ?: 0)
+            return convertTime(parsedDate?.time ?: 0, offset != null)
         }
 
         fun getRelativePath(uri: Uri, path: String?, fileName: String) : String {
