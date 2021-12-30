@@ -4,6 +4,10 @@ import android.content.Context
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
+import java.util.TimeZone
+import java.util.Calendar
+import java.util.Date
+import android.util.Log
 
 private val exifAttributes = arrayOf(
     ExifInterface.TAG_IMAGE_WIDTH,
@@ -160,6 +164,39 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_NEW_SUBFILE_TYPE,
     ExifInterface.TAG_SUBFILE_TYPE,
 )
+
+fun fixExif(context: Context, uri : Uri) {
+
+    val inStream = context.contentResolver.openFileDescriptor(
+        uri,
+        "rw"
+    )!!
+
+    val exifInterface = ExifInterface(inStream.fileDescriptor)
+
+    // The number passed to this function doesn't matter
+    val millis = TimeZone.getDefault().getOffset(0)
+
+    val total_mins = (millis / (1000 * 60))
+
+    val hours = (total_mins / 60)
+    var hours_str_rep = hours.toString().padStart(2, '0')
+
+    if (hours >= 0)
+        hours_str_rep = "+${hours_str_rep}"
+
+    val mins = (total_mins % 60).toString().padEnd(2, '0')
+
+    val offset_time = "$hours_str_rep:$mins"
+
+    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME, offset_time)
+    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offset_time)
+    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
+
+    exifInterface.saveAttributes()
+
+    inStream.close()
+}
 
 fun clearExif(context: Context, uri : Uri) {
 

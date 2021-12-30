@@ -90,21 +90,32 @@ class InAppGallery : AppCompatActivity() {
             return format.format(date)
         }
 
-        @SuppressLint("SimpleDateFormat")
-        fun convertTime(time: String, isVideo : Boolean = true): String {
+        fun convertTimeForVideo(time: String) : String {
+            val dateFormat = SimpleDateFormat("yyyyMMdd'T'hhmmss.SSS'Z'")
+            dateFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val parsedDate = dateFormat.parse(time)
+            return convertTime(parsedDate?.time ?: 0)
+        }
+
+        fun convertTimeForPhoto(time: String, offset: String? = null) : String {
+
+            val timestamp = if (offset != null) {
+                "$time $offset"
+            } else {
+                time
+            }
+
             val dateFormat = SimpleDateFormat(
-                if (isVideo) {
-                    "yyyyMMdd'T'hhmmss.SSS'Z'"
-                } else {
+                if (offset == null) {
                     "yyyy:MM:dd hh:mm:ss"
+                } else {
+                    "yyyy:MM:dd hh:mm:ss Z"
                 }
             )
-            dateFormat.timeZone = if (isVideo) {
-                TimeZone.getTimeZone("UTC")
-            } else {
-                TimeZone.getDefault()
+            if (offset == null) {
+                dateFormat.timeZone = TimeZone.getDefault()
             }
-            val parsedDate = dateFormat.parse(time)
+            val parsedDate = dateFormat.parse(timestamp)
             return convertTime(parsedDate?.time ?: 0)
         }
 
@@ -273,7 +284,7 @@ class InAppGallery : AppCompatActivity() {
             )
 
             val date =
-                convertTime(
+                convertTimeForVideo(
                     mediaMetadataRetriever.extractMetadata(
                         MediaMetadataRetriever.METADATA_KEY_DATE
                     )!!
@@ -288,21 +299,19 @@ class InAppGallery : AppCompatActivity() {
             )
             val eInterface = ExifInterface(iStream!!)
 
-            if (eInterface.hasAttribute("DateTimeOriginal")) {
-                dateAdded = convertTime(
-                    eInterface.getAttribute(
-                        "DateTimeOriginal"
-                    )!!,
-                    false
+            val offset = eInterface.getAttribute(ExifInterface.TAG_OFFSET_TIME)
+
+            if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)) {
+                dateAdded = convertTimeForPhoto(
+                    eInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)!!,
+                    offset
                 )
             }
 
-            if (eInterface.hasAttribute("DateTime")) {
-                dateModified = convertTime(
-                    eInterface.getAttribute(
-                        "DateTime"
-                    )!!,
-                    false
+            if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME)) {
+                dateModified = convertTimeForPhoto(
+                    eInterface.getAttribute(ExifInterface.TAG_DATETIME)!!,
+                    offset
                 )
             }
 
