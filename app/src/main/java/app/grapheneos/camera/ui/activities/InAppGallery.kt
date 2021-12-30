@@ -97,7 +97,7 @@ class InAppGallery : AppCompatActivity() {
         }
 
         fun convertTimeForVideo(time: String) : String {
-            val dateFormat = SimpleDateFormat("yyyyMMdd'T'hhmmss.SSS'Z'")
+            val dateFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'")
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val parsedDate = dateFormat.parse(time)
             return convertTime(parsedDate?.time ?: 0)
@@ -113,9 +113,9 @@ class InAppGallery : AppCompatActivity() {
 
             val dateFormat = SimpleDateFormat(
                 if (offset == null) {
-                    "yyyy:MM:dd hh:mm:ss"
+                    "yyyy:MM:dd HH:mm:ss"
                 } else {
-                    "yyyy:MM:dd hh:mm:ss Z"
+                    "yyyy:MM:dd HH:mm:ss Z"
                 }
             )
             if (offset == null) {
