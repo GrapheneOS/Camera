@@ -6,6 +6,7 @@ import androidx.exifinterface.media.ExifInterface
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import java.util.TimeZone
 import java.util.Calendar
+import java.text.SimpleDateFormat
 import java.util.Date
 import android.util.Log
 
@@ -192,6 +193,11 @@ fun fixExif(context: Context, uri : Uri) {
     exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME, offset_time)
     exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offset_time)
     exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
+
+    val now = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").format(Date())
+
+    exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, now)
+    exifInterface.setAttribute(ExifInterface.TAG_DATETIME, now)
 
     exifInterface.saveAttributes()
 
