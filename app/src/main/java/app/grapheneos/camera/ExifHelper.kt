@@ -8,6 +8,8 @@ import java.util.TimeZone
 import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.time.ZonedDateTime
+import java.time.ZoneId
 import android.util.Log
 
 private val exifAttributes = arrayOf(
@@ -175,8 +177,9 @@ fun fixExif(context: Context, uri : Uri) {
 
     val exifInterface = ExifInterface(inStream.fileDescriptor)
 
-    // The number passed to this function doesn't matter
-    val millis = TimeZone.getDefault().getOffset(0)
+    val now = Date()
+
+    val millis = TimeZone.getDefault().getOffset(now.time)
 
     val total_mins = (millis / (1000 * 60))
 
@@ -194,10 +197,10 @@ fun fixExif(context: Context, uri : Uri) {
     exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offset_time)
 //    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
-    val now = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").format(Date())
+    val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").format(now)
 
-    exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, now)
-    exifInterface.setAttribute(ExifInterface.TAG_DATETIME, now)
+    exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
+    exifInterface.setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
 
     exifInterface.saveAttributes()
 
