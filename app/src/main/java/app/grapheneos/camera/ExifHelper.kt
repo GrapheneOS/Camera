@@ -192,7 +192,7 @@ fun fixExif(context: Context, uri : Uri) {
 
     exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME, offset_time)
     exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offset_time)
-    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
+//    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
     val now = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").format(Date())
 
