@@ -101,7 +101,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        var outputFileOptionsBuilder : ImageCapture.OutputFileOptions.Builder? = null
+        var outputFileOptionsBuilder : ImageCapture.OutputFileOptions.Builder?
 
         try {
             outputFileOptionsBuilder = genOutputBuilderForImage()

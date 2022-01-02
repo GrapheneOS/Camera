@@ -167,7 +167,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun startRecording() {
         if (camConfig.camera == null) return
 
-        var pendingRecording : PendingRecording? = null
+        var pendingRecording : PendingRecording?
 
         try {
             pendingRecording = genPendingRecording()
