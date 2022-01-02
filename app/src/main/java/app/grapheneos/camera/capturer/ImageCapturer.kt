@@ -130,9 +130,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
             }
         }
 
-        outputFileOptionsBuilder!!.setMetadata(imageMetadata)
+        outputFileOptionsBuilder.setMetadata(imageMetadata)
 
-        val outputFileOptions = outputFileOptionsBuilder!!.build()
+        val outputFileOptions = outputFileOptionsBuilder.build()
 
         mActivity.previewLoader.visibility = View.VISIBLE
         camConfig.snapPreview()
