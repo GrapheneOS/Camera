@@ -1,0 +1,105 @@
+<resources>
+    <string name="app_name">Caméra</string>
+
+    <string name="camera_permission_dialog_title">Autorisation d\'accès à l\'appareil photo</string>
+    <string name="camera_permission_dialog_message">
+        L'\application requiert l\'autorisation d'accès à l\'appareil photo pour fonctionner. Veuillez fournir l\'autorisation via les paramètres afin d\'utiliser cette application.
+    </string>
+
+    <string name="audio_permission_dialog_title">Autorisation d\'accès au microphone</string>
+    <string name="audio_permission_dialog_message">L\'application requiert l\'autorisation d\'accès au microphone afin d\'enregistrer une vidéo contenant du son. Veuillez fournir l\'autorisation via les paramètres afin de procéder à cette configuration. Si vous n\'avez pas besoin que votre vidéo contienne de l\'audio, vous pouvez simplement la désactiver (et la réactiver plus tard dans les paramètres).</string>
+
+    <string name="location_permission_dialog_title">Autorisation d\'accès à la localisation requise </string>
+    <string name="location_permission_dialog_message">
+        L\'application requiert l\'autorisation d\'accès à la localisation pour le géomarquage. Veuillez fournir l\'autorisation requise via les paramètres afin d\'utiliser cette application.
+    </string>
+
+    <string name="focus_ring">Bague de mise au point</string>
+    <string name="flip_camera">Caméra Flip</string>
+    <string name="loading_camera">Chargement de la Caméra</string>
+    <string name="flash_mode">Mode Flash</string>
+    <string name="capture_mode">Mode Capture</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="toggle_torch">Activer la torche</string>
+    <string name="zoom_in">Zoom Avant</string>
+    <string name="zoom_out">Zoom Arrière</string>
+    <string name="scan_result">Résultat du Scan</string>
+    <string name="share_qr_text">Partager le texte QR</string>
+    <string name="copy_to_clipboard">Copier dans le presse-papiers</string>
+    <string name="retake">Reprendre</string>
+    <string name="play_preview">Lire L\'aperçu</string>
+    <string name="toggle_button">Activer les Boutons</string>
+    <string name="aspect_ratio">Ratio D\'aspect</string>
+    <string name="toggle_flash">Activer le Flash</string>
+    <string name="grid_toggle">Activer la Grille</string>
+    <string name="image_format">Format D\'image</string>
+    <string name="include_audio">Inclure L\'audio</string>
+    <string name="video_quality">Qualité de la vidéo</string>
+    <string name="optimize_for">Optimisé pour</string>
+    <string name="quality">Qualité</string>
+    <string name="latency">Latence</string>
+    <string name="preview">Aperçu</string>
+    <string name="go_back_to_camera">Retourner à la caméra</string>
+    <string name="file_info">Info du Fichier</string>
+    <string name="share_file">Partager le fichier</string>
+    <string name="delete_file">Supprimer le fichier</string>
+    <string name="edit">Éditer</string>
+    <string name="self_illumination">Auto-illumination</string>
+    <string name="focus_timeout">Délai de mise au point</string>
+    <string name="timer">Minuteur</string>
+    <string name="cancel_timer">Supprimer le Minuteur</string>
+    <string name="media_location">Emplacement des médias</string>
+    <string name="camera_sounds">Sons de la Caméra</string>
+    <string name="video_capture_label">Enregistrer la Vidéo</string>
+
+    <string name="camera">PHOTO</string>
+    <string name="video">VIDÉO</string>
+    <string name="portrait_mode">PORTRAIT</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_sight_mode">VISION NOCTURNE</string>
+    <string name="face_retouch_mode">RETOUCHE DU VISAGE</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">SCAN QR</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="go_back_to_gallery">Retourner à la Galerie</string>
+    <string name="delete">Supprimer</string>
+    <string name="share_media">Partager le Média</string>
+    <string name="rec_without_audio">Démarrer l\'enregistrement sans audio</string>
+    <string name="save_image_as_preview">Enregistrer l\'image comme prévisualisée</string>
+    <string name="qr_scan_toggle">Basculer en Scan QR</string>
+    <string name="qr_scan">Code QR</string>
+    <string name="data_matrix">Data Matrix</string>
+    <string name="aztec_code">Code Aztec</string>
+    <string name="maxicode">Maxi Code</string>
+    <string name="more_options">Plus d\'Options</string>
+    <string name="codabar">Codabar</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Plus de Paramètres</string>
+    <string name="additional_settings">Paramètres Additionnels</string>
+
+    <string name="general">Général</string>
+
+    <string name="save_image_as_previewed">Enregistrer l\'image telle qu\'elle a été prévisualisée</string>
+    <string name="save_as_image_preview_desc">Enregistrer l\'image de sortie comme visible sur l\'aperçu (corrige l\'inversion)</string>
+
+    <string name="gyroscope_suggestions">Suggestions par le gyroscope</string>
+    <string name="gyroscope_setting_desc">Obtenez occasionnellement des suggestions visuelles pour des images droites/bien inclinées </string>
+
+    <string name="storage">Stockage</string>
+    <string name="storage_location">Emplacement de Stockage</string>
+    <string name="image_file_name_format">Format de Nom des Fichiers Images</string>
+    <string name="video_file_name_format">Format de Nom des Fichiers Vidéos</string>
+    <string name="revert_back_to_dcim">Revenir à DCIM</string>
+
+    <string name="image_quality">Qualité D\'image</string>
+    <string name="image_quality_desc" formatted="false">Ajustez la qualité d\'une image capturée par l\'application de 1% à 100%. Ce champ peut être laissé vide pour éviter de définir explicitement la qualité d\'image.</string>
+    <string name="photo">Photo</string>
+    <string name="increase_quality">Augmenter la Qualité</string>
+    <string name="decrease_quality">Diminuer la Qualité</string>
+    <string name="remove_exif_title">Suppression des données EXIF après la capture</string>
+    <string name="remove_exif_subtitle">Remarque: L\'option de géomarquage/localisation est indépendante de ce paramètre.</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+</resources>
