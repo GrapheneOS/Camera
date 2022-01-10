@@ -36,6 +36,9 @@ import java.util.Date
 import java.util.TimeZone
 import kotlin.properties.Delegates
 import androidx.documentfile.provider.DocumentFile
+import java.io.InputStream
+import java.lang.Exception
+
 
 class InAppGallery : AppCompatActivity() {
 
@@ -242,7 +245,8 @@ class InAppGallery : AppCompatActivity() {
                     showMessage("File deleted successfully")
                     (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
                 } else {
-                    showMessage("An unexpected error occurred while deleting this file")
+                    showMessage("An unexpected error occurred while deleting this" +
+                            " file")
                 }
             }
             .setNegativeButton("Cancel", null).show()
@@ -545,23 +549,51 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
+    private fun uriExists(uri: Uri) : Boolean {
+            try {
+                val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return false
+                inputStream.close()
+                return true
+            } catch (e: Exception) {
+                return false
+            }
+    }
+
     override fun onResume() {
         super.onResume()
 
         val gsaUris = (gallerySlider.adapter as GallerySliderAdapter).mediaUris
-        val newUris = camConfig.mediaUris
 
-        var urisHaveChanged = false
+        if (isSecureMode) {
 
-        for (mediaUri in gsaUris) {
-            if (!newUris.contains(mediaUri)) {
-                urisHaveChanged = true
-                break
+            val newUris : ArrayList<Uri> = arrayListOf()
+
+            for (mediaUri in gsaUris) {
+                if (uriExists(mediaUri)) {
+                    newUris.add(mediaUri)
+                }
             }
-        }
 
-        if (urisHaveChanged) {
-            gallerySlider.adapter = GallerySliderAdapter(this, newUris)
+            // If mediaUris have changed
+            if (mediaUris.size != newUris.size) {
+                gallerySlider.adapter = GallerySliderAdapter(this, newUris)
+            }
+
+        } else {
+
+            val newUris = camConfig.mediaUris
+            var urisHaveChanged = false
+
+            for (mediaUri in gsaUris) {
+                if (!newUris.contains(mediaUri)) {
+                    urisHaveChanged = true
+                    break
+                }
+            }
+
+            if (urisHaveChanged) {
+                gallerySlider.adapter = GallerySliderAdapter(this, newUris)
+            }
         }
 
         showActionBar()
