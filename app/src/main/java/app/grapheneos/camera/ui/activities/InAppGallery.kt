@@ -484,7 +484,7 @@ class InAppGallery : AppCompatActivity() {
         if (isSecureMode) {
             val spName = intent.extras?.getString("fileSP")
             val sp = getSharedPreferences(spName, Context.MODE_PRIVATE)
-            val filePaths = sp.getStringSet("filePaths", emptySet())!!
+            val filePaths = sp.getString("filePaths", "")!!.split(",")
             val mediaFileArray: Array<Uri> =
                 filePaths.stream().map { Uri.parse(it) }.toArray { length ->
                     arrayOfNulls<Uri>(length)

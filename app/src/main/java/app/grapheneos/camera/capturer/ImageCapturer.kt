@@ -190,7 +190,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     }
 
                     if(mActivity is SecureMainActivity) {
-                        mActivity.capturedFilePaths.add(camConfig.latestUri.toString())
+                        mActivity.capturedFilePaths.add(0, camConfig.latestUri.toString())
                     }
 
                     fixExif(mActivity, camConfig.latestUri!!)

@@ -36,7 +36,11 @@ class SecureMainActivity : MainActivity() {
         val intent = Intent(this, InAppGallery::class.java)
 
         val editor = fileSP.edit()
-        editor.putStringSet("filePaths", capturedFilePaths.toSet())
+        editor.putString("filePaths", if (capturedFilePaths.isEmpty()) {
+            ""
+        } else {
+            capturedFilePaths.joinToString(",")
+        })
 
         if(editor.commit()){
             intent.putExtra("show_videos_only", this.requiresVideoModeOnly)

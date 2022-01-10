@@ -242,7 +242,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         camConfig.updatePreview()
 
                         if(mActivity is SecureMainActivity) {
-                            mActivity.capturedFilePaths.add(outputUri.toString())
+                            mActivity.capturedFilePaths.add(0, outputUri.toString())
                         }
                     }
                 }
