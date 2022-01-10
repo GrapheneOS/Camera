@@ -550,13 +550,13 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun uriExists(uri: Uri) : Boolean {
-            try {
-                val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return false
-                inputStream.close()
-                return true
-            } catch (e: Exception) {
-                return false
-            }
+        try {
+            val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return false
+            inputStream.close()
+            return true
+        } catch (e: Exception) {
+            return false
+        }
     }
 
     override fun onResume() {
