@@ -21,11 +21,6 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <style name="SettingsDialogAnim">
-        <item name="android:windowEnterAnimation">@anim/slide_down</item>
-        <item name="android:windowExitAnimation">@anim/slide_up</item>
-    </style>
-
     <style name="OverlayActionBar" parent="Theme.AppCompat.DayNight.DarkActionBar">
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowActionBarOverlay">true</item>

@@ -20,7 +20,6 @@
     <string name="flash_mode">Flash Mode</string>
     <string name="capture_mode">Capture Mode</string>
     <string name="start_value_timer">00:00</string>
-    <string name="toggle_torch">Toggle torch</string>
     <string name="zoom_in">Zoom In</string>
     <string name="zoom_out">Zoom Out</string>
     <string name="scan_result">Scan Result</string>
@@ -32,23 +31,19 @@
     <string name="aspect_ratio">Aspect Ratio</string>
     <string name="toggle_flash">Toggle Flash</string>
     <string name="grid_toggle">Grid Toggle</string>
-    <string name="image_format">Image Format</string>
     <string name="include_audio">Include Audio</string>
     <string name="video_quality">Video Quality</string>
     <string name="optimize_for">Optimize for</string>
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>
     <string name="preview">Preview</string>
-    <string name="go_back_to_camera">Go back to camera</string>
     <string name="file_info">File Info</string>
-    <string name="share_file">Share file</string>
     <string name="delete_file">Delete file</string>
     <string name="edit">Edit</string>
     <string name="self_illumination">Self Illumination</string>
     <string name="focus_timeout">Focus Timeout</string>
     <string name="timer">Timer</string>
     <string name="cancel_timer">Cancel Timer</string>
-    <string name="media_location">Media Location</string>
     <string name="camera_sounds">Camera Sounds</string>
     <string name="video_capture_label">Record Video</string>
 
@@ -62,21 +57,15 @@
     <string name="qr_scan_mode">QR SCAN</string>
     <string name="aspect_ratio_16_9">16:9</string>
     <string name="aspect_ratio_4_3">4:3</string>
-    <string name="go_back_to_gallery">Go back to Gallery</string>
-    <string name="delete">Delete</string>
     <string name="share_media">Share Media</string>
     <string name="rec_without_audio">Start recording without audio</string>
-    <string name="save_image_as_preview">Save Image as Previewed</string>
     <string name="qr_scan_toggle">QR Scan toggle</string>
     <string name="qr_scan">QR Code</string>
     <string name="data_matrix">Data Matrix</string>
     <string name="aztec_code">Aztec Code</string>
-    <string name="maxicode">Maxi Code</string>
     <string name="more_options">More Options</string>
-    <string name="codabar">Codabar</string>
     <string name="pdf_417">PDF 417</string>
     <string name="more_settings">More Settings</string>
-    <string name="additional_settings">Additional Settings</string>
 
     <string name="general">General</string>
 

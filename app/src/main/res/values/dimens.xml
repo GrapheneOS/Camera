@@ -3,13 +3,10 @@
     <dimen name="toggle_button_padding">10dp</dimen>
     <dimen name="toggle_button_size">46dp</dimen>
 
-    <dimen name="qr_toggle_button_padding">10dp</dimen>
     <dimen name="qr_toggle_button_size">52dp</dimen>
 
     <dimen name="grid_on_toggle_button_padding">6dp</dimen>
     <dimen name="grid_off_toggle_button_padding">12dp</dimen>
-
-    <dimen name="settings_toggle_button_spacing">14dp</dimen>
 
     <dimen name="settings_dialog_padding_vertical">12dp</dimen>
     <dimen name="settings_dialog_padding_horizontal">14dp</dimen>
