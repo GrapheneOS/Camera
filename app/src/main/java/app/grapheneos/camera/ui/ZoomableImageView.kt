@@ -201,11 +201,7 @@ class ZoomableImageView @JvmOverloads constructor(
 
         isInZoomMode = false
 
-        gActivity.let {
-            it.showActionBar()
-//            it.gallerySlider.isUserInputEnabled = true
-        }
-
+        gActivity.showActionBar()
     }
 
     fun fixTrans() {

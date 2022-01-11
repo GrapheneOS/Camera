@@ -8,7 +8,6 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.provider.MediaStore
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -39,7 +38,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val videoFileFormat = ".mp4"
 
-    var recording: Recording? = null
+    private var recording: Recording? = null
 
     var isPaused = false
         set(value) {
@@ -62,12 +61,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val runnable = Runnable {
         ++elapsedSeconds
         val secs = padTo2(elapsedSeconds % 60)
-        val mins = padTo2(elapsedSeconds / 60 % 60)
+        val min = padTo2(elapsedSeconds / 60 % 60)
         val hours = padTo2(elapsedSeconds / 3600)
         val timerText: String = if (hours == "00") {
-            "$mins:$secs"
+            "$min:$secs"
         } else {
-            "$hours:$mins:$secs"
+            "$hours:$min:$secs"
         }
         mActivity.timerView.text = timerText
         startTimer()
@@ -167,7 +166,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun startRecording() {
         if (camConfig.camera == null) return
 
-        var pendingRecording : PendingRecording?
+        val pendingRecording : PendingRecording?
 
         try {
             pendingRecording = genPendingRecording()

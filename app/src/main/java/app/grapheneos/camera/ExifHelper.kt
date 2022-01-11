@@ -5,12 +5,10 @@ import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import java.util.TimeZone
-import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.time.ZonedDateTime
-import java.time.ZoneId
-import android.util.Log
+import java.util.Locale
+
 
 private val exifAttributes = arrayOf(
     ExifInterface.TAG_IMAGE_WIDTH,
@@ -181,23 +179,23 @@ fun fixExif(context: Context, uri : Uri) {
 
     val millis = TimeZone.getDefault().getOffset(now.time)
 
-    val total_mins = (millis / (1000 * 60))
+    val totalMins = (millis / (1000 * 60))
 
-    val hours = (total_mins / 60)
-    var hours_str_rep = hours.toString().padStart(2, '0')
+    val hours = (totalMins / 60)
+    var hoursStrRep = hours.toString().padStart(2, '0')
 
     if (hours >= 0)
-        hours_str_rep = "+${hours_str_rep}"
+        hoursStrRep = "+${hoursStrRep}"
 
-    val mins = (total_mins % 60).toString().padEnd(2, '0')
+    val mins = (totalMins % 60).toString().padEnd(2, '0')
 
-    val offset_time = "$hours_str_rep:$mins"
+    val offsetTime = "$hoursStrRep:$mins"
 
-    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME, offset_time)
-    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offset_time)
+    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
+    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
 //    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
-    val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").format(now)
+    val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(now)
 
     exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
     exifInterface.setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)

@@ -25,7 +25,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.io.FileNotFoundException
-import android.app.AlertDialog
 
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"
@@ -101,7 +100,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        var outputFileOptionsBuilder : ImageCapture.OutputFileOptions.Builder?
+        val outputFileOptionsBuilder : ImageCapture.OutputFileOptions.Builder?
 
         try {
             outputFileOptionsBuilder = genOutputBuilderForImage()

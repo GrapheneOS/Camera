@@ -23,7 +23,6 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import kotlin.math.roundToInt
 
-
 class ZoomBar : AppCompatSeekBar {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(

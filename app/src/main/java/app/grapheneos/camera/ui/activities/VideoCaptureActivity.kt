@@ -13,7 +13,7 @@ class VideoCaptureActivity : CaptureActivity() {
     private lateinit var whiteOptionCircle: ImageView
     private lateinit var playPreview: ImageView
 
-    var savedUri: Uri? = null
+    private var savedUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

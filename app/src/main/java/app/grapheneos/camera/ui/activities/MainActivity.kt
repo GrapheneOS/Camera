@@ -110,8 +110,8 @@ open class MainActivity : AppCompatActivity(),
     private var audioPermissionDialog: AlertDialog? = null
     private var lastFrame: Bitmap? = null
 
+    private lateinit var mainFrame: View
     lateinit var rootView: View
-    lateinit var mainFrame: View
 
     lateinit var qrScanToggles: View
     lateinit var moreOptionsToggle: View
@@ -179,8 +179,8 @@ open class MainActivity : AppCompatActivity(),
     lateinit var gLineX : View
     lateinit var gLineZ : View
 
-    lateinit var gLeftDash : View
-    lateinit var gRightDash : View
+    private lateinit var gLeftDash : View
+    private lateinit var gRightDash : View
 
     lateinit var locationListener: CustomLocationListener
 

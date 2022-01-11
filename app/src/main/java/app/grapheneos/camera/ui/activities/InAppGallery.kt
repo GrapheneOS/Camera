@@ -13,7 +13,6 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -30,7 +29,6 @@ import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
 import java.io.OutputStream
 import java.net.URLDecoder
-import java.text.Format
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
@@ -38,6 +36,7 @@ import kotlin.properties.Delegates
 import androidx.documentfile.provider.DocumentFile
 import java.io.InputStream
 import java.lang.Exception
+import java.util.Locale
 
 
 class InAppGallery : AppCompatActivity() {
@@ -100,7 +99,7 @@ class InAppGallery : AppCompatActivity() {
         }
 
         fun convertTimeForVideo(time: String) : String {
-            val dateFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'")
+            val dateFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US)
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val parsedDate = dateFormat.parse(time)
             return convertTime(parsedDate?.time ?: 0)
@@ -119,8 +118,8 @@ class InAppGallery : AppCompatActivity() {
                     "yyyy:MM:dd HH:mm:ss"
                 } else {
                     "yyyy:MM:dd HH:mm:ss Z"
-                }
-            )
+                }, Locale.US)
+
             if (offset == null) {
                 dateFormat.timeZone = TimeZone.getDefault()
             }
