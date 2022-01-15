@@ -26,12 +26,12 @@ android {
         }
     }
 
-    compileSdk = 31
+    compileSdk = 32
 
     defaultConfig {
         applicationId = "app.grapheneos.camera"
         minSdk = 29
-        targetSdk = 31
+        targetSdk = 32
         versionCode = 9
         versionName = versionCode.toString()
 
@@ -60,9 +60,9 @@ android {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.4.0")
-    implementation("com.google.android.material:material:1.4.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.2")
+    implementation("androidx.appcompat:appcompat:1.4.1")
+    implementation("com.google.android.material:material:1.5.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.3")
     implementation("androidx.exifinterface:exifinterface:1.3.3")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
