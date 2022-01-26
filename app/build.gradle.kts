@@ -26,7 +26,8 @@ android {
         }
     }
 
-    compileSdk = 31
+    compileSdk = 32
+    buildToolsVersion = "32.0.0"
 
     defaultConfig {
         applicationId = "app.grapheneos.camera"
