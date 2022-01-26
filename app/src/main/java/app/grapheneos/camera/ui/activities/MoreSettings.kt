@@ -34,9 +34,9 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     private lateinit var rootView: View
 
-    private lateinit var pQField : EditText
-    private lateinit var iFField : EditText
-    private lateinit var vFField : EditText
+    private lateinit var pQField: EditText
+    private lateinit var iFField: EditText
+    private lateinit var vFField: EditText
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -48,14 +48,16 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             contentResolver.takePersistableUriPermission(
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
 
             grantUriPermission(
                 packageName,
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+            )
 
             val path = URLDecoder.decode(uri.toString(), "UTF-8")
             camConfig.storageLocation = uri.toString()
@@ -67,14 +69,14 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         } else {
             showMessage(
-            "No directory was selected by" +
-                    " the picker"
+                "No directory was selected by" +
+                        " the picker"
             )
         }
     }
 
     companion object {
-        fun cleanPath(path: String) : String {
+        fun cleanPath(path: String): String {
 
             if (path.isEmpty()) {
                 return "DCIM/Camera"
@@ -92,8 +94,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         setTitle(R.string.more_settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val showStorageSettings = intent.extras?.
-                        getBoolean("show_storage_settings") == true
+        val showStorageSettings = intent.extras?.getBoolean("show_storage_settings") == true
 
         val sIAPToggle = findViewById<SwitchCompat>(
             R.id.save_image_as_preview_toggle
@@ -239,7 +240,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-        
+
         if (event.action == MotionEvent.ACTION_UP) {
             val v: View? = currentFocus
             if (v is EditText) {
@@ -258,7 +259,8 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         val view = currentFocus
         if (view != null) {
             view.clearFocus()
-            val imm: InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            val imm: InputMethodManager =
+                getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(view.windowToken, 0)
         }
     }
@@ -278,7 +280,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 camConfig.photoQuality =
                     Integer.parseInt(pQField.text.toString())
 
-            } catch (exception : Exception) {
+            } catch (exception: Exception) {
 
                 camConfig.photoQuality = 0
 

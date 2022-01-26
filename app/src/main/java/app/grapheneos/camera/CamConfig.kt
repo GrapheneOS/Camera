@@ -217,7 +217,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var preview: Preview? = null
 
-    val allowedFormats : ArrayList<BarcodeFormat> = arrayListOf()
+    val allowedFormats: ArrayList<BarcodeFormat> = arrayListOf()
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
@@ -235,12 +235,16 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private val commonPref = when (mActivity) {
         is SecureMainActivity -> {
-            mActivity.getSharedPreferences(COMMON_SP_NAME
-                    + mActivity.openedActivityAt, Context.MODE_PRIVATE)
+            mActivity.getSharedPreferences(
+                COMMON_SP_NAME
+                        + mActivity.openedActivityAt, Context.MODE_PRIVATE
+            )
         }
         is SecureCaptureActivity -> {
-            mActivity.getSharedPreferences(COMMON_SP_NAME
-                    + mActivity.openedActivityAt, Context.MODE_PRIVATE)
+            mActivity.getSharedPreferences(
+                COMMON_SP_NAME
+                        + mActivity.openedActivityAt, Context.MODE_PRIVATE
+            )
         }
         else -> {
             mActivity.getSharedPreferences(COMMON_SP_NAME, Context.MODE_PRIVATE)
@@ -264,12 +268,12 @@ class CamConfig(private val mActivity: MainActivity) {
     val isFlashAvailable: Boolean
         get() = camera!!.cameraInfo.hasFlashUnit()
 
-    var isTorchOn : Boolean = false
-        get(){
+    var isTorchOn: Boolean = false
+        get() {
             return camera?.cameraInfo?.torchState?.value == TorchState.ON
         }
         set(value) {
-            field = if(isFlashAvailable) {
+            field = if (isFlashAvailable) {
                 camera?.cameraControl?.enableTorch(value)
                 value
             } else {
@@ -279,7 +283,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var modeText: Int = DEFAULT_CAMERA_MODE
 
-    var aspectRatio : Int
+    var aspectRatio: Int
         get() {
             return when {
                 isVideoMode -> {
@@ -296,7 +300,6 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
             }
         }
-
         set(value) {
             val editor = commonPref.edit()
             editor.putInt(SettingValues.Key.ASPECT_RATIO, value)
@@ -459,7 +462,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    val mediaUris : ArrayList<Uri>
+    val mediaUris: ArrayList<Uri>
         get() {
             val data = commonPref.getString(
                 SettingValues.Key.MEDIA_URIS,
@@ -511,9 +514,9 @@ class CamConfig(private val mActivity: MainActivity) {
             return uris
         }
 
-    private fun getOldPaths() : List<Uri> {
+    private fun getOldPaths(): List<Uri> {
 
-        val pathData : ArrayList<Pair<Uri, Int>> = arrayListOf()
+        val pathData: ArrayList<Pair<Uri, Int>> = arrayListOf()
 
         val imageCursor = mActivity.contentResolver.query(
             imageCollectionUri,
@@ -550,7 +553,7 @@ class CamConfig(private val mActivity: MainActivity) {
             "${MediaStore.Video.VideoColumns.DATE_ADDED} DESC"
         )
 
-        if (videoCursor!=null) {
+        if (videoCursor != null) {
             while (videoCursor.moveToNext()) {
                 val videoUri = ContentUris
                     .withAppendedId(
@@ -570,7 +573,7 @@ class CamConfig(private val mActivity: MainActivity) {
         return pathData.map { it.first }
     }
 
-    var photoQuality : Int
+    var photoQuality: Int
         get() {
             return commonPref.getInt(
                 SettingValues.Key.PHOTO_QUALITY,
@@ -583,7 +586,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    var removeExifAfterCapture : Boolean
+    var removeExifAfterCapture: Boolean
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
@@ -599,7 +602,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    var gSuggestions : Boolean
+    var gSuggestions: Boolean
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.GYROSCOPE_SUGGESTIONS,
@@ -615,16 +618,16 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    fun shouldShowGyroscope() : Boolean {
+    fun shouldShowGyroscope(): Boolean {
         return isInPhotoMode && gSuggestions
     }
 
-    private val isInPhotoMode : Boolean
+    private val isInPhotoMode: Boolean
         get() {
             return !(isQRMode || isVideoMode)
         }
 
-    val isInCaptureMode : Boolean
+    val isInCaptureMode: Boolean
         get() {
             return mActivity is CaptureActivity
         }
@@ -714,7 +717,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (value) {
                 // If location listener wasn't previously set
-                if(!field) {
+                if (!field) {
                     mActivity.locationListener.start()
                 }
             } else {
@@ -751,12 +754,16 @@ class CamConfig(private val mActivity: MainActivity) {
         val modeText = getCurrentModeText()
         modePref = when (mActivity) {
             is SecureCaptureActivity -> {
-                mActivity.getSharedPreferences(modeText + mActivity.openedActivityAt,
-                    Context.MODE_PRIVATE)
+                mActivity.getSharedPreferences(
+                    modeText + mActivity.openedActivityAt,
+                    Context.MODE_PRIVATE
+                )
             }
             is SecureMainActivity -> {
-                mActivity.getSharedPreferences(modeText + mActivity.openedActivityAt,
-                    Context.MODE_PRIVATE)
+                mActivity.getSharedPreferences(
+                    modeText + mActivity.openedActivityAt,
+                    Context.MODE_PRIVATE
+                )
             }
             else -> {
                 mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
@@ -775,7 +782,7 @@ class CamConfig(private val mActivity: MainActivity) {
         )
         editor.commit()
 
-        if(selected) {
+        if (selected) {
             if (BarcodeFormat.valueOf(format) !in allowedFormats) {
                 allowedFormats.add(BarcodeFormat.valueOf(format))
             }
@@ -836,9 +843,9 @@ class CamConfig(private val mActivity: MainActivity) {
         )
 
         requireLocation = modePref.getBoolean(
-                SettingValues.Key.GEO_TAGGING,
-                SettingValues.Default.GEO_TAGGING
-            )
+            SettingValues.Key.GEO_TAGGING,
+            SettingValues.Default.GEO_TAGGING
+        )
 
         selfIlluminate = modePref.getBoolean(
             SettingValues.Key.SELF_ILLUMINATION,
@@ -889,8 +896,10 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         if (!commonPref.contains(SettingValues.Key.ASPECT_RATIO)) {
-            editor.putInt(SettingValues.Key.ASPECT_RATIO,
-                SettingValues.Default.ASPECT_RATIO)
+            editor.putInt(
+                SettingValues.Key.ASPECT_RATIO,
+                SettingValues.Default.ASPECT_RATIO
+            )
         }
 
         if (!commonPref.contains(SettingValues.Key.SCAN_ALL_CODES)) {
@@ -970,19 +979,19 @@ class CamConfig(private val mActivity: MainActivity) {
                     allowedFormats.add(format)
                 }
 
-                if(format == BarcodeFormat.QR_CODE) {
+                if (format == BarcodeFormat.QR_CODE) {
                     mActivity.qrToggle.isSelected = true
                 }
 
-                if(format == BarcodeFormat.AZTEC) {
+                if (format == BarcodeFormat.AZTEC) {
                     mActivity.azToggle.isSelected = true
                 }
 
-                if(format == BarcodeFormat.PDF_417) {
+                if (format == BarcodeFormat.PDF_417) {
                     mActivity.cBToggle.isSelected = true
                 }
 
-                if(format == BarcodeFormat.DATA_MATRIX) {
+                if (format == BarcodeFormat.DATA_MATRIX) {
                     mActivity.dmToggle.isSelected = true
                 }
             }
@@ -1021,7 +1030,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun updatePreview() {
 
-        if (latestUri==null) return
+        if (latestUri == null) return
 
         if (isVideo(latestUri!!)) {
             try {
@@ -1043,7 +1052,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (mActivity is SecureMainActivity) {
 
-                if (mActivity.capturedFilePaths.isNotEmpty()){
+                if (mActivity.capturedFilePaths.isNotEmpty()) {
                     latestUri = Uri.parse(
                         mActivity.capturedFilePaths.last()
                     )
@@ -1096,7 +1105,7 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
-    fun initializeCamera(forced : Boolean = false) {
+    fun initializeCamera(forced: Boolean = false) {
         if (cameraProvider != null) {
             startCamera(forced = forced)
             return
@@ -1106,7 +1115,8 @@ class CamConfig(private val mActivity: MainActivity) {
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
 
-            val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(mActivity, cameraProvider!!)
+            val extensionsManagerFuture =
+                ExtensionsManager.getInstanceAsync(mActivity, cameraProvider!!)
 
             extensionsManagerFuture.addListener({
                 extensionsManager = extensionsManagerFuture.get()
@@ -1119,7 +1129,7 @@ class CamConfig(private val mActivity: MainActivity) {
     // Start the camera with latest hard configuration
     @JvmOverloads
     fun startCamera(forced: Boolean = false) {
-        if ((!forced && camera != null) || cameraProvider==null) return
+        if ((!forced && camera != null) || cameraProvider == null) return
 
         mActivity.exposureBar.hidePanel()
         updatePrefMode()
@@ -1248,11 +1258,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
         loadTabs()
 
-        camera!!.cameraInfo.zoomState.observe(mActivity, {
+        camera!!.cameraInfo.zoomState.observe(mActivity) {
             if (it.linearZoom != 0f) {
                 mActivity.zoomBar.updateThumb()
             }
-        })
+        }
 
         mActivity.zoomBar.updateThumb(false)
 
@@ -1482,8 +1492,8 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         mActivity.cbText.visibility = if (isVideoMode || mActivity.timerDuration == 0) {
-             View.INVISIBLE
-        } else  {
+            View.INVISIBLE
+        } else {
             View.VISIBLE
         }
 
@@ -1512,7 +1522,10 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
-        builder.setMultiChoiceItems(optionNames.toArray(arrayOf<String>()), optionValues.toBooleanArray()) { _, index, isChecked ->
+        builder.setMultiChoiceItems(
+            optionNames.toArray(arrayOf<String>()),
+            optionValues.toBooleanArray()
+        ) { _, index, isChecked ->
             optionValues[index] = isChecked
         }
 

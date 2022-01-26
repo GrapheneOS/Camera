@@ -21,7 +21,7 @@ class ZoomableImageView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : AppCompatImageView(context, attrs) {
 
-    lateinit var mMatrix : Matrix
+    lateinit var mMatrix: Matrix
 
     private var mode = NONE
 
@@ -41,13 +41,13 @@ class ZoomableImageView @JvmOverloads constructor(
 
     private var isZoomingDisabled = true
 
-    lateinit var gActivity : InAppGallery
+    lateinit var gActivity: InAppGallery
 
     init {
         sharedConstructing()
     }
 
-    private val currentInstance : ZoomableImageView
+    private val currentInstance: ZoomableImageView
         get() {
             return gActivity.gallerySlider.getChildAt(0)
                 .findViewById(R.id.slide_preview)
@@ -247,7 +247,8 @@ class ZoomableImageView @JvmOverloads constructor(
         // Rescales image on rotation
         if (oldMeasuredHeight == viewWidth &&
             oldMeasuredHeight == viewHeight || viewWidth == 0 ||
-            viewHeight == 0) return
+            viewHeight == 0
+        ) return
 
         oldMeasuredHeight = viewHeight
         oldMeasuredWidth = viewWidth

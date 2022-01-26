@@ -91,7 +91,7 @@ open class CaptureActivity : MainActivity() {
         thirdOption.visibility = View.INVISIBLE
 
         captureButton.setOnClickListener {
-            if (timerDuration==0){
+            if (timerDuration == 0) {
                 takePicture()
             } else {
                 if (cdTimer.isRunning) {
@@ -218,7 +218,7 @@ open class CaptureActivity : MainActivity() {
         finish()
     }
 
-    private fun imageProxyToBitmap(image: ImageProxy, rotation : Float): Bitmap {
+    private fun imageProxyToBitmap(image: ImageProxy, rotation: Float): Bitmap {
         val planeProxy = image.planes[0]
         val buffer: ByteBuffer = planeProxy.buffer
         val bytes = ByteArray(buffer.remaining())

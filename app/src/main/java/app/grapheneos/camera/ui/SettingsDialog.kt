@@ -113,7 +113,7 @@ class SettingsDialog(mActivity: MainActivity) :
 
         val rootView = findViewById<SettingsFrameLayout>(R.id.root)
         rootView.setOnInterceptTouchEventListener(
-            object: SettingsFrameLayout.OnInterceptTouchEventListener {
+            object : SettingsFrameLayout.OnInterceptTouchEventListener {
 
                 override fun onInterceptTouchEvent(
                     view: SettingsFrameLayout?,
@@ -123,7 +123,10 @@ class SettingsDialog(mActivity: MainActivity) :
                     return mActivity.gestureDetectorCompat.onTouchEvent(ev)
                 }
 
-                override fun onTouchEvent(view: SettingsFrameLayout?, event: MotionEvent?): Boolean {
+                override fun onTouchEvent(
+                    view: SettingsFrameLayout?,
+                    event: MotionEvent?
+                ): Boolean {
                     return false
                 }
             }
@@ -132,16 +135,17 @@ class SettingsDialog(mActivity: MainActivity) :
         settingsFrame = findViewById(R.id.settings_frame)
 
         rootView.viewTreeObserver.addOnPreDrawListener(
-            object: OnPreDrawListener {
+            object : OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     rootView.viewTreeObserver.removeOnPreDrawListener(this)
 
                     settingsFrame.layoutParams =
-                                (settingsFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
-                                    val marginTop = (mActivity.rootView.layoutParams as ViewGroup.MarginLayoutParams).topMargin
-                                    it.height = (marginTop + (rootView.measuredWidth * 4/3))
-                                    it
-                                }
+                        (settingsFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
+                            val marginTop =
+                                (mActivity.rootView.layoutParams as ViewGroup.MarginLayoutParams).topMargin
+                            it.height = (marginTop + (rootView.measuredWidth * 4 / 3))
+                            it
+                        }
 
                     return true
                 }
@@ -525,7 +529,7 @@ class SettingsDialog(mActivity: MainActivity) :
             R.anim.slide_down
         )
 
-        anim.setAnimationListener(object: Animation.AnimationListener {
+        anim.setAnimationListener(object : Animation.AnimationListener {
             override fun onAnimationStart(p0: Animation?) {}
 
             override fun onAnimationEnd(p0: Animation?) {
@@ -665,7 +669,7 @@ class SettingsDialog(mActivity: MainActivity) :
 
         updateFlashMode()
 
-        if(camConfig.isVideoMode) {
+        if (camConfig.isVideoMode) {
             aRToggle.isChecked = true
         } else {
             aRToggle.isChecked = camConfig.aspectRatio == AspectRatio.RATIO_16_9
@@ -697,10 +701,8 @@ class SettingsDialog(mActivity: MainActivity) :
 
         videoQualitySpinner.adapter = vQAdapter
 
-        val qt = if (qualityText.isEmpty()) {
+        val qt = qualityText.ifEmpty {
             camConfig.videoQuality?.let { getTitleFor(it) }
-        } else {
-            qualityText
         }
 
         videoQualitySpinner.setSelection(titles.indexOf(qt))

@@ -43,10 +43,10 @@ class InAppGallery : AppCompatActivity() {
 
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
-    private var snackBar : Snackbar? = null
+    private var snackBar: Snackbar? = null
     private var ogColor by Delegates.notNull<Int>()
 
-    private val isSecureMode : Boolean
+    private val isSecureMode: Boolean
         get() {
             return intent.extras?.containsKey("fileSP") == true
         }
@@ -81,7 +81,7 @@ class InAppGallery : AppCompatActivity() {
             }
         }
 
-    private lateinit var rootView : View
+    private lateinit var rootView: View
 
     companion object {
         @SuppressLint("SimpleDateFormat")
@@ -98,14 +98,14 @@ class InAppGallery : AppCompatActivity() {
             return format.format(date)
         }
 
-        fun convertTimeForVideo(time: String) : String {
+        fun convertTimeForVideo(time: String): String {
             val dateFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US)
             dateFormat.timeZone = TimeZone.getTimeZone("UTC")
             val parsedDate = dateFormat.parse(time)
             return convertTime(parsedDate?.time ?: 0)
         }
 
-        fun convertTimeForPhoto(time: String, offset: String? = null) : String {
+        fun convertTimeForPhoto(time: String, offset: String? = null): String {
 
             val timestamp = if (offset != null) {
                 "$time $offset"
@@ -118,7 +118,8 @@ class InAppGallery : AppCompatActivity() {
                     "yyyy:MM:dd HH:mm:ss"
                 } else {
                     "yyyy:MM:dd HH:mm:ss Z"
-                }, Locale.US)
+                }, Locale.US
+            )
 
             if (offset == null) {
                 dateFormat.timeZone = TimeZone.getDefault()
@@ -127,9 +128,9 @@ class InAppGallery : AppCompatActivity() {
             return convertTime(parsedDate?.time ?: 0, offset != null)
         }
 
-        fun getRelativePath(uri: Uri, path: String?, fileName: String) : String {
+        fun getRelativePath(uri: Uri, path: String?, fileName: String): String {
 
-            if (path==null) {
+            if (path == null) {
                 val dPath = URLDecoder.decode(
                     uri.lastPathSegment,
                     "UTF-8"
@@ -191,7 +192,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun editCurrentMedia() {
-        if (isSecureMode){
+        if (isSecureMode) {
             showMessage(
                 "Editing images in secure mode is not allowed."
             )
@@ -220,15 +221,15 @@ class InAppGallery : AppCompatActivity() {
             .setMessage("Do you really want to delete this file?")
             .setPositiveButton("Delete") { _, _ ->
 
-                val res : Boolean
+                val res: Boolean
 
                 if (mediaUri.authority == "media") {
 
                     res = contentResolver.delete(
-                            mediaUri,
-                            null,
-                            null
-                        ) == 1
+                        mediaUri,
+                        null,
+                        null
+                    ) == 1
 
                 } else {
                     val doc = DocumentFile.fromSingleUri(
@@ -244,8 +245,10 @@ class InAppGallery : AppCompatActivity() {
                     showMessage("File deleted successfully")
                     (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
                 } else {
-                    showMessage("An unexpected error occurred while deleting this" +
-                            " file")
+                    showMessage(
+                        "An unexpected error occurred while deleting this" +
+                                " file"
+                    )
                 }
             }
             .setNegativeButton("Cancel", null).show()
@@ -281,8 +284,8 @@ class InAppGallery : AppCompatActivity() {
 
         mediaCursor.close()
 
-        var dateAdded : String? = null
-        var dateModified : String? = null
+        var dateAdded: String? = null
+        var dateModified: String? = null
 
         if (VideoCapturer.isVideo(mediaUri)) {
 
@@ -328,7 +331,8 @@ class InAppGallery : AppCompatActivity() {
         }
 
 
-        val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        val alertDialog: AlertDialog.Builder =
+            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
 
         alertDialog.setTitle("File Details")
 
@@ -343,7 +347,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Size: \n")
-        if(size==0){
+        if (size == 0) {
             detailsBuilder.append("Loading...")
         } else {
             detailsBuilder.append(
@@ -358,7 +362,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Created On: \n")
-        if(dateAdded==null){
+        if (dateAdded == null) {
             detailsBuilder.append("Not found")
         } else {
             detailsBuilder.append(dateAdded)
@@ -367,7 +371,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("Last Modified On: \n")
-        if(dateModified==null){
+        if (dateModified == null) {
             detailsBuilder.append("Not found")
         } else {
             detailsBuilder.append(dateModified)
@@ -528,7 +532,7 @@ class InAppGallery : AppCompatActivity() {
         supportActionBar?.let {
             if (it.isShowing) {
                 hideActionBar()
-            }  else {
+            } else {
                 showActionBar()
             }
         }
@@ -548,7 +552,7 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
-    private fun uriExists(uri: Uri) : Boolean {
+    private fun uriExists(uri: Uri): Boolean {
         try {
             val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return false
             inputStream.close()
@@ -565,7 +569,7 @@ class InAppGallery : AppCompatActivity() {
 
         if (isSecureMode) {
 
-            val newUris : ArrayList<Uri> = arrayListOf()
+            val newUris: ArrayList<Uri> = arrayListOf()
 
             for (mediaUri in gsaUris) {
                 if (uriExists(mediaUri)) {

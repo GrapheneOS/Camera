@@ -16,7 +16,8 @@ import kotlin.math.round
 
 
 class SensorOrientationChangeNotifier private constructor(
-        private val mainActivity: MainActivity) {
+    private val mainActivity: MainActivity
+) {
 
     companion object {
         private var mInstance: SensorOrientationChangeNotifier? = null
@@ -102,7 +103,7 @@ class SensorOrientationChangeNotifier private constructor(
                 notifyListeners()
             }
 
-            if (!camConfig.shouldShowGyroscope())  return
+            if (!camConfig.shouldShowGyroscope()) return
 
             val dAngle = if (mainActivity.gCircleFrame.rotation == 270f) {
                 90f
@@ -146,7 +147,7 @@ class SensorOrientationChangeNotifier private constructor(
             updateGyro(fAngle, zAngle)
         }
 
-        fun updateGyro(fAngle : Float, zAngle : Float) {
+        fun updateGyro(fAngle: Float, zAngle: Float) {
             mainActivity.onDeviceAngleChange(fAngle, zAngle)
 
             lastX = fAngle
@@ -191,10 +192,10 @@ class SensorOrientationChangeNotifier private constructor(
         return null
     }
 
-    fun notifyListeners(manualUpdate : Boolean = false) {
+    fun notifyListeners(manualUpdate: Boolean = false) {
 
-        if(manualUpdate){
-           mOrientation = mainActivity.getRotation()
+        if (manualUpdate) {
+            mOrientation = mainActivity.getRotation()
         }
 
         val deadLinksArr = ArrayList<WeakReference<Listener?>>()

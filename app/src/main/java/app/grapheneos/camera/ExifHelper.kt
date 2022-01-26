@@ -166,7 +166,7 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_SUBFILE_TYPE,
 )
 
-fun fixExif(context: Context, uri : Uri) {
+fun fixExif(context: Context, uri: Uri) {
 
     val inStream = context.contentResolver.openFileDescriptor(
         uri,
@@ -205,7 +205,7 @@ fun fixExif(context: Context, uri : Uri) {
     inStream.close()
 }
 
-fun clearExif(context: Context, uri : Uri) {
+fun clearExif(context: Context, uri: Uri) {
 
     if (!camConfig.removeExifAfterCapture) return
 
@@ -281,6 +281,6 @@ fun clearExif(context: Context, uri : Uri) {
 //    exifInterface.saveAttributes()
 //}
 
-fun ExifInterface.removeAttribute(tag : String) {
+fun ExifInterface.removeAttribute(tag: String) {
     return setAttribute(tag, null)
 }

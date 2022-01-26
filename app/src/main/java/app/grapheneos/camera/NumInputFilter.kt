@@ -4,11 +4,21 @@ import android.text.InputFilter
 import android.text.Spanned
 import app.grapheneos.camera.ui.activities.MoreSettings
 
-class NumInputFilter(private val mActivity : MoreSettings) : InputFilter {
+class NumInputFilter(private val mActivity: MoreSettings) : InputFilter {
 
-    override fun filter(source: CharSequence, start: Int, end: Int, dest: Spanned, dstart: Int, dend: Int): CharSequence? {
+    override fun filter(
+        source: CharSequence,
+        start: Int,
+        end: Int,
+        dest: Spanned,
+        dstart: Int,
+        dend: Int
+    ): CharSequence? {
         try {
-            val input = (dest.subSequence(0, dstart).toString() + source + dest.subSequence(dend, dest.length)).toInt()
+            val input = (dest.subSequence(0, dstart).toString() + source + dest.subSequence(
+                dend,
+                dest.length
+            )).toInt()
             if (isInRange(input)) {
                 return null
             } else {

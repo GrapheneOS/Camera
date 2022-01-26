@@ -33,7 +33,8 @@ class TunePlayer(mActivity: MainActivity) {
         // Wait until the audio is played
         try {
             Thread.sleep(vRecPlayer.duration.toLong())
-        } catch (exception : Exception) { }
+        } catch (exception: Exception) {
+        }
     }
 
     fun playVRStopSound() {

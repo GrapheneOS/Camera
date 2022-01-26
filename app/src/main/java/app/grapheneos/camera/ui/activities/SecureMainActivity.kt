@@ -11,7 +11,7 @@ class SecureMainActivity : MainActivity() {
 
     val capturedFilePaths = arrayListOf<String>()
 
-    private lateinit var fileSP : SharedPreferences
+    private lateinit var fileSP: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,13 +19,13 @@ class SecureMainActivity : MainActivity() {
         fileSP = getSharedPreferences(getSPName(), Context.MODE_PRIVATE)
     }
 
-    private fun getSPName() : String {
+    private fun getSPName(): String {
         return "files-$openedActivityAt"
     }
 
     override fun openGallery() {
 
-        if(capturedFilePaths.isEmpty()){
+        if (capturedFilePaths.isEmpty()) {
             showMessage(
                 "Please capture a photo/video before trying to view" +
                         " them."
@@ -36,13 +36,15 @@ class SecureMainActivity : MainActivity() {
         val intent = Intent(this, InAppGallery::class.java)
 
         val editor = fileSP.edit()
-        editor.putString("filePaths", if (capturedFilePaths.isEmpty()) {
-            ""
-        } else {
-            capturedFilePaths.joinToString(",")
-        })
+        editor.putString(
+            "filePaths", if (capturedFilePaths.isEmpty()) {
+                ""
+            } else {
+                capturedFilePaths.joinToString(",")
+            }
+        )
 
-        if(editor.commit()){
+        if (editor.commit()) {
             intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
             intent.putExtra("fileSP", getSPName())
             intent.putExtra("is_secure_mode", true)

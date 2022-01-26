@@ -12,11 +12,11 @@ class BottomTabLayout @JvmOverloads constructor(
 
     private var sp = 0
 
-    private val snapPoints : ArrayList<Int> = arrayListOf()
+    private val snapPoints: ArrayList<Int> = arrayListOf()
 
     private lateinit var tabParent: ViewGroup
 
-    val selectedTab : Tab?
+    val selectedTab: Tab?
         get() {
             return getTabAt(selectedTabPosition)
         }
@@ -57,12 +57,12 @@ class BottomTabLayout @JvmOverloads constructor(
     override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
         super.onScrollChanged(x, y, oldX, oldY)
 
-        if (snapPoints.last()!=0) {
+        if (snapPoints.last() != 0) {
 
             for (i in 0 until snapPoints.size step 2) {
 
                 val start = snapPoints[i]
-                val end = snapPoints[i+1]
+                val end = snapPoints[i + 1]
 
                 if (x in start..end) {
                     val index = i / 2
@@ -75,11 +75,11 @@ class BottomTabLayout @JvmOverloads constructor(
         }
     }
 
-    fun getTabAtX(x: Int) : Tab? {
+    fun getTabAtX(x: Int): Tab? {
         for (i in 0 until snapPoints.size step 2) {
 
             val start = snapPoints[i]
-            val end = snapPoints[i+1]
+            val end = snapPoints[i + 1]
 
             if (x in start..end) {
                 val index = i / 2
