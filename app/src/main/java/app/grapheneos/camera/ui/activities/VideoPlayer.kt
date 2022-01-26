@@ -33,7 +33,7 @@ class VideoPlayer : AppCompatActivity() {
 
         val videoView = findViewById<VideoView>(R.id.video_player)
 
-        val mediaController = object: MediaController(this) {
+        val mediaController = object : MediaController(this) {
             override fun show() {
                 super.show()
                 supportActionBar?.show()

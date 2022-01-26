@@ -38,7 +38,7 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         Log.i(TAG, "allowedFormats: ${camConfig.allowedFormats}")
 
         supportedHints[DecodeHintType.POSSIBLE_FORMATS] =
-            if(camConfig.scanAllCodes) {
+            if (camConfig.scanAllCodes) {
                 BarcodeFormat.values().asList()
             } else {
                 camConfig.allowedFormats
@@ -60,8 +60,8 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         val previewWidth: Int
         val previewHeight: Int
 
-        val imageWidth : Int
-        val imageHeight : Int
+        val imageWidth: Int
+        val imageHeight: Int
 
         if (rotationDegrees == 0 || rotationDegrees == 180) {
             previewWidth = mActivity.previewView.height

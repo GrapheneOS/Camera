@@ -10,8 +10,8 @@ class QRToggle @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : ShapeableImageView(context, attrs) {
 
-    lateinit var mActivity : MainActivity
-    lateinit var key : String
+    lateinit var mActivity: MainActivity
+    lateinit var key: String
 
     init {
         setOnClickListener {

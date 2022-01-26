@@ -114,7 +114,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var rootView: View
 
     lateinit var qrScanToggles: View
-    lateinit var moreOptionsToggle: View
+    private lateinit var moreOptionsToggle: View
 
     lateinit var qrToggle: QRToggle
     lateinit var dmToggle: QRToggle
@@ -171,16 +171,16 @@ open class MainActivity : AppCompatActivity(),
     lateinit var cbText: TextView
     lateinit var cbCross: ImageView
 
-    lateinit var gCircleFrame : FrameLayout
+    lateinit var gCircleFrame: FrameLayout
 
-    lateinit var gAngleTextView: TextView
-    lateinit var gCircle : LinearLayout
+    private lateinit var gAngleTextView: TextView
+    private lateinit var gCircle: LinearLayout
 
-    lateinit var gLineX : View
-    lateinit var gLineZ : View
+    private lateinit var gLineX: View
+    private lateinit var gLineZ: View
 
-    private lateinit var gLeftDash : View
-    private lateinit var gRightDash : View
+    private lateinit var gLeftDash: View
+    private lateinit var gRightDash: View
 
     lateinit var locationListener: CustomLocationListener
 
@@ -203,23 +203,23 @@ open class MainActivity : AppCompatActivity(),
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var snackBar : Snackbar? = null
+    private var snackBar: Snackbar? = null
 
     private val autoRotateSettingObserver =
-            object: ContentObserver(Handler(Looper.myLooper()!!)) {
-        override fun onChange(selfChange: Boolean) {
-            forceUpdateOrientationSensor()
+        object : ContentObserver(Handler(Looper.myLooper()!!)) {
+            override fun onChange(selfChange: Boolean) {
+                forceUpdateOrientationSensor()
+            }
         }
-    }
 
-    private lateinit var focusRing : ImageView
+    private lateinit var focusRing: ImageView
 
     private val focusRingHandler: Handler = Handler(Looper.getMainLooper())
     private val focusRingCallback: Runnable = Runnable {
         focusRing.visibility = View.INVISIBLE
     }
 
-    lateinit var micOffIcon : ImageView
+    lateinit var micOffIcon: ImageView
 
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
@@ -240,7 +240,8 @@ open class MainActivity : AppCompatActivity(),
                 Log.i(TAG, "Permission granted for recording audio.")
             } else {
                 Log.i(TAG, "Permission denied for recording audio.")
-                val builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                val builder =
+                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 builder.setTitle(R.string.audio_permission_dialog_title)
                 builder.setMessage(R.string.audio_permission_dialog_message)
 
@@ -312,7 +313,7 @@ open class MainActivity : AppCompatActivity(),
         focusRing.visibility = View.VISIBLE
         focusRing.alpha = 1f
 
-        if(areSystemAnimationsEnabled()) {
+        if (areSystemAnimationsEnabled()) {
             // Animate the focus ring to disappear
             focusRing.animate()
                 .setStartDelay(500)
@@ -326,7 +327,7 @@ open class MainActivity : AppCompatActivity(),
 
                     override fun onAnimationEnd(animator: Animator) {
 
-                        if(!isCancelled) {
+                        if (!isCancelled) {
                             focusRing.visibility = View.INVISIBLE
                         }
 
@@ -362,7 +363,7 @@ open class MainActivity : AppCompatActivity(),
 
     protected open fun openGallery() {
 
-        if(camConfig.latestMediaFile==null){
+        if (camConfig.latestMediaFile == null) {
             showMessage(
                 "Please capture a photo/video before trying to view" +
                         " them."
@@ -381,59 +382,62 @@ open class MainActivity : AppCompatActivity(),
         Log.i(TAG, "Checking camera status...")
 
         // Check if the app has access to the user's camera
-        if (ContextCompat.checkSelfPermission(
+        when {
+            ContextCompat.checkSelfPermission(
                 this, Manifest.permission.CAMERA
             ) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
+                    PackageManager.PERMISSION_GRANTED -> {
 
-            // If the user has manually granted the permission, dismiss the dialog.
-            if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) cameraPermissionDialog!!.cancel()
-            Log.i(TAG, "Permission granted.")
+                // If the user has manually granted the permission, dismiss the dialog.
+                if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) cameraPermissionDialog!!.cancel()
+                Log.i(TAG, "Permission granted.")
 
-            // Setup the camera since the permission is available
-            camConfig.initializeCamera()
-        } else if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
-
-            Log.i(TAG, "The user has default denied camera permission.")
-
-            // Don't build and show a new dialog if it's already visible
-            if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) return
-            val builder = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            builder.setTitle(R.string.camera_permission_dialog_title)
-            builder.setMessage(R.string.camera_permission_dialog_message)
-            val positiveClicked = AtomicBoolean(false)
-
-            // Open the settings menu for the current app
-            builder.setPositiveButton("Settings") { _: DialogInterface?, _: Int ->
-                positiveClicked.set(true)
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                val uri = Uri.fromParts(
-                    "package",
-                    packageName, null
-                )
-                intent.data = uri
-                startActivity(intent)
+                // Setup the camera since the permission is available
+                camConfig.initializeCamera()
             }
-            builder.setNegativeButton("Cancel", null)
-            builder.setOnDismissListener {
+            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
 
-                // The dialog could have either been dismissed by clicking on the
-                // background or by clicking the cancel button. So in those cases,
-                // the app should exit as the app depends on the camera permission.
-                if (!positiveClicked.get()) {
-                    finish()
+                Log.i(TAG, "The user has default denied camera permission.")
+
+                // Don't build and show a new dialog if it's already visible
+                if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) return
+                val builder =
+                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                builder.setTitle(R.string.camera_permission_dialog_title)
+                builder.setMessage(R.string.camera_permission_dialog_message)
+                val positiveClicked = AtomicBoolean(false)
+
+                // Open the settings menu for the current app
+                builder.setPositiveButton("Settings") { _: DialogInterface?, _: Int ->
+                    positiveClicked.set(true)
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    val uri = Uri.fromParts(
+                        "package",
+                        packageName, null
+                    )
+                    intent.data = uri
+                    startActivity(intent)
                 }
+                builder.setNegativeButton("Cancel", null)
+                builder.setOnDismissListener {
+
+                    // The dialog could have either been dismissed by clicking on the
+                    // background or by clicking the cancel button. So in those cases,
+                    // the app should exit as the app depends on the camera permission.
+                    if (!positiveClicked.get()) {
+                        finish()
+                    }
+                }
+                cameraPermissionDialog = builder.show()
             }
-            cameraPermissionDialog = builder.show()
-        }
 
-        // Request for the permission (Android will actually popup the permission
-        // dialog in this case)
-        else {
-            Log.i(TAG, "Requesting permission from user...")
+            // Request for the permission (Android will actually popup the permission
+            // dialog in this case)
+            else -> {
+                Log.i(TAG, "Requesting permission from user...")
 
-            requestPermissionLauncher.launch(cameraPermission)
+                requestPermissionLauncher.launch(cameraPermission)
+            }
         }
 
         audioPermissionDialog?.let { dialog ->
@@ -595,13 +599,13 @@ open class MainActivity : AppCompatActivity(),
         }
 
         timerView = findViewById(R.id.timer)
-        previewView.previewStreamState.observe(this, { state: StreamState ->
+        previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
                 camConfig.reloadSettings()
                 if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
-                    if(!settingsDialog.isShowing) {
+                    if (!settingsDialog.isShowing) {
                         settingsIcon.visibility = View.VISIBLE
                     }
                     settingsIcon.isEnabled = true
@@ -615,7 +619,7 @@ open class MainActivity : AppCompatActivity(),
                     mainOverlay.visibility = View.VISIBLE
                 }
             }
-        })
+        }
         flipCameraCircle = findViewById(R.id.flip_camera_circle)
 
         flipCamIcon = findViewById(R.id.flip_camera_icon_content)
@@ -823,9 +827,9 @@ open class MainActivity : AppCompatActivity(),
                         Rect(0, 0, size.x, size.y)
                     }
 
-                    if(rect == null || rect.left == 0 || rect.right == windowsSize.right){
+                    if (rect == null || rect.left == 0 || rect.right == windowsSize.right) {
                         layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
-                    } else{
+                    } else {
                         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
                     }
                 }
@@ -863,28 +867,30 @@ open class MainActivity : AppCompatActivity(),
             }
 
             if (insets.top != 0 && !isInsetSet) {
-                mainFrame.layoutParams = (mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
-                    it.setMargins(
-                        it.leftMargin,
-                        insets.top,
-                        it.rightMargin,
-                        it.bottomMargin,
-                    )
+                mainFrame.layoutParams =
+                    (mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
+                        it.setMargins(
+                            it.leftMargin,
+                            insets.top,
+                            it.rightMargin,
+                            it.bottomMargin,
+                        )
 
-                    it
-                }
+                        it
+                    }
 
-                qrScanToggles.layoutParams = (qrScanToggles.layoutParams as ViewGroup.MarginLayoutParams).let {
-                    it.setMargins(
-                        it.leftMargin,
-                        (16 * resources.displayMetrics.density.toInt()) +
-                                insets.top,
-                        it.rightMargin,
-                        it.bottomMargin,
-                    )
+                qrScanToggles.layoutParams =
+                    (qrScanToggles.layoutParams as ViewGroup.MarginLayoutParams).let {
+                        it.setMargins(
+                            it.leftMargin,
+                            (16 * resources.displayMetrics.density.toInt()) +
+                                    insets.top,
+                            it.rightMargin,
+                            it.bottomMargin,
+                        )
 
-                    it
-                }
+                        it
+                    }
 
                 isInsetSet = true
             }
@@ -894,7 +900,8 @@ open class MainActivity : AppCompatActivity(),
 
         WindowInsetsControllerCompat(window, rootView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.statusBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -926,7 +933,7 @@ open class MainActivity : AppCompatActivity(),
         micOffIcon = findViewById(R.id.mic_off)
 
         previewView.viewTreeObserver.addOnPreDrawListener(
-            object: ViewTreeObserver.OnPreDrawListener {
+            object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     previewView.viewTreeObserver.removeOnPreDrawListener(this)
                     repositionTabLayout()
@@ -981,13 +988,13 @@ open class MainActivity : AppCompatActivity(),
         threeButtons.visibility = View.VISIBLE
 
         tabLayout.viewTreeObserver.addOnPreDrawListener(
-            object: ViewTreeObserver.OnPreDrawListener {
+            object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
 
                     tabLayout.viewTreeObserver
                         .removeOnPreDrawListener(
-                        this
-                    )
+                            this
+                        )
 
                     val previewHeight169 = previewContainer.width * 16 / 9
 
@@ -1008,7 +1015,7 @@ open class MainActivity : AppCompatActivity(),
                                 it.leftMargin,
                                 it.topMargin,
                                 it.rightMargin,
-                                if(extraHeight169 > 0) {
+                                if (extraHeight169 > 0) {
                                     extraHeight169
                                 } else {
                                     it.bottomMargin
@@ -1179,7 +1186,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun blurBitmap(bitmap: Bitmap): Bitmap {
-        return BlurBitmap.get(bitmap)
+        return BlurBitmap[bitmap]
     }
 
 //    private val fTHandler : Handler = Handler(Looper.getMainLooper())
@@ -1292,8 +1299,11 @@ open class MainActivity : AppCompatActivity(),
         rotateView(gCircleFrame, iconRotation)
 
         // Set iconRotation to 0
-        if(Settings.System.getInt(contentResolver,
-                Settings.System.ACCELEROMETER_ROTATION, 0) != 1) {
+        if (Settings.System.getInt(
+                contentResolver,
+                Settings.System.ACCELEROMETER_ROTATION, 0
+            ) != 1
+        ) {
             iconRotation = 0f
         }
 
@@ -1456,12 +1466,12 @@ open class MainActivity : AppCompatActivity(),
         sensorNotifier?.notifyListeners(true)
     }
 
-    val sensorNotifier : SensorOrientationChangeNotifier?
+    val sensorNotifier: SensorOrientationChangeNotifier?
         get() {
             return SensorOrientationChangeNotifier.getInstance(this)
         }
 
-    fun getRotation() : Int {
+    fun getRotation(): Int {
         val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             display?.rotation ?: @Suppress("DEPRECATION")
             windowManager.defaultDisplay.rotation
@@ -1497,7 +1507,7 @@ open class MainActivity : AppCompatActivity(),
             Log.i(TAG, "zAngle: $zAngle")
 
             val lzAngle = when {
-                zAngle < - 45 -> {
+                zAngle < -45 -> {
                     -45
                 }
                 zAngle > 45 -> {
