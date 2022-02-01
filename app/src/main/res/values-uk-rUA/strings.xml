@@ -4,16 +4,10 @@
     <string name="camera_permission_dialog_title">Потрібен дозвіл камери</string>
     <string name="camera_permission_dialog_message">"\n        Для роботи програми потрібен дозвіл на доступ до камери. Будь ласка, надайте необхідний дозвіл у налаштуваннях, щоб використовувати цю програму.\n    "</string>
     <string name="audio_permission_dialog_title">Потрібен дозвіл на аудіо</string>
-    <string name="audio_permission_dialog_title">Потрібен дозвіл на аудіо</string>
     <string name="audio_permission_dialog_message">Додатку потрібен дозвіл на доступ до мікрофона, щоб записати відео, яке містить аудіо. Будь ласка, надайте необхідний дозвіл у налаштуваннях, щоб продовжити з цією конфігурацією. Якщо вам не потрібно, щоб ваше відео містило звук, ви можете просто вимкнути його (і ввімкнути пізніше в налаштуваннях).</string>
-    <string name="audio_permission_dialog_message">Додатку потрібен дозвіл на доступ до мікрофона, щоб записати відео, яке містить аудіо. Будь ласка, надайте необхідний дозвіл у налаштуваннях, щоб продовжити з цією конфігурацією. Якщо вам не потрібно, щоб ваше відео містило звук, ви можете просто вимкнути його (і ввімкнути пізніше в налаштуваннях).</string>
-    <string name="location_permission_dialog_title">Потрібен дозвіл на місцезнаходження</string>
     <string name="location_permission_dialog_title">Потрібен дозвіл на місцезнаходження</string>
     <string name="location_permission_dialog_message">Додатку потрібен дозвіл на місцезнаходження для геотегування. Будь ласка, надайте необхідний дозвіл у налаштуваннях, щоб використовувати цю програму.</string>
-    <string name="location_permission_dialog_message">"\n        Додатку потрібен дозвіл на місцезнаходження для геотегування. Будь ласка, надайте необхідний дозвіл у налаштуваннях, щоб використовувати цю програму.\n    "</string>
     <string name="focus_ring">Фокусне кільце</string>
-    <string name="focus_ring">Фокусне кільце</string>
-    <string name="flip_camera">Перегортнути камеру</string>
     <string name="flip_camera">Перегортнути камеру</string>
     <string name="loading_camera">Завантаження камери</string>
     <string name="flash_mode">Режим спалаху</string>
@@ -70,7 +64,6 @@
     <string name="decrease_quality">Погіршити якість</string>
     <string name="remove_exif_title">Видалити EXIF-дані після захоплення</string>
     <string name="remove_exif_subtitle">Примітка. Параметр розташування не залежить від цього параметра</string>
-    <string name="image_quality_desc">Налаштуйте якість світлини, зробленого програмою, від 1% до 100%. Це поле можна залишити порожнім, щоб уникнути явного налаштування якості.</string>
     <string name="image_quality_desc">Налаштуйте якість світлини, зробленого програмою, від 1% до 100%. Це поле можна залишити порожнім, щоб уникнути явного налаштування якості.</string>
     <string name="image_quality">Якість світлини</string>
     <string name="revert_back_to_dcim">Повернутися до DCIM</string>
