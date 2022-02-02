@@ -158,13 +158,12 @@ class CamConfig(private val mActivity: MainActivity) {
             BarcodeFormat.PDF_417,
         )
 
-        val extensionModes = arrayOf(
-            CameraModes.CAMERA,
-            CameraModes.PORTRAIT,
-            CameraModes.HDR,
-            CameraModes.NIGHT_SIGHT,
-            CameraModes.FACE_RETOUCH,
-            CameraModes.AUTO,
+        val extensionModes = mapOf(
+            CameraModes.PORTRAIT to ExtensionMode.BOKEH,
+            CameraModes.HDR to ExtensionMode.HDR,
+            CameraModes.NIGHT_SIGHT to ExtensionMode.NIGHT,
+            CameraModes.FACE_RETOUCH to ExtensionMode.FACE_RETOUCH,
+            CameraModes.AUTO to ExtensionMode.AUTO
         )
 
         val imageCollectionUri: Uri = MediaStore.Images.Media.getContentUri(
@@ -308,7 +307,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var lensFacing = DEFAULT_LENS_FACING
 
-    private var cameraMode = DEFAULT_EXTENSION_MODE
+    private var extensionMode = DEFAULT_EXTENSION_MODE
 
     private lateinit var cameraSelector: CameraSelector
 
@@ -1161,9 +1160,9 @@ class CamConfig(private val mActivity: MainActivity) {
         // Unbind/close all other camera(s) [if any]
         cameraProvider!!.unbindAll()
 
-        if (extensionsManager.isExtensionAvailable(cameraSelector, cameraMode)) {
+        if (extensionsManager.isExtensionAvailable(cameraSelector, extensionMode)) {
             cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-                cameraSelector, cameraMode
+                cameraSelector, extensionMode
             )
         } else {
             Log.i(TAG, "The current mode isn't available for this device ")
@@ -1441,7 +1440,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         this.modeText = modeText
 
-        cameraMode = extensionModes.indexOf(modeText)
+        extensionMode = extensionModes.getOrDefault(modeText, ExtensionMode.NONE)
 
         mActivity.cancelFocusTimer()
 
