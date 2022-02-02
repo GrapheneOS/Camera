@@ -132,7 +132,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val PHOTO_QUALITY = 0
 
-            const val REMOVE_EXIF_AFTER_CAPTURE = false
+            const val REMOVE_EXIF_AFTER_CAPTURE = true
 
             const val GYROSCOPE_SUGGESTIONS = false
 
