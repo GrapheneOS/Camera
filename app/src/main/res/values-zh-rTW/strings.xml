@@ -1,0 +1,94 @@
+﻿<resources>
+    <string name="app_name">相機</string>
+
+    <string name="camera_permission_dialog_title">需要相機許可權</string>
+    <string name="camera_permission_dialog_message">
+        此應用需要相機許可權才能執行，請在設定中授予許可權以使用此應用。
+    </string>
+
+    <string name="audio_permission_dialog_title">需要麥克風許可權</string>
+    <string name="audio_permission_dialog_message">此應用需要麥克風許可權以錄製有聲影片，請在設定中授予許可權，如果您不需要錄製有聲影片則您可以直接禁用它。</string>
+
+    <string name="location_permission_dialog_title">需要位置資訊許可權</string>
+    <string name="location_permission_dialog_message">
+        此應用需要位置資訊許可權來給照片標記位置資訊，請在設定中授予許可權以使用此功能。
+    </string>
+
+    <string name="focus_ring">對焦</string>
+    <string name="flip_camera">翻轉相機</string>
+    <string name="loading_camera">載入相機中</string>
+    <string name="flash_mode">Flash Mode</string>
+    <string name="capture_mode">Capture Mode</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">放大</string>
+    <string name="zoom_out">縮小</string>
+    <string name="scan_result">掃描結果</string>
+    <string name="share_qr_text">分享二維碼文字</string>
+    <string name="copy_to_clipboard">複製到剪下板</string>
+    <string name="retake">重試</string>
+    <string name="play_preview">播放預覽</string>
+    <string name="toggle_button">切換按鈕</string>
+    <string name="aspect_ratio">縱橫比</string>
+    <string name="toggle_flash">切換閃光燈</string>
+    <string name="grid_toggle">網格切換</string>
+    <string name="include_audio">包含音訊</string>
+    <string name="video_quality">影片質量</string>
+    <string name="optimize_for">側重於</string>
+    <string name="quality">質量</string>
+    <string name="latency">延遲</string>
+    <string name="preview">預覽</string>
+    <string name="file_info">資訊</string>
+    <string name="delete_file">刪除</string>
+    <string name="edit">編輯</string>
+    <string name="self_illumination">Self Illumination</string>
+    <string name="focus_timeout">對焦超時</string>
+    <string name="timer">計時器</string>
+    <string name="cancel_timer">取消計時器</string>
+    <string name="camera_sounds">快門聲</string>
+    <string name="video_capture_label">錄製影片</string>
+
+    <string name="camera">照片</string>
+    <string name="video">影片</string>
+    <string name="portrait_mode">慢動作</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_sight_mode">夜景</string>
+    <string name="face_retouch_mode">人像</string>
+    <string name="auto_mode">自動</string>
+    <string name="qr_scan_mode">二維碼</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">分享</string>
+    <string name="rec_without_audio">開始無聲錄製</string>
+    <string name="qr_scan_toggle">切換二維碼掃描</string>
+    <string name="qr_scan">二維碼</string>
+    <string name="data_matrix">Data Matrix</string>
+    <string name="aztec_code">Aztec Code</string>
+    <string name="more_options">更多</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">更多設定</string>
+
+    <string name="general">通用</string>
+
+    <string name="save_image_as_previewed">儲存映象自拍</string>
+    <string name="save_as_image_preview_desc">將前置攝像頭拍下的照片儲存為映象（將解決照片反轉問題）</string>
+
+    <string name="gyroscope_suggestions">拍照建議</string>
+    <string name="gyroscope_setting_desc">在您拍照時提供一些建議來幫助您拍攝最佳照片</string>
+
+    <string name="storage">儲存</string>
+    <string name="storage_location">儲存位置</string>
+    <string name="image_file_name_format">圖片名稱格式</string>
+    <string name="video_file_name_format">影片名稱格式</string>
+    <string name="revert_back_to_dcim">重置回 DCIM</string>
+
+    <string name="image_quality">影象質量</string>
+    <string name="image_quality_desc">改變影象質量以減少每張影象佔用的空間或提高影象質量</string>
+    <string name="photo">照片</string>
+    <string name="increase_quality">提高質量</string>
+    <string name="decrease_quality">降低質量</string>
+    <string name="remove_exif_title">拍攝後刪除 EXIF 資訊</string>
+    <string name="remove_exif_subtitle">注意：地理標籤/位置選項與此設定無關。</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+</resources>
