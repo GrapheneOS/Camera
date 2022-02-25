@@ -23,6 +23,13 @@ android {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
             }
+
+            create("play") {
+                storeFile = rootProject.file(keystoreProperties["storeFile"]!!)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["uploadKeyAlias"] as String
+                keyPassword = keystoreProperties["uploadKeyPassword"] as String
+            }
         }
     }
 
@@ -44,6 +51,14 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (useKeystoreProperties) {
                 signingConfig = signingConfigs.getByName("release")
+            }
+        }
+
+        create("play") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".play"
+            if (useKeystoreProperties) {
+                signingConfig = signingConfigs.getByName("play")
             }
         }
     }
