@@ -1,0 +1,96 @@
+<resources>
+    <string name="app_name">Camera</string>
+
+    <string name="camera_permission_dialog_title">需要相机权限</string>
+    <string name="camera_permission_dialog_message">
+        该应用程式需要相机权限才能运行。请通过设定来提供此应用程式所需的权限。
+    </string>
+
+    <string name="audio_permission_dialog_title">需要麦克风权限</string>
+    <string name="audio_permission_dialog_message">
+        此应用程式需要麦克风权限录影的时候才会有声音，请通设定提供此应用程式所需的权限。如果您录影不需要有声音，可以禁用（之后可以在设定中启用）。
+    </string>
+
+    <string name="location_permission_dialog_title">需要位置权限</string>
+    <string name="location_permission_dialog_message">
+        此应用程式需要位置权限才能纪录位置，请通过设定来提供此应用程式所需的权限。
+    </string>
+
+    <string name="focus_ring">对焦环</string>
+    <string name="flip_camera">反转相机</string>
+    <string name="loading_camera">载入相机</string>
+    <string name="flash_mode">闪光灯模式</string>
+    <string name="capture_mode">拍照模式</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">放大</string>
+    <string name="zoom_out">缩小</string>
+    <string name="scan_result">扫描结果</string>
+    <string name="share_qr_text">分享二维条码</string>
+    <string name="copy_to_clipboard">复制到剪贴簿</string>
+    <string name="retake">重新拍摄</string>
+    <string name="play_preview">播放预览</string>
+    <string name="toggle_button">切换按钮</string>
+    <string name="aspect_ratio">长宽比</string>
+    <string name="toggle_flash">切换闪光灯</string>
+    <string name="grid_toggle">切换格状线条</string>
+    <string name="include_audio">包含音讯</string>
+    <string name="video_quality">影片质量</string>
+    <string name="optimize_for">优化</string>
+    <string name="quality">质量</string>
+    <string name="latency">延迟</string>
+    <string name="preview">预览</string>
+    <string name="file_info">档案信息</string>
+    <string name="delete_file">删除档案</string>
+    <string name="edit">编辑</string>
+    <string name="self_illumination">萤幕发光</string>
+    <string name="focus_timeout">对焦超时</string>
+    <string name="timer">超时时间</string>
+    <string name="cancel_timer">取消超时时间</string>
+    <string name="camera_sounds">相机声音</string>
+    <string name="video_capture_label">录制影片</string>
+
+    <string name="camera">相机</string>
+    <string name="video">录影</string>
+    <string name="portrait_mode">肖像</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_sight_mode">夜景</string>
+    <string name="face_retouch_mode">脸部修饰</string>
+    <string name="auto_mode">自动</string>
+    <string name="qr_scan_mode">扫描 QR Code</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">分享</string>
+    <string name="rec_without_audio">开始无音讯录影</string>
+    <string name="qr_scan_toggle">切换扫描 QR Code</string>
+    <string name="qr_scan">QR Code</string>
+    <string name="data_matrix">资料矩阵</string>
+    <string name="aztec_code">阿兹特克码</string>
+    <string name="more_options">更多选项</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">更多设定</string>
+
+    <string name="general">一般</string>
+
+    <string name="save_image_as_previewed">将影像另存为预览</string>
+    <string name="save_as_image_preview_desc">将输出影像储存为预览时可见的影像（修复了反转问题）</string>
+
+    <string name="gyroscope_suggestions">水平仪的建议</string>
+    <string name="gyroscope_setting_desc">偶尔会得到视觉上的建议，即直角/井字形的影像</string>
+
+    <string name="storage">储存</string>
+    <string name="storage_location">储存位置</string>
+    <string name="image_file_name_format">图片档名格式</string>
+    <string name="video_file_name_format">影片档名格式</string>
+    <string name="revert_back_to_dcim">回复到 DCIM</string>
+
+    <string name="image_quality">影片质量</string>
+    <string name="image_quality_desc" formatted="false">调整应用程式拍摄照片的质量，从1%到100%。这个栏位可以留空。</string>
+    <string name="photo">照片</string>
+    <string name="increase_quality">增加质量</string>
+    <string name="decrease_quality">减少质量</string>
+    <string name="remove_exif_title">在拍照后删除 EXIF 资料</string>
+    <string name="remove_exif_subtitle">注意：地理标签 / 位置选项与此各定无关</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+</resources>
