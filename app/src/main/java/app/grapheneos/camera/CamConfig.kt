@@ -816,8 +816,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (!modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.reloadQualities()
-                val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
-                sEditor.putString(videoQualityKey, option)
+                val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String?
+                option.let {
+                    sEditor.putString(videoQualityKey, option)
+                }
             } else {
                 modePref.getString(videoQualityKey, null)?.let {
                     mActivity.settingsDialog.reloadQualities(it)
