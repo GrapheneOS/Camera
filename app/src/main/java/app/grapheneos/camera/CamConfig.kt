@@ -1198,9 +1198,16 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 videoCapture =
                     VideoCapture.withOutput(
-                        Recorder.Builder()
-                            .setQualitySelector(QualitySelector.from(videoQuality!!))
-                            .build()
+                        Recorder.Builder().apply {
+                            if (QualitySelector.isQualitySupported(
+                                    camera!!.cameraInfo,
+                                    videoQuality!!
+                                )
+                            ) {
+                                setQualitySelector(QualitySelector.from(videoQuality!!))
+                            }
+
+                        }.build()
                     )
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
