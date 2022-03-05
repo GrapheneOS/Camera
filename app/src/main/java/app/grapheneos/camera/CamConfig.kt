@@ -44,6 +44,7 @@ import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executors
 import android.widget.Button
+import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.Quality
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
@@ -1200,16 +1201,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 videoCapture =
                     VideoCapture.withOutput(
-                        Recorder.Builder().apply {
-                            if (QualitySelector.isQualitySupported(
-                                    camera!!.cameraInfo,
-                                    videoQuality!!
-                                )
-                            ) {
-                                setQualitySelector(QualitySelector.from(videoQuality!!))
-                            }
-
-                        }.build()
+                        Recorder.Builder().
+                            setQualitySelector(
+                                QualitySelector.from(videoQuality!!, FallbackStrategy.lowerQualityOrHigherThan(videoQuality!!))
+                            )
+                            .build()
                     )
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
