@@ -217,6 +217,8 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                     "Images taken in this mode don't contain" +
                             "extra EXIF data"
                 )
+            } else {
+                exifToggle.performClick()
             }
         }
 
@@ -236,6 +238,20 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         gSwitch.isChecked = camConfig.gSuggestions
         gSwitch.setOnClickListener {
             camConfig.gSuggestions = gSwitch.isChecked
+        }
+
+        val gSetting = findViewById<LinearLayout>(R.id.gyroscope_setting)
+        gSetting.setOnClickListener {
+            gSwitch.performClick()
+        }
+
+        val sIAPSetting = findViewById<LinearLayout>(R.id.save_image_as_preview_setting)
+        sIAPSetting.setOnClickListener {
+            sIAPToggle.performClick()
+        }
+
+        sLS.setOnClickListener {
+            sLField.performClick()
         }
     }
 
