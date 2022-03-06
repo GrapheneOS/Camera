@@ -49,6 +49,7 @@ import androidx.camera.video.Quality
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import androidx.documentfile.provider.DocumentFile
+import java.lang.IllegalArgumentException
 
 // work around https://issuetracker.google.com/issues/222726805
 private fun ExtensionsManager.isExtensionAvailableSafe(
@@ -272,6 +273,11 @@ class CamConfig(private val mActivity: MainActivity) {
             return field ||
                     mActivity is VideoCaptureActivity ||
                     mActivity is VideoOnlyActivity
+        }
+
+    val canTakePicture : Boolean
+        get() {
+            return imageCapture != null
         }
 
     var isQRMode = false
@@ -1269,10 +1275,27 @@ class CamConfig(private val mActivity: MainActivity) {
 
         mActivity.forceUpdateOrientationSensor()
 
-        camera = cameraProvider!!.bindToLifecycle(
-            mActivity, cameraSelector,
-            useCaseGroupBuilder.build()
-        )
+        try {
+            camera = cameraProvider!!.bindToLifecycle(
+                mActivity, cameraSelector,
+                useCaseGroupBuilder.build()
+            )
+        } catch (exception : IllegalArgumentException) {
+            if (isVideoMode) {
+                val newUseCaseGroupBuilder = UseCaseGroup.Builder()
+                newUseCaseGroupBuilder.addUseCase(videoCapture!!)
+                newUseCaseGroupBuilder.addUseCase(preview!!)
+                imageCapture = null
+
+                camera = cameraProvider!!.bindToLifecycle(
+                    mActivity, cameraSelector,
+                    newUseCaseGroupBuilder.build()
+                )
+
+            } else {
+                throw exception
+            }
+        }
 
         loadTabs()
 

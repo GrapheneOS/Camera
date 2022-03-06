@@ -95,6 +95,11 @@ class ImageCapturer(private val mActivity: MainActivity) {
     fun takePicture() {
         if (camConfig.camera == null) return
 
+        if (!camConfig.canTakePicture) {
+            mActivity.showMessage("Your device unfortunately doesn't support taking pictures while recording a video")
+            return
+        }
+
         if (isTakingPicture) {
             mActivity.showMessage(
                 "Please wait for the last image to get processed..."
