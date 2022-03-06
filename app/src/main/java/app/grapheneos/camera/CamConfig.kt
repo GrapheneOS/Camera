@@ -49,7 +49,6 @@ import androidx.camera.video.Quality
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import androidx.documentfile.provider.DocumentFile
-import java.lang.IllegalArgumentException
 
 // work around https://issuetracker.google.com/issues/222726805
 private fun ExtensionsManager.isExtensionAvailableSafe(

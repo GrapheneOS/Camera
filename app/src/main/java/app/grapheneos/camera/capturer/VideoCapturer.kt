@@ -25,7 +25,6 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
