@@ -1213,10 +1213,12 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 videoCapture =
                     VideoCapture.withOutput(
-                        Recorder.Builder().
-                            setQualitySelector(
-                                QualitySelector.from(videoQuality!!, FallbackStrategy.lowerQualityOrHigherThan(videoQuality!!))
+                        Recorder.Builder().setQualitySelector(
+                            QualitySelector.from(
+                                videoQuality!!,
+                                FallbackStrategy.lowerQualityOrHigherThan(videoQuality!!)
                             )
+                        )
                             .build()
                     )
 
