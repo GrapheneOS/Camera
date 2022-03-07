@@ -29,6 +29,7 @@
                     android:id="@+id/preview"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
+                    android:keepScreenOn="true"
                     app:layout_constraintDimensionRatio="H,9:16"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
