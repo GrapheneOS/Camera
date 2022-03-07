@@ -602,7 +602,6 @@ class InAppGallery : AppCompatActivity() {
     }
 
     fun showMessage(msg: String) {
-        snackBar?.setText(msg)
-        snackBar?.show()
+        snackBar!!.setText(msg).show()
     }
 }

@@ -1449,8 +1449,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     fun showMessage(msg: String) {
-        snackBar?.setText(msg)
-        snackBar?.show()
+        snackBar!!.setText(msg).show()
     }
 
     private fun pauseOrientationSensor() {
