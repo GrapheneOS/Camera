@@ -55,10 +55,10 @@ private fun ExtensionsManager.isExtensionAvailableSafe(
     cameraSelector: CameraSelector,
     extensionMode: Int
 ): Boolean {
-    try {
-        return isExtensionAvailable(cameraSelector, extensionMode)
+    return try {
+        isExtensionAvailable(cameraSelector, extensionMode)
     } catch (e: AbstractMethodError) {
-        return false
+        false
     }
 }
 
@@ -274,7 +274,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     mActivity is VideoOnlyActivity
         }
 
-    val canTakePicture : Boolean
+    val canTakePicture: Boolean
         get() {
             return imageCapture != null
         }
@@ -1279,7 +1279,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity, cameraSelector,
                 useCaseGroupBuilder.build()
             )
-        } catch (exception : IllegalArgumentException) {
+        } catch (exception: IllegalArgumentException) {
             if (isVideoMode) {
                 val newUseCaseGroupBuilder = UseCaseGroup.Builder()
                 newUseCaseGroupBuilder.addUseCase(videoCapture!!)
