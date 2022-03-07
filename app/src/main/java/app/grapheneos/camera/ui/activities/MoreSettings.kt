@@ -168,6 +168,20 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             pQField.setText(camConfig.photoQuality.toString())
         }
 
+        pQField.setOnClickListener {
+            if (camConfig.photoQuality != NumInputFilter.max) {
+                pQField.setText(camConfig.photoQuality.toString())
+            } else {
+                showMessage(
+                    "Photo quality can only be between ${NumInputFilter.min} and ${NumInputFilter.max}"
+                )
+            }
+
+            if (camConfig.photoQuality >= NumInputFilter.min) {
+                pQField.setText(camConfig.photoQuality.toString())
+            }
+        }
+
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
 
@@ -176,35 +190,6 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         vFField = findViewById(R.id.video_format_setting_field)
         vFField.setOnEditorActionListener(this)
-
-        val iPQButton = findViewById<View>(R.id.increase_photo_quality)
-        iPQButton.setOnClickListener {
-
-            if (camConfig.photoQuality != NumInputFilter.max) {
-                ++camConfig.photoQuality
-                pQField.setText(camConfig.photoQuality.toString())
-            } else {
-                showMessage(
-                    "Photo quality can only be between ${NumInputFilter.min} and ${NumInputFilter.max}"
-                )
-            }
-        }
-
-        val dPQButton = findViewById<View>(R.id.decrease_photo_quality)
-        dPQButton.setOnClickListener {
-            if (camConfig.photoQuality >= NumInputFilter.min) {
-                --camConfig.photoQuality
-
-                if (camConfig.photoQuality >= NumInputFilter.min) {
-                    pQField.setText(camConfig.photoQuality.toString())
-                } else {
-                    pQField.setText("")
-                    showMessage(
-                        "Photo quality was set to auto mode"
-                    )
-                }
-            }
-        }
 
         val exifToggle = findViewById<SwitchCompat>(R.id.remove_exif_toggle)
         val exifToggleSetting =
