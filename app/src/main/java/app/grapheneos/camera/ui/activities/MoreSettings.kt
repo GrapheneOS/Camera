@@ -122,7 +122,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         snackBar = Snackbar.make(
             rootView,
-            "Hello World",
+            "",
             Snackbar.LENGTH_LONG
         )
 
@@ -152,8 +152,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 }
             }
 
-            dialog.setNegativeButton("No", null)
-            dialog.show()
+            dialog.setNegativeButton("No", null).show()
         }
 
         val sLS = findViewById<View>(R.id.storage_location_setting)
@@ -292,14 +291,11 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             )
         } else {
             try {
-
                 camConfig.photoQuality =
                     Integer.parseInt(pQField.text.toString())
 
             } catch (exception: Exception) {
-
                 camConfig.photoQuality = 0
-
             }
         }
 
