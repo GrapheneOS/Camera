@@ -3,15 +3,15 @@
 
     <string name="camera_permission_dialog_title">Richiesta autorizzazione fotocamera</string>
     <string name="camera_permission_dialog_message">
-        L\'app richiede l'autorizzazione di accedere alla fotocamera per funzionare. Consenti l\'autorizzazione necessaria nelle Impostazioni per poter usare questa app.
+        L\'app richiede l\'autorizzazione di accedere alla fotocamera per funzionare. Consenti l\'autorizzazione necessaria nelle Impostazioni per poter usare questa app.
     </string>
 
     <string name="audio_permission_dialog_title">Richiesta autorizzazione audio</string>
-    <string name="audio_permission_dialog_message">L\'app richiede l'autorizzazione di accedere al microfono per registrare un video contenente audio. Consenti l\'autorizzazione necessaria nelle Impostazioni per continuare con questa configurazione. Se non ti serve che il video contenga audio, puoi disattivarlo (e riattivarlo in seguito nelle impostazioni).</string>
+    <string name="audio_permission_dialog_message">L\'app richiede l\'autorizzazione di accedere al microfono per registrare un video contenente audio. Consenti l\'autorizzazione necessaria nelle Impostazioni per continuare con questa configurazione. Se non ti serve che il video contenga audio, puoi disattivarlo (e riattivarlo in seguito nelle impostazioni).</string>
 
     <string name="location_permission_dialog_title">Richiesta autorizzazione posizione</string>
     <string name="location_permission_dialog_message">
-        L\'app richiede l'autorizzazione di accedere alla posizione per la geolocalizzazione. Consenti l\'autorizzazione necessaria nelle Impostazioni per poter usare questa app.
+        L\'app richiede l\'autorizzazione di accedere alla posizione per la geolocalizzazione. Consenti l\'autorizzazione necessaria nelle Impostazioni per poter usare questa app.
     </string>
 
     <string name="focus_ring">Anello messa a fuoco</string>
