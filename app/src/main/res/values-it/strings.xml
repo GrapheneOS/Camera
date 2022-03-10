@@ -82,7 +82,7 @@
     <string name="revert_back_to_dcim">Torna a DCIM</string>
 
     <string name="image_quality">Qualità immagine</string>
-    <string name="image_quality_desc" formatted="false">Regola la qualità di un\'immagine scattata dall\'app da 1% a 100%. Questo campo può essere lasciato vuoto per evitare di impostare esplicitamente la qualità d'\immagine.</string>
+    <string name="image_quality_desc" formatted="false">Regola la qualità di un\'immagine scattata dall\'app da 1% a 100%. Questo campo può essere lasciato vuoto per evitare di impostare esplicitamente la qualità d\'immagine.</string>
     <string name="photo">Foto</string>
     <string name="increase_quality">Aumenta qualità</string>
     <string name="decrease_quality">Riduci qualità</string>
