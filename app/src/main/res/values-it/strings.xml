@@ -1,0 +1,94 @@
+<resources>
+    <string name="app_name">Fotocamera</string>
+
+    <string name="camera_permission_dialog_title">Richiesta autorizzazione fotocamera</string>
+    <string name="camera_permission_dialog_message">
+        L\'app richiede l'autorizzazione di accedere alla fotocamera per funzionare. Consenti l\'autorizzazione necessaria nelle Impostazioni per poter usare questa app.
+    </string>
+
+    <string name="audio_permission_dialog_title">Richiesta autorizzazione audio</string>
+    <string name="audio_permission_dialog_message">L\'app richiede l'autorizzazione di accedere al microfono per registrare un video contenente audio. Consenti l\'autorizzazione necessaria nelle Impostazioni per continuare con questa configurazione. Se non ti serve che il video contenga audio, puoi disattivarlo (e riattivarlo in seguito nelle impostazioni).</string>
+
+    <string name="location_permission_dialog_title">Richiesta autorizzazione posizione</string>
+    <string name="location_permission_dialog_message">
+        L\'app richiede l'autorizzazione di accedere alla posizione per la geolocalizzazione. Consenti l\'autorizzazione necessaria nelle Impostazioni per poter usare questa app.
+    </string>
+
+    <string name="focus_ring">Anello messa a fuoco</string>
+    <string name="flip_camera">Cambia fotocamera</string>
+    <string name="loading_camera">Caricamento fotocamera</string>
+    <string name="flash_mode">Modalità flash</string>
+    <string name="capture_mode">Modalità cattura</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Zoom +</string>
+    <string name="zoom_out">Zoom -</string>
+    <string name="scan_result">Risultato scansione</string>
+    <string name="share_qr_text">Condividi codice QR</string>
+    <string name="copy_to_clipboard">Copia negli appunti</string>
+    <string name="retake">Riesegui</string>
+    <string name="play_preview">Riproduci anteprima</string>
+    <string name="toggle_button">Scambia pulsante</string>
+    <string name="aspect_ratio">Rapporto d\'aspetto</string>
+    <string name="toggle_flash">Flash on/off</string>
+    <string name="grid_toggle">Griglia on/off</string>
+    <string name="include_audio">Includi audio</string>
+    <string name="video_quality">Qualità video</string>
+    <string name="optimize_for">Ottimizza per</string>
+    <string name="quality">Qualità</string>
+    <string name="latency">Latenza</string>
+    <string name="preview">Anteprima</string>
+    <string name="file_info">Info file</string>
+    <string name="delete_file">Elimina file</string>
+    <string name="edit">Modifica</string>
+    <string name="self_illumination">Illuminazione propria</string>
+    <string name="focus_timeout">Scadenza messa a fuoco</string>
+    <string name="timer">Conto alla rovescia</string>
+    <string name="cancel_timer">Annulla conto alla rovescia</string>
+    <string name="camera_sounds">Suoni fotocamera</string>
+    <string name="video_capture_label">Registra video</string>
+
+    <string name="camera">FOTO</string>
+    <string name="video">VIDEO</string>
+    <string name="portrait_mode">VERTICALE</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_sight_mode">VISTA NOTTURNA</string>
+    <string name="face_retouch_mode">RITOCCO VISO</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">SCAN. QR</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Condividi file</string>
+    <string name="rec_without_audio">Inizia registrazione senza audio</string>
+    <string name="qr_scan_toggle">Scan. QR on/off</string>
+    <string name="qr_scan">Codice QR</string>
+    <string name="data_matrix">Matrice dati</string>
+    <string name="aztec_code">Codice Aztec</string>
+    <string name="more_options">Altre opzioni</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Altre impostazioni</string>
+
+    <string name="general">Generali</string>
+
+    <string name="save_image_as_previewed">Salva immagine come in anteprima</string>
+    <string name="save_as_image_preview_desc">Salva l\'immagine di output come vista nell\'anteprima (corregge l\'inversione)</string>
+
+    <string name="gyroscope_suggestions">Consigli giroscopio</string>
+    <string name="gyroscope_setting_desc">Ricevi consigli visivi occasionali per immagini allineate/ben angolate</string>
+
+    <string name="storage">Archiviazione</string>
+    <string name="storage_location">Percorso archiviazione</string>
+    <string name="image_file_name_format">Formato nome file immagine</string>
+    <string name="video_file_name_format">Formato nome file video</string>
+    <string name="revert_back_to_dcim">Torna a DCIM</string>
+
+    <string name="image_quality">Qualità immagine</string>
+    <string name="image_quality_desc" formatted="false">Regola la qualità di un\'immagine scattata dall\'app da 1% a 100%. Questo campo può essere lasciato vuoto per evitare di impostare esplicitamente la qualità d'\immagine.</string>
+    <string name="photo">Foto</string>
+    <string name="increase_quality">Aumenta qualità</string>
+    <string name="decrease_quality">Riduci qualità</string>
+    <string name="remove_exif_title">Rimuovi dati EXIF dopo lo scatto</string>
+    <string name="remove_exif_subtitle">Nota: l\'opzione di geolocalizzazione/posizione è indipendente da questa impostazione</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+</resources>
