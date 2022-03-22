@@ -3,7 +3,6 @@ package app.grapheneos.camera
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
-import android.location.Criteria
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -19,9 +18,6 @@ class App : Application() {
 
     private val locationManager by lazy {
         getSystemService(LocationManager::class.java)!!
-    }
-    private val providerType by lazy {
-        locationManager.getBestProvider(Criteria(), true) ?: LocationManager.GPS_PROVIDER
     }
     private val locationListener: LocationListener by lazy {
         object : LocationListener {
@@ -105,12 +101,14 @@ class App : Application() {
             }
         }
 
-        locationManager.requestLocationUpdates(
-            providerType,
-            2000,
-            10f,
-            locationListener
-        )
+        locationManager.allProviders.forEach { provider ->
+            locationManager.requestLocationUpdates(
+                provider,
+                2000,
+                10f,
+                locationListener
+            )
+        }
     }
 
     fun dropLocationUpdates() {
