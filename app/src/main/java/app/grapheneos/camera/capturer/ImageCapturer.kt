@@ -15,16 +15,17 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.io.FileNotFoundException
 
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"
@@ -125,14 +126,14 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
         if (camConfig.requireLocation) {
 
-            if (mActivity.locationListener.lastKnownLocation == null) {
+            val location = (mActivity.applicationContext as App).getLocation()
+            if (location == null) {
                 mActivity.showMessage(
                     "Couldn't attach location to image since it's" +
                             " currently unavailable"
                 )
             } else {
-                imageMetadata.location =
-                    mActivity.locationListener.lastKnownLocation
+                imageMetadata.location = location
             }
         }
 
