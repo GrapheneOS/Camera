@@ -16,6 +16,7 @@
 
 
     <application
+        android:name=".App"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:resizeableActivity="false"
