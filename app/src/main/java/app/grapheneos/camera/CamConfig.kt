@@ -731,16 +731,7 @@ class CamConfig(private val mActivity: MainActivity) {
             return mActivity.settingsDialog.locToggle.isChecked
         }
         set(value) {
-
-            if (value) {
-                // If location listener wasn't previously set
-                if (!field) {
-                    mActivity.locationListener.start()
-                }
-            } else {
-                mActivity.locationListener.stop()
-            }
-
+            mActivity.locationCamConfigChanged(value)
             val editor = modePref.edit()
             editor.putBoolean(SettingValues.Key.GEO_TAGGING, value)
             editor.commit()
