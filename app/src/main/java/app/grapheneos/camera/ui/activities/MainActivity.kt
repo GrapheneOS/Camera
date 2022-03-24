@@ -58,9 +58,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import app.grapheneos.camera.App
 import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
-import app.grapheneos.camera.CustomLocationListener
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
@@ -90,13 +90,14 @@ import com.google.zxing.BarcodeFormat
 import android.widget.RelativeLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 
-
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
     OnScaleGestureListener,
     GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener,
     SensorOrientationChangeNotifier.Listener {
+
+    private val application: App by lazy { applicationContext as App }
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
@@ -181,8 +182,6 @@ open class MainActivity : AppCompatActivity(),
 
     private lateinit var gLeftDash: View
     private lateinit var gRightDash: View
-
-    lateinit var locationListener: CustomLocationListener
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -451,18 +450,6 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
-
-        locationListener.locationPermissionDialog?.let { dialog ->
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.ACCESS_FINE_LOCATION
-                ) ==
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                if (dialog.isShowing) {
-                    dialog.dismiss()
-                }
-            }
-        }
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -508,7 +495,7 @@ open class MainActivity : AppCompatActivity(),
         }
 
         if (camConfig.requireLocation) {
-            locationListener.start()
+            requestLocation()
         }
 
         gCircleFrame.visibility = if (camConfig.gSuggestions) {
@@ -537,9 +524,6 @@ open class MainActivity : AppCompatActivity(),
             cancelFocusTimer()
         }
         lastFrame = null
-
-        if (camConfig.requireLocation)
-            locationListener.stop()
     }
 
     lateinit var gestureDetectorCompat: GestureDetectorCompat
@@ -913,8 +897,6 @@ open class MainActivity : AppCompatActivity(),
         cbCross = findViewById(R.id.capture_button_cross)
 
         settingsDialog = SettingsDialog(this)
-
-        locationListener = CustomLocationListener(this)
 
         snackBar = Snackbar.make(
             previewView,
@@ -1453,6 +1435,19 @@ open class MainActivity : AppCompatActivity(),
         snackBar?.show()
     }
 
+
+    fun indicateLocationProvidedIsDisabled() {
+        val snackbar = Snackbar.make(
+            previewView,
+            R.string.location_is_disabled,
+            Snackbar.LENGTH_SHORT
+        )
+        snackbar.setAction(R.string.enable) {
+            enableLocationLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        }
+        snackbar.show()
+    }
+
     private fun pauseOrientationSensor() {
         SensorOrientationChangeNotifier
             .getInstance(this)?.remove(this)
@@ -1583,5 +1578,85 @@ open class MainActivity : AppCompatActivity(),
     override fun onDestroy() {
         super.onDestroy()
         SensorOrientationChangeNotifier.clearInstance()
+    }
+
+    fun locationCamConfigChanged(required: Boolean) {
+        if (required) {
+            requestLocation()
+        } else {
+            application.dropLocationUpdates()
+        }
+    }
+
+    private val enableLocationLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        requestLocation(application.isAnyLocationProvideActive())
+    }
+
+    // Used to request permission from the user
+    private val locationPermissionLauncher = registerForActivityResult(
+        RequestMultiplePermissions()
+    ) {
+        if (!application.shouldAskForLocationPermission()) {
+            requestLocation()
+        } else {
+            camConfig.requireLocation = false
+        }
+    }
+
+    private fun requestLocation(reAttach: Boolean = false) {
+
+        when {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION
+            ) -> {
+                AlertDialog.Builder(
+                    this,
+                    android.R.style.Theme_DeviceDefault_Dialog_Alert
+                ).setTitle(R.string.location_permission_dialog_title)
+                    .setMessage(R.string.location_permission_dialog_message)
+                    .setPositiveButton(R.string.settings) { _, _ ->
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts(
+                            "package",
+                            packageName, null
+                        )
+                        intent.data = uri
+                        this.startActivity(intent)
+                    }
+                    .setNegativeButton(android.R.string.cancel) { dialog, _ ->
+                        dialog.dismiss()
+                    }.setOnDismissListener {
+                        if (ContextCompat.checkSelfPermission(
+                                this, Manifest.permission.ACCESS_FINE_LOCATION
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            camConfig.requireLocation = false
+                        }
+                    }
+                    .show()
+            }
+
+            (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+                    == PackageManager.PERMISSION_GRANTED) -> {
+                application.requestLocationUpdates(reAttach)
+            }
+            else -> {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    )
+                )
+            }
+        }
     }
 }

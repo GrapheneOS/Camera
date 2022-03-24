@@ -91,4 +91,9 @@
     <string name="degree_format">%d°</string>
     <string name="percent_symbol">%</string>
 
+    <string name="location_is_disabled">Location is disabled</string>
+    <string name="settings">settings</string>
+    <string name="enable">enable</string>
+
+
 </resources>
