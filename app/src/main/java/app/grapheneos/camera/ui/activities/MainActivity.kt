@@ -636,7 +636,7 @@ open class MainActivity : AppCompatActivity(),
             true
         }
         flipCameraCircle.setOnClickListener {
-
+            resetAutoSleep()
             if (camConfig.isQRMode) {
                 camConfig.scanAllCodes = !camConfig.scanAllCodes
                 return@setOnClickListener
@@ -670,6 +670,7 @@ open class MainActivity : AppCompatActivity(),
         }
         thirdCircle = findViewById(R.id.third_circle)
         thirdCircle.setOnClickListener {
+            resetAutoSleep()
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
@@ -686,7 +687,6 @@ open class MainActivity : AppCompatActivity(),
         }
 
         thirdCircle.setOnLongClickListener {
-
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
@@ -706,6 +706,7 @@ open class MainActivity : AppCompatActivity(),
 
         captureButton = findViewById(R.id.capture_button)
         captureButton.setOnClickListener {
+            resetAutoSleep()
             if (camConfig.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
@@ -1029,6 +1030,7 @@ open class MainActivity : AppCompatActivity(),
             tabLayout.centerTab(selectedTab)
             tab?.let { tabLayout.centerTab(it) }
             camConfig.switchMode(mode)
+            resetAutoSleep()
         }
     }
 
@@ -1659,4 +1661,9 @@ open class MainActivity : AppCompatActivity(),
             }
         }
     }
+
+    private fun resetAutoSleep() {
+        application.resetPreventScreenFromSleeping()
+    }
+
 }
