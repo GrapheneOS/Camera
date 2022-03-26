@@ -6,7 +6,10 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.CountDownTimer
+import android.view.WindowManager
 import androidx.annotation.RequiresPermission
+import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class App : Application() {
@@ -42,8 +45,21 @@ class App : Application() {
         }
     }
 
+    private val autoSleepDuration: Long = 5 * 60 * 1000 //5 min
+    private val autoSleepTimer = object : CountDownTimer(
+        autoSleepDuration,
+        autoSleepDuration / 2
+    ) {
+        override fun onTick(milliLeft: Long) {}
+
+        override fun onFinish() {
+            activity?.enableAutoSleep()
+        }
+    }
+
     private val activityLifeCycleHelper by lazy {
         ActivityLifeCycleHelper { activity ->
+            if (activity != null) activity.disableAutoSleep() else this.activity?.enableAutoSleep()
             this.activity = activity
         }
     }
@@ -124,6 +140,21 @@ class App : Application() {
     override fun onTerminate() {
         super.onTerminate()
         unregisterActivityLifecycleCallbacks(activityLifeCycleHelper)
+    }
+
+    private fun AppCompatActivity.disableAutoSleep() {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        resetPreventScreenFromSleeping()
+    }
+
+    fun resetPreventScreenFromSleeping() {
+        autoSleepTimer.cancel()
+        autoSleepTimer.start()
+    }
+
+    private fun AppCompatActivity.enableAutoSleep() {
+        autoSleepTimer.cancel()
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
 }
