@@ -44,9 +44,7 @@ class App : Application() {
 
     private val activityLifeCycleHelper by lazy {
         ActivityLifeCycleHelper { activity ->
-            if (activity is MainActivity) {
-                this.activity = activity
-            }
+            this.activity = activity
         }
     }
 
