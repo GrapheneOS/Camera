@@ -26,20 +26,19 @@ class App : Application() {
             }
 
             override fun onProviderDisabled(provider: String) {
-                super.onProviderDisabled(provider)
                 if (!isAnyLocationProvideActive()) {
                     activity?.indicateLocationProvidedIsDisabled()
                 }
             }
 
             override fun onLocationChanged(locations: MutableList<Location>) {
-                super.onLocationChanged(locations)
                 val location = locations.getAccurateOne()
                 if (location != null) {
                     this@App.location = location
                 }
             }
 
+            override fun onProviderEnabled(provider: String) {}
         }
     }
 
