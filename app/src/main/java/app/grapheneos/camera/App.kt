@@ -93,7 +93,7 @@ class App : Application() {
         registerActivityLifecycleCallbacks(activityLifeCycleHelper)
     }
 
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_COARSE_LOCATION])
     fun requestLocationUpdates(reAttach: Boolean = false) {
         if (!isLocationEnabled()) {
             activity?.indicateLocationProvidedIsDisabled()
@@ -134,7 +134,7 @@ class App : Application() {
     private fun isLocationEnabled(): Boolean = locationManager.isLocationEnabled
 
     fun shouldAskForLocationPermission() =
-        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
 
     override fun onTerminate() {
