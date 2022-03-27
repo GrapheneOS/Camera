@@ -1612,7 +1612,7 @@ open class MainActivity : AppCompatActivity(),
         when {
             ActivityCompat.shouldShowRequestPermissionRationale(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
-            ) || ActivityCompat.shouldShowRequestPermissionRationale(
+            ) && ActivityCompat.shouldShowRequestPermissionRationale(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION
             ) -> {
                 AlertDialog.Builder(
@@ -1633,7 +1633,7 @@ open class MainActivity : AppCompatActivity(),
                         dialog.dismiss()
                     }.setOnDismissListener {
                         if (ContextCompat.checkSelfPermission(
-                                this, Manifest.permission.ACCESS_FINE_LOCATION
+                                this, Manifest.permission.ACCESS_COARSE_LOCATION
                             ) != PackageManager.PERMISSION_GRANTED
                         ) {
                             camConfig.requireLocation = false
@@ -1644,7 +1644,7 @@ open class MainActivity : AppCompatActivity(),
 
             (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(
+                    || ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
