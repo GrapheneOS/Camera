@@ -18,13 +18,13 @@ class ActivityLifeCycleHelper(
     }
 
     override fun onActivityResumed(activity: Activity) {
-        if (activity is MainActivity){
+        if (activity is MainActivity) {
             callback.invoke(activity)
         }
     }
 
     override fun onActivityPaused(activity: Activity) {
-        if (activity is MainActivity){
+        if (activity is MainActivity) {
             callback.invoke(null)
         }
     }

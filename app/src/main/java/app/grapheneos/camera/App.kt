@@ -45,7 +45,7 @@ class App : Application() {
         }
     }
 
-    private val autoSleepDuration: Long = 5 * 60 * 1000 //5 min
+    private val autoSleepDuration: Long = 5 * 60 * 1000 // 5 minutes
     private val autoSleepTimer = object : CountDownTimer(
         autoSleepDuration,
         autoSleepDuration / 2
