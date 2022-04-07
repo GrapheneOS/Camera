@@ -16,7 +16,6 @@ import android.provider.MediaStore
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -206,14 +205,9 @@ class InAppGallery : AppCompatActivity() {
         editIntent.data = mediaUri
 
         editIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-        try {
-            editIntentLauncher.launch(
-                Intent.createChooser(editIntent, "Edit Image")
-            )
-        } catch (e: SecurityException) {
-            Toast.makeText(this, "Failed to open editor app", Toast.LENGTH_SHORT).show()
-            e.fillInStackTrace()
-        }
+        editIntentLauncher.launch(
+            Intent.createChooser(editIntent, "Edit Image")
+        )
     }
 
     private fun deleteCurrentMedia() {
