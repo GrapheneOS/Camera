@@ -1110,9 +1110,31 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun toggleCameraSelector() {
+
+        // Manually switch to the opposite lens facing
         lensFacing =
-            if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT else CameraSelector.LENS_FACING_BACK
-        startCamera(true)
+            if (lensFacing == CameraSelector.LENS_FACING_BACK)
+                CameraSelector.LENS_FACING_FRONT
+            else
+                CameraSelector.LENS_FACING_BACK
+
+
+        // Test whether the new lens facing is supported by the current device
+        // If it is supported then restart the camera with the new configuration
+        if (isLensFacingSupported(lensFacing)) {
+            startCamera(true)
+        } else {
+            // Else revert back to the old facing (while displaying an error message
+            // to the user)
+            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                mActivity.showMessage("Could not detect front camera. Please try again later!")
+                CameraSelector.LENS_FACING_FRONT
+            } else {
+                mActivity.showMessage("Could not detect rear camera. Please try again later!")
+                CameraSelector.LENS_FACING_BACK
+            }
+        }
+
     }
 
     fun initializeCamera(forced: Boolean = false) {
@@ -1125,6 +1147,16 @@ class CamConfig(private val mActivity: MainActivity) {
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
 
+            // Manually switch to the other lens facing (if the default lens facing isn't
+            // supported for the current device)
+            if (!isLensFacingSupported(lensFacing)) {
+                lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                    CameraSelector.LENS_FACING_FRONT
+                } else {
+                    CameraSelector.LENS_FACING_BACK
+                }
+            }
+
             val extensionsManagerFuture =
                 ExtensionsManager.getInstanceAsync(mActivity, cameraProvider!!)
 
@@ -1134,6 +1166,14 @@ class CamConfig(private val mActivity: MainActivity) {
             }, ContextCompat.getMainExecutor(mActivity))
 
         }, ContextCompat.getMainExecutor(mActivity))
+    }
+
+    private fun isLensFacingSupported(lensFacing : Int) : Boolean {
+        val tCameraSelector = CameraSelector.Builder()
+            .requireLensFacing(lensFacing)
+            .build()
+
+        return cameraProvider!!.hasCamera(tCameraSelector)
     }
 
     // Start the camera with latest hard configuration
