@@ -1092,9 +1092,6 @@ open class MainActivity : AppCompatActivity(),
             dialog = Dialog(this, R.style.Theme_Dialog)
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
             dialog.setContentView(R.layout.scan_result_dialog)
-            dialog.window?.setBackgroundDrawable(
-                ColorDrawable(Color.TRANSPARENT)
-            )
 
             val tabLayout: TabLayout = dialog.findViewById(R.id.encoding_tabs)
 
