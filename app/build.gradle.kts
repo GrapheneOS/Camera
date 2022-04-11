@@ -79,12 +79,12 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.3")
     implementation("androidx.exifinterface:exifinterface:1.3.3")
 
-    implementation("androidx.camera:camera-core:1.1.0-beta02")
-    implementation("androidx.camera:camera-camera2:1.1.0-beta02")
-    implementation("androidx.camera:camera-lifecycle:1.1.0-beta02")
-    implementation("androidx.camera:camera-video:1.1.0-beta02")
-    implementation("androidx.camera:camera-view:1.1.0-beta02")
-    implementation("androidx.camera:camera-extensions:1.1.0-beta02")
+    implementation("androidx.camera:camera-core:1.1.0-beta03")
+    implementation("androidx.camera:camera-camera2:1.1.0-beta03")
+    implementation("androidx.camera:camera-lifecycle:1.1.0-beta03")
+    implementation("androidx.camera:camera-video:1.1.0-beta03")
+    implementation("androidx.camera:camera-view:1.1.0-beta03")
+    implementation("androidx.camera:camera-extensions:1.1.0-beta03")
 
     implementation("com.google.zxing:core:3.4.1")
 }
