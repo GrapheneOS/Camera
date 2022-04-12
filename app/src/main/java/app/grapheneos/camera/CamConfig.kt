@@ -1457,10 +1457,18 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (extensionsManager.isExtensionAvailable(
                 cameraSelector,
-                ExtensionMode.NIGHT
+                ExtensionMode.AUTO
             )
         ) {
-            modes.add(CameraModes.NIGHT_SIGHT)
+            modes.add(CameraModes.AUTO)
+        }
+
+        if (extensionsManager.isExtensionAvailable(
+                cameraSelector,
+                ExtensionMode.FACE_RETOUCH
+            )
+        ) {
+            modes.add(CameraModes.FACE_RETOUCH)
         }
 
         if (extensionsManager.isExtensionAvailable(
@@ -1477,22 +1485,6 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         ) {
             modes.add(CameraModes.HDR)
-        }
-
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.FACE_RETOUCH
-            )
-        ) {
-            modes.add(CameraModes.FACE_RETOUCH)
-        }
-
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.AUTO
-            )
-        ) {
-            modes.add(CameraModes.AUTO)
         }
 
         modes.add(CameraModes.CAMERA)
