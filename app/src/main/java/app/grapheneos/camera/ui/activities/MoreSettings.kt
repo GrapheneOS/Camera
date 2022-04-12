@@ -120,11 +120,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dirPickerHandler.launch(Intent.createChooser(i, "Choose storage location"))
         }
 
-        snackBar = Snackbar.make(
-            rootView,
-            "Hello World",
-            Snackbar.LENGTH_LONG
-        )
+        snackBar = Snackbar.make(rootView, "", Snackbar.LENGTH_LONG)
 
         rSLocation = findViewById(R.id.refresh_storage_location)
         rSLocation.setOnClickListener {

@@ -508,11 +508,7 @@ class InAppGallery : AppCompatActivity() {
 
         gallerySlider.adapter = GallerySliderAdapter(this, mediaUris)
 
-        snackBar = Snackbar.make(
-            gallerySlider,
-            "",
-            Snackbar.LENGTH_LONG
-        )
+        snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
 
     }
 

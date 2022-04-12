@@ -899,11 +899,7 @@ open class MainActivity : AppCompatActivity(),
 
         settingsDialog = SettingsDialog(this)
 
-        snackBar = Snackbar.make(
-            previewView,
-            "",
-            Snackbar.LENGTH_LONG
-        )
+        snackBar = Snackbar.make(previewView, "", Snackbar.LENGTH_LONG)
 
         contentResolver.registerContentObserver(
             Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
