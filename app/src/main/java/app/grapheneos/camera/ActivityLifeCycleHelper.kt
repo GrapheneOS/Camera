@@ -9,13 +9,9 @@ class ActivityLifeCycleHelper(
     private val callback: (activity: MainActivity?) -> Unit
 ) : Application.ActivityLifecycleCallbacks {
 
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        //nothing to do here
-    }
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
 
-    override fun onActivityStarted(activity: Activity) {
-        //nothing to do here
-    }
+    override fun onActivityStarted(activity: Activity) {}
 
     override fun onActivityResumed(activity: Activity) {
         if (activity is MainActivity) {
@@ -29,15 +25,9 @@ class ActivityLifeCycleHelper(
         }
     }
 
-    override fun onActivityStopped(activity: Activity) {
-        //nothing to do here
-    }
+    override fun onActivityStopped(activity: Activity) {}
 
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
-        //nothing to do here
-    }
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
-    override fun onActivityDestroyed(activity: Activity) {
-        //nothing to do here
-    }
+    override fun onActivityDestroyed(activity: Activity) {}
 }
