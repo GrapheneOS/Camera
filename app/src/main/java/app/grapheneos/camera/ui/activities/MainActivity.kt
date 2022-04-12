@@ -1426,22 +1426,19 @@ open class MainActivity : AppCompatActivity(),
         return false
     }
 
-    fun showMessage(msg: String) {
-        snackBar?.setText(msg)
-        snackBar?.show()
+    fun showMessage(msg: String, action: String? = null, callback: View.OnClickListener? = null) {
+        snackBar?.apply {
+            setText(msg)
+            setAction(action, callback)
+            show()
+        }
     }
 
 
     fun indicateLocationProvidedIsDisabled() {
-        val snackbar = Snackbar.make(
-            previewView,
-            R.string.location_is_disabled,
-            Snackbar.LENGTH_SHORT
-        )
-        snackbar.setAction(R.string.enable) {
+        showMessage(getString(R.string.location_is_disabled), getString(R.string.enable)) {
             enableLocationLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         }
-        snackbar.show()
     }
 
     private fun pauseOrientationSensor() {
