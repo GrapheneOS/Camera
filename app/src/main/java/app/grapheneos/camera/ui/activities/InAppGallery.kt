@@ -19,6 +19,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.exifinterface.media.ExifInterface
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.GSlideTransformer
@@ -26,16 +27,14 @@ import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.VideoCapturer
 import com.google.android.material.snackbar.Snackbar
-import java.io.OutputStream
+import java.io.FileNotFoundException
+import java.io.InputStream
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 import kotlin.properties.Delegates
-import androidx.documentfile.provider.DocumentFile
-import java.io.InputStream
-import java.util.Locale
-
 
 class InAppGallery : AppCompatActivity() {
 
@@ -53,31 +52,30 @@ class InAppGallery : AppCompatActivity() {
         registerForActivityResult(StartActivityForResult())
         { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                // There are no request codes
-                val contentUri: Uri? = result.data?.data
-
-                if (contentUri != null) {
-                    val inStream = contentResolver.openInputStream(
-                        contentUri
-                    )
-
-                    inStream?.readBytes()?.let {
-
-                        val outStream: OutputStream? =
-                            contentResolver.openOutputStream(getCurrentUri())
-                        outStream?.write(it)
-                        outStream?.close()
-
-                        showMessage("Edit successful")
-
-                        recreate()
-                        return@registerForActivityResult
-                    }
-                }
-
-                showMessage("An unexpected error occurred after editing.")
+                saveEditedImage(result.data?.data)
             }
         }
+
+    private fun unexpectedError() = showMessage(getString(R.string.editing_unexpected_error))
+
+    private fun saveEditedImage(editingUri : Uri?) {
+        val contentUri = editingUri ?: return unexpectedError()
+        try {
+            contentResolver.openInputStream(contentUri).use { inStream ->
+                inStream?.readBytes()?.let { editedStream ->
+                    contentResolver.openOutputStream(getCurrentUri())?.use { outputStream ->
+                        outputStream.write(editedStream)
+                    }
+                    showMessage(getString(R.string.edit_successfully))
+                    recreate()
+                }
+            }
+        } catch (ignored: SecurityException) {
+            showMessage(getString(R.string.editing_permission_error))
+        } catch (e: FileNotFoundException) {
+            unexpectedError()
+        }
+    }
 
     private lateinit var rootView: View
 
@@ -268,9 +266,7 @@ class InAppGallery : AppCompatActivity() {
         )
 
         if (mediaCursor?.moveToFirst() != true) {
-            showMessage(
-                "An unexpected error occurred"
-            )
+            showMessage(getString(R.string.unexpected_error))
 
             mediaCursor?.close()
             return
@@ -429,7 +425,7 @@ class InAppGallery : AppCompatActivity() {
 
         if (isSecureMode) {
             showMessage(
-                "Sharing images in secure mode is not allowed."
+                getString(R.string.sharing_not_allowed)
             )
             return
         }
@@ -447,7 +443,7 @@ class InAppGallery : AppCompatActivity() {
         share.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
         startActivity(
-            Intent.createChooser(share, "Share Image")
+            Intent.createChooser(share, getString(R.string.share_image))
         )
 
     }
