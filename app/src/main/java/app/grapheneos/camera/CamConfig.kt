@@ -65,7 +65,7 @@ class CamConfig(private val mActivity: MainActivity) {
         const val VIDEO = R.string.video
         const val PORTRAIT = R.string.portrait_mode
         const val HDR = R.string.hdr_mode
-        const val NIGHT_SIGHT = R.string.night_sight_mode
+        const val NIGHT = R.string.night_mode
         const val FACE_RETOUCH = R.string.face_retouch_mode
         const val AUTO = R.string.auto_mode
         const val QR_SCAN = R.string.qr_scan_mode
@@ -162,7 +162,7 @@ class CamConfig(private val mActivity: MainActivity) {
         val extensionModes = mapOf(
             CameraModes.PORTRAIT to ExtensionMode.BOKEH,
             CameraModes.HDR to ExtensionMode.HDR,
-            CameraModes.NIGHT_SIGHT to ExtensionMode.NIGHT,
+            CameraModes.NIGHT to ExtensionMode.NIGHT,
             CameraModes.FACE_RETOUCH to ExtensionMode.FACE_RETOUCH,
             CameraModes.AUTO to ExtensionMode.AUTO
         )
@@ -1482,7 +1482,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 ExtensionMode.NIGHT
             )
         ) {
-            modes.add(CameraModes.NIGHT_SIGHT)
+            modes.add(CameraModes.NIGHT)
         }
 
         if (extensionsManager.isExtensionAvailable(
