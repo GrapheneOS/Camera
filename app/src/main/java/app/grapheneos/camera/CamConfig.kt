@@ -1487,6 +1487,14 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.FACE_RETOUCH)
         }
 
+        if (extensionsManager.isExtensionAvailable(
+                cameraSelector,
+                ExtensionMode.AUTO
+            )
+        ) {
+            modes.add(CameraModes.AUTO)
+        }
+
         modes.add(CameraModes.CAMERA)
 
         modes.add(CameraModes.VIDEO)
