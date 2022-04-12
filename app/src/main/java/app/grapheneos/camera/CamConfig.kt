@@ -1204,9 +1204,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 cameraSelector, extensionMode
             )
         } else {
-            Log.i(TAG, "The current mode isn't available for this device ")
-//            showMessage(mActivity, "The current mode isn't available for this device",
-//                Toast.LENGTH_LONG).show()
+            Log.e(TAG, "The current mode isn't available for this device")
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
