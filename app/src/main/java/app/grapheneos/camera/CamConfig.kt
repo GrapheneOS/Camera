@@ -1479,6 +1479,14 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (extensionsManager.isExtensionAvailable(
                 cameraSelector,
+                ExtensionMode.NIGHT
+            )
+        ) {
+            modes.add(CameraModes.NIGHT_SIGHT)
+        }
+
+        if (extensionsManager.isExtensionAvailable(
+                cameraSelector,
                 ExtensionMode.HDR
             )
         ) {
