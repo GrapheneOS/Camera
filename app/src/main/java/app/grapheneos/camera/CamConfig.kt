@@ -50,18 +50,6 @@ import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import androidx.documentfile.provider.DocumentFile
 
-// work around https://issuetracker.google.com/issues/222726805
-private fun ExtensionsManager.isExtensionAvailableSafe(
-    cameraSelector: CameraSelector,
-    extensionMode: Int
-): Boolean {
-    try {
-        return isExtensionAvailable(cameraSelector, extensionMode)
-    } catch (e: AbstractMethodError) {
-        return false
-    }
-}
-
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
 
@@ -1211,7 +1199,7 @@ class CamConfig(private val mActivity: MainActivity) {
         // Unbind/close all other camera(s) [if any]
         cameraProvider!!.unbindAll()
 
-        if (extensionsManager.isExtensionAvailableSafe(cameraSelector, extensionMode)) {
+        if (extensionsManager.isExtensionAvailable(cameraSelector, extensionMode)) {
             cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
                 cameraSelector, extensionMode
             )
@@ -1467,7 +1455,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.QR_SCAN)
         }
 
-        if (extensionsManager.isExtensionAvailableSafe(
+        if (extensionsManager.isExtensionAvailable(
                 cameraSelector,
                 ExtensionMode.NIGHT
             )
@@ -1475,7 +1463,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.NIGHT_SIGHT)
         }
 
-        if (extensionsManager.isExtensionAvailableSafe(
+        if (extensionsManager.isExtensionAvailable(
                 cameraSelector,
                 ExtensionMode.BOKEH
             )
@@ -1483,7 +1471,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.PORTRAIT)
         }
 
-        if (extensionsManager.isExtensionAvailableSafe(
+        if (extensionsManager.isExtensionAvailable(
                 cameraSelector,
                 ExtensionMode.HDR
             )
@@ -1491,7 +1479,7 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.HDR)
         }
 
-        if (extensionsManager.isExtensionAvailableSafe(
+        if (extensionsManager.isExtensionAvailable(
                 cameraSelector,
                 ExtensionMode.FACE_RETOUCH
             )
