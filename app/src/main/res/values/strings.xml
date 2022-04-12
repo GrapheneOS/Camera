@@ -100,6 +100,17 @@
     <string name="unexpected_error">An unexpected error occurred after editing.</string>
 
     <string name="edit_successfully">Edit successful</string>
+    <string name="edit_not_allowed">Editing images in secure mode is not allowed.</string>
+    <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
+    <string name="edit_image">Edit Image</string>
+    <string name="share_image">Share Image</string>
+    <string name="delete">Delete</string>
+    <string name="delete_title">Are you sure?</string>
+    <string name="deleted_successfully">File deleted successfully</string>
+    <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
+    <string name="delete_description">"Do you really want to delete this file?"</string>
+    <string name="cancel">Cancel</string>
+    <string name="no_image">Please capture a photo/video before trying to view them.</string>
 
 
 </resources>

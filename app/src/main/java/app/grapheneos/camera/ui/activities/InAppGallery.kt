@@ -189,9 +189,7 @@ class InAppGallery : AppCompatActivity() {
 
     private fun editCurrentMedia() {
         if (isSecureMode) {
-            showMessage(
-                "Editing images in secure mode is not allowed."
-            )
+            showMessage(getString(R.string.edit_not_allowed))
             return
         }
 
@@ -204,7 +202,7 @@ class InAppGallery : AppCompatActivity() {
 
         editIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         editIntentLauncher.launch(
-            Intent.createChooser(editIntent, "Edit Image")
+            Intent.createChooser(editIntent, getString(R.string.edit_image))
         )
     }
 
@@ -213,9 +211,9 @@ class InAppGallery : AppCompatActivity() {
         val mediaUri = getCurrentUri()
 
         AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle("Are you sure?")
-            .setMessage("Do you really want to delete this file?")
-            .setPositiveButton("Delete") { _, _ ->
+            .setTitle(R.string.delete_title)
+            .setMessage(R.string.delete_description)
+            .setPositiveButton(R.string.delete) { _, _ ->
 
                 val res: Boolean
 
@@ -238,16 +236,13 @@ class InAppGallery : AppCompatActivity() {
 
                 if (res) {
                     MainActivity.camConfig.removeFromGallery(mediaUri)
-                    showMessage("File deleted successfully")
+                    showMessage(getString(R.string.deleted_successfully))
                     (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
                 } else {
-                    showMessage(
-                        "An unexpected error occurred while deleting this" +
-                                " file"
-                    )
+                    showMessage(getString(R.string.deleting_unexpected_error))
                 }
             }
-            .setNegativeButton("Cancel", null).show()
+            .setNegativeButton(R.string.cancel, null).show()
 
     }
 
@@ -507,10 +502,7 @@ class InAppGallery : AppCompatActivity() {
 
         // Close gallery if no files are present
         if (mediaUris.isEmpty()) {
-            showMessage(
-                "Please capture a photo/video before trying to view" +
-                        " them."
-            )
+            showMessage(getString(R.string.no_image))
             finish()
         }
 
