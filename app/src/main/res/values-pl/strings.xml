@@ -1,0 +1,116 @@
+<resources>
+    <string name="app_name">Aparat</string>
+
+    <string name="camera_permission_dialog_title">Wymagane uprawnienie aparatu</string>
+    <string name="camera_permission_dialog_message">
+        Aplikacja potrzebuje przyznanego uprawnienia dostępu do aparatu aby działać. Nadaj wymagane uprawnienia w Ustawieniach, aby korzystać z tej aplikacji.
+    </string>
+
+    <string name="audio_permission_dialog_title">Wymagane uprawnienie audio</string>
+    <string name="audio_permission_dialog_message">Aplikacja potrzebuje przyznanego uprawnienia na dostęp do mikrofonu, aby nagrywać filmy z dźwiękiem. Przyznaj wymagane uprawnienia w Ustawieniach, by kontynuować z tą konfiguracją. Jeśli nie chcesz, aby Twój film zawierał dźwięk, możesz go po prostu wyłączyć (i włączyć ponownie później w ustawieniach).</string>
+
+    <string name="location_permission_dialog_title">Wymagane uprawnienie lokalizacji</string>
+    <string name="location_permission_dialog_message">
+        Aplikacja potrzebuje przyznanych uprawnień dostępu do lokalizacji na potrzeby geotagowania. Nadaj wymagane uprawnienia w Ustawieniach, aby korzystać z tej aplikacji.
+    </string>
+
+    <string name="focus_ring">Pierścień ostrości</string>
+    <string name="flip_camera">Odwróć aparat</string>
+    <string name="loading_camera">Wczytywanie aparatu</string>
+    <string name="flash_mode">Tryb lampy błyskowej</string>
+    <string name="capture_mode">Tryb przechwytywania</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Przybliż</string>
+    <string name="zoom_out">Oddal</string>
+    <string name="scan_result">Rezultat Skanowania</string>
+    <string name="share_qr_text">Udostępnij Tekst QR</string>
+    <string name="copy_to_clipboard">Kopiuj do Schowka</string>
+    <string name="retake">Ponów</string>
+    <string name="play_preview">Odtwórz Podgląd</string>
+    <string name="toggle_button">Przycisk przełącznika</string>
+    <string name="aspect_ratio">Współczynnik Proporcji</string>
+    <string name="toggle_flash">Przełącz Lampę Błyskową</string>
+    <string name="grid_toggle">Przełącz Siatkę</string>
+    <string name="include_audio">Dołącz Dźwięk</string>
+    <string name="video_quality">Jakość Wideo</string>
+    <string name="optimize_for">Optymalizuj pod</string>
+    <string name="quality">Jakość</string>
+    <string name="latency">Opóźnienie</string>
+    <string name="preview">Podgląd</string>
+    <string name="file_info">Informacje o Pliku</string>
+    <string name="delete_file">Usuń plik</string>
+    <string name="edit">Edytuj</string>
+    <string name="self_illumination">Własne Oświetlenie</string>
+    <string name="focus_timeout">Limit Czasu Ostrości</string>
+    <string name="timer">Odliczanie</string>
+    <string name="cancel_timer">Anuluj Odliczanie</string>
+    <string name="camera_sounds">Dźwięki Aparatu</string>
+    <string name="video_capture_label">Nagrywaj Film</string>
+
+    <string name="camera">APARAT</string>
+    <string name="video">KAMERA</string>
+    <string name="portrait_mode">PORTRET</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">NOC</string>
+    <string name="face_retouch_mode">RETUSZ TWARZY</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">SKANER QR</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Udostępnij Media</string>
+    <string name="rec_without_audio">Rozpocznij nagrywanie bez dźwięku</string>
+    <string name="qr_scan_toggle">Przełącznik Skanera QR</string>
+    <string name="qr_scan">Kod QR</string>
+    <string name="data_matrix">Matryca Danych</string>
+    <string name="aztec_code">Aztec Code</string>
+    <string name="more_options">Więcej Opcji</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Więcej Ustawień</string>
+
+    <string name="general">Ogólne</string>
+
+    <string name="save_image_as_previewed">Zapisz obraz jako podgląd</string>
+    <string name="save_as_image_preview_desc">Zapisz obraz wyjściowy jako widoczny na podglądzie (poprawia inwersję)</string>
+
+    <string name="gyroscope_suggestions">Sugestie Żyroskopu</string>
+    <string name="gyroscope_setting_desc">Okazjonalnie otrzymuj wizualne sugestie dotyczące obrazów prostych/pod dobrym kątem</string>
+
+    <string name="storage">Przechowywanie</string>
+    <string name="storage_location">Lokalizacja Przechowywania</string>
+    <string name="image_file_name_format">Format Nazwy Pliku Obrazu</string>
+    <string name="video_file_name_format">Format Nazwy Pliku Wideo</string>
+    <string name="revert_back_to_dcim">Przywróć z powrotem do DCIM</string>
+
+    <string name="image_quality">Jakość Obrazu</string>
+    <string name="image_quality_desc" formatted="false">Dostosuj jakość obrazu przechwytywanego przez aplikację od 1% do 100%. To pole można pozostawić puste, aby uniknąć jawnego ustawiania jakości obrazu.</string>
+    <string name="photo">Zdjęcie</string>
+    <string name="increase_quality">Zwiększ Jakość</string>
+    <string name="decrease_quality">Zmniejsz Jakość</string>
+    <string name="remove_exif_title">Usuń dane EXIF po przechwyceniu</string>
+    <string name="remove_exif_subtitle">Notka: Opcja Geotagowania/Lokalizacji jest niezależna od tego ustawienia</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+    <string name="location_is_disabled">Lokalizacja jest wyłączona</string>
+    <string name="settings">ustawienia</string>
+    <string name="enable">włącz</string>
+
+    <string name="editing_permission_error">Bezpieczna kamera nie może odczytać obrazu, ponieważ edytor nie daje jej dostępu do odczytu.</string>
+    <string name="editing_unexpected_error">Po edycji wystąpił nieoczekiwany błąd.</string>
+    <string name="unexpected_error">Po edycji wystąpił nieoczekiwany błąd.</string>
+
+    <string name="edit_successfully">Edycja powiodła się</string>
+    <string name="edit_not_allowed">Edycja obrazów w trybie bezpiecznym jest niedozwolona.</string>
+    <string name="sharing_not_allowed">Udostępnianie obrazów w trybie bezpiecznym jest niedozwolone.</string>
+    <string name="edit_image">Edytuj Obraz</string>
+    <string name="share_image">Udostępnij Obraz</string>
+    <string name="delete">Usuń</string>
+    <string name="delete_title">Jesteś pewien?</string>
+    <string name="deleted_successfully">Plik został pomyślnie usunięty</string>
+    <string name="deleting_unexpected_error">Wystąpił nieoczekiwany błąd podczas usuwania tego pliku</string>
+    <string name="delete_description">"Czy na pewno chcesz usunąć ten plik?"</string>
+    <string name="cancel">Anuluj</string>
+    <string name="no_image">Zrób zdjęcie/film przed próbą ich wyświetlenia.</string>
+
+
+</resources>
