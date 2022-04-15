@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="qr_result_background">@color/material_dynamic_neutral20</color>
+    <color name="qr_result_background">#2E3133</color>
 </resources>
