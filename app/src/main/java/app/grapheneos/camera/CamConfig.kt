@@ -1235,12 +1235,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 videoCapture =
                     VideoCapture.withOutput(
-                        Recorder.Builder().setQualitySelector(
-                            QualitySelector.from(
-                                videoQuality!!,
-                                FallbackStrategy.lowerQualityOrHigherThan(videoQuality!!)
-                            )
-                        )
+                        Recorder.Builder()
+                            .setQualitySelector(videoQuality!!.withFallbackIfUnsupported())
                             .build()
                     )
 
@@ -1334,6 +1330,15 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.sensorNotifier?.forceUpdateGyro()
         } else {
             mActivity.gCircleFrame.visibility = View.GONE
+        }
+    }
+
+    // work around CameraX QualitySelector bug
+    private fun Quality.withFallbackIfUnsupported(): QualitySelector {
+        return if (QualitySelector.isQualitySupported(camera!!.cameraInfo, this)) {
+            QualitySelector.from(this)
+        } else {
+            QualitySelector.from(this, FallbackStrategy.higherQualityOrLowerThan(this))
         }
     }
 
