@@ -17,6 +17,7 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
+import android.widget.Button
 import android.widget.FrameLayout
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
@@ -29,26 +30,25 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.FallbackStrategy
+import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
+import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureCaptureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executors
-import android.widget.Button
-import androidx.camera.video.FallbackStrategy
-import androidx.camera.video.Quality
-import app.grapheneos.camera.ui.activities.CaptureActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
-import androidx.documentfile.provider.DocumentFile
 
 @SuppressLint("ApplySharedPref")
 class CamConfig(private val mActivity: MainActivity) {
