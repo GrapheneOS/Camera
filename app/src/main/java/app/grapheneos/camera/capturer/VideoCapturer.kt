@@ -11,10 +11,10 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.view.View
 import android.webkit.MimeTypeMap
-import androidx.camera.video.Recording
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
+import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -25,10 +25,10 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.io.FileNotFoundException
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -88,7 +88,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         handler.removeCallbacks(runnable)
     }
 
-    private fun genPendingRecording(): PendingRecording {
+    private fun genPendingRecording(): PendingRecording? {
         var fileName: String
         val sdf = SimpleDateFormat(
             "yyyyMMdd_HHmmss",
@@ -112,15 +112,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
             && mActivity.isOutputUriAvailable()
         ) {
 
-            return camConfig.videoCapture!!.output.prepareRecording(
+            val fd = mActivity.contentResolver.openFileDescriptor(
+                mActivity.outputUri,
+                "w"
+            ) ?: return null
+
+            return camConfig.videoCapture?.output?.prepareRecording(
                 mActivity,
                 FileDescriptorOutputOptions
-                    .Builder(
-                        mActivity.contentResolver.openFileDescriptor(
-                            mActivity.outputUri,
-                            "w"
-                        )!!
-                    ).build()
+                    .Builder(fd)
+                    .build()
             )
 
         } else {
@@ -185,7 +186,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 )
                 == PackageManager.PERMISSION_GRANTED
             ) {
-                pendingRecording.withAudioEnabled()
+                pendingRecording?.withAudioEnabled()
             } else {
                 mActivity.requestAudioPermission()
                 return
@@ -194,7 +195,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         beforeRecordingStarts()
 
-        recording = pendingRecording.start(
+        recording = pendingRecording?.start(
             ContextCompat.getMainExecutor(mActivity)
         ) {
             if (it is VideoRecordEvent.Finalize) {
