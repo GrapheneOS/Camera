@@ -231,7 +231,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var latestUri: Uri? = null
 
-    val mPlayer: TunePlayer = TunePlayer(mActivity)
+    val mPlayer: TunePlayer by lazy { TunePlayer(mActivity.applicationContext) }
 
     private val commonPref = when (mActivity) {
         is SecureMainActivity -> {
@@ -271,7 +271,7 @@ class CamConfig(private val mActivity: MainActivity) {
         private set
 
     val isFlashAvailable: Boolean
-        get() = camera!!.cameraInfo.hasFlashUnit()
+        get() = camera?.cameraInfo?.hasFlashUnit() ?: false
 
     var isTorchOn: Boolean = false
         get() {
@@ -1027,10 +1027,8 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun updatePreview() {
-
-        if (latestUri == null) return
-
-        if (isVideo(latestUri!!)) {
+        val uri = latestUri ?: return
+        if (isVideo(uri)) {
             try {
                 mActivity.imagePreview.setImageBitmap(
                     getVideoThumbnail(mActivity, latestUri)
@@ -1161,7 +1159,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .requireLensFacing(lensFacing)
             .build()
 
-        return cameraProvider!!.hasCamera(tCameraSelector)
+        return cameraProvider?.hasCamera(tCameraSelector) ?: false
     }
 
     // Start the camera with latest hard configuration
@@ -1197,7 +1195,7 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.updateLastFrame()
 
         // Unbind/close all other camera(s) [if any]
-        cameraProvider!!.unbindAll()
+        cameraProvider?.unbindAll()
 
         if (extensionsManager.isExtensionAvailable(cameraSelector, extensionMode)) {
             cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
@@ -1210,18 +1208,19 @@ class CamConfig(private val mActivity: MainActivity) {
         val useCaseGroupBuilder = UseCaseGroup.Builder()
 
         if (isQRMode) {
-            qrAnalyzer = QRAnalyzer(mActivity)
+            val analyzer = QRAnalyzer(mActivity)
+            val mIAnalyzer = ImageAnalysis.Builder()
+                .setTargetResolution(Size(960, 960))
+                .setOutputImageRotationEnabled(true)
+                .build()
+            qrAnalyzer = analyzer
             mActivity.startFocusTimer()
-            iAnalyzer =
-                ImageAnalysis.Builder()
-                    .setTargetResolution(Size(960, 960))
-                    .setOutputImageRotationEnabled(true)
-                    .build()
-            iAnalyzer!!.setAnalyzer(cameraExecutor, qrAnalyzer!!)
+            iAnalyzer = mIAnalyzer
+            mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
             cameraSelector = CameraSelector.Builder()
                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                 .build()
-            useCaseGroupBuilder.addUseCase(iAnalyzer!!)
+            useCaseGroupBuilder.addUseCase(mIAnalyzer)
 
         } else {
             if (isVideoMode) {
@@ -1281,9 +1280,11 @@ class CamConfig(private val mActivity: MainActivity) {
             .setTargetAspectRatio(aspectRatio)
             .build()
 
-        useCaseGroupBuilder.addUseCase(preview!!)
+        preview?.let {
+            useCaseGroupBuilder.addUseCase(it)
+        }
 
-        preview!!.setSurfaceProvider(mActivity.previewView.surfaceProvider)
+        preview?.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
         mActivity.forceUpdateOrientationSensor()
 
@@ -1295,8 +1296,12 @@ class CamConfig(private val mActivity: MainActivity) {
         } catch (exception : IllegalArgumentException) {
             if (isVideoMode) {
                 val newUseCaseGroupBuilder = UseCaseGroup.Builder()
-                newUseCaseGroupBuilder.addUseCase(videoCapture!!)
-                newUseCaseGroupBuilder.addUseCase(preview!!)
+                videoCapture?.let {
+                    newUseCaseGroupBuilder.addUseCase(it)
+                }
+                preview?.let {
+                    newUseCaseGroupBuilder.addUseCase(it)
+                }
                 imageCapture = null
 
                 camera = cameraProvider!!.bindToLifecycle(
@@ -1311,7 +1316,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         loadTabs()
 
-        camera!!.cameraInfo.zoomState.observe(mActivity) {
+        camera?.cameraInfo?.zoomState?.observe(mActivity) {
             if (it.linearZoom != 0f) {
                 mActivity.zoomBar.updateThumb()
             }
@@ -1319,7 +1324,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         mActivity.zoomBar.updateThumb(false)
 
-        mActivity.exposureBar.setExposureConfig(camera!!.cameraInfo.exposureState)
+        camera?.cameraInfo?.exposureState?.let { mActivity.exposureBar.setExposureConfig(it) }
 
         mActivity.settingsDialog.torchToggle.isChecked = false
 

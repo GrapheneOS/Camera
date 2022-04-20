@@ -200,9 +200,10 @@ class ImageCapturer(private val mActivity: MainActivity) {
                         mActivity.capturedFilePaths.add(0, camConfig.latestUri.toString())
                     }
 
-                    fixExif(mActivity, camConfig.latestUri!!)
-
-                    clearExif(mActivity, camConfig.latestUri!!)
+                    camConfig.latestUri?.let {
+                        fixExif(mActivity, it)
+                        clearExif(mActivity, it)
+                    }
 
                     mActivity.previewLoader.visibility = View.GONE
                     camConfig.updatePreview()
