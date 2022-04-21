@@ -112,5 +112,5 @@
     <string name="cancel">Cancel</string>
     <string name="no_image">Please capture a photo/video before trying to view them.</string>
 
-
+    <string name="bind_failure">Failed to open camera due to an OS or hardware issue. Try rebooting.</string>
 </resources>

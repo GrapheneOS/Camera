@@ -1289,29 +1289,33 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.forceUpdateOrientationSensor()
 
         try {
-            camera = cameraProvider!!.bindToLifecycle(
-                mActivity, cameraSelector,
-                useCaseGroupBuilder.build()
-            )
-        } catch (exception : IllegalArgumentException) {
-            if (isVideoMode) {
-                val newUseCaseGroupBuilder = UseCaseGroup.Builder()
-                videoCapture?.let {
-                    newUseCaseGroupBuilder.addUseCase(it)
-                }
-                preview?.let {
-                    newUseCaseGroupBuilder.addUseCase(it)
-                }
-                imageCapture = null
-
+            try {
                 camera = cameraProvider!!.bindToLifecycle(
                     mActivity, cameraSelector,
-                    newUseCaseGroupBuilder.build()
+                    useCaseGroupBuilder.build()
                 )
+            } catch (exception: IllegalArgumentException) {
+                if (isVideoMode) {
+                    val newUseCaseGroupBuilder = UseCaseGroup.Builder()
+                    videoCapture?.let {
+                        newUseCaseGroupBuilder.addUseCase(it)
+                    }
+                    preview?.let {
+                        newUseCaseGroupBuilder.addUseCase(it)
+                    }
+                    imageCapture = null
 
-            } else {
-                throw exception
+                    camera = cameraProvider!!.bindToLifecycle(
+                        mActivity, cameraSelector,
+                        newUseCaseGroupBuilder.build()
+                    )
+                } else {
+                    throw exception
+                }
             }
+        } catch (exception: IllegalArgumentException) {
+            mActivity.showMessage(mActivity.getString(R.string.bind_failure))
+            return
         }
 
         loadTabs()
