@@ -95,7 +95,7 @@
     <string name="settings">settings</string>
     <string name="enable">enable</string>
 
-    <string name="editing_permission_error">Secure Camera cannot read the image due to the editor not giving it read access.</string>
+    <string name="editing_permission_error">Could not read the image due to the editor not providing read access.</string>
     <string name="editing_unexpected_error">An unexpected error occurred after editing.</string>
     <string name="unexpected_error">An unexpected error occurred after editing.</string>
 
