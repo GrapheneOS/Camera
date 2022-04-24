@@ -39,9 +39,9 @@ class GallerySliderAdapter(
         val playButton: ImageView = holder.binding.playButton
         val mediaUri = mediaUris[position]
 
+        mediaPreview.setGalleryActivity(gActivity)
+        mediaPreview.disableZooming()
         mediaPreview.apply {
-            disableZooming()
-            setGalleryActivity(gActivity)
             setOnClickListener {
                 val mUri = getCurrentUri()
                 if (VideoCapturer.isVideo(mUri)) {
