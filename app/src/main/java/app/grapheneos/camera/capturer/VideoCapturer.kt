@@ -349,6 +349,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun stopRecording() {
         recording?.stop()
         recording?.close()
+        recording = null
     }
 
     companion object {
