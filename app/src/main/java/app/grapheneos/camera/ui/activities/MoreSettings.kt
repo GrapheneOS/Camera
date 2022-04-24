@@ -11,21 +11,20 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
+import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
 import java.net.URLDecoder
 
-
 class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
+    private lateinit var binding: MoreSettingsBinding
     private lateinit var snackBar: Snackbar
 
     private lateinit var sLField: EditText
@@ -90,15 +89,14 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.more_settings)
+        binding = MoreSettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         setTitle(R.string.more_settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val showStorageSettings = intent.extras?.getBoolean("show_storage_settings") == true
 
-        val sIAPToggle = findViewById<SwitchCompat>(
-            R.id.save_image_as_preview_toggle
-        )
+        val sIAPToggle = binding.saveImageAsPreviewToggle
 
         sIAPToggle.isChecked = camConfig.saveImageAsPreviewed
 
@@ -107,11 +105,9 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 sIAPToggle.isChecked
         }
 
-        rootView = findViewById(R.id.root_view)
+        rootView = binding.rootView
 
-        sLField = findViewById(
-            R.id.storage_location_field
-        )
+        sLField = binding.storageLocationField
 
         sLField.setText(cleanPath(camConfig.storageLocation))
 
@@ -122,7 +118,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         snackBar = Snackbar.make(rootView, "", Snackbar.LENGTH_LONG)
 
-        rSLocation = findViewById(R.id.refresh_storage_location)
+        rSLocation = binding.refreshStorageLocation
         rSLocation.setOnClickListener {
 
             val dialog = AlertDialog.Builder(this)
@@ -152,14 +148,14 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dialog.show()
         }
 
-        val sLS = findViewById<View>(R.id.storage_location_setting)
+        val sLS = binding.storageLocationSetting
         sLS.visibility = if (showStorageSettings) {
             View.VISIBLE
         } else {
             View.GONE
         }
 
-        pQField = findViewById(R.id.photo_quality)
+        pQField = binding.photoQuality
 
         if (camConfig.photoQuality != 0) {
             pQField.setText(camConfig.photoQuality.toString())
@@ -168,13 +164,13 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
 
-        iFField = findViewById(R.id.image_format_setting_field)
+        iFField = binding.imageFormatSettingField
         iFField.setOnEditorActionListener(this)
 
-        vFField = findViewById(R.id.video_format_setting_field)
+        vFField = binding.videoFormatSettingField
         vFField.setOnEditorActionListener(this)
 
-        val iPQButton = findViewById<View>(R.id.increase_photo_quality)
+        val iPQButton = binding.increasePhotoQuality
         iPQButton.setOnClickListener {
 
             if (camConfig.photoQuality != NumInputFilter.max) {
@@ -187,7 +183,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             }
         }
 
-        val dPQButton = findViewById<View>(R.id.decrease_photo_quality)
+        val dPQButton = binding.decreasePhotoQuality
         dPQButton.setOnClickListener {
             if (camConfig.photoQuality >= NumInputFilter.min) {
                 --camConfig.photoQuality
@@ -203,9 +199,8 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             }
         }
 
-        val exifToggle = findViewById<SwitchCompat>(R.id.remove_exif_toggle)
-        val exifToggleSetting =
-            findViewById<LinearLayout>(R.id.remove_exif_setting)
+        val exifToggle = binding.removeExifToggle
+        val exifToggleSetting = binding.removeExifSetting
 
         exifToggleSetting.setOnClickListener {
             if (camConfig.isInCaptureMode) {
@@ -230,18 +225,18 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             camConfig.removeExifAfterCapture = exifToggle.isChecked
         }
 
-        val gSwitch = findViewById<SwitchCompat>(R.id.gyroscope_setting_switch)
+        val gSwitch = binding.gyroscopeSettingSwitch
         gSwitch.isChecked = camConfig.gSuggestions
         gSwitch.setOnClickListener {
             camConfig.gSuggestions = gSwitch.isChecked
         }
 
-        val gSetting = findViewById<LinearLayout>(R.id.gyroscope_setting)
+        val gSetting = binding.gyroscopeSetting
         gSetting.setOnClickListener {
             gSwitch.performClick()
         }
 
-        val sIAPSetting = findViewById<LinearLayout>(R.id.save_image_as_preview_setting)
+        val sIAPSetting = binding.saveImageAsPreviewSetting
         sIAPSetting.setOnClickListener {
             sIAPToggle.performClick()
         }
