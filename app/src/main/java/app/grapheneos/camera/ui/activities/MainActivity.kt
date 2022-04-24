@@ -70,6 +70,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.databinding.ActivityMainBinding
+import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -97,6 +98,7 @@ open class MainActivity : AppCompatActivity(),
     SensorOrientationChangeNotifier.Listener {
 
     private val application: App by lazy { applicationContext as App }
+    private lateinit var binding: ActivityMainBinding
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
@@ -529,23 +531,22 @@ open class MainActivity : AppCompatActivity(),
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
 
         gestureDetectorCompat = GestureDetectorCompat(this, this)
 
         camConfig = CamConfig(this)
-        mainOverlay = findViewById(R.id.main_overlay)
+        mainOverlay = binding.mainOverlay
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
-        thirdOption = findViewById(R.id.third_option)
-        previewLoader = findViewById(R.id.preview_loading)
-        imagePreview = findViewById(R.id.image_preview)
+        thirdOption = binding.thirdOption
+        previewLoader = binding.previewLoading
+        imagePreview = binding.imagePreview
         camConfig.updatePreview()
-        previewView = findViewById(R.id.preview)
+        previewView = binding.preview
         previewView.scaleType = PreviewView.ScaleType.FIT_START
-        previewContainer = findViewById(R.id.preview_container)
+        previewContainer = binding.previewContainer
         scaleGestureDetector = ScaleGestureDetector(this, this)
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -569,7 +570,7 @@ open class MainActivity : AppCompatActivity(),
             }
         })
 
-        tabLayout = findViewById(R.id.camera_mode_tabs)
+        tabLayout = binding.cameraModeTabs
 
         tabLayout.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
@@ -581,7 +582,7 @@ open class MainActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
 
-        timerView = findViewById(R.id.timer)
+        timerView = binding.timer
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
@@ -603,9 +604,9 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
-        flipCameraCircle = findViewById(R.id.flip_camera_circle)
+        flipCameraCircle = binding.flipCameraCircle
 
-        flipCamIcon = findViewById(R.id.flip_camera_icon_content)
+        flipCamIcon = binding.flipCameraIconContent
 
         var tapDownTimestamp: Long = 0
         flipCameraCircle.setOnTouchListener { _, event ->
@@ -613,7 +614,6 @@ open class MainActivity : AppCompatActivity(),
                 MotionEvent.ACTION_DOWN -> {
                     if (tapDownTimestamp == 0L) {
                         tapDownTimestamp = System.currentTimeMillis()
-                        Log.i(TAG, "I was called!")
                         flipCameraCircle.animate().scaleXBy(0.05f).setDuration(300).start()
                         flipCameraCircle.animate().scaleYBy(0.05f).setDuration(300).start()
                     }
@@ -646,7 +646,7 @@ open class MainActivity : AppCompatActivity(),
                 return@setOnClickListener
             }
 
-            val flipCameraIcon: ImageView = findViewById(R.id.flip_camera_icon)
+            val flipCameraIcon: ImageView = binding.flipCameraIcon
             val rotation: Float = if (flipCameraIcon.rotation < 180) {
                 180f
             } else {
@@ -667,7 +667,7 @@ open class MainActivity : AppCompatActivity(),
             it.startAnimation(rotate)
             camConfig.toggleCameraSelector()
         }
-        thirdCircle = findViewById(R.id.third_circle)
+        thirdCircle = binding.thirdCircle
         thirdCircle.setOnClickListener {
             resetAutoSleep()
             if (videoCapturer.isRecording) {
@@ -703,7 +703,7 @@ open class MainActivity : AppCompatActivity(),
             return@setOnLongClickListener true
         }
 
-        captureButton = findViewById(R.id.capture_button)
+        captureButton = binding.captureButton
         captureButton.setOnClickListener {
             resetAutoSleep()
             if (camConfig.isVideoMode) {
@@ -734,7 +734,7 @@ open class MainActivity : AppCompatActivity(),
             }
         }
 
-        cancelButtonView = findViewById(R.id.cancel_button)
+        cancelButtonView = binding.cancelButton
 //        cancelButtonView.setOnClickListener(object : View.OnClickListener {
 //
 //            val SWITCH_ANIM_DURATION = 150
@@ -768,23 +768,23 @@ open class MainActivity : AppCompatActivity(),
 //            }
 //        })
 
-        zoomBar = findViewById(R.id.zoom_bar)
+        zoomBar = binding.zoomBar
         zoomBar.setMainActivity(this)
 
-        zoomBarPanel = findViewById(R.id.zoom_bar_panel)
+        zoomBarPanel = binding.zoomBarPanel
 
-        exposureBar = findViewById(R.id.exposure_bar)
+        exposureBar = binding.exposureBar
         exposureBar.setMainActivity(this)
 
-        exposureBarPanel = findViewById(R.id.exposure_bar_panel)
+        exposureBarPanel = binding.exposureBarPanel
 
-        qrOverlay = findViewById(R.id.qr_overlay)
+        qrOverlay = binding.qrOverlay
         qrOverlay.post {
             qrOverlay.setViewFinder()
         }
 
-        threeButtons = findViewById(R.id.three_buttons)
-        settingsIcon = findViewById(R.id.settings_option)
+        threeButtons = binding.threeButtons
+        settingsIcon = binding.settingsOption
         settingsIcon.setOnClickListener {
             if (!camConfig.isQRMode)
                 settingsDialog.show()
@@ -819,20 +819,20 @@ open class MainActivity : AppCompatActivity(),
                 }
             })
 
-        exposurePlusIcon = findViewById(R.id.exposure_plus_icon)
-        exposureNegIcon = findViewById(R.id.exposure_neg_icon)
+        exposurePlusIcon = binding.exposurePlusIcon
+        exposureNegIcon = binding.exposureNegIcon
 
-        zoomInIcon = findViewById(R.id.zoom_in_icon)
-        zoomOutIcon = findViewById(R.id.zoom_out_icon)
+        zoomInIcon = binding.zoomInIcon
+        zoomOutIcon = binding.zoomOutIcon
 
-        previewGrid = findViewById(R.id.preview_grid)
+        previewGrid = binding.previewGrid
         previewGrid.setMainActivity(this)
 
-        rootView = findViewById(R.id.root)
+        rootView = binding.root
 
-        mainFrame = findViewById(R.id.main_frame)
+        mainFrame = binding.mainFrame
 
-        qrScanToggles = findViewById(R.id.qr_scan_toggles)
+        qrScanToggles = binding.qrScanToggles
 
         var isInsetSet = false
 
@@ -890,11 +890,11 @@ open class MainActivity : AppCompatActivity(),
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        cdTimer = findViewById(R.id.c_timer)
+        cdTimer = binding.cTimer
         cdTimer.setMainActivity(this)
 
-        cbText = findViewById(R.id.capture_button_text)
-        cbCross = findViewById(R.id.capture_button_cross)
+        cbText = binding.captureButtonText
+        cbCross = binding.captureButtonCross
 
         settingsDialog = SettingsDialog(this)
 
@@ -906,9 +906,9 @@ open class MainActivity : AppCompatActivity(),
             autoRotateSettingObserver
         )
 
-        focusRing = findViewById(R.id.focusRing)
+        focusRing = binding.focusRing
 
-        micOffIcon = findViewById(R.id.mic_off)
+        micOffIcon = binding.micOff
 
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
@@ -920,39 +920,39 @@ open class MainActivity : AppCompatActivity(),
             }
         )
 
-        moreOptionsToggle = findViewById(R.id.more_options)
+        moreOptionsToggle = binding.moreOptions
         moreOptionsToggle.setOnClickListener {
             camConfig.showMoreOptionsForQR()
         }
 
-        qrToggle = findViewById(R.id.qr_scan_toggle)
+        qrToggle = binding.qrScanToggle
         qrToggle.mActivity = this
         qrToggle.key = BarcodeFormat.QR_CODE.name
 
-        dmToggle = findViewById(R.id.data_matrix_toggle)
+        dmToggle = binding.dataMatrixToggle
         dmToggle.mActivity = this
         dmToggle.key = BarcodeFormat.DATA_MATRIX.name
 
-        cBToggle = findViewById(R.id.pdf417_toggle)
+        cBToggle = binding.pdf417Toggle
         cBToggle.mActivity = this
         cBToggle.key = BarcodeFormat.PDF_417.name
 
-        azToggle = findViewById(R.id.aztec_toggle)
+        azToggle = binding.aztecToggle
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
         camConfig.loadSettings()
 
-        gCircle = findViewById(R.id.g_circle)
-        gAngleTextView = findViewById(R.id.g_circle_text)
+        gCircle = binding.gCircle
+        gAngleTextView = binding.gCircleText
 
-        gLineX = findViewById(R.id.g_circle_line_x)
-        gLineZ = findViewById(R.id.g_circle_line_z)
+        gLineX = binding.gCircleLineX
+        gLineZ = binding.gCircleLineZ
 
-        gLeftDash = findViewById(R.id.g_circle_left_dash)
-        gRightDash = findViewById(R.id.g_circle_right_dash)
+        gLeftDash = binding.gCircleLeftDash
+        gRightDash = binding.gCircleRightDash
 
-        gCircleFrame = findViewById(R.id.g_circle_frame)
+        gCircleFrame = binding.gCircleFrame
     }
 
     private fun getStatusBarHeight(): Int {
@@ -1086,11 +1086,11 @@ open class MainActivity : AppCompatActivity(),
         runOnUiThread {
             dialog = Dialog(this, R.style.Theme_Dialog)
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-            dialog.setContentView(R.layout.scan_result_dialog)
+            val dialogBinding = ScanResultDialogBinding.inflate(layoutInflater)
+            dialog.setContentView(dialogBinding.root)
 
-            val tabLayout: TabLayout = dialog.findViewById(R.id.encoding_tabs)
-
-            val textView = dialog.findViewById<View>(R.id.scan_result_text) as TextView
+            val tabLayout: TabLayout = dialogBinding.encodingTabs
+            val textView = dialogBinding.scanResultText
 
             tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 
@@ -1121,7 +1121,7 @@ open class MainActivity : AppCompatActivity(),
                 text = "Binary"
             })
 
-            val ctc: ImageButton = dialog.findViewById(R.id.copy_qr_text)
+            val ctc: ImageButton = dialogBinding.copyQrText
             ctc.setOnClickListener {
                 val clipboardManager = getSystemService(
                     Context.CLIPBOARD_SERVICE
@@ -1135,9 +1135,7 @@ open class MainActivity : AppCompatActivity(),
                 showMessage("Copied text to clipboard!")
             }
 
-            val sButton: ImageButton = dialog.findViewById(
-                R.id.share_qr_text
-            )
+            val sButton: ImageButton = dialogBinding.shareQrText
             sButton.setOnClickListener {
                 val sIntent = Intent(Intent.ACTION_SEND)
                 sIntent.type = "text/plain"
