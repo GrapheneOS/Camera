@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -16,35 +17,35 @@ import android.view.ViewTreeObserver.OnPreDrawListener
 import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
-import android.widget.ToggleButton
-import android.widget.ImageView
-import android.widget.Spinner
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.ScrollView
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import android.widget.AdapterView
-import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Spinner
+import android.widget.ToggleButton
 import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.video.QualitySelector
-import app.grapheneos.camera.R
-import app.grapheneos.camera.CamConfig
-import app.grapheneos.camera.ui.activities.MainActivity
-import android.provider.Settings
 import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.R
+import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.CaptureActivity
+import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 
-
 class SettingsDialog(mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
 
+    private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
     private var dialog: View
     var locToggle: ToggleButton
     private var flashToggle: ImageView
@@ -83,12 +84,12 @@ class SettingsDialog(mActivity: MainActivity) :
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
     init {
-        setContentView(R.layout.settings)
+        setContentView(binding.root)
 
-        dialog = findViewById(R.id.settings_dialog)
+        dialog = binding.settingsDialog
         dialog.setOnClickListener {}
 
-        moreSettingsButton = findViewById(R.id.more_settings)
+        moreSettingsButton = binding.moreSettings
         moreSettingsButton.setOnClickListener {
             if (!mActivity.videoCapturer.isRecording) {
                 openMoreSettings()
@@ -106,12 +107,12 @@ class SettingsDialog(mActivity: MainActivity) :
 
         this.mActivity = mActivity
 
-        val background: View = findViewById(R.id.background)
+        val background: View = binding.background
         background.setOnClickListener {
             slideDialogUp()
         }
 
-        val rootView = findViewById<SettingsFrameLayout>(R.id.root)
+        val rootView = binding.root
         rootView.setOnInterceptTouchEventListener(
             object : SettingsFrameLayout.OnInterceptTouchEventListener {
 
@@ -132,7 +133,7 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         )
 
-        settingsFrame = findViewById(R.id.settings_frame)
+        settingsFrame = binding.settingsFrame
 
         rootView.viewTreeObserver.addOnPreDrawListener(
             object : OnPreDrawListener {
@@ -152,7 +153,7 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         )
 
-        locToggle = findViewById(R.id.location_toggle)
+        locToggle = binding.locationToggle
         locToggle.setOnClickListener {
 
             if (camConfig.isVideoMode) {
@@ -173,7 +174,7 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         }
 
-        flashToggle = findViewById(R.id.flash_toggle_option)
+        flashToggle = binding.flashToggleOption
         flashToggle.setOnClickListener {
             if (mActivity.requiresVideoModeOnly) {
                 mActivity.showMessage(
@@ -184,7 +185,7 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         }
 
-        aRToggle = findViewById(R.id.aspect_ratio_toggle)
+        aRToggle = binding.aspectRatioToggle
         aRToggle.setOnClickListener {
             if (camConfig.isVideoMode) {
                 aRToggle.isChecked = true
@@ -196,7 +197,7 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         }
 
-        torchToggle = findViewById(R.id.torch_toggle_option)
+        torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
             if (camConfig.isFlashAvailable) {
                 camConfig.toggleTorchState()
@@ -208,7 +209,7 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         }
 
-        gridToggle = findViewById(R.id.grid_toggle_option)
+        gridToggle = binding.gridToggleOption
         gridToggle.setOnClickListener {
             camConfig.gridType = when (camConfig.gridType) {
                 CamConfig.GridType.NONE -> CamConfig.GridType.THREE_BY_THREE
@@ -219,7 +220,7 @@ class SettingsDialog(mActivity: MainActivity) :
             updateGridToggleUI()
         }
 
-        videoQualitySpinner = findViewById(R.id.video_quality_spinner)
+        videoQualitySpinner = binding.videoQualitySpinner
 
         videoQualitySpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
@@ -237,15 +238,15 @@ class SettingsDialog(mActivity: MainActivity) :
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
 
-        qRadio = findViewById(R.id.quality_radio)
-        lRadio = findViewById(R.id.latency_radio)
+        qRadio = binding.qualityRadio
+        lRadio = binding.latencyRadio
 
         if (mActivity.requiresVideoModeOnly) {
             qRadio.isEnabled = false
             lRadio.isEnabled = false
         }
 
-        cmRadioGroup = findViewById(R.id.cm_radio_group)
+        cmRadioGroup = binding.cmRadioGroup
         cmRadioGroup.setOnCheckedChangeListener { _, _ ->
             camConfig.emphasisQuality = qRadio.isChecked
             if (camConfig.cameraProvider != null) {
@@ -253,12 +254,12 @@ class SettingsDialog(mActivity: MainActivity) :
             }
         }
 
-        selfIlluminationToggle = findViewById(R.id.self_illumination_switch)
+        selfIlluminationToggle = binding.selfIlluminationSwitch
         selfIlluminationToggle.setOnClickListener {
             camConfig.selfIlluminate = selfIlluminationToggle.isChecked
         }
 
-        focusTimeoutSpinner = findViewById(R.id.focus_timeout_spinner)
+        focusTimeoutSpinner = binding.focusTimeoutSpinner
         focusTimeoutSpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
@@ -278,7 +279,7 @@ class SettingsDialog(mActivity: MainActivity) :
 
         focusTimeoutSpinner.setSelection(2)
 
-        timerSpinner = findViewById(R.id.timer_spinner)
+        timerSpinner = binding.timerSpinner
         timerSpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
@@ -319,20 +320,20 @@ class SettingsDialog(mActivity: MainActivity) :
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
 
-        mScrollView = findViewById(R.id.settings_scrollview)
-        mScrollViewContent = findViewById(R.id.settings_scrollview_content)
+        mScrollView = binding.settingsScrollview
+        mScrollViewContent = binding.settingsScrollviewContent
 
-        csSwitch = findViewById(R.id.camera_sounds_switch)
+        csSwitch = binding.cameraSoundsSwitch
         csSwitch.setOnCheckedChangeListener { _, value ->
             camConfig.enableCameraSounds = value
         }
 
-        includeAudioSetting = findViewById(R.id.include_audio_setting)
-        selfIlluminationSetting = findViewById(R.id.self_illumination_setting)
-        videoQualitySetting = findViewById(R.id.video_quality_setting)
-        timerSetting = findViewById(R.id.timer_setting)
+        includeAudioSetting = binding.includeAudioSetting
+        selfIlluminationSetting = binding.selfIlluminationSetting
+        videoQualitySetting = binding.videoQualitySetting
+        timerSetting = binding.timerSetting
 
-        includeAudioToggle = findViewById(R.id.include_audio_switch)
+        includeAudioToggle = binding.includeAudioSwitch
         includeAudioToggle.setOnClickListener {
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
