@@ -71,6 +71,7 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+
     buildFeatures {
         viewBinding = true
     }
