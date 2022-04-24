@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.fragment
 
-import android.view.View
 import androidx.recyclerview.widget.RecyclerView
+import app.grapheneos.camera.databinding.GallerySlideBinding
 
-class GallerySlide(itemView: View) : RecyclerView.ViewHolder(itemView)
+class GallerySlide(val binding: GallerySlideBinding) : RecyclerView.ViewHolder(binding.root)
