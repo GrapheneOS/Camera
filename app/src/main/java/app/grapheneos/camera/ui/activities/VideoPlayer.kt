@@ -6,18 +6,20 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.MediaController
-import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
+import app.grapheneos.camera.databinding.VideoPlayerBinding
 
 class VideoPlayer : AppCompatActivity() {
 
     private var handler: Handler = Handler(Looper.myLooper()!!)
+    private lateinit var binding: VideoPlayerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.video_player)
+        binding = VideoPlayerBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         supportActionBar?.let {
             it.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.appbar)))
@@ -31,7 +33,7 @@ class VideoPlayer : AppCompatActivity() {
 
         val uri = intent.extras!!.get("videoUri") as Uri
 
-        val videoView = findViewById<VideoView>(R.id.video_player)
+        val videoView = binding.videoPlayer
 
         val mediaController = object : MediaController(this) {
             override fun show() {
