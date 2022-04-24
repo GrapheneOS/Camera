@@ -48,6 +48,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
 @SuppressLint("ApplySharedPref")
@@ -210,7 +211,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var camera: Camera? = null
 
     var cameraProvider: ProcessCameraProvider? = null
-    private lateinit var extensionsManager: ExtensionsManager
+    private var extensionsManager: ExtensionsManager? = null
 
     var imageCapture: ImageCapture? = null
         private set
@@ -1130,8 +1131,13 @@ class CamConfig(private val mActivity: MainActivity) {
         }
         val cameraProviderFuture = ProcessCameraProvider.getInstance(mActivity)
 
-        cameraProviderFuture.addListener({
-            cameraProvider = cameraProviderFuture.get()
+        cameraProviderFuture.addListener(fun() {
+            try {
+                cameraProvider = cameraProviderFuture.get()
+            } catch (e: ExecutionException) {
+                mActivity.showMessage(mActivity.getString(R.string.camera_provider_init_failure))
+                return
+            }
 
             // Manually switch to the other lens facing (if the default lens facing isn't
             // supported for the current device)
@@ -1147,7 +1153,11 @@ class CamConfig(private val mActivity: MainActivity) {
                 ExtensionsManager.getInstanceAsync(mActivity, cameraProvider!!)
 
             extensionsManagerFuture.addListener({
-                extensionsManager = extensionsManagerFuture.get()
+                try {
+                    extensionsManager = extensionsManagerFuture.get()
+                } catch (e: ExecutionException) {
+                    mActivity.showMessage(mActivity.getString(R.string.extensions_manager_init_failure))
+                }
                 startCamera(forced = forced)
             }, ContextCompat.getMainExecutor(mActivity))
 
@@ -1197,7 +1207,8 @@ class CamConfig(private val mActivity: MainActivity) {
         // Unbind/close all other camera(s) [if any]
         cameraProvider?.unbindAll()
 
-        if (extensionsManager.isExtensionAvailable(cameraSelector, extensionMode)) {
+        val extensionsManager = extensionsManager
+        if (extensionsManager != null && extensionsManager.isExtensionAvailable(cameraSelector, extensionMode)) {
             cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
                 cameraSelector, extensionMode
             )
@@ -1467,44 +1478,47 @@ class CamConfig(private val mActivity: MainActivity) {
             modes.add(CameraModes.QR_SCAN)
         }
 
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.AUTO
-            )
-        ) {
-            modes.add(CameraModes.AUTO)
-        }
+        val extensionsManager = extensionsManager
+        if (extensionsManager != null) {
+            if (extensionsManager.isExtensionAvailable(
+                    cameraSelector,
+                    ExtensionMode.AUTO
+                )
+            ) {
+                modes.add(CameraModes.AUTO)
+            }
 
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.FACE_RETOUCH
-            )
-        ) {
-            modes.add(CameraModes.FACE_RETOUCH)
-        }
+            if (extensionsManager.isExtensionAvailable(
+                    cameraSelector,
+                    ExtensionMode.FACE_RETOUCH
+                )
+            ) {
+                modes.add(CameraModes.FACE_RETOUCH)
+            }
 
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.BOKEH
-            )
-        ) {
-            modes.add(CameraModes.PORTRAIT)
-        }
+            if (extensionsManager.isExtensionAvailable(
+                    cameraSelector,
+                    ExtensionMode.BOKEH
+                )
+            ) {
+                modes.add(CameraModes.PORTRAIT)
+            }
 
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.NIGHT
-            )
-        ) {
-            modes.add(CameraModes.NIGHT)
-        }
+            if (extensionsManager.isExtensionAvailable(
+                    cameraSelector,
+                    ExtensionMode.NIGHT
+                )
+            ) {
+                modes.add(CameraModes.NIGHT)
+            }
 
-        if (extensionsManager.isExtensionAvailable(
-                cameraSelector,
-                ExtensionMode.HDR
-            )
-        ) {
-            modes.add(CameraModes.HDR)
+            if (extensionsManager.isExtensionAvailable(
+                    cameraSelector,
+                    ExtensionMode.HDR
+                )
+            ) {
+                modes.add(CameraModes.HDR)
+            }
         }
 
         modes.add(CameraModes.CAMERA)
