@@ -26,6 +26,7 @@ import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.databinding.GalleryBinding
 import com.google.android.material.snackbar.Snackbar
 import java.io.FileNotFoundException
 import java.io.InputStream
@@ -38,6 +39,7 @@ import kotlin.properties.Delegates
 
 class InAppGallery : AppCompatActivity() {
 
+    lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
     private var snackBar: Snackbar? = null
@@ -444,7 +446,6 @@ class InAppGallery : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
 
         val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
@@ -456,8 +457,8 @@ class InAppGallery : AppCompatActivity() {
         }
 
         ogColor = ContextCompat.getColor(this, R.color.system_neutral1_900)
-
-        setContentView(R.layout.gallery)
+        binding = GalleryBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         supportActionBar?.let {
             it.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.appbar)))
@@ -465,12 +466,12 @@ class InAppGallery : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
-        rootView = findViewById(R.id.root_view)
+        rootView = binding.rootView
         rootView.setOnClickListener {
             toggleActionBarState()
         }
 
-        gallerySlider = findViewById(R.id.gallery_slider)
+        gallerySlider = binding.gallerySlider
         gallerySlider.setPageTransformer(GSlideTransformer())
 
         if (isSecureMode) {
