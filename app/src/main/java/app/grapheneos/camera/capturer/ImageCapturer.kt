@@ -11,6 +11,7 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
+import androidx.annotation.StringRes
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
@@ -21,6 +22,7 @@ import app.grapheneos.camerax.ImageSaver
 import app.grapheneos.camerax.OutputFileOptions
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.R
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -109,14 +111,12 @@ class ImageCapturer(private val mActivity: MainActivity) {
         if (camConfig.camera == null) return
 
         if (!camConfig.canTakePicture) {
-            mActivity.showMessage("Your device unfortunately doesn't support taking pictures while recording a video")
+            mActivity.showMessage(getString(R.string.unsupported_taking_picture_while_recording))
             return
         }
 
         if (isTakingPicture) {
-            mActivity.showMessage(
-                "Please wait for the last image to get processed..."
-            )
+            mActivity.showMessage(getString(R.string.image_processing_pending))
             return
         }
 
@@ -140,10 +140,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
             val location = (mActivity.applicationContext as App).getLocation()
             if (location == null) {
-                mActivity.showMessage(
-                    "Couldn't attach location to image since it's" +
-                            " currently unavailable"
-                )
+                mActivity.showMessage(getString(R.string.location_unavailable))
             } else {
                 imageMetadata.location = location
             }
@@ -251,6 +248,8 @@ class ImageCapturer(private val mActivity: MainActivity) {
             }
         )
     }
+
+    private fun getString(@StringRes id: Int) = mActivity.getString(id)
 
     companion object {
         private const val TAG = "ImageCapturer"
