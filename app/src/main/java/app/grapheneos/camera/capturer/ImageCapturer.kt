@@ -182,7 +182,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
                 }
             }
         mActivity.previewLoader.visibility = View.VISIBLE
-        camConfig.snapPreview()
         camConfig.imageCapture!!.takePicture(
             ContextCompat.getMainExecutor(mActivity),
             object : ImageCapture.OnImageCapturedCallback() {
@@ -190,6 +189,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     super.onCaptureSuccess(image)
                     Log.i(TAG, "Image Capture successfully!")
                     camConfig.mPlayer.playShutterSound()
+                    camConfig.snapPreview()
 
                     mActivity.runOnUiThread {
                         mActivity.previewLoader.visibility = View.GONE
