@@ -60,37 +60,28 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         val previewWidth: Int
         val previewHeight: Int
 
-        val imageWidth: Int
-        val imageHeight: Int
-
         if (rotationDegrees == 0 || rotationDegrees == 180) {
-            previewWidth = mActivity.previewView.height
-            previewHeight = mActivity.previewView.width
-
-            imageWidth = plane.rowStride
-            imageHeight = image.height
-        } else {
             previewWidth = mActivity.previewView.width
             previewHeight = mActivity.previewView.height
-
-            imageWidth = image.height
-            imageHeight = image.width
+        } else {
+            previewWidth = mActivity.previewView.height
+            previewHeight = mActivity.previewView.width
         }
 
         val iFact = if (previewWidth < previewHeight) {
-            imageWidth / previewWidth.toFloat()
+            image.width / previewWidth.toFloat()
         } else {
-            imageHeight / previewHeight.toFloat()
+            image.height / previewHeight.toFloat()
         }
 
         val size = mActivity.qrOverlay.size * iFact
 
-        val left = (imageWidth - size) / 2
-        val top = (imageHeight - size) / 2
+        val left = (image.width - size) / 2
+        val top = (image.height - size) / 2
 
         val source = PlanarYUVLuminanceSource(
             imageData,
-            imageWidth, imageHeight,
+            plane.rowStride, image.height,
             left.roundToInt(), top.roundToInt(),
             size.roundToInt(), size.roundToInt(),
             false
