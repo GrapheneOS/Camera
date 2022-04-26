@@ -68,13 +68,13 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
             previewHeight = mActivity.previewView.width
         }
 
-        val iFact = if (previewWidth < previewHeight) {
+        val scaleFactor = if (previewWidth < previewHeight) {
             image.width / previewWidth.toFloat()
         } else {
             image.height / previewHeight.toFloat()
         }
 
-        val size = mActivity.qrOverlay.size * iFact
+        val size = mActivity.qrOverlay.size * scaleFactor
 
         val left = (image.width - size) / 2
         val top = (image.height - size) / 2
