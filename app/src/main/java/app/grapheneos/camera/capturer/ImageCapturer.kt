@@ -1,5 +1,6 @@
 package app.grapheneos.camera.capturer
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.net.Uri
 import android.provider.MediaStore
@@ -12,9 +13,12 @@ import android.webkit.MimeTypeMap
 import android.widget.FrameLayout
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import app.grapheneos.camerax.ImageSaver
+import app.grapheneos.camerax.OutputFileOptions
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.clearExif
@@ -26,12 +30,19 @@ import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class ImageCapturer(private val mActivity: MainActivity) {
     private val imageFileFormat = ".jpg"
+    private val mainExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+
+    @SuppressLint("RestrictedApi")
+    private val sequentialExecutor = CameraXExecutors.newSequentialExecutor(executor)
 
     private fun genOutputBuilderForImage():
-            ImageCapture.OutputFileOptions.Builder {
+            OutputFileOptions {
 
         var fileName: String
 
@@ -58,7 +69,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                 "DCIM/Camera"
             )
 
-            return ImageCapture.OutputFileOptions.Builder(
+            return OutputFileOptions.OutputFileOptionsMediaStore(
                 mActivity.contentResolver,
                 CamConfig.imageCollectionUri,
                 contentValues
@@ -83,7 +94,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
                 camConfig.addToGallery(child.uri)
 
-                return ImageCapture.OutputFileOptions.Builder(oStream)
+                return OutputFileOptions.OutputFileOptionsOutputStream(oStream)
             } catch (exception: NullPointerException) {
                 throw FileNotFoundException("The default storage location seems to have been deleted.")
             }
@@ -93,6 +104,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
     val isTakingPicture: Boolean
         get() = mActivity.previewLoader.visibility == View.VISIBLE
 
+    @SuppressLint("RestrictedApi")
     fun takePicture() {
         if (camConfig.camera == null) return
 
@@ -108,10 +120,10 @@ class ImageCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        val outputFileOptionsBuilder: ImageCapture.OutputFileOptions.Builder?
+        val outputFileOptions: OutputFileOptions
 
         try {
-            outputFileOptionsBuilder = genOutputBuilderForImage()
+            outputFileOptions = genOutputBuilderForImage()
         } catch (exception: FileNotFoundException) {
             camConfig.onStorageLocationNotFound()
             return
@@ -137,63 +149,13 @@ class ImageCapturer(private val mActivity: MainActivity) {
             }
         }
 
-        outputFileOptionsBuilder.setMetadata(imageMetadata)
+        outputFileOptions.metadata = imageMetadata
 
-        val outputFileOptions = outputFileOptionsBuilder.build()
-
-        mActivity.previewLoader.visibility = View.VISIBLE
-        camConfig.snapPreview()
-        camConfig.imageCapture!!.takePicture(
-            outputFileOptions,
-            ContextCompat.getMainExecutor(mActivity),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    Log.i(TAG, "Image saved successfully!")
-                    camConfig.mPlayer.playShutterSound()
-
-                    if (camConfig.selfIlluminate) {
-
-                        val animation: Animation = AlphaAnimation(0.8f, 0f)
-                        animation.duration = 200
-                        animation.interpolator = LinearInterpolator()
-                        animation.fillAfter = true
-
-                        mActivity.mainOverlay.setImageResource(android.R.color.white)
-
-                        animation.setAnimationListener(
-                            object : Animation.AnimationListener {
-                                override fun onAnimationStart(p0: Animation?) {
-                                    mActivity.mainOverlay.visibility = View.VISIBLE
-                                }
-
-                                override fun onAnimationEnd(p0: Animation?) {
-                                    mActivity.mainOverlay.visibility = View.INVISIBLE
-                                    mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                                    mActivity.updateLastFrame()
-
-                                    mActivity.mainOverlay.layoutParams =
-                                        (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
-                                            this.setMargins(
-                                                leftMargin,
-                                                (46 * mActivity.resources.displayMetrics.density).toInt(), // topMargin
-                                                rightMargin,
-                                                (40 * mActivity.resources.displayMetrics.density).toInt() // bottomMargin
-                                            )
-                                        }
-                                }
-
-                                override fun onAnimationRepeat(p0: Animation?) {}
-
-                            }
-                        )
-
-                        mActivity.mainOverlay.startAnimation(animation)
-                    }
-
-                    val imageUri = outputFileResults.savedUri
-
-                    if (imageUri != null) {
-                        camConfig.addToGallery(imageUri)
+        val imageSavedCallbackWrapper: ImageSaver.OnImageSavedCallback =
+            object : ImageSaver.OnImageSavedCallback {
+                override fun onImageSaved(mSavedUri: Uri?) {
+                    if (mSavedUri != null) {
+                        camConfig.addToGallery(mSavedUri)
                     }
 
                     if (mActivity is SecureMainActivity) {
@@ -205,15 +167,89 @@ class ImageCapturer(private val mActivity: MainActivity) {
                         clearExif(mActivity, it)
                     }
 
-                    mActivity.previewLoader.visibility = View.GONE
-                    camConfig.updatePreview()
+                    mActivity.runOnUiThread {
+                        camConfig.updatePreview()
+                    }
+                    Log.i(TAG, "Image saved successfully")
                 }
 
-                override fun onError(exception: ImageCaptureException) {
-                    exception.printStackTrace()
-                    mActivity.previewLoader.visibility = View.GONE
+                override fun onError(
+                    saveError: ImageSaver.SaveError,
+                    message: String,
+                    cause: Throwable?
+                ) {
+                    cause?.printStackTrace()
+                    mActivity.runOnUiThread {
+                        mActivity.previewLoader.visibility = View.GONE
+                    }
                 }
-            })
+            }
+        mActivity.previewLoader.visibility = View.VISIBLE
+        camConfig.snapPreview()
+        camConfig.imageCapture!!.takePicture(
+            ContextCompat.getMainExecutor(mActivity),
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    super.onCaptureSuccess(image)
+                    Log.i(TAG, "Image Capture successfully!")
+                    camConfig.mPlayer.playShutterSound()
+
+                    mActivity.runOnUiThread {
+                        mActivity.previewLoader.visibility = View.GONE
+                        if (camConfig.selfIlluminate) {
+
+                            val animation: Animation = AlphaAnimation(0.8f, 0f)
+                            animation.duration = 200
+                            animation.interpolator = LinearInterpolator()
+                            animation.fillAfter = true
+
+                            mActivity.mainOverlay.setImageResource(android.R.color.white)
+
+                            animation.setAnimationListener(
+                                object : Animation.AnimationListener {
+                                    override fun onAnimationStart(p0: Animation?) {
+                                        mActivity.mainOverlay.visibility = View.VISIBLE
+                                    }
+
+                                    override fun onAnimationEnd(p0: Animation?) {
+                                        mActivity.mainOverlay.visibility = View.INVISIBLE
+                                        mActivity.mainOverlay.setImageResource(android.R.color.transparent)
+                                        mActivity.updateLastFrame()
+
+                                        mActivity.mainOverlay.layoutParams =
+                                            (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
+                                                this.setMargins(
+                                                    leftMargin,
+                                                    (46 * mActivity.resources.displayMetrics.density).toInt(), // topMargin
+                                                    rightMargin,
+                                                    (40 * mActivity.resources.displayMetrics.density).toInt() // bottomMargin
+                                                )
+                                            }
+                                    }
+
+                                    override fun onAnimationRepeat(p0: Animation?) {}
+
+                                }
+                            )
+
+                            mActivity.mainOverlay.startAnimation(animation)
+                        }
+                    }
+                    executor.execute {
+                        ImageSaver(
+                            image,
+                            outputFileOptions,
+                            image.imageInfo.rotationDegrees,
+                            100,
+                            mainExecutor,
+                            sequentialExecutor,
+                            imageSavedCallbackWrapper
+                        ).run()
+                    }
+                }
+
+            }
+        )
     }
 
     companion object {
