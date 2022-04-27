@@ -87,7 +87,7 @@ class GallerySliderAdapter(
         // Close gallery if no files are present
         if (mediaUris.isEmpty()) {
             gActivity.showMessage(
-                "No image found. Exiting in-app gallery."
+                gActivity.getString(R.string.existing_no_image)
             )
             gActivity.finish()
         }

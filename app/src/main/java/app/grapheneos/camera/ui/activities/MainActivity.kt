@@ -246,7 +246,7 @@ open class MainActivity : AppCompatActivity(),
                 builder.setMessage(R.string.audio_permission_dialog_message)
 
                 // Open the settings menu for the current app
-                builder.setPositiveButton("Settings") { _: DialogInterface?, _: Int ->
+                builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                     val uri = Uri.fromParts(
                         "package",
@@ -255,9 +255,9 @@ open class MainActivity : AppCompatActivity(),
                     intent.data = uri
                     startActivity(intent)
                 }
-                builder.setNegativeButton("Cancel", null)
+                builder.setNegativeButton(R.string.cancel, null)
 
-                builder.setNeutralButton("Disable Audio") { _: DialogInterface?, _: Int ->
+                builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
                     camConfig.includeAudio = false
                 }
 
@@ -365,8 +365,7 @@ open class MainActivity : AppCompatActivity(),
 
         if (camConfig.latestMediaFile == null) {
             showMessage(
-                "Please capture a photo/video before trying to view" +
-                        " them."
+                getString(R.string.no_image)
             )
             return
         }
@@ -408,7 +407,7 @@ open class MainActivity : AppCompatActivity(),
                 val positiveClicked = AtomicBoolean(false)
 
                 // Open the settings menu for the current app
-                builder.setPositiveButton("Settings") { _: DialogInterface?, _: Int ->
+                builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
                     positiveClicked.set(true)
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                     val uri = Uri.fromParts(
@@ -418,7 +417,7 @@ open class MainActivity : AppCompatActivity(),
                     intent.data = uri
                     startActivity(intent)
                 }
-                builder.setNegativeButton("Cancel", null)
+                builder.setNegativeButton(R.string.cancel, null)
                 builder.setOnDismissListener {
 
                     // The dialog could have either been dismissed by clicking on the
@@ -676,8 +675,7 @@ open class MainActivity : AppCompatActivity(),
             } else {
                 if (imageCapturer.isTakingPicture) {
                     showMessage(
-                        "Please wait for the image to get captured " +
-                                "before trying to open the gallery."
+                        getString(R.string.please_wait_for_image_to_get_captured_before_opening)
                     )
                 } else {
                     openGallery()
@@ -692,8 +690,7 @@ open class MainActivity : AppCompatActivity(),
             } else {
                 if (imageCapturer.isTakingPicture) {
                     showMessage(
-                        "Please wait for the image to get " +
-                                "captured before attempting to share via long tap"
+                        getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
                     )
                 } else {
                     shareLatestMedia()
@@ -1040,7 +1037,7 @@ open class MainActivity : AppCompatActivity(),
 
         if (mediaUri == null) {
             showMessage(
-                "Please capture a photo/video before attempting to share via long tap"
+                getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
             )
             return
         }
@@ -1054,7 +1051,7 @@ open class MainActivity : AppCompatActivity(),
             "image/*"
         }
 
-        startActivity(Intent.createChooser(share, "Share Image"))
+        startActivity(Intent.createChooser(share, getString(R.string.share_image)))
     }
 
     private lateinit var dialog: Dialog
@@ -1133,7 +1130,7 @@ open class MainActivity : AppCompatActivity(),
                 )
                 clipboardManager.setPrimaryClip(clipData)
 
-                showMessage("Copied text to clipboard!")
+                showMessage(getString(R.string.copied_text_to_clipboard))
             }
 
             val sButton: ImageButton = dialogBinding.shareQrText
@@ -1144,7 +1141,7 @@ open class MainActivity : AppCompatActivity(),
                 startActivity(
                     Intent.createChooser(
                         sIntent,
-                        "Share text via"
+                        getString(R.string.share_text_via)
                     )
                 )
             }

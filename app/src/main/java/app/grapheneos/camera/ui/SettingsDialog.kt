@@ -26,6 +26,7 @@ import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.ToggleButton
+import androidx.annotation.StringRes
 import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
@@ -83,6 +84,8 @@ class SettingsDialog(mActivity: MainActivity) :
 
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
+    private fun getString(@StringRes id: Int) = mActivity.getString(id)
+
     init {
         setContentView(binding.root)
 
@@ -94,7 +97,7 @@ class SettingsDialog(mActivity: MainActivity) :
             if (!mActivity.videoCapturer.isRecording) {
                 openMoreSettings()
             } else {
-                mActivity.showMessage("Cannot switch activities when recording")
+                mActivity.showMessage(getString(R.string.more_settings_unavailable_during_recording))
             }
         }
 
@@ -159,7 +162,7 @@ class SettingsDialog(mActivity: MainActivity) :
             if (camConfig.isVideoMode) {
                 camConfig.requireLocation = false
                 mActivity.showMessage(
-                    "Geo-tagging currently is not supported for video mode"
+                    getString(R.string.video_geo_tagging_unsupported)
                 )
                 return@setOnClickListener
             }
@@ -167,7 +170,7 @@ class SettingsDialog(mActivity: MainActivity) :
             if (mActivity.videoCapturer.isRecording) {
                 locToggle.isChecked = !locToggle.isChecked
                 mActivity.showMessage(
-                    "Can't toggle geo-tagging for ongoing recording"
+                    getString(R.string.toggle_geo_tagging_unsupported_while_recording)
                 )
             } else {
                 camConfig.requireLocation = locToggle.isChecked
@@ -178,7 +181,7 @@ class SettingsDialog(mActivity: MainActivity) :
         flashToggle.setOnClickListener {
             if (mActivity.requiresVideoModeOnly) {
                 mActivity.showMessage(
-                    "Cannot switch flash mode in this mode"
+                    getString(R.string.flash_switch_unsupported)
                 )
             } else {
                 camConfig.toggleFlashMode()
@@ -190,7 +193,7 @@ class SettingsDialog(mActivity: MainActivity) :
             if (camConfig.isVideoMode) {
                 aRToggle.isChecked = true
                 mActivity.showMessage(
-                    "4:3 is not supported in video mode"
+                    getString(R.string.four_by_three_unsupported_in_video)
                 )
             } else {
                 camConfig.toggleAspectRatio()
@@ -204,7 +207,7 @@ class SettingsDialog(mActivity: MainActivity) :
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(
-                    "Flash/Torch is unavailable for this mode"
+                    getString(R.string.flash_unavailable_in_current_mode)
                 )
             }
         }
@@ -308,7 +311,7 @@ class SettingsDialog(mActivity: MainActivity) :
                         } catch (exception: Exception) {
 
                             mActivity.showMessage(
-                                "An unexpected error occurred while setting focus timeout"
+                                getString(R.string.unexpected_error_while_setting_focus_timeout)
                             )
 
                         }
@@ -408,7 +411,7 @@ class SettingsDialog(mActivity: MainActivity) :
             } catch (exception: Exception) {
 
                 mActivity.showMessage(
-                    "An unexpected error occurred while setting focus timeout"
+                    getString(R.string.unexpected_error_while_setting_focus_timeout)
                 )
 
             }
