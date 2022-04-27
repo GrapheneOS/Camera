@@ -33,7 +33,7 @@ class TunePlayer(context: Context) {
         // Wait until the audio is played
         try {
             Thread.sleep(vRecPlayer.duration.toLong())
-        } catch (exception: Exception) {
+        } catch (exception: InterruptedException) {
         }
     }
 
