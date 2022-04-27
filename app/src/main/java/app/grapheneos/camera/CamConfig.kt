@@ -110,8 +110,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ASPECT_RATIO = AspectRatio.RATIO_4_3
 
-            val VIDEO_QUALITY = Quality.FHD!!
-
             const val SELF_ILLUMINATION = false
 
             const val GEO_TAGGING = false
@@ -328,14 +326,14 @@ class CamConfig(private val mActivity: MainActivity) {
             field = value
         }
 
-    var videoQuality: Quality? = SettingValues.Default.VIDEO_QUALITY
+    var videoQuality: Quality? = null
         get() {
             return if (modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.titleToQuality(
                     modePref.getString(videoQualityKey, "")!!
                 )
             } else {
-                SettingValues.Default.VIDEO_QUALITY
+                null
             }
         }
         set(value) {
@@ -1245,12 +1243,21 @@ class CamConfig(private val mActivity: MainActivity) {
                         View.VISIBLE
                     }
 
-                videoCapture =
-                    VideoCapture.withOutput(
-                        Recorder.Builder()
-                            .setQualitySelector(videoQuality!!.withFallbackIfUnsupported())
-                            .build()
-                    )
+                // QualitySelector fallback doesn't work correctly so we can only set a known
+                // supported quality configured via the setting previously
+                // https://issuetracker.google.com/issues/230651237
+                val videoQuality = videoQuality
+                if (videoQuality != null) {
+                    videoCapture =
+                        VideoCapture.withOutput(
+                            Recorder.Builder()
+                                .setQualitySelector(QualitySelector.from(videoQuality))
+                                .build()
+                        )
+                } else {
+                    videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+                }
+
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
@@ -1352,15 +1359,6 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.sensorNotifier?.forceUpdateGyro()
         } else {
             mActivity.gCircleFrame.visibility = View.GONE
-        }
-    }
-
-    // work around CameraX QualitySelector bug
-    private fun Quality.withFallbackIfUnsupported(): QualitySelector {
-        return if (QualitySelector.isQualitySupported(camera!!.cameraInfo, this)) {
-            QualitySelector.from(this)
-        } else {
-            QualitySelector.from(this, FallbackStrategy.higherQualityOrLowerThan(this))
         }
     }
 
