@@ -94,6 +94,12 @@
     <string name="location_is_disabled">Location is disabled</string>
     <string name="settings">settings</string>
     <string name="enable">enable</string>
+    <string name="ok">Ok</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="disable_audio">Disable Audio</string>
+    <string name="copied_text_to_clipboard">Copied text to clipboard!</string>
+    <string name="share_text_via">Share text via</string>
 
     <string name="editing_permission_error">Could not read the image due to the editor not providing read access.</string>
     <string name="editing_unexpected_error">An unexpected error occurred after editing.</string>
@@ -118,4 +124,35 @@
     <string name="unsupported_taking_picture_while_recording">Your device unfortunately doesn\'t support taking pictures while recording a video</string>
     <string name="image_processing_pending">Please wait for the last image to get processed…</string>
     <string name="location_unavailable">Couldn\'t attach location to image since it\'s  currently unavailable</string>
+    <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
+    <string name="no_barcode_selected">Please ensure that at least one barcode is selected in manual mode</string>
+    <string name="flash_unavailable_in_selected_mode">Flash is unavailable for the current mode.</string>
+    <string name="front_camera_unavailable">Could not detect front camera. Please try again later!</string>
+    <string name="rear_camera_unavailable">Could not detect rear camera. Please try again later!</string>
+    <string name="folder_not_found">Storage location not found</string>
+    <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
+    <string name="more_settings_unavailable_during_recording">Cannot switch activities when recording</string>
+    <string name="video_geo_tagging_unsupported">Geo-tagging currently is not supported for video mode</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Can\'t toggle geo-tagging for ongoing recording</string>
+    <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
+    <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
+    <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
+    <string name="unexpected_error_while_setting_focus_timeout">An unexpected error occurred while setting focus timeout</string>
+    <string name="unexpected_error_while_opening_gallery">An unexpected error occurred while opening the gallery</string>
+    <string name="no_directory_selected">No directory was selected by the picker</string>
+    <string name="choose_storage_location">Choose storage location</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="revert_to_default_directory">Do you want to revert back to the default directory?</string>
+    <string name="reverted_to_default_directory">Switched back to the default storage location</string>
+    <string name="already_using_default_directory">Already using the default storage location</string>
+    <string name="photo_quality_was_set_to_auto">Photo quality was set to auto mode</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
+
+    <string name="capturing_image">Capturing Image…</string>
+    <string name="image_captured_successfully">Image captured successfully</string>
+    <string name="unable_to_capture_image">Unable to capture image</string>
+    <string name="recording_too_short_to_be_saved">Recording too short to be saved</string>
+    <string name="please_wait_for_image_to_get_captured_before_opening">Please wait for the image to get captured before trying to open the gallery.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
+
 </resources>

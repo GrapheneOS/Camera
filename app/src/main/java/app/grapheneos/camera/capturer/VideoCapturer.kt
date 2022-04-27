@@ -207,7 +207,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
                     if (it.error == 8) {
                         mActivity.showMessage(
-                            "Recording too short to be saved"
+                            mActivity.getString(R.string.recording_too_short_to_be_saved)
                         )
                     } else {
                         mActivity.showMessage(

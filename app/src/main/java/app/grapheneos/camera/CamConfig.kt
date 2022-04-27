@@ -19,6 +19,7 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import android.widget.FrameLayout
+import androidx.annotation.StringRes
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -768,6 +769,8 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    private fun getString(@StringRes id: Int) = mActivity.getString(id)
+
     fun setQRScanningFor(format: String, selected: Boolean) {
 
         val formatSRep = "${SettingValues.Key.SCAN}_$format"
@@ -786,8 +789,7 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             if (allowedFormats.size == 1) {
                 mActivity.showMessage(
-                    "Please ensure that at least one barcode is " +
-                            "selected in manual mode"
+                    getString(R.string.no_barcode_selected)
                 )
             } else {
                 allowedFormats.remove(BarcodeFormat.valueOf(format))
@@ -1082,7 +1084,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         } else {
             mActivity.showMessage(
-                "Flash is unavailable for the current mode."
+                getString(R.string.flash_unavailable_in_selected_mode)
             )
         }
     }
@@ -1114,10 +1116,10 @@ class CamConfig(private val mActivity: MainActivity) {
             // Else revert back to the old facing (while displaying an error message
             // to the user)
             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                mActivity.showMessage("Could not detect front camera. Please try again later!")
+                mActivity.showMessage(getString(R.string.front_camera_unavailable))
                 CameraSelector.LENS_FACING_FRONT
             } else {
-                mActivity.showMessage("Could not detect rear camera. Please try again later!")
+                mActivity.showMessage(getString(R.string.rear_camera_unavailable))
                 CameraSelector.LENS_FACING_BACK
             }
         }
@@ -1646,8 +1648,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 } else if (format in allowedFormats) {
                     if (allowedFormats.size == 1) {
                         mActivity.showMessage(
-                            "Please ensure that at least one barcode is " +
-                                    "selected in manual mode"
+                            getString(R.string.no_barcode_selected)
                         )
                     } else {
                         allowedFormats.remove(format)
@@ -1665,7 +1666,7 @@ class CamConfig(private val mActivity: MainActivity) {
             qrAnalyzer?.refreshHints()
         }
 
-        builder.setNegativeButton("Cancel", null)
+        builder.setNegativeButton(R.string.cancel, null)
 
         // Create and show the alert dialog
         val dialog = builder.create()
@@ -1685,10 +1686,10 @@ class CamConfig(private val mActivity: MainActivity) {
         camConfig.storageLocation = ""
 
         val builder = AlertDialog.Builder(mActivity)
-        builder.setTitle("Storage location not found")
-        builder.setMessage("Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).")
-        builder.setPositiveButton("Ok", null)
-        builder.setNeutralButton("More Settings") { _, _ ->
+        builder.setTitle(R.string.folder_not_found)
+        builder.setMessage(R.string.reverting_to_default_folder)
+        builder.setPositiveButton(R.string.ok, null)
+        builder.setNeutralButton(R.string.more_settings) { _, _ ->
             mActivity.settingsDialog.openMoreSettings()
         }
         val alertDialog: AlertDialog = builder.create()

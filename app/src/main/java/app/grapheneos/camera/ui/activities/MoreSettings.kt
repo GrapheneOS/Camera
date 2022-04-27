@@ -68,8 +68,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         } else {
             showMessage(
-                "No directory was selected by" +
-                        " the picker"
+                getString(R.string.no_directory_selected)
             )
         }
     }
@@ -113,7 +112,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         sLField.setOnClickListener {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            dirPickerHandler.launch(Intent.createChooser(i, "Choose storage location"))
+            dirPickerHandler.launch(Intent.createChooser(i, getString(R.string.choose_storage_location)))
         }
 
         snackBar = Snackbar.make(rootView, "", Snackbar.LENGTH_LONG)
@@ -123,28 +122,28 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
             val dialog = AlertDialog.Builder(this)
 
-            dialog.setTitle("Are you sure?")
+            dialog.setTitle(R.string.are_you_sure)
 
-            dialog.setMessage("Do you want to revert back to the default directory?")
+            dialog.setMessage(R.string.revert_to_default_directory)
 
-            dialog.setPositiveButton("Yes") { _, _ ->
+            dialog.setPositiveButton(R.string.yes) { _, _ ->
                 val path = "DCIM/Camera"
                 sLField.setText(path)
 
                 if (camConfig.storageLocation.isNotEmpty()) {
                     showMessage(
-                        "Switched back to the default storage location"
+                        getString(R.string.reverted_to_default_directory)
                     )
 
                     camConfig.storageLocation = ""
                 } else {
                     showMessage(
-                        "Already using the default storage location"
+                        getString(R.string.already_using_default_directory)
                     )
                 }
             }
 
-            dialog.setNegativeButton("No", null)
+            dialog.setNegativeButton(R.string.no, null)
             dialog.show()
         }
 
@@ -193,7 +192,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 } else {
                     pQField.setText("")
                     showMessage(
-                        "Photo quality was set to auto mode"
+                        getString(R.string.photo_quality_was_set_to_auto)
                     )
                 }
             }
@@ -205,8 +204,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         exifToggleSetting.setOnClickListener {
             if (camConfig.isInCaptureMode) {
                 showMessage(
-                    "Images taken in this mode don't contain" +
-                            "extra EXIF data"
+                    getString(R.string.image_taken_in_this_mode_does_not_contain_extra_data)
                 )
             } else {
                 exifToggle.performClick()
@@ -279,7 +277,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             camConfig.photoQuality = 0
 
             showMessage(
-                "Photo quality was set to auto mode"
+                getString(R.string.photo_quality_was_set_to_auto)
             )
         } else {
             try {
