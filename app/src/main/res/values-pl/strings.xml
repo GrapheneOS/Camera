@@ -22,7 +22,7 @@
     <string name="start_value_timer">00:00</string>
     <string name="zoom_in">Przybliż</string>
     <string name="zoom_out">Oddal</string>
-    <string name="scan_result">Rezultat Skanowania</string>
+    <string name="scan_result">Wynik Skanowania</string>
     <string name="share_qr_text">Udostępnij Tekst QR</string>
     <string name="copy_to_clipboard">Kopiuj do Schowka</string>
     <string name="retake">Ponów</string>
@@ -45,10 +45,10 @@
     <string name="timer">Odliczanie</string>
     <string name="cancel_timer">Anuluj Odliczanie</string>
     <string name="camera_sounds">Dźwięki Aparatu</string>
-    <string name="video_capture_label">Nagrywaj Film</string>
+    <string name="video_capture_label">Nagrywaj Wideo</string>
 
     <string name="camera">APARAT</string>
-    <string name="video">KAMERA</string>
+    <string name="video">WIDEO</string>
     <string name="portrait_mode">PORTRET</string>
     <string name="hdr_mode">HDR</string>
     <string name="night_mode">NOC</string>
@@ -94,8 +94,14 @@
     <string name="location_is_disabled">Lokalizacja jest wyłączona</string>
     <string name="settings">ustawienia</string>
     <string name="enable">włącz</string>
+    <string name="ok">Ok</string>
+    <string name="yes">Tak</string>
+    <string name="no">Nie</string>
+    <string name="disable_audio">Wyłącz Dźwięk</string>
+    <string name="copied_text_to_clipboard">Skopiowano tekst do schowka!</string>
+    <string name="share_text_via">Udostępnij tekst przez</string>
 
-    <string name="editing_permission_error">Bezpieczna kamera nie może odczytać obrazu, ponieważ edytor nie daje jej dostępu do odczytu.</string>
+    <string name="editing_permission_error">Nie można odczytać obrazu, ponieważ edytor nie zapewnia dostępu do odczytu.</string>
     <string name="editing_unexpected_error">Po edycji wystąpił nieoczekiwany błąd.</string>
     <string name="unexpected_error">Po edycji wystąpił nieoczekiwany błąd.</string>
 
@@ -112,5 +118,41 @@
     <string name="cancel">Anuluj</string>
     <string name="no_image">Zrób zdjęcie/film przed próbą ich wyświetlenia.</string>
 
+    <string name="bind_failure">Nie udało się otworzyć aparatu z powodu problemu z systemem operacyjnym lub sprzętem. Spróbuj uruchomić ponownie urządzenie.</string>
+    <string name="camera_provider_init_failure">Nie udało się załadować dostawcy kamery z powodu problemu z systemem operacyjnym lub sprzętem. Spróbuj uruchomić ponownie urządzenie.</string>
+    <string name="extensions_manager_init_failure">Nie udało się załadować menedżera rozszerzeń z powodu problemu z systemem operacyjnym lub sprzętem. Tryby rozszerzeń są niedostępne. Spróbuj uruchomić ponownie urządzenie.</string>
+    <string name="unsupported_taking_picture_while_recording">Twoje urządzenie niestety nie obsługuje robienia zdjęć podczas nagrywania wideo</string>
+    <string name="image_processing_pending">Poczekaj na przetworzenie ostatniego obrazu…</string>
+    <string name="location_unavailable">Nie można dołączyć lokalizacji do obrazu, ponieważ jest ona obecnie niedostępna</string>
+    <string name="existing_no_image">Nie znaleziono obrazu. Zamykam wbudowaną galerię.</string>
+    <string name="no_barcode_selected">Upewnij się, że co najmniej jeden kod kreskowy został wybrany w trybie ręcznym</string>
+    <string name="flash_unavailable_in_selected_mode">Lampa błyskowa jest niedostępna w bieżącym trybie.</string>
+    <string name="front_camera_unavailable">Nie udało się wykryć przedniego aparatu. Spróbuj ponownie później!</string>
+    <string name="rear_camera_unavailable">Nie udało się wykryć tylniego aparatu. Spróbuj ponownie później!</string>
+    <string name="folder_not_found">Nie znaleziono miejsca przechowywania</string>
+    <string name="reverting_to_default_folder">Przywracanie domyślnego katalogu DCIM, ponieważ wcześniej wybrana niestandardowa lokalizacja przechowywania wydaje się być usunięta. Zmień lokalizację przechowywania na inny folder (jeśli jest to wymagane).</string>
+    <string name="more_settings_unavailable_during_recording">Nie można przełączać aktywności podczas nagrywania</string>
+    <string name="video_geo_tagging_unsupported">Obecnie geotagowanie nie jest obsługiwane w trybie wideo</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Nie można przełączyć geotagowania dla trwającego nagrywania</string>
+    <string name="flash_switch_unsupported">Nie można przełączyć trybu lampy błyskowej w tym trybie</string>
+    <string name="four_by_three_unsupported_in_video">4:3 nie jest obsługiwana w trybie wideo</string>
+    <string name="flash_unavailable_in_current_mode">Lampa błyskowa/latarka jest niedostępna w tym trybie</string>
+    <string name="unexpected_error_while_setting_focus_timeout">Wystąpił nieoczekiwany błąd podczas ustawiania limitu czasu fokusu</string>
+    <string name="unexpected_error_while_opening_gallery">Wystąpił nieoczekiwany błąd podczas otwierania galerii</string>
+    <string name="no_directory_selected">Żaden katalog nie został wybrany przez selektor</string>
+    <string name="choose_storage_location">Wybierz miejsce przechowywania</string>
+    <string name="are_you_sure">Czy jesteś pewien?</string>
+    <string name="revert_to_default_directory">Czy chcesz przywrócić do katalogu domyślnego?</string>
+    <string name="reverted_to_default_directory">Przełączono z powrotem do domyślnej lokalizacji przechowywania</string>
+    <string name="already_using_default_directory">Używasz już domyślnej lokalizacji przechowywania</string>
+    <string name="photo_quality_was_set_to_auto">Jakość zdjęć została ustawiona na tryb automatyczny</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Obrazy wykonane w tym trybie nie zawierają dodatkowych danych EXIF</string>
+
+    <string name="capturing_image">Przechwytywanie obrazu…</string>
+    <string name="image_captured_successfully">Obraz przechwycony pomyślnie</string>
+    <string name="unable_to_capture_image">Nie można przechwycić obrazu</string>
+    <string name="recording_too_short_to_be_saved">Nagranie za krótkie by mogło być zapisane</string>
+    <string name="please_wait_for_image_to_get_captured_before_opening">Poczekaj, aż obraz zostanie przechwycony, zanim spróbujesz otworzyć galerię.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Poczekaj, aż obraz zostanie przechwycony, zanim spróbujesz udostępnić przez długie dotknięcie</string>
 
 </resources>
