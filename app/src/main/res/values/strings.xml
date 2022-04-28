@@ -121,7 +121,7 @@
     <string name="bind_failure">Failed to open camera due to an OS or hardware issue. Try rebooting.</string>
     <string name="camera_provider_init_failure">Failed to load camera provider due to OS or hardware issue. Try rebooting.</string>
     <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
-    <string name="unsupported_taking_picture_while_recording">Your device unfortunately doesn\'t support taking pictures while recording a video</string>
+    <string name="unsupported_taking_picture_while_recording">Your device doesn\'t support taking pictures while recording video with the current settings.</string>
     <string name="image_processing_pending">Please wait for the last image to get processed…</string>
     <string name="location_unavailable">Couldn\'t attach location to image since it\'s  currently unavailable</string>
     <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
