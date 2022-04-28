@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import androidx.annotation.StringRes
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.core.content.ContextCompat
@@ -103,8 +104,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         }
     }
 
-    val isTakingPicture: Boolean
-        get() = mActivity.previewLoader.visibility == View.VISIBLE
+    var isTakingPicture: Boolean = false
 
     @SuppressLint("RestrictedApi")
     fun takePicture() {
@@ -166,6 +166,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
                     mActivity.runOnUiThread {
                         camConfig.updatePreview()
+                        mActivity.previewLoader.visibility = View.GONE
                     }
                     Log.i(TAG, "Image saved successfully")
                 }
@@ -181,7 +182,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     }
                 }
             }
-        mActivity.previewLoader.visibility = View.VISIBLE
         camConfig.imageCapture!!.takePicture(
             ContextCompat.getMainExecutor(mActivity),
             object : ImageCapture.OnImageCapturedCallback() {
@@ -192,7 +192,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     camConfig.snapPreview()
 
                     mActivity.runOnUiThread {
-                        mActivity.previewLoader.visibility = View.GONE
+                        mActivity.previewLoader.visibility = View.VISIBLE
                         if (camConfig.selfIlluminate) {
 
                             val animation: Animation = AlphaAnimation(0.8f, 0f)
@@ -243,10 +243,17 @@ class ImageCapturer(private val mActivity: MainActivity) {
                             imageSavedCallbackWrapper
                         ).run()
                     }
+                    isTakingPicture = false
                 }
 
+                override fun onError(exception: ImageCaptureException) {
+                    super.onError(exception)
+                    mActivity.previewLoader.visibility = View.GONE
+                    isTakingPicture = false
+                }
             }
         )
+        isTakingPicture = true
     }
 
     private fun getString(@StringRes id: Int) = mActivity.getString(id)
