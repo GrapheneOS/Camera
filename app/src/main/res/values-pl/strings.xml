@@ -121,7 +121,7 @@
     <string name="bind_failure">Nie udało się otworzyć aparatu z powodu problemu z systemem operacyjnym lub sprzętem. Spróbuj uruchomić ponownie urządzenie.</string>
     <string name="camera_provider_init_failure">Nie udało się załadować dostawcy kamery z powodu problemu z systemem operacyjnym lub sprzętem. Spróbuj uruchomić ponownie urządzenie.</string>
     <string name="extensions_manager_init_failure">Nie udało się załadować menedżera rozszerzeń z powodu problemu z systemem operacyjnym lub sprzętem. Tryby rozszerzeń są niedostępne. Spróbuj uruchomić ponownie urządzenie.</string>
-    <string name="unsupported_taking_picture_while_recording">Twoje urządzenie niestety nie obsługuje robienia zdjęć podczas nagrywania wideo</string>
+    <string name="unsupported_taking_picture_while_recording">Twoje urządzenie niestety nie obsługuje robienia zdjęć podczas nagrywania wideo z obecnymi ustawieniami</string>
     <string name="image_processing_pending">Poczekaj na przetworzenie ostatniego obrazu…</string>
     <string name="location_unavailable">Nie można dołączyć lokalizacji do obrazu, ponieważ jest ona obecnie niedostępna</string>
     <string name="existing_no_image">Nie znaleziono obrazu. Zamykam wbudowaną galerię.</string>
