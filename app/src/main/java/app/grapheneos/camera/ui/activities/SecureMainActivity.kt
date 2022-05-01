@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import app.grapheneos.camera.R
 
 class SecureMainActivity : MainActivity() {
 
@@ -27,8 +28,7 @@ class SecureMainActivity : MainActivity() {
 
         if (capturedFilePaths.isEmpty()) {
             showMessage(
-                "Please capture a photo/video before trying to view" +
-                        " them."
+                getString(R.string.no_image)
             )
             return
         }
@@ -51,7 +51,7 @@ class SecureMainActivity : MainActivity() {
             startActivity(intent)
         } else {
             showMessage(
-                "An unexpected error occurred while opening the gallery",
+                getString(R.string.unexpected_error_while_opening_gallery),
             )
         }
     }

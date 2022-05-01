@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class App : Application() {
-
     private var activity: MainActivity? = null
     private var location: Location? = null
 
@@ -22,6 +21,7 @@ class App : Application() {
     private val locationManager by lazy {
         getSystemService(LocationManager::class.java)!!
     }
+
     private val locationListener: LocationListener by lazy {
         object : LocationListener {
             override fun onLocationChanged(changedLocation: Location) {
@@ -156,5 +156,4 @@ class App : Application() {
         autoSleepTimer.cancel()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
-
 }

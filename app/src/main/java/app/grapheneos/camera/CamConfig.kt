@@ -19,6 +19,7 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import android.widget.FrameLayout
+import androidx.annotation.StringRes
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -108,8 +109,6 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GRID_TYPE_INDEX = 0
 
             const val ASPECT_RATIO = AspectRatio.RATIO_4_3
-
-            val VIDEO_QUALITY = Quality.FHD!!
 
             const val SELF_ILLUMINATION = false
 
@@ -327,14 +326,14 @@ class CamConfig(private val mActivity: MainActivity) {
             field = value
         }
 
-    var videoQuality: Quality? = SettingValues.Default.VIDEO_QUALITY
+    var videoQuality: Quality? = null
         get() {
             return if (modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.titleToQuality(
                     modePref.getString(videoQualityKey, "")!!
                 )
             } else {
-                SettingValues.Default.VIDEO_QUALITY
+                null
             }
         }
         set(value) {
@@ -768,6 +767,8 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    private fun getString(@StringRes id: Int) = mActivity.getString(id)
+
     fun setQRScanningFor(format: String, selected: Boolean) {
 
         val formatSRep = "${SettingValues.Key.SCAN}_$format"
@@ -786,8 +787,7 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             if (allowedFormats.size == 1) {
                 mActivity.showMessage(
-                    "Please ensure that at least one barcode is " +
-                            "selected in manual mode"
+                    getString(R.string.no_barcode_selected)
                 )
             } else {
                 allowedFormats.remove(BarcodeFormat.valueOf(format))
@@ -1082,7 +1082,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         } else {
             mActivity.showMessage(
-                "Flash is unavailable for the current mode."
+                getString(R.string.flash_unavailable_in_selected_mode)
             )
         }
     }
@@ -1114,10 +1114,10 @@ class CamConfig(private val mActivity: MainActivity) {
             // Else revert back to the old facing (while displaying an error message
             // to the user)
             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                mActivity.showMessage("Could not detect front camera. Please try again later!")
+                mActivity.showMessage(getString(R.string.front_camera_unavailable))
                 CameraSelector.LENS_FACING_FRONT
             } else {
-                mActivity.showMessage("Could not detect rear camera. Please try again later!")
+                mActivity.showMessage(getString(R.string.rear_camera_unavailable))
                 CameraSelector.LENS_FACING_BACK
             }
         }
@@ -1243,12 +1243,21 @@ class CamConfig(private val mActivity: MainActivity) {
                         View.VISIBLE
                     }
 
-                videoCapture =
-                    VideoCapture.withOutput(
-                        Recorder.Builder()
-                            .setQualitySelector(videoQuality!!.withFallbackIfUnsupported())
-                            .build()
-                    )
+                // QualitySelector fallback doesn't work correctly so we can only set a known
+                // supported quality configured via the setting previously
+                // https://issuetracker.google.com/issues/230651237
+                val videoQuality = videoQuality
+                if (videoQuality != null) {
+                    videoCapture =
+                        VideoCapture.withOutput(
+                            Recorder.Builder()
+                                .setQualitySelector(QualitySelector.from(videoQuality))
+                                .build()
+                        )
+                } else {
+                    videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+                }
+
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
@@ -1350,15 +1359,6 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.sensorNotifier?.forceUpdateGyro()
         } else {
             mActivity.gCircleFrame.visibility = View.GONE
-        }
-    }
-
-    // work around CameraX QualitySelector bug
-    private fun Quality.withFallbackIfUnsupported(): QualitySelector {
-        return if (QualitySelector.isQualitySupported(camera!!.cameraInfo, this)) {
-            QualitySelector.from(this)
-        } else {
-            QualitySelector.from(this, FallbackStrategy.higherQualityOrLowerThan(this))
         }
     }
 
@@ -1646,8 +1646,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 } else if (format in allowedFormats) {
                     if (allowedFormats.size == 1) {
                         mActivity.showMessage(
-                            "Please ensure that at least one barcode is " +
-                                    "selected in manual mode"
+                            getString(R.string.no_barcode_selected)
                         )
                     } else {
                         allowedFormats.remove(format)
@@ -1665,7 +1664,7 @@ class CamConfig(private val mActivity: MainActivity) {
             qrAnalyzer?.refreshHints()
         }
 
-        builder.setNegativeButton("Cancel", null)
+        builder.setNegativeButton(R.string.cancel, null)
 
         // Create and show the alert dialog
         val dialog = builder.create()
@@ -1685,10 +1684,10 @@ class CamConfig(private val mActivity: MainActivity) {
         camConfig.storageLocation = ""
 
         val builder = AlertDialog.Builder(mActivity)
-        builder.setTitle("Storage location not found")
-        builder.setMessage("Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).")
-        builder.setPositiveButton("Ok", null)
-        builder.setNeutralButton("More Settings") { _, _ ->
+        builder.setTitle(R.string.folder_not_found)
+        builder.setMessage(R.string.reverting_to_default_folder)
+        builder.setPositiveButton(R.string.ok, null)
+        builder.setNeutralButton(R.string.more_settings) { _, _ ->
             mActivity.settingsDialog.openMoreSettings()
         }
         val alertDialog: AlertDialog = builder.create()

@@ -116,7 +116,7 @@ open class CaptureActivity : MainActivity() {
     fun takePicture() {
 
         showMessage(
-            "Capturing Image..."
+            getString(R.string.capturing_image)
         )
 
         previewLoader.visibility = View.VISIBLE
@@ -128,7 +128,7 @@ open class CaptureActivity : MainActivity() {
                     bitmap = imageProxyToBitmap(image, image.imageInfo.rotationDegrees.toFloat())
                     showPreview()
                     previewLoader.visibility = View.GONE
-                    showMessage("Image captured successfully")
+                    showMessage(getString(R.string.image_captured_successfully))
 
                     image.close()
                 }
@@ -137,7 +137,7 @@ open class CaptureActivity : MainActivity() {
                     super.onError(exception)
                     exception.printStackTrace()
                     showMessage(
-                        "Unable to capture image"
+                        getString(R.string.unable_to_capture_image)
                     )
 
                     finishActivity(RESULT_CANCELED)
