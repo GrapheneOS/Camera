@@ -90,5 +90,5 @@ dependencies {
     implementation("androidx.camera:camera-view:1.1.0-beta03")
     implementation("androidx.camera:camera-extensions:1.1.0-beta03")
 
-    implementation("com.google.zxing:core:3.4.1")
+    implementation("com.google.zxing:core:3.5.0")
 }
