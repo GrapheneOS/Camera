@@ -5,9 +5,9 @@
 
     <size
         android:width="32dp"
-        android:height="32dp" />
+        android:height="32dp"/>
 
     <corners android:radius="16dp"/>
 
-    <solid android:color="#ff0000" />
+    <solid android:color="#ff0000"/>
 </shape>

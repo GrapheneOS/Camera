@@ -11,7 +11,7 @@
         android:pivotX="50%"
         android:pivotY="0%"
         android:toXScale="0.0"
-        android:toYScale="0.0" />
+        android:toYScale="0.0"/>
 
     <translate
         android:duration="@android:integer/config_shortAnimTime"

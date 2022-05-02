@@ -12,5 +12,5 @@
     </item>
     <item
         android:gravity="center"
-        android:drawable="@drawable/flash_on" />
+        android:drawable="@drawable/flash_on"/>
 </layer-list>

@@ -3,16 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="app.grapheneos.camera">
 
-    <uses-feature android:name="android.hardware.camera.any" />
+    <uses-feature android:name="android.hardware.camera.any"/>
 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
 
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
 
 
@@ -40,9 +40,9 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
         </activity>
@@ -55,8 +55,8 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.media.action.STILL_IMAGE_CAMERA"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
         </activity-alias>
@@ -75,8 +75,8 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
         </activity>
@@ -94,8 +94,8 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.media.action.VIDEO_CAMERA" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.media.action.VIDEO_CAMERA"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
         </activity>
@@ -114,8 +114,8 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.media.action.IMAGE_CAPTURE" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.media.action.IMAGE_CAPTURE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
         </activity>
@@ -136,8 +136,8 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.media.action.IMAGE_CAPTURE_SECURE" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.media.action.IMAGE_CAPTURE_SECURE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
         </activity>
@@ -156,8 +156,8 @@
             android:exported="true">
 
             <intent-filter>
-                <action android:name="android.media.action.VIDEO_CAPTURE" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.media.action.VIDEO_CAPTURE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
 
         </activity>
@@ -167,21 +167,21 @@
             android:theme="@style/OverlayActionBar"
             android:taskAffinity=".ui.activities.VideoPlayer"
             android:excludeFromRecents="true"
-            android:exported="false" />
+            android:exported="false"/>
 
         <activity
             android:name=".ui.activities.InAppGallery"
             android:theme="@style/OverlayActionBar"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
-            android:exported="false" />
+            android:exported="false"/>
 
         <activity
             android:name=".ui.activities.MoreSettings"
             android:theme="@style/OverlayActionBar"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
-            android:exported="false" />
+            android:exported="false"/>
 
     </application>
 

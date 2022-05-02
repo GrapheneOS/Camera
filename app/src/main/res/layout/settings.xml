@@ -73,7 +73,7 @@
                         android:scaleType="centerCrop"
                         android:background="@drawable/aspect_ratio"
                         android:text="@string/aspect_ratio"
-                        tools:ignore="SpUsage" />
+                        tools:ignore="SpUsage"/>
 
                 </FrameLayout>
 
@@ -107,7 +107,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/toggle_button_size"
                         android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/toggle_flash" />
+                        android:contentDescription="@string/toggle_flash"/>
 
                 </FrameLayout>
 
@@ -122,7 +122,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/toggle_button_size"
                         android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/grid_toggle" />
+                        android:contentDescription="@string/grid_toggle"/>
 
                 </FrameLayout>
 
@@ -160,7 +160,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/self_illumination" />
+                            android:text="@string/self_illumination"/>
 
                         <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/self_illumination_switch"
@@ -184,7 +184,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/video_quality" />
+                            android:text="@string/video_quality"/>
 
                         <FrameLayout
                             android:layout_height="wrap_content"
@@ -199,7 +199,7 @@
                                 android:checked="true"
                                 android:padding="0dp"
                                 android:layout_margin="0dp"
-                                android:layout_gravity="end" />
+                                android:layout_gravity="end"/>
 
                         </FrameLayout>
                     </LinearLayout>
@@ -216,7 +216,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/include_audio" />
+                            android:text="@string/include_audio"/>
 
                         <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/include_audio_switch"
@@ -238,7 +238,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/camera_sounds" />
+                            android:text="@string/camera_sounds"/>
 
                         <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/camera_sounds_switch"
@@ -262,7 +262,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical|start"
-                            android:text="@string/optimize_for" />
+                            android:text="@string/optimize_for"/>
 
                         <RadioGroup
                             android:id="@+id/cm_radio_group"
@@ -278,7 +278,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/quality"
-                                android:checked="true" />
+                                android:checked="true"/>
 
                             <View
                                 android:layout_width="6dp"
@@ -289,7 +289,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/latency"
-                                android:checked="false" />
+                                android:checked="false"/>
 
                         </RadioGroup>
 
@@ -308,7 +308,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/focus_timeout" />
+                            android:text="@string/focus_timeout"/>
 
                         <FrameLayout
                             android:layout_height="wrap_content"
@@ -324,7 +324,7 @@
                                 android:checked="true"
                                 android:padding="0dp"
                                 android:layout_margin="0dp"
-                                android:layout_gravity="end" />
+                                android:layout_gravity="end"/>
 
                         </FrameLayout>
                     </LinearLayout>
@@ -342,7 +342,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/timer" />
+                            android:text="@string/timer"/>
 
                         <FrameLayout
                             android:layout_height="wrap_content"
@@ -358,7 +358,7 @@
                                 android:checked="true"
                                 android:padding="0dp"
                                 android:layout_margin="0dp"
-                                android:layout_gravity="end" />
+                                android:layout_gravity="end"/>
 
                         </FrameLayout>
                     </LinearLayout>
@@ -382,7 +382,7 @@
             android:layout_marginTop="8dp"
             android:paddingHorizontal="18dp"
             android:paddingVertical="10dp"
-            android:text="@string/more_settings" />
+            android:text="@string/more_settings"/>
 
     </RelativeLayout>
 

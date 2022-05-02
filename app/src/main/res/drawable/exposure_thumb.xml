@@ -6,13 +6,13 @@
             <item>
                 <shape
                     android:shape="oval">
-                    <solid android:color="#fff" />
+                    <solid android:color="#fff"/>
                     <stroke
                         android:color="#808080"
-                        android:width="0.6dp" />
+                        android:width="0.6dp"/>
                     <size
                         android:height="32dp"
-                        android:width="32dp" />
+                        android:width="32dp"/>
                 </shape>
             </item>
             <item
@@ -25,7 +25,7 @@
                     android:width="24dp"
                     android:fromDegrees="90"
                     android:toDegrees="90"
-                    android:gravity="center" />
+                    android:gravity="center"/>
             </item>
         </layer-list>
     </item>

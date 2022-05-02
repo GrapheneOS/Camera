@@ -23,7 +23,7 @@
             android:layout_marginStart="68dp"
             android:layout_marginVertical="12dp"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"/>
 
         <LinearLayout
             android:id="@+id/gyroscope_setting"
@@ -36,7 +36,7 @@
             android:paddingTop="8dp"
             android:paddingBottom="10dp"
             android:paddingStart="10dp"
-            android:paddingEnd="6dp" >
+            android:paddingEnd="6dp">
 
             <ImageView
                 android:id="@+id/gyroscope_setting_icon"
@@ -45,7 +45,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/save_image_as_previewed"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -62,7 +62,7 @@
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <TextView
                     android:id="@+id/gyroscope_setting_description"
@@ -71,7 +71,7 @@
                     android:text="@string/gyroscope_setting_desc"
                     android:paddingStart="10dp"
                     android:textSize="14sp"
-                    tools:ignore="RtlSymmetry" />
+                    tools:ignore="RtlSymmetry"/>
 
             </LinearLayout>
 
@@ -80,7 +80,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="0dp" />
+                android:layout_marginEnd="0dp"/>
 
         </LinearLayout>
 
@@ -92,7 +92,7 @@
             android:layout_marginStart="68dp"
             android:layout_marginVertical="12dp"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"/>
 
         <LinearLayout
             android:id="@+id/save_image_as_preview_setting"
@@ -105,7 +105,7 @@
             android:paddingStart="10dp"
             android:paddingEnd="6dp"
             android:clickable="true"
-            android:focusable="true" >
+            android:focusable="true">
 
             <ImageView
                 android:id="@+id/save_image_as_preview_icon"
@@ -114,7 +114,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/save_image_as_previewed"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -131,7 +131,7 @@
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <TextView
                     android:id="@+id/save_image_as_preview_subtitle"
@@ -140,7 +140,7 @@
                     android:text="@string/save_as_image_preview_desc"
                     android:paddingStart="10dp"
                     android:textSize="14sp"
-                    tools:ignore="RtlSymmetry" />
+                    tools:ignore="RtlSymmetry"/>
 
             </LinearLayout>
 
@@ -149,7 +149,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="0dp" />
+                android:layout_marginEnd="0dp"/>
 
         </LinearLayout>
 
@@ -173,7 +173,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/image_quality"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -190,7 +190,7 @@
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <TextView
                     android:id="@+id/photo_quality_subtitle"
@@ -199,7 +199,7 @@
                     android:text="@string/image_quality_desc"
                     android:paddingStart="10dp"
                     android:textSize="14sp"
-                    tools:ignore="RtlSymmetry" />
+                    tools:ignore="RtlSymmetry"/>
 
             </LinearLayout>
 
@@ -216,7 +216,7 @@
                     android:src="@drawable/remove"
                     android:background="?selectableItemBackgroundBorderless"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/decrease_quality" />
+                    android:contentDescription="@string/decrease_quality"/>
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_height="match_parent"
@@ -240,7 +240,7 @@
                         android:layout_gravity="center"
                         android:importantForAutofill="no"
                         android:inputType="number"
-                        android:imeOptions="actionDone" />
+                        android:imeOptions="actionDone"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -251,7 +251,7 @@
                     android:textSize="16sp"
                     android:paddingTop="16dp"
                     android:layout_gravity="center"
-                    android:layout_marginEnd="4dp" />
+                    android:layout_marginEnd="4dp"/>
 
                 <ImageView
                     android:id="@+id/increase_photo_quality"
@@ -261,7 +261,7 @@
                     android:src="@drawable/add"
                     android:background="?selectableItemBackgroundBorderless"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/increase_quality" />
+                    android:contentDescription="@string/increase_quality"/>
 
             </LinearLayout>
 
@@ -278,7 +278,7 @@
             android:paddingStart="10dp"
             android:paddingEnd="6dp"
             android:clickable="true"
-            android:focusable="true" >
+            android:focusable="true">
 
             <ImageView
                 android:id="@+id/remove_exif_icon"
@@ -287,7 +287,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/save_image_as_previewed"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -304,7 +304,7 @@
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <TextView
                     android:id="@+id/remove_exif_subtitle"
@@ -313,7 +313,7 @@
                     android:text="@string/remove_exif_subtitle"
                     android:paddingStart="10dp"
                     android:textSize="14sp"
-                    tools:ignore="RtlSymmetry" />
+                    tools:ignore="RtlSymmetry"/>
 
             </LinearLayout>
 
@@ -322,7 +322,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="0dp" />
+                android:layout_marginEnd="0dp"/>
 
         </LinearLayout>
 
@@ -334,7 +334,7 @@
             android:layout_marginStart="68dp"
             android:layout_marginVertical="12dp"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"/>
 
         <LinearLayout
             android:id="@+id/storage_location_setting"
@@ -347,7 +347,7 @@
             android:paddingTop="8dp"
             android:paddingBottom="10dp"
             android:paddingStart="10dp"
-            android:paddingEnd="6dp" >
+            android:paddingEnd="6dp">
 
             <ImageView
                 android:id="@+id/storage_location_icon"
@@ -356,7 +356,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/save_image_as_previewed"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -372,7 +372,7 @@
                     android:text="@string/storage_location"
                     android:layout_marginStart="10dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -393,7 +393,7 @@
                         android:drawableStart="@drawable/folder"
                         android:drawablePadding="6dp"
                         android:importantForAutofill="no"
-                        android:inputType="textNoSuggestions" />
+                        android:inputType="textNoSuggestions"/>
 
                     <ImageButton
                         android:id="@+id/refresh_storage_location"
@@ -421,7 +421,7 @@
             android:paddingEnd="6dp"
             android:clickable="true"
             android:focusable="true"
-            android:visibility="gone" >
+            android:visibility="gone">
 
             <ImageView
                 android:id="@+id/image_format_setting_icon"
@@ -430,7 +430,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/image_file_name_format"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -447,7 +447,7 @@
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <AutoCompleteTextView
                     android:id="@+id/image_format_setting_field"
@@ -460,7 +460,7 @@
                     android:paddingEnd="0dp"
                     android:textSize="14sp"
                     android:imeOptions="actionDone"
-                    tools:ignore="LabelFor" />
+                    tools:ignore="LabelFor"/>
 
             </LinearLayout>
 
@@ -478,7 +478,7 @@
             android:paddingEnd="6dp"
             android:clickable="true"
             android:focusable="true"
-            android:visibility="gone" >
+            android:visibility="gone">
 
             <ImageView
                 android:id="@+id/video_format_setting_icon"
@@ -487,7 +487,7 @@
                 android:layout_height="48dp"
                 android:contentDescription="@string/video_file_name_format"
                 android:paddingStart="4dp"
-                android:paddingEnd="8dp" />
+                android:paddingEnd="8dp"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -504,7 +504,7 @@
                     android:layout_marginStart="10dp"
                     android:paddingBottom="2dp"
                     android:textColor="?android:textColorPrimary"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"/>
 
                 <AutoCompleteTextView
                     android:id="@+id/video_format_setting_field"
@@ -517,7 +517,7 @@
                     android:paddingEnd="0dp"
                     android:textSize="14sp"
                     android:imeOptions="actionDone"
-                    tools:ignore="LabelFor" />
+                    tools:ignore="LabelFor"/>
 
             </LinearLayout>
         </LinearLayout>

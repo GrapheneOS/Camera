@@ -14,7 +14,7 @@
             </item>
             <item
                 android:gravity="center"
-                android:drawable="@drawable/torch_off" />
+                android:drawable="@drawable/torch_off"/>
         </layer-list>
     </item>
     <item android:state_checked="true">
@@ -31,7 +31,7 @@
             </item>
             <item
                 android:gravity="center"
-                android:drawable="@drawable/torch_on" />
+                android:drawable="@drawable/torch_on"/>
         </layer-list>
     </item>
 </selector>

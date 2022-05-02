@@ -13,7 +13,7 @@
                 </shape>
             </item>
             <item
-                android:drawable="@drawable/location_off" />
+                android:drawable="@drawable/location_off"/>
         </layer-list>
     </item>
     <item android:state_checked="true">
@@ -29,7 +29,7 @@
                 </shape>
             </item>
             <item
-                android:drawable="@drawable/location_on" />
+                android:drawable="@drawable/location_on"/>
         </layer-list>
     </item>
 </selector>

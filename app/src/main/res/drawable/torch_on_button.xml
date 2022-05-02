@@ -19,6 +19,6 @@
         android:drawable="@drawable/torch_on"
         android:gravity="center"
         android:height="36dp"
-        android:width="36dp" />
+        android:width="36dp"/>
 
 </layer-list>

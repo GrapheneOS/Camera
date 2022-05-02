@@ -4,12 +4,12 @@
         <shape android:shape="rectangle">
             <size
                 android:height="12dp"
-                android:width="28dp" />
+                android:width="28dp"/>
             <padding
                 android:left="8dp"
                 android:right="8dp"/>
-            <solid android:color="@color/selected_option_bg" />
-            <corners android:radius="100dp" />
+            <solid android:color="@color/selected_option_bg"/>
+            <corners android:radius="100dp"/>
         </shape>
     </item>
     <item android:drawable="@drawable/dropdown"/>

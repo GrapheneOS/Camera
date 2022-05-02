@@ -12,5 +12,5 @@
     </item>
     <item
         android:gravity="center"
-        android:drawable="@drawable/grid_3x3" />
+        android:drawable="@drawable/grid_3x3"/>
 </layer-list>

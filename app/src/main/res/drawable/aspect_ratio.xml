@@ -6,6 +6,6 @@
     <solid android:color="@color/selected_option_bg"/>
     <size
         android:height="@dimen/toggle_button_size"
-        android:width="@dimen/toggle_button_size" />
+        android:width="@dimen/toggle_button_size"/>
 
 </shape>

@@ -5,12 +5,12 @@
 
     <size
         android:width="48dp"
-        android:height="48dp" />
+        android:height="48dp"/>
 
-    <solid android:color="@android:color/transparent" />
+    <solid android:color="@android:color/transparent"/>
 
     <stroke
         android:width="2dp"
-        android:color="@color/white" />
+        android:color="@color/white"/>
 
 </shape>

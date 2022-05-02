@@ -13,13 +13,13 @@
           android:bottom="2dp"
           android:left="2dp"
           android:right="2dp"
-          android:top="2dp" />
+          android:top="2dp"/>
 
     </shape>
 
   </item>
 
   <item
-      android:drawable="@drawable/more_options_raw" />
+      android:drawable="@drawable/more_options_raw"/>
 
 </layer-list>

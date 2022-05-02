@@ -12,5 +12,5 @@
     </item>
     <item
         android:gravity="center"
-        android:drawable="@drawable/grid_goldenratio" />
+        android:drawable="@drawable/grid_goldenratio"/>
 </layer-list>

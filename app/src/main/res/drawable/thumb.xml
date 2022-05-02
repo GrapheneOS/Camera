@@ -4,13 +4,13 @@
     <item>
         <shape
             android:shape="oval">
-            <solid android:color="#fff" />
+            <solid android:color="#fff"/>
             <stroke
                 android:color="#808080"
-                android:width="0.6dp" />
+                android:width="0.6dp"/>
             <size
                 android:height="32dp"
-                android:width="32dp" />
+                android:width="32dp"/>
         </shape>
     </item>
 </selector>

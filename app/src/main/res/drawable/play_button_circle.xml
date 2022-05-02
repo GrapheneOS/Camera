@@ -15,5 +15,5 @@
     </item>
     <item
         android:gravity="center"
-        android:drawable="@drawable/play" />
+        android:drawable="@drawable/play"/>
 </layer-list>
