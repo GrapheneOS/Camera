@@ -103,11 +103,6 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
                 }
             } catch (e: ReaderException) {
             }
-        } catch (e: ArrayIndexOutOfBoundsException) {
-            // MaxiCode bug which should be fixed by
-            // https://github.com/zxing/zxing/commit/6dd0776b961f8471c8cd9df7b49d6652c4629175 at
-            // which point this workaround can be removed.
-            Log.e(TAG, "zxing ArrayIndexOutOfBoundsException bug", e)
         }
 
         // Compute the FPS of the entire pipeline
