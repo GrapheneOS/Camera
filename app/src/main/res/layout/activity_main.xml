@@ -235,6 +235,7 @@
                     android:layout_gravity="center"
                     android:textSize="28dp"
                     android:textStyle="bold"
+                    android:textColor="#333"
                     tools:ignore="SpUsage"/>
 
                 <ImageView
