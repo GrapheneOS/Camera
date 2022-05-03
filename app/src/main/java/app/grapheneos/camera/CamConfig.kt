@@ -1584,7 +1584,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-        mActivity.cbText.visibility = if (isVideoMode || mActivity.timerDuration == 0) {
+        mActivity.cbText.visibility = if (isQRMode || isVideoMode || mActivity.timerDuration == 0) {
             View.INVISIBLE
         } else {
             View.VISIBLE
