@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.camera.core.impl.utils;
+package androidxc.camera.core.impl.utils;
 
+import android.annotation.SuppressLint;
 import android.location.Location;
 
 import androidx.annotation.NonNull;
@@ -23,7 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Logger;
-import androidx.exifinterface.media.ExifInterface;
+import androidxc.exifinterface.media.ExifInterface;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -43,6 +44,7 @@ import java.util.Locale;
  *
  * <p>Call {@link #save()} to persist changes to disc.
  */
+@SuppressLint("RestrictedApi")
 @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Exif {
 
