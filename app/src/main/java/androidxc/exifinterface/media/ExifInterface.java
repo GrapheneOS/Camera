@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package androidx.exifinterface.media;
+package androidxc.exifinterface.media;
 
-import static androidx.exifinterface.media.ExifInterfaceUtils.byteArrayToHexString;
-import static androidx.exifinterface.media.ExifInterfaceUtils.closeFileDescriptor;
-import static androidx.exifinterface.media.ExifInterfaceUtils.closeQuietly;
-import static androidx.exifinterface.media.ExifInterfaceUtils.convertToLongArray;
-import static androidx.exifinterface.media.ExifInterfaceUtils.copy;
-import static androidx.exifinterface.media.ExifInterfaceUtils.parseSubSeconds;
-import static androidx.exifinterface.media.ExifInterfaceUtils.startsWith;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.byteArrayToHexString;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.closeFileDescriptor;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.closeQuietly;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.convertToLongArray;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.copy;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.parseSubSeconds;
+import static androidxc.exifinterface.media.ExifInterfaceUtils.startsWith;
 
 import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
@@ -40,8 +40,8 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.exifinterface.media.ExifInterfaceUtils.Api21Impl;
-import androidx.exifinterface.media.ExifInterfaceUtils.Api23Impl;
+import androidxc.exifinterface.media.ExifInterfaceUtils.Api21Impl;
+import androidxc.exifinterface.media.ExifInterfaceUtils.Api23Impl;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
