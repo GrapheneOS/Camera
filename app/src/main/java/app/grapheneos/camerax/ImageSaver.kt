@@ -39,8 +39,7 @@ class ImageSaver(
 
     override fun run() {
         mSequentialIoExecutor.execute {
-            val savedUri: Uri? = saveImageToFile()
-            postSuccess(savedUri)
+            saveImageToFile()
         }
     }
 
