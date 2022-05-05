@@ -24,8 +24,6 @@ import app.grapheneos.camerax.OutputFileOptions
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
-import app.grapheneos.camera.clearExif
-import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
@@ -92,12 +90,10 @@ class ImageCapturer(private val mActivity: MainActivity) {
                     fileName
                 )!!
 
-                val oStream = mActivity.contentResolver
-                    .openOutputStream(child.uri)!!
-
+                val contentResolver = mActivity.contentResolver
                 camConfig.addToGallery(child.uri)
 
-                return OutputFileOptions.OutputFileOptionsOutputStream(oStream)
+                return OutputFileOptions.OutputFileOptionsOutputStream(contentResolver, child.uri)
             } catch (exception: NullPointerException) {
                 throw FileNotFoundException("The default storage location seems to have been deleted.")
             }
@@ -157,11 +153,6 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
                     if (mActivity is SecureMainActivity) {
                         mActivity.capturedFilePaths.add(0, camConfig.latestUri.toString())
-                    }
-
-                    camConfig.latestUri?.let {
-                        fixExif(mActivity, it)
-                        clearExif(mActivity, it)
                     }
 
                     mActivity.runOnUiThread {

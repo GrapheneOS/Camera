@@ -1,7 +1,5 @@
 package app.grapheneos.camera
 
-import android.content.Context
-import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import java.util.TimeZone
@@ -166,15 +164,7 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_SUBFILE_TYPE,
 )
 
-fun fixExif(context: Context, uri: Uri) {
-
-    val inStream = context.contentResolver.openFileDescriptor(
-        uri,
-        "rw"
-    )!!
-
-    val exifInterface = ExifInterface(inStream.fileDescriptor)
-
+fun ExifInterface.fixExif(): ExifInterface {
     val now = Date()
 
     val millis = TimeZone.getDefault().getOffset(now.time)
@@ -188,41 +178,26 @@ fun fixExif(context: Context, uri: Uri) {
         hoursStrRep = "+${hoursStrRep}"
 
     val mins = (totalMins % 60).toString().padEnd(2, '0')
-
     val offsetTime = "$hoursStrRep:$mins"
 
-    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
-    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
+    setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
+    setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
 //    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
     val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(now)
 
-    exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
-    exifInterface.setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
-
-    exifInterface.saveAttributes()
-
-    inStream.close()
+    setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
+    setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
+    return this
 }
 
-fun clearExif(context: Context, uri: Uri) {
-
-    if (!camConfig.removeExifAfterCapture) return
-
-    val inStream = context.contentResolver.openFileDescriptor(
-        uri,
-        "rw"
-    )!!
-
-    val exifInterface = ExifInterface(inStream.fileDescriptor)
+fun ExifInterface.clearExif(): ExifInterface {
+    if (!camConfig.removeExifAfterCapture) return this
 
     for (exifTag in exifAttributes) {
-        exifInterface.removeAttribute(exifTag)
+        removeAttribute(exifTag)
     }
-
-    exifInterface.saveAttributes()
-
-    inStream.close()
+    return this
 }
 
 // TODO: (Re-)use this code later to implement custom EXIF removal setting

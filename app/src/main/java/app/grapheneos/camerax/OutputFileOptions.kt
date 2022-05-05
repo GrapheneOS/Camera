@@ -2,6 +2,7 @@ package app.grapheneos.camerax
 
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.res.AssetFileDescriptor
 import android.net.Uri
 import androidx.camera.core.ImageCapture
 import java.io.OutputStream
@@ -18,7 +19,8 @@ sealed class OutputFileOptions(
     ) : OutputFileOptions(metadata)
 
     data class OutputFileOptionsOutputStream(
-        val outputStream: OutputStream,
+        val contentResolver: ContentResolver,
+        val uri: Uri,
         override var metadata: ImageCapture.Metadata = ImageCapture.Metadata()
     ) : OutputFileOptions(metadata)
 
