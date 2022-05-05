@@ -14,10 +14,11 @@ import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.utils.ImageUtil
 import androidx.camera.core.internal.utils.ImageUtil.CodecFailedException
 import androidx.camera.core.internal.utils.ImageUtil.CodecFailedException.FailureType
+import androidx.exifinterface.media.ExifInterface
+import app.grapheneos.camera.clearExif
+import app.grapheneos.camera.fixExif
 import app.grapheneos.camerax.OutputFileOptions.OutputFileOptionsMediaStore
-import app.grapheneos.camerax.OutputFileOptions.OutputFileOptionsOutputStream
 import java.io.IOException
-import java.io.OutputStream
 import java.io.UnsupportedEncodingException
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
@@ -51,18 +52,14 @@ class ImageSaver(
                 is OutputFileOptionsMediaStore -> {
                     val (contentResolver, saveCollection, values) = mOutputFileOptions
                     setContentValuePending(values, pending)
-                    val outputUri = contentResolver.insert(
-                        saveCollection,
-                        values
-                    )
-                    val output: OutputStream = contentResolver.openOutputStream(outputUri!!)!!
-                    saveException = output.writeImageAndExif()
+                    val outputUri = contentResolver.insert(saveCollection, values)!!
+                    saveException = writeImageAndExif(contentResolver, outputUri)
                     setUriNotPending(outputUri, contentResolver)
                     uri = outputUri
                 }
-                is OutputFileOptionsOutputStream -> {
-                    val (outputStream) = mOutputFileOptions
-                    saveException = outputStream.writeImageAndExif()
+                is OutputFileOptions.OutputFileOptionsOutputStream -> {
+                    val (contentResolver, outputUri) = mOutputFileOptions
+                    saveException = writeImageAndExif(contentResolver, outputUri)
                 }
             }
         } catch (e: IOException) {
@@ -96,33 +93,38 @@ class ImageSaver(
         val exception: Exception? = null,
     )
 
-    private fun OutputStream.writeImageAndExif(): SaveException? {
+    private fun writeImageAndExif(
+        contentResolver: ContentResolver, uri: Uri
+    ): SaveException? {
         var saveException: SaveException? = null
         try {
-            val bytes = imageToJpegByteArray(mImage, mJpegQuality)
-            write(bytes)
-
-            // Create new exif based on the original exif.
-            val exif = Exif.createFromImageProxy(mImage)
-            Exif.createFromImageProxy(mImage).copyToCroppedImage(exif)
-
-            // Overwrite the original orientation if the quirk exists.
-            if (!ExifRotationAvailability().shouldUseExifOrientation(mImage)) {
-                exif.rotate(mOrientation)
-            }
-
-            // Overwrite exif based on metadata.
             val metadata = mOutputFileOptions.metadata
-            if (metadata.isReversedHorizontal) {
-                exif.flipHorizontally()
+            contentResolver.openOutputStream(uri)?.use { os ->
+                val bytes = imageToJpegByteArray(mImage, mJpegQuality)
+                os.write(bytes)
             }
-            if (metadata.isReversedVertical) {
-                exif.flipVertically()
-            }
-            if (metadata.location != null) {
-                exif.attachLocation(metadata.location!!)
-            }
-            exif.save()
+
+            contentResolver.openAssetFileDescriptor(uri, "rw")?.createInputStream()
+                ?.use { inputStream ->
+                    val exifSavedImage = Exif.createFromInputStream(inputStream)
+                    val exifCapturedImage = Exif.createFromImageProxy(mImage)
+                    exifCapturedImage.copyToCroppedImage(exifSavedImage)
+
+                    metadata.location?.let { exifSavedImage.attachLocation(it) }
+                    if (metadata.isReversedHorizontal) {
+                        exifSavedImage.flipHorizontally()
+                    }
+                    if (metadata.isReversedVertical) {
+                        exifSavedImage.flipVertically()
+                    }
+                    if (!ExifRotationAvailability().shouldUseExifOrientation(mImage)) {
+                        exifSavedImage.rotate(mOrientation)
+                    }
+                    exifSavedImage.save()
+                }
+            contentResolver.openAssetFileDescriptor(uri, "rw")?.createInputStream()?.use {
+                    ExifInterface(it).fixExif().clearExif().saveAttributes()
+                }
         } catch (e: IOException) {
             saveException = SaveException(
                 SaveError.FILE_IO_FAILED,
