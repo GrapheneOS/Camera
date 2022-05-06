@@ -43,7 +43,7 @@ import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 
-class SettingsDialog(mActivity: MainActivity) :
+class SettingsDialog(val mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
 
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
@@ -53,7 +53,6 @@ class SettingsDialog(mActivity: MainActivity) :
     private var aRToggle: ToggleButton
     var torchToggle: ToggleButton
     private var gridToggle: ImageView
-    private var mActivity: MainActivity
     var videoQualitySpinner: Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
     private var focusTimeoutSpinner: Spinner
@@ -107,8 +106,6 @@ class SettingsDialog(mActivity: MainActivity) :
         setOnDismissListener {
             mActivity.settingsIcon.visibility = View.VISIBLE
         }
-
-        this.mActivity = mActivity
 
         val background: View = binding.background
         background.setOnClickListener {
