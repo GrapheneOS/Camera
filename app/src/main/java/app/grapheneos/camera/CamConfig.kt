@@ -180,7 +180,7 @@ class CamConfig(private val mActivity: MainActivity) {
         const val COMMON_SP_NAME = "commons"
 
         @JvmStatic
-        @Throws(Throwable::class)
+        @Throws(Exception::class)
         fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap {
 
             val mBitmap: Bitmap
@@ -1034,8 +1034,8 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.imagePreview.setImageBitmap(
                     getVideoThumbnail(mActivity, latestUri)
                 )
-            } catch (throwable: Throwable) {
-                throwable.printStackTrace()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         } else {
             mActivity.imagePreview.setImageBitmap(null)
