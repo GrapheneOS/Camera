@@ -20,7 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
-import androidx.exifinterface.media.ExifInterface
+import androidxc.exifinterface.media.ExifInterface
 import androidx.viewpager2.widget.ViewPager2
 import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
@@ -216,23 +216,16 @@ class InAppGallery : AppCompatActivity() {
             .setTitle(R.string.delete_title)
             .setMessage(R.string.delete_description)
             .setPositiveButton(R.string.delete) { _, _ ->
+                var res = false
 
-                val res: Boolean
-
-                if (mediaUri.authority == "media") {
-
-                    res = contentResolver.delete(
-                        mediaUri,
-                        null,
-                        null
-                    ) == 1
-
+                if (mediaUri.authority == MediaStore.AUTHORITY) {
+                    try {
+                        res = contentResolver.delete(mediaUri, null, null) == 1
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 } else {
-                    val doc = DocumentFile.fromSingleUri(
-                        this,
-                        mediaUri
-                    )!!
-
+                    val doc = DocumentFile.fromSingleUri(this, mediaUri)!!
                     res = doc.delete()
                 }
 
@@ -244,7 +237,8 @@ class InAppGallery : AppCompatActivity() {
                     showMessage(getString(R.string.deleting_unexpected_error))
                 }
             }
-            .setNegativeButton(R.string.cancel, null).show()
+            .setNegativeButton(R.string.cancel, null)
+            .show()
 
     }
 
