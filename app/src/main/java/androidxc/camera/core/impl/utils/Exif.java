@@ -890,5 +890,9 @@ public final class Exif {
                 ExifInterface.TAG_NEW_SUBFILE_TYPE,
                 ExifInterface.TAG_SUBFILE_TYPE);
     }
+
+    public ExifInterface getExifInterface() {
+        return mExifInterface;
+    }
 }
 
