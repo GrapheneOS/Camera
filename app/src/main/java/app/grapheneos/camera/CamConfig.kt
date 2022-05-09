@@ -6,6 +6,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -48,6 +49,7 @@ import app.grapheneos.camera.ui.activities.SecureCaptureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.util.ImageResizer
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
@@ -1038,8 +1040,16 @@ class CamConfig(private val mActivity: MainActivity) {
                 e.printStackTrace()
             }
         } else {
-            mActivity.imagePreview.setImageBitmap(null)
-            mActivity.imagePreview.setImageURI(latestUri)
+            val preview = mActivity.imagePreview
+            val side = preview.layoutParams.width
+
+            try {
+                val source = ImageDecoder.createSource(mActivity.contentResolver, uri)
+                val bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+                preview.setImageBitmap(bitmap)
+            } catch (e: Exception) {
+                Log.d(TAG, "unable to update preview", e)
+            }
         }
     }
 
