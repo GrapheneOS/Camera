@@ -4578,8 +4578,7 @@ public class ExifInterface {
 
             // Check file type
             if (!mIsExifDataOnly) {
-                in = new BufferedInputStream(in, SIGNATURE_CHECK_SIZE);
-                mMimeType = getMimeType((BufferedInputStream) in);
+                mMimeType = getMimeType(in);
             }
 
             if (shouldSupportSeek(mMimeType)) {
@@ -4782,6 +4781,40 @@ public class ExifInterface {
             if (!shouldKeepTempFile) {
                 tempFile.delete();
             }
+        }
+
+        // Discard the thumbnail in memory
+        mThumbnailBytes = null;
+    }
+
+    public void saveAttributes(InputStream original, OutputStream out) throws IOException {
+        if (!isSupportedFormatForSavingAttributes(mMimeType)) {
+            throw new IOException("ExifInterface only supports saving attributes for JPEG, PNG, "
+                    + "WebP, and DNG formats.");
+        }
+
+        if (mHasThumbnail && mHasThumbnailStrips && !mAreThumbnailStripsConsecutive) {
+            throw new IOException("ExifInterface does not support saving attributes when the image "
+                    + "file has non-consecutive thumbnail strips");
+        }
+
+        // Remember the fact that we've changed the file on disk from what was
+        // originally parsed, meaning we can't answer range questions
+        mModified = true;
+
+        // Keep the thumbnail in memory
+        mThumbnailBytes = getThumbnail();
+
+        if (mMimeType == IMAGE_TYPE_JPEG) {
+            saveJpegAttributes(original, out);
+        } else if (mMimeType == IMAGE_TYPE_PNG) {
+            savePngAttributes(original, out);
+        } else if (mMimeType == IMAGE_TYPE_WEBP) {
+            saveWebpAttributes(original, out);
+        } else if (mMimeType == IMAGE_TYPE_DNG || mMimeType == IMAGE_TYPE_UNKNOWN) {
+            ByteOrderedDataOutputStream dataOutputStream =
+                    new ByteOrderedDataOutputStream(out, ByteOrder.BIG_ENDIAN);
+            writeExifSegment(dataOutputStream);
         }
 
         // Discard the thumbnail in memory
@@ -5338,7 +5371,7 @@ public class ExifInterface {
     }
 
     // Checks the type of image file
-    private int getMimeType(BufferedInputStream in) throws IOException {
+    private int getMimeType(InputStream in) throws IOException {
         in.mark(SIGNATURE_CHECK_SIZE);
         byte[] signatureCheckBytes = new byte[SIGNATURE_CHECK_SIZE];
         in.read(signatureCheckBytes);
