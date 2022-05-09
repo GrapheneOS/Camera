@@ -20,6 +20,7 @@ import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import java.io.ByteArrayOutputStream
+import java.lang.Exception
 import java.nio.ByteBuffer
 
 open class CaptureActivity : MainActivity() {
@@ -197,18 +198,18 @@ open class CaptureActivity : MainActivity() {
             bitmap.compress(cf, 100, bos)
             val bitmapData: ByteArray = bos.toByteArray()
 
-            val oStream =
-                contentResolver.openOutputStream(outputUri)
+            var result = RESULT_CANCELED
 
-            if (oStream != null) {
-                oStream.write(bitmapData)
-                oStream.close()
-
-                setResult(RESULT_OK)
-            } else {
-                setResult(RESULT_CANCELED)
+            try {
+                contentResolver.openOutputStream(outputUri)?.use {
+                    it.write(bitmapData)
+                }
+                result = RESULT_OK
+            } catch (e: Exception) {
+                showMessage(getString(R.string.unable_to_save_image))
             }
 
+            setResult(result)
         } else {
             bitmap = resizeImage(bitmap)
             resultIntent.putExtra("data", bitmap)
