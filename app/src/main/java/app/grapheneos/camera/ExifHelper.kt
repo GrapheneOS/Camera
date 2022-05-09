@@ -1,7 +1,6 @@
 package app.grapheneos.camera
 
-import androidx.exifinterface.media.ExifInterface
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
+import androidxc.exifinterface.media.ExifInterface
 import java.util.TimeZone
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -164,10 +163,8 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_SUBFILE_TYPE,
 )
 
-fun ExifInterface.fixExif(): ExifInterface {
-    val now = Date()
-
-    val millis = TimeZone.getDefault().getOffset(now.time)
+fun ExifInterface.fixExif(captureTime: Date) {
+    val millis = TimeZone.getDefault().getOffset(captureTime.time)
 
     val totalMins = (millis / (1000 * 60))
 
@@ -178,26 +175,23 @@ fun ExifInterface.fixExif(): ExifInterface {
         hoursStrRep = "+${hoursStrRep}"
 
     val mins = (totalMins % 60).toString().padEnd(2, '0')
+
     val offsetTime = "$hoursStrRep:$mins"
 
     setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
     setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
 //    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
-    val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(now)
+    val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(captureTime)
 
     setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
     setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
-    return this
 }
 
-fun ExifInterface.clearExif(): ExifInterface {
-    if (!camConfig.removeExifAfterCapture) return this
-
+fun ExifInterface.clearExif() {
     for (exifTag in exifAttributes) {
         removeAttribute(exifTag)
     }
-    return this
 }
 
 // TODO: (Re-)use this code later to implement custom EXIF removal setting
