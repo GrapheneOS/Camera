@@ -431,12 +431,11 @@ class InAppGallery : AppCompatActivity() {
 
         val share = Intent(Intent.ACTION_SEND)
         share.putExtra(Intent.EXTRA_STREAM, mediaUri)
-        share.data = mediaUri
-        share.type = if (VideoCapturer.isVideo(mediaUri)) {
+        share.setDataAndType(mediaUri, if (VideoCapturer.isVideo(mediaUri)) {
             "video/*"
         } else {
             "image/*"
-        }
+        })
         share.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
         startActivity(

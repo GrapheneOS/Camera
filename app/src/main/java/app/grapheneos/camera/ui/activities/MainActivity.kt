@@ -1043,13 +1043,12 @@ open class MainActivity : AppCompatActivity(),
         }
 
         val share = Intent(Intent.ACTION_SEND)
-        share.data = mediaUri
         share.putExtra(Intent.EXTRA_STREAM, mediaUri)
-        share.type = if (VideoCapturer.isVideo(mediaUri)) {
+        share.setDataAndType(mediaUri, if (VideoCapturer.isVideo(mediaUri)) {
             "video/*"
         } else {
             "image/*"
-        }
+        })
 
         startActivity(Intent.createChooser(share, getString(R.string.share_image)))
     }
