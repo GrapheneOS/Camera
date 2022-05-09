@@ -151,6 +151,7 @@
     <string name="capturing_image">Capturing Image…</string>
     <string name="image_captured_successfully">Image captured successfully</string>
     <string name="unable_to_capture_image">Unable to capture image</string>
+    <string name="unable_to_save_image">Unable to save the image</string>
     <string name="recording_too_short_to_be_saved">Recording too short to be saved</string>
     <string name="please_wait_for_image_to_get_captured_before_opening">Please wait for the image to get captured before trying to open the gallery.</string>
     <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>

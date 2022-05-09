@@ -1,6 +1,7 @@
 package app.grapheneos.camera.capturer
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import android.view.View
@@ -21,9 +22,12 @@ private const val imageFileFormat = ".jpg"
 var isTakingPicture: Boolean = false
 
 class ImageCapturer(private val mActivity: MainActivity) {
+
     @SuppressLint("RestrictedApi")
     fun takePicture() {
-        if (camConfig.camera == null) return
+        if (camConfig.camera == null) {
+            return
+        }
 
         if (!camConfig.canTakePicture) {
             mActivity.showMessage(R.string.unsupported_taking_picture_while_recording)
@@ -36,14 +40,10 @@ class ImageCapturer(private val mActivity: MainActivity) {
         }
 
         val imageMetadata = ImageCapture.Metadata()
-
-        imageMetadata.isReversedHorizontal =
-            camConfig.lensFacing ==
-                    CameraSelector.LENS_FACING_FRONT &&
-                    camConfig.saveImageAsPreviewed
+        imageMetadata.isReversedHorizontal = camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT
+                && camConfig.saveImageAsPreviewed
 
         if (camConfig.requireLocation) {
-
             val location = (mActivity.applicationContext as App).getLocation()
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
@@ -51,6 +51,26 @@ class ImageCapturer(private val mActivity: MainActivity) {
                 imageMetadata.location = location
             }
         }
+
+        val preview = mActivity.imagePreview
+
+        val imageCapture = camConfig.imageCapture!!
+
+        val imageSaver = ImageSaver(
+            this,
+            mActivity.applicationContext,
+            imageCapture.jpegQuality,
+            camConfig.storageLocation,
+            imageFileFormat,
+            imageMetadata,
+            camConfig.removeExifAfterCapture,
+            targetThumbnailWidth = preview.width,
+            targetThumbnailHeight = preview.height,
+        )
+
+        isTakingPicture = true
+
+        imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
     }
 
     fun onCaptureSuccess() {
@@ -114,6 +134,21 @@ class ImageCapturer(private val mActivity: MainActivity) {
         if (mActivity is SecureMainActivity) {
             mActivity.capturedFilePaths.add(0, camConfig.latestUri.toString())
         }
+    }
+
+    fun onStorageLocationNotFound() {
+        camConfig.onStorageLocationNotFound()
+    }
+
+    fun onImageSaverError(exception: ImageSaverException) {
+        Log.e(TAG, "onImageSaverError", exception)
+        mActivity.previewLoader.visibility = View.GONE
+        mActivity.showMessage(R.string.unable_to_save_image)
+    }
+
+    fun onThumbnailGenerated(thumbnail: Bitmap) {
+        mActivity.previewLoader.visibility = View.GONE
+        mActivity.imagePreview.setImageBitmap(thumbnail)
     }
 
     companion object {
