@@ -49,6 +49,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
@@ -69,6 +70,7 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.capturer.isTakingPicture
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
@@ -673,7 +675,7 @@ open class MainActivity : AppCompatActivity(),
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
-                if (imageCapturer.isTakingPicture) {
+                if (isTakingPicture) {
                     showMessage(
                         getString(R.string.please_wait_for_image_to_get_captured_before_opening)
                     )
@@ -688,7 +690,7 @@ open class MainActivity : AppCompatActivity(),
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
-                if (imageCapturer.isTakingPicture) {
+                if (isTakingPicture) {
                     showMessage(
                         getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
                     )
@@ -1418,6 +1420,10 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
         return false
+    }
+
+    fun showMessage(@StringRes msg: Int, action: String? = null, callback: View.OnClickListener? = null) {
+        showMessage(getString(msg), action, callback)
     }
 
     fun showMessage(msg: String, action: String? = null, callback: View.OnClickListener? = null) {
