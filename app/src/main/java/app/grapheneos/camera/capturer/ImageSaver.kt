@@ -281,6 +281,7 @@ class ImageSaver(
                 return parent.createFile(mimeType(), fileName())!!.uri
             } catch (npe: NullPointerException) {
                 appContext.mainExecutor.execute(imageCapturer::onStorageLocationNotFound)
+                skipErrorDialog = true
                 throw FileNotFoundException("The default storage location seems to have been deleted")
             }
         }
@@ -309,8 +310,10 @@ class ImageSaver(
         mainThreadExecutor.execute{ imageCapturer.onCaptureError(exception) }
     }
 
+    private var skipErrorDialog = false
+
     private fun handleError(e: ImageSaverException) {
-        mainThreadExecutor.execute { imageCapturer.onImageSaverError(e) }
+        mainThreadExecutor.execute { imageCapturer.onImageSaverError(e, skipErrorDialog) }
     }
 
     companion object {
