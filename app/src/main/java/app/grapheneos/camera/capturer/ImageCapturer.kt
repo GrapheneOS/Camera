@@ -1,6 +1,9 @@
 package app.grapheneos.camera.capturer
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
@@ -125,7 +128,9 @@ class ImageCapturer(private val mActivity: MainActivity) {
 
         isTakingPicture = false
         mActivity.previewLoader.visibility = View.GONE
-        mActivity.showMessage(R.string.unable_to_capture_image)
+
+        val msg = mActivity.getString(R.string.unable_to_capture_image_verbose, exception.imageCaptureError)
+        showErrorDialog(msg, exception)
     }
 
     fun onImageSaverSuccess(uri: Uri) {
@@ -140,10 +145,39 @@ class ImageCapturer(private val mActivity: MainActivity) {
         camConfig.onStorageLocationNotFound()
     }
 
-    fun onImageSaverError(exception: ImageSaverException) {
+    fun onImageSaverError(exception: ImageSaverException, skipErrorDialog: Boolean) {
         Log.e(TAG, "onImageSaverError", exception)
         mActivity.previewLoader.visibility = View.GONE
-        mActivity.showMessage(R.string.unable_to_save_image)
+
+        if (skipErrorDialog) {
+            mActivity.showMessage(R.string.unable_to_save_image)
+        } else {
+            val msg = mActivity.getString(R.string.unable_to_save_image_verbose, exception.place.name)
+            showErrorDialog(msg, exception)
+        }
+    }
+
+    private fun showErrorDialog(message: String, exception: Throwable) {
+        val ctx = mActivity
+
+        AlertDialog.Builder(ctx).apply {
+            setMessage(message)
+            setPositiveButton(R.string.show_details) { _, _ ->
+                val list = exception.asStringList()
+
+                AlertDialog.Builder(ctx).apply {
+                    setItems(list.toTypedArray(), null)
+                    setNeutralButton(R.string.copy_to_clipboard) { _, _ ->
+                        val clipData = ClipData.newPlainText(exception.javaClass.name, list.joinToString("\n"))
+                        val cm = mActivity.getSystemService(ClipboardManager::class.java)
+                        cm.setPrimaryClip(clipData)
+                        ctx.showMessage(R.string.copied_text_to_clipboard)
+                    }
+                    show()
+                }
+            }
+            show()
+        }
     }
 
     fun onThumbnailGenerated(thumbnail: Bitmap) {
