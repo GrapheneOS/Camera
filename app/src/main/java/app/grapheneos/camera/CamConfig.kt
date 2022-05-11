@@ -91,6 +91,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val VIDEO_QUALITY = "video_quality"
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
+            const val INCLUDE_EIS = "include_eis"
             const val SCAN = "scan"
             const val SCAN_ALL_CODES = "scan_all_codes"
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
@@ -128,6 +129,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val INCLUDE_AUDIO = true
+
+            const val INCLUDE_EIS = true
 
             const val SCAN_ALL_CODES = false
 
@@ -444,6 +447,18 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
 
             mActivity.settingsDialog.includeAudioToggle.isChecked = value
+        }
+
+    var includeEIS: Boolean
+        get() {
+            return mActivity.settingsDialog.includeEISToggle.isChecked
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.INCLUDE_EIS, value)
+            editor.apply()
+
+            mActivity.settingsDialog.includeEISToggle.isChecked = value
         }
 
     var saveImageAsPreviewed: Boolean
@@ -899,6 +914,13 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
+        if (!commonPref.contains(SettingValues.Key.INCLUDE_EIS)) {
+            editor.putBoolean(
+                SettingValues.Key.INCLUDE_EIS,
+                SettingValues.Default.INCLUDE_EIS
+            )
+        }
+
         if (!commonPref.contains(SettingValues.Key.ASPECT_RATIO)) {
             editor.putInt(
                 SettingValues.Key.ASPECT_RATIO,
@@ -966,6 +988,11 @@ class CamConfig(private val mActivity: MainActivity) {
         includeAudio = commonPref.getBoolean(
             SettingValues.Key.INCLUDE_AUDIO,
             SettingValues.Default.INCLUDE_AUDIO
+        )
+
+        includeEIS = commonPref.getBoolean(
+            SettingValues.Key.INCLUDE_EIS,
+            SettingValues.Default.INCLUDE_EIS
         )
 
         allowedFormats.clear()
@@ -1313,12 +1340,16 @@ class CamConfig(private val mActivity: MainActivity) {
             .setTargetAspectRatio(aspectRatio);
 
         @androidx.camera.camera2.interop.ExperimentalCamera2Interop
-        if (!isVideoMode) {
-            Camera2Interop.Extender(previewBuilder)
-                .setCaptureRequestOption(
-                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                    CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
-                )
+        if (isVideoMode && includeEIS) {
+            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON
+            )
+        } else {
+            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+            )
         }
 
         preview = previewBuilder.build()

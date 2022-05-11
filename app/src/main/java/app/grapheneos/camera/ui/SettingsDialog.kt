@@ -66,6 +66,7 @@ class SettingsDialog(val mActivity: MainActivity) :
     var lRadio: RadioButton
 
     var includeAudioToggle: SwitchCompat
+    var includeEISToggle: SwitchCompat
 
     var selfIlluminationToggle: SwitchCompat
     var csSwitch: SwitchCompat
@@ -73,6 +74,7 @@ class SettingsDialog(val mActivity: MainActivity) :
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
     private var includeAudioSetting: View
+    private var includeEISSetting: View
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
@@ -329,6 +331,7 @@ class SettingsDialog(val mActivity: MainActivity) :
         }
 
         includeAudioSetting = binding.includeAudioSetting
+        includeEISSetting = binding.includeEisSetting
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
@@ -338,6 +341,14 @@ class SettingsDialog(val mActivity: MainActivity) :
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
+            camConfig.startCamera(true)
+        }
+
+        includeEISToggle = binding.includeEisSwitch
+        includeEISToggle.setOnClickListener {
+            camConfig.includeEIS = includeEISToggle.isChecked
+        }
+        includeEISToggle.setOnCheckedChangeListener { _, _ ->
             camConfig.startCamera(true)
         }
 
@@ -372,9 +383,11 @@ class SettingsDialog(val mActivity: MainActivity) :
     fun showOnlyRelevantSettings() {
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
+            includeEISSetting.visibility = View.VISIBLE
             videoQualitySetting.visibility = View.VISIBLE
         } else {
             includeAudioSetting.visibility = View.GONE
+            includeEISSetting.visibility = View.GONE
             videoQualitySetting.visibility = View.GONE
         }
 
