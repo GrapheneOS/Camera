@@ -32,6 +32,7 @@
     <string name="toggle_flash">Toggle Flash</string>
     <string name="grid_toggle">Grid Toggle</string>
     <string name="include_audio">Include Audio</string>
+    <string name="enable_eis">Enable EIS</string>
     <string name="video_quality">Video Quality</string>
     <string name="optimize_for">Optimize for</string>
     <string name="quality">Quality</string>

@@ -5,6 +5,8 @@ import android.animation.ValueAnimator
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -28,7 +30,9 @@ import android.widget.Spinner
 import android.widget.ToggleButton
 import androidx.annotation.StringRes
 import androidx.appcompat.widget.SwitchCompat
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
@@ -66,6 +70,7 @@ class SettingsDialog(val mActivity: MainActivity) :
     var lRadio: RadioButton
 
     var includeAudioToggle: SwitchCompat
+    var enableEISToggle: SwitchCompat
 
     var selfIlluminationToggle: SwitchCompat
     var csSwitch: SwitchCompat
@@ -73,6 +78,7 @@ class SettingsDialog(val mActivity: MainActivity) :
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
     private var includeAudioSetting: View
+    private var enableEISSetting: View
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
@@ -329,6 +335,7 @@ class SettingsDialog(val mActivity: MainActivity) :
         }
 
         includeAudioSetting = binding.includeAudioSetting
+        enableEISSetting = binding.enableEisSetting
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
@@ -338,6 +345,14 @@ class SettingsDialog(val mActivity: MainActivity) :
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
+            camConfig.startCamera(true)
+        }
+
+        enableEISToggle = binding.enableEisSwitch
+        enableEISToggle.setOnClickListener {
+            camConfig.enableEIS = enableEISToggle.isChecked
+        }
+        enableEISToggle.setOnCheckedChangeListener { _, _ ->
             camConfig.startCamera(true)
         }
 
@@ -370,11 +385,20 @@ class SettingsDialog(val mActivity: MainActivity) :
     }
 
     fun showOnlyRelevantSettings() {
+        @androidx.camera.camera2.interop.ExperimentalCamera2Interop
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
+            enableEISSetting.visibility = View.GONE
+            for (mode in Camera2CameraInfo.from(camConfig.camera!!.cameraInfo)
+                .getCameraCharacteristic(CameraCharacteristics
+                    .CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)!!){
+                        if (mode == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)
+                            enableEISSetting.visibility = View.VISIBLE
+            }
             videoQualitySetting.visibility = View.VISIBLE
         } else {
             includeAudioSetting.visibility = View.GONE
+            enableEISSetting.visibility = View.GONE
             videoQualitySetting.visibility = View.GONE
         }
 
