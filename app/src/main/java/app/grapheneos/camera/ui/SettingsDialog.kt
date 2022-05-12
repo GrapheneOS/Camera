@@ -5,6 +5,8 @@ import android.animation.ValueAnimator
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -28,7 +30,9 @@ import android.widget.Spinner
 import android.widget.ToggleButton
 import androidx.annotation.StringRes
 import androidx.appcompat.widget.SwitchCompat
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
@@ -381,9 +385,16 @@ class SettingsDialog(val mActivity: MainActivity) :
     }
 
     fun showOnlyRelevantSettings() {
+        @androidx.camera.camera2.interop.ExperimentalCamera2Interop
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
-            includeEISSetting.visibility = View.VISIBLE
+            includeEISSetting.visibility = View.GONE
+            for (mode in Camera2CameraInfo.from(camConfig.camera!!.cameraInfo)
+                .getCameraCharacteristic(CameraCharacteristics
+                    .CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)!!){
+                        if (mode == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)
+                            includeEISSetting.visibility = View.VISIBLE
+            }
             videoQualitySetting.visibility = View.VISIBLE
         } else {
             includeAudioSetting.visibility = View.GONE
