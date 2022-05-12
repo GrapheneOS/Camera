@@ -4578,6 +4578,10 @@ public class ExifInterface {
 
             // Check file type
             if (!mIsExifDataOnly) {
+                if (!(in instanceof ByteArrayInputStream)) {
+                    in = new BufferedInputStream(in, SIGNATURE_CHECK_SIZE);
+                }
+
                 mMimeType = getMimeType(in);
             }
 
