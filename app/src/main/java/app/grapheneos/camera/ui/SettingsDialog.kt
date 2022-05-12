@@ -70,7 +70,7 @@ class SettingsDialog(val mActivity: MainActivity) :
     var lRadio: RadioButton
 
     var includeAudioToggle: SwitchCompat
-    var includeEISToggle: SwitchCompat
+    var enableEISToggle: SwitchCompat
 
     var selfIlluminationToggle: SwitchCompat
     var csSwitch: SwitchCompat
@@ -78,7 +78,7 @@ class SettingsDialog(val mActivity: MainActivity) :
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
     private var includeAudioSetting: View
-    private var includeEISSetting: View
+    private var enableEISSetting: View
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
@@ -335,7 +335,7 @@ class SettingsDialog(val mActivity: MainActivity) :
         }
 
         includeAudioSetting = binding.includeAudioSetting
-        includeEISSetting = binding.includeEisSetting
+        enableEISSetting = binding.enableEisSetting
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
@@ -348,11 +348,11 @@ class SettingsDialog(val mActivity: MainActivity) :
             camConfig.startCamera(true)
         }
 
-        includeEISToggle = binding.includeEisSwitch
-        includeEISToggle.setOnClickListener {
-            camConfig.includeEIS = includeEISToggle.isChecked
+        enableEISToggle = binding.enableEisSwitch
+        enableEISToggle.setOnClickListener {
+            camConfig.enableEIS = enableEISToggle.isChecked
         }
-        includeEISToggle.setOnCheckedChangeListener { _, _ ->
+        enableEISToggle.setOnCheckedChangeListener { _, _ ->
             camConfig.startCamera(true)
         }
 
@@ -388,17 +388,17 @@ class SettingsDialog(val mActivity: MainActivity) :
         @androidx.camera.camera2.interop.ExperimentalCamera2Interop
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
-            includeEISSetting.visibility = View.GONE
+            enableEISSetting.visibility = View.GONE
             for (mode in Camera2CameraInfo.from(camConfig.camera!!.cameraInfo)
                 .getCameraCharacteristic(CameraCharacteristics
                     .CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)!!){
                         if (mode == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)
-                            includeEISSetting.visibility = View.VISIBLE
+                            enableEISSetting.visibility = View.VISIBLE
             }
             videoQualitySetting.visibility = View.VISIBLE
         } else {
             includeAudioSetting.visibility = View.GONE
-            includeEISSetting.visibility = View.GONE
+            enableEISSetting.visibility = View.GONE
             videoQualitySetting.visibility = View.GONE
         }
 

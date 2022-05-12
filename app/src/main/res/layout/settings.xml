@@ -250,7 +250,7 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:id="@+id/include_eis_setting"
+                        android:id="@+id/enable_eis_setting"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
@@ -261,10 +261,10 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:text="@string/include_eis"/>
+                            android:text="@string/enable_eis"/>
 
                         <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/include_eis_switch"
+                            android:id="@+id/enable_eis_switch"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:checked="true"
