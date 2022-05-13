@@ -149,7 +149,7 @@ class ImageCapturer(private val mActivity: MainActivity) {
         Log.e(TAG, "onImageSaverError", exception)
         mActivity.previewLoader.visibility = View.GONE
 
-        if (skipErrorDialog) {
+        if (skipErrorDialog || !mActivity.isStarted) {
             mActivity.showMessage(R.string.unable_to_save_image)
         } else {
             val msg = mActivity.getString(R.string.unable_to_save_image_verbose, exception.place.name)

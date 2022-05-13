@@ -1657,4 +1657,15 @@ open class MainActivity : AppCompatActivity(),
         application.resetPreventScreenFromSleeping()
     }
 
+    var isStarted = false
+
+    override fun onStart() {
+        super.onStart()
+        isStarted = true
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isStarted = false
+    }
 }
