@@ -155,6 +155,7 @@
     <string name="unable_to_capture_image_verbose">Unable to capture image, error code: %d</string>
     <string name="unable_to_save_image">Unable to save the image</string>
     <string name="unable_to_save_image_verbose">Unable to save the image, error occurred during: %s</string>
+    <string name="inaccessible_image">Inaccessible image</string>
     <string name="show_details">Show details</string>
     <string name="recording_too_short_to_be_saved">Recording too short to be saved</string>
     <string name="please_wait_for_image_to_get_captured_before_opening">Please wait for the image to get captured before trying to open the gallery.</string>
