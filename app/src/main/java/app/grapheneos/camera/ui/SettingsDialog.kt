@@ -73,7 +73,6 @@ class SettingsDialog(val mActivity: MainActivity) :
     var enableEISToggle: SwitchCompat
 
     var selfIlluminationToggle: SwitchCompat
-    var csSwitch: SwitchCompat
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
@@ -328,11 +327,6 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         mScrollView = binding.settingsScrollview
         mScrollViewContent = binding.settingsScrollviewContent
-
-        csSwitch = binding.cameraSoundsSwitch
-        csSwitch.setOnCheckedChangeListener { _, value ->
-            camConfig.enableCameraSounds = value
-        }
 
         includeAudioSetting = binding.includeAudioSetting
         enableEISSetting = binding.enableEisSetting

@@ -87,7 +87,6 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GRID = "grid"
             const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
             const val FOCUS_TIMEOUT = "focus_timeout"
-            const val CAMERA_SOUNDS = "camera_sounds"
             const val VIDEO_QUALITY = "video_quality"
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
@@ -104,6 +103,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
 
             const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
+
+            const val CAMERA_SOUNDS = "camera_sounds"
 
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
@@ -126,8 +127,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val FOCUS_TIMEOUT = "5s"
 
-            const val CAMERA_SOUNDS = true
-
             const val INCLUDE_AUDIO = true
 
             const val ENABLE_EIS = true
@@ -144,6 +143,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val REMOVE_EXIF_AFTER_CAPTURE = true
 
             const val GYROSCOPE_SUGGESTIONS = false
+
+            const val CAMERA_SOUNDS = true
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -398,14 +399,15 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var enableCameraSounds: Boolean
         get() {
-            return mActivity.settingsDialog.csSwitch.isChecked
+            return commonPref.getBoolean(
+                SettingValues.Key.CAMERA_SOUNDS,
+                SettingValues.Default.CAMERA_SOUNDS
+            )
         }
         set(value) {
             val editor = commonPref.edit()
             editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, value)
             editor.apply()
-
-            mActivity.settingsDialog.csSwitch.isChecked = value
         }
 
     var scanAllCodes: Boolean
@@ -955,12 +957,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
 
         editor.commit()
-
-        mActivity.settingsDialog.csSwitch.isChecked =
-            commonPref.getBoolean(
-                SettingValues.Key.CAMERA_SOUNDS,
-                SettingValues.Default.CAMERA_SOUNDS
-            )
 
         gridType = GridType.values()[commonPref.getInt(
             SettingValues.Key.GRID,
