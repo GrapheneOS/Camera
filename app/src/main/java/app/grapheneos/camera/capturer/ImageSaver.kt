@@ -148,6 +148,16 @@ class ImageSaver(
             throw ImageSaverException(Place.FILE_CREATION, e)
         }
 
+        val shouldFsync = when (uri.host) {
+            MediaStore.AUTHORITY,
+            // see com.android.externalstorage.ExternalStorageProvider and
+            // com.android.internal.content.FileSystemProvider
+            "com.android.externalstorage.documents" ->
+                true
+            else ->
+                false
+        }
+
         try {
             contentResolver.openAssetFileDescriptor(uri, "w")!!.use {
                 val fd = it.fileDescriptor
@@ -159,7 +169,9 @@ class ImageSaver(
                     off += Os.write(fd, bytes, off, len - off)
                 } while (off != len)
 
-                Os.fsync(fd)
+                if (shouldFsync) {
+                    Os.fsync(fd)
+                }
             }
         } catch (e: Exception) {
             deleteIncompleteImage(uri)
