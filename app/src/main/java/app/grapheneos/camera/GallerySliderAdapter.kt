@@ -1,6 +1,7 @@
 package app.grapheneos.camera
 
 import android.content.Intent
+import android.graphics.ImageDecoder
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +14,7 @@ import app.grapheneos.camera.ui.ZoomableImageView
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide
+import kotlin.math.max
 
 class GallerySliderAdapter(
     private val gActivity: InAppGallery,
@@ -73,7 +75,32 @@ class GallerySliderAdapter(
         } else {
             playButton.visibility = View.INVISIBLE
             mediaPreview.enableZooming()
-            mediaPreview.setImageURI(mediaUri)
+
+            val bitmap = try {
+                val source = ImageDecoder.createSource(gActivity.contentResolver, mediaUri)
+                ImageDecoder.decodeBitmap(source, object : ImageDecoder.OnHeaderDecodedListener {
+                    override fun onHeaderDecoded(decoder: ImageDecoder,
+                        info: ImageDecoder.ImageInfo, source: ImageDecoder.Source) {
+                        val size = info.size
+                        val w = size.width
+                        val h = size.height
+                        // limit the max size of the bitmap to avoid bumping into bitmap size limit
+                        // (100 MB)
+                        val largerSide = max(w, h)
+                        val maxSide = 4500
+
+                        if (largerSide > maxSide) {
+                            val ratio = maxSide.toDouble() / largerSide
+                            decoder.setTargetSize((ratio * w).toInt(), (ratio * h).toInt())
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                gActivity.showMessage(gActivity.getString(R.string.inaccessible_image))
+                null
+            }
+
+            mediaPreview.setImageBitmap(bitmap)
         }
     }
 
