@@ -149,7 +149,7 @@ class ImageSaver(
         }
 
         try {
-            contentResolver.openFileDescriptor(uri, "w")!!.use {
+            contentResolver.openAssetFileDescriptor(uri, "w")!!.use {
                 val fd = it.fileDescriptor
                 val bytes = processedJpegBytes
                 var off = 0
