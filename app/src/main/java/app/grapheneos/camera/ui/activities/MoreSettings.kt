@@ -234,6 +234,17 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             gSwitch.performClick()
         }
 
+        val csSwitch = binding.cameraSoundsSwitch
+        csSwitch.isChecked = camConfig.enableCameraSounds
+        csSwitch.setOnClickListener {
+            camConfig.enableCameraSounds = csSwitch.isChecked
+        }
+
+        val csSetting = binding.cameraSoundsSetting
+        csSetting.setOnClickListener {
+            csSwitch.performClick()
+        }
+
         val sIAPSetting = binding.saveImageAsPreviewSetting
         sIAPSetting.setOnClickListener {
             sIAPToggle.performClick()

@@ -45,7 +45,6 @@
     <string name="focus_timeout">Focus Timeout</string>
     <string name="timer">Timer</string>
     <string name="cancel_timer">Cancel Timer</string>
-    <string name="camera_sounds">Camera Sounds</string>
     <string name="video_capture_label">Record Video</string>
 
     <string name="camera">CAMERA</string>
@@ -75,6 +74,9 @@
 
     <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
     <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
+
+    <string name="camera_sounds">Camera Sounds</string>
+    <string name="camera_sounds_desc">Shutter sound and other audio cues</string>
 
     <string name="storage">Storage</string>
     <string name="storage_location">Storage Location</string>

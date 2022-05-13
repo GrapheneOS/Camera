@@ -84,6 +84,65 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/camera_sounds_setting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="6dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/camera_sounds_icon"
+                android:src="@drawable/volume_up"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/camera_sounds"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/camera_sounds_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/camera_sounds"
+                    android:layout_marginStart="10dp"
+                    android:paddingBottom="2dp"
+                    android:textColor="?android:textColorPrimary"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/camera_sounds_description"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/camera_sounds_desc"
+                    android:paddingStart="10dp"
+                    android:textSize="14sp"
+                    tools:ignore="RtlSymmetry"/>
+
+            </LinearLayout>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/camera_sounds_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="0dp"/>
+
+        </LinearLayout>
+
         <TextView
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
