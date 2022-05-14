@@ -129,8 +129,10 @@ class ImageCapturer(private val mActivity: MainActivity) {
         isTakingPicture = false
         mActivity.previewLoader.visibility = View.GONE
 
-        val msg = mActivity.getString(R.string.unable_to_capture_image_verbose, exception.imageCaptureError)
-        showErrorDialog(msg, exception)
+        if (mActivity.isStarted) {
+            val msg = mActivity.getString(R.string.unable_to_capture_image_verbose, exception.imageCaptureError)
+            showErrorDialog(msg, exception)
+        }
     }
 
     fun onImageSaverSuccess(uri: Uri) {
