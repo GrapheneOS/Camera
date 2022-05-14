@@ -1294,7 +1294,6 @@ class CamConfig(private val mActivity: MainActivity) {
                     videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
                 }
 
-
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
 
