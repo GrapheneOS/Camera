@@ -52,6 +52,13 @@ android {
             if (useKeystoreProperties) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            resValue("string", "app_name", "Camera")
+        }
+
+        getByName("debug") {
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Camera d")
+            // isDebuggable = false
         }
 
         create("play") {
