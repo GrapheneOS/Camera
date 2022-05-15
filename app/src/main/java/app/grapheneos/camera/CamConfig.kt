@@ -1084,21 +1084,12 @@ class CamConfig(private val mActivity: MainActivity) {
             if (latestUri != null) return latestUri
 
             if (mActivity is SecureMainActivity) {
-
                 if (mActivity.capturedFilePaths.isNotEmpty()) {
-                    latestUri = Uri.parse(
-                        mActivity.capturedFilePaths.last()
-                    )
+                    latestUri = Uri.parse(mActivity.capturedFilePaths.last())
                 }
-
             } else {
-                val uris = mediaUris
-
-                if (uris.isNotEmpty()) {
-                    uris.first { uri ->
-                        mActivity !is VideoOnlyActivity || isVideo(uri)
-                    }
-                    latestUri = uris.first()
+                latestUri = mediaUris.firstOrNull { uri ->
+                    mActivity !is VideoOnlyActivity || isVideo(uri)
                 }
             }
 
