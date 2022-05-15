@@ -42,7 +42,7 @@ class InAppGallery : AppCompatActivity() {
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
     private val mediaUris: ArrayList<Uri> = arrayListOf()
-    private var snackBar: Snackbar? = null
+    private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
 
     private val isSecureMode: Boolean
@@ -465,6 +465,7 @@ class InAppGallery : AppCompatActivity() {
         }
 
         gallerySlider = binding.gallerySlider
+        snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
         gallerySlider.setPageTransformer(GSlideTransformer())
 
         if (isSecureMode) {
@@ -501,9 +502,6 @@ class InAppGallery : AppCompatActivity() {
         }
 
         gallerySlider.adapter = GallerySliderAdapter(this, mediaUris)
-
-        snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
-
     }
 
     fun toggleActionBarState() {
@@ -585,7 +583,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     fun showMessage(msg: String) {
-        snackBar?.setText(msg)
-        snackBar?.show()
+        snackBar.setText(msg)
+        snackBar.show()
     }
 }

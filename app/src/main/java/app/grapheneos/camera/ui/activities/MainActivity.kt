@@ -217,7 +217,7 @@ open class MainActivity : AppCompatActivity(),
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var snackBar: Snackbar? = null
+    private lateinit var snackBar: Snackbar
 
     private val autoRotateSettingObserver =
         object : ContentObserver(Handler(Looper.myLooper()!!)) {
@@ -546,7 +546,7 @@ open class MainActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.getRoot())
+        snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
         gestureDetectorCompat = GestureDetectorCompat(this, this)
 
@@ -894,6 +894,8 @@ open class MainActivity : AppCompatActivity(),
             WindowInsetsCompat.CONSUMED
         }
 
+        setContentView(binding.getRoot())
+
         WindowInsetsControllerCompat(window, rootView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.statusBars())
             controller.systemBarsBehavior =
@@ -909,8 +911,6 @@ open class MainActivity : AppCompatActivity(),
         cbCross = binding.captureButtonCross
 
         settingsDialog = SettingsDialog(this)
-
-        snackBar = Snackbar.make(previewView, "", Snackbar.LENGTH_LONG)
 
         contentResolver.registerContentObserver(
             Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
@@ -1439,7 +1439,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     fun showMessage(msg: String, action: String? = null, callback: View.OnClickListener? = null) {
-        snackBar?.apply {
+        snackBar.apply {
             setText(msg)
             setAction(action, callback)
             show()
