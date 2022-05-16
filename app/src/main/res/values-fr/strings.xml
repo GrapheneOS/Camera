@@ -1,0 +1,166 @@
+<resources>
+    <string name="app_name">Camera</string>
+
+    <string name="camera_permission_dialog_title">Camera permission required</string>
+    <string name="camera_permission_dialog_message">
+        The app needs permission to access the camera to function. Please provide the required permission via Settings in order to use this app.
+    </string>
+
+    <string name="audio_permission_dialog_title">Audio permission required</string>
+    <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record a video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just disable it (and enable it back later in the settings).</string>
+
+    <string name="location_permission_dialog_title">Location permission required</string>
+    <string name="location_permission_dialog_message">
+        The app needs location permission for geo-tagging. Please provide the required permission via Settings in order to use this app.
+    </string>
+
+    <string name="focus_ring">Focus Ring</string>
+    <string name="flip_camera">Flip Camera</string>
+    <string name="loading_camera">Loading camera</string>
+    <string name="flash_mode">Flash Mode</string>
+    <string name="capture_mode">Capture Mode</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Zoom In</string>
+    <string name="zoom_out">Zoom Out</string>
+    <string name="scan_result">Scan Result</string>
+    <string name="share_qr_text">Share QR Text</string>
+    <string name="copy_to_clipboard">Copy to clipboard</string>
+    <string name="retake">Retake</string>
+    <string name="play_preview">Play Preview</string>
+    <string name="toggle_button">Toggle Button</string>
+    <string name="aspect_ratio">Aspect Ratio</string>
+    <string name="toggle_flash">Toggle Flash</string>
+    <string name="grid_toggle">Grid Toggle</string>
+    <string name="include_audio">Include Audio</string>
+    <string name="enable_eis">Enable EIS</string>
+    <string name="video_quality">Video Quality</string>
+    <string name="optimize_for">Optimize for</string>
+    <string name="quality">Quality</string>
+    <string name="latency">Latency</string>
+    <string name="preview">Preview</string>
+    <string name="file_info">File Info</string>
+    <string name="delete_file">Delete file</string>
+    <string name="edit">Edit</string>
+    <string name="self_illumination">Self Illumination</string>
+    <string name="focus_timeout">Focus Timeout</string>
+    <string name="timer">Timer</string>
+    <string name="cancel_timer">Cancel Timer</string>
+    <string name="video_capture_label">Record Video</string>
+
+    <string name="camera">CAMERA</string>
+    <string name="video">VIDEO</string>
+    <string name="portrait_mode">PORTRAIT</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">NIGHT</string>
+    <string name="face_retouch_mode">FACE RETOUCH</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">QR SCAN</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Share Media</string>
+    <string name="rec_without_audio">Start recording without audio</string>
+    <string name="qr_scan_toggle">QR Scan toggle</string>
+    <string name="qr_scan">QR Code</string>
+    <string name="data_matrix">Data Matrix</string>
+    <string name="aztec_code">Aztec Code</string>
+    <string name="more_options">More Options</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">More Settings</string>
+
+    <string name="general">General</string>
+
+    <string name="save_image_as_previewed">Save image as previewed</string>
+    <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion)</string>
+
+    <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
+    <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
+
+    <string name="camera_sounds">Camera Sounds</string>
+    <string name="camera_sounds_desc">Shutter sound and other audio cues</string>
+
+    <string name="storage">Storage</string>
+    <string name="storage_location">Storage Location</string>
+    <string name="image_file_name_format">Image File Name Format</string>
+    <string name="video_file_name_format">Video File Name Format</string>
+    <string name="revert_back_to_dcim">Revert back to DCIM</string>
+
+    <string name="image_quality">Image Quality</string>
+    <string name="image_quality_desc" formatted="false">Adjust the quality of an image captured by the app from 1% to 100%. This field can be left empty to avoid explicitly setting the image quality.</string>
+    <string name="photo">Photo</string>
+    <string name="increase_quality">Increase Quality</string>
+    <string name="decrease_quality">Decrease Quality</string>
+    <string name="remove_exif_title">Remove EXIF data after capture</string>
+    <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+    <string name="location_is_disabled">Location is disabled</string>
+    <string name="settings">settings</string>
+    <string name="enable">enable</string>
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="disable_audio">Disable Audio</string>
+    <string name="copied_text_to_clipboard">Copied text to clipboard</string>
+    <string name="share_text_via">Share text via</string>
+
+    <string name="editing_permission_error">Could not read the image due to the editor not providing read access.</string>
+    <string name="editing_unexpected_error">An unexpected error occurred after editing.</string>
+    <string name="unexpected_error">An unexpected error occurred after editing.</string>
+
+    <string name="edit_successfully">Edit successful</string>
+    <string name="edit_not_allowed">Editing images in secure mode is not allowed.</string>
+    <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
+    <string name="edit_image">Edit Image</string>
+    <string name="share_image">Share Image</string>
+    <string name="delete">Delete</string>
+    <string name="delete_title">Are you sure?</string>
+    <string name="deleted_successfully">File deleted successfully</string>
+    <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
+    <string name="delete_description">"Do you really want to delete this file?"</string>
+    <string name="cancel">Cancel</string>
+    <string name="no_image">Please capture a photo/video before trying to view them.</string>
+
+    <string name="bind_failure">Failed to open camera due to an OS or hardware issue. Try rebooting.</string>
+    <string name="camera_provider_init_failure">Failed to load camera provider due to OS or hardware issue. Try rebooting.</string>
+    <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
+    <string name="unsupported_taking_picture_while_recording">Your device doesn\'t support taking pictures while recording video with the current settings.</string>
+    <string name="image_processing_pending">Please wait for the last image to get processed…</string>
+    <string name="location_unavailable">Couldn\'t attach location to image since it\'s  currently unavailable</string>
+    <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
+    <string name="no_barcode_selected">Please ensure that at least one barcode is selected in manual mode</string>
+    <string name="flash_unavailable_in_selected_mode">Flash is unavailable for the current mode.</string>
+    <string name="front_camera_unavailable">Could not detect front camera. Please try again later!</string>
+    <string name="rear_camera_unavailable">Could not detect rear camera. Please try again later!</string>
+    <string name="folder_not_found">Storage location not found</string>
+    <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
+    <string name="more_settings_unavailable_during_recording">Cannot switch activities when recording</string>
+    <string name="video_geo_tagging_unsupported">Geo-tagging currently is not supported for video mode</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Can\'t toggle geo-tagging for ongoing recording</string>
+    <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
+    <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
+    <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
+    <string name="unexpected_error_while_setting_focus_timeout">An unexpected error occurred while setting focus timeout</string>
+    <string name="unexpected_error_while_opening_gallery">An unexpected error occurred while opening the gallery</string>
+    <string name="no_directory_selected">No directory was selected by the picker</string>
+    <string name="choose_storage_location">Choose storage location</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="revert_to_default_directory">Do you want to revert back to the default directory?</string>
+    <string name="reverted_to_default_directory">Switched back to the default storage location</string>
+    <string name="already_using_default_directory">Already using the default storage location</string>
+    <string name="photo_quality_was_set_to_auto">Photo quality was set to auto mode</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
+
+    <string name="capturing_image">Capturing Image…</string>
+    <string name="image_captured_successfully">Image captured successfully</string>
+    <string name="unable_to_capture_image">Unable to capture image</string>
+    <string name="unable_to_capture_image_verbose">Unable to capture image, error code: %d</string>
+    <string name="unable_to_save_image">Unable to save the image</string>
+    <string name="unable_to_save_image_verbose">Unable to save the image, error occurred during: %s</string>
+    <string name="inaccessible_image">Inaccessible image</string>
+    <string name="show_details">Show details</string>
+    <string name="recording_too_short_to_be_saved">Recording too short to be saved</string>
+    <string name="please_wait_for_image_to_get_captured_before_opening">Please wait for the image to get captured before trying to open the gallery.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
+
+</resources>
