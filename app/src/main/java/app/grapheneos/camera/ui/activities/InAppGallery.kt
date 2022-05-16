@@ -341,7 +341,7 @@ class InAppGallery : AppCompatActivity() {
                     (size / (1000f * 1000f))
                 )
             )
-            detailsBuilder.append(" mb")
+            detailsBuilder.append(" MB")
         }
 
         detailsBuilder.append("\n\n")
