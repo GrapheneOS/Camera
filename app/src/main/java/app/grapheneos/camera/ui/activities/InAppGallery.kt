@@ -338,7 +338,7 @@ class InAppGallery : AppCompatActivity() {
             detailsBuilder.append(
                 String.format(
                     "%.2f",
-                    (size / (1024f * 1024f))
+                    (size / (1000f * 1000f))
                 )
             )
             detailsBuilder.append(" mb")
