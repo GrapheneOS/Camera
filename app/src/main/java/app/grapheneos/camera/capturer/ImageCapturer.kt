@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
-import android.net.Uri
 import android.util.Log
 import android.view.View
 import android.view.animation.AlphaAnimation
@@ -16,6 +15,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import app.grapheneos.camera.App
+import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
@@ -24,7 +24,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 private const val imageFileFormat = ".jpg"
 var isTakingPicture: Boolean = false
 
-class ImageCapturer(private val mActivity: MainActivity) {
+class ImageCapturer(val mActivity: MainActivity) {
 
     @SuppressLint("RestrictedApi")
     fun takePicture() {
@@ -135,11 +135,11 @@ class ImageCapturer(private val mActivity: MainActivity) {
         }
     }
 
-    fun onImageSaverSuccess(uri: Uri) {
-        camConfig.addToGallery(uri)
+    fun onImageSaverSuccess(item: CapturedItem) {
+        camConfig.updateLastCapturedItem(item)
 
         if (mActivity is SecureMainActivity) {
-            mActivity.capturedFilePaths.add(0, camConfig.latestUri.toString())
+            mActivity.capturedItems.add(item)
         }
     }
 

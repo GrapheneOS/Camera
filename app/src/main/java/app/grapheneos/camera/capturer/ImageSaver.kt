@@ -20,6 +20,9 @@ import androidx.camera.core.internal.utils.ImageUtil
 import androidx.documentfile.provider.DocumentFile
 import androidxc.camera.core.impl.utils.Exif
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.IMAGE_NAME_PREFIX
+import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
@@ -192,7 +195,8 @@ class ImageSaver(
         }
         logDuration(startOfWriting) {"image writing (saveToMediaStore: ${saveToMediaStore()})"}
 
-        mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(uri) }
+        val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
+        mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem) }
     }
 
     // based on EXIF update sequence in androidx.camera.core.ImageSaver#saveImageToTempFile(),
@@ -272,10 +276,12 @@ class ImageSaver(
 
     fun saveToMediaStore() = storageLocation.isEmpty()
 
-    private fun fileName(): String {
+    private fun dateString() =
         // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous one
-        val sdf = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
-        return "IMG_${sdf.format(captureTime)}$imageFileFormat"
+        SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
+
+    private fun fileName(): String {
+        return IMAGE_NAME_PREFIX + dateString() + imageFileFormat
     }
 
     private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
@@ -335,7 +341,6 @@ class ImageSaver(
     companion object {
         val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()
         private val imageWriterExecutor = Executors.newSingleThreadExecutor()
-        private val thumbnailGeneratorExecutor = Executors.newSingleThreadExecutor()
 
         private const val TAG = "ImageSaver"
         private const val LOG_DURATION = false

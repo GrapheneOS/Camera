@@ -3,8 +3,11 @@ package app.grapheneos.camera.capturer
 import android.Manifest
 import android.animation.ValueAnimator
 import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -20,7 +23,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
@@ -88,17 +94,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         handler.removeCallbacks(runnable)
     }
 
-    private fun genPendingRecording(): PendingRecording? {
-        var fileName: String
-        val sdf = SimpleDateFormat(
-            "yyyyMMdd_HHmmss",
-            Locale.US
-        )
-
-        val date = Date()
-        fileName = sdf.format(date)
-        fileName = "VID_$fileName$videoFileFormat"
-
+    private fun genPendingRecording(fileName: String): PendingRecording? {
         val mimeType =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat) ?: "video/mp4"
 
@@ -153,8 +149,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         "w"
                     )!!
 
-                    camConfig.addToGallery(child.uri)
-
                     return camConfig.videoCapture!!.output.prepareRecording(
                         mActivity,
                         FileDescriptorOutputOptions.Builder(fd).build()
@@ -170,10 +164,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun startRecording() {
         if (camConfig.camera == null) return
 
+        val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
+
         val pendingRecording: PendingRecording?
 
         try {
-            pendingRecording = genPendingRecording()
+            pendingRecording = genPendingRecording(fileName)
         } catch (exception: Exception) {
             camConfig.onStorageLocationNotFound()
             return
@@ -216,7 +213,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         )
                     }
                 } else {
-
                     val outputUri = it.outputResults.outputUri
 
                     try {
@@ -231,8 +227,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         if (mActivity is VideoCaptureActivity) {
                             mActivity.afterRecording(outputUri)
                             return@start
-                        } else {
-                            camConfig.addToGallery(outputUri)
                         }
 
                     } catch (exception: Exception) {
@@ -243,10 +237,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         }
                     }
 
-                    camConfig.updatePreview()
+                    val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, outputUri)
+                    camConfig.updateLastCapturedItem(item)
+
+                    mActivity.updateThumbnail()
 
                     if (mActivity is SecureMainActivity) {
-                        mActivity.capturedFilePaths.add(0, outputUri.toString())
+                        mActivity.capturedItems.add(item)
                     }
                 }
             }
@@ -350,13 +347,5 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording?.stop()
         recording?.close()
         recording = null
-    }
-
-    companion object {
-        //        private const val TAG = "VideoCapturer"
-        fun isVideo(uri: Uri): Boolean {
-            return uri.encodedPath?.contains("video") == true ||
-                    uri.encodedPath?.endsWith(".mp4") == true
-        }
     }
 }

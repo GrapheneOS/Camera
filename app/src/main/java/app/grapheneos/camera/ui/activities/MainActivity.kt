@@ -67,6 +67,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import app.grapheneos.camera.App
 import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.ITEM_TYPE_IMAGE
+import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
@@ -1048,25 +1051,17 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun shareLatestMedia() {
-
-        val mediaUri = camConfig.latestUri
-
-        if (mediaUri == null) {
-            showMessage(
-                getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
-            )
+        val item = camConfig.lastCapturedItem
+        if (item == null) {
+            showMessage(R.string.please_wait_for_image_to_get_captured_before_sharing)
             return
         }
 
-        val share = Intent(Intent.ACTION_SEND)
-        share.putExtra(Intent.EXTRA_STREAM, mediaUri)
-        share.setDataAndType(mediaUri, if (VideoCapturer.isVideo(mediaUri)) {
-            "video/*"
-        } else {
-            "image/*"
-        })
-
-        startActivity(Intent.createChooser(share, getString(R.string.share_image)))
+        Intent(Intent.ACTION_SEND).let {
+            it.putExtra(Intent.EXTRA_STREAM, item.uri)
+            it.setDataAndType(item.uri, item.mimeType())
+            startActivity(Intent.createChooser(it, getString(R.string.share_image)))
+        }
     }
 
     private lateinit var dialog: Dialog
