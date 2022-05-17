@@ -3,7 +3,9 @@ package app.grapheneos.camera.ui.activities
 import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
+import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -15,13 +17,14 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
+import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
-import java.net.URLDecoder
 
 class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
@@ -41,49 +44,60 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        if (it.data != null) {
+        val intent = it.data
+        val uri = intent?.data?.let {
+            if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) {
+                null
+            } else {
+                it
+            }
+        }
+        if (uri != null) {
+            contentResolver.takePersistableUriPermission(uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
-            val uri = it.data?.data!!
+            val uriString = uri.toString()
+            camConfig.storageLocation = uriString
 
-            contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
+            val uiString = storageLocationToUiString(uriString)
+            sLField.setText(uiString)
 
-            grantUriPermission(
-                packageName,
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-            )
-
-            val path = URLDecoder.decode(uri.toString(), "UTF-8")
-            camConfig.storageLocation = uri.toString()
-
-            val dPath = cleanPath(path)
-            sLField.setText(dPath)
-
-            showMessage("Storage location successfully updated to $dPath")
+            showMessage("Storage location successfully updated to $uiString")
 
         } else {
-            showMessage(
-                getString(R.string.no_directory_selected)
-            )
+            showMessage(getString(R.string.no_directory_selected))
         }
     }
 
-    companion object {
-        fun cleanPath(path: String): String {
-
-            if (path.isEmpty()) {
-                return "DCIM/Camera"
-            }
-
-            val s = URLDecoder.decode(path, "UTF-8")
-            return s.substring(s.lastIndexOf(":") + 1)
+    fun storageLocationToUiString(sl: String): String {
+        if (sl.isEmpty()) {
+            return DEFAULT_MEDIA_STORE_CAPTURE_PATH
         }
+
+        val uri = Uri.parse(sl)
+        val treeId = uri.pathSegments[1]
+
+        if (uri.host == SAF_URI_HOST_EXTERNAL_STORAGE) {
+            val endOfVolumeName = treeId.lastIndexOf(':')
+            val path = treeId.substring(endOfVolumeName + 1)
+
+            if (!path.isEmpty()) {
+                return path
+            }
+        }
+
+        try {
+            val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
+
+            val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+            contentResolver.query(docUri, projection, null, null)?.use {
+                if (it.moveToFirst()) {
+                    return it.getString(0)
+                }
+            }
+        } catch (ignored: Exception) {}
+
+        return treeId
     }
 
 
@@ -109,7 +123,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         sLField = binding.storageLocationField
 
-        sLField.setText(cleanPath(camConfig.storageLocation))
+        sLField.setText(storageLocationToUiString(camConfig.storageLocation))
 
         sLField.setOnClickListener {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
