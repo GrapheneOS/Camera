@@ -53,6 +53,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.edit
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
@@ -335,9 +336,9 @@ class CamConfig(private val mActivity: MainActivity) {
         set(value) {
             val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
 
-            val editor = modePref.edit()
-            editor.putString(videoQualityKey, option)
-            editor.commit()
+            modePref.edit {
+                putString(videoQualityKey, option)
+            }
 
             field = value
         }
@@ -360,9 +361,9 @@ class CamConfig(private val mActivity: MainActivity) {
         set(flashMode) {
 
             if (::modePref.isInitialized) {
-                val editor = modePref.edit()
-                editor.putInt(SettingValues.Key.FLASH_MODE, flashMode)
-                editor.commit()
+                modePref.edit {
+                    putInt(SettingValues.Key.FLASH_MODE, flashMode)
+                }
             }
 
             imageCapture?.flashMode = flashMode
@@ -729,9 +730,9 @@ class CamConfig(private val mActivity: MainActivity) {
         }
         set(value) {
             mActivity.locationCamConfigChanged(value)
-            val editor = modePref.edit()
-            editor.putBoolean(SettingValues.Key.GEO_TAGGING, value)
-            editor.commit()
+            modePref.edit {
+                putBoolean(SettingValues.Key.GEO_TAGGING, value)
+            }
 
             mActivity.settingsDialog.locToggle.isChecked = value
 
@@ -747,9 +748,9 @@ class CamConfig(private val mActivity: MainActivity) {
                     && lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
-            val editor = modePref.edit()
-            editor.putBoolean(SettingValues.Key.SELF_ILLUMINATION, value)
-            editor.commit()
+            modePref.edit {
+                putBoolean(SettingValues.Key.SELF_ILLUMINATION, value)
+            }
 
             mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
             mActivity.settingsDialog.selfIllumination()
@@ -782,12 +783,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
         val formatSRep = "${SettingValues.Key.SCAN}_$format"
 
-        val editor = commonPref.edit()
-        editor.putBoolean(
-            formatSRep,
-            selected
-        )
-        editor.commit()
+        commonPref.edit {
+            putBoolean(formatSRep, selected)
+        }
 
         if (selected) {
             if (BarcodeFormat.valueOf(format) !in allowedFormats) {
@@ -807,43 +805,38 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun reloadSettings() {
-
         // pref config needs to be created
-        val sEditor = modePref.edit()
+        modePref.edit {
+            if (!modePref.contains(SettingValues.Key.FLASH_MODE)) {
+                putInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
+            }
 
-        if (!modePref.contains(SettingValues.Key.FLASH_MODE)) {
-            sEditor.putInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
-        }
+            if (!modePref.contains(SettingValues.Key.GEO_TAGGING)) {
+                putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
+            }
 
-        if (!modePref.contains(SettingValues.Key.GEO_TAGGING)) {
-            sEditor.putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
-        }
+            if (isVideoMode) {
 
-        if (isVideoMode) {
-
-            if (!modePref.contains(videoQualityKey)) {
-                mActivity.settingsDialog.reloadQualities()
-                val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String?
-                option.let {
-                    sEditor.putString(videoQualityKey, option)
+                if (!modePref.contains(videoQualityKey)) {
+                    mActivity.settingsDialog.reloadQualities()
+                    val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String?
+                    putString(videoQualityKey, option)
+                } else {
+                    modePref.getString(videoQualityKey, null)?.let {
+                        mActivity.settingsDialog.reloadQualities(it)
+                    }
                 }
-            } else {
-                modePref.getString(videoQualityKey, null)?.let {
-                    mActivity.settingsDialog.reloadQualities(it)
+            }
+
+            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
+                    putBoolean(
+                        SettingValues.Key.SELF_ILLUMINATION,
+                        SettingValues.Default.SELF_ILLUMINATION
+                    )
                 }
             }
         }
-
-        if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-            if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
-                sEditor.putBoolean(
-                    SettingValues.Key.SELF_ILLUMINATION,
-                    SettingValues.Default.SELF_ILLUMINATION
-                )
-            }
-        }
-
-        sEditor.commit()
 
         flashMode = modePref.getInt(
             SettingValues.Key.FLASH_MODE,
@@ -863,7 +856,6 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.settingsDialog.showOnlyRelevantSettings()
     }
 
-    @SuppressLint("ApplySharedPref")
     fun loadSettings() {
 
         // Create common config. if it's not created
@@ -943,7 +935,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
 
-        editor.commit()
+        editor.apply()
 
         gridType = GridType.values()[commonPref.getInt(
             SettingValues.Key.GRID,
@@ -1022,9 +1014,9 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, value)
-            editor.commit()
+            commonPref.edit {
+                putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, value)
+            }
         }
 
     fun toggleTorchState() {
@@ -1652,41 +1644,33 @@ class CamConfig(private val mActivity: MainActivity) {
         // Add OK and Cancel buttons
         builder.setPositiveButton("OK") { _, _ ->
 
-            val editor = commonPref.edit()
+            commonPref.edit {
+                for (index in 0 until optionNames.size) {
 
-            for (index in 0 until optionNames.size) {
+                    val optionName = optionNames[index]
+                    val optionValue = optionValues[index]
 
-                val optionName = optionNames[index]
-                val optionValue = optionValues[index]
+                    val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
 
-                val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
+                    val format = BarcodeFormat.valueOf(optionName)
 
-                val format = BarcodeFormat.valueOf(optionName)
+                    if (optionValue) {
+                        allowedFormats.add(format)
 
-                if (optionValue) {
-                    allowedFormats.add(format)
+                        putBoolean(formatSRep, true)
+                    } else if (format in allowedFormats) {
+                        if (allowedFormats.size == 1) {
+                            mActivity.showMessage(
+                                getString(R.string.no_barcode_selected)
+                            )
+                        } else {
+                            allowedFormats.remove(format)
 
-                    editor.putBoolean(
-                        formatSRep,
-                        true
-                    )
-                } else if (format in allowedFormats) {
-                    if (allowedFormats.size == 1) {
-                        mActivity.showMessage(
-                            getString(R.string.no_barcode_selected)
-                        )
-                    } else {
-                        allowedFormats.remove(format)
-
-                        editor.putBoolean(
-                            formatSRep,
-                            false
-                        )
+                            putBoolean(formatSRep, false)
+                        }
                     }
                 }
             }
-
-            editor.commit()
 
             qrAnalyzer?.refreshHints()
         }
