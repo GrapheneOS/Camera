@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.ViewGroup
 import androidx.core.view.ViewCompat
+import app.grapheneos.camera.CameraMode
 import com.google.android.material.tabs.TabLayout
 
 class BottomTabLayout @JvmOverloads constructor(
@@ -120,15 +121,9 @@ class BottomTabLayout @JvmOverloads constructor(
         return selectedChild.left + selectedWidth - width / 2
     }
 
-    fun getAllModes(): ArrayList<Int> {
-        val modes = arrayListOf<Int>()
-
-        for (index in 0..tabCount) {
-            val tab = getTabAt(index)
-            if (tab != null)
-                modes.add(tab.id)
-        }
-
-        return modes
+    fun getAllModes(): Set<CameraMode> {
+        return IntRange(0, tabCount - 1).map {
+            getTabAt(it)!!.tag as CameraMode
+        }.toSet()
     }
 }
