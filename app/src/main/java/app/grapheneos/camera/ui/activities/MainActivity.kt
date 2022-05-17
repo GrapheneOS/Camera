@@ -13,6 +13,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.graphics.Point
 import android.graphics.Rect
 import android.net.Uri
@@ -73,6 +74,7 @@ import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.capturer.isTakingPicture
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
@@ -85,15 +87,19 @@ import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
+import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.executeIfAlive
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.zxing.BarcodeFormat
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
+import kotlin.math.max
 
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
@@ -190,6 +196,8 @@ open class MainActivity : AppCompatActivity(),
 
     private lateinit var gLeftDash: View
     private lateinit var gRightDash: View
+
+    val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -391,9 +399,6 @@ open class MainActivity : AppCompatActivity(),
 
         val intent = Intent(this, InAppGallery::class.java)
 
-        intent.putExtra("show_videos_only", this.requiresVideoModeOnly)
-        intent.putExtra("is_secure_mode", false)
-        startActivity(intent)
     }
 
     private fun checkPermissions() {
@@ -507,11 +512,7 @@ open class MainActivity : AppCompatActivity(),
             startFocusTimer()
         }
 
-        camConfig.latestUri = null
-
-        if (camConfig.latestMediaFile == null) {
-            imagePreview.setImageResource(android.R.color.transparent)
-        }
+        updateThumbnail()
 
         if (camConfig.requireLocation) {
             requestLocation()
@@ -562,7 +563,6 @@ open class MainActivity : AppCompatActivity(),
         thirdOption = binding.thirdOption
         previewLoader = binding.previewLoading
         imagePreview = binding.imagePreview
-        camConfig.updatePreview()
         previewView = binding.preview
         previewView.scaleType = PreviewView.ScaleType.FIT_START
         previewContainer = binding.previewContainer
@@ -1580,6 +1580,7 @@ open class MainActivity : AppCompatActivity(),
     override fun onDestroy() {
         super.onDestroy()
         SensorOrientationChangeNotifier.clearInstance()
+        thumbnailLoaderExecutor.shutdownNow()
     }
 
     fun locationCamConfigChanged(required: Boolean) {
@@ -1666,7 +1667,7 @@ open class MainActivity : AppCompatActivity(),
         application.resetPreventScreenFromSleeping()
     }
 
-    var isStarted = false
+    @Volatile var isStarted = false
 
     override fun onStart() {
         super.onStart()
@@ -1676,5 +1677,47 @@ open class MainActivity : AppCompatActivity(),
     override fun onStop() {
         super.onStop()
         isStarted = false
+    }
+
+    fun updateThumbnail() {
+        val item = camConfig.lastCapturedItem
+        val preview = imagePreview
+        preview.setImageBitmap(null)
+
+        if (item == null) {
+            return
+        }
+
+        val ctx = applicationContext
+
+        thumbnailLoaderExecutor.executeIfAlive {
+            var bitmap: Bitmap? = null
+            try {
+                val side = preview.layoutParams.width
+
+                if (item.type == ITEM_TYPE_VIDEO) {
+                    val origBitmap = getVideoThumbnail(ctx, item.uri)
+                    origBitmap?.let {
+                        val w = it.width.toDouble()
+                        val h = it.height.toDouble()
+                        val ratio = max(w / side, h / side)
+
+                        bitmap = Bitmap.createScaledBitmap(it, (w / ratio).toInt(), (h / ratio).toInt(), true)
+                        origBitmap.recycle()
+                    }
+                } else if (item.type == ITEM_TYPE_IMAGE) {
+                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
+                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "unable to update preview", e)
+            }
+
+            mainExecutor.execute {
+                if (isStarted && camConfig.lastCapturedItem == item) {
+                    preview.setImageBitmap(bitmap)
+                }
+            }
+        }
     }
 }

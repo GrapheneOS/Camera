@@ -27,6 +27,7 @@ import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.executeIfAlive
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
@@ -121,7 +122,8 @@ class ImageSaver(
             handleError(e)
             return
         }
-        thumbnailGeneratorExecutor.execute(this::generateThumbnail)
+
+        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
     }
 
     private var cropRect: Rect? = null

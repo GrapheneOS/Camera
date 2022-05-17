@@ -349,3 +349,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording = null
     }
 }
+
+@Throws(Exception::class)
+fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap? {
+    MediaMetadataRetriever().use {
+        it.setDataSource(context, uri)
+        return it.frameAtTime
+    }
+}
