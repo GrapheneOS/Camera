@@ -2,6 +2,9 @@ package app.grapheneos.camera.capturer
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
@@ -151,7 +154,24 @@ class ImageCapturer(val mActivity: MainActivity) {
         Log.e(TAG, "onImageSaverError", exception)
         mActivity.previewLoader.visibility = View.GONE
 
-        if (skipErrorDialog || !mActivity.isStarted) {
+        if (!mActivity.isStarted) {
+            val channelId = "image_saver_error"
+            val channel = NotificationChannel(channelId, mActivity.getString(R.string.unable_to_save_image),
+                NotificationManager.IMPORTANCE_HIGH)
+
+            val notif = Notification.Builder(mActivity, channelId).apply {
+                setSmallIcon(R.drawable.info)
+                setContentTitle(mActivity.getString(R.string.unable_to_save_image))
+            }.build()
+
+            mActivity.getSystemService(NotificationManager::class.java).let {
+                it.createNotificationChannel(channel)
+                it.notify(1, notif)
+            }
+            return
+        }
+
+        if (skipErrorDialog) {
             mActivity.showMessage(R.string.unable_to_save_image)
         } else {
             val msg = mActivity.getString(R.string.unable_to_save_image_verbose, exception.place.name)
