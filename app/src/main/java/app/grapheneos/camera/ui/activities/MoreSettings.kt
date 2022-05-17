@@ -17,6 +17,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
+import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.snackbar.Snackbar
@@ -127,8 +128,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dialog.setMessage(R.string.revert_to_default_directory)
 
             dialog.setPositiveButton(R.string.yes) { _, _ ->
-                val path = "DCIM/Camera"
-                sLField.setText(path)
+                sLField.setText(DEFAULT_MEDIA_STORE_CAPTURE_PATH)
 
                 if (camConfig.storageLocation.isNotEmpty()) {
                     showMessage(

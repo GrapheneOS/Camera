@@ -105,7 +105,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
         }
 
         if (mActivity is VideoCaptureActivity

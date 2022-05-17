@@ -34,6 +34,12 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 
+// see com.android.externalstorage.ExternalStorageProvider and
+// com.android.internal.content.FileSystemProvider
+const val SAF_URI_HOST_EXTERNAL_STORAGE = "com.android.externalstorage.documents"
+
+const val DEFAULT_MEDIA_STORE_CAPTURE_PATH = "DCIM/Camera"
+
 /*
 Based on androidx.camera.core.ImageSaver
 
@@ -150,9 +156,7 @@ class ImageSaver(
 
         val shouldFsync = when (uri.host) {
             MediaStore.AUTHORITY,
-            // see com.android.externalstorage.ExternalStorageProvider and
-            // com.android.internal.content.FileSystemProvider
-            "com.android.externalstorage.documents" ->
+            SAF_URI_HOST_EXTERNAL_STORAGE ->
                 true
             else ->
                 false
@@ -282,7 +286,7 @@ class ImageSaver(
             val cv = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, fileName())
                 put(MediaStore.MediaColumns.MIME_TYPE, mimeType())
-                put(MediaStore.MediaColumns.RELATIVE_PATH,"DCIM/Camera")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
 
