@@ -2,14 +2,11 @@ package app.grapheneos.camera
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -35,16 +32,13 @@ import androidx.camera.core.UseCaseGroup
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
-import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.analyzer.QRAnalyzer
-import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureActivity
@@ -96,7 +90,11 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
 
             const val STORAGE_LOCATION = "storage_location"
-            const val MEDIA_URIS = "media_uri_s"
+            const val PREVIOUS_SAF_TREES = "previous_saf_trees"
+
+            const val LAST_CAPTURED_ITEM_TYPE = "last_captured_item_type"
+            const val LAST_CAPTURED_ITEM_DATE_STRING = "last_captured_item_date_string"
+            const val LAST_CAPTURED_ITEM_URI = "last_captured_item_uri"
 
             const val PHOTO_QUALITY = "photo_quality"
 
@@ -136,7 +134,6 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SAVE_IMAGE_AS_PREVIEW = false
 
             const val STORAGE_LOCATION = ""
-            const val MEDIA_URIS = ""
 
             const val PHOTO_QUALITY = 0
 
@@ -177,33 +174,6 @@ class CamConfig(private val mActivity: MainActivity) {
         val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
 
         const val COMMON_SHARED_PREFS_NAME = "commons"
-
-        @JvmStatic
-        @Throws(Exception::class)
-        fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap {
-
-            val mBitmap: Bitmap
-            var mMediaMetadataRetriever: MediaMetadataRetriever? = null
-
-            try {
-                mMediaMetadataRetriever = MediaMetadataRetriever()
-                mMediaMetadataRetriever.setDataSource(context, uri)
-                mBitmap = mMediaMetadataRetriever.frameAtTime!!
-            } catch (m_e: Exception) {
-                throw Exception(
-                    "Exception in retrieveVideoFrameFromVideo(String p_videoPath)"
-                            + m_e.message
-                )
-            } finally {
-                if (mMediaMetadataRetriever != null) {
-                    mMediaMetadataRetriever.release()
-                    mMediaMetadataRetriever.close()
-                }
-            }
-            return mBitmap
-        }
-
-        const val PATH_SEPARATOR = ";"
     }
 
     var camera: Camera? = null
@@ -228,8 +198,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var iAnalyzer: ImageAnalysis? = null
 
-    var latestUri: Uri? = null
-
     val mPlayer: TunePlayer by lazy { TunePlayer(mActivity.applicationContext) }
 
     // note that Activities which implement SecureActivity interface (meaning they are accessible
@@ -238,6 +206,25 @@ class CamConfig(private val mActivity: MainActivity) {
     // but never modify them
     val commonPref: SharedPreferences = mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
     private lateinit var modePref: SharedPreferences
+
+    var lastCapturedItem: CapturedItem? = null
+
+    init {
+        if (mActivity !is SecureActivity) {
+            CapturedItems.init(mActivity, this)
+
+            val type = commonPref.getInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, -1)
+            val dateStr = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, null)
+            val uri = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, null)
+
+            if (dateStr != null && uri != null) {
+                val skip = type == ITEM_TYPE_IMAGE && mActivity is VideoOnlyActivity
+                if (!skip) {
+                    lastCapturedItem = CapturedItem(type, dateStr, Uri.parse(uri))
+                }
+            }
+        }
+    }
 
 
     var isVideoMode = false
@@ -459,121 +446,15 @@ class CamConfig(private val mActivity: MainActivity) {
             )!!
         }
         set(value) {
+            val cur = storageLocation
+            if (cur != SettingValues.Default.STORAGE_LOCATION) {
+                CapturedItems.savePreviousSafTree(Uri.parse(cur), commonPref)
+            }
+
             val editor = commonPref.edit()
             editor.putString(SettingValues.Key.STORAGE_LOCATION, value)
             editor.apply()
         }
-
-    val mediaUris: ArrayList<Uri>
-        get() {
-            val data = commonPref.getString(
-                SettingValues.Key.MEDIA_URIS,
-                SettingValues.Default.MEDIA_URIS
-            )!!
-
-            // This branching was done because
-            // string.split returns [""] even if the main string is empty
-            val uriPaths = if (data.isEmpty()) {
-                emptyList()
-            } else {
-                data.split(PATH_SEPARATOR)
-            }
-
-            val uris = arrayListOf<Uri>().let {
-                val newUris = uriPaths.map { path ->
-                    Uri.parse(path)
-                }
-
-                var hasDelUris = false
-
-                for (newUri in newUris) {
-                    val doc = DocumentFile.fromSingleUri(mActivity, newUri)!!
-                    if (doc.exists()) {
-                        it.add(newUri)
-                    } else {
-                        hasDelUris = true
-                    }
-                }
-
-                if (hasDelUris) {
-                    val editor = commonPref.edit()
-                    editor.putString(
-                        SettingValues.Key.MEDIA_URIS,
-                        it.joinToString(PATH_SEPARATOR)
-                    )
-                    editor.commit()
-                }
-
-                for (oldPath in getOldPaths()) {
-                    if (!it.contains(oldPath)) {
-                        it.add(oldPath)
-                    }
-                }
-
-                it
-            }
-
-            return uris
-        }
-
-    private fun getOldPaths(): List<Uri> {
-
-        val pathData: ArrayList<Pair<Uri, Int>> = arrayListOf()
-
-        val imageCursor = mActivity.contentResolver.query(
-            imageCollectionUri,
-            arrayOf(
-                MediaStore.Images.ImageColumns._ID,
-                MediaStore.Images.ImageColumns.DATE_ADDED,
-            ),
-            null, null,
-            "${MediaStore.Images.ImageColumns.DATE_ADDED} DESC"
-        )
-
-        if (imageCursor != null) {
-            while (imageCursor.moveToNext()) {
-                val imageUri = ContentUris
-                    .withAppendedId(
-                        imageCollectionUri,
-                        imageCursor.getInt(0).toLong()
-                    )
-
-                val imageAddedOn = imageCursor.getInt(1)
-
-                pathData.add(Pair(imageUri, imageAddedOn))
-            }
-            imageCursor.close()
-        }
-
-        val videoCursor = mActivity.contentResolver.query(
-            videoCollectionUri,
-            arrayOf(
-                MediaStore.Video.VideoColumns._ID,
-                MediaStore.Video.VideoColumns.DATE_ADDED,
-            ),
-            null, null,
-            "${MediaStore.Video.VideoColumns.DATE_ADDED} DESC"
-        )
-
-        if (videoCursor != null) {
-            while (videoCursor.moveToNext()) {
-                val videoUri = ContentUris
-                    .withAppendedId(
-                        videoCollectionUri,
-                        videoCursor.getInt(0).toLong()
-                    )
-
-                val videoAddedOn = videoCursor.getInt(1)
-
-                pathData.add(Pair(videoUri, videoAddedOn))
-            }
-            videoCursor.close()
-        }
-
-        pathData.sortWith(compareBy { -it.second })
-
-        return pathData.map { it.first }
-    }
 
     var photoQuality: Int
         get() {
@@ -666,49 +547,14 @@ class CamConfig(private val mActivity: MainActivity) {
 //            editor.apply()
 //        }
 
-    @SuppressLint("MutatingSharedPrefs")
-    fun addToGallery(uri: Uri) {
-
-        val path = uri.toString()
-
-        val uriPathData = commonPref.getString(
-            SettingValues.Key.MEDIA_URIS,
-            SettingValues.Default.MEDIA_URIS
-        )!!
-
-        val resultData = if (uriPathData.isEmpty()) {
-            path
-        } else {
-            "$path$PATH_SEPARATOR$uriPathData"
+    fun updateLastCapturedItem(item: CapturedItem) {
+        commonPref.edit {
+            putInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, item.type)
+            putString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, item.dateString)
+            putString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, item.uri.toString())
         }
 
-        camConfig.latestUri = uri
-
-        val editor = commonPref.edit()
-        editor.putString(SettingValues.Key.MEDIA_URIS, resultData)
-        editor.commit()
-    }
-
-    @SuppressLint("MutatingSharedPrefs")
-    fun removeFromGallery(uri: Uri) {
-
-        val path = uri.toString()
-
-        val uriPathData = commonPref.getString(
-            SettingValues.Key.MEDIA_URIS,
-            SettingValues.Default.MEDIA_URIS
-        )!!
-
-        val uriPaths = ArrayList<String>()
-        uriPaths.addAll(uriPathData.split(PATH_SEPARATOR))
-        uriPaths.remove(path)
-
-        val editor = commonPref.edit()
-        editor.putString(
-            SettingValues.Key.MEDIA_URIS,
-            uriPaths.joinToString(PATH_SEPARATOR)
-        )
-        editor.commit()
+        lastCapturedItem = item
     }
 
     var requireLocation: Boolean = false
@@ -988,50 +834,6 @@ class CamConfig(private val mActivity: MainActivity) {
     fun toggleTorchState() {
         isTorchOn = !isTorchOn
     }
-
-
-    fun updatePreview() {
-        val uri = latestUri ?: return
-        if (isVideo(uri)) {
-            try {
-                mActivity.imagePreview.setImageBitmap(
-                    getVideoThumbnail(mActivity, latestUri)
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        } else {
-            val preview = mActivity.imagePreview
-            val side = preview.layoutParams.width
-
-            try {
-                val source = ImageDecoder.createSource(mActivity.contentResolver, uri)
-                val bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
-                preview.setImageBitmap(bitmap)
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to update preview", e)
-            }
-        }
-    }
-
-    val latestMediaFile: Uri?
-        get() {
-            if (latestUri != null) return latestUri
-
-            if (mActivity is SecureMainActivity) {
-                if (mActivity.capturedFilePaths.isNotEmpty()) {
-                    latestUri = Uri.parse(mActivity.capturedFilePaths.last())
-                }
-            } else {
-                latestUri = mediaUris.firstOrNull { uri ->
-                    mActivity !is VideoOnlyActivity || isVideo(uri)
-                }
-            }
-
-            updatePreview()
-
-            return latestUri
-        }
 
     fun toggleFlashMode() {
         if (isFlashAvailable) {
