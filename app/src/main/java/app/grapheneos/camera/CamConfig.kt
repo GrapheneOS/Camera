@@ -47,8 +47,7 @@ import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.capturer.VideoCapturer.Companion.isVideo
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
-import app.grapheneos.camera.ui.activities.SecureCaptureActivity
+import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
@@ -1592,8 +1591,8 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun onStorageLocationNotFound() {
-        // Reverting back to DCIM
-        camConfig.storageLocation = ""
+        // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
+        storageLocation = ""
 
         val builder = AlertDialog.Builder(mActivity)
         builder.setTitle(R.string.folder_not_found)
