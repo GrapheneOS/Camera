@@ -186,7 +186,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         const val DEFAULT_CAMERA_MODE = CameraModes.CAMERA
 
-        const val COMMON_SP_NAME = "commons"
+        const val COMMON_SHARED_PREFS_NAME = "commons"
 
         @JvmStatic
         @Throws(Exception::class)
@@ -242,24 +242,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val mPlayer: TunePlayer by lazy { TunePlayer(mActivity.applicationContext) }
 
-    private val commonPref = when (mActivity) {
-        is SecureMainActivity -> {
-            mActivity.getSharedPreferences(
-                COMMON_SP_NAME
-                        + mActivity.openedActivityAt, Context.MODE_PRIVATE
-            )
-        }
-        is SecureCaptureActivity -> {
-            mActivity.getSharedPreferences(
-                COMMON_SP_NAME
-                        + mActivity.openedActivityAt, Context.MODE_PRIVATE
-            )
-        }
-        else -> {
-            mActivity.getSharedPreferences(COMMON_SP_NAME, Context.MODE_PRIVATE)
-        }
-    }
-
+    // note that Activities which implement SecureActivity interface (meaning they are accessible
+    // from the lock screen) are forced to override getSharedPreferences()
+    // and return an instance of in-memory EphemeralSharedPrefs, which are based on "real" prefs,
+    // but never modify them
+    val commonPref: SharedPreferences = mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
     private lateinit var modePref: SharedPreferences
 
 
