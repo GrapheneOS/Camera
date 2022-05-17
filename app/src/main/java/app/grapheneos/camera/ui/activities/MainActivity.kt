@@ -99,7 +99,9 @@ open class MainActivity : AppCompatActivity(),
     GestureDetector.OnDoubleTapListener,
     SensorOrientationChangeNotifier.Listener {
 
-    private val application: App by lazy { applicationContext as App }
+    private val application: App
+        get() = applicationContext as App
+
     private lateinit var binding: ActivityMainBinding
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
@@ -1033,7 +1035,7 @@ open class MainActivity : AppCompatActivity(),
 
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
-            val mode = selectedTab.id
+            val mode = selectedTab.tag as CameraMode
             tabLayout.centerTab(selectedTab)
             tab?.let { tabLayout.centerTab(it) }
             camConfig.switchMode(mode)

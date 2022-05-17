@@ -58,7 +58,18 @@ import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
-@SuppressLint("ApplySharedPref")
+// note that enum constant name is used as a name of a SharedPreferences instance
+enum class CameraMode(val extensionMode: Int, val uiName: Int) {
+    QR_SCAN(ExtensionMode.NONE, R.string.qr_scan_mode),
+    AUTO(ExtensionMode.AUTO, R.string.auto_mode),
+    FACE_RETOUCH(ExtensionMode.FACE_RETOUCH, R.string.face_retouch_mode),
+    PORTRAIT(ExtensionMode.BOKEH, R.string.portrait_mode),
+    NIGHT(ExtensionMode.NIGHT, R.string.night_mode),
+    HDR(ExtensionMode.HDR, R.string.hdr_mode),
+    CAMERA(ExtensionMode.NONE, R.string.camera),
+    VIDEO(ExtensionMode.NONE, R.string.video),
+}
+
 class CamConfig(private val mActivity: MainActivity) {
 
     enum class GridType {
@@ -68,18 +79,7 @@ class CamConfig(private val mActivity: MainActivity) {
         GOLDEN_RATIO
     }
 
-    private object CameraModes {
-        const val CAMERA = R.string.camera
-        const val VIDEO = R.string.video
-        const val PORTRAIT = R.string.portrait_mode
-        const val HDR = R.string.hdr_mode
-        const val NIGHT = R.string.night_mode
-        const val FACE_RETOUCH = R.string.face_retouch_mode
-        const val AUTO = R.string.auto_mode
-        const val QR_SCAN = R.string.qr_scan_mode
-    }
-
-    private object SettingValues {
+    object SettingValues {
 
         object Key {
             const val SELF_ILLUMINATION = "self_illumination"
@@ -160,21 +160,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
         const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
 
-        const val DEFAULT_EXTENSION_MODE = ExtensionMode.NONE
-
         val commonFormats = arrayOf(
             BarcodeFormat.AZTEC,
             BarcodeFormat.QR_CODE,
             BarcodeFormat.DATA_MATRIX,
             BarcodeFormat.PDF_417,
-        )
-
-        val extensionModes = mapOf(
-            CameraModes.PORTRAIT to ExtensionMode.BOKEH,
-            CameraModes.HDR to ExtensionMode.HDR,
-            CameraModes.NIGHT to ExtensionMode.NIGHT,
-            CameraModes.FACE_RETOUCH to ExtensionMode.FACE_RETOUCH,
-            CameraModes.AUTO to ExtensionMode.AUTO
         )
 
         val imageCollectionUri: Uri = MediaStore.Images.Media.getContentUri(
@@ -185,7 +175,7 @@ class CamConfig(private val mActivity: MainActivity) {
             MediaStore.VOLUME_EXTERNAL_PRIMARY
         )!!
 
-        const val DEFAULT_CAMERA_MODE = CameraModes.CAMERA
+        val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
 
         const val COMMON_SHARED_PREFS_NAME = "commons"
 
@@ -283,7 +273,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-    private var modeText: Int = DEFAULT_CAMERA_MODE
+    private var currentMode: CameraMode = DEFAULT_CAMERA_MODE
 
     var aspectRatio: Int
         get() {
@@ -309,8 +299,6 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
     var lensFacing = DEFAULT_LENS_FACING
-
-    private var extensionMode = DEFAULT_EXTENSION_MODE
 
     private lateinit var cameraSelector: CameraSelector
 
@@ -756,27 +744,6 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.settingsDialog.selfIllumination()
         }
 
-    private fun updatePrefMode() {
-        val modeText = getCurrentModeText()
-        modePref = when (mActivity) {
-            is SecureCaptureActivity -> {
-                mActivity.getSharedPreferences(
-                    modeText + mActivity.openedActivityAt,
-                    Context.MODE_PRIVATE
-                )
-            }
-            is SecureMainActivity -> {
-                mActivity.getSharedPreferences(
-                    modeText + mActivity.openedActivityAt,
-                    Context.MODE_PRIVATE
-                )
-            }
-            else -> {
-                mActivity.getSharedPreferences(modeText, Context.MODE_PRIVATE)
-            }
-        }
-    }
-
     private fun getString(@StringRes id: Int) = mActivity.getString(id)
 
     fun setQRScanningFor(format: String, selected: Boolean) {
@@ -1023,16 +990,6 @@ class CamConfig(private val mActivity: MainActivity) {
         isTorchOn = !isTorchOn
     }
 
-    private fun getCurrentModeText(): String {
-
-        val vp = if (isVideoMode) {
-            "VIDEO"
-        } else {
-            "PHOTO"
-        }
-
-        return "$modeText-$vp"
-    }
 
     fun updatePreview() {
         val uri = latestUri ?: return
@@ -1179,12 +1136,11 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     // Start the camera with latest hard configuration
-    @JvmOverloads
     fun startCamera(forced: Boolean = false) {
         if ((!forced && camera != null) || cameraProvider == null) return
 
         mActivity.exposureBar.hidePanel()
-        updatePrefMode()
+        modePref = mActivity.getSharedPreferences(currentMode.name, Context.MODE_PRIVATE)
 
         val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val display = mActivity.display
@@ -1213,13 +1169,14 @@ class CamConfig(private val mActivity: MainActivity) {
         // Unbind/close all other camera(s) [if any]
         cameraProvider?.unbindAll()
 
-        val extensionsManager = extensionsManager
-        if (extensionsManager != null && extensionsManager.isExtensionAvailable(cameraSelector, extensionMode)) {
-            cameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-                cameraSelector, extensionMode
-            )
-        } else {
-            Log.e(TAG, "The current mode isn't available for this device")
+        val extMode = currentMode.extensionMode
+        if (extMode != ExtensionMode.NONE) {
+            val em = extensionsManager
+            if (em != null && em.isExtensionAvailable(cameraSelector, extMode)) {
+                cameraSelector = em.getExtensionEnabledCameraSelector(cameraSelector, extMode)
+            } else {
+                Log.e(TAG, "Mode $currentMode isn't available for this device")
+            }
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
@@ -1317,13 +1274,10 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
-        preview = previewBuilder.build()
-
-        preview?.let {
+        preview = previewBuilder.build().also {
             useCaseGroupBuilder.addUseCase(it)
+            it.setSurfaceProvider(mActivity.previewView.surfaceProvider)
         }
-
-        preview?.setSurfaceProvider(mActivity.previewView.surfaceProvider)
 
         mActivity.forceUpdateOrientationSensor()
 
@@ -1447,119 +1401,66 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun loadTabs() {
-
-        val modes = getAvailableModes()
-        val cModes = mActivity.tabLayout.getAllModes()
-
-        var mae = true
-
-        if (modes.size == cModes.size) {
-            for (index in 0 until modes.size) {
-                if (modes[index] != cModes[index]) {
-                    mae = false
-                    break
+    fun availableModes(): Set<CameraMode> {
+        return CameraMode.values().filter {
+            when (it) {
+                CameraMode.CAMERA, CameraMode.VIDEO -> true
+                CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
+                else -> {
+                    check(it.extensionMode != ExtensionMode.NONE)
+                    val em = extensionsManager
+                    if (em != null) {
+                        em.isExtensionAvailable(cameraSelector, it.extensionMode)
+                    } else {
+                        false
+                    }
                 }
             }
-        } else mae = false
+        }.toSet()
+    }
 
-        if (mae) return
+    @SuppressLint("ClickableViewAccessibility")
+    private fun loadTabs() {
+        val tabLayout = mActivity.tabLayout
+        val availableModes = availableModes()
+
+        if (availableModes == tabLayout.getAllModes()) {
+            return
+        }
 
         Log.i(TAG, "Refreshing tabs...")
 
-        mActivity.tabLayout.removeAllTabs()
+        tabLayout.removeAllTabs()
 
-        modes.forEach { mode ->
-            mActivity.tabLayout.newTab().let {
-                mActivity.tabLayout.addTab(it.apply {
-                    setText(mode)
-                    val tab = it
-                    it.view.setOnTouchListener { _, e ->
-                        if (e.action == MotionEvent.ACTION_UP) {
-                            mActivity.finalizeMode(tab)
-                        }
-                        false
+        availableModes.forEach { mode ->
+            tabLayout.newTab().let { tab ->
+                tab.setText(mode.uiName)
+
+                tab.view.setOnTouchListener { _, e ->
+                    if (e.action == MotionEvent.ACTION_UP) {
+                        mActivity.finalizeMode(tab)
                     }
-                    id = mode
-                }, false)
-                if (mode == DEFAULT_CAMERA_MODE) {
-                    it.select()
+                    false
                 }
+                tab.tag = mode
+
+                tabLayout.addTab(tab, mode == DEFAULT_CAMERA_MODE)
             }
         }
     }
 
-    private fun getAvailableModes(): ArrayList<Int> {
-        val modes = arrayListOf<Int>()
-
-        if (mActivity !is SecureMainActivity) {
-            modes.add(CameraModes.QR_SCAN)
+    fun switchMode(mode: CameraMode) {
+        if (currentMode == mode) {
+            return
         }
 
-        val extensionsManager = extensionsManager
-        if (extensionsManager != null) {
-            if (extensionsManager.isExtensionAvailable(
-                    cameraSelector,
-                    ExtensionMode.AUTO
-                )
-            ) {
-                modes.add(CameraModes.AUTO)
-            }
-
-            if (extensionsManager.isExtensionAvailable(
-                    cameraSelector,
-                    ExtensionMode.FACE_RETOUCH
-                )
-            ) {
-                modes.add(CameraModes.FACE_RETOUCH)
-            }
-
-            if (extensionsManager.isExtensionAvailable(
-                    cameraSelector,
-                    ExtensionMode.BOKEH
-                )
-            ) {
-                modes.add(CameraModes.PORTRAIT)
-            }
-
-            if (extensionsManager.isExtensionAvailable(
-                    cameraSelector,
-                    ExtensionMode.NIGHT
-                )
-            ) {
-                modes.add(CameraModes.NIGHT)
-            }
-
-            if (extensionsManager.isExtensionAvailable(
-                    cameraSelector,
-                    ExtensionMode.HDR
-                )
-            ) {
-                modes.add(CameraModes.HDR)
-            }
-        }
-
-        modes.add(CameraModes.CAMERA)
-
-        modes.add(CameraModes.VIDEO)
-
-        return modes
-    }
-
-    fun switchMode(modeText: Int) {
-
-        if (this.modeText == modeText) return
-
-        this.modeText = modeText
-
-        extensionMode = extensionModes.getOrDefault(modeText, ExtensionMode.NONE)
+        currentMode = mode
 
         mActivity.cancelFocusTimer()
 
-        isQRMode = modeText == CameraModes.QR_SCAN
+        isQRMode = mode == CameraMode.QR_SCAN
 
-        isVideoMode = modeText == CameraModes.VIDEO
+        isVideoMode = mode == CameraMode.VIDEO
 
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
