@@ -5,7 +5,6 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -16,39 +15,41 @@ import android.provider.MediaStore
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
-import androidxc.exifinterface.media.ExifInterface
 import androidx.viewpager2.widget.ViewPager2
+import androidxc.exifinterface.media.ExifInterface
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
+import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
-import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.databinding.GalleryBinding
 import com.google.android.material.snackbar.Snackbar
 import java.io.FileNotFoundException
-import java.io.InputStream
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.concurrent.Executors
 import kotlin.properties.Delegates
 
 class InAppGallery : AppCompatActivity() {
 
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
-    private val mediaUris: ArrayList<Uri> = arrayListOf()
+    var gallerySliderAdapter: GallerySliderAdapter? = null
+    val asyncLoader = Executors.newSingleThreadExecutor()
+
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
 
-    private val isSecureMode: Boolean
-        get() {
-            return intent.extras?.containsKey("fileSP") == true
-        }
+    private var isSecureMode = false
 
     private val editIntentLauncher =
         registerForActivityResult(StartActivityForResult())
@@ -65,7 +66,7 @@ class InAppGallery : AppCompatActivity() {
         try {
             contentResolver.openInputStream(contentUri).use { inStream ->
                 inStream?.readBytes()?.let { editedStream ->
-                    contentResolver.openOutputStream(getCurrentUri())?.use { outputStream ->
+                    contentResolver.openOutputStream(getCurrentItem().uri)?.use { outputStream ->
                         outputStream.write(editedStream)
                     }
                     showMessage(getString(R.string.edit_successfully))
@@ -82,6 +83,10 @@ class InAppGallery : AppCompatActivity() {
     private lateinit var rootView: View
 
     companion object {
+        const val INTENT_KEY_SECURE_MODE = "is_secure_mode"
+        const val INTENT_KEY_VIDEO_ONLY_MODE = "video_only_mode"
+        const val INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS = "secure_mode_items"
+
         @SuppressLint("SimpleDateFormat")
         fun convertTime(time: Long, showTimeZone: Boolean = true): String {
             val date = Date(time)
@@ -148,8 +153,8 @@ class InAppGallery : AppCompatActivity() {
 
     }
 
-    private fun getCurrentUri(): Uri {
-        return (gallerySlider.adapter as GallerySliderAdapter).getCurrentUri()
+    private fun getCurrentItem(): CapturedItem {
+        return gallerySliderAdapter!!.getCurrentItem()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -195,12 +200,12 @@ class InAppGallery : AppCompatActivity() {
             return
         }
 
-        val mediaUri = getCurrentUri()
+        val curItem = getCurrentItem()
 
         val editIntent = Intent(Intent.ACTION_EDIT)
 
-        editIntent.putExtra(Intent.EXTRA_STREAM, mediaUri)
-        editIntent.data = mediaUri
+        editIntent.putExtra(Intent.EXTRA_STREAM, curItem.uri)
+        editIntent.data = curItem.uri
 
         editIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         editIntentLauncher.launch(
@@ -209,8 +214,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun deleteCurrentMedia() {
-
-        val mediaUri = getCurrentUri()
+        val curItem = getCurrentItem()
 
         AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(R.string.delete_title)
@@ -218,21 +222,21 @@ class InAppGallery : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { _, _ ->
                 var res = false
 
-                if (mediaUri.authority == MediaStore.AUTHORITY) {
+                val uri = curItem.uri
+                if (uri.authority == MediaStore.AUTHORITY) {
                     try {
-                        res = contentResolver.delete(mediaUri, null, null) == 1
+                        res = contentResolver.delete(uri, null, null) == 1
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
                 } else {
-                    val doc = DocumentFile.fromSingleUri(this, mediaUri)!!
+                    val doc = DocumentFile.fromSingleUri(this, uri)!!
                     res = doc.delete()
                 }
 
                 if (res) {
-                    MainActivity.camConfig.removeFromGallery(mediaUri)
                     showMessage(getString(R.string.deleted_successfully))
-                    (gallerySlider.adapter as GallerySliderAdapter).removeUri(mediaUri)
+                    gallerySliderAdapter!!.removeItem(curItem)
                 } else {
                     showMessage(getString(R.string.deleting_unexpected_error))
                 }
@@ -243,10 +247,10 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun showCurrentMediaDetails() {
-        val mediaUri = getCurrentUri()
+        val curItem = getCurrentItem()
 
         val mediaCursor = contentResolver.query(
-            mediaUri,
+            curItem.uri,
             arrayOf(
                 MediaStore.MediaColumns.RELATIVE_PATH,
                 MediaStore.MediaColumns.DISPLAY_NAME,
@@ -257,7 +261,7 @@ class InAppGallery : AppCompatActivity() {
         )
 
         if (mediaCursor?.moveToFirst() != true) {
-            showMessage(getString(R.string.unexpected_error))
+            showMessage(getString(R.string.unable_to_obtain_file_details))
 
             mediaCursor?.close()
             return
@@ -272,47 +276,37 @@ class InAppGallery : AppCompatActivity() {
         var dateAdded: String? = null
         var dateModified: String? = null
 
-        if (VideoCapturer.isVideo(mediaUri)) {
+        try {
+            if (curItem.type == ITEM_TYPE_VIDEO) {
+                MediaMetadataRetriever().use {
+                    it.setDataSource(this, curItem.uri)
+                    dateAdded = convertTimeForVideo(it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)!!)
+                    dateModified = dateAdded
+                }
+            } else {
+                contentResolver.openInputStream(curItem.uri)?.use { stream ->
+                    val eInterface = ExifInterface(stream)
 
-            val mediaMetadataRetriever = MediaMetadataRetriever()
-            mediaMetadataRetriever.setDataSource(
-                this,
-                mediaUri
-            )
+                    val offset = eInterface.getAttribute(ExifInterface.TAG_OFFSET_TIME)
 
-            val date =
-                convertTimeForVideo(
-                    mediaMetadataRetriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_DATE
-                    )!!
-                )
+                    if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)) {
+                        dateAdded = convertTimeForPhoto(
+                            eInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)!!,
+                            offset
+                        )
+                    }
 
-            dateAdded = date
-            dateModified = date
-
-        } else {
-            val iStream = contentResolver.openInputStream(
-                mediaUri
-            )
-            val eInterface = ExifInterface(iStream!!)
-
-            val offset = eInterface.getAttribute(ExifInterface.TAG_OFFSET_TIME)
-
-            if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)) {
-                dateAdded = convertTimeForPhoto(
-                    eInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)!!,
-                    offset
-                )
+                    if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME)) {
+                        dateModified = convertTimeForPhoto(
+                            eInterface.getAttribute(ExifInterface.TAG_DATETIME)!!,
+                            offset
+                        )
+                    }
+                }
             }
-
-            if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME)) {
-                dateModified = convertTimeForPhoto(
-                    eInterface.getAttribute(ExifInterface.TAG_DATETIME)!!,
-                    offset
-                )
-            }
-
-            iStream.close()
+        } catch (e: Exception) {
+            showMessage(getString(R.string.unable_to_obtain_file_details))
+            return
         }
 
 
@@ -328,7 +322,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Path: \n")
-        detailsBuilder.append(getRelativePath(mediaUri, relativePath, fileName))
+        detailsBuilder.append(getRelativePath(curItem.uri, relativePath, fileName))
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Size: \n")
@@ -413,36 +407,25 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun shareCurrentMedia() {
-
         if (isSecureMode) {
-            showMessage(
-                getString(R.string.sharing_not_allowed)
-            )
+            showMessage(getString(R.string.sharing_not_allowed))
             return
         }
 
-        val mediaUri = getCurrentUri()
+        val curItem = getCurrentItem()
 
         val share = Intent(Intent.ACTION_SEND)
-        share.putExtra(Intent.EXTRA_STREAM, mediaUri)
-        share.setDataAndType(mediaUri, if (VideoCapturer.isVideo(mediaUri)) {
-            "video/*"
-        } else {
-            "image/*"
-        })
+        share.putExtra(Intent.EXTRA_STREAM, curItem.uri)
+        share.setDataAndType(curItem.uri, curItem.mimeType())
         share.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
 
-        startActivity(
-            Intent.createChooser(share, getString(R.string.share_image))
-        )
-
+        startActivity(Intent.createChooser(share, getString(R.string.share_image)))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        isSecureMode = intent.extras?.getBoolean(INTENT_KEY_SECURE_MODE) ?: false
 
-        val showVideosOnly = intent.extras?.getBoolean("show_videos_only")!!
-        val isSecureMode = intent.extras?.getBoolean("is_secure_mode") == true
+        super.onCreate(savedInstanceState)
 
         if (isSecureMode) {
             setShowWhenLocked(true)
@@ -461,47 +444,52 @@ class InAppGallery : AppCompatActivity() {
 
         rootView = binding.rootView
         rootView.setOnClickListener {
-            toggleActionBarState()
+            if (gallerySliderAdapter != null) {
+                toggleActionBarState()
+            }
         }
 
         gallerySlider = binding.gallerySlider
         snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
         gallerySlider.setPageTransformer(GSlideTransformer())
 
-        if (isSecureMode) {
-            val spName = intent.extras?.getString("fileSP")
-            val sp = getSharedPreferences(spName, Context.MODE_PRIVATE)
-            val filePaths = sp.getString("filePaths", "")!!.split(",")
-            val mediaFileArray: Array<Uri> =
-                filePaths.stream().map { Uri.parse(it) }.toArray { length ->
-                    arrayOfNulls<Uri>(length)
-                }
+        val showVideosOnly = intent.extras?.getBoolean(INTENT_KEY_VIDEO_ONLY_MODE) ?: false
+        val listOfSecureModeCapturedItems = intent.extras!!.getParcelableArrayList<CapturedItem>(INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
 
-            mediaUris.addAll(mediaFileArray)
-        } else {
-
-            if (MainActivity.isCamConfigInitialized()) {
-                if (showVideosOnly) {
-                    for (mediaUri in MainActivity.camConfig.mediaUris) {
-                        if (VideoCapturer.isVideo(mediaUri)) {
-                            mediaUris.add(mediaUri)
-                        }
-                    }
-                } else {
-                    mediaUris.addAll(MainActivity.camConfig.mediaUris)
-                }
-            } else {
-                finish()
+        asyncLoader.execute {
+            var items: List<CapturedItem> = CapturedItems.get(this)
+            if (showVideosOnly) {
+                items = items.filter { it.type == ITEM_TYPE_VIDEO }
             }
+            listOfSecureModeCapturedItems?.toHashSet()?.let { allowedSet ->
+                items = items.filter { allowedSet.contains(it) }
+            }
+
+            val mutableItems = items.toMutableList()
+            mutableItems.sortByDescending { it.dateString }
+
+            mainExecutor.execute { asyncResultReady(mutableItems) }
         }
 
-        // Close gallery if no files are present
-        if (mediaUris.isEmpty()) {
-            showMessage(getString(R.string.no_image))
+        hideActionBar()
+    }
+
+    fun asyncResultReady(items: MutableList<CapturedItem>) {
+        if (isDestroyed) {
+            return
+        }
+
+        if (items.isEmpty()) {
+            Toast.makeText(applicationContext, R.string.empty_gallery, Toast.LENGTH_SHORT).show()
             finish()
+            return
         }
 
-        gallerySlider.adapter = GallerySliderAdapter(this, mediaUris)
+        GallerySliderAdapter(this, items).let {
+            gallerySliderAdapter = it
+            gallerySlider.adapter = it
+        }
+        showActionBar()
     }
 
     fun toggleActionBarState() {
@@ -528,58 +516,9 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
-    private fun uriExists(uri: Uri): Boolean {
-        try {
-            val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return false
-            inputStream.close()
-            return true
-        } catch (e: Exception) {
-            return false
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        val gsaUris = (gallerySlider.adapter as GallerySliderAdapter).mediaUris
-
-        if (isSecureMode) {
-
-            val newUris: ArrayList<Uri> = arrayListOf()
-
-            for (mediaUri in gsaUris) {
-                if (uriExists(mediaUri)) {
-                    newUris.add(mediaUri)
-                }
-            }
-
-            // If mediaUris have changed
-            if (mediaUris.size != newUris.size) {
-                gallerySlider.adapter = GallerySliderAdapter(this, newUris)
-            }
-
-        } else {
-
-            if (MainActivity.isCamConfigInitialized()){
-                val newUris = MainActivity.camConfig.mediaUris
-                var urisHaveChanged = false
-
-                for (mediaUri in gsaUris) {
-                    if (!newUris.contains(mediaUri)) {
-                        urisHaveChanged = true
-                        break
-                    }
-                }
-
-                if (urisHaveChanged) {
-                    gallerySlider.adapter = GallerySliderAdapter(this, newUris)
-                }
-            } else {
-                finish()
-            }
-        }
-
-        showActionBar()
+    override fun onDestroy() {
+        super.onDestroy()
+        asyncLoader.shutdownNow()
     }
 
     fun showMessage(msg: String) {
