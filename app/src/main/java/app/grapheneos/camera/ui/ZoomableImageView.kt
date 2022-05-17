@@ -259,7 +259,7 @@ class ZoomableImageView @JvmOverloads constructor(
             if (drawable?.intrinsicWidth ?: 0 == 0 || drawable?.intrinsicHeight ?: 0 == 0) return
             val bmWidth = drawable.intrinsicWidth
             val bmHeight = drawable.intrinsicHeight
-            Log.d("bmSize", "bmWidth: $bmWidth bmHeight : $bmHeight")
+//            Log.d("bmSize", "bmWidth: $bmWidth bmHeight : $bmHeight")
             val scaleX = viewWidth.toFloat() / bmWidth.toFloat()
             val scaleY = viewHeight.toFloat() / bmHeight.toFloat()
             scale = scaleX.coerceAtMost(scaleY)

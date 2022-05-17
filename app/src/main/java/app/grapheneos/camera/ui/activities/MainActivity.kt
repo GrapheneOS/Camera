@@ -388,16 +388,25 @@ open class MainActivity : AppCompatActivity(),
         return duration != 0f && transition != 0f
     }
 
-    protected open fun openGallery() {
+    private fun openGallery() {
+        check(this !is CaptureActivity)
 
-        if (camConfig.latestMediaFile == null) {
-            showMessage(
-                getString(R.string.no_image)
-            )
-            return
+        Intent(this, InAppGallery::class.java).let {
+            if (this is SecureMainActivity) {
+                it.putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
+
+                val list = capturedItems
+                if (list.isEmpty()) {
+                    showMessage(R.string.no_image)
+                    return
+                }
+                it.putParcelableArrayListExtra(InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS, list)
+            } else {
+                it.putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, requiresVideoModeOnly)
+            }
+
+            startActivity(it)
         }
-
-        val intent = Intent(this, InAppGallery::class.java)
 
     }
 
