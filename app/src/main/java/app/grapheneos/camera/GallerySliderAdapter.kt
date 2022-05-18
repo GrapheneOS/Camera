@@ -3,7 +3,6 @@ package app.grapheneos.camera
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,8 +19,10 @@ import kotlin.math.max
 
 class GallerySliderAdapter(
     private val gActivity: InAppGallery,
-    val items: MutableList<CapturedItem>
+    val items: ArrayList<CapturedItem>
 ) : RecyclerView.Adapter<GallerySlide>() {
+
+    var atLeastOneBindViewHolderCall = false
 
     private val layoutInflater: LayoutInflater = LayoutInflater.from(gActivity)
 
@@ -45,14 +46,18 @@ class GallerySliderAdapter(
         mediaPreview.visibility = View.INVISIBLE
         mediaPreview.setImageBitmap(null)
 
-        val placeholderText = holder.binding.placeholderText
-        placeholderText.visibility = View.VISIBLE
-        placeholderText.setText("…")
+        val placeholderText = holder.binding.placeholderText.root
+        if (atLeastOneBindViewHolderCall) {
+            placeholderText.visibility = View.VISIBLE
+            placeholderText.setText("…")
+        }
+        atLeastOneBindViewHolderCall = true
+
         playButton.visibility = View.GONE
 
         holder.currentPostion = position
 
-        gActivity.asyncLoader.executeIfAlive {
+        gActivity.asyncImageLoader.executeIfAlive {
             val bitmap: Bitmap? = try {
                 if (item.type == ITEM_TYPE_VIDEO) {
                     getVideoThumbnail(gActivity, item.uri)
@@ -93,6 +98,7 @@ class GallerySliderAdapter(
                             R.string.inaccessible_image
                         } else { R.string.inaccessible_video }
 
+                        placeholderText.visibility = View.VISIBLE
                         placeholderText.setText(gActivity.getString(resId, item.dateString))
                     }
                 } else {
