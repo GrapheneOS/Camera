@@ -245,34 +245,30 @@ class InAppGallery : AppCompatActivity() {
     private fun showCurrentMediaDetails() {
         val curItem = getCurrentItem()
 
-        val mediaCursor = contentResolver.query(
-            curItem.uri,
-            arrayOf(
-                MediaStore.MediaColumns.RELATIVE_PATH,
-                MediaStore.MediaColumns.DISPLAY_NAME,
-                MediaStore.MediaColumns.SIZE
-            ),
-            null,
-            null,
-        )
-
-        if (mediaCursor?.moveToFirst() != true) {
-            showMessage(getString(R.string.unable_to_obtain_file_details))
-
-            mediaCursor?.close()
-            return
-        }
-
-        val relativePath = mediaCursor.getString(0)
-        val fileName = mediaCursor.getString(1)
-        val size = mediaCursor.getInt(2)
-
-        mediaCursor.close()
+        var relativePath: String? = null
+        var fileName: String? = null
+        var size: Long = 0
 
         var dateAdded: String? = null
         var dateModified: String? = null
 
         try {
+            // note that the first column (RELATIVE_PATH) is undefined for SAF Uris
+            val projection = arrayOf(MediaColumns.RELATIVE_PATH, OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
+
+            contentResolver.query(curItem.uri, projection, null,null)?.use {
+                if (it.moveToFirst()) {
+                    relativePath = it.getString(0)
+                    fileName = it.getString(1)
+                    size = it.getLong(2)
+                }
+            }
+
+            if (fileName == null) {
+                showMessage(getString(R.string.unable_to_obtain_file_details))
+                return
+            }
+
             if (curItem.type == ITEM_TYPE_VIDEO) {
                 MediaMetadataRetriever().use {
                     it.setDataSource(this, curItem.uri)
@@ -301,6 +297,7 @@ class InAppGallery : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
+            Log.d("showCurrentMediaDetails", "unable to obtain file details", e)
             showMessage(getString(R.string.unable_to_obtain_file_details))
             return
         }
@@ -322,7 +319,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Size: \n")
-        if (size == 0) {
+        if (size == 0L) {
             detailsBuilder.append("Loading...")
         } else {
             detailsBuilder.append(
