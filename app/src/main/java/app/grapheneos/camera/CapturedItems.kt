@@ -99,7 +99,7 @@ object CapturedItems {
             collectSafItems(resolver, it, list)
         }
 
-        return list
+        return list.distinct()
     }
 
     private fun collectMediaStoreItems(resolver: ContentResolver, volumeName: String, dest: ArrayList<CapturedItem>) {
@@ -175,7 +175,7 @@ object CapturedItems {
 
         list.addAll(getPreviousSafTrees(prefs))
 
-        return list
+        return list.distinct()
     }
 
     // save few last SAF trees to include their contents in the gallery
