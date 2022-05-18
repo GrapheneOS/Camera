@@ -14,6 +14,7 @@ import android.provider.MediaStore
 import android.util.Log
 import app.grapheneos.camera.CamConfig.SettingValues
 import app.grapheneos.camera.util.edit
+import kotlin.jvm.Throws
 
 typealias ItemType = Int
 const val ITEM_TYPE_IMAGE: ItemType = 0
@@ -89,13 +90,18 @@ object CapturedItems {
         }
     }
 
-    fun get(ctx: Context): ArrayList<CapturedItem> {
+    @Throws(InterruptedException::class)
+    fun get(ctx: Context): List<CapturedItem> {
         val resolver = ctx.contentResolver
         val list = ArrayList<CapturedItem>()
 
         collectMediaStoreItems(resolver, MediaStore.VOLUME_EXTERNAL_PRIMARY, list)
 
         getSafTrees(ctx.getSharedPreferences(CamConfig.COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)).forEach {
+            if (Thread.interrupted()) {
+                // executor is shutting down
+                throw InterruptedException()
+            }
             collectSafItems(resolver, it, list)
         }
 

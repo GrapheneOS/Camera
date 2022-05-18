@@ -405,6 +405,10 @@ open class MainActivity : AppCompatActivity(),
                 it.putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, requiresVideoModeOnly)
             }
 
+            if (isThumbnailLoaded) { // indicates that last captured item is accessible
+                it.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, camConfig.lastCapturedItem)
+            }
+
             startActivity(it)
         }
 
@@ -1688,10 +1692,13 @@ open class MainActivity : AppCompatActivity(),
         isStarted = false
     }
 
+    var isThumbnailLoaded = false
+
     fun updateThumbnail() {
         val item = camConfig.lastCapturedItem
         val preview = imagePreview
         preview.setImageBitmap(null)
+        isThumbnailLoaded = false
 
         if (item == null) {
             return
@@ -1725,6 +1732,7 @@ open class MainActivity : AppCompatActivity(),
             mainExecutor.execute {
                 if (isStarted && camConfig.lastCapturedItem == item) {
                     preview.setImageBitmap(bitmap)
+                    isThumbnailLoaded = true
                 }
             }
         }
