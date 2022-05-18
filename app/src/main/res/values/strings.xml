@@ -117,7 +117,7 @@
     <string name="delete_title">Are you sure?</string>
     <string name="deleted_successfully">File deleted successfully</string>
     <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
-    <string name="delete_description">"Do you really want to delete this file?"</string>
+    <string name="delete_description">"Do you really want to delete this file (%s)?"</string>
     <string name="cancel">Cancel</string>
     <string name="no_image">Please capture a photo/video before trying to view them.</string>
 
