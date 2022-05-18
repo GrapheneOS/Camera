@@ -36,6 +36,15 @@ class CapturedItem(
         }
     }
 
+    fun uiName(): String {
+        val prefix = if (type == ITEM_TYPE_IMAGE) IMAGE_NAME_PREFIX else {
+            check(type == ITEM_TYPE_VIDEO)
+            VIDEO_NAME_PREFIX
+        }
+
+        return "$prefix$dateString"
+    }
+
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeByte(type.toByte())
         dest.writeString(dateString)

@@ -214,20 +214,19 @@ class InAppGallery : AppCompatActivity() {
 
         AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(R.string.delete_title)
-            .setMessage(R.string.delete_description)
+            .setMessage(getString(R.string.delete_description, curItem.uiName()))
             .setPositiveButton(R.string.delete) { _, _ ->
                 var res = false
 
                 val uri = curItem.uri
-                if (uri.authority == MediaStore.AUTHORITY) {
-                    try {
-                        res = contentResolver.delete(uri, null, null) == 1
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                try {
+                    if (uri.authority == MediaStore.AUTHORITY) {
+                        res = contentResolver.delete(uri, null, null) > 0
+                    } else {
+                        res = DocumentsContract.deleteDocument(contentResolver, uri)
                     }
-                } else {
-                    val doc = DocumentFile.fromSingleUri(this, uri)!!
-                    res = doc.delete()
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
 
                 if (res) {
