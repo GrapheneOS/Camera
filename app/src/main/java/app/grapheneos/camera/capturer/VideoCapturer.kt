@@ -4,24 +4,23 @@ import android.Manifest
 import android.animation.ValueAnimator
 import android.content.ContentValues
 import android.content.Context
-import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
+import android.os.ParcelFileDescriptor
+import android.provider.DocumentsContract
+import android.provider.MediaStore.MediaColumns
 import android.view.View
 import android.webkit.MimeTypeMap
 import androidx.camera.video.FileDescriptorOutputOptions
-import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.PendingRecording
+import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.documentfile.provider.DocumentFile
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
@@ -31,7 +30,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import java.io.FileNotFoundException
+import app.grapheneos.camera.util.getTreeDocumentUri
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -94,159 +93,136 @@ class VideoCapturer(private val mActivity: MainActivity) {
         handler.removeCallbacks(runnable)
     }
 
-    private fun genPendingRecording(fileName: String): PendingRecording? {
+    private class RecordingContext(
+        val pendingRecording: PendingRecording,
+        val uri: Uri,
+        val fileDescriptor: ParcelFileDescriptor,
+        val shouldAddToGallery: Boolean
+    )
+
+    private fun createRecordingContext(recorder: Recorder, fileName: String): RecordingContext? {
         val mimeType =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat) ?: "video/mp4"
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
-        }
+        val ctx = mActivity
+        val contentResolver = ctx.contentResolver
 
-        if (mActivity is VideoCaptureActivity
-            && mActivity.isOutputUriAvailable()
-        ) {
+        val uri: Uri?
+        var shouldAddToGallery = true
 
-            val fd = mActivity.contentResolver.openFileDescriptor(
-                mActivity.outputUri,
-                "w"
-            ) ?: return null
-
-            return camConfig.videoCapture?.output?.prepareRecording(
-                mActivity,
-                FileDescriptorOutputOptions
-                    .Builder(fd)
-                    .build()
-            )
-
+        if (ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()) {
+            uri = ctx.outputUri
+            shouldAddToGallery = false
         } else {
+            val storageLocation = camConfig.storageLocation
 
-            if (camConfig.storageLocation.isEmpty()) {
-                return camConfig.videoCapture!!.output.prepareRecording(
-                    mActivity,
-                    MediaStoreOutputOptions.Builder(
-                        mActivity.contentResolver,
-                        CamConfig.videoCollectionUri
-                    ).setContentValues(contentValues)
-                        .build()
-                )
-            } else {
-                try {
-                    val parent = DocumentFile.fromTreeUri(
-                        mActivity, Uri.parse(
-                            camConfig.storageLocation
-                        )
-                    )!!
-
-                    val child = parent.createFile(
-                        mimeType,
-                        fileName
-                    )!!
-
-                    val fd = mActivity.contentResolver.openFileDescriptor(
-                        child.uri,
-                        "w"
-                    )!!
-
-                    return camConfig.videoCapture!!.output.prepareRecording(
-                        mActivity,
-                        FileDescriptorOutputOptions.Builder(fd).build()
-                    )
-
-                } catch (exception: NullPointerException) {
-                    throw FileNotFoundException()
+            if (storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION) {
+                val contentValues = ContentValues().apply {
+                    put(MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
                 }
+                uri = contentResolver.insert(CamConfig.videoCollectionUri, contentValues)
+            } else {
+                val treeUri = Uri.parse(storageLocation)
+                val treeDocumentUri = getTreeDocumentUri(treeUri)
+
+                uri = DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType, fileName)
             }
         }
+
+        if (uri == null) {
+            return null
+        }
+
+        contentResolver.openFileDescriptor(uri,"w")?.let {
+            val outputOptions = FileDescriptorOutputOptions.Builder(it).build()
+            val pendingRecording = recorder.prepareRecording(ctx, outputOptions)
+
+            return RecordingContext(pendingRecording, uri, it, shouldAddToGallery)
+        }
+        return null
     }
 
     fun startRecording() {
         if (camConfig.camera == null) return
+        val recorder = camConfig.videoCapture?.output ?: return
 
         val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
 
-        val pendingRecording: PendingRecording?
+        var includeAudio = false
 
-        try {
-            pendingRecording = genPendingRecording(fileName)
-        } catch (exception: Exception) {
-            camConfig.onStorageLocationNotFound()
-            return
-        }
+        val ctx = mActivity
 
-        if (mActivity.settingsDialog.includeAudioToggle.isChecked) {
-            if (ActivityCompat.checkSelfPermission(
-                    mActivity,
-                    Manifest.permission.RECORD_AUDIO
-                )
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                pendingRecording?.withAudioEnabled()
+        if (ctx.settingsDialog.includeAudioToggle.isChecked) {
+            if (ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PERMISSION_GRANTED) {
+                includeAudio = true
             } else {
-                mActivity.requestAudioPermission()
+                ctx.requestAudioPermission()
                 return
             }
         }
 
+        val recordingCtx = try {
+            createRecordingContext(recorder, fileName)!!
+        } catch (exception: Exception) {
+            val foreignUri = ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()
+            if (!foreignUri) {
+                camConfig.onStorageLocationNotFound()
+            }
+            ctx.showMessage(R.string.unable_to_access_output_file)
+            return
+        }
+
+        val pendingRecording = recordingCtx.pendingRecording
+
+        if (includeAudio) {
+            pendingRecording.withAudioEnabled()
+        }
+
         beforeRecordingStarts()
 
-        recording = pendingRecording?.start(
-            ContextCompat.getMainExecutor(mActivity)
-        ) {
-            if (it is VideoRecordEvent.Finalize) {
+        recording = pendingRecording.start(ctx.mainExecutor) { event ->
+            if (event is VideoRecordEvent.Finalize) {
                 afterRecordingStops()
 
                 camConfig.mPlayer.playVRStopSound()
 
-                if (it.hasError()) {
-
-                    if (it.error == 8) {
-                        mActivity.showMessage(
-                            mActivity.getString(R.string.recording_too_short_to_be_saved)
-                        )
+                if (event.hasError()) {
+                    if (event.error == 8) {
+                        ctx.showMessage(R.string.recording_too_short_to_be_saved)
                     } else {
-                        mActivity.showMessage(
-                            "Unable to save recording (Error code: " +
-                                    "${it.error})"
-                        )
+                        ctx.showMessage("Unable to save recording (Error code: ${event.error}")
                     }
-                } else {
-                    val outputUri = it.outputResults.outputUri
+                    return@start
+                }
 
-                    try {
+                val uri = recordingCtx.uri
 
-                        val stream = mActivity.contentResolver
-                            .openInputStream(
-                                outputUri
-                            ) ?: throw NullPointerException()
-
-                        stream.close()
-
-                        if (mActivity is VideoCaptureActivity) {
-                            mActivity.afterRecording(outputUri)
-                            return@start
-                        }
-
-                    } catch (exception: Exception) {
-
-                        if (mActivity is VideoCaptureActivity) {
-                            mActivity.afterRecording(mActivity.outputUri)
-                            return@start
-                        }
-                    }
-
-                    val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, outputUri)
+                if (recordingCtx.shouldAddToGallery) {
+                    val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
                     camConfig.updateLastCapturedItem(item)
 
-                    mActivity.updateThumbnail()
+                    ctx.updateThumbnail()
 
-                    if (mActivity is SecureMainActivity) {
-                        mActivity.capturedItems.add(item)
+                    if (ctx is SecureMainActivity) {
+                        ctx.capturedItems.add(item)
                     }
                 }
+
+                if (ctx is VideoCaptureActivity) {
+                    ctx.afterRecording(uri)
+                }
             }
+        }
+
+        try {
+            // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
+            // caller, and that it's safe to do so as soon as pendingRecording.start() returns
+            recordingCtx.fileDescriptor.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         isRecording = true
