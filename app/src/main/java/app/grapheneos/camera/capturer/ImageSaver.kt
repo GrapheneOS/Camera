@@ -7,6 +7,7 @@ import android.graphics.ImageDecoder
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.system.Os
 import android.util.Log
@@ -17,7 +18,6 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.utils.ImageUtil
-import androidx.documentfile.provider.DocumentFile
 import androidxc.camera.core.impl.utils.Exif
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItem
@@ -28,9 +28,9 @@ import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
+import app.grapheneos.camera.util.getTreeDocumentUri
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
@@ -276,7 +276,7 @@ class ImageSaver(
         mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
     }
 
-    fun saveToMediaStore() = storageLocation.isEmpty()
+    fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION
 
     private fun dateString() =
         // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous one
@@ -288,7 +288,7 @@ class ImageSaver(
 
     private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
 
-    @Throws(FileNotFoundException::class)
+    @Throws(Exception::class)
     fun obtainOutputUri(): Uri? {
         if (saveToMediaStore()) {
             val cv = ContentValues().apply {
@@ -301,12 +301,13 @@ class ImageSaver(
             return contentResolver.insert(CamConfig.imageCollectionUri, cv)
         } else {
             try {
-                val parent = DocumentFile.fromTreeUri(appContext, Uri.parse(storageLocation))!!
-                return parent.createFile(mimeType(), fileName())!!.uri
-            } catch (npe: NullPointerException) {
+                val treeUri = Uri.parse(storageLocation)
+                val treeDocumentUri = getTreeDocumentUri(treeUri)
+                return DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType(), fileName())!!
+            } catch (e: Exception) {
                 appContext.mainExecutor.execute(imageCapturer::onStorageLocationNotFound)
                 skipErrorDialog = true
-                throw FileNotFoundException("The default storage location seems to have been deleted")
+                throw e
             }
         }
     }
