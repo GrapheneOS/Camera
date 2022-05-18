@@ -3,9 +3,7 @@ package app.grapheneos.camera.ui.activities
 import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
-import android.net.Uri
 import android.os.Bundle
-import android.provider.DocumentsContract
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -17,13 +15,13 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
-import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
-import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
+import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.snackbar.Snackbar
 
 class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
@@ -59,7 +57,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             val uriString = uri.toString()
             camConfig.storageLocation = uriString
 
-            val uiString = storageLocationToUiString(uriString)
+            val uiString = storageLocationToUiString(this, uriString)
             sLField.setText(uiString)
 
             showMessage("Storage location successfully updated to $uiString")
@@ -67,37 +65,6 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         } else {
             showMessage(getString(R.string.no_directory_selected))
         }
-    }
-
-    fun storageLocationToUiString(sl: String): String {
-        if (sl.isEmpty()) {
-            return DEFAULT_MEDIA_STORE_CAPTURE_PATH
-        }
-
-        val uri = Uri.parse(sl)
-        val treeId = uri.pathSegments[1]
-
-        if (uri.host == SAF_URI_HOST_EXTERNAL_STORAGE) {
-            val endOfVolumeName = treeId.lastIndexOf(':')
-            val path = treeId.substring(endOfVolumeName + 1)
-
-            if (!path.isEmpty()) {
-                return path
-            }
-        }
-
-        try {
-            val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
-
-            val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-            contentResolver.query(docUri, projection, null, null)?.use {
-                if (it.moveToFirst()) {
-                    return it.getString(0)
-                }
-            }
-        } catch (ignored: Exception) {}
-
-        return treeId
     }
 
 
@@ -123,7 +90,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         sLField = binding.storageLocationField
 
-        sLField.setText(storageLocationToUiString(camConfig.storageLocation))
+        sLField.setText(storageLocationToUiString(this, camConfig.storageLocation))
 
         sLField.setOnClickListener {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -142,18 +109,14 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dialog.setMessage(R.string.revert_to_default_directory)
 
             dialog.setPositiveButton(R.string.yes) { _, _ ->
-                sLField.setText(DEFAULT_MEDIA_STORE_CAPTURE_PATH)
+                val defaultLocation = CamConfig.SettingValues.Default.STORAGE_LOCATION
 
-                if (camConfig.storageLocation.isNotEmpty()) {
-                    showMessage(
-                        getString(R.string.reverted_to_default_directory)
-                    )
-
-                    camConfig.storageLocation = ""
+                if (camConfig.storageLocation != defaultLocation) {
+                    showMessage(getString(R.string.reverted_to_default_directory))
+                    camConfig.storageLocation = defaultLocation
+                    sLField.setText(storageLocationToUiString(this, defaultLocation))
                 } else {
-                    showMessage(
-                        getString(R.string.already_using_default_directory)
-                    )
+                    showMessage(getString(R.string.already_using_default_directory))
                 }
             }
 

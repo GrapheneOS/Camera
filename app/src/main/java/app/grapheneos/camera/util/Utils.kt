@@ -23,3 +23,44 @@ fun ExecutorService.executeIfAlive(r: Runnable) {
         check(this.isShutdown)
     }
 }
+
+fun storageLocationToUiString(ctx: Context, sl: String): String {
+    if (sl == CamConfig.SettingValues.Default.STORAGE_LOCATION) {
+        return "${ctx.getString(R.string.main_storage)}/$DEFAULT_MEDIA_STORE_CAPTURE_PATH"
+    }
+
+    val uri = Uri.parse(sl)
+    val indexOfId = if (DocumentsContract.isDocumentUri(ctx, uri)) 3 else 1
+    val locationId = uri.pathSegments[indexOfId]
+
+    if (uri.host == SAF_URI_HOST_EXTERNAL_STORAGE) {
+        val endOfVolumeId = locationId.lastIndexOf(':')
+        val volumeId = locationId.substring(0, endOfVolumeId)
+
+        val volumeName = if (volumeId == "primary") {
+            ctx.getString(R.string.main_storage)
+        } else {
+            val sm = ctx.getSystemService(StorageManager::class.java)
+            sm.storageVolumes.find {
+                volumeId == it.uuid
+            }?.getDescription(ctx) ?: volumeId
+        }
+
+        val path = locationId.substring(endOfVolumeId + 1)
+
+        return "$volumeName/$path"
+    }
+
+    try {
+        val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
+
+        val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+        ctx.contentResolver.query(docUri, projection, null, null)?.use {
+            if (it.moveToFirst()) {
+                return it.getString(0)
+            }
+        }
+    } catch (ignored: Exception) {}
+
+    return locationId
+}

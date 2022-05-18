@@ -168,4 +168,6 @@
     <string name="inaccessible_image">Photo %s is inaccessible</string>
     <string name="inaccessible_video">Video %s is inaccessible</string>
 
+    <string name="main_storage">Main storage</string>
+
 </resources>

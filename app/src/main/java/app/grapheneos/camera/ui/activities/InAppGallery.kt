@@ -140,24 +140,12 @@ class InAppGallery : AppCompatActivity() {
             return convertTime(parsedDate?.time ?: 0, offset != null)
         }
 
-        fun getRelativePath(uri: Uri, path: String?, fileName: String): String {
-
+        fun getRelativePath(ctx: Context, uri: Uri, path: String?, fileName: String): String {
             if (path == null) {
-                val dPath = URLDecoder.decode(
-                    uri.lastPathSegment,
-                    "UTF-8"
-                )
-
-                val sType = dPath.substring(0, 7).replaceFirstChar {
-                    it.uppercase()
-                }
-
-                val rPath = dPath.substring(8)
-
-                return "($sType Storage) $rPath"
+                return storageLocationToUiString(ctx, uri.toString())
             }
 
-            return "(Primary Storage) $path$fileName"
+            return "${ctx.getString(R.string.main_storage)}/$path$fileName"
         }
     }
 
@@ -330,7 +318,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Path: \n")
-        detailsBuilder.append(getRelativePath(curItem.uri, relativePath, fileName))
+        detailsBuilder.append(getRelativePath(this, curItem.uri, relativePath, fileName!!))
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append("File Size: \n")
