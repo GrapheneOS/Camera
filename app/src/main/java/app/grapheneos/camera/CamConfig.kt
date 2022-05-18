@@ -547,11 +547,23 @@ class CamConfig(private val mActivity: MainActivity) {
 //            editor.apply()
 //        }
 
+    private fun saveLastCapturedItem(item: CapturedItem, editor: SharedPreferences.Editor) {
+        editor.putInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, item.type)
+        editor.putString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, item.dateString)
+        editor.putString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, item.uri.toString())
+    }
+
     fun updateLastCapturedItem(item: CapturedItem) {
         commonPref.edit {
-            putInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, item.type)
-            putString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, item.dateString)
-            putString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, item.uri.toString())
+            saveLastCapturedItem(item, this)
+        }
+
+        if (mActivity is SecureMainActivity) {
+            // previous call updated ephemeral SharedPreferences that won't be accessible by the
+            // "regular" MainActivity
+            mActivity.applicationContext.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE).edit {
+                saveLastCapturedItem(item, this)
+            }
         }
 
         lastCapturedItem = item
@@ -1394,7 +1406,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun onStorageLocationNotFound() {
         // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
-        storageLocation = ""
+        storageLocation = SettingValues.Default.STORAGE_LOCATION
 
         val builder = AlertDialog.Builder(mActivity)
         builder.setTitle(R.string.folder_not_found)
