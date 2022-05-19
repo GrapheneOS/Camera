@@ -1634,23 +1634,19 @@ open class MainActivity : AppCompatActivity(),
             ) && ActivityCompat.shouldShowRequestPermissionRationale(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION
             ) -> {
-                AlertDialog.Builder(
-                    this,
-                    android.R.style.Theme_DeviceDefault_Dialog_Alert
-                ).setTitle(R.string.location_permission_dialog_title)
-                    .setMessage(R.string.location_permission_dialog_message)
-                    .setPositiveButton(R.string.settings) { _, _ ->
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        val uri = Uri.fromParts(
-                            "package",
-                            packageName, null
-                        )
-                        intent.data = uri
-                        this.startActivity(intent)
+                AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).let {
+                    it.setTitle(R.string.location_permission_dialog_title)
+                    it.setMessage(R.string.location_permission_dialog_message)
+
+                    if (this !is SecureActivity) {
+                        it.setPositiveButton(R.string.settings) { _, _ ->
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            intent.data = Uri.fromParts("package", packageName, null)
+                            this.startActivity(intent)
+                        }
                     }
-                    .setNegativeButton(android.R.string.cancel) { dialog, _ ->
-                        dialog.dismiss()
-                    }.setOnDismissListener {
+
+                    it.setOnDismissListener {
                         if (ContextCompat.checkSelfPermission(
                                 this, Manifest.permission.ACCESS_COARSE_LOCATION
                             ) != PackageManager.PERMISSION_GRANTED
@@ -1658,7 +1654,7 @@ open class MainActivity : AppCompatActivity(),
                             camConfig.requireLocation = false
                         }
                     }
-                    .show()
+                }.show()
             }
 
             (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)

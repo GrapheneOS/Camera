@@ -93,8 +93,8 @@
     <string name="percent_symbol">%</string>
 
     <string name="location_is_disabled">Location is disabled</string>
-    <string name="settings">settings</string>
-    <string name="enable">enable</string>
+    <string name="settings">Settings</string>
+    <string name="enable">Enable</string>
     <string name="ok">OK</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
