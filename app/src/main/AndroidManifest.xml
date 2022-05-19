@@ -68,7 +68,6 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:showWhenLocked="true"
-            android:showOnLockScreen="true"
             android:excludeFromRecents="true"
             android:exported="true">
 
@@ -126,7 +125,6 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:showWhenLocked="true"
-            android:showOnLockScreen="true"
             android:excludeFromRecents="true"
             android:exported="true">
 
@@ -176,6 +174,14 @@
             android:theme="@style/OverlayActionBar"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.activities.MoreSettingsSecure"
+            android:theme="@style/OverlayActionBar"
+            android:taskAffinity=".ui.activities.InAppGallery"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
             android:exported="false"/>
 
     </application>
