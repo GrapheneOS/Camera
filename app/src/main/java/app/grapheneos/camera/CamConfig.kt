@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.ImageDecoder
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.net.Uri
@@ -46,7 +45,6 @@ import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
-import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.edit
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
@@ -213,18 +211,23 @@ class CamConfig(private val mActivity: MainActivity) {
     init {
         if (mActivity !is SecureActivity) {
             CapturedItems.init(mActivity, this)
+            fetchLastCapturedItemFromSharedPrefs()
+        }
+    }
 
-            val type = commonPref.getInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, -1)
-            val dateStr = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, null)
-            val uri = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, null)
+    fun fetchLastCapturedItemFromSharedPrefs() {
+        val type = commonPref.getInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, -1)
+        val dateStr = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, null)
+        val uri = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, null)
 
-            if (dateStr != null && uri != null) {
-                val skip = type == ITEM_TYPE_IMAGE && mActivity is VideoOnlyActivity
-                if (!skip) {
-                    lastCapturedItem = CapturedItem(type, dateStr, Uri.parse(uri))
-                }
+        var item: CapturedItem? = null
+        if (dateStr != null && uri != null) {
+            val skip = type == ITEM_TYPE_IMAGE && mActivity is VideoOnlyActivity
+            if (!skip) {
+                item = CapturedItem(type, dateStr, Uri.parse(uri))
             }
         }
+        lastCapturedItem = item
     }
 
 
