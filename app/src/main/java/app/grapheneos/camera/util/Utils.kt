@@ -1,13 +1,17 @@
 package app.grapheneos.camera.util
 
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
+import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.RejectedExecutionException
 
@@ -63,4 +67,13 @@ fun storageLocationToUiString(ctx: Context, sl: String): String {
     } catch (ignored: Exception) {}
 
     return locationId
+}
+
+@Throws(IOException::class)
+fun removePendingFlagFromUri(contentResolver: ContentResolver, uri: Uri) {
+    val cv = ContentValues()
+    cv.put(MediaStore.MediaColumns.IS_PENDING, 0)
+    if (contentResolver.update(uri, cv, null, null) != 1) {
+        throw IOException("unable to remove IS_PENDING flag")
+    }
 }

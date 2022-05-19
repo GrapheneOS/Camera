@@ -31,6 +31,7 @@ import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.util.getTreeDocumentUri
+import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -97,7 +98,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val pendingRecording: PendingRecording,
         val uri: Uri,
         val fileDescriptor: ParcelFileDescriptor,
-        val shouldAddToGallery: Boolean
+        val shouldAddToGallery: Boolean,
+        val isPendingMediaStoreUri: Boolean,
     )
 
     private fun createRecordingContext(recorder: Recorder, fileName: String): RecordingContext? {
@@ -109,6 +111,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         val uri: Uri?
         var shouldAddToGallery = true
+        var isPendingMediaStoreUri = false
 
         if (ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()) {
             uri = ctx.outputUri
@@ -121,8 +124,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     put(MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaColumns.MIME_TYPE, mimeType)
                     put(MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
+                    put(MediaColumns.IS_PENDING, 1)
                 }
                 uri = contentResolver.insert(CamConfig.videoCollectionUri, contentValues)
+                isPendingMediaStoreUri = true
             } else {
                 val treeUri = Uri.parse(storageLocation)
                 val treeDocumentUri = getTreeDocumentUri(treeUri)
@@ -139,7 +144,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             val outputOptions = FileDescriptorOutputOptions.Builder(it).build()
             val pendingRecording = recorder.prepareRecording(ctx, outputOptions)
 
-            return RecordingContext(pendingRecording, uri, it, shouldAddToGallery)
+            return RecordingContext(pendingRecording, uri, it, shouldAddToGallery, isPendingMediaStoreUri)
         }
         return null
     }
@@ -193,12 +198,20 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (event.error == 8) {
                         ctx.showMessage(R.string.recording_too_short_to_be_saved)
                     } else {
-                        ctx.showMessage("Unable to save recording (Error code: ${event.error}")
+                        ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
                     }
                     return@start
                 }
 
                 val uri = recordingCtx.uri
+
+                if (recordingCtx.isPendingMediaStoreUri) {
+                    try {
+                        removePendingFlagFromUri(ctx.contentResolver, uri)
+                    } catch (e: Exception) {
+                        ctx.showMessage(R.string.unable_to_save_video)
+                    }
+                }
 
                 if (recordingCtx.shouldAddToGallery) {
                     val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
