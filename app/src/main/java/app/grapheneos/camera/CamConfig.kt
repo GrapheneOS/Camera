@@ -1360,7 +1360,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         // Add OK and Cancel buttons
-        builder.setPositiveButton("OK") { _, _ ->
+        builder.setPositiveButton(getString(R.string.ok)) { _, _ ->
 
             commonPref.edit {
                 for (index in 0 until optionNames.size) {

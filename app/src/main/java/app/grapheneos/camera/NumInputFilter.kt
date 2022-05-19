@@ -22,7 +22,8 @@ class NumInputFilter(private val settings: MoreSettings) : InputFilter {
             if (isInRange(input)) {
                 return null
             } else {
-                settings.showMessage("Photo quality can only be between $min and $max")
+                settings.showMessage(settings.getString(
+                    R.string.photo_quality_number_limit, min, max))
             }
         } catch (e: NumberFormatException) {
             e.printStackTrace()

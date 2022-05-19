@@ -314,11 +314,9 @@ open class MainActivity : AppCompatActivity(),
         if (data?.encodedPath != null) {
             val file = File(data.encodedPath!!)
             if (file.exists()) {
-                showMessage("File exists: ${file.absolutePath}")
+                showMessage(getString(R.string.file_already_exists, file.absolutePath))
             } else {
-                showMessage(
-                    "File does not exist :( ${data.encodedPath!!} "
-                )
+                showMessage(getString(R.string.file_does_not_exist, data.encodedPath))
             }
         }
 
