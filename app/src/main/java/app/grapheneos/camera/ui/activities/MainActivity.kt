@@ -525,6 +525,10 @@ open class MainActivity : AppCompatActivity(),
             startFocusTimer()
         }
 
+        if (this !is SecureActivity) {
+            camConfig.fetchLastCapturedItemFromSharedPrefs()
+        }
+
         updateThumbnail()
 
         if (camConfig.requireLocation) {
