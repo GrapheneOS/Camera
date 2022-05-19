@@ -23,7 +23,7 @@ import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.snackbar.Snackbar
 
-class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
+open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var camConfig: CamConfig
 
     private lateinit var binding: MoreSettingsBinding
@@ -83,7 +83,7 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         setTitle(R.string.more_settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val showStorageSettings = intent.getBooleanExtra(INTENT_EXTRA_SHOW_STORAGE_SETTINGS, false)
+        val showStorageSettings = this !is MoreSettingsSecure
 
         val sIAPToggle = binding.saveImageAsPreviewToggle
 
@@ -318,11 +318,10 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         private var staticCamConfig: CamConfig? = null
 
         private const val INTENT_EXTRA_CAM_CONFIG_ID = "camConfig_id"
-        private const val INTENT_EXTRA_SHOW_STORAGE_SETTINGS = "show_storage_settings"
 
         fun start(caller: MainActivity) {
-            Intent(caller, MoreSettings::class.java).let {
-                it.putExtra(INTENT_EXTRA_SHOW_STORAGE_SETTINGS, caller !is SecureActivity)
+            val flavor = if (caller is SecureActivity) MoreSettingsSecure::class else MoreSettings::class
+            Intent(caller, flavor.java).let {
                 camConfigId += 1
                 it.putExtra(INTENT_EXTRA_CAM_CONFIG_ID, camConfigId)
                 staticCamConfig = caller.camConfig
