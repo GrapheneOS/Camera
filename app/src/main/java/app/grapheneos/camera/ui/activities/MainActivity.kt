@@ -1217,7 +1217,9 @@ open class MainActivity : AppCompatActivity(),
 
             val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
-            camConfig.mPlayer.playFocusStartSound()
+            if (!camConfig.isVideoMode) {
+                camConfig.mPlayer.playFocusStartSound()
+            }
 
             if (camConfig.focusTimeout == 0L) {
                 focusBuilder.disableAutoCancel()
