@@ -60,7 +60,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             val uiString = storageLocationToUiString(this, uriString)
             sLField.setText(uiString)
 
-            showMessage("Storage location successfully updated to $uiString")
+            showMessage(getString(R.string.storage_location_updated, uiString))
 
         } else {
             showMessage(getString(R.string.no_directory_selected))
@@ -153,35 +153,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         vFField = binding.videoFormatSettingField
         vFField.setOnEditorActionListener(this)
-
-        val iPQButton = binding.increasePhotoQuality
-        iPQButton.setOnClickListener {
-
-            if (camConfig.photoQuality != NumInputFilter.max) {
-                ++camConfig.photoQuality
-                pQField.setText(camConfig.photoQuality.toString())
-            } else {
-                showMessage(
-                    "Photo quality can only be between ${NumInputFilter.min} and ${NumInputFilter.max}"
-                )
-            }
-        }
-
-        val dPQButton = binding.decreasePhotoQuality
-        dPQButton.setOnClickListener {
-            if (camConfig.photoQuality >= NumInputFilter.min) {
-                --camConfig.photoQuality
-
-                if (camConfig.photoQuality >= NumInputFilter.min) {
-                    pQField.setText(camConfig.photoQuality.toString())
-                } else {
-                    pQField.setText("")
-                    showMessage(
-                        getString(R.string.photo_quality_was_set_to_auto)
-                    )
-                }
-            }
-        }
 
         val exifToggle = binding.removeExifToggle
         val exifToggleSetting = binding.removeExifSetting

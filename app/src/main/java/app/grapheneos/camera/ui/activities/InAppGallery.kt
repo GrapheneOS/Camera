@@ -305,21 +305,21 @@ class InAppGallery : AppCompatActivity() {
         val alertDialog: AlertDialog.Builder =
             AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
 
-        alertDialog.setTitle("File Details")
+        alertDialog.setTitle(getString(R.string.file_details))
 
         val detailsBuilder = StringBuilder()
 
-        detailsBuilder.append("\nFile Name: \n")
+        detailsBuilder.append("\n", getString(R.string.file_name_generic), "\n")
         detailsBuilder.append(fileName)
         detailsBuilder.append("\n\n")
 
-        detailsBuilder.append("File Path: \n")
+        detailsBuilder.append(getString(R.string.file_path), "\n")
         detailsBuilder.append(getRelativePath(this, curItem.uri, relativePath, fileName!!))
         detailsBuilder.append("\n\n")
 
-        detailsBuilder.append("File Size: \n")
+        detailsBuilder.append(getString(R.string.file_size), "\n")
         if (size == 0L) {
-            detailsBuilder.append("Loading...")
+            detailsBuilder.append(getString(R.string.loading_generic))
         } else {
             detailsBuilder.append(
                 String.format(
@@ -332,25 +332,25 @@ class InAppGallery : AppCompatActivity() {
 
         detailsBuilder.append("\n\n")
 
-        detailsBuilder.append("File Created On: \n")
+        detailsBuilder.append(getString(R.string.file_created_on), "\n")
         if (dateAdded == null) {
-            detailsBuilder.append("Not found")
+            detailsBuilder.append(getString(R.string.not_found_generic))
         } else {
             detailsBuilder.append(dateAdded)
         }
 
         detailsBuilder.append("\n\n")
 
-        detailsBuilder.append("Last Modified On: \n")
+        detailsBuilder.append(getString(R.string.last_modified_on), "\n")
         if (dateModified == null) {
-            detailsBuilder.append("Not found")
+            detailsBuilder.append(getString(R.string.not_found_generic))
         } else {
             detailsBuilder.append(dateModified)
         }
 
         alertDialog.setMessage(detailsBuilder)
 
-        alertDialog.setPositiveButton("Ok", null)
+        alertDialog.setPositiveButton(getString(R.string.ok), null)
 
 
         alertDialog.show()

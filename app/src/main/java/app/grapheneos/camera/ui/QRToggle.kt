@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui
 
 import android.content.Context
 import android.util.AttributeSet
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.imageview.ShapeableImageView
 
@@ -33,10 +34,9 @@ class QRToggle @JvmOverloads constructor(
         val camConfig = mActivity.camConfig
 
         if (!selected && camConfig.allowedFormats.size == 1) {
-            mActivity.showMessage(
-                "Couldn't exclude $key format. " +
-                        "Please ensure at least one format is selected in manual mode."
-            )
+            mActivity.showMessage(mActivity.getString(
+                R.string.couldnt_exclude_qr_format, key
+            ))
             isSelected = true
         } else {
             camConfig.setQRScanningFor(key, selected)
