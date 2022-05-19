@@ -29,6 +29,7 @@ import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.getTreeDocumentUri
+import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -189,7 +190,7 @@ class ImageSaver(
 
         if (saveToMediaStore()) {
             try {
-                removePendingFlagFromUri(uri)
+                removePendingFlagFromUri(contentResolver, uri)
             } catch (e: Exception) {
                 // don't delete the image in this case, since it's already fully written out
                 throw ImageSaverException(Place.FILE_WRITE_COMPLETION, e)
@@ -309,15 +310,6 @@ class ImageSaver(
                 skipErrorDialog = true
                 throw e
             }
-        }
-    }
-
-    @Throws(IOException::class)
-    fun removePendingFlagFromUri(uri: Uri) {
-        val cv = ContentValues()
-        cv.put(MediaStore.MediaColumns.IS_PENDING, 0)
-        if (contentResolver.update(uri, cv, null, null) != 1) {
-            throw IOException("unable to remove IS_PENDING flag")
         }
     }
 
