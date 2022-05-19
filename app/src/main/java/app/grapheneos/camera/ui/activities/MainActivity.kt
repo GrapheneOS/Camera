@@ -1729,10 +1729,12 @@ open class MainActivity : AppCompatActivity(),
                 Log.d(TAG, "unable to update preview", e)
             }
 
-            mainExecutor.execute {
-                if (isStarted && camConfig.lastCapturedItem == item) {
-                    preview.setImageBitmap(bitmap)
-                    isThumbnailLoaded = true
+            if (bitmap != null) {
+                mainExecutor.execute {
+                    if (isStarted && camConfig.lastCapturedItem == item) {
+                        preview.setImageBitmap(bitmap)
+                        isThumbnailLoaded = true
+                    }
                 }
             }
         }
