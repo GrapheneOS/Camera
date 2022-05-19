@@ -18,9 +18,9 @@ import androidx.camera.core.ZoomState
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import kotlin.math.roundToInt
 
 class ZoomBar : AppCompatSeekBar {
@@ -46,9 +46,11 @@ class ZoomBar : AppCompatSeekBar {
         .inflate(R.layout.zoom_bar_thumb, null, false)
 
     private lateinit var mainActivity: MainActivity
+    private lateinit var camConfig: CamConfig
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
+        camConfig = mainActivity.camConfig
     }
 
     fun showPanel() {

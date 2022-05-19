@@ -4,7 +4,7 @@ import android.text.InputFilter
 import android.text.Spanned
 import app.grapheneos.camera.ui.activities.MoreSettings
 
-class NumInputFilter(private val mActivity: MoreSettings) : InputFilter {
+class NumInputFilter(private val settings: MoreSettings) : InputFilter {
 
     override fun filter(
         source: CharSequence,
@@ -22,9 +22,7 @@ class NumInputFilter(private val mActivity: MoreSettings) : InputFilter {
             if (isInRange(input)) {
                 return null
             } else {
-                mActivity.showMessage(
-                    "Photo quality can only be between $min and $max"
-                )
+                settings.showMessage("Photo quality can only be between $min and $max")
             }
         } catch (e: NumberFormatException) {
             e.printStackTrace()

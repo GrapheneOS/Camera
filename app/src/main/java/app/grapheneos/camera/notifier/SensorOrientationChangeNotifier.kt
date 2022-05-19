@@ -7,7 +7,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.view.View
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import java.lang.ref.WeakReference
 import kotlin.math.abs
 import kotlin.math.atan
@@ -103,7 +102,7 @@ class SensorOrientationChangeNotifier private constructor(
                 notifyListeners()
             }
 
-            if (!camConfig.shouldShowGyroscope()) return
+            if (!mainActivity.camConfig.shouldShowGyroscope()) return
 
             val dAngle = if (mainActivity.gCircleFrame.rotation == 270f) {
                 90f

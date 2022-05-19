@@ -9,7 +9,6 @@ import android.view.View
 import androidx.camera.core.AspectRatio
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 class CustomGrid @JvmOverloads constructor(
     context: Context,
@@ -32,6 +31,8 @@ class CustomGrid @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
+        val camConfig = mActivity.camConfig
+
         super.onDraw(canvas)
 
         if (camConfig.gridType == CamConfig.GridType.NONE) {

@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui
 import android.content.Context
 import android.util.AttributeSet
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.android.material.imageview.ShapeableImageView
 
 class QRToggle @JvmOverloads constructor(
@@ -31,6 +30,7 @@ class QRToggle @JvmOverloads constructor(
 
     override fun setSelected(selected: Boolean) {
         super.setSelected(selected)
+        val camConfig = mActivity.camConfig
 
         if (!selected && camConfig.allowedFormats.size == 1) {
             mActivity.showMessage(

@@ -10,9 +10,9 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.camera.core.AspectRatio
+import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -20,6 +20,7 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     private lateinit var timer: CountDownTimer
     lateinit var mActivity: MainActivity
+    lateinit var camConfig: CamConfig
 
     companion object {
         private const val textAnimDuration = 700L
@@ -33,6 +34,7 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mActivity = mainActivity
+        camConfig = mainActivity.camConfig
     }
 
     fun startTimer() {

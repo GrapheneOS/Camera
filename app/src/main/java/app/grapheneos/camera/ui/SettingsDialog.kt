@@ -42,13 +42,14 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 
 class SettingsDialog(val mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
+    val camConfig = mActivity.camConfig
 
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
     private var dialog: View
@@ -99,7 +100,7 @@ class SettingsDialog(val mActivity: MainActivity) :
         moreSettingsButton = binding.moreSettings
         moreSettingsButton.setOnClickListener {
             if (!mActivity.videoCapturer.isRecording) {
-                openMoreSettings()
+                MoreSettings.start(mActivity)
             } else {
                 mActivity.showMessage(getString(R.string.more_settings_unavailable_during_recording))
             }
@@ -725,16 +726,5 @@ class SettingsDialog(val mActivity: MainActivity) :
         }
 
         videoQualitySpinner.setSelection(titles.indexOf(qt))
-    }
-
-    fun openMoreSettings() {
-        val mSIntent = Intent(mActivity, MoreSettings::class.java)
-        mSIntent.putExtra(
-            "show_storage_settings",
-            !(mActivity is SecureMainActivity ||
-                    (mActivity is CaptureActivity &&
-                            mActivity !is VideoCaptureActivity))
-        )
-        mActivity.startActivity(mSIntent)
     }
 }

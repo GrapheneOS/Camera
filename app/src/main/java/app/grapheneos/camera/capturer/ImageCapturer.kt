@@ -21,13 +21,13 @@ import app.grapheneos.camera.App
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 
 private const val imageFileFormat = ".jpg"
 var isTakingPicture: Boolean = false
 
 class ImageCapturer(val mActivity: MainActivity) {
+    val camConfig = mActivity.camConfig
 
     @SuppressLint("RestrictedApi")
     fun takePicture() {

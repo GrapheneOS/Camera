@@ -27,7 +27,6 @@ import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.util.getTreeDocumentUri
@@ -37,6 +36,7 @@ import java.util.Date
 import java.util.Locale
 
 class VideoCapturer(private val mActivity: MainActivity) {
+    val camConfig = mActivity.camConfig
 
     var isRecording = false
         private set
