@@ -1,10 +1,9 @@
 package app.grapheneos.camera
 
-import android.content.Context
 import android.media.MediaPlayer
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
+import app.grapheneos.camera.ui.activities.MainActivity
 
-class TunePlayer(context: Context) {
+class TunePlayer(val context: MainActivity) {
 
     private val shutterPlayer: MediaPlayer = MediaPlayer.create(context, R.raw.image_shot)
 
@@ -17,7 +16,7 @@ class TunePlayer(context: Context) {
     private val vStopPlayer: MediaPlayer = MediaPlayer.create(context, R.raw.video_stop)
 
     private fun shouldNotPlayTune(): Boolean {
-        return !camConfig.enableCameraSounds
+        return !context.camConfig.enableCameraSounds
     }
 
     fun playShutterSound() {

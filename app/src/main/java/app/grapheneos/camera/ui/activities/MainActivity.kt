@@ -1318,13 +1318,12 @@ open class MainActivity : AppCompatActivity(),
         rotateView(settingsDialog.settingsFrame, iconRotation)
     }
 
+    lateinit var camConfig: CamConfig
+
     companion object {
         private const val TAG = "GOCam"
         private const val autoCenterFocusDuration = 2000L
         private val hexArray = "0123456789ABCDEF".toCharArray()
-
-        lateinit var camConfig: CamConfig
-        fun isCamConfigInitialized() = this::camConfig.isInitialized
 
         private const val SWIPE_THRESHOLD = 100
         private const val SWIPE_VELOCITY_THRESHOLD = 100

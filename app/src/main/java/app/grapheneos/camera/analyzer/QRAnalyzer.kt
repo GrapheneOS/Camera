@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
@@ -31,6 +30,8 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
     }
 
     fun refreshHints() {
+        val camConfig = mActivity.camConfig
+
         val supportedHints: MutableMap<DecodeHintType, Any> = EnumMap(
             DecodeHintType::class.java
         )

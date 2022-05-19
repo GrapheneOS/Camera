@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -198,7 +199,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var iAnalyzer: ImageAnalysis? = null
 
-    val mPlayer: TunePlayer by lazy { TunePlayer(mActivity.applicationContext) }
+    val mPlayer: TunePlayer by lazy { TunePlayer(mActivity) }
 
     // note that Activities which implement SecureActivity interface (meaning they are accessible
     // from the lock screen) are forced to override getSharedPreferences()
@@ -1413,7 +1414,7 @@ class CamConfig(private val mActivity: MainActivity) {
         builder.setMessage(R.string.reverting_to_default_folder)
         builder.setPositiveButton(R.string.ok, null)
         builder.setNeutralButton(R.string.more_settings) { _, _ ->
-            mActivity.settingsDialog.openMoreSettings()
+            MoreSettings.start(mActivity)
         }
         val alertDialog: AlertDialog = builder.create()
         alertDialog.setCancelable(false)

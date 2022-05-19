@@ -20,11 +20,11 @@ import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.MoreSettingsBinding
-import app.grapheneos.camera.ui.activities.MainActivity.Companion.camConfig
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.snackbar.Snackbar
 
 class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
+    private lateinit var camConfig: CamConfig
 
     private lateinit var binding: MoreSettingsBinding
     private lateinit var snackBar: Snackbar
@@ -70,12 +70,20 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val camConfig = obtainCamConfig(intent)
+        if (camConfig == null) {
+            finish()
+            return
+        }
+        this.camConfig = camConfig
+
         binding = MoreSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setTitle(R.string.more_settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val showStorageSettings = intent.extras?.getBoolean("show_storage_settings") == true
+        val showStorageSettings = intent.getBooleanExtra(INTENT_EXTRA_SHOW_STORAGE_SETTINGS, false)
 
         val sIAPToggle = binding.saveImageAsPreviewToggle
 
@@ -303,5 +311,40 @@ class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    companion object {
+        private var camConfigId = 0L
+        private var staticCamConfig: CamConfig? = null
+
+        private const val INTENT_EXTRA_CAM_CONFIG_ID = "camConfig_id"
+        private const val INTENT_EXTRA_SHOW_STORAGE_SETTINGS = "show_storage_settings"
+
+        fun start(caller: MainActivity) {
+            Intent(caller, MoreSettings::class.java).let {
+                it.putExtra(INTENT_EXTRA_SHOW_STORAGE_SETTINGS, caller !is SecureActivity)
+                camConfigId += 1
+                it.putExtra(INTENT_EXTRA_CAM_CONFIG_ID, camConfigId)
+                staticCamConfig = caller.camConfig
+
+                caller.startActivity(it)
+            }
+        }
+
+        private fun obtainCamConfig(intent: Intent): CamConfig? {
+            val camConfig = staticCamConfig
+            if (camConfigId != intent.getLongExtra(INTENT_EXTRA_CAM_CONFIG_ID, -1)) {
+                return null
+            }
+            return camConfig
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (isFinishing) {
+            staticCamConfig = null
+        }
     }
 }
