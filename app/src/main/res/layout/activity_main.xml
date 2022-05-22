@@ -125,12 +125,22 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
 
-            <app.grapheneos.camera.ui.QROverlay
-                android:id="@+id/qr_overlay"
-                android:visibility="invisible"
-                android:layout_width="match_parent"
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_height="match_parent"
-                android:layerType="software"/>
+                android:layout_width="match_parent">
+
+                <app.grapheneos.camera.ui.QROverlay
+                    android:id="@+id/qr_overlay"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="invisible"
+                    app:layout_constraintDimensionRatio="H,9:16"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:layerType="software"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <ImageView
                 android:layout_width="84dp"
