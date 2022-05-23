@@ -132,13 +132,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dialog.show()
         }
 
-        val sLS = binding.storageLocationSetting
-        sLS.visibility = if (showStorageSettings) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
-
         pQField = binding.photoQuality
 
         if (camConfig.photoQuality != 0) {
@@ -206,8 +199,13 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             sIAPToggle.performClick()
         }
 
+        val sLS = binding.storageLocationSetting
         sLS.setOnClickListener {
             sLField.performClick()
+        }
+
+        if (!showStorageSettings) {
+            binding.storageLocationSettings.visibility = View.GONE
         }
     }
 
