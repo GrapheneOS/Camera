@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <array name="time_options">
+        <item>Aus</item>
+        <item>3s</item>
+        <item>5s</item>
+        <item>8s</item>
+        <item>10s</item>
+    </array>
+
+</resources>

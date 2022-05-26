@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_permission_dialog_title">Kamera Zugriff benötigt</string>
+    <string name="camera_permission_dialog_message">
+        Die APP benötigt die Berechtigung auf die Kamera zuzugreifen um zu funktionieren. Bitte die nötigen Berechtigung über die Einstellungen setzen um diese APP zu verwenden.
+    </string>
+ 
+    <string name="audio_permission_dialog_title">Audio Berechtigung benötigt</string>
+    <string name="audio_permission_dialog_message">Die APP benötigt die Berechtigung auf das Mikrofon zuzugreifen um Vidos aufzunehmen die Ton enthalten. Bitte die notwendige Berechtigung über die Einstellungen zur Verfügung stellen um mit der Konfigurationb vortzufahren. Wird kein Ton in den Videos benötigt, so kann dies einfach in den Einstellungen deaktiviert (und später wieder aktiviert) werden.</string>
+ 
+    <string name="location_permission_dialog_title">Standort Berechtigungen benötigt</string>
+    <string name="location_permission_dialog_message">
+        Die APP benötigt Standort Berechtigungen für Geo-Tagging. Bitte die nötigen Berechtigungen über die Einstellungen bereitsllen um diese APP zu verwenden.
+    </string>
+ 
+    <string name="focus_ring">Fokusring</string>
+    <string name="flip_camera">Kamera umdrehen</string>
+    <string name="loading_camera">Lade Kamera</string>
+    <string name="flash_mode">Blitzmodus</string>
+    <string name="capture_mode">Aufnahmemodus</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Heranzoomen</string>
+    <string name="zoom_out">Herauszommen</string>
+    <string name="scan_result">Scan-Ergebnis</string>
+    <string name="share_qr_text">QR-Text Teilen</string>
+    <string name="copy_to_clipboard">In die Zwischenablage kopieren</string>
+    <string name="retake">Wiederholen</string>
+    <string name="play_preview">Vorschau abspielen</string>
+    <string name="toggle_button">Umschaltknopf</string>
+    <string name="aspect_ratio">Seitenverhältnis</string>
+    <string name="toggle_flash">Blitz umschalten</string>
+    <string name="grid_toggle">Raster umschalten</string>
+    <string name="include_audio">Ton einschließen</string>
+    <string name="enable_eis">Aktiviere EIS</string>
+    <string name="video_quality">Video Qualität</string>
+    <string name="optimize_for">Optimiere für</string>
+    <string name="quality">Qualität</string>
+    <string name="latency">Latenz</string>
+    <string name="preview">Vorschau</string>
+    <string name="file_info">Datei Info</string>
+    <string name="delete_file">Datei löschen</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="self_illumination">Selfie Licht</string>
+    <string name="focus_timeout">Fokus-Timeout</string>
+    <string name="timer">Timer</string>
+    <string name="cancel_timer">Timer Abbrechen</string>
+    <string name="video_capture_label">Video aufnehmen</string>
+ 
+    <string name="camera">KAMERA</string>
+    <string name="video">VIDEO</string>
+    <string name="portrait_mode">PORTRAIT</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">NACHT</string>
+    <string name="face_retouch_mode">GESICHT RETUSCHIEREN</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">QR SCAN</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Medien teilen</string>
+    <string name="rec_without_audio">Starte Aufnahme ohne Ton</string>
+    <string name="qr_scan_toggle">QR Scan umschalten</string>
+    <string name="qr_scan">QR Code</string>
+    <string name="data_matrix">Daten Matrix</string>
+    <string name="aztec_code">Aztec-Code</string>
+    <string name="more_options">Weitere Optionen</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Weitere Einstellungen</string>
+ 
+    <string name="general">Allgemein</string>
+ 
+    <string name="save_image_as_previewed">Speichere Bild wie in der Vorschau angezeigt</string>
+    <string name="save_as_image_preview_desc">Speichere Bild wie in der Vorschau angezeigt (behebt die Invertierung)</string>
+ 
+    <string name="gyroscope_suggestions">Gyroskop-Vorschläge</string>
+    <string name="gyroscope_setting_desc">Erhalte gelegentlich visuelle Vorschläge für gerade/gut ausgerichtete Bilder.</string>
+ 
+    <string name="camera_sounds">Kamera Töne</string>
+    <string name="camera_sounds_desc">Verschluss-Ton und andere aktustische Hinweise</string>
+ 
+    <string name="storage">Speicher</string>
+    <string name="storage_location">Speicherort</string>
+    <string name="image_file_name_format">Dateinamenformat für Bilder</string>
+    <string name="video_file_name_format">Dateinamenformat für Videos</string>
+    <string name="revert_back_to_dcim">Wider DCIM verwenden</string>
+ 
+    <string name="image_quality">Bildqualität</string>
+    <string name="image_quality_desc" formatted="false">Anpassen der Bildqualität von Aufnahmen mit der APP zwischen 1% bis 100%. Feld leer lassen um keine explizite Bildqualität einzustellen.</string>
+    <string name="photo">Foto</string>
+    <string name="increase_quality">Qualität erhöhen</string>
+    <string name="decrease_quality">Qualität reduzieren</string>
+    <string name="remove_exif_title">EXIF Daten nach aufnahme entfernen</string>
+    <string name="remove_exif_subtitle">Hinweis: Die Geo-Tagging/Standort Option ist unabhängig von dieser Einstellung</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+ 
+    <string name="location_is_disabled">Standort ist deaktiviert</string>
+    <string name="settings">Einstellungen</string>
+    <string name="enable">aktivieren</string>
+    <string name="ok">OK</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="disable_audio">Ton deaktivieren</string>
+    <string name="copied_text_to_clipboard">Text in Zwischenablage kopieren</string>
+    <string name="share_text_via">Text teilen mit</string>
+ 
+    <string name="editing_permission_error">Das Bild konnte nicht gelesen werden, da der Editor keinen Lesezugriff gewährt.</string>
+    <string name="editing_unexpected_error">Nach dem Bearbeiten ist ein unerwarteter Fehler aufgetreten.</string>
+    <string name="unexpected_error">Es ist ein unerwarteter Fehler aufgetreten.</string>
+ 
+    <string name="unable_to_obtain_file_details">Dateidetails können nicht abgerufen werden</string>
+ 
+    <string name="edit_successfully">Bearbeitung erfolgreich</string>
+    <string name="edit_not_allowed">Bildbearbeitung ist im sicheren Modus nicht gestattet.</string>
+    <string name="sharing_not_allowed">Das teilen von Bildern ist im sicheren Modus nicht gestattet.</string>
+    <string name="edit_image">Bild bearbeiten</string>
+    <string name="share_image">Vild teilen</string>
+    <string name="delete">Löschen</string>
+    <string name="delete_title">Sind Sie sicher?</string>
+    <string name="deleted_successfully">Datei erfolgreich gelöscht</string>
+    <string name="deleting_unexpected_error">Beim Löschen der Datei ist ein unerwarteter Fehler aufgetreten</string>
+    <string name="delete_description">"Möchten Sie die Datei (%s) wirklich löschen?"</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="no_image">Bitte nehmen Sie ein Bild/Video auf bevor sie versuchen diese zu betrachten.</string>
+ 
+    <string name="empty_gallery">Aufgenommene Bilder/Videos nicht gefunden</string>
+ 
+    <string name="bind_failure">Öffnen der Kamera aufgrund eines System- oder Hardwarefehlers fehlgeschlagen. Versuchen Sie einen Neustart.</string>
+    <string name="camera_provider_init_failure">Kameraanbieter konnte aufgrund eines System- oder Hardwarefehlers  nicht geladen werden. Versuchen Sie einen Neustart.</string>
+    <string name="extensions_manager_init_failure">Erweiterungs Manager onnte aufgrund eines System- oder Hardwarefehlers  nicht geladen werden. Versuchen Sie einen Neustart.</string>
+    <string name="unsupported_taking_picture_while_recording">Das Gerät unterstützt das Aufnehmen von Bildern während der Videoaufnahme in der aktuellen Konfiguration nicht.</string>
+    <string name="image_processing_pending">Bitte warten bis das letzte Bild verarbeitet wurde...</string>
+    <string name="location_unavailable">Der Standort konnte nicht an das Bild angehängt werden, da es derzeit nicht verfügbar ist.</string>
+    <string name="existing_no_image">Kein Bild gefunden. Verlasse In-App-Galerie.</string>
+    <string name="no_barcode_selected">Bitte sicherstellen, dass im manuellen Modus mindestens ein Barcode ausgewählt ist.</string>
+    <string name="flash_unavailable_in_selected_mode">Der Blitz ist im aktuellen Modus nicht verfügbar.</string>
+    <string name="front_camera_unavailable">Frontkamera wurde nicht erkannt. Bitte versuchen Sie es später noch einmal!</string>
+    <string name="rear_camera_unavailable">Hauptkamera wurde nicht erkannt. Bitte versuchen Sie es später noch einmal!</string>
+    <string name="folder_not_found">Speicherort nicht gefunden</string>
+    <string name="reverting_to_default_folder">Setze auf das standard DCIM Verzeichnis zurück, da der benutzerdefinierte Speicherort anscheinend gelöscht wurde. Bitte den Speicherort auf ein anderes Verzeichnis ändern (falls erforderlich).</string>
+    <string name="more_settings_unavailable_during_recording">Weitere Einstellungen sind während der Aufzeichnung nicht verfügbar</string>
+    <string name="video_geo_tagging_unsupported">Geo-Tagging wird für den Videomodus derzeit nicht unterstützt</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Das Umschalten von Geo-Tagging ist für laufende Aufzeichnungen nicht möglich</string>
+    <string name="flash_switch_unsupported">In diesem Modus kann der Blitzmodus nicht umgestellt werden</string>
+    <string name="four_by_three_unsupported_in_video">4:3 wird im Videomodus nicht unterstützt</string>
+    <string name="flash_unavailable_in_current_mode">Blitz/Taschenlampe ist in diesem Modus nicht verfügbar</string>
+    <string name="unexpected_error_while_setting_focus_timeout">Beim setzen des Fokus-Timeouts ist es zu einem unerwarteter Fehler gekommen</string>
+    <string name="unexpected_error_while_opening_gallery">Beim öffnen der Galerie ist es zu einem unerwarteten Fehler gekommen</string>
+    <string name="no_directory_selected">Bei der Auswahl wurde kein Verzeichnis ausgewählt</string>
+    <string name="choose_storage_location">Speicherort auswählen</string>
+    <string name="are_you_sure">Sind Sie sicher?</string>
+    <string name="revert_to_default_directory">Möchten Sie zum Standardverzeichnis zurücksetzen?</string>
+    <string name="reverted_to_default_directory">Zum Standardverzeichnis zurückgesetzt</string>
+    <string name="already_using_default_directory">Das Standardverzeichnis wird bereits verwendet</string>
+    <string name="photo_quality_was_set_to_auto">Bildqualität wurde auf Autamatisch gesetzt</string>
+    <string name="photo_quality_number_limit">Bildqualität muss zwischen %1$d und %2$d liegen</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Bilder die in diesem Modus aufgenommen werden enthalten keine zusätzlichen EXIF Daten</string>
+    <string name="file_already_exists">Datei existiert bereits unter %s</string>
+    <string name="file_does_not_exist">Datei existiert noch nicht unter %s</string>
+    <string name="couldnt_exclude_qr_format">Das Format %s konnte nicht entfernt werden. Stellen Sie sicher, dass im manuellen Modus mindestens ein Format ausgewählt ist.</string>
+ 
+    <string name="capturing_image">Bild aufnehmen…</string>
+    <string name="image_captured_successfully">Bild erfolgreich aufgenommen</string>
+    <string name="unable_to_capture_image">Bild konnte nicht aufgenommen werden</string>
+    <string name="unable_to_capture_image_verbose">Bild konnte nicht aufgenommen werden, Fehlercode: %d</string>
+    <string name="unable_to_save_image">Das Bild konnte nicht gespeichert werden</string>
+    <string name="unable_to_save_image_verbose">Das Bild konnte nicht gespeichert werden, Fehler während: %s</string>
+    <string name="show_details">Zeige Details</string>
+    <string name="recording_too_short_to_be_saved">Aufnahme zu kurz zum Speichern</string>
+    <string name="unable_to_save_video">Video konnte nicht gespeichert werden</string>
+    <string name="unable_to_save_video_verbose">Video konnte nicht gespeichert werden, Fehlercode: %d</string>
+    <string name="unable_to_access_output_file">Auf Ausgabedatei kann nicht zugegriffen werden</string>
+    <string name="please_wait_for_image_to_get_captured_before_opening">Bitte warten Sie, bis das Bild aufgenommen wurde, bevor Sie versuchen, die Galerie zu öffnen.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Bitte warten Sie, bis das Bild aufgenommen wurde, bevor Sie versuchen, es durch langes Antippen zu teilen.</string>
+ 
+    <string name="file_details">Datei Details</string>
+    <string name="file_name_generic">Dateiname: </string>
+    <string name="not_found_generic">Nicht gefunden</string>
+    <string name="loading_generic">Lade…</string>
+    <string name="file_size">Dateigröße: </string>
+    <string name="file_path">Dateipfad: </string>
+    <string name="file_created_on">Datei erstellt am: </string>
+    <string name="last_modified_on">Zuletzt geändert am: </string>
+
+    <string name="inaccessible_image">Bild %s ist nicht verfügbar</string>
+    <string name="inaccessible_video">Video %s ist nicht verfügbar</string>
+ 
+    <string name="main_storage">Hauptspeicher</string>
+
+    <string name="off">Aus</string>
+ 
+</resources>
