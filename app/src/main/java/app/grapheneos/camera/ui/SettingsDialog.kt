@@ -297,7 +297,7 @@ class SettingsDialog(val mActivity: MainActivity) :
 
                     val selectedOption = timerSpinner.selectedItem.toString()
 
-                    if (selectedOption == "Off") {
+                    if (selectedOption == getString(R.string.off)) {
                         mActivity.timerDuration = 0
                         mActivity.cbText.visibility = View.INVISIBLE
                     } else {
@@ -414,8 +414,9 @@ class SettingsDialog(val mActivity: MainActivity) :
 
     fun updateFocusTimeout(selectedOption: String) {
 
-        if (selectedOption == "Off") {
+        if (selectedOption == "Off" || selectedOption == getString(R.string.off)) {
             camConfig.focusTimeout = 0
+            focusTimeoutSpinner.setSelection(timeOptions.indexOf(getString(R.string.off)), false)
         } else {
 
             try {
@@ -431,9 +432,9 @@ class SettingsDialog(val mActivity: MainActivity) :
                 )
 
             }
+            focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
         }
 
-        focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
     }
 
     fun updateVideoQuality(choice: String, resCam: Boolean = true) {
