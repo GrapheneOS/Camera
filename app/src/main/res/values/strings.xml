@@ -85,8 +85,6 @@
     <string name="image_quality">Image Quality</string>
     <string name="image_quality_desc" formatted="false">Adjust the quality of an image captured by the app from 1% to 100%. This field can be left empty to avoid explicitly setting the image quality.</string>
     <string name="photo">Photo</string>
-    <string name="increase_quality">Increase Quality</string>
-    <string name="decrease_quality">Decrease Quality</string>
     <string name="remove_exif_title">Remove EXIF data after capture</string>
     <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
     <string name="degree_format">%d°</string>
@@ -104,7 +102,6 @@
 
     <string name="editing_permission_error">Could not read the image due to the editor not providing read access.</string>
     <string name="editing_unexpected_error">An unexpected error occurred after editing.</string>
-    <string name="unexpected_error">An unexpected error occurred after editing.</string>
 
     <string name="unable_to_obtain_file_details">Unable to obtain file details</string>
 
@@ -143,7 +140,6 @@
     <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
     <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
     <string name="unexpected_error_while_setting_focus_timeout">An unexpected error occurred while setting focus timeout</string>
-    <string name="unexpected_error_while_opening_gallery">An unexpected error occurred while opening the gallery</string>
     <string name="storage_location_updated">Storage location successfully updated to %s</string>
     <string name="no_directory_selected">No directory was selected by the picker</string>
     <string name="choose_storage_location">Choose storage location</string>
