@@ -145,6 +145,7 @@
     <string name="flash_unavailable_in_current_mode">Blitz/Taschenlampe ist in diesem Modus nicht verfügbar</string>
     <string name="unexpected_error_while_setting_focus_timeout">Beim setzen des Fokus-Timeouts ist es zu einem unerwarteter Fehler gekommen</string>
     <string name="unexpected_error_while_opening_gallery">Beim öffnen der Galerie ist es zu einem unerwarteten Fehler gekommen</string>
+    <string name="storage_location_updated">Speicherort erfolgreich auf %s geändert</string>
     <string name="no_directory_selected">Bei der Auswahl wurde kein Verzeichnis ausgewählt</string>
     <string name="choose_storage_location">Speicherort auswählen</string>
     <string name="are_you_sure">Sind Sie sicher?</string>
