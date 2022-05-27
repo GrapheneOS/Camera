@@ -633,7 +633,6 @@ class SettingsDialog(val mActivity: MainActivity) :
     }
 
     private fun getAvailableQTitles(): List<String> {
-
         val titles = arrayListOf<String>()
 
         getAvailableQualities().forEach {
@@ -641,7 +640,6 @@ class SettingsDialog(val mActivity: MainActivity) :
         }
 
         return titles
-
     }
 
     private fun getTitleFor(quality: Quality): String {
@@ -705,7 +703,7 @@ class SettingsDialog(val mActivity: MainActivity) :
         slideDialogDown()
     }
 
-    fun reloadQualities(qualityText: String = "") {
+    fun reloadQualities() {
 
         val titles = getAvailableQTitles()
 
@@ -721,10 +719,8 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         videoQualitySpinner.adapter = vQAdapter
 
-        val qt = qualityText.ifEmpty {
-            camConfig.videoQuality?.let { getTitleFor(it) }
+        if (camConfig.videoQuality != Quality.HIGHEST) {
+            videoQualitySpinner.setSelection(titles.indexOf(getTitleFor(camConfig.videoQuality)))
         }
-
-        videoQualitySpinner.setSelection(titles.indexOf(qt))
     }
 }
