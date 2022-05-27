@@ -114,6 +114,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ASPECT_RATIO = AspectRatio.RATIO_4_3
 
+            val VIDEO_QUALITY = Quality.HIGHEST
+
             const val SELF_ILLUMINATION = false
 
             const val GEO_TAGGING = false
@@ -301,14 +303,14 @@ class CamConfig(private val mActivity: MainActivity) {
             field = value
         }
 
-    var videoQuality: Quality? = null
+    var videoQuality: Quality = SettingValues.Default.VIDEO_QUALITY
         get() {
             return if (modePref.contains(videoQualityKey)) {
                 mActivity.settingsDialog.titleToQuality(
                     modePref.getString(videoQualityKey, "")!!
                 )
             } else {
-                null
+                SettingValues.Default.VIDEO_QUALITY
             }
         }
         set(value) {
@@ -644,16 +646,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             if (isVideoMode) {
-
-                if (!modePref.contains(videoQualityKey)) {
-                    mActivity.settingsDialog.reloadQualities()
-                    val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String?
-                    putString(videoQualityKey, option)
-                } else {
-                    modePref.getString(videoQualityKey, null)?.let {
-                        mActivity.settingsDialog.reloadQualities(it)
-                    }
-                }
+                mActivity.settingsDialog.reloadQualities()
             }
 
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
@@ -1023,20 +1016,12 @@ class CamConfig(private val mActivity: MainActivity) {
                         View.VISIBLE
                     }
 
-                // QualitySelector fallback doesn't work correctly so we can only set a known
-                // supported quality configured via the setting previously
-                // https://issuetracker.google.com/issues/230651237
-                val videoQuality = videoQuality
-                if (videoQuality != null) {
-                    videoCapture =
-                        VideoCapture.withOutput(
-                            Recorder.Builder()
-                                .setQualitySelector(QualitySelector.from(videoQuality))
-                                .build()
-                        )
-                } else {
-                    videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
-                }
+                videoCapture =
+                    VideoCapture.withOutput(
+                        Recorder.Builder()
+                            .setQualitySelector(QualitySelector.from(videoQuality))
+                            .build()
+                    )
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
