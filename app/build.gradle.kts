@@ -89,12 +89,13 @@ dependencies {
     implementation("com.google.android.material:material:1.6.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    implementation("androidx.camera:camera-core:1.1.0-rc01")
-    implementation("androidx.camera:camera-camera2:1.1.0-rc01")
-    implementation("androidx.camera:camera-lifecycle:1.1.0-rc01")
-    implementation("androidx.camera:camera-video:1.1.0-rc01")
-    implementation("androidx.camera:camera-view:1.1.0-rc01")
-    implementation("androidx.camera:camera-extensions:1.1.0-rc01")
+    val cameraVersion = "1.2.0-alpha01"
+    implementation("androidx.camera:camera-core:$cameraVersion")
+    implementation("androidx.camera:camera-camera2:$cameraVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraVersion")
+    implementation("androidx.camera:camera-video:$cameraVersion")
+    implementation("androidx.camera:camera-view:$cameraVersion")
+    implementation("androidx.camera:camera-extensions:$cameraVersion")
 
     implementation("com.google.zxing:core:3.5.0")
 }
