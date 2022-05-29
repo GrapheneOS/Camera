@@ -18,8 +18,8 @@ class VideoCaptureActivity : CaptureActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        whiteOptionCircle = findViewById(R.id.white_option_circle)
-        playPreview = findViewById(R.id.play_preview)
+        whiteOptionCircle = binding.whiteOptionCircle
+        playPreview = binding.playPreview
 
         captureButton.setImageResource(R.drawable.recording)
 
