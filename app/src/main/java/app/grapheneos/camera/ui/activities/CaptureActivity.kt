@@ -40,10 +40,10 @@ open class CaptureActivity : MainActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        retakeIcon = findViewById(R.id.retake_icon)
-        flipCameraContent = findViewById(R.id.flip_camera_icon_content)
+        retakeIcon = binding.retakeIcon
+        flipCameraContent = binding.flipCameraIconContent
 
-        confirmButton = findViewById(R.id.confirm_button)
+        confirmButton = binding.confirmButton
 
         if (intent.extras?.containsKey(EXTRA_OUTPUT) == true) {
             outputUri = intent.extras?.get(EXTRA_OUTPUT) as Uri
