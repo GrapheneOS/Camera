@@ -3,7 +3,7 @@ package app.grapheneos.camera.util
 import android.graphics.ImageDecoder
 import kotlin.math.max
 
-class ImageResizer(val targetWidth: Int, val targetHeight: Int) : ImageDecoder.OnHeaderDecodedListener {
+class ImageResizer(private val targetWidth: Int, private val targetHeight: Int) : ImageDecoder.OnHeaderDecodedListener {
     override fun onHeaderDecoded(decoder: ImageDecoder, info: ImageDecoder.ImageInfo, source: ImageDecoder.Source) {
         val size = info.size
         val w = size.width.toDouble()

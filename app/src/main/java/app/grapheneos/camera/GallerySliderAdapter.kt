@@ -22,7 +22,7 @@ class GallerySliderAdapter(
     val items: ArrayList<CapturedItem>
 ) : RecyclerView.Adapter<GallerySlide>() {
 
-    var atLeastOneBindViewHolderCall = false
+    private var atLeastOneBindViewHolderCall = false
 
     private val layoutInflater: LayoutInflater = LayoutInflater.from(gActivity)
 

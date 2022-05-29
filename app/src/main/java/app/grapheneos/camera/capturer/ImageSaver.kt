@@ -58,20 +58,20 @@ open a Uri during the thumbnail generation
 - ImageProxy isn't held open for the whole duration of storage IO, it's closed as soon as possible
  */
 class ImageSaver(
-    val imageCapturer: ImageCapturer,
-    val appContext: Context,
-    val jpegQuality: Int,
-    val storageLocation: String,
-    val imageFileFormat: String,
-    val imageCaptureMetadata: ImageCapture.Metadata,
-    val removeExifAfterCapture: Boolean,
+    private val imageCapturer: ImageCapturer,
+    private val appContext: Context,
+    private val jpegQuality: Int,
+    private val storageLocation: String,
+    private val imageFileFormat: String,
+    private val imageCaptureMetadata: ImageCapture.Metadata,
+    private val removeExifAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
 ) : ImageCapture.OnImageCapturedCallback()
 {
-    val captureTime = Date()
-    val contentResolver = appContext.contentResolver
-    val mainThreadExecutor = appContext.mainExecutor
+    private val captureTime = Date()
+    private val contentResolver = appContext.contentResolver
+    private val mainThreadExecutor = appContext.mainExecutor
 
     override fun onCaptureSuccess(image: ImageProxy) {
         mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
@@ -277,7 +277,7 @@ class ImageSaver(
         mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
     }
 
-    fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION
+    private fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION
 
     private fun dateString() =
         // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous one

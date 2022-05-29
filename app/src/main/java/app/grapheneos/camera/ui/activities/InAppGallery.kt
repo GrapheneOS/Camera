@@ -47,11 +47,11 @@ import kotlin.properties.Delegates
 
 class InAppGallery : AppCompatActivity() {
 
-    lateinit var binding: GalleryBinding
+    private lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
-    var gallerySliderAdapter: GallerySliderAdapter? = null
+    private var gallerySliderAdapter: GallerySliderAdapter? = null
 
-    val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
+    private val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
     val asyncImageLoader = Executors.newSingleThreadExecutor()
 
     private lateinit var snackBar: Snackbar
@@ -499,7 +499,7 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
-    fun asyncResultReady(items: ArrayList<CapturedItem>) {
+    private fun asyncResultReady(items: ArrayList<CapturedItem>) {
         if (isDestroyed) {
             return
         }

@@ -41,7 +41,7 @@ import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
 
-class SettingsDialog(val mActivity: MainActivity) :
+class SettingsDialog(private val mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
     val camConfig = mActivity.camConfig
 

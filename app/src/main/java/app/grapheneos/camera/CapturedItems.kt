@@ -83,7 +83,7 @@ class CapturedItem(
 object CapturedItems {
     const val TAG = "CapturedItems"
 
-    const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
+    private const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
 
     fun init(ctx: Context, camConfig: CamConfig) {
         val prefs = camConfig.commonPref
@@ -171,7 +171,7 @@ object CapturedItems {
         }
     }
 
-    fun maybeGetCurentSafTree(prefs: SharedPreferences): Uri? {
+    private fun maybeGetCurentSafTree(prefs: SharedPreferences): Uri? {
         return prefs.getString(SettingValues.Key.STORAGE_LOCATION, null)?.let {
             if (it != SettingValues.Default.STORAGE_LOCATION) {
                 Uri.parse(it)
@@ -181,7 +181,7 @@ object CapturedItems {
         }
     }
 
-    fun getSafTrees(prefs: SharedPreferences): List<Uri> {
+    private fun getSafTrees(prefs: SharedPreferences): List<Uri> {
         val list = ArrayList<Uri>()
 
         maybeGetCurentSafTree(prefs)?.let {
@@ -198,7 +198,7 @@ object CapturedItems {
 
     const val SAF_TREE_SEPARATOR = "\u0000"
 
-    fun getPreviousSafTrees(prefs: SharedPreferences): MutableList<Uri> {
+    private fun getPreviousSafTrees(prefs: SharedPreferences): MutableList<Uri> {
         prefs.getString(SettingValues.Key.PREVIOUS_SAF_TREES, null)?.let {
             return it.split(SAF_TREE_SEPARATOR).map { Uri.parse(it) }.toMutableList()
         }
@@ -220,7 +220,7 @@ object CapturedItems {
         }
     }
 
-    fun savePreviousSafTrees(trees: List<Uri>, editor: SharedPreferences.Editor) {
+    private fun savePreviousSafTrees(trees: List<Uri>, editor: SharedPreferences.Editor) {
         if (trees.isEmpty()) {
             return
         }
@@ -294,7 +294,7 @@ object CapturedItems {
         savePreviousSafTrees(list, editor)
     }
 
-    fun parseCapturedItem(fileName: String, uri: Uri): CapturedItem? {
+    private fun parseCapturedItem(fileName: String, uri: Uri): CapturedItem? {
         val type = if (fileName.startsWith(IMAGE_NAME_PREFIX)) {
             ITEM_TYPE_IMAGE
         } else if (fileName.startsWith(VIDEO_NAME_PREFIX)) {
