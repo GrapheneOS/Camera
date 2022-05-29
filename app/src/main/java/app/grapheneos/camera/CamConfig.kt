@@ -1061,7 +1061,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 preview?.targetRotation
                     ?: rotation
             )
-            .setTargetAspectRatio(aspectRatio);
+            .setTargetAspectRatio(aspectRatio)
 
         @androidx.camera.camera2.interop.ExperimentalCamera2Interop
         if (isVideoMode && enableEIS) {
@@ -1211,11 +1211,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 else -> {
                     check(it.extensionMode != ExtensionMode.NONE)
                     val em = extensionsManager
-                    if (em != null) {
-                        em.isExtensionAvailable(cameraSelector, it.extensionMode)
-                    } else {
-                        false
-                    }
+                    em?.isExtensionAvailable(cameraSelector, it.extensionMode) ?: false
                 }
             }
         }.toSet()

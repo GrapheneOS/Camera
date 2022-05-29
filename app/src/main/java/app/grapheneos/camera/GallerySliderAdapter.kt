@@ -49,7 +49,7 @@ class GallerySliderAdapter(
         val placeholderText = holder.binding.placeholderText.root
         if (atLeastOneBindViewHolderCall) {
             placeholderText.visibility = View.VISIBLE
-            placeholderText.setText("…")
+            placeholderText.text = "…"
         }
         atLeastOneBindViewHolderCall = true
 
@@ -99,7 +99,7 @@ class GallerySliderAdapter(
                         } else { R.string.inaccessible_video }
 
                         placeholderText.visibility = View.VISIBLE
-                        placeholderText.setText(gActivity.getString(resId, item.dateString))
+                        placeholderText.text = gActivity.getString(resId, item.dateString)
                     }
                 } else {
                     bitmap?.recycle()
