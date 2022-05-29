@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.Dialog
-import android.content.Intent
 import android.graphics.Color
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
@@ -32,7 +31,6 @@ import androidx.annotation.StringRes
 import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
@@ -40,12 +38,8 @@ import androidx.camera.video.QualitySelector
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
-import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
-import app.grapheneos.camera.ui.activities.SecureActivity
-import app.grapheneos.camera.ui.activities.SecureMainActivity
-import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 
 class SettingsDialog(val mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
