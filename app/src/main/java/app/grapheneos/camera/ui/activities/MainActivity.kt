@@ -111,7 +111,7 @@ open class MainActivity : AppCompatActivity(),
     private val application: App
         get() = applicationContext as App
 
-    private lateinit var binding: ActivityMainBinding
+    protected lateinit var binding: ActivityMainBinding
 
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
@@ -1691,7 +1691,7 @@ open class MainActivity : AppCompatActivity(),
         isStarted = false
     }
 
-    var isThumbnailLoaded = false
+    private var isThumbnailLoaded = false
 
     fun updateThumbnail() {
         val item = camConfig.lastCapturedItem
