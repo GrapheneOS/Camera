@@ -12,6 +12,9 @@ import android.util.AttributeSet
 import android.view.View
 
 class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
+    companion object {
+        const val RATIO = 0.6f
+    }
 
     private val boxPaint: Paint = Paint().apply {
         color = 0Xffffff
@@ -40,7 +43,7 @@ class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
         val overlayWidth = width.toFloat()
         val overlayHeight = height.toFloat()
 
-        size = overlayHeight.coerceAtMost(overlayWidth) * 0.6f
+        size = overlayHeight.coerceAtMost(overlayWidth) * RATIO
 
         val cx = overlayWidth / 2
         val cy = overlayHeight / 2

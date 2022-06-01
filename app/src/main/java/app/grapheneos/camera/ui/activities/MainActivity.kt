@@ -204,22 +204,10 @@ open class MainActivity : AppCompatActivity(),
             previewView.width.toFloat(), previewView.height.toFloat()
         )
 
-        val shouldUseFocusRegion = when (Build.PRODUCT) {
-            "OnePlus6", "OnePlus6T" -> false
-            else -> true
-        }
-
-        val autoFocusPoint = if (shouldUseFocusRegion) {
-            factory.createPoint(
-                previewView.width / 2.0f,
-                previewView.height / 2.0f, qrOverlay.size
-            )
-        } else {
-            factory.createPoint(
-                previewView.width / 2.0f,
-                previewView.height / 2.0f
-            )
-        }
+        val autoFocusPoint = factory.createPoint(
+            previewView.width / 2.0f,
+            previewView.height / 2.0f, QROverlay.RATIO
+        )
 
         camConfig.camera?.cameraControl?.startFocusAndMetering(
             FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
