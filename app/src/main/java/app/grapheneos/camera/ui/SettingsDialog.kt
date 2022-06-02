@@ -613,11 +613,11 @@ class SettingsDialog(val mActivity: MainActivity) :
     }
 
     private fun slideDialogDown() {
-        dialog.startAnimation(slideDownAnimation)
+        settingsFrame.startAnimation(slideDownAnimation)
     }
 
     fun slideDialogUp() {
-        dialog.startAnimation(slideUpAnimation)
+        settingsFrame.startAnimation(slideUpAnimation)
     }
 
     private fun getAvailableQualities(): List<Quality> {
