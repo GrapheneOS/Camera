@@ -1003,7 +1003,7 @@ class CamConfig(private val mActivity: MainActivity) {
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
             cameraSelector = CameraSelector.Builder()
                 .requireLensFacing(
-                    if(isLensFacingSupported(CameraSelector.LENS_FACING_BACK)) {
+                    if (isLensFacingSupported(CameraSelector.LENS_FACING_BACK)) {
                         CameraSelector.LENS_FACING_BACK
                     } else {
                         mActivity.showMessage(R.string.qr_rear_camera_unavailable)
