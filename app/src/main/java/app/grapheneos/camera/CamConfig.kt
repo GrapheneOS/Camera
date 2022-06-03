@@ -1002,7 +1002,13 @@ class CamConfig(private val mActivity: MainActivity) {
             iAnalyzer = mIAnalyzer
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
             cameraSelector = CameraSelector.Builder()
-                .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                .requireLensFacing(
+                    if(isLensFacingSupported(CameraSelector.LENS_FACING_BACK)) {
+                        CameraSelector.LENS_FACING_BACK
+                    } else {
+                        mActivity.showMessage("The rear camera seems to be unavailable. Using front camera for QR mode instead.")
+                        CameraSelector.LENS_FACING_FRONT
+                    })
                 .build()
             useCaseGroupBuilder.addUseCase(mIAnalyzer)
 
