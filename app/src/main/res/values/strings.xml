@@ -131,6 +131,7 @@
     <string name="flash_unavailable_in_selected_mode">Flash is unavailable for the current mode.</string>
     <string name="front_camera_unavailable">Could not detect front camera. Please try again later!</string>
     <string name="rear_camera_unavailable">Could not detect rear camera. Please try again later!</string>
+    <string name="qr_rear_camera_unavailable">The rear camera seems to be unavailable. Using front camera for QR mode instead.</string>
     <string name="folder_not_found">Storage location not found</string>
     <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
     <string name="more_settings_unavailable_during_recording">Cannot switch activities when recording</string>

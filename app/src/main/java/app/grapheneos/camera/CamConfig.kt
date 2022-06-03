@@ -1006,7 +1006,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     if(isLensFacingSupported(CameraSelector.LENS_FACING_BACK)) {
                         CameraSelector.LENS_FACING_BACK
                     } else {
-                        mActivity.showMessage("The rear camera seems to be unavailable. Using front camera for QR mode instead.")
+                        mActivity.showMessage(R.string.qr_rear_camera_unavailable)
                         CameraSelector.LENS_FACING_FRONT
                     })
                 .build()
