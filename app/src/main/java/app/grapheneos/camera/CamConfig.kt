@@ -62,6 +62,7 @@ enum class CameraMode(val extensionMode: Int, val uiName: Int) {
     VIDEO(ExtensionMode.NONE, R.string.video),
 }
 
+@SuppressLint("UnsafeOptInUsageError")
 class CamConfig(private val mActivity: MainActivity) {
 
     enum class GridType {
@@ -523,6 +524,10 @@ class CamConfig(private val mActivity: MainActivity) {
             )
             editor.apply()
         }
+
+    val isZslSupported : Boolean by lazy {
+        camera!!.cameraInfo.isZslSupported
+    }
 
     fun shouldShowGyroscope(): Boolean {
         return isInPhotoMode && gSuggestions
