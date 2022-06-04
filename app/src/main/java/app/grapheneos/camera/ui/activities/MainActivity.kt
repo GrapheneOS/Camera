@@ -875,7 +875,7 @@ open class MainActivity : AppCompatActivity(),
                     (mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
                         it.setMargins(
                             it.leftMargin,
-                            insets.top,
+                            (8 * resources.displayMetrics.density.toInt()) + insets.top,
                             it.rightMargin,
                             it.bottomMargin,
                         )

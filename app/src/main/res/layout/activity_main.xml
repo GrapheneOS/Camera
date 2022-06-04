@@ -17,8 +17,7 @@
         <FrameLayout
             android:id="@+id/main_frame"
             android:layout_height="match_parent"
-            android:layout_width="match_parent"
-            android:paddingTop="8dp">
+            android:layout_width="match_parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/preview_container"
