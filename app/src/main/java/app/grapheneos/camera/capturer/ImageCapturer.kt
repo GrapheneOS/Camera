@@ -42,6 +42,11 @@ class ImageCapturer(val mActivity: MainActivity) {
             return
         }
 
+        if (isCaptureQueueFull) {
+            mActivity.showMessage(R.string.image_processing_pending)
+            return
+        }
+
         val imageMetadata = ImageCapture.Metadata()
         imageMetadata.isReversedHorizontal = camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT
                 && camConfig.saveImageAsPreviewed
@@ -94,6 +99,12 @@ class ImageCapturer(val mActivity: MainActivity) {
             // The first request shall be removed after it gets processed
         }
     }
+
+    private val isCaptureQueueFull : Boolean
+        get() {
+            Log.i(TAG, "captureRequestQueue.size: ${captureRequestQueue.size}")
+            return captureRequestQueue.size == MAX_CAPTURE_QUEUE_LENGTH
+        }
 
     fun onCaptureSuccess() {
         camConfig.mPlayer.playShutterSound()
@@ -222,5 +233,6 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     companion object {
         private const val TAG = "ImageCapturer"
+        private const val MAX_CAPTURE_QUEUE_LENGTH = 3
     }
 }
