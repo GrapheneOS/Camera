@@ -69,9 +69,15 @@ class ImageSaver(
     @Px val targetThumbnailHeight: Int,
 ) : ImageCapture.OnImageCapturedCallback()
 {
-    val captureTime = Date()
+    private lateinit var captureTime : Date
+
     val contentResolver = appContext.contentResolver
     val mainThreadExecutor = appContext.mainExecutor
+
+    fun takePicture() {
+        captureTime = Date()
+        imageCapture.takePicture(imageCaptureCallbackExecutor, this)
+    }
 
     override fun onCaptureSuccess(image: ImageProxy) {
         mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
