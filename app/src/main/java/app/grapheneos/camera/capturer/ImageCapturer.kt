@@ -65,7 +65,7 @@ class ImageCapturer(val mActivity: MainActivity) {
         val imageSaver = ImageSaver(
             this,
             mActivity.applicationContext,
-            imageCapture.jpegQuality,
+            imageCapture,
             camConfig.storageLocation,
             imageFileFormat,
             imageMetadata,

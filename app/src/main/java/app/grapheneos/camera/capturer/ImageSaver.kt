@@ -60,7 +60,7 @@ open a Uri during the thumbnail generation
 class ImageSaver(
     val imageCapturer: ImageCapturer,
     val appContext: Context,
-    val jpegQuality: Int,
+    val imageCapture: ImageCapture,
     val storageLocation: String,
     val imageFileFormat: String,
     val imageCaptureMetadata: ImageCapture.Metadata,
@@ -98,7 +98,7 @@ class ImageSaver(
             origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
                 ImageUtil.jpegImageToJpegByteArray(image)
             } else if (imageFormat == ImageFormat.YUV_420_888) {
-                ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality)
+                ImageUtil.yuvImageToJpegByteArray(image, cropRect, imageCapture.jpegQuality)
             } else {
                 throw IllegalStateException("unknown imageFormat $imageFormat")
             }
@@ -144,7 +144,7 @@ class ImageSaver(
                     "cropJpegByteArray",
                     ByteArray::class.java, Rect::class.java, Int::class.javaPrimitiveType)
                 cropJpegByteArray.isAccessible = true
-                origJpegBytes = cropJpegByteArray.invoke(null, uncroppedJpegBytes, cropRect, jpegQuality) as ByteArray
+                origJpegBytes = cropJpegByteArray.invoke(null, uncroppedJpegBytes, cropRect, imageCapture.jpegQuality) as ByteArray
             } catch (e: Exception) {
                 throw ImageSaverException(Place.IMAGE_CROPPING, e)
             }
