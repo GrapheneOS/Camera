@@ -204,6 +204,12 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             sLField.performClick()
         }
 
+        val zslToggle = binding.zslSettingToggle
+        zslToggle.isChecked = camConfig.enableZsl
+        zslToggle.setOnClickListener {
+            camConfig.enableZsl = !camConfig.enableZsl
+        }
+
         if (!showStorageSettings) {
             binding.storageLocationSettings.visibility = View.GONE
         }

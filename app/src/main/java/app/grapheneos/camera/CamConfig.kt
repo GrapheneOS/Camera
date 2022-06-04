@@ -103,6 +103,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val CAMERA_SOUNDS = "camera_sounds"
 
+            const val ENABLE_ZSL = "enable_zsl"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -143,6 +145,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GYROSCOPE_SUGGESTIONS = false
 
             const val CAMERA_SOUNDS = true
+
+            const val ENABLE_ZSL = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -429,6 +433,19 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
 
             mActivity.settingsDialog.enableEISToggle.isChecked = value
+        }
+
+    var enableZsl: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.ENABLE_ZSL,
+                SettingValues.Default.ENABLE_ZSL
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.ENABLE_ZSL, value)
+            editor.apply()
         }
 
     var saveImageAsPreviewed: Boolean
