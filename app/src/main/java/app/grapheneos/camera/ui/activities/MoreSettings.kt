@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.activities
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
@@ -204,10 +205,19 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             sLField.performClick()
         }
 
-        val zslToggle = binding.zslSettingToggle
-        zslToggle.isChecked = camConfig.enableZsl
-        zslToggle.setOnClickListener {
-            camConfig.enableZsl = !camConfig.enableZsl
+        val zslSetting = binding.zslSetting
+        if (camConfig.isZslSupported) {
+            zslSetting.visibility = View.VISIBLE
+
+            val zslToggle = binding.zslSettingToggle
+            zslToggle.isChecked = camConfig.enableZsl
+            zslToggle.setOnClickListener {
+                camConfig.enableZsl = !camConfig.enableZsl
+            }
+
+            zslSetting.setOnClickListener {
+                zslToggle.performClick()
+            }
         }
 
         if (!showStorageSettings) {
