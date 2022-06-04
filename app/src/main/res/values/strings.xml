@@ -183,4 +183,6 @@
 
     <string name="main_storage">Main storage</string>
 
+    <string name="zsl_setting_title">Use ZSL in Latency mode</string>
+    <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
 </resources>
