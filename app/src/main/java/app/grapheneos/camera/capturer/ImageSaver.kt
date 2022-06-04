@@ -74,7 +74,11 @@ class ImageSaver(
     val contentResolver = appContext.contentResolver
     val mainThreadExecutor = appContext.mainExecutor
 
+    var hasCaptureStarted = false
+
     fun takePicture() {
+        if (hasCaptureStarted) return
+        hasCaptureStarted = true
         captureTime = Date()
         imageCapture.takePicture(imageCaptureCallbackExecutor, this)
     }
@@ -89,6 +93,12 @@ class ImageSaver(
             return
         }
 
+        mainThreadExecutor.execute {
+            // The first capture request will always be the one being processed (as the others are appended to the list)
+            imageCapturer.captureRequestQueue.removeAt(0)
+            // Proceed with the next capture request (if any)
+            imageCapturer.processCaptureReqQueue()
+        }
         imageWriterExecutor.execute(this::saveImage)
     }
 

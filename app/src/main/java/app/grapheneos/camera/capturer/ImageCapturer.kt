@@ -29,6 +29,8 @@ var isTakingPicture: Boolean = false
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
 
+    val captureRequestQueue = arrayListOf<ImageSaver>()
+
     @SuppressLint("RestrictedApi")
     fun takePicture() {
         if (camConfig.camera == null) {
@@ -37,11 +39,6 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         if (!camConfig.canTakePicture) {
             mActivity.showMessage(R.string.unsupported_taking_picture_while_recording)
-            return
-        }
-
-        if (isTakingPicture) {
-            mActivity.showMessage(R.string.image_processing_pending)
             return
         }
 
@@ -76,12 +73,29 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         isTakingPicture = true
 
-        imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
+        // If the queue is empty then try processing
+        // the first request after adding it to the queue
+        if (captureRequestQueue.isEmpty()) {
+            captureRequestQueue.add(imageSaver)
+            processCaptureReqQueue()
+        // Else add it to the queue and wait for it to eventually get processed
+        } else {
+            captureRequestQueue.add(imageSaver)
+        }
+    }
+
+    // Processes the first request of the capture request queue (if it's not empty)
+    fun processCaptureReqQueue() {
+        if (captureRequestQueue.isEmpty()) {
+            isTakingPicture = false
+            return
+        } else {
+            captureRequestQueue.first().takePicture()
+            // The first request shall be removed after it gets processed
+        }
     }
 
     fun onCaptureSuccess() {
-        isTakingPicture = false
-
         camConfig.mPlayer.playShutterSound()
         camConfig.snapPreview()
 
@@ -129,7 +143,6 @@ class ImageCapturer(val mActivity: MainActivity) {
     fun onCaptureError(exception: ImageCaptureException) {
         Log.e(TAG, "onCaptureError", exception)
 
-        isTakingPicture = false
         mActivity.previewLoader.visibility = View.GONE
 
         if (mActivity.isStarted) {
