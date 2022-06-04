@@ -1023,14 +1023,6 @@ open class MainActivity : AppCompatActivity(),
                             it
                         }
 
-                    qrScanToggles.layoutParams =
-                        (qrScanToggles.layoutParams as ViewGroup.MarginLayoutParams).let {
-
-                            it.height = halfOfExtraHeight
-
-                            it
-                        }
-
                     return true
                 }
 
