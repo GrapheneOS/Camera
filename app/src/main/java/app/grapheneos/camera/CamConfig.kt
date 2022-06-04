@@ -1060,7 +1060,11 @@ class CamConfig(private val mActivity: MainActivity) {
                         if (emphasisQuality) {
                             ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                         } else {
-                            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+                            if (enableZsl) {
+                                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+                            } else {
+                                ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+                            }
                         }
                     )
 
