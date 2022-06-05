@@ -29,6 +29,28 @@ var isTakingPicture: Boolean = false
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
 
+    private fun fadeCaptureButton() {
+        mActivity.captureButton.isEnabled = false
+
+        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
+        animation.duration = 200
+        animation.interpolator = LinearInterpolator()
+        animation.fillAfter = true
+
+        mActivity.captureButton.startAnimation(animation)
+    }
+
+    private fun unfadeCaptureButton() {
+        mActivity.captureButton.isEnabled = true
+
+        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 1f)
+        animation.duration = 200
+        animation.interpolator = LinearInterpolator()
+        animation.fillAfter = true
+
+        mActivity.captureButton.startAnimation(animation)
+    }
+
     @SuppressLint("RestrictedApi")
     fun takePicture() {
         if (camConfig.camera == null) {
@@ -41,7 +63,6 @@ class ImageCapturer(val mActivity: MainActivity) {
         }
 
         if (isTakingPicture) {
-            mActivity.showMessage(R.string.image_processing_pending)
             return
         }
 
@@ -77,9 +98,11 @@ class ImageCapturer(val mActivity: MainActivity) {
         isTakingPicture = true
 
         imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
+        fadeCaptureButton()
     }
 
     fun onCaptureSuccess() {
+        unfadeCaptureButton()
         isTakingPicture = false
 
         camConfig.mPlayer.playShutterSound()
@@ -128,6 +151,7 @@ class ImageCapturer(val mActivity: MainActivity) {
     fun onCaptureError(exception: ImageCaptureException) {
         Log.e(TAG, "onCaptureError", exception)
 
+        unfadeCaptureButton()
         isTakingPicture = false
         mActivity.previewLoader.visibility = View.GONE
 
