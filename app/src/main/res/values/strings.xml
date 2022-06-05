@@ -185,4 +185,10 @@
 
     <string name="zsl_setting_title">Use ZSL in Latency mode</string>
     <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
+
+    <string name="off">Off</string>
+    <string name="three_seconds">3s</string>
+    <string name="five_seconds">5s</string>
+    <string name="eight_seconds">8s</string>
+    <string name="ten_seconds">10s</string>
 </resources>
