@@ -1223,7 +1223,6 @@ class CamConfig(private val mActivity: MainActivity) {
                     override fun onAnimationEnd(p0: Animation?) {
                         mActivity.mainOverlay.visibility = View.INVISIBLE
                         mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                        mActivity.updateLastFrame()
                     }
 
                     override fun onAnimationRepeat(p0: Animation?) {}

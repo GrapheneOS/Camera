@@ -104,7 +104,6 @@ class ImageCapturer(val mActivity: MainActivity) {
                     override fun onAnimationEnd(p0: Animation?) {
                         mActivity.mainOverlay.visibility = View.INVISIBLE
                         mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                        mActivity.updateLastFrame()
 
                         mActivity.mainOverlay.layoutParams =
                             (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
