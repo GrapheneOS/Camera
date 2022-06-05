@@ -996,15 +996,10 @@ open class MainActivity : AppCompatActivity(),
 
                     val previewHeight169 = previewContainer.width * 16 / 9
 
-                    val previewHeight43 = previewContainer.width * 4 / 3
-
                     val extraHeight169 = previewContainer.height -
                             previewHeight169 -
                             tabLayout.height -
                             10 * resources.displayMetrics.density.toInt()
-
-                    val halfOfExtraHeight = (previewContainer.height -
-                            previewHeight43) / 2
 
                     tabLayout.layoutParams =
                         (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
