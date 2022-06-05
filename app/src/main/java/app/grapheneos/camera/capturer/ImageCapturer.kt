@@ -29,6 +29,28 @@ var isTakingPicture: Boolean = false
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
 
+    private fun blurCaptureButton() {
+        mActivity.captureButton.isEnabled = false
+
+        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
+        animation.duration = 200
+        animation.interpolator = LinearInterpolator()
+        animation.fillAfter = true
+
+        mActivity.captureButton.startAnimation(animation)
+    }
+
+    private fun unBlurCaptureButton() {
+        mActivity.captureButton.isEnabled = true
+
+        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 1f)
+        animation.duration = 200
+        animation.interpolator = LinearInterpolator()
+        animation.fillAfter = true
+
+        mActivity.captureButton.startAnimation(animation)
+    }
+
     @SuppressLint("RestrictedApi")
     fun takePicture() {
         if (camConfig.camera == null) {
@@ -41,7 +63,6 @@ class ImageCapturer(val mActivity: MainActivity) {
         }
 
         if (isTakingPicture) {
-            mActivity.showMessage(R.string.image_processing_pending)
             return
         }
 
@@ -76,10 +97,12 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         isTakingPicture = true
 
+        blurCaptureButton()
         imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
     }
 
     fun onCaptureSuccess() {
+        unBlurCaptureButton()
         isTakingPicture = false
 
         camConfig.mPlayer.playShutterSound()
