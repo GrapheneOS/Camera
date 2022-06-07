@@ -127,16 +127,6 @@ class ImageCapturer(val mActivity: MainActivity) {
                     override fun onAnimationEnd(p0: Animation?) {
                         mActivity.mainOverlay.visibility = View.INVISIBLE
                         mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-
-                        mActivity.mainOverlay.layoutParams =
-                            (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
-                                this.setMargins(
-                                    leftMargin,
-                                    (46 * mActivity.resources.displayMetrics.density).toInt(), // topMargin
-                                    rightMargin,
-                                    (40 * mActivity.resources.displayMetrics.density).toInt() // bottomMargin
-                                )
-                            }
                     }
 
                     override fun onAnimationRepeat(p0: Animation?) {}

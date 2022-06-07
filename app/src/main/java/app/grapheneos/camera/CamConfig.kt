@@ -1173,16 +1173,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (selfIlluminate) {
 
-            mActivity.mainOverlay.layoutParams =
-                (mActivity.mainOverlay.layoutParams as FrameLayout.LayoutParams).apply {
-                    this.setMargins(
-                        leftMargin,
-                        0, // topMargin
-                        rightMargin,
-                        0 // bottomMargin
-                    )
-                }
-
             val animation: Animation = AlphaAnimation(0f, 0.8f)
             animation.duration = PREVIEW_SL_OVERLAY_DUR
             animation.interpolator = LinearInterpolator()
