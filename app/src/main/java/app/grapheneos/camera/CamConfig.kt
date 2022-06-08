@@ -1173,7 +1173,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (selfIlluminate) {
 
-            val animation: Animation = AlphaAnimation(0f, 0.8f)
+            val animation: Animation = AlphaAnimation(mActivity.mainOverlay.alpha, 0.8f)
             animation.duration = PREVIEW_SL_OVERLAY_DUR
             animation.interpolator = LinearInterpolator()
             animation.fillAfter = true
