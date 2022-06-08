@@ -108,6 +108,11 @@ class ImageCapturer(val mActivity: MainActivity) {
         camConfig.mPlayer.playShutterSound()
         camConfig.snapPreview()
 
+        if (mActivity.captureButton.isPressed) {
+            mActivity.captureButton.performLongClick()
+            return
+        }
+
         mActivity.previewLoader.visibility = View.VISIBLE
         if (camConfig.selfIlluminate) {
 
