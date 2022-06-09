@@ -36,12 +36,14 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         cFadeAnim?.cancel()
 
-        cFadeAnim = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
-        cFadeAnim?.duration = 200
-        cFadeAnim?.interpolator = LinearInterpolator()
-        cFadeAnim?.fillAfter = true
+        AlphaAnimation(mActivity.captureButton.alpha, 0.6f).let {
+            it.duration = 200
+            it.interpolator = LinearInterpolator()
+            it.fillAfter = true
 
-        mActivity.captureButton.startAnimation(cFadeAnim)
+            mActivity.captureButton.startAnimation(it)
+            cFadeAnim = it
+        }
     }
 
     private fun unfadeCaptureButton() {
@@ -49,12 +51,14 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         cFadeAnim?.cancel()
 
-        cFadeAnim = AlphaAnimation(mActivity.captureButton.alpha, 1f)
-        cFadeAnim?.duration = 200
-        cFadeAnim?.interpolator = LinearInterpolator()
-        cFadeAnim?.fillAfter = true
+        AlphaAnimation(mActivity.captureButton.alpha, 1f).let {
+            it.duration = 200
+            it.interpolator = LinearInterpolator()
+            it.fillAfter = true
 
-        mActivity.captureButton.startAnimation(cFadeAnim)
+            mActivity.captureButton.startAnimation(it)
+            cFadeAnim = it
+        }
     }
 
     @SuppressLint("RestrictedApi")
