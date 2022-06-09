@@ -725,7 +725,8 @@ open class MainActivity : AppCompatActivity(),
 
         captureButton = binding.captureButton
         captureButton.setOnLongClickListener {
-            if (camConfig.isVideoMode || camConfig.isQRMode || timerDuration != 0)
+            if (camConfig.isSingleShot ||
+                    camConfig.isVideoMode || camConfig.isQRMode || timerDuration != 0)
                 return@setOnLongClickListener false
 
             captureButton.performClick()
