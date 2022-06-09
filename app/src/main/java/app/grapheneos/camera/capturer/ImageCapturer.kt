@@ -93,22 +93,26 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         val imageCapture = camConfig.imageCapture!!
 
-        val imageSaver = ImageSaver(
-            this,
-            mActivity.applicationContext,
-            imageCapture.jpegQuality,
-            camConfig.storageLocation,
-            imageFileFormat,
-            imageMetadata,
-            camConfig.removeExifAfterCapture,
-            targetThumbnailWidth = preview.width,
-            targetThumbnailHeight = preview.height,
-        )
+        try {
+            val imageSaver = ImageSaver(
+                this,
+                mActivity.applicationContext,
+                imageCapture.jpegQuality,
+                camConfig.storageLocation,
+                imageFileFormat,
+                imageMetadata,
+                camConfig.removeExifAfterCapture,
+                targetThumbnailWidth = preview.width,
+                targetThumbnailHeight = preview.height,
+            )
 
-        isTakingPicture = true
+            isTakingPicture = true
 
-        imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
-        fadeCaptureButton()
+            imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
+            fadeCaptureButton()
+        } catch (e: QueueFullException) {
+            mActivity.showMessage(R.string.image_queue_full)
+        }
     }
 
     fun onCaptureSuccess() {
