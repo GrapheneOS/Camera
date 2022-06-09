@@ -106,6 +106,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = "enable_zsl"
 
+            const val SINGLE_SHOT = "single_shot"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -148,6 +150,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val ENABLE_ZSL = false
+
+            const val SINGLE_SHOT = true
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -434,6 +438,19 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
 
             mActivity.settingsDialog.enableEISToggle.isChecked = value
+        }
+
+    var isSingleShot: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.SINGLE_SHOT,
+                SettingValues.Default.SINGLE_SHOT
+            ) && !isInCaptureMode
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.SINGLE_SHOT, value)
+            editor.apply()
         }
 
     var enableZsl: Boolean
@@ -796,6 +813,12 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.settingsDialog.cmRadioGroup.check(R.id.quality_radio)
         } else {
             mActivity.settingsDialog.cmRadioGroup.check(R.id.latency_radio)
+        }
+
+        if (isSingleShot) {
+            mActivity.settingsDialog.smRadioGroup.check(R.id.single_shot_radio)
+        } else {
+            mActivity.settingsDialog.smRadioGroup.check(R.id.continuous_shot_radio)
         }
 
         aspectRatio = commonPref.getInt(
