@@ -73,6 +73,11 @@ class ImageSaver(
     val contentResolver = appContext.contentResolver
     val mainThreadExecutor = appContext.mainExecutor
 
+    init {
+        if (photosInQueue == MAX_PHOTOS_IN_QUEUE) throw QueueFullException()
+        ++photosInQueue
+    }
+
     override fun onCaptureSuccess(image: ImageProxy) {
         mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
 
@@ -84,6 +89,7 @@ class ImageSaver(
         }
 
         imageWriterExecutor.execute(this::saveImage)
+        Log.i("TAG", "Trying to save image $photosInQueue")
     }
 
     // based on androidx.camera.core.ImageSaver#imageToJpegByteArray(),
@@ -123,7 +129,8 @@ class ImageSaver(
             handleError(e)
             return
         }
-
+        Log.i("TAG", "Done with image $photosInQueue")
+        --photosInQueue
         imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
     }
 
@@ -324,6 +331,7 @@ class ImageSaver(
 
     // implementation of ImageCapture.OnImageCapturedCallback.onError
     override fun onError(exception: ImageCaptureException) {
+        --photosInQueue
         mainThreadExecutor.execute{ imageCapturer.onCaptureError(exception) }
     }
 
@@ -337,7 +345,10 @@ class ImageSaver(
         val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()
         private val imageWriterExecutor = Executors.newSingleThreadExecutor()
 
+        private var photosInQueue = 0
+
         private const val TAG = "ImageSaver"
+        private const val MAX_PHOTOS_IN_QUEUE = 20
         private const val LOG_DURATION = false
     }
 
@@ -352,3 +363,7 @@ class ImageSaver(
         }
     }
 }
+
+// An exception that's thrown when the user attempts to take another picture
+// when too many requests are already waiting to be processed.
+class QueueFullException : Exception()
