@@ -204,6 +204,100 @@
                         </FrameLayout>
                     </LinearLayout>
 
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center_vertical|start"
+                            android:text="@string/shot_mode"/>
+
+                        <RadioGroup
+                            android:id="@+id/sm_radio_group"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center_vertical|end"
+                            android:orientation="horizontal">
+
+                            <RadioButton
+                                android:id="@+id/single_shot_radio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/single_shot"
+                                android:checked="true"/>
+
+                            <View
+                                android:layout_width="6dp"
+                                android:layout_height="0dp"/>
+
+                            <RadioButton
+                                android:id="@+id/continuous_shot_radio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/continuous_shot"
+                                android:checked="false"/>
+
+                        </RadioGroup>
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:paddingBottom="@dimen/settings_dialog_menu_item_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center_vertical|start"
+                            android:text="@string/optimize_for"/>
+
+                        <RadioGroup
+                            android:id="@+id/cm_radio_group"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center_vertical|end"
+                            android:orientation="horizontal">
+
+                            <RadioButton
+                                android:id="@+id/quality_radio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/quality"
+                                android:checked="true"/>
+
+                            <View
+                                android:layout_width="6dp"
+                                android:layout_height="0dp"/>
+
+                            <RadioButton
+                                android:id="@+id/latency_radio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/latency"
+                                android:checked="false"/>
+
+                        </RadioGroup>
+
+                    </RelativeLayout>
+
+
                     <LinearLayout
                         android:id="@+id/include_audio_setting"
                         android:layout_width="match_parent"
@@ -249,53 +343,6 @@
                             android:layout_gravity="end"/>
 
                     </LinearLayout>
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
-                            android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical|start"
-                            android:text="@string/optimize_for"/>
-
-                        <RadioGroup
-                            android:id="@+id/cm_radio_group"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical|end"
-                            android:orientation="horizontal">
-
-                            <RadioButton
-                                android:id="@+id/quality_radio"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/quality"
-                                android:checked="true"/>
-
-                            <View
-                                android:layout_width="6dp"
-                                android:layout_height="0dp"/>
-
-                            <RadioButton
-                                android:id="@+id/latency_radio"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/latency"
-                                android:checked="false"/>
-
-                        </RadioGroup>
-
-                    </RelativeLayout>
-
 
                     <LinearLayout
                         android:layout_width="match_parent"
