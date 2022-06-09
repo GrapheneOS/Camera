@@ -311,6 +311,12 @@ open class MainActivity : AppCompatActivity(),
         Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
     }
 
+    val currentCaptureButton : View
+        get() {
+            return if (camConfig.isVideoMode) thirdOption
+                else captureButton
+        }
+
     fun updateLastFrame() {
         lastFrame = previewView.bitmap
     }
