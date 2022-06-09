@@ -185,4 +185,5 @@
 
     <string name="zsl_setting_title">Use ZSL in Latency mode</string>
     <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
+    <string name="image_queue_full">The image queue is currently full. Please wait for a while before taking your next set of shots.</string>
 </resources>
