@@ -13,7 +13,6 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import android.widget.FrameLayout
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -32,31 +31,36 @@ class ImageCapturer(val mActivity: MainActivity) {
     var cFadeAnim : AlphaAnimation? = null
 
     private fun fadeCaptureButton() {
-        mActivity.captureButton.isEnabled = false
 
+        val captureButton = mActivity.currentCaptureButton
+
+        captureButton.isEnabled = false
         cFadeAnim?.cancel()
 
-        AlphaAnimation(mActivity.captureButton.alpha, 0.6f).let {
+        AlphaAnimation(captureButton.alpha, 0.6f).let {
             it.duration = 200
             it.interpolator = LinearInterpolator()
             it.fillAfter = true
 
-            mActivity.captureButton.startAnimation(it)
+            captureButton.startAnimation(it)
             cFadeAnim = it
         }
     }
 
     private fun unfadeCaptureButton() {
-        mActivity.captureButton.isEnabled = true
+
+        val captureButton = mActivity.currentCaptureButton
+
+        captureButton.isEnabled = true
 
         cFadeAnim?.cancel()
 
-        AlphaAnimation(mActivity.captureButton.alpha, 1f).let {
+        AlphaAnimation(captureButton.alpha, 1f).let {
             it.duration = 200
             it.interpolator = LinearInterpolator()
             it.fillAfter = true
 
-            mActivity.captureButton.startAnimation(it)
+            captureButton.startAnimation(it)
             cFadeAnim = it
         }
     }
