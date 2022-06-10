@@ -349,7 +349,7 @@ class ImageSaver(
         private var photosInQueue : AtomicInteger = AtomicInteger()
 
         private const val TAG = "ImageSaver"
-        private const val MAX_PHOTOS_IN_QUEUE = 20
+        private const val MAX_PHOTOS_IN_QUEUE = 5
         private const val LOG_DURATION = false
     }
 
