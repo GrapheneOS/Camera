@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 // see com.android.externalstorage.ExternalStorageProvider and
 // com.android.internal.content.FileSystemProvider
@@ -74,8 +75,8 @@ class ImageSaver(
     val mainThreadExecutor = appContext.mainExecutor
 
     init {
-        if (photosInQueue == MAX_PHOTOS_IN_QUEUE) throw QueueFullException()
-        ++photosInQueue
+        if (photosInQueue.get() == MAX_PHOTOS_IN_QUEUE) throw QueueFullException()
+        photosInQueue.getAndIncrement()
     }
 
     override fun onCaptureSuccess(image: ImageProxy) {
@@ -130,7 +131,7 @@ class ImageSaver(
             return
         }
         Log.i("TAG", "Done with image $photosInQueue")
-        --photosInQueue
+        photosInQueue.getAndDecrement()
         imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
     }
 
@@ -331,7 +332,7 @@ class ImageSaver(
 
     // implementation of ImageCapture.OnImageCapturedCallback.onError
     override fun onError(exception: ImageCaptureException) {
-        --photosInQueue
+        photosInQueue.getAndDecrement()
         mainThreadExecutor.execute{ imageCapturer.onCaptureError(exception) }
     }
 
@@ -345,7 +346,7 @@ class ImageSaver(
         val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()
         private val imageWriterExecutor = Executors.newSingleThreadExecutor()
 
-        private var photosInQueue = 0
+        private var photosInQueue : AtomicInteger = AtomicInteger()
 
         private const val TAG = "ImageSaver"
         private const val MAX_PHOTOS_IN_QUEUE = 20
