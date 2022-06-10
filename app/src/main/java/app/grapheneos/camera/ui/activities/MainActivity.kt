@@ -16,6 +16,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.Point
 import android.graphics.Rect
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -52,6 +53,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -613,7 +615,17 @@ open class MainActivity : AppCompatActivity(),
         timerView = binding.timer
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
+                mainOverlay.setImageDrawable(ColorDrawable(ContextCompat.getColor(this, android.R.color.transparent)))
                 mainOverlay.visibility = View.INVISIBLE
+                // To ensure that the continuous shot snaps fit as per the preview
+                mainOverlay.layoutParams =
+                    (mainOverlay.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                        height = if (camConfig.aspectRatio == AspectRatio.RATIO_16_9) {
+                            previewView.width * 16 / 9
+                        } else {
+                            previewView.width * 4 / 3
+                        }
+                    }
                 camConfig.reloadSettings()
                 if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE

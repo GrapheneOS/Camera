@@ -1,9 +1,12 @@
 package app.grapheneos.camera
 
+import android.animation.Animator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.drawable.ColorDrawable
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.net.Uri
@@ -13,6 +16,8 @@ import android.util.Log
 import android.util.Size
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
@@ -37,6 +42,8 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -46,6 +53,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.util.edit
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
@@ -1190,6 +1198,48 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             mActivity.gCircleFrame.visibility = View.GONE
         }
+
+        mActivity.mainOverlay.layoutParams =
+            (mActivity.mainOverlay.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                height = LayoutParams.MATCH_PARENT
+            }
+    }
+
+    private val frameBorder : MaterialShapeDrawable by lazy {
+        val frameBorder = MaterialShapeDrawable()
+        frameBorder.fillColor = ContextCompat.getColorStateList(mActivity, android.R.color.transparent)
+        frameBorder
+    }
+
+    val snapAnimator : ValueAnimator by lazy {
+        val animator = ValueAnimator.ofFloat(0f, 4 * mActivity.resources.displayMetrics.density)
+        animator.duration = PREVIEW_SNAP_DURATION
+        animator.interpolator = FastOutSlowInInterpolator()
+        animator.repeatMode = ValueAnimator.REVERSE
+
+        animator.addUpdateListener {
+            frameBorder.setStroke(it.animatedValue as Float, mActivity.getColor(android.R.color.white))
+            mActivity.mainOverlay.background = frameBorder
+        }
+
+        animator.addListener(
+            object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                    mActivity.mainOverlay.visibility = View.VISIBLE
+                    mActivity.mainOverlay.setImageDrawable(ColorDrawable(ContextCompat.getColor(mActivity, android.R.color.transparent)))
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    mActivity.mainOverlay.visibility = View.GONE
+                    mActivity.mainOverlay.background = null
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {}
+                override fun onAnimationRepeat(p0: Animator?) {}
+            }
+        )
+
+        animator
     }
 
     fun snapPreview() {
@@ -1218,33 +1268,38 @@ class CamConfig(private val mActivity: MainActivity) {
 
             mActivity.mainOverlay.startAnimation(animation)
 
-        } else {
-
-            val animation: Animation = AlphaAnimation(1f, 0f)
-            animation.duration = PREVIEW_SNAP_DURATION
-            animation.interpolator = LinearInterpolator()
-            animation.repeatMode = Animation.REVERSE
-
-            mActivity.mainOverlay.setImageResource(android.R.color.black)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.INVISIBLE
-                        mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                    }
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
-                }
-            )
-
-            mActivity.mainOverlay.startAnimation(animation)
+            return
         }
+
+        if (!isSingleShot && mActivity.captureButton.isPressed) {
+            snapAnimator.cancel()
+            snapAnimator.start()
+            return
+        }
+
+        val animation: Animation = AlphaAnimation(1f, 0f)
+        animation.duration = PREVIEW_SNAP_DURATION
+        animation.interpolator = LinearInterpolator()
+        animation.repeatMode = Animation.REVERSE
+
+        mActivity.mainOverlay.setImageResource(android.R.color.black)
+
+        animation.setAnimationListener(
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.VISIBLE
+                }
+
+                override fun onAnimationEnd(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.INVISIBLE
+                    mActivity.mainOverlay.setImageResource(android.R.color.transparent)
+                }
+
+                override fun onAnimationRepeat(p0: Animation?) {}
+            }
+        )
+
+        mActivity.mainOverlay.startAnimation(animation)
     }
 
     fun availableModes(): Set<CameraMode> {
