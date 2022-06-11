@@ -129,9 +129,11 @@ class ImageSaver(
         } catch (e: ImageSaverException) {
             handleError(e)
             return
+        } finally {
+            Log.i("TAG", "Done with image $photosInQueue")
+            photosInQueue.getAndDecrement()
         }
-        Log.i("TAG", "Done with image $photosInQueue")
-        photosInQueue.getAndDecrement()
+
         imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
     }
 
