@@ -434,24 +434,6 @@
         <FrameLayout
             android:layout_height="26dp"
             android:layout_width="26dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="12dp"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true">
-
-            <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/flash_pager"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?actionBarItemBackground"
-                android:orientation="vertical"
-                android:contentDescription="@string/flash_mode"/>
-
-        </FrameLayout>
-
-        <FrameLayout
-            android:layout_height="26dp"
-            android:layout_width="26dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="16dp"
             android:layout_alignParentTop="true"
