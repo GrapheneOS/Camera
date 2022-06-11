@@ -90,7 +90,6 @@ class ImageSaver(
         }
 
         imageWriterExecutor.execute(this::saveImage)
-        Log.i("TAG", "Trying to save image $photosInQueue")
     }
 
     // based on androidx.camera.core.ImageSaver#imageToJpegByteArray(),
@@ -130,7 +129,6 @@ class ImageSaver(
             handleError(e)
             return
         } finally {
-            Log.i("TAG", "Done with image $photosInQueue")
             photosInQueue.getAndDecrement()
         }
 
