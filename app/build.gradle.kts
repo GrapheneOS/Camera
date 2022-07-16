@@ -82,6 +82,10 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    lintOptions {
+        disable("LintError")
+    }
 }
 
 dependencies {
