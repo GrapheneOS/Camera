@@ -1306,21 +1306,21 @@ open class MainActivity : AppCompatActivity(),
         private const val SWIPE_VELOCITY_THRESHOLD = 100
     }
 
-    override fun onDown(p0: MotionEvent?): Boolean {
+    override fun onDown(p0: MotionEvent): Boolean {
         return false
     }
 
-    override fun onShowPress(p0: MotionEvent?) {}
+    override fun onShowPress(p0: MotionEvent) {}
 
-    override fun onSingleTapUp(p0: MotionEvent?): Boolean {
+    override fun onSingleTapUp(p0: MotionEvent): Boolean {
         return false
     }
 
-    override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+    override fun onScroll(p0: MotionEvent, p1: MotionEvent, p2: Float, p3: Float): Boolean {
         return false
     }
 
-    override fun onLongPress(p0: MotionEvent?) {}
+    override fun onLongPress(p0: MotionEvent) {}
 
     override fun onFling(
         e1: MotionEvent, e2: MotionEvent,
@@ -1410,15 +1410,15 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    override fun onSingleTapConfirmed(p0: MotionEvent?): Boolean {
+    override fun onSingleTapConfirmed(p0: MotionEvent): Boolean {
         return false
     }
 
-    override fun onDoubleTap(p0: MotionEvent?): Boolean {
+    override fun onDoubleTap(p0: MotionEvent): Boolean {
         return false
     }
 
-    override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
+    override fun onDoubleTapEvent(p0: MotionEvent): Boolean {
         return false
     }
 
