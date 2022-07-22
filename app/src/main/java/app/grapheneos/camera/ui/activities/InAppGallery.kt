@@ -446,7 +446,7 @@ class InAppGallery : AppCompatActivity() {
         gallerySlider.setPageTransformer(GSlideTransformer())
 
         val showVideosOnly = intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
-        val listOfSecureModeCapturedItems = intent.getParcelableArrayListExtra<CapturedItem>(INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
+        val listOfSecureModeCapturedItems = intent.getParcelableArrayListExtraCompat<CapturedItem>(INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
 
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
@@ -479,7 +479,7 @@ class InAppGallery : AppCompatActivity() {
             mainExecutor.execute { asyncResultReady(items) }
         }
 
-        val lastCapturedItem = intent.getParcelableExtra<CapturedItem>(INTENT_KEY_LAST_CAPTURED_ITEM)
+        val lastCapturedItem = intent.getParcelableExtraCompat<CapturedItem>(INTENT_KEY_LAST_CAPTURED_ITEM)
 
         if (lastCapturedItem != null) {
             val list = ArrayList<CapturedItem>()
