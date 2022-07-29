@@ -2,11 +2,11 @@
 <resources>
 
     <array name="time_options">
-        <item>Off</item>
-        <item>3s</item>
-        <item>5s</item>
-        <item>8s</item>
-        <item>10s</item>
+        <item>@string/off</item>
+        <item>@string/three_seconds</item>
+        <item>@string/five_seconds</item>
+        <item>@string/eight_seconds</item>
+        <item>@string/ten_seconds</item>
     </array>
 
 </resources>
