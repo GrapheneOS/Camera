@@ -1,0 +1,158 @@
+<resources>
+    <string name="app_name">Aparat</string>
+
+    <string name="camera_permission_dialog_title">Wymagane uprawnienie aparatu</string>
+    <string name="camera_permission_dialog_message">
+        Aplikacja potrzebuje przyznanego uprawnienia dostępu do aparatu aby działać. Nadaj wymagane uprawnienia w Ustawieniach, aby korzystać z tej aplikacji.
+    </string>
+
+    <string name="audio_permission_dialog_title">Wymagane uprawnienie audio</string>
+    <string name="audio_permission_dialog_message">Aplikacja potrzebuje przyznanego uprawnienia na dostęp do mikrofonu, aby nagrywać filmy z dźwiękiem. Przyznaj wymagane uprawnienia w Ustawieniach, by kontynuować z tą konfiguracją. Jeśli nie chcesz, aby Twój film zawierał dźwięk, możesz go po prostu wyłączyć (i włączyć ponownie później w ustawieniach).</string>
+
+    <string name="location_permission_dialog_title">Wymagane uprawnienie lokalizacji</string>
+    <string name="location_permission_dialog_message">
+        Aplikacja potrzebuje przyznanych uprawnień dostępu do lokalizacji na potrzeby geotagowania. Nadaj wymagane uprawnienia w Ustawieniach, aby korzystać z tej aplikacji.
+    </string>
+
+    <string name="focus_ring">Pierścień ostrości</string>
+    <string name="flip_camera">Odwróć aparat</string>
+    <string name="loading_camera">Wczytywanie aparatu</string>
+    <string name="flash_mode">Tryb lampy błyskowej</string>
+    <string name="capture_mode">Tryb przechwytywania</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Przybliż</string>
+    <string name="zoom_out">Oddal</string>
+    <string name="scan_result">Wynik Skanowania</string>
+    <string name="share_qr_text">Udostępnij Tekst QR</string>
+    <string name="copy_to_clipboard">Kopiuj do Schowka</string>
+    <string name="retake">Ponów</string>
+    <string name="play_preview">Odtwórz Podgląd</string>
+    <string name="toggle_button">Przycisk przełącznika</string>
+    <string name="aspect_ratio">Współczynnik Proporcji</string>
+    <string name="toggle_flash">Przełącz Lampę Błyskową</string>
+    <string name="grid_toggle">Przełącz Siatkę</string>
+    <string name="include_audio">Dołącz Dźwięk</string>
+    <string name="video_quality">Jakość Wideo</string>
+    <string name="optimize_for">Optymalizuj pod</string>
+    <string name="quality">Jakość</string>
+    <string name="latency">Opóźnienie</string>
+    <string name="preview">Podgląd</string>
+    <string name="file_info">Informacje o Pliku</string>
+    <string name="delete_file">Usuń plik</string>
+    <string name="edit">Edytuj</string>
+    <string name="self_illumination">Własne Oświetlenie</string>
+    <string name="focus_timeout">Limit Czasu Ostrości</string>
+    <string name="timer">Odliczanie</string>
+    <string name="cancel_timer">Anuluj Odliczanie</string>
+    <string name="camera_sounds">Dźwięki Aparatu</string>
+    <string name="video_capture_label">Nagrywaj Wideo</string>
+
+    <string name="camera">APARAT</string>
+    <string name="video">WIDEO</string>
+    <string name="portrait_mode">PORTRET</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">NOC</string>
+    <string name="face_retouch_mode">RETUSZ TWARZY</string>
+    <string name="auto_mode">AUTO</string>
+    <string name="qr_scan_mode">SKANER QR</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Udostępnij Media</string>
+    <string name="rec_without_audio">Rozpocznij nagrywanie bez dźwięku</string>
+    <string name="qr_scan_toggle">Przełącznik Skanera QR</string>
+    <string name="qr_scan">Kod QR</string>
+    <string name="data_matrix">Matryca Danych</string>
+    <string name="aztec_code">Aztec Code</string>
+    <string name="more_options">Więcej Opcji</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Więcej Ustawień</string>
+
+    <string name="general">Ogólne</string>
+
+    <string name="save_image_as_previewed">Zapisz obraz jako podgląd</string>
+    <string name="save_as_image_preview_desc">Zapisz obraz wyjściowy jako widoczny na podglądzie (poprawia inwersję)</string>
+
+    <string name="gyroscope_suggestions">Sugestie Żyroskopu</string>
+    <string name="gyroscope_setting_desc">Okazjonalnie otrzymuj wizualne sugestie dotyczące obrazów prostych/pod dobrym kątem</string>
+
+    <string name="storage">Przechowywanie</string>
+    <string name="storage_location">Lokalizacja Przechowywania</string>
+    <string name="image_file_name_format">Format Nazwy Pliku Obrazu</string>
+    <string name="video_file_name_format">Format Nazwy Pliku Wideo</string>
+    <string name="revert_back_to_dcim">Przywróć z powrotem do DCIM</string>
+
+    <string name="image_quality">Jakość Obrazu</string>
+    <string name="image_quality_desc" formatted="false">Dostosuj jakość obrazu przechwytywanego przez aplikację od 1% do 100%. To pole można pozostawić puste, aby uniknąć jawnego ustawiania jakości obrazu.</string>
+    <string name="photo">Zdjęcie</string>
+    <string name="increase_quality">Zwiększ Jakość</string>
+    <string name="decrease_quality">Zmniejsz Jakość</string>
+    <string name="remove_exif_title">Usuń dane EXIF po przechwyceniu</string>
+    <string name="remove_exif_subtitle">Notka: Opcja Geotagowania/Lokalizacji jest niezależna od tego ustawienia</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+    <string name="location_is_disabled">Lokalizacja jest wyłączona</string>
+    <string name="settings">ustawienia</string>
+    <string name="enable">włącz</string>
+    <string name="ok">Ok</string>
+    <string name="yes">Tak</string>
+    <string name="no">Nie</string>
+    <string name="disable_audio">Wyłącz Dźwięk</string>
+    <string name="copied_text_to_clipboard">Skopiowano tekst do schowka!</string>
+    <string name="share_text_via">Udostępnij tekst przez</string>
+
+    <string name="editing_permission_error">Nie można odczytać obrazu, ponieważ edytor nie zapewnia dostępu do odczytu.</string>
+    <string name="editing_unexpected_error">Po edycji wystąpił nieoczekiwany błąd.</string>
+    <string name="unexpected_error">Po edycji wystąpił nieoczekiwany błąd.</string>
+
+    <string name="edit_successfully">Edycja powiodła się</string>
+    <string name="edit_not_allowed">Edycja obrazów w trybie bezpiecznym jest niedozwolona.</string>
+    <string name="sharing_not_allowed">Udostępnianie obrazów w trybie bezpiecznym jest niedozwolone.</string>
+    <string name="edit_image">Edytuj Obraz</string>
+    <string name="share_image">Udostępnij Obraz</string>
+    <string name="delete">Usuń</string>
+    <string name="delete_title">Jesteś pewien?</string>
+    <string name="deleted_successfully">Plik został pomyślnie usunięty</string>
+    <string name="deleting_unexpected_error">Wystąpił nieoczekiwany błąd podczas usuwania tego pliku</string>
+    <string name="delete_description">"Czy na pewno chcesz usunąć ten plik?"</string>
+    <string name="cancel">Anuluj</string>
+    <string name="no_image">Zrób zdjęcie/film przed próbą ich wyświetlenia.</string>
+
+    <string name="bind_failure">Nie udało się otworzyć aparatu z powodu problemu z systemem operacyjnym lub sprzętem. Spróbuj uruchomić ponownie urządzenie.</string>
+    <string name="camera_provider_init_failure">Nie udało się załadować dostawcy kamery z powodu problemu z systemem operacyjnym lub sprzętem. Spróbuj uruchomić ponownie urządzenie.</string>
+    <string name="extensions_manager_init_failure">Nie udało się załadować menedżera rozszerzeń z powodu problemu z systemem operacyjnym lub sprzętem. Tryby rozszerzeń są niedostępne. Spróbuj uruchomić ponownie urządzenie.</string>
+    <string name="unsupported_taking_picture_while_recording">Twoje urządzenie niestety nie obsługuje robienia zdjęć podczas nagrywania wideo z obecnymi ustawieniami</string>
+    <string name="image_processing_pending">Poczekaj na przetworzenie ostatniego obrazu…</string>
+    <string name="location_unavailable">Nie można dołączyć lokalizacji do obrazu, ponieważ jest ona obecnie niedostępna</string>
+    <string name="existing_no_image">Nie znaleziono obrazu. Zamykam wbudowaną galerię.</string>
+    <string name="no_barcode_selected">Upewnij się, że co najmniej jeden kod kreskowy został wybrany w trybie ręcznym</string>
+    <string name="flash_unavailable_in_selected_mode">Lampa błyskowa jest niedostępna w bieżącym trybie.</string>
+    <string name="front_camera_unavailable">Nie udało się wykryć przedniego aparatu. Spróbuj ponownie później!</string>
+    <string name="rear_camera_unavailable">Nie udało się wykryć tylniego aparatu. Spróbuj ponownie później!</string>
+    <string name="folder_not_found">Nie znaleziono miejsca przechowywania</string>
+    <string name="reverting_to_default_folder">Przywracanie domyślnego katalogu DCIM, ponieważ wcześniej wybrana niestandardowa lokalizacja przechowywania wydaje się być usunięta. Zmień lokalizację przechowywania na inny folder (jeśli jest to wymagane).</string>
+    <string name="more_settings_unavailable_during_recording">Nie można przełączać aktywności podczas nagrywania</string>
+    <string name="video_geo_tagging_unsupported">Obecnie geotagowanie nie jest obsługiwane w trybie wideo</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Nie można przełączyć geotagowania dla trwającego nagrywania</string>
+    <string name="flash_switch_unsupported">Nie można przełączyć trybu lampy błyskowej w tym trybie</string>
+    <string name="four_by_three_unsupported_in_video">4:3 nie jest obsługiwana w trybie wideo</string>
+    <string name="flash_unavailable_in_current_mode">Lampa błyskowa/latarka jest niedostępna w tym trybie</string>
+    <string name="unexpected_error_while_setting_focus_timeout">Wystąpił nieoczekiwany błąd podczas ustawiania limitu czasu fokusu</string>
+    <string name="unexpected_error_while_opening_gallery">Wystąpił nieoczekiwany błąd podczas otwierania galerii</string>
+    <string name="no_directory_selected">Żaden katalog nie został wybrany przez selektor</string>
+    <string name="choose_storage_location">Wybierz miejsce przechowywania</string>
+    <string name="are_you_sure">Czy jesteś pewien?</string>
+    <string name="revert_to_default_directory">Czy chcesz przywrócić do katalogu domyślnego?</string>
+    <string name="reverted_to_default_directory">Przełączono z powrotem do domyślnej lokalizacji przechowywania</string>
+    <string name="already_using_default_directory">Używasz już domyślnej lokalizacji przechowywania</string>
+    <string name="photo_quality_was_set_to_auto">Jakość zdjęć została ustawiona na tryb automatyczny</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Obrazy wykonane w tym trybie nie zawierają dodatkowych danych EXIF</string>
+
+    <string name="capturing_image">Przechwytywanie obrazu…</string>
+    <string name="image_captured_successfully">Obraz przechwycony pomyślnie</string>
+    <string name="unable_to_capture_image">Nie można przechwycić obrazu</string>
+    <string name="recording_too_short_to_be_saved">Nagranie za krótkie by mogło być zapisane</string>
+    <string name="please_wait_for_image_to_get_captured_before_opening">Poczekaj, aż obraz zostanie przechwycony, zanim spróbujesz otworzyć galerię.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Poczekaj, aż obraz zostanie przechwycony, zanim spróbujesz udostępnić przez długie dotknięcie</string>
+
+</resources>
