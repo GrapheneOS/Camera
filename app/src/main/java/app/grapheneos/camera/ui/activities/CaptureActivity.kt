@@ -46,7 +46,7 @@ open class CaptureActivity : MainActivity() {
         confirmButton = findViewById(R.id.confirm_button)
 
         if (intent.extras?.containsKey(EXTRA_OUTPUT) == true) {
-            outputUri = intent.extras?.get(EXTRA_OUTPUT) as Uri
+            outputUri = intent.getParcelableExtraCompat<Uri>(EXTRA_OUTPUT) as Uri
         }
 
         // Disable capture button for a while (to avoid picture capture)

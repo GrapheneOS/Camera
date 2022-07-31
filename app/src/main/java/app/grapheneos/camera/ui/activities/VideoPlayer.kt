@@ -31,7 +31,7 @@ class VideoPlayer : AppCompatActivity() {
             throw Exception("Video Player requires videoUri")
         }
 
-        val uri = intent.extras!!.get("videoUri") as Uri
+        val uri = intent.getParcelableExtraCompat<Uri>("videoUri") as Uri
 
         val videoView = binding.videoPlayer
 
