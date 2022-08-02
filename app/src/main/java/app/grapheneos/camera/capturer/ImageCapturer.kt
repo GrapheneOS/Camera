@@ -13,7 +13,6 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import android.widget.FrameLayout
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -29,26 +28,41 @@ var isTakingPicture: Boolean = false
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
 
+    var cFadeAnim : AlphaAnimation? = null
+
     private fun fadeCaptureButton() {
-        mActivity.captureButton.isEnabled = false
 
-        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
-        animation.duration = 200
-        animation.interpolator = LinearInterpolator()
-        animation.fillAfter = true
+        val captureButton = mActivity.currentCaptureButton
 
-        mActivity.captureButton.startAnimation(animation)
+        captureButton.isEnabled = false
+        cFadeAnim?.cancel()
+
+        AlphaAnimation(captureButton.alpha, 0.6f).let {
+            it.duration = 200
+            it.interpolator = LinearInterpolator()
+            it.fillAfter = true
+
+            captureButton.startAnimation(it)
+            cFadeAnim = it
+        }
     }
 
     private fun unfadeCaptureButton() {
-        mActivity.captureButton.isEnabled = true
 
-        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 1f)
-        animation.duration = 200
-        animation.interpolator = LinearInterpolator()
-        animation.fillAfter = true
+        val captureButton = mActivity.currentCaptureButton
 
-        mActivity.captureButton.startAnimation(animation)
+        captureButton.isEnabled = true
+
+        cFadeAnim?.cancel()
+
+        AlphaAnimation(captureButton.alpha, 1f).let {
+            it.duration = 200
+            it.interpolator = LinearInterpolator()
+            it.fillAfter = true
+
+            captureButton.startAnimation(it)
+            cFadeAnim = it
+        }
     }
 
     @SuppressLint("RestrictedApi")
@@ -83,22 +97,26 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         val imageCapture = camConfig.imageCapture!!
 
-        val imageSaver = ImageSaver(
-            this,
-            mActivity.applicationContext,
-            imageCapture.jpegQuality,
-            camConfig.storageLocation,
-            imageFileFormat,
-            imageMetadata,
-            camConfig.removeExifAfterCapture,
-            targetThumbnailWidth = preview.width,
-            targetThumbnailHeight = preview.height,
-        )
+        try {
+            val imageSaver = ImageSaver(
+                this,
+                mActivity.applicationContext,
+                imageCapture.jpegQuality,
+                camConfig.storageLocation,
+                imageFileFormat,
+                imageMetadata,
+                camConfig.removeExifAfterCapture,
+                targetThumbnailWidth = preview.width,
+                targetThumbnailHeight = preview.height,
+            )
 
-        isTakingPicture = true
+            isTakingPicture = true
 
-        imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
-        fadeCaptureButton()
+            imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
+            fadeCaptureButton()
+        } catch (e: QueueFullException) {
+            mActivity.showMessage(R.string.image_queue_full)
+        }
     }
 
     fun onCaptureSuccess() {
@@ -107,6 +125,11 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         camConfig.mPlayer.playShutterSound()
         camConfig.snapPreview()
+
+        if (mActivity.captureButton.isPressed) {
+            mActivity.captureButton.performLongClick()
+            return
+        }
 
         mActivity.previewLoader.visibility = View.VISIBLE
         if (camConfig.selfIlluminate) {

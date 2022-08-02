@@ -77,6 +77,10 @@ class SettingsDialog(val mActivity: MainActivity) :
     private var videoQualitySetting: View
     private var timerSetting: View
 
+    var smRadioGroup: RadioGroup
+    var sRadio: RadioButton
+    var cRadio: RadioButton
+
     var settingsFrame: View
 
     private var moreSettingsButton: View
@@ -252,6 +256,20 @@ class SettingsDialog(val mActivity: MainActivity) :
             if (camConfig.cameraProvider != null) {
                 camConfig.startCamera(true)
             }
+        }
+
+        sRadio = binding.singleShotRadio
+        cRadio = binding.continuousShotRadio
+
+        // Disallow user from switching to shot mode in (image) capture mode
+        if (camConfig.isInCaptureMode) {
+            sRadio.isEnabled = false
+            cRadio.isEnabled = false
+        }
+
+        smRadioGroup = binding.smRadioGroup
+        smRadioGroup.setOnCheckedChangeListener { _, _ ->
+            camConfig.isSingleShot = sRadio.isChecked
         }
 
         selfIlluminationToggle = binding.selfIlluminationSwitch

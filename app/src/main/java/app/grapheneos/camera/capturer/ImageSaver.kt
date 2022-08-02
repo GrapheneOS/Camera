@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 // see com.android.externalstorage.ExternalStorageProvider and
 // com.android.internal.content.FileSystemProvider
@@ -72,6 +73,11 @@ class ImageSaver(
     val captureTime = Date()
     val contentResolver = appContext.contentResolver
     val mainThreadExecutor = appContext.mainExecutor
+
+    init {
+        if (photosInQueue.get() == MAX_PHOTOS_IN_QUEUE) throw QueueFullException()
+        photosInQueue.getAndIncrement()
+    }
 
     override fun onCaptureSuccess(image: ImageProxy) {
         mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
@@ -122,6 +128,8 @@ class ImageSaver(
         } catch (e: ImageSaverException) {
             handleError(e)
             return
+        } finally {
+            photosInQueue.getAndDecrement()
         }
 
         imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
@@ -324,6 +332,7 @@ class ImageSaver(
 
     // implementation of ImageCapture.OnImageCapturedCallback.onError
     override fun onError(exception: ImageCaptureException) {
+        photosInQueue.getAndDecrement()
         mainThreadExecutor.execute{ imageCapturer.onCaptureError(exception) }
     }
 
@@ -337,7 +346,10 @@ class ImageSaver(
         val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()
         private val imageWriterExecutor = Executors.newSingleThreadExecutor()
 
+        private var photosInQueue : AtomicInteger = AtomicInteger()
+
         private const val TAG = "ImageSaver"
+        private const val MAX_PHOTOS_IN_QUEUE = 5
         private const val LOG_DURATION = false
     }
 
@@ -352,3 +364,7 @@ class ImageSaver(
         }
     }
 }
+
+// An exception that's thrown when the user attempts to take another picture
+// when too many requests are already waiting to be processed.
+class QueueFullException : Exception()
