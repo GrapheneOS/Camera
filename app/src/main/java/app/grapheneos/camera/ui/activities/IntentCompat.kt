@@ -7,7 +7,8 @@ import android.os.Parcel
 import android.os.Parcelable
 
 inline internal fun <reified T : Parcelable> Intent.getParcelableExtraCompat(name: String): T? {
-    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    val clazz = T::class
+    return if (clazz == null || clazz.java == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         @Suppress("DEPRECATION")
         this.getParcelableExtra<T>(name)
     } else {
@@ -16,7 +17,8 @@ inline internal fun <reified T : Parcelable> Intent.getParcelableExtraCompat(nam
 }
 
 inline internal fun <reified T : Parcelable> Intent.getParcelableArrayListExtraCompat(name: String): ArrayList<T>? {
-    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    val clazz = T::class
+    return if (clazz == null || clazz.java == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         @Suppress("DEPRECATION")
         this.getParcelableArrayListExtra<T>(name)
     } else {

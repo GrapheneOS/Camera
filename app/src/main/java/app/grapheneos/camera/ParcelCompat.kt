@@ -6,7 +6,8 @@ import android.os.Parcel
 import android.os.Parcelable
 
 inline internal fun <reified T : Parcelable> Parcel.readParcelableCompat(loader: ClassLoader?): T? {
-    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    val clazz = T::class
+    return if (clazz == null || clazz.java == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         @Suppress("DEPRECATION")
         this.readParcelable<T>(loader)
     } else {
