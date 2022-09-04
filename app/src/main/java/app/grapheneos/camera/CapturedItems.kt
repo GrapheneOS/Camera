@@ -69,7 +69,7 @@ class CapturedItem(
             override fun createFromParcel(source: Parcel): CapturedItem {
                 val type = source.readByte().toInt()
                 val dateString = source.readString()!!
-                val uri = source.readParcelableCompat<Uri>(null)!!
+                val uri = source.readParcelable<Uri>(null)!!
                 return CapturedItem(type, dateString, uri)
             }
 
