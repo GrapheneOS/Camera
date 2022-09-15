@@ -36,6 +36,8 @@ android {
     compileSdk = 33
     buildToolsVersion = "33.0.0"
 
+    namespace = "app.grapheneos.camera"
+
     defaultConfig {
         applicationId = "app.grapheneos.camera"
         minSdk = 29
