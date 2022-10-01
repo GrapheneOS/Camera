@@ -47,6 +47,7 @@ class VideoPlayer : AppCompatActivity() {
             }
         }
         mediaController.setAnchorView(videoView)
+        mediaController.setMediaPlayer(videoView)
 
         videoView.setMediaController(mediaController)
         videoView.setVideoURI(uri)
