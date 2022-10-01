@@ -204,7 +204,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var iAnalyzer: ImageAnalysis? = null
 
-    val mPlayer: TunePlayer by lazy { TunePlayer(mActivity) }
+    val mPlayer = TunePlayer(mActivity)
 
     // note that Activities which implement SecureActivity interface (meaning they are accessible
     // from the lock screen) are forced to override getSharedPreferences()
