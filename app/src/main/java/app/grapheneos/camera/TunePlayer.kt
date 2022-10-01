@@ -3,6 +3,7 @@ package app.grapheneos.camera
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Handler
 import android.os.SystemClock
 import app.grapheneos.camera.ui.activities.MainActivity
 
@@ -48,17 +49,13 @@ class TunePlayer(val context: MainActivity) {
         shutterPlayer.start()
     }
 
-    fun playVRStartSound() {
+    fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
         if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) return
         vRecPlayer.seekTo(0)
         vRecPlayer.start()
-
-        // Wait until the audio is played
-        do {
-            SystemClock.sleep(10)
-        } while (vRecPlayer.isPlaying)
-        // sleep a bit more to make sure the end of this sound isn't captured by the video recorder
-        SystemClock.sleep(10)
+        vRecPlayer.setOnCompletionListener({
+            handler.postDelayed(onPlayed, 10)
+        })
     }
 
     fun playVRStopSound() {

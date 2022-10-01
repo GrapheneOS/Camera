@@ -187,58 +187,59 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         beforeRecordingStarts()
+        isRecording = true
+        camConfig.mPlayer.playVRStartSound(handler, {
+            startTimer()
+            recording = pendingRecording.start(ctx.mainExecutor) { event ->
+                if (event is VideoRecordEvent.Finalize) {
+                    afterRecordingStops()
 
-        recording = pendingRecording.start(ctx.mainExecutor) { event ->
-            if (event is VideoRecordEvent.Finalize) {
-                afterRecordingStops()
+                    camConfig.mPlayer.playVRStopSound()
 
-                camConfig.mPlayer.playVRStopSound()
-
-                if (event.hasError()) {
-                    if (event.error == 8) {
-                        ctx.showMessage(R.string.recording_too_short_to_be_saved)
-                    } else {
-                        ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                    if (event.hasError()) {
+                        if (event.error == 8) {
+                            ctx.showMessage(R.string.recording_too_short_to_be_saved)
+                        } else {
+                            ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                        }
+                        return@start
                     }
-                    return@start
-                }
 
-                val uri = recordingCtx.uri
+                    val uri = recordingCtx.uri
 
-                if (recordingCtx.isPendingMediaStoreUri) {
-                    try {
-                        removePendingFlagFromUri(ctx.contentResolver, uri)
-                    } catch (e: Exception) {
-                        ctx.showMessage(R.string.unable_to_save_video)
+                    if (recordingCtx.isPendingMediaStoreUri) {
+                        try {
+                            removePendingFlagFromUri(ctx.contentResolver, uri)
+                        } catch (e: Exception) {
+                            ctx.showMessage(R.string.unable_to_save_video)
+                        }
                     }
-                }
 
-                if (recordingCtx.shouldAddToGallery) {
-                    val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
-                    camConfig.updateLastCapturedItem(item)
+                    if (recordingCtx.shouldAddToGallery) {
+                        val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
+                        camConfig.updateLastCapturedItem(item)
 
-                    ctx.updateThumbnail()
+                        ctx.updateThumbnail()
 
-                    if (ctx is SecureMainActivity) {
-                        ctx.capturedItems.add(item)
+                        if (ctx is SecureMainActivity) {
+                            ctx.capturedItems.add(item)
+                        }
                     }
-                }
 
-                if (ctx is VideoCaptureActivity) {
-                    ctx.afterRecording(uri)
+                    if (ctx is VideoCaptureActivity) {
+                        ctx.afterRecording(uri)
+                    }
                 }
             }
-        }
 
-        try {
-            // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
-            // caller, and that it's safe to do so as soon as pendingRecording.start() returns
-            recordingCtx.fileDescriptor.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        isRecording = true
+            try {
+                // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
+                // caller, and that it's safe to do so as soon as pendingRecording.start() returns
+                recordingCtx.fileDescriptor.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        })
     }
 
     private val dp16 = 16 * mActivity.resources.displayMetrics.density
@@ -250,7 +251,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         // TODO: Uncomment this once the main indicator UI gets implemented
         // mActivity.micOffIcon.visibility = View.GONE
-        camConfig.mPlayer.playVRStartSound()
 
         val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
 
@@ -283,7 +283,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
-        startTimer()
     }
 
     private fun afterRecordingStops() {
