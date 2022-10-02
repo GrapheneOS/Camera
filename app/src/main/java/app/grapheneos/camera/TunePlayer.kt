@@ -50,7 +50,10 @@ class TunePlayer(val context: MainActivity) {
     }
 
     fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-        if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) return
+        if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) {
+            onPlayed.run()
+            return
+        }
         vRecPlayer.seekTo(0)
         vRecPlayer.start()
         vRecPlayer.setOnCompletionListener({
