@@ -155,15 +155,6 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         locToggle = binding.locationToggle
         locToggle.setOnClickListener {
-
-            if (camConfig.isVideoMode) {
-                camConfig.requireLocation = false
-                mActivity.showMessage(
-                    getString(R.string.video_geo_tagging_unsupported)
-                )
-                return@setOnClickListener
-            }
-
             if (mActivity.videoCapturer.isRecording) {
                 locToggle.isChecked = !locToggle.isChecked
                 mActivity.showMessage(

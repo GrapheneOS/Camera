@@ -125,7 +125,7 @@
     <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
     <string name="unsupported_taking_picture_while_recording">Your device doesn\'t support taking pictures while recording video with the current settings.</string>
     <string name="image_processing_pending">Please wait for the last image to get processed…</string>
-    <string name="location_unavailable">Couldn\'t attach location to image since it\'s  currently unavailable</string>
+    <string name="location_unavailable">Couldn\'t attach location to image/video since it\'s  currently unavailable</string>
     <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
     <string name="no_barcode_selected">Please ensure that at least one barcode is selected in manual mode</string>
     <string name="flash_unavailable_in_selected_mode">Flash is unavailable for the current mode.</string>
@@ -135,7 +135,6 @@
     <string name="folder_not_found">Storage location not found</string>
     <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
     <string name="more_settings_unavailable_during_recording">Cannot switch activities when recording</string>
-    <string name="video_geo_tagging_unsupported">Geo-tagging currently is not supported for video mode</string>
     <string name="toggle_geo_tagging_unsupported_while_recording">Can\'t toggle geo-tagging for ongoing recording</string>
     <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
     <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
