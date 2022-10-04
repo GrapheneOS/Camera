@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
+import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
@@ -21,6 +22,7 @@ import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
+import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
@@ -140,10 +142,18 @@ class VideoCapturer(private val mActivity: MainActivity) {
             return null
         }
 
+        var location: Location? = null
+        if (camConfig.requireLocation) {
+            location = (mActivity.applicationContext as App).getLocation()
+            if (location == null) {
+                mActivity.showMessage(R.string.location_unavailable)
+            }
+        }
         contentResolver.openFileDescriptor(uri,"w")?.let {
-            val outputOptions = FileDescriptorOutputOptions.Builder(it).build()
+            val outputOptions = FileDescriptorOutputOptions.Builder(it)
+                .setLocation(location)
+                .build()
             val pendingRecording = recorder.prepareRecording(ctx, outputOptions)
-
             return RecordingContext(pendingRecording, uri, it, shouldAddToGallery, isPendingMediaStoreUri)
         }
         return null
