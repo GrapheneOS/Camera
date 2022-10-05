@@ -1231,12 +1231,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
                 else -> {
                     check(it.extensionMode != ExtensionMode.NONE)
-                    val em = extensionsManager
-                    if (em != null) {
-                        em.isExtensionAvailable(cameraSelector, it.extensionMode)
-                    } else {
-                        false
-                    }
+                    extensionsManager?.isExtensionAvailable(cameraSelector, it.extensionMode) ?: false
                 }
             }
         }.toSet()
