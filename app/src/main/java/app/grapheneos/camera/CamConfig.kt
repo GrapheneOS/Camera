@@ -1223,7 +1223,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    fun availableModes(): Set<CameraMode> {
+    private fun availableModes(): Set<CameraMode> {
         return CameraMode.values().filter {
             when (it) {
                 CameraMode.CAMERA, CameraMode.VIDEO -> true
