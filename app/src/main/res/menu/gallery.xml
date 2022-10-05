@@ -29,4 +29,9 @@
         android:title="@string/share_media"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/edit_with"
+        app:showAsAction="never"
+        android:title="@string/edit_with"
+        android:enabled="true"/>
 </menu>
