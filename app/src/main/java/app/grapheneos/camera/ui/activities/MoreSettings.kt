@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.activities
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.KeyEvent
@@ -83,6 +83,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         setContentView(binding.root)
         setTitle(R.string.more_settings)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        window.navigationBarColor = Color.TRANSPARENT
 
         val showStorageSettings = this !is MoreSettingsSecure
 
