@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -170,7 +171,10 @@ class InAppGallery : AppCompatActivity() {
                 editCurrentMedia()
                 true
             }
-
+            R.id.edit_with -> {
+                editCurrentMedia(withDefault = false)
+                true
+            }
             R.id.delete_icon -> {
                 deleteCurrentMedia()
                 true
@@ -190,7 +194,7 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
-    private fun editCurrentMedia() {
+    private fun editCurrentMedia(withDefault: Boolean = true) {
         if (isSecureMode) {
             showMessage(getString(R.string.edit_not_allowed))
             return
@@ -204,9 +208,15 @@ class InAppGallery : AppCompatActivity() {
         editIntent.data = curItem.uri
 
         editIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-        editIntentLauncher.launch(
-            Intent.createChooser(editIntent, getString(R.string.edit_image))
-        )
+        if (withDefault) {
+            try {
+                editIntentLauncher.launch(editIntent)
+            } catch (ignored: ActivityNotFoundException) {
+                showMessage(getString(R.string.no_editor_app_error))
+            }
+        } else {
+            editIntentLauncher.launch(Intent.createChooser(editIntent, getString(R.string.edit_image)))
+        }
     }
 
     private fun deleteCurrentMedia() {
