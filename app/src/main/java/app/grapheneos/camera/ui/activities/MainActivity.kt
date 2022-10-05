@@ -975,12 +975,6 @@ open class MainActivity : AppCompatActivity(),
         gCircleFrame = binding.gCircleFrame
     }
 
-    private fun getStatusBarHeight(): Int {
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        return if (resourceId > 0) resources.getDimensionPixelSize(resourceId)
-        else Rect().apply { window.decorView.getWindowVisibleDisplayFrame(this) }.top
-    }
-
     private fun repositionTabLayout() {
 
         threeButtons.visibility = View.VISIBLE
