@@ -17,7 +17,6 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
-import android.widget.FrameLayout
 import androidx.annotation.StringRes
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.AspectRatio
