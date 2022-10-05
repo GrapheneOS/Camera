@@ -5,24 +5,28 @@
     tools:context=".ui.activities.InAppGallery"
     tools:ignore="AlwaysShowAction">
 
-    <item android:id="@+id/edit_icon"
+    <item
+        android:id="@+id/edit_icon"
         android:icon="@drawable/edit"
         android:title="@string/edit"
-        app:showAsAction="always"/>
+        app:showAsAction="always" />
 
-    <item android:id="@+id/delete_icon"
+    <item
+        android:id="@+id/delete_icon"
         android:icon="@drawable/delete"
         android:title="@string/delete_file"
-        app:showAsAction="always"/>
+        app:showAsAction="always" />
 
-    <item android:id="@+id/info"
+    <item
+        android:id="@+id/info"
         android:icon="@drawable/info"
         android:title="@string/file_info"
-        app:showAsAction="always"/>
+        app:showAsAction="always" />
 
-    <item android:id="@+id/share_icon"
+    <item
+        android:id="@+id/share_icon"
         android:icon="@drawable/share"
         android:title="@string/share_media"
-        app:showAsAction="always"/>
+        app:showAsAction="always" />
 
 </menu>
