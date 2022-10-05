@@ -1658,6 +1658,9 @@ open class MainActivity : AppCompatActivity(),
     override fun onStop() {
         super.onStop()
         isStarted = false
+        if (this::videoCapturer.isInitialized && videoCapturer.isRecording) {
+            videoCapturer.stopRecording()
+        }
     }
 
     var isThumbnailLoaded = false
