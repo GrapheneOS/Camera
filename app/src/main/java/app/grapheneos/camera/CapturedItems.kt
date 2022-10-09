@@ -14,6 +14,7 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.database.getIntOrNull
+import androidx.recyclerview.widget.DiffUtil
 import app.grapheneos.camera.CamConfig.SettingValues
 import app.grapheneos.camera.util.edit
 import kotlin.jvm.Throws
@@ -80,6 +81,24 @@ class CapturedItem(
     }
 
     override fun describeContents() = 0
+}
+
+open class UiItemDiff :
+    DiffUtil.ItemCallback<CapturedItem>() {
+
+    override fun areItemsTheSame(
+        oldItem: CapturedItem,
+        newItem: CapturedItem
+    ) = oldItem.uri == newItem.uri
+
+    override fun areContentsTheSame(
+        oldItem: CapturedItem,
+        newItem: CapturedItem
+    ): Boolean {
+        return oldItem.uri == newItem.uri &&
+                oldItem.type == newItem.type &&
+                oldItem.dateString == newItem.dateString
+    }
 }
 
 object CapturedItems {
