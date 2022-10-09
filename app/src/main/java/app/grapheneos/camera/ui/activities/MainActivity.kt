@@ -1464,7 +1464,9 @@ open class MainActivity : AppCompatActivity(),
 
 
     fun indicateLocationProvidedIsDisabled() {
-        showMessage(getString(R.string.location_is_disabled), getString(R.string.enable)) {
+        showMessage(getString(R.string.location_is_disabled),
+            if (this !is SecureMainActivity)  getString(R.string.enable) else null
+        ) {
             enableLocationLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         }
     }
