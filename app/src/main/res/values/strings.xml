@@ -22,6 +22,7 @@
     <string name="zoom_out">Zoom Out</string>
     <string name="scan_result">Scan Result</string>
     <string name="share_qr_text">Share QR Text</string>
+    <string name="open_with">Open with</string>
     <string name="copy_to_clipboard">Copy to clipboard</string>
     <string name="retake">Retake</string>
     <string name="play_preview">Play Preview</string>
