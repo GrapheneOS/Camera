@@ -58,7 +58,8 @@ class InAppGallery : AppCompatActivity() {
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
 
-    private var isSecureMode = false
+    var isSecureMode = false
+        private set
 
     private val editIntentLauncher =
         registerForActivityResult(StartActivityForResult())

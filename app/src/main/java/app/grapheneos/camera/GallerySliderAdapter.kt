@@ -84,7 +84,8 @@ class GallerySliderAdapter(
                             val curItem = getCurrentItem()
                             if (curItem.type == ITEM_TYPE_VIDEO) {
                                 val intent = Intent(gActivity, VideoPlayer::class.java)
-                                intent.putExtra("videoUri", curItem.uri)
+                                intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
+                                intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
 
                                 gActivity.startActivity(intent)
                             } else {
