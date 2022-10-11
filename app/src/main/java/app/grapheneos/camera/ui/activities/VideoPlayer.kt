@@ -13,11 +13,20 @@ import app.grapheneos.camera.databinding.VideoPlayerBinding
 
 class VideoPlayer : AppCompatActivity() {
 
+    companion object {
+        const val IN_SECURE_MODE = "isInSecureMode"
+        const val VIDEO_URI = "videoUri"
+    }
+
     private var handler: Handler = Handler(Looper.myLooper()!!)
     private lateinit var binding: VideoPlayerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent.getBooleanExtra(IN_SECURE_MODE, false)) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        }
         binding = VideoPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -27,7 +36,7 @@ class VideoPlayer : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
-        if (intent.extras?.containsKey("videoUri") != true) {
+        if (intent.extras?.containsKey(VIDEO_URI) != true) {
             throw Exception("Video Player requires videoUri")
         }
 
