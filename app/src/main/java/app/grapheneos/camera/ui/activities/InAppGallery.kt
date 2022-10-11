@@ -42,23 +42,39 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.collections.ArrayList
 import kotlin.properties.Delegates
 
 class InAppGallery : AppCompatActivity() {
 
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
-    var gallerySliderAdapter: GallerySliderAdapter? = null
+    private val gallerySliderAdapter: GallerySliderAdapter by lazy { GallerySliderAdapter(this) }
 
-    val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
-    val asyncImageLoader = Executors.newSingleThreadExecutor()
+    private val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
+    val asyncImageLoader: ExecutorService = Executors.newSingleThreadExecutor()
 
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
 
     private var isSecureMode = false
+
+    private val showVideosOnly by lazy {
+        intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
+    }
+
+    private val listOfSecureModeCapturedItems by lazy {
+        intent.getParcelableArrayListExtra<CapturedItem>(
+            INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS
+        )
+    }
+
+    private val lastCapturedItem by lazy {
+        intent.getParcelableExtra<CapturedItem>(INTENT_KEY_LAST_CAPTURED_ITEM)
+    }
+
+    private lateinit var allItems: ArrayList<CapturedItem>
 
     private val editIntentLauncher =
         registerForActivityResult(StartActivityForResult())
@@ -151,7 +167,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun getCurrentItem(): CapturedItem {
-        return gallerySliderAdapter!!.getCurrentItem()
+        return gallerySliderAdapter.getCurrentItem()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -241,7 +257,9 @@ class InAppGallery : AppCompatActivity() {
 
                 if (res) {
                     showMessage(getString(R.string.deleted_successfully))
-                    gallerySliderAdapter!!.removeItem(curItem)
+                    allItems.remove(curItem)
+                    val capturedItems = getNewFilteredList(allItems)
+                    asyncResultReady(capturedItems)
                 } else {
                     showMessage(getString(R.string.deleting_unexpected_error))
                 }
@@ -446,17 +464,15 @@ class InAppGallery : AppCompatActivity() {
 
         rootView = binding.rootView
         rootView.setOnClickListener {
-            if (gallerySliderAdapter != null) {
+            if (gallerySliderAdapter.currentList.isNotEmpty()) {
                 toggleActionBarState()
             }
         }
 
         gallerySlider = binding.gallerySlider
+        gallerySlider.adapter = gallerySliderAdapter
         snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
         gallerySlider.setPageTransformer(GSlideTransformer())
-
-        val showVideosOnly = intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
-        val listOfSecureModeCapturedItems = intent.getParcelableArrayListExtra<CapturedItem>(INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
 
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
@@ -466,47 +482,46 @@ class InAppGallery : AppCompatActivity() {
                 // executor threads
                 return@execute
             }
-            val setOfSecureModeCapturedItems = listOfSecureModeCapturedItems?.toHashSet()
-            val items = ArrayList<CapturedItem>(unprocessedItems.size)
-
-            unprocessedItems.forEach { item ->
-                if (showVideosOnly) {
-                    if (item.type != ITEM_TYPE_VIDEO) {
-                        return@forEach
-                    }
-                }
-
-                setOfSecureModeCapturedItems?.let {
-                    if (!it.contains(item)) {
-                        return@forEach
-                    }
-                }
-
-                items.add(item)
+            allItems = ArrayList()
+            allItems.addAll(unprocessedItems)
+            val capturedItems = getNewFilteredList(allItems)
+            mainExecutor.execute {
+                asyncResultReady(capturedItems)
             }
-            items.sortByDescending { it.dateString }
-
-            mainExecutor.execute { asyncResultReady(items) }
         }
 
-        val lastCapturedItem = intent.getParcelableExtra<CapturedItem>(INTENT_KEY_LAST_CAPTURED_ITEM)
-
         if (lastCapturedItem != null) {
-            val list = ArrayList<CapturedItem>()
-            list.add(lastCapturedItem)
-            GallerySliderAdapter(this, list).let {
-                gallerySliderAdapter = it
-                gallerySlider.adapter = it
-            }
+            gallerySliderAdapter.submitList(listOf(lastCapturedItem))
         } else {
             Handler(mainLooper).postDelayed({
-                if (gallerySliderAdapter == null) {
+                if (gallerySliderAdapter.currentList.isNotEmpty()) {
                     binding.placeholderText.root.visibility = View.VISIBLE
                 }
             }, 500)
 
             hideActionBar()
         }
+    }
+
+    private fun getNewFilteredList(list: ArrayList<CapturedItem>): ArrayList<CapturedItem> {
+        val result = ArrayList<CapturedItem>()
+        val allItems = ArrayList(list)
+        result.addAll(list)
+
+        for (capturedItem in allItems) {
+            if (showVideosOnly) {
+                if (capturedItem.type != ITEM_TYPE_VIDEO) {
+                    result.remove(capturedItem)
+                    continue
+                }
+            }
+
+            if (isSecureMode && listOfSecureModeCapturedItems?.contains(capturedItem) != true) {
+                result.remove(capturedItem)
+            }
+        }
+        result.sortByDescending { it.dateString }
+        return result
     }
 
     fun asyncResultReady(items: ArrayList<CapturedItem>) {
@@ -519,31 +534,8 @@ class InAppGallery : AppCompatActivity() {
             finish()
             return
         }
-
         binding.placeholderText.root.visibility = View.GONE
-
-        val existingAdapter = gallerySliderAdapter
-
-        if (existingAdapter == null) {
-            GallerySliderAdapter(this, items).let {
-                gallerySliderAdapter = it
-                gallerySlider.adapter = it
-            }
-        } else {
-            val adapterItems = existingAdapter.items
-            adapterItems.ensureCapacity(items.size)
-
-            val preloadedItem = adapterItems[0]
-
-            items.forEachIndexed { index, item ->
-                // this check is needed to avoid showing preloaded item twice (it's not guaranteed
-                // that it'll be first in the list)
-                if (index > 50 || item != preloadedItem) {
-                    adapterItems.add(item)
-                }
-            }
-            existingAdapter.notifyItemRangeInserted(1, items.size - 1)
-        }
+        gallerySliderAdapter.submitList(items)
         showActionBar()
     }
 

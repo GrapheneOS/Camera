@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.ListAdapter
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.databinding.GallerySlideBinding
 import app.grapheneos.camera.ui.ZoomableImageView
@@ -18,9 +18,8 @@ import app.grapheneos.camera.util.executeIfAlive
 import kotlin.math.max
 
 class GallerySliderAdapter(
-    private val gActivity: InAppGallery,
-    val items: ArrayList<CapturedItem>
-) : RecyclerView.Adapter<GallerySlide>() {
+    private val gActivity: InAppGallery
+) : ListAdapter<CapturedItem, GallerySlide>(UiItemDiff()) {
 
     var atLeastOneBindViewHolderCall = false
 
@@ -30,15 +29,11 @@ class GallerySliderAdapter(
         return GallerySlide(GallerySlideBinding.inflate(layoutInflater, parent, false))
     }
 
-    override fun getItemId(position: Int): Long {
-        return items[position].hashCode().toLong()
-    }
-
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
         val mediaPreview: ZoomableImageView = holder.binding.slidePreview
 //        Log.d("GallerySliderAdapter", "postiion $position, preview ${System.identityHashCode(mediaPreview)}")
         val playButton: ImageView = holder.binding.playButton
-        val item = items[position]
+        val item = currentList[position]
 
         mediaPreview.setGalleryActivity(gActivity)
         mediaPreview.disableZooming()
@@ -108,31 +103,10 @@ class GallerySliderAdapter(
         }
     }
 
-    fun removeItem(item: CapturedItem) {
-        removeChildAt(items.indexOf(item))
-    }
-
-    private fun removeChildAt(index: Int) {
-        items.removeAt(index)
-
-        // Close gallery if no files are present
-        if (items.isEmpty()) {
-            gActivity.showMessage(
-                gActivity.getString(R.string.existing_no_image)
-            )
-            gActivity.finish()
-        }
-
-        notifyItemRemoved(index)
-    }
-
     fun getCurrentItem(): CapturedItem {
-        return items[gActivity.gallerySlider.currentItem]
+        return currentList[gActivity.gallerySlider.currentItem]
     }
 
-    override fun getItemCount(): Int {
-        return items.size
-    }
 }
 
 object ImageDownscaler : ImageDecoder.OnHeaderDecodedListener {
