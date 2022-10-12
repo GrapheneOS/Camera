@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.VideoPlayerBinding
+import app.grapheneos.camera.util.getParcelableExtra
 
 class VideoPlayer : AppCompatActivity() {
 
@@ -25,6 +26,7 @@ class VideoPlayer : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val intent = this.intent
         if (intent.getBooleanExtra(IN_SECURE_MODE, false)) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -38,11 +40,7 @@ class VideoPlayer : AppCompatActivity() {
             it.setDisplayHomeAsUpEnabled(true)
         }
 
-        if (intent.extras?.containsKey(VIDEO_URI) != true) {
-            throw Exception("Video Player requires videoUri")
-        }
-
-        val uri = intent.extras!!.get("videoUri") as Uri
+        val uri = getParcelableExtra<Uri>(intent, VIDEO_URI)!!
 
         val videoView = binding.videoPlayer
 
