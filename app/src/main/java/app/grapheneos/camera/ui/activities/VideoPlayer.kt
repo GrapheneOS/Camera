@@ -5,23 +5,25 @@ import android.media.AudioManager
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.util.Log
 import android.widget.MediaController
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.VideoPlayerBinding
 import app.grapheneos.camera.util.getParcelableExtra
+import kotlin.concurrent.thread
+
 
 class VideoPlayer : AppCompatActivity() {
 
     companion object {
+        const val TAG = "VideoPlayer"
         const val IN_SECURE_MODE = "isInSecureMode"
         const val VIDEO_URI = "videoUri"
     }
 
-    private var handler: Handler = Handler(Looper.myLooper()!!)
     private lateinit var binding: VideoPlayerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,32 +57,42 @@ class VideoPlayer : AppCompatActivity() {
                 supportActionBar?.hide()
             }
         }
-        mediaController.setAnchorView(videoView)
-        mediaController.setMediaPlayer(videoView)
 
-        videoView.setAudioFocusRequest(if (hasAudio(uri)) AudioManager.AUDIOFOCUS_GAIN else AudioManager.AUDIOFOCUS_NONE)
-        videoView.setMediaController(mediaController)
-        videoView.setVideoURI(uri)
-        videoView.requestFocus()
-        videoView.start()
+        thread {
+            var hasAudio = true
+            try {
+                MediaMetadataRetriever().use {
+                    it.setDataSource(this, uri)
+                    hasAudio = it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) != null
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "", e)
+            }
 
-        handler.postDelayed(
-            { mediaController.show(0) },
-            100
-        )
-    }
+            mainExecutor.execute {
+                val lifecycleState = lifecycle.currentState
 
-    private fun hasAudio(uri: Uri): Boolean {
-        try {
-            val metadataRetriever = MediaMetadataRetriever()
-            metadataRetriever.setDataSource(this, uri)
-            val hasAudio =
-                metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
-            return hasAudio != null && hasAudio == "yes"
+                if (lifecycleState == Lifecycle.State.DESTROYED) {
+                    return@execute
+                }
+
+                val audioFocus = if (hasAudio) AudioManager.AUDIOFOCUS_GAIN else AudioManager.AUDIOFOCUS_NONE
+                videoView.setAudioFocusRequest(audioFocus)
+
+                videoView.setOnPreparedListener { _ ->
+                    videoView.setMediaController(mediaController)
+
+                    if (lifecycleState == Lifecycle.State.RESUMED) {
+                        videoView.start()
+                    }
+
+                    supportActionBar?.show()
+                    mediaController.show(0)
+                }
+
+                videoView.setVideoURI(uri)
+            }
         }
-        catch (ignored: SecurityException) { }
-        catch (ignored: IllegalArgumentException) { }
-        return true
     }
 
     override fun onSupportNavigateUp(): Boolean {
