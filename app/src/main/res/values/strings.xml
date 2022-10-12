@@ -185,4 +185,14 @@
 
     <string name="zsl_setting_title">Use ZSL in Latency mode</string>
     <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
+
+    <string name="white_balance_mode_auto">Auto</string>
+    <string name="white_balance_mode_cloudy_daylight">Cloudy Daylight</string>
+    <string name="white_balance_mode_daylight">Daylight</string>
+    <string name="white_balance_mode_fluorescent">Fluorescent</string>
+    <string name="white_balance_mode_incandescent">Incandescent</string>
+    <string name="white_balance_mode_shade">Shade</string>
+    <string name="white_balance_mode_twiLight">TwiLight</string>
+    <string name="white_balance_mode_warm_fluorescent">Warm Fluorescent</string>
+
 </resources>
