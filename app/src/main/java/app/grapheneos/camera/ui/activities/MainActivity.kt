@@ -11,7 +11,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -66,7 +65,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isGone
 import app.grapheneos.camera.App
 import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
@@ -91,6 +89,7 @@ import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
+import app.grapheneos.camera.util.resolveActivity
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -1085,17 +1084,16 @@ open class MainActivity : AppCompatActivity(),
 
             val tabLayout: TabLayout = dialogBinding.encodingTabs
             val textView = dialogBinding.scanResultText
-            val handlers = resolveIntentHandler(rawText)
-            dialogBinding.openWith.isGone = handlers.isEmpty()
-            dialogBinding.openWith.setOnClickListener {
-                startActivity(
-                    Intent.createChooser(
-                        Intent(Intent.ACTION_VIEW).apply {
-                            data = Uri.parse(rawText)
-                        },
-                        getString(R.string.open_with)
-                    )
-                )
+
+            val intentView = Intent(Intent.ACTION_VIEW, Uri.parse(rawText))
+
+            if (packageManager.resolveActivity(intentView, 0L) != null) {
+                dialogBinding.openWith.setOnClickListener {
+                    val chooser = Intent.createChooser(intentView, getString(R.string.open_with))
+                    startActivity(chooser)
+                }
+            } else {
+                dialogBinding.openWith.visibility = View.GONE
             }
 
             tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -1162,26 +1160,6 @@ open class MainActivity : AppCompatActivity(),
             camConfig.cameraProvider?.unbindAll()
 
             dialog.show()
-        }
-    }
-
-    private fun resolveIntentHandler(value: String): List<ResolveInfo> {
-        val response = Uri.parse(value)
-        val intent = Intent(Intent.ACTION_VIEW)
-            .apply {
-                data = response
-            }
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManager.queryIntentActivities(
-                intent,
-                PackageManager.ResolveInfoFlags.of(0)
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.queryIntentActivities(
-                intent,
-                PackageManager.GET_ACTIVITIES
-            )
         }
     }
 
