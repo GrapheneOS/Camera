@@ -6,14 +6,12 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
-import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
-import androidx.core.database.getIntOrNull
 import app.grapheneos.camera.CamConfig.SettingValues
 import app.grapheneos.camera.util.edit
 import kotlin.jvm.Throws
@@ -122,18 +120,7 @@ object CapturedItems {
     private fun collectMediaStoreItems(resolver: ContentResolver, volumeName: String, dest: ArrayList<CapturedItem>) {
         val volumeUri = MediaStore.Files.getContentUri(volumeName)
 
-        val columns = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            arrayOf(
-                BaseColumns._ID,
-                MediaStore.MediaColumns.DISPLAY_NAME,
-                MediaStore.MediaColumns.IS_TRASHED
-            )
-        } else {
-            arrayOf(
-                BaseColumns._ID,
-                MediaStore.MediaColumns.DISPLAY_NAME
-            )
-        }
+        val columns = arrayOf(BaseColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
         val idColumn = 0
         val nameColumn = 1
 
@@ -144,10 +131,7 @@ object CapturedItems {
                 while (it.moveToNext()) {
                     val name = it.getString(nameColumn)
                     val uri = ContentUris.withAppendedId(volumeUri, it.getLong(idColumn))
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
-                        val index = it.getColumnIndex(MediaStore.MediaColumns.IS_TRASHED)
-                        if (index != -1 && 1 == (it.getIntOrNull(index) ?: 0)) continue
-                    }
+
                     parseCapturedItem(name, uri)?.let {
                         dest.add(it)
                     }
