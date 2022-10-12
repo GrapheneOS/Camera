@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.activities
 
 import android.graphics.drawable.ColorDrawable
+import android.media.AudioManager
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -58,6 +60,7 @@ class VideoPlayer : AppCompatActivity() {
         mediaController.setAnchorView(videoView)
         mediaController.setMediaPlayer(videoView)
 
+        videoView.setAudioFocusRequest(if (hasAudio(uri)) AudioManager.AUDIOFOCUS_GAIN else AudioManager.AUDIOFOCUS_NONE)
         videoView.setMediaController(mediaController)
         videoView.setVideoURI(uri)
         videoView.requestFocus()
@@ -67,6 +70,19 @@ class VideoPlayer : AppCompatActivity() {
             { mediaController.show(0) },
             100
         )
+    }
+
+    private fun hasAudio(uri: Uri): Boolean {
+        try {
+            val metadataRetriever = MediaMetadataRetriever()
+            metadataRetriever.setDataSource(this, uri)
+            val hasAudio =
+                metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO)
+            return hasAudio != null && hasAudio == "yes"
+        }
+        catch (ignored: SecurityException) { }
+        catch (ignored: IllegalArgumentException) { }
+        return true
     }
 
     override fun onSupportNavigateUp(): Boolean {
