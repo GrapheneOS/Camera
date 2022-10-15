@@ -37,6 +37,8 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.ktx.markAs16by9Layout
+import app.grapheneos.camera.ktx.markAs4by3Layout
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -1162,7 +1164,16 @@ class CamConfig(private val mActivity: MainActivity) {
 
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
-
+        mActivity.previewView.apply {
+            when (aspectRatio) {
+                AspectRatio.RATIO_16_9 -> {
+                    markAs16by9Layout()
+                }
+                AspectRatio.RATIO_4_3 -> {
+                    markAs4by3Layout()
+                }
+            }
+        }
         if (isInPhotoMode) {
             mActivity.sensorNotifier?.forceUpdateGyro()
         } else {
