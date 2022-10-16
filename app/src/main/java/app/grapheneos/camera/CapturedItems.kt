@@ -12,6 +12,7 @@ import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.os.ParcelCompat
 import app.grapheneos.camera.CamConfig.SettingValues
 import app.grapheneos.camera.util.edit
 import kotlin.jvm.Throws
@@ -69,7 +70,11 @@ class CapturedItem(
             override fun createFromParcel(source: Parcel): CapturedItem {
                 val type = source.readByte().toInt()
                 val dateString = source.readString()!!
-                val uri = source.readParcelable<Uri>(null)!!
+                val uri = ParcelCompat.readParcelable(
+                    source,
+                    null,
+                    Uri::class.java
+                )!!
                 return CapturedItem(type, dateString, uri)
             }
 
