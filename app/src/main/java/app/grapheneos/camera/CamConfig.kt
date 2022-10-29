@@ -42,6 +42,7 @@ import app.grapheneos.camera.ktx.markAs4by3Layout
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.QrTile
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -271,6 +272,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
+    private val defaultMode =  if (mActivity is QrTile) CameraMode.QR_SCAN else DEFAULT_CAMERA_MODE
     private var currentMode: CameraMode = DEFAULT_CAMERA_MODE
 
     var aspectRatio: Int
@@ -1272,7 +1274,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
                 tab.tag = mode
 
-                tabLayout.addTab(tab, mode == DEFAULT_CAMERA_MODE)
+                tabLayout.addTab(tab, mode == defaultMode)
             }
         }
     }
