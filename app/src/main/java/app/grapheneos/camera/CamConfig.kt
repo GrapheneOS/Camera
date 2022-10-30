@@ -17,6 +17,7 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
+import android.widget.FrameLayout
 import androidx.annotation.StringRes
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.AspectRatio
@@ -36,6 +37,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.core.view.updateLayoutParams
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.markAs16by9Layout
 import app.grapheneos.camera.ktx.markAs4by3Layout
@@ -1164,6 +1166,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
         // Focus camera on touch/tap
         mActivity.previewView.setOnTouchListener(mActivity)
+        mActivity.previewView.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+            mActivity.bottomOverlay.updateLayoutParams<FrameLayout.LayoutParams> {
+                height = mActivity.mainFrame.height - v.height
+            }
+        }
         mActivity.previewView.apply {
             when (aspectRatio) {
                 AspectRatio.RATIO_16_9 -> {
