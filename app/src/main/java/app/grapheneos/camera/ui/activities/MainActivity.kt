@@ -858,7 +858,7 @@ open class MainActivity : AppCompatActivity(),
         var isInsetSet = false
 
         ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val insets = windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
 
             view.layoutParams = (view.layoutParams as ViewGroup.MarginLayoutParams).let {
                 it.setMargins(
