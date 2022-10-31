@@ -1,0 +1,192 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="camera_permission_dialog_title">Требуется разрешение \"Камера\"</string>
+    <string name="camera_permission_dialog_message">
+        Приложению необходимо разрешение \"Камера\" для функционирования. Пожалуйста, предоставьте необходимое разрешение, используя Настройки, чтобы использовать это приложение.
+    </string>
+
+    <string name="audio_permission_dialog_title">Требуется разрешение \"Микрофон\"</string>
+    <string name="audio_permission_dialog_message">
+        Приложению необходимо разрешение \"Микрофон\" для записи видео содержащего звук. Пожалуйста, предоставьте необходимое разрешение, используя Настройки, чтобы использовать эту функциональность. Если вам не нужно, чтобы видео содержало звук, вы можете просто выключить его (и включить его позже в настройках).
+    </string>
+
+    <string name="location_permission_dialog_title">Требуется разрешение \"Местоположение\"</string>
+    <string name="location_permission_dialog_message">
+        Приложению необходимо разрешение \"Местоположение\" для гео-тегов. Пожалуйста, предоставьте необходимое разрешение, используя Настройки, чтобы использовать эту функциональность.
+    </string>
+
+    <string name="focus_ring">Кольцо фокуса</string>
+    <string name="flip_camera">Перевернуть камеру</string>
+    <string name="loading_camera">Загрузка камеры</string>
+    <string name="flash_mode">Flash Mode</string>
+    <string name="capture_mode">Capture Mode</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Приблизить</string>
+    <string name="zoom_out">Отдалить</string>
+    <string name="scan_result">Сканировать результат</string>
+    <string name="share_qr_text">Поделиться текстом с QR</string>
+    <string name="open_with">Открыть с помощью</string>
+    <string name="copy_to_clipboard">Копировать в буфер обмена</string>
+    <string name="retake">Retake</string>
+    <string name="play_preview">Play Preview</string>
+    <string name="toggle_button">Переключатель гео-тегов</string>
+    <string name="aspect_ratio">Соотношение сторон</string>
+    <string name="toggle_flash">Переключатель вспышки</string>
+    <string name="grid_toggle">Переключатель сетки</string>
+    <string name="include_audio">Запись звука</string>
+    <string name="enable_eis">Включить EIS</string>
+    <string name="video_quality">Качество видео</string>
+    <string name="optimize_for">Оптимизировать</string>
+    <string name="quality">Качество</string>
+    <string name="latency">Задержка</string>
+    <string name="preview">Превью</string>
+    <string name="file_info">Информация о файле</string>
+    <string name="delete_file">Удалить файл</string>
+    <string name="edit">Редактировать</string>
+    <string name="self_illumination">Подсветка экраном</string>
+    <string name="focus_timeout">Таймаут фокусировки</string>
+    <string name="timer">Таймер</string>
+    <string name="cancel_timer">Отменить таймер</string>
+    <string name="video_capture_label">Записать видео</string>
+
+    <string name="camera">КАМЕРА</string>
+    <string name="video">ВИДЕО</string>
+    <string name="portrait_mode">ПОРТРЕТ</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">НОЧЬ</string>
+    <string name="face_retouch_mode">РЕТУШЬ ЛИЦА</string>
+    <string name="auto_mode">АВТО</string>
+    <string name="qr_scan_mode">QR СКАНЕР</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Поделиться медиа</string>
+    <string name="edit_with">Редактировать с помощью</string>
+    <string name="rec_without_audio">Начать запись без аудио</string>
+    <string name="qr_scan_toggle">Переключатель QR сканера</string>
+    <string name="qr_scan">QR код</string>
+    <string name="data_matrix">Data Matrix</string>
+    <string name="aztec_code">Aztec Code</string>
+    <string name="more_options">Больше опций</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Больше настроек</string>
+
+    <string name="general">Общие</string>
+
+    <string name="save_image_as_previewed">Сохранять фото как на превью</string>
+    <string name="save_as_image_preview_desc">Сохранять фото как его видно на превью (исправляет зеркально отраженные фото)</string>
+
+    <string name="gyroscope_suggestions">Помощь гироскопа</string>
+    <string name="gyroscope_setting_desc">Иногда получать визуальную помощь для получения фото с ровным горизонтом</string>
+
+    <string name="camera_sounds">Звуки камеры</string>
+    <string name="camera_sounds_desc">Звук затвора и другие аудио подсказки</string>
+
+    <string name="storage">Хранилище</string>
+    <string name="storage_location">Место хранения</string>
+    <string name="image_file_name_format">Формат имени файла фото:</string>
+    <string name="video_file_name_format">Формат имени файла видео:</string>
+    <string name="revert_back_to_dcim">Revert back to DCIM</string>
+
+    <string name="image_quality">Качество фото</string>
+    <string name="image_quality_desc" formatted="false">Устанавливает качество снятого фото в пределах от 1% до 100%. Это поле можно оставить пустым, чтобы избежать явной установки качества изображения.</string>
+    <string name="photo">Фото</string>
+    <string name="remove_exif_title">Удалить EXIF метаданные после съемки</string>
+    <string name="remove_exif_subtitle">Примечание: Опция гео-тегов независима от этой настройки</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+    <string name="location_is_disabled">Местоположение отключено</string>
+    <string name="settings">Настройки</string>
+    <string name="enable">Включить</string>
+    <string name="ok">ОК</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="disable_audio">Выключить звук</string>
+    <string name="copied_text_to_clipboard">Текст скопирован в буфер обмена</string>
+    <string name="share_text_via">Поделиться текстом через</string>
+
+    <string name="editing_permission_error">Не удалось прочитать фото из-за того, что редактор не предоставляет права на чтение.</string>
+    <string name="editing_unexpected_error">Возникла непредвиденная ошибка после редактирования.</string>
+
+    <string name="unable_to_obtain_file_details">Не удалось получить детали файла</string>
+
+    <string name="edit_successfully">Успешно отредактировано</string>
+    <string name="no_editor_app_error">Вероятно у вас отсутствует необходимое приложение для редактирования этого контента</string>
+    <string name="edit_not_allowed">Редактировать фото в безопасном режиме запрещено.</string>
+    <string name="sharing_not_allowed">Делиться фото в безопасном режиме запрещено.</string>
+    <string name="edit_image">Редактировать фото</string>
+    <string name="share_image">Поделиться фото</string>
+    <string name="delete">Удалить</string>
+    <string name="delete_title">Вы уверены?</string>
+    <string name="deleted_successfully">Файл успешно удален</string>
+    <string name="deleting_unexpected_error">Возникла непредвиденная ошибка во время удаления этого файла</string>
+    <string name="delete_description">"Вы действительно хотите удалить этот файл (%s)?"</string>
+    <string name="cancel">Отмена</string>
+    <string name="no_image">Пожалуйста, снимите фото/видео перед тем как попытаетесь посмотреть их.</string>
+
+    <string name="empty_gallery">Снятые фото/видео не найдены</string>
+
+    <string name="bind_failure">Не удалось открыть камеру из-за программной или аппаратной проблемы. Попробуйте перезагрузить устройство.</string>
+    <string name="camera_provider_init_failure">Не удалось загрузить провайдера камеры из-за программной или аппаратной проблемы. Попробуйте перезагрузить устройство.</string>
+    <string name="extensions_manager_init_failure">Не удалось загрузить менеджер расширений из-за программной или аппаратной проблемы. Режимы расширения недоступны. Попробуйте перезагрузить устройство.</string>
+    <string name="unsupported_taking_picture_while_recording">Ваше устройство не поддерживает съемку фото во время записи видео с текущими настройками.</string>
+    <string name="image_processing_pending">Пожалуйста, подождите, последнее фото обрабатывается…</string>
+    <string name="location_unavailable">Невозможно добавить гео-тег к фото/видео, потому что местоположение в данный момент недоступно</string>
+    <string name="existing_no_image">Фото не найдено. Выход из встроенной галереи.</string>
+    <string name="no_barcode_selected">Пожалуйста, убедитесь, что как минимум один баркод выбран в ручном режиме</string>
+    <string name="flash_unavailable_in_selected_mode">Вспышка недоступна для этого режима.</string>
+    <string name="front_camera_unavailable">Невозможно обнаружить фронтальную камеру. Пожалуйста, попробуйте позже!</string>
+    <string name="rear_camera_unavailable">Невозможно обнаружить основную камеру. Пожалуйста, попробуйте позже!</string>
+    <string name="qr_rear_camera_unavailable">Основная камера недоступна. Задействована фронтальная камера для QR сканера.</string>
+    <string name="folder_not_found">Место хранения недоступно</string>
+    <string name="reverting_to_default_folder">Возврат к директории DCIM по умолчанию, так как пользовательское место хранения похоже удалено. Пожалуйста, измените место хранения на другую директорию (если необходимо).</string>
+    <string name="more_settings_unavailable_during_recording">Невозможно перейти в настройки во время записи</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Невозможно переключить гео-теги во время записи</string>
+    <string name="flash_switch_unsupported">Не удалось переключить режим вспышки в этом режиме</string>
+    <string name="four_by_three_unsupported_in_video">4:3 не поддерживается в видео режиме</string>
+    <string name="flash_unavailable_in_current_mode">Вспышка/Фонарик недоступна для этого режима.</string>
+    <string name="unexpected_error_while_setting_focus_timeout">Возникла непредвиденная ошибка во время установки таймаута фокуса</string>
+    <string name="storage_location_updated">Место хранения успешно обновлено на %s</string>
+    <string name="no_directory_selected">Директория не была выбрана</string>
+    <string name="choose_storage_location">Выберите место хранения</string>
+    <string name="are_you_sure">Вы уверены?</string>
+    <string name="revert_to_default_directory">Вы хотите вернуть директорию по умолчанию?</string>
+    <string name="reverted_to_default_directory">Расположение директории по умолчанию установлено</string>
+    <string name="already_using_default_directory">Директория по умолчанию уже используется</string>
+    <string name="photo_quality_was_set_to_auto">Качество фотографий установлено в автоматический режим</string>
+    <string name="photo_quality_number_limit" tools:ignore="PluralsCandidate">Качество фото может быть только в пределах %1$d и %2$d</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Изображения, сделанные в этом режиме, не содержат дополнительных метаданных EXIF</string>
+    <string name="file_already_exists">Файл уже существует: %s</string>
+    <string name="file_does_not_exist">Файл не существует: %s</string>
+    <string name="couldnt_exclude_qr_format">Нельзя исключить формат %s. Убедитесь, что как минимум один баркод выбран в ручном режиме.</string>
+
+    <string name="capturing_image">Съемка фото…</string>
+    <string name="image_captured_successfully">Фото снято успешно</string>
+    <string name="unable_to_capture_image">Не удалось снять фото</string>
+    <string name="unable_to_capture_image_verbose">Не удалось снять фото, код ошибки: %d</string>
+    <string name="unable_to_save_image">Не удалось сохранить фото</string>
+    <string name="unable_to_save_image_verbose">Не удалось сохранить фото, ошибка возникла во время: %s</string>
+    <string name="show_details">Показать детали</string>
+    <string name="recording_too_short_to_be_saved">Запись слишком коротка для сохранения</string>
+    <string name="unable_to_save_video">Не удалось сохранить это видео</string>
+    <string name="unable_to_save_video_verbose">Не удалось сохранить это видео, код ошибки: %d</string>
+    <string name="unable_to_access_output_file">Не удалось получить доступ к конечному файлу</string>
+    <string name="please_wait_for_image_to_get_captured_before_opening">Подождите завершения съемки фото перед тем как попытаетесь открыть галерею.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Подождите заверш. съемки фото перед тем как попытаетесь поделиться через долгое нажатие.</string>
+
+    <string name="file_details">Детали файла</string>
+    <string name="file_name_generic">Имя файла: </string>
+    <string name="not_found_generic">Не найдено</string>
+    <string name="loading_generic">Загрузка…</string>
+    <string name="file_size">Размер файла: </string>
+    <string name="file_path">Путь к файлу: </string>
+    <string name="file_created_on">Файл создан: </string>
+    <string name="last_modified_on">Последний раз модифицирован: </string>
+
+    <string name="inaccessible_image">Фото %s недоступно</string>
+    <string name="inaccessible_video">Видео %s недоступно</string>
+
+    <string name="main_storage">Основное хранилище</string>
+
+    <string name="zsl_setting_title">Использовать ZSL в режиме оптимизации задержки</string>
+    <string name="zsl_setting_desc">Использует Zero Shutter Lag (ZSL, нулевая задержка затвора) в режиме оптимизации задержки для быстрого захвата. Некоторые устройства могут иметь проблемную реализацию этой функциональности.</string>
+</resources>
