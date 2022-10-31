@@ -44,6 +44,16 @@
                     app:layout_constraintBottom_toBottomOf="@id/preview"
                     android:layerType="software"/>
 
+                <ImageView
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:id="@+id/focusRing"
+                    android:src="@drawable/focus_ring"
+                    android:visibility="invisible"
+                    android:contentDescription="@string/focus_ring"
+                    app:layout_constraintTop_toTopOf="@id/preview"
+                    app:layout_constraintStart_toStartOf="@id/preview"/>
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <FrameLayout
@@ -134,14 +144,6 @@
                 android:id="@+id/preview_grid"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
-
-            <ImageView
-                android:layout_width="84dp"
-                android:layout_height="84dp"
-                android:id="@+id/focusRing"
-                android:src="@drawable/focus_ring"
-                android:visibility="invisible"
-                android:contentDescription="@string/focus_ring"/>
 
             <ImageView
                 android:id="@+id/main_overlay"

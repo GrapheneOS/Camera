@@ -65,6 +65,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
@@ -101,6 +103,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
@@ -320,8 +323,12 @@ open class MainActivity : AppCompatActivity(),
 
         // Move the focus ring so that its center is at the tap location (x, y)
         val width = focusRing.width.toFloat()
-        focusRing.x = x - width / 2
-        focusRing.y = y - width / 2
+        focusRing.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            updateMargins(
+                left = (x - width / 2).roundToInt(),
+                top = (y - width / 2).roundToInt()
+            )
+        }
 
         // Show focus ring
         focusRing.visibility = View.VISIBLE
