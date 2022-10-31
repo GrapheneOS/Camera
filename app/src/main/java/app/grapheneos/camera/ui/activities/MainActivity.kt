@@ -800,9 +800,6 @@ open class MainActivity : AppCompatActivity(),
         exposureBarPanel = binding.exposureBarPanel
 
         qrOverlay = binding.qrOverlay
-        qrOverlay.post {
-            qrOverlay.setViewFinder()
-        }
 
         threeButtons = binding.threeButtons
         settingsIcon = binding.settingsOption

@@ -34,7 +34,6 @@ import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.markAs16by9Layout
@@ -1310,7 +1309,6 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             mActivity.cancelButtonView.visibility = View.INVISIBLE
-            mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
 
             mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
             mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
@@ -1321,7 +1319,6 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.thirdOption.visibility = View.VISIBLE
             mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
             mActivity.cancelButtonView.visibility = View.VISIBLE
-            mActivity.previewView.scaleType = PreviewView.ScaleType.FIT_START
 
             mActivity.qrScanToggles.visibility = View.GONE
 
