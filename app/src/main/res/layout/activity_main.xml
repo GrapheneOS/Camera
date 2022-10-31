@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/root"
-        android:background="@color/black"
+        android:background="@color/default_bg"
         tools:context=".ui.activities.MainActivity">
 
         <FrameLayout
@@ -53,6 +53,15 @@
                     android:contentDescription="@string/focus_ring"
                     app:layout_constraintTop_toTopOf="@id/preview"
                     app:layout_constraintStart_toStartOf="@id/preview"/>
+
+                <!-- Hides part of focus ring that is outside of the preview by occupying the area below the preview. -->
+                <View
+                    android:id="@+id/bottom_overlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:background="@color/default_bg"
+                    app:layout_constraintTop_toBottomOf="@id/preview"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
