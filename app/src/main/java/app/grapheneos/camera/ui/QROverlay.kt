@@ -39,7 +39,7 @@ class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
     var size: Float = 0f
         private set
 
-    fun setViewFinder() {
+    private fun setViewFinder() {
         val overlayWidth = width.toFloat()
         val overlayHeight = height.toFloat()
 
@@ -48,12 +48,11 @@ class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
         val cx = overlayWidth / 2
         val cy = overlayHeight / 2
         boxRect = RectF(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2)
-
-        invalidate()
     }
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
+        setViewFinder()
         boxRect?.let {
             // Draws the dark background scrim and leaves the box area clear.
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), scrimPaint)
