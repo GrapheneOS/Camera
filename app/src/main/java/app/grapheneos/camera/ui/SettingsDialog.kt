@@ -465,6 +465,7 @@ class SettingsDialog(val mActivity: MainActivity) :
                 val color = animator.animatedValue as Int
                 mActivity.previewView.setBackgroundColor(color)
                 mActivity.rootView.setBackgroundColor(color)
+                mActivity.bottomOverlay.setBackgroundColor(color)
                 window?.statusBarColor = color
             }
 
@@ -500,6 +501,7 @@ class SettingsDialog(val mActivity: MainActivity) :
                 val color = animator.animatedValue as Int
                 mActivity.previewView.setBackgroundColor(color)
                 mActivity.rootView.setBackgroundColor(color)
+                mActivity.bottomOverlay.setBackgroundColor(color)
                 window?.statusBarColor = color
             }
 

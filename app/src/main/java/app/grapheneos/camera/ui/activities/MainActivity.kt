@@ -122,6 +122,7 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var previewView: PreviewView
     lateinit var previewContainer: ConstraintLayout
+    lateinit var bottomOverlay: View
 
     // Hold a reference to the manual permission dialog to avoid re-creating it if it
     // is already visible and to dismiss it if the permission gets granted.
@@ -577,6 +578,7 @@ open class MainActivity : AppCompatActivity(),
         previewView = binding.preview
         previewView.scaleType = PreviewView.ScaleType.FIT_START
         previewContainer = binding.previewContainer
+        bottomOverlay = binding.bottomOverlay
         scaleGestureDetector = ScaleGestureDetector(this, this)
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
