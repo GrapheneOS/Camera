@@ -133,14 +133,18 @@
 
             <app.grapheneos.camera.ui.CountDownTimerUI
                 android:id="@+id/c_timer"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
                 android:visibility="gone"
                 android:shadowColor="#000000"
                 android:shadowDx="1.5"
                 android:shadowDy="1.3"
                 android:shadowRadius="1.6"
-                android:textColor="@color/white"/>
+                android:textColor="@color/white"
+                app:layout_constraintTop_toTopOf="@id/preview"
+                app:layout_constraintStart_toStartOf="@id/preview"
+                app:layout_constraintEnd_toEndOf="@id/preview"
+                app:layout_constraintBottom_toBottomOf="@id/preview"/>
 
             <app.grapheneos.camera.ui.CustomGrid
                 android:id="@+id/preview_grid"
