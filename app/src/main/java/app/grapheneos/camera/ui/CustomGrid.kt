@@ -31,6 +31,10 @@ class CustomGrid @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (!this::mActivity.isInitialized) {
+            return super.onDraw(canvas)
+        }
+
         val camConfig = mActivity.camConfig
 
         super.onDraw(canvas)
