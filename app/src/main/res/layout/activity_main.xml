@@ -52,10 +52,12 @@
             <!-- Hides part of focus ring that is outside of the preview by occupying the area below the preview. -->
             <View
                 android:id="@+id/bottom_overlay"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:background="@color/default_bg"
                 app:layout_constraintTop_toBottomOf="@id/preview"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"/>
 
             <FrameLayout
@@ -161,9 +163,13 @@
             <ImageView
                 android:id="@+id/main_overlay"
                 android:scaleType="fitStart"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/loading_camera"/>
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:contentDescription="@string/loading_camera"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
