@@ -39,22 +39,16 @@ class CustomGrid @JvmOverloads constructor(
             return
         }
 
-        val previewHeight = if (camConfig.aspectRatio == AspectRatio.RATIO_16_9) {
-            mActivity.previewView.width * 16 / 9
-        } else {
-            mActivity.previewView.width * 4 / 3
-        }
-
         if (camConfig.gridType == CamConfig.GridType.GOLDEN_RATIO) {
 
             val cx = width / 2f
-            val cy = previewHeight / 2f
+            val cy = height / 2f
 
             val dxH = width / 8f
-            val dyH = previewHeight / 8f
+            val dyH = height / 8f
 
-            canvas.drawLine(cx - dxH, 0f, cx - dxH, previewHeight.toFloat(), paint)
-            canvas.drawLine(cx + dxH, 0f, cx + dxH, previewHeight.toFloat(), paint)
+            canvas.drawLine(cx - dxH, 0f, cx - dxH, height.toFloat(), paint)
+            canvas.drawLine(cx + dxH, 0f, cx + dxH, height.toFloat(), paint)
             canvas.drawLine(0f, cy - dyH, width.toFloat(), cy - dyH, paint)
             canvas.drawLine(0f, cy + dyH, width.toFloat(), cy + dyH, paint)
 
@@ -70,27 +64,27 @@ class CustomGrid @JvmOverloads constructor(
                 width / seed * 2f,
                 0f,
                 width / seed * 2f,
-                previewHeight.toFloat(),
+                height.toFloat(),
                 paint
             )
-            canvas.drawLine(width / seed, 0f, width / seed, previewHeight.toFloat(), paint)
+            canvas.drawLine(width / seed, 0f, width / seed, height.toFloat(), paint)
             canvas.drawLine(
-                0f, previewHeight / seed * 2f,
-                width.toFloat(), previewHeight / seed * 2f, paint
+                0f, height / seed * 2f,
+                width.toFloat(), height / seed * 2f, paint
             )
-            canvas.drawLine(0f, previewHeight / seed, width.toFloat(), previewHeight / seed, paint)
+            canvas.drawLine(0f, height / seed, width.toFloat(), height / seed, paint)
 
             if (seed == 4f) {
                 canvas.drawLine(
                     width / seed * 3f,
                     0f,
                     width / seed * 3f,
-                    previewHeight.toFloat(),
+                    height.toFloat(),
                     paint
                 )
                 canvas.drawLine(
-                    0f, previewHeight / seed * 3f,
-                    width.toFloat(), previewHeight / seed * 3f, paint
+                    0f, height / seed * 3f,
+                    width.toFloat(), height / seed * 3f, paint
                 )
             }
         }
