@@ -126,7 +126,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val FLASH_MODE = ImageCapture.FLASH_MODE_OFF
 
-            const val EMPHASIS_ON_QUALITY = true
+            const val EMPHASIS_ON_QUALITY = false
 
             const val FOCUS_TIMEOUT = "5s"
 
