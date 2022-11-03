@@ -14,154 +14,147 @@
         android:background="@color/default_bg"
         tools:context=".ui.activities.MainActivity">
 
-        <FrameLayout
-            android:id="@+id/main_frame"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/preview_container"
             android:layout_height="match_parent"
             android:layout_width="match_parent">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/preview_container"
+            <androidx.camera.view.PreviewView
+                android:id="@+id/preview"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintDimensionRatio="H,9:16"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <app.grapheneos.camera.ui.QROverlay
+                android:id="@+id/qr_overlay"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="invisible"
+                app:layout_constraintTop_toTopOf="@id/preview"
+                app:layout_constraintStart_toStartOf="@id/preview"
+                app:layout_constraintEnd_toEndOf="@id/preview"
+                app:layout_constraintBottom_toBottomOf="@id/preview"
+                android:layerType="software"/>
+
+            <ImageView
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:id="@+id/focusRing"
+                android:src="@drawable/focus_ring"
+                android:visibility="invisible"
+                android:contentDescription="@string/focus_ring"
+                app:layout_constraintTop_toTopOf="@id/preview"
+                app:layout_constraintStart_toStartOf="@id/preview"/>
+
+            <!-- Hides part of focus ring that is outside of the preview by occupying the area below the preview. -->
+            <View
+                android:id="@+id/bottom_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:background="@color/default_bg"
+                app:layout_constraintTop_toBottomOf="@id/preview"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <FrameLayout
+                android:id="@+id/g_circle_frame"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_width="match_parent">
+                android:layout_gravity="center">
 
-                <androidx.camera.view.PreviewView
-                    android:id="@+id/preview"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    app:layout_constraintDimensionRatio="H,9:16"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"/>
-
-                <app.grapheneos.camera.ui.QROverlay
-                    android:id="@+id/qr_overlay"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:visibility="invisible"
-                    app:layout_constraintTop_toTopOf="@id/preview"
-                    app:layout_constraintStart_toStartOf="@id/preview"
-                    app:layout_constraintEnd_toEndOf="@id/preview"
-                    app:layout_constraintBottom_toBottomOf="@id/preview"
-                    android:layerType="software"/>
-
-                <ImageView
-                    android:layout_width="84dp"
-                    android:layout_height="84dp"
-                    android:id="@+id/focusRing"
-                    android:src="@drawable/focus_ring"
-                    android:visibility="invisible"
-                    android:contentDescription="@string/focus_ring"
-                    app:layout_constraintTop_toTopOf="@id/preview"
-                    app:layout_constraintStart_toStartOf="@id/preview"/>
-
-                <!-- Hides part of focus ring that is outside of the preview by occupying the area below the preview. -->
-                <View
-                    android:id="@+id/bottom_overlay"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:background="@color/default_bg"
-                    app:layout_constraintTop_toBottomOf="@id/preview"
-                    app:layout_constraintBottom_toBottomOf="parent"/>
-
-                <FrameLayout
-                    android:id="@+id/g_circle_frame"
+                <LinearLayout
+                    android:id="@+id/g_circle"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_gravity="center">
+                    android:gravity="center"
+                    android:rotation="0"
+                    android:paddingBottom="14sp"
+                    android:layout_marginBottom="9dp"
+                    android:orientation="vertical">
 
-                    <LinearLayout
-                        android:id="@+id/g_circle"
+                    <TextView
+                        android:id="@+id/g_circle_text"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:rotation="0"
-                        android:paddingBottom="14sp"
-                        android:layout_marginBottom="9dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/g_circle_text"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textSize="14sp"
-                            android:layout_marginBottom="4dp"
-                            android:shadowColor="#000000"
-                            android:shadowDx="1.5"
-                            android:shadowDy="1.3"
-                            android:shadowRadius="1.6"
-                            android:textColor="@color/white"
-                            android:textAlignment="center"/>
-
-                        <View
-                            android:id="@+id/g_circle_line_x"
-                            android:background="@drawable/white_shadow_rect"
-                            android:layout_width="120dp"
-                            android:layout_gravity="center"
-                            android:layout_height="2dp"/>
-
-                    </LinearLayout>
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="4dp"
+                        android:shadowColor="#000000"
+                        android:shadowDx="1.5"
+                        android:shadowDy="1.3"
+                        android:shadowRadius="1.6"
+                        android:textColor="@color/white"
+                        android:textAlignment="center"/>
 
                     <View
-                        android:id="@+id/g_circle_line_z"
-                        android:background="@drawable/yellow_shadow_rect"
-                        android:layout_width="100dp"
+                        android:id="@+id/g_circle_line_x"
+                        android:background="@drawable/white_shadow_rect"
+                        android:layout_width="120dp"
                         android:layout_gravity="center"
-                        android:layout_height="1.5dp"/>
+                        android:layout_height="2dp"/>
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal">
+                </LinearLayout>
 
-                        <View
-                            android:id="@+id/g_circle_left_dash"
-                            android:background="@drawable/white_shadow_rect"
-                            android:layout_width="8dp"
-                            android:layout_height="2dp"/>
+                <View
+                    android:id="@+id/g_circle_line_z"
+                    android:background="@drawable/yellow_shadow_rect"
+                    android:layout_width="100dp"
+                    android:layout_gravity="center"
+                    android:layout_height="1.5dp"/>
 
-                        <View
-                            android:background="@android:color/transparent"
-                            android:layout_width="120dp"
-                            android:layout_height="1dp"/>
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal">
 
-                        <View
-                            android:id="@+id/g_circle_right_dash"
-                            android:layout_width="8dp"
-                            android:layout_height="2dp"
-                            android:background="@drawable/white_shadow_rect"/>
+                    <View
+                        android:id="@+id/g_circle_left_dash"
+                        android:background="@drawable/white_shadow_rect"
+                        android:layout_width="8dp"
+                        android:layout_height="2dp"/>
 
-                    </LinearLayout>
+                    <View
+                        android:background="@android:color/transparent"
+                        android:layout_width="120dp"
+                        android:layout_height="1dp"/>
 
-                </FrameLayout>
+                    <View
+                        android:id="@+id/g_circle_right_dash"
+                        android:layout_width="8dp"
+                        android:layout_height="2dp"
+                        android:background="@drawable/white_shadow_rect"/>
 
-                <app.grapheneos.camera.ui.CountDownTimerUI
-                    android:id="@+id/c_timer"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="gone"
-                    android:shadowColor="#000000"
-                    android:shadowDx="1.5"
-                    android:shadowDy="1.3"
-                    android:shadowRadius="1.6"
-                    android:textColor="@color/white"/>
+                </LinearLayout>
 
-                <app.grapheneos.camera.ui.CustomGrid
-                    android:id="@+id/preview_grid"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
+            </FrameLayout>
 
-                <ImageView
-                    android:id="@+id/main_overlay"
-                    android:scaleType="fitStart"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="@string/loading_camera"/>
+            <app.grapheneos.camera.ui.CountDownTimerUI
+                android:id="@+id/c_timer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                android:shadowColor="#000000"
+                android:shadowDx="1.5"
+                android:shadowDy="1.3"
+                android:shadowRadius="1.6"
+                android:textColor="@color/white"/>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            <app.grapheneos.camera.ui.CustomGrid
+                android:id="@+id/preview_grid"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
 
-        </FrameLayout>
+            <ImageView
+                android:id="@+id/main_overlay"
+                android:scaleType="fitStart"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/loading_camera"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <LinearLayout
             android:id="@+id/three_buttons"

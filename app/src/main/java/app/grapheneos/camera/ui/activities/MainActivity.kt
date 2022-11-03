@@ -130,7 +130,6 @@ open class MainActivity : AppCompatActivity(),
     private var audioPermissionDialog: AlertDialog? = null
     private var lastFrame: Bitmap? = null
 
-    private lateinit var mainFrame: View
     lateinit var rootView: View
 
     lateinit var qrScanToggles: View
@@ -857,8 +856,6 @@ open class MainActivity : AppCompatActivity(),
 
         rootView = binding.root
 
-        mainFrame = binding.mainFrame
-
         qrScanToggles = binding.qrScanToggles
 
         var isInsetSet = false
@@ -878,17 +875,9 @@ open class MainActivity : AppCompatActivity(),
             }
 
             if (insets.top != 0 && !isInsetSet) {
-                mainFrame.layoutParams =
-                    (mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
-                        it.setMargins(
-                            it.leftMargin,
-                            (8 * resources.displayMetrics.density.toInt()) + insets.top,
-                            it.rightMargin,
-                            it.bottomMargin,
-                        )
-
-                        it
-                    }
+                previewContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    updateMargins(top = (8 * resources.displayMetrics.density.toInt()) + insets.top)
+                }
 
                 qrScanToggles.layoutParams =
                     (qrScanToggles.layoutParams as ViewGroup.MarginLayoutParams).let {
