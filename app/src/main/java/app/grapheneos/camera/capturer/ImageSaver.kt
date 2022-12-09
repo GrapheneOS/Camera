@@ -98,7 +98,7 @@ class ImageSaver(
             origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
                 ImageUtil.jpegImageToJpegByteArray(image)
             } else if (imageFormat == ImageFormat.YUV_420_888) {
-                ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality)
+                ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)
             } else {
                 throw IllegalStateException("unknown imageFormat $imageFormat")
             }
