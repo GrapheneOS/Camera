@@ -6,7 +6,7 @@ val useKeystoreProperties = keystorePropertiesFile.canRead()
 val keystoreProperties = Properties()
 if (useKeystoreProperties) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
+	}
 
 plugins {
     id("com.android.application")
@@ -34,7 +34,7 @@ android {
     }
 
     compileSdk = 33
-    buildToolsVersion = "33.0.0"
+    buildToolsVersion = "33.0.1"
 
     namespace = "app.grapheneos.camera"
 
