@@ -27,7 +27,6 @@
         android:icon="@mipmap/ic_launcher"
         android:resizeableActivity="false"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.App"
         tools:ignore="UnusedAttribute">
