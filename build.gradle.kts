@@ -1,13 +1,7 @@
 buildscript {
     repositories {
-        // dependabot cannot handle google()
-        maven {
-            url = uri("https://dl.google.com/dl/android/maven2")
-        }
-        // dependabot cannot handle mavenCentral()
-        maven {
-            url = uri("https://repo.maven.apache.org/maven2")
-        }
+        google()
+        mavenCentral()
     }
     dependencies {
         classpath("com.android.tools.build:gradle:7.3.1")
