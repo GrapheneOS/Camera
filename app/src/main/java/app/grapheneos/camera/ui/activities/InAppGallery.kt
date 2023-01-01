@@ -216,7 +216,12 @@ class InAppGallery : AppCompatActivity() {
                 showMessage(getString(R.string.no_editor_app_error))
             }
         } else {
-            editIntentLauncher.launch(Intent.createChooser(editIntent, getString(R.string.edit_image)))
+            editIntentLauncher.launch(
+                Intent.createChooser(
+                     editIntent,
+                     getString(R.string.edit_image)
+                ).putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE, false)
+            )
         }
     }
 
