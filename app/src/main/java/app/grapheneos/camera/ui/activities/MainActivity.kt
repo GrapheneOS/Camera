@@ -838,7 +838,7 @@ open class MainActivity : AppCompatActivity(),
                         Rect(0, 0, size.x, size.y)
                     }
 
-                    if (rect == null || rect.left == 0 || rect.right == windowsSize.right) {
+                    if (rect == null || rect.left <= 0 || rect.right == windowsSize.right) {
                         layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
                     } else {
                         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
