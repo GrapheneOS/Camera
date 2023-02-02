@@ -93,7 +93,7 @@ android {
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.6.0")
-    implementation("com.google.android.material:material:1.7.0")
+    implementation("com.google.android.material:material:1.8.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     val cameraVersion = "1.3.0-alpha02"
