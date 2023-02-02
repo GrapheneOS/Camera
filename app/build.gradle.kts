@@ -6,7 +6,7 @@ val useKeystoreProperties = keystorePropertiesFile.canRead()
 val keystoreProperties = Properties()
 if (useKeystoreProperties) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-	}
+}
 
 plugins {
     id("com.android.application")
