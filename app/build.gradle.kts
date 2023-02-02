@@ -14,6 +14,12 @@ plugins {
     kotlin("kapt")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
 android {
     if (useKeystoreProperties) {
         signingConfigs {
