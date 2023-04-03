@@ -1058,16 +1058,37 @@ open class MainActivity : AppCompatActivity(),
     private lateinit var dialog: Dialog
 
     open fun bytesToHex(bytes: ByteArray): String {
-        val hexChars = CharArray(bytes.size)
-        for (i in 0 until bytes.indices.last - 1 step 3) {
-            val v: Int = bytes[i].toInt() and 0xFF
-            hexChars[i] = hexArray[v ushr 4]
-            hexChars[i + 1] = hexArray[v and 0x0F]
-            hexChars[i + 2] = ' '
+        if (bytes.isEmpty()) return "" // outLen will be wrong for empty inputs
+
+        // Represent bytes as a grid of hex digits:
+        // Add a space between every byte
+        // Double space every 4 bytes (unless end or newline)
+        // Add a newline every 8 bytes (unless end)
+
+        var outLen = bytes.size * 3 - 1 // 2 hex digits + 1 space/newline per byte (except last)
+        outLen += bytes.size / 8 // One double space per row except the last incomplete row
+        if (bytes.size % 8 > 4) {
+            outLen += 1 // One double space for the last incomplete row, if it has >4 columns
         }
+
+        val hexChars = CharArray(outLen)
+        var j = 0 // Output index
+
+        for (i in bytes.indices) {
+            val byte = bytes[i].toInt() and 0xFF
+            hexChars[j++] = hexArray[byte ushr 4]
+            hexChars[j++] = hexArray[byte and 0x0F]
+
+            if (i == bytes.lastIndex) break // No trailing whitespace
+            if (i % 8 == 7) {
+                hexChars[j++] = '\n'
+            } else {
+                hexChars[j++] = ' '
+                if (i % 4 == 3) hexChars[j++] = ' '
+            }
+        }
+
         return String(hexChars)
-            .replace("(.{12})".toRegex(), "$0  ")
-            .replace("(.{28})".toRegex(), "$0\n")
     }
 
     private var isQRDialogShowing = false
