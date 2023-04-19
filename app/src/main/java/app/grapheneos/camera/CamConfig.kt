@@ -25,6 +25,8 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.extensions.ExtensionMode
@@ -1017,8 +1019,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (isQRMode) {
             val analyzer = QRAnalyzer(mActivity)
+            val strategy = ResolutionStrategy(Size(960, 960),
+                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
             val mIAnalyzer = ImageAnalysis.Builder()
-                .setTargetResolution(Size(960, 960))
+                .setResolutionSelector(
+                    ResolutionSelector.Builder().setResolutionStrategy(strategy).build())
                 .setOutputImageRotationEnabled(true)
                 .build()
             qrAnalyzer = analyzer
