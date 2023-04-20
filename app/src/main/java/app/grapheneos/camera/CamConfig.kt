@@ -25,6 +25,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.core.TorchState
@@ -1016,6 +1017,9 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         val useCaseGroupBuilder = UseCaseGroup.Builder()
+        val aspectRatioStrategy = AspectRatioStrategy(
+            aspectRatio, AspectRatioStrategy.FALLBACK_RULE_AUTO
+        )
 
         if (isQRMode) {
             val analyzer = QRAnalyzer(mActivity)
@@ -1080,7 +1084,11 @@ class CamConfig(private val mActivity: MainActivity) {
                             ?: rotation
                     )
 
-                    it.setTargetAspectRatio(aspectRatio)
+                    it.setResolutionSelector(
+                        ResolutionSelector.Builder()
+                            .setAspectRatioStrategy(aspectRatioStrategy)
+                            .build()
+                    )
 
                     it.setFlashMode(flashMode)
 
@@ -1100,7 +1108,9 @@ class CamConfig(private val mActivity: MainActivity) {
                 preview?.targetRotation
                     ?: rotation
             )
-            .setTargetAspectRatio(aspectRatio);
+            .setResolutionSelector(
+                ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
+            )
 
         @androidx.camera.camera2.interop.ExperimentalCamera2Interop
         if (isVideoMode && enableEIS) {
