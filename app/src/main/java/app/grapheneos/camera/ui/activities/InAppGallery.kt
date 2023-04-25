@@ -101,13 +101,8 @@ class InAppGallery : AppCompatActivity() {
         @SuppressLint("SimpleDateFormat")
         fun convertTime(time: Long, showTimeZone: Boolean = true): String {
             val date = Date(time)
-            val format = SimpleDateFormat(
-                if (showTimeZone) {
-                    "yyyy-MM-dd HH:mm:ss z"
-                } else {
-                    "yyyy-MM-dd HH:mm:ss"
-                }
-            )
+            val pattern = if (showTimeZone) "yyyy-MM-dd HH:mm:ss z" else "yyyy-MM-dd HH:mm:ss"
+            val format = SimpleDateFormat(pattern)
             format.timeZone = TimeZone.getDefault()
             return format.format(date)
         }

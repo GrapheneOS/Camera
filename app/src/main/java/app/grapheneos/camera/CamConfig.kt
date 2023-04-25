@@ -1438,15 +1438,12 @@ class CamConfig(private val mActivity: MainActivity) {
         // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
         storageLocation = SettingValues.Default.STORAGE_LOCATION
 
-        val builder = AlertDialog.Builder(mActivity)
-        builder.setTitle(R.string.folder_not_found)
-        builder.setMessage(R.string.reverting_to_default_folder)
-        builder.setPositiveButton(R.string.ok, null)
-        builder.setNeutralButton(R.string.more_settings) { _, _ ->
-            MoreSettings.start(mActivity)
-        }
-        val alertDialog: AlertDialog = builder.create()
-        alertDialog.setCancelable(false)
-        alertDialog.show()
+        AlertDialog.Builder(mActivity)
+            .setTitle(R.string.folder_not_found)
+            .setMessage(R.string.reverting_to_default_folder)
+            .setPositiveButton(R.string.ok, null)
+            .setNeutralButton(R.string.more_settings) { _, _ -> MoreSettings.start(mActivity) }
+            .setCancelable(false)
+            .show()
     }
 }

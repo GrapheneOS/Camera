@@ -14,8 +14,6 @@ import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.graphics.Point
-import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -81,6 +79,7 @@ import app.grapheneos.camera.capturer.isTakingPicture
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.ktx.SystemSettingsObserver
+import app.grapheneos.camera.ktx.getSizeCompat
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -243,52 +242,42 @@ open class MainActivity : AppCompatActivity(),
         handler.removeCallbacks(runnable)
     }
 
+    private fun isPermissionGranted(permission : String) : Boolean {
+        return ActivityCompat.checkSelfPermission(
+            this,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
     ) { permissions: Map<String, Boolean> ->
-        if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.i(TAG, "Permission granted for recording audio.")
-            } else {
-                Log.i(TAG, "Permission denied for recording audio.")
-                val builder =
-                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                builder.setTitle(R.string.audio_permission_dialog_title)
-                builder.setMessage(R.string.audio_permission_dialog_message)
 
-                // Open the settings menu for the current app
-                builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    val uri = Uri.fromParts(
-                        "package",
-                        packageName, null
-                    )
-                    intent.data = uri
-                    startActivity(intent)
-                }
-                builder.setNegativeButton(R.string.cancel, null)
-
-                builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-                    camConfig.includeAudio = false
-                }
-
-                audioPermissionDialog = builder.show()
-            }
-        }
         if (permissions.containsKey(Manifest.permission.CAMERA)) {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.CAMERA
-                ) ==
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.i(TAG, "Permission granted for camera.")
-            } else {
-                Log.i(TAG, "Permission denied for camera.")
-            }
+            val granted = isPermissionGranted(Manifest.permission.CAMERA)
+            Log.i(TAG, "Permission ${if (granted) "granted" else "denied"} for camera.")
+        }
+
+        if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
+            val granted = isPermissionGranted(Manifest.permission.RECORD_AUDIO)
+            Log.i(TAG, "Permission ${if (granted) "granted" else "denied"} for recording audio.")
+            if (granted) return@registerForActivityResult
+            audioPermissionDialog =
+                AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(R.string.audio_permission_dialog_title)
+                    .setMessage(R.string.audio_permission_dialog_message)
+                    .setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts(
+                            "package", packageName, null
+                        )
+                        intent.data = uri
+                        startActivity(intent)
+                    }.setNegativeButton(R.string.cancel, null)
+                    .setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
+                        camConfig.includeAudio = false
+                    }.show()
         }
     }
 
@@ -296,18 +285,16 @@ open class MainActivity : AppCompatActivity(),
     var dirPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
     { result ->
 
-        val data: Uri? = result.data?.data
+        Log.i(TAG, "Selected location: ${result?.data?.data?.encodedPath}")
 
-        if (data?.encodedPath != null) {
-            val file = File(data.encodedPath!!)
-            if (file.exists()) {
-                showMessage(getString(R.string.file_already_exists, file.absolutePath))
-            } else {
-                showMessage(getString(R.string.file_does_not_exist, data.encodedPath))
-            }
-        }
+        val data: Uri = result.data?.data ?: return@registerForActivityResult
+        val encodedPath = data.encodedPath ?: return@registerForActivityResult
+        val file = File(encodedPath)
 
-        Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
+        val message = if (file.exists()) getString(R.string.file_already_exists, file.absolutePath)
+        else getString(R.string.file_does_not_exist, data.encodedPath)
+
+        showMessage(message)
     }
 
     fun updateLastFrame() {
@@ -423,37 +410,31 @@ open class MainActivity : AppCompatActivity(),
             shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
 
                 Log.i(TAG, "The user has default denied camera permission.")
+                val positiveClicked = AtomicBoolean(false)
 
                 // Don't build and show a new dialog if it's already visible
                 if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) return
-                val builder =
+                cameraPermissionDialog =
                     AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                builder.setTitle(R.string.camera_permission_dialog_title)
-                builder.setMessage(R.string.camera_permission_dialog_message)
-                val positiveClicked = AtomicBoolean(false)
-
-                // Open the settings menu for the current app
-                builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
-                    positiveClicked.set(true)
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    val uri = Uri.fromParts(
-                        "package",
-                        packageName, null
-                    )
-                    intent.data = uri
-                    startActivity(intent)
-                }
-                builder.setNegativeButton(R.string.cancel, null)
-                builder.setOnDismissListener {
-
-                    // The dialog could have either been dismissed by clicking on the
-                    // background or by clicking the cancel button. So in those cases,
-                    // the app should exit as the app depends on the camera permission.
-                    if (!positiveClicked.get()) {
-                        finish()
-                    }
-                }
-                cameraPermissionDialog = builder.show()
+                        .setTitle(R.string.camera_permission_dialog_title)
+                        .setMessage(R.string.camera_permission_dialog_message)
+                        .setPositiveButton(R.string.settings) { _, _->
+                            // Open the settings menu for the current app
+                            positiveClicked.set(true)
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            val uri = Uri.fromParts("package", packageName, null)
+                            intent.data = uri
+                            startActivity(intent)
+                        }
+                        .setNegativeButton(R.string.cancel, null)
+                        .setOnDismissListener {
+                            // The dialog could have either been dismissed by clicking on the
+                            // background or by clicking the cancel button. So in those cases,
+                            // the app should exit as the app depends on the camera permission.
+                            if (!positiveClicked.get()) {
+                                finish()
+                            }
+                        }.show()
             }
 
             // Request for the permission (Android will actually popup the permission
@@ -465,15 +446,9 @@ open class MainActivity : AppCompatActivity(),
             }
         }
 
-        audioPermissionDialog?.let { dialog ->
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.RECORD_AUDIO
-                ) ==
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                if (dialog.isShowing) {
-                    dialog.dismiss()
-                }
+        if (audioPermissionDialog?.isShowing == true) {
+            if (isPermissionGranted(Manifest.permission.RECORD_AUDIO)) {
+                dialog.dismiss()
             }
         }
     }
@@ -713,15 +688,15 @@ open class MainActivity : AppCompatActivity(),
         thirdCircle.setOnLongClickListener {
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
-            } else {
-                if (isTakingPicture) {
-                    showMessage(
-                        getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
-                    )
-                } else {
-                    shareLatestMedia()
-                }
+                return@setOnLongClickListener true
+            }
 
+            if (isTakingPicture) {
+                showMessage(
+                    getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
+                )
+            } else {
+                shareLatestMedia()
             }
 
             return@setOnLongClickListener true
@@ -821,16 +796,7 @@ open class MainActivity : AppCompatActivity(),
                     val rect = if (displayCutout?.boundingRects?.isNotEmpty() == true)
                         displayCutout.boundingRects.first() else null
 
-                    val windowsSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        windowManager.currentWindowMetrics.bounds
-                    } else {
-                        val size = Point()
-                        // defaultDisplay isn't deprecated below API 30 as highlighted by the IDE
-                        // and this code would only execute if it is (Hint: enclosing if-block)
-                        @Suppress("DEPRECATION")
-                        windowManager.defaultDisplay.getRealSize(size)
-                        Rect(0, 0, size.x, size.y)
-                    }
+                    val windowsSize = windowManager.getSizeCompat()
 
                     if (rect == null || rect.left <= 0 || rect.right == windowsSize.right) {
                         layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
@@ -1513,7 +1479,7 @@ open class MainActivity : AppCompatActivity(),
                 gAngleTextView.text = getString(R.string.degree_format, abs(xAngle).toInt())
                 if (xAngle == 0f) {
                     setThicknessOfGLines(4)
-                    vibrateDevice()
+                    vibrateDeviceFor50Millis()
                 } else {
                     setThicknessOfGLines(2)
                 }
@@ -1589,8 +1555,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    // Vibrates the device for 100 milliseconds.
-    private fun vibrateDevice() {
+    private fun vibrateDeviceFor50Millis() {
         val vibrator = getSystemService(Vibrator::class.java)
         vibrator?.vibrate(VibrationEffect.createOneShot(50, 10))
     }
@@ -1634,27 +1599,23 @@ open class MainActivity : AppCompatActivity(),
             ) && ActivityCompat.shouldShowRequestPermissionRationale(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION
             ) -> {
-                AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).let {
-                    it.setTitle(R.string.location_permission_dialog_title)
-                    it.setMessage(R.string.location_permission_dialog_message)
-
-                    if (this !is SecureActivity) {
-                        it.setPositiveButton(R.string.settings) { _, _ ->
-                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                            intent.data = Uri.fromParts("package", packageName, null)
-                            this.startActivity(intent)
-                        }
-                    }
-
-                    it.setOnDismissListener {
-                        if (ContextCompat.checkSelfPermission(
-                                this, Manifest.permission.ACCESS_COARSE_LOCATION
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
+                AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(R.string.location_permission_dialog_title)
+                    .setMessage(R.string.location_permission_dialog_message)
+                    .setOnDismissListener {
+                        if (isPermissionGranted(Manifest.permission.ACCESS_COARSE_LOCATION)) {
                             camConfig.requireLocation = false
                         }
                     }
-                }.show()
+                    .apply {
+                        if (this !is SecureActivity) {
+                            setPositiveButton(R.string.settings) { _, _ ->
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                intent.data = Uri.fromParts("package", packageName, null)
+                                this@MainActivity.startActivity(intent)
+                            }
+                        }
+                    }.show()
             }
 
             (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -1711,34 +1672,38 @@ open class MainActivity : AppCompatActivity(),
         val ctx = applicationContext
 
         thumbnailLoaderExecutor.executeIfAlive {
-            var bitmap: Bitmap? = null
-            try {
+            val bitmap: Bitmap = try {
                 val side = preview.layoutParams.width
+                when (item.type) {
+                    ITEM_TYPE_VIDEO -> {
+                        val origBitmap = getVideoThumbnail(ctx, item.uri)
+                        origBitmap?.let {
+                            val w = it.width.toDouble()
+                            val h = it.height.toDouble()
+                            val ratio = max(w / side, h / side)
 
-                if (item.type == ITEM_TYPE_VIDEO) {
-                    val origBitmap = getVideoThumbnail(ctx, item.uri)
-                    origBitmap?.let {
-                        val w = it.width.toDouble()
-                        val h = it.height.toDouble()
-                        val ratio = max(w / side, h / side)
-
-                        bitmap = Bitmap.createScaledBitmap(it, (w / ratio).toInt(), (h / ratio).toInt(), true)
-                        origBitmap.recycle()
+                            Bitmap.createScaledBitmap(it, (w / ratio).toInt(), (h / ratio).toInt(), true).also {
+                                origBitmap.recycle()
+                            }
+                        }
                     }
-                } else if (item.type == ITEM_TYPE_IMAGE) {
-                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
-                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+                    ITEM_TYPE_IMAGE -> {
+                        val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
+                        ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+                    }
+                    else -> {
+                        null
+                    }
                 }
             } catch (e: Exception) {
                 Log.d(TAG, "unable to update preview", e)
-            }
+                null
+            } ?: return@executeIfAlive
 
-            if (bitmap != null) {
-                mainExecutor.execute {
-                    if (isStarted && camConfig.lastCapturedItem == item) {
-                        preview.setImageBitmap(bitmap)
-                        isThumbnailLoaded = true
-                    }
+            mainExecutor.execute {
+                if (isStarted && camConfig.lastCapturedItem == item) {
+                    preview.setImageBitmap(bitmap)
+                    isThumbnailLoaded = true
                 }
             }
         }

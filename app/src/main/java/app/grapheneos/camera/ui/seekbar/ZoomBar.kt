@@ -64,11 +64,8 @@ class ZoomBar : AppCompatSeekBar {
     }
 
     private fun togglePanel(visibility: Int) {
-        val transition: Transition = Fade()
-        if (visibility == View.GONE) {
-            transition.duration = 300
-        } else {
-            transition.duration = 0
+        val transition: Transition = Fade().apply {
+            duration = if (visibility == View.GONE) 300 else 0
         }
         transition.addTarget(R.id.zoom_bar_panel)
 

@@ -42,8 +42,8 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) {
-        val intent = it.data
+    ) { activityResult ->
+        val intent = activityResult.data
         val uri = intent?.data?.let {
             if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) {
                 null
@@ -51,21 +51,21 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 it
             }
         }
-        if (uri != null) {
-            contentResolver.takePersistableUriPermission(uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
-            val uriString = uri.toString()
-            camConfig.storageLocation = uriString
-
-            val uiString = storageLocationToUiString(this, uriString)
-            sLField.setText(uiString)
-
-            showMessage(getString(R.string.storage_location_updated, uiString))
-
-        } else {
+        if (uri == null) {
             showMessage(getString(R.string.no_directory_selected))
+            return@registerForActivityResult
         }
+        contentResolver.takePersistableUriPermission(uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+        val uriString = uri.toString()
+        camConfig.storageLocation = uriString
+
+        val uiString = storageLocationToUiString(this, uriString)
+        sLField.setText(uiString)
+
+        showMessage(getString(R.string.storage_location_updated, uiString))
     }
 
 
@@ -92,8 +92,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         sIAPToggle.isChecked = camConfig.saveImageAsPreviewed
 
         sIAPToggle.setOnClickListener {
-            camConfig.saveImageAsPreviewed =
-                sIAPToggle.isChecked
+            camConfig.saveImageAsPreviewed = sIAPToggle.isChecked
         }
 
         rootView = binding.rootView
@@ -111,27 +110,22 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         rSLocation = binding.refreshStorageLocation
         rSLocation.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.are_you_sure)
+                .setMessage(R.string.revert_to_default_directory)
+                .setPositiveButton(R.string.yes) { _, _ ->
+                    val defaultLocation = CamConfig.SettingValues.Default.STORAGE_LOCATION
 
-            val dialog = AlertDialog.Builder(this)
-
-            dialog.setTitle(R.string.are_you_sure)
-
-            dialog.setMessage(R.string.revert_to_default_directory)
-
-            dialog.setPositiveButton(R.string.yes) { _, _ ->
-                val defaultLocation = CamConfig.SettingValues.Default.STORAGE_LOCATION
-
-                if (camConfig.storageLocation != defaultLocation) {
-                    showMessage(getString(R.string.reverted_to_default_directory))
-                    camConfig.storageLocation = defaultLocation
-                    sLField.setText(storageLocationToUiString(this, defaultLocation))
-                } else {
-                    showMessage(getString(R.string.already_using_default_directory))
+                    if (camConfig.storageLocation != defaultLocation) {
+                        showMessage(getString(R.string.reverted_to_default_directory))
+                        camConfig.storageLocation = defaultLocation
+                        sLField.setText(storageLocationToUiString(this, defaultLocation))
+                    } else {
+                        showMessage(getString(R.string.already_using_default_directory))
+                    }
                 }
-            }
-
-            dialog.setNegativeButton(R.string.no, null)
-            dialog.show()
+                .setNegativeButton(R.string.no, null)
+                .show()
         }
 
         pQField = binding.photoQuality

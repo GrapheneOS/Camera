@@ -68,42 +68,44 @@ class GallerySliderAdapter(
             } catch (e: Exception) { null }
 
             gActivity.mainExecutor.execute {
-                if (holder.currentPostion == position) {
-                    if (bitmap != null) {
-                        placeholderText.visibility = View.GONE
-                        mediaPreview.visibility = View.VISIBLE
-                        mediaPreview.setImageBitmap(bitmap)
-
-                        if (item.type == ITEM_TYPE_VIDEO) {
-                            playButton.visibility = View.VISIBLE
-                        } else if (item.type == ITEM_TYPE_IMAGE) {
-                            mediaPreview.enableZooming()
-                        }
-
-                        mediaPreview.setOnClickListener {
-                            val curItem = getCurrentItem()
-                            if (curItem.type == ITEM_TYPE_VIDEO) {
-                                val intent = Intent(gActivity, VideoPlayer::class.java)
-                                intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
-                                intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
-
-                                gActivity.startActivity(intent)
-                            } else {
-                                gActivity.toggleActionBarState()
-                            }
-                        }
-                    } else  {
-                        mediaPreview.visibility = View.INVISIBLE
-
-                        val resId = if (item.type == ITEM_TYPE_IMAGE) {
-                            R.string.inaccessible_image
-                        } else { R.string.inaccessible_video }
-
-                        placeholderText.visibility = View.VISIBLE
-                        placeholderText.setText(gActivity.getString(resId, item.dateString))
-                    }
-                } else {
+                if (holder.currentPostion != position) {
                     bitmap?.recycle()
+                    return@execute
+                }
+
+                if (bitmap == null) {
+                    mediaPreview.visibility = View.INVISIBLE
+
+                    val resId = if (item.type == ITEM_TYPE_IMAGE) {
+                        R.string.inaccessible_image
+                    } else { R.string.inaccessible_video }
+
+                    placeholderText.visibility = View.VISIBLE
+                    placeholderText.text = gActivity.getString(resId, item.dateString)
+                    return@execute
+                }
+
+                placeholderText.visibility = View.GONE
+                mediaPreview.visibility = View.VISIBLE
+                mediaPreview.setImageBitmap(bitmap)
+
+                if (item.type == ITEM_TYPE_VIDEO) {
+                    playButton.visibility = View.VISIBLE
+                } else if (item.type == ITEM_TYPE_IMAGE) {
+                    mediaPreview.enableZooming()
+                }
+
+                mediaPreview.setOnClickListener {
+                    val curItem = getCurrentItem()
+                    if (curItem.type == ITEM_TYPE_VIDEO) {
+                        val intent = Intent(gActivity, VideoPlayer::class.java)
+                        intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
+                        intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
+
+                        gActivity.startActivity(intent)
+                    } else {
+                        gActivity.toggleActionBarState()
+                    }
                 }
             }
         }
