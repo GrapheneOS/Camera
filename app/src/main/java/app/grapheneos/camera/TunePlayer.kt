@@ -4,43 +4,39 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
-import android.os.SystemClock
-import app.grapheneos.camera.ui.activities.MainActivity
 
-private fun prepareMediaPlayer(context: Context, resid: Int, listener: MediaPlayer.OnPreparedListener) {
-    MediaPlayer().apply {
-        setDataSource(context, Uri.parse("android.resource://" + context.getPackageName() + "/" + resid))
-        setOnPreparedListener(listener)
-        prepareAsync()
-    }
-}
 
-class TunePlayer(val context: MainActivity) {
+class TunePlayer(val context: Context,val camConfig: CamConfig) {
 
     private lateinit var shutterPlayer: MediaPlayer
 
-    private lateinit var fSPlayer: MediaPlayer
+    private lateinit var focusSoundPlayer: MediaPlayer
 
-    private lateinit var tIPlayer: MediaPlayer
-    private lateinit var tCPlayer: MediaPlayer
+    private lateinit var timeIncrementPlayer: MediaPlayer
+    private lateinit var itemCapturedCPlayer: MediaPlayer
 
-    private lateinit var vRecPlayer: MediaPlayer
-    private lateinit var vStopPlayer: MediaPlayer
+    private lateinit var videoRecordingStartPlayer: MediaPlayer
+    private lateinit var videoRecordingStopPlayer: MediaPlayer
+
+    private fun prepareMediaPlayer(resId: Int, listener: MediaPlayer.OnPreparedListener) {
+        MediaPlayer().apply {
+            setDataSource(context, Uri.parse("android.resource://${context.packageName}/$resId"))
+            setOnPreparedListener(listener)
+            prepareAsync()
+        }
+    }
 
     init {
-        prepareMediaPlayer(context, R.raw.image_shot, { player -> shutterPlayer = player })
-
-        prepareMediaPlayer(context, R.raw.focus_start, { player -> fSPlayer = player })
-
-        prepareMediaPlayer(context, R.raw.timer_increment, { player -> tIPlayer = player })
-        prepareMediaPlayer(context, R.raw.timer_final_second, { player -> tCPlayer = player })
-
-        prepareMediaPlayer(context, R.raw.video_start, { player -> vRecPlayer = player })
-        prepareMediaPlayer(context, R.raw.video_stop, { player -> vStopPlayer = player })
+        prepareMediaPlayer(R.raw.image_shot) { player -> shutterPlayer = player }
+        prepareMediaPlayer(R.raw.focus_start) { player -> focusSoundPlayer = player }
+        prepareMediaPlayer(R.raw.timer_increment) { player -> timeIncrementPlayer = player }
+        prepareMediaPlayer(R.raw.timer_final_second) { player -> itemCapturedCPlayer = player }
+        prepareMediaPlayer(R.raw.video_start) { player -> videoRecordingStartPlayer = player }
+        prepareMediaPlayer(R.raw.video_stop) { player -> videoRecordingStopPlayer = player }
     }
 
     private fun shouldNotPlayTune(): Boolean {
-        return !context.camConfig.enableCameraSounds
+        return !camConfig.enableCameraSounds
     }
 
     fun playShutterSound() {
@@ -50,38 +46,38 @@ class TunePlayer(val context: MainActivity) {
     }
 
     fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-        if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) {
+        if (shouldNotPlayTune() || !::videoRecordingStartPlayer.isInitialized) {
             onPlayed.run()
             return
         }
-        vRecPlayer.seekTo(0)
-        vRecPlayer.start()
-        vRecPlayer.setOnCompletionListener({
+        videoRecordingStartPlayer.seekTo(0)
+        videoRecordingStartPlayer.start()
+        videoRecordingStartPlayer.setOnCompletionListener {
             handler.postDelayed(onPlayed, 10)
-        })
+        }
     }
 
     fun playVRStopSound() {
-        if (shouldNotPlayTune() || !::vStopPlayer.isInitialized) return
-        vStopPlayer.seekTo(0)
-        vStopPlayer.start()
+        if (shouldNotPlayTune() || !::videoRecordingStopPlayer.isInitialized) return
+        videoRecordingStopPlayer.seekTo(0)
+        videoRecordingStopPlayer.start()
     }
 
     fun playTimerIncrementSound() {
-        if (shouldNotPlayTune() || !::tIPlayer.isInitialized) return
-        tIPlayer.seekTo(0)
-        tIPlayer.start()
+        if (shouldNotPlayTune() || !::timeIncrementPlayer.isInitialized) return
+        timeIncrementPlayer.seekTo(0)
+        timeIncrementPlayer.start()
     }
 
     fun playTimerFinalSSound() {
-        if (shouldNotPlayTune() || !::tCPlayer.isInitialized) return
-        tCPlayer.seekTo(0)
-        tCPlayer.start()
+        if (shouldNotPlayTune() || !::itemCapturedCPlayer.isInitialized) return
+        itemCapturedCPlayer.seekTo(0)
+        itemCapturedCPlayer.start()
     }
 
     fun playFocusStartSound() {
-        if (shouldNotPlayTune() || !::fSPlayer.isInitialized) return
-        fSPlayer.seekTo(0)
-        fSPlayer.start()
+        if (shouldNotPlayTune() || !::focusSoundPlayer.isInitialized) return
+        focusSoundPlayer.seekTo(0)
+        focusSoundPlayer.start()
     }
 }
