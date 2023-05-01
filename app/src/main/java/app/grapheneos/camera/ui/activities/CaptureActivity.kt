@@ -28,10 +28,10 @@ open class CaptureActivity : MainActivity() {
     lateinit var outputUri: Uri
     lateinit var bitmap: Bitmap
 
-    private lateinit var retakeIcon: ImageView
+    private val retakeIcon: ImageView by lazy { binding.retakeIcon }
 
-    private lateinit var flipCameraContent: ImageView
-    lateinit var confirmButton: ImageButton
+    private val flipCameraContent: ImageView by lazy { binding.flipCameraIconContent }
+    val confirmButton: ImageButton by lazy { binding.confirmButton }
 
     fun isOutputUriAvailable(): Boolean {
         return ::outputUri.isInitialized
@@ -39,11 +39,6 @@ open class CaptureActivity : MainActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        retakeIcon = findViewById(R.id.retake_icon)
-        flipCameraContent = findViewById(R.id.flip_camera_icon_content)
-
-        confirmButton = findViewById(R.id.confirm_button)
 
         if (intent.extras?.containsKey(EXTRA_OUTPUT) == true) {
             outputUri = intent.extras?.get(EXTRA_OUTPUT) as Uri
