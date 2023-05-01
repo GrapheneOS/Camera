@@ -22,6 +22,7 @@ import app.grapheneos.camera.R
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
+private const val MAX_ALLOWED_SIZE = 1000000 //1 MB
 open class CaptureActivity : MainActivity() {
 
     lateinit var outputUri: Uri
@@ -210,7 +211,7 @@ open class CaptureActivity : MainActivity() {
 
             setResult(result)
         } else {
-            bitmap = resizeImage(bitmap)
+            bitmap = downscaleIfNeeded(bitmap)
             resultIntent.putExtra("data", bitmap)
             setResult(RESULT_OK, resultIntent)
         }
@@ -226,16 +227,13 @@ open class CaptureActivity : MainActivity() {
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.size).rotate(rotation)
     }
 
-    private fun resizeImage(image: Bitmap): Bitmap {
-
+    private fun downscaleIfNeeded(image: Bitmap): Bitmap {
+        if (bitmap.byteCount <= MAX_ALLOWED_SIZE) return image
+        val downScale = 10
         val width = image.width
         val height = image.height
-
-        val scaleWidth = width / 10
-        val scaleHeight = height / 10
-
-        if (image.byteCount <= 1000000)
-            return image
+        val scaleWidth = width / downScale
+        val scaleHeight = height / downScale
 
         return Bitmap.createScaledBitmap(image, scaleWidth, scaleHeight, false)
     }
