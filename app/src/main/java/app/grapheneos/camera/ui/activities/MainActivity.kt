@@ -11,7 +11,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -120,9 +119,9 @@ open class MainActivity : AppCompatActivity(),
     private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
-    lateinit var previewView: PreviewView
-    lateinit var previewContainer: ConstraintLayout
-    lateinit var bottomOverlay: View
+    val previewView: PreviewView by lazy {  binding.preview }
+    val previewContainer: ConstraintLayout by lazy { binding.previewContainer }
+    val bottomOverlay: View by lazy { binding.bottomOverlay }
 
     // Hold a reference to the manual permission dialog to avoid re-creating it if it
     // is already visible and to dismiss it if the permission gets granted.
@@ -130,77 +129,74 @@ open class MainActivity : AppCompatActivity(),
     private var audioPermissionDialog: AlertDialog? = null
     private var lastFrame: Bitmap? = null
 
-    private lateinit var mainFrame: View
-    lateinit var rootView: View
+    private val mainFrame: View by lazy { binding.mainFrame }
+    val rootView: View by lazy { binding.root }
 
-    lateinit var qrScanToggles: View
-    private lateinit var moreOptionsToggle: View
+    val qrScanToggles: View by lazy { binding.qrScanToggles }
+    private val moreOptionsToggle: View by lazy { binding.moreOptions }
 
-    lateinit var qrToggle: QRToggle
-    lateinit var dmToggle: QRToggle
-    lateinit var cBToggle: QRToggle
-    lateinit var azToggle: QRToggle
+    val qrToggle: QRToggle by lazy { binding.qrScanToggle }
+    val dmToggle: QRToggle by lazy { binding.dataMatrixToggle }
+    val cBToggle: QRToggle by lazy { binding.pdf417Toggle }
+    val azToggle: QRToggle by lazy { binding.aztecToggle }
 
     lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
 
-    lateinit var flipCameraCircle: View
-    lateinit var cancelButtonView: ImageView
-    lateinit var tabLayout: BottomTabLayout
-    lateinit var thirdCircle: ImageView
-    lateinit var captureButton: ImageButton
+    val flipCameraCircle: View by lazy { binding.flipCameraCircle }
+    val cancelButtonView: ImageView by lazy { binding.cancelButton }
+    val tabLayout: BottomTabLayout by lazy { binding.cameraModeTabs }
+    val thirdCircle: ImageView by lazy { binding.thirdCircle }
+    val captureButton: ImageButton by lazy {  binding.captureButton }
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     private lateinit var dbTapGestureDetector: GestureDetector
-    lateinit var timerView: TextView
-    lateinit var thirdOption: View
-    lateinit var imagePreview: ShapeableImageView
-    lateinit var previewLoader: ProgressBar
+    val timerView: TextView by lazy { binding.timer }
+    val thirdOption: View by lazy { binding.thirdOption }
+    val imagePreview: ShapeableImageView by lazy { binding.imagePreview }
+    val previewLoader: ProgressBar by lazy {  binding.previewLoading }
     private var isZooming = false
 
-    lateinit var zoomBar: ZoomBar
-    lateinit var zoomBarPanel: LinearLayout
+    val zoomBar: ZoomBar by lazy { binding.zoomBar }
+    val zoomBarPanel: LinearLayout by lazy { binding.zoomBarPanel }
+    val exposureBar: ExposureBar by lazy { binding.exposureBar }
+    val exposureBarPanel: LinearLayout by lazy { binding.exposureBarPanel }
 
-    lateinit var exposureBar: ExposureBar
-    lateinit var exposureBarPanel: LinearLayout
+    val qrOverlay: QROverlay by lazy {  binding.qrOverlay }
+    val threeButtons: LinearLayout by lazy { binding.threeButtons }
 
-    lateinit var qrOverlay: QROverlay
+    val settingsIcon: ImageView by lazy { binding.settingsOption }
 
-    lateinit var threeButtons: LinearLayout
+    private val exposurePlusIcon: ImageView by lazy {  binding.exposurePlusIcon }
+    private val exposureNegIcon: ImageView by lazy { binding.exposureNegIcon }
 
-    lateinit var settingsIcon: ImageView
+    private val zoomInIcon: ImageView by lazy { binding.zoomInIcon }
+    private val zoomOutIcon: ImageView by lazy { binding.zoomOutIcon }
 
-    private lateinit var exposurePlusIcon: ImageView
-    private lateinit var exposureNegIcon: ImageView
+    val flipCamIcon: ImageView by lazy { binding.flipCameraIconContent }
+    val mainOverlay: ImageView by lazy { binding.mainOverlay }
 
-    private lateinit var zoomInIcon: ImageView
-    private lateinit var zoomOutIcon: ImageView
-
-    lateinit var flipCamIcon: ImageView
-
-    lateinit var mainOverlay: ImageView
-
-    lateinit var settingsDialog: SettingsDialog
-    lateinit var previewGrid: CustomGrid
+    val settingsDialog: SettingsDialog by lazy { SettingsDialog(this) }
+    val previewGrid: CustomGrid by lazy { binding.previewGrid }
 
     private var wasSwiping = false
 
-    lateinit var cdTimer: CountDownTimerUI
+    val cdTimer: CountDownTimerUI by lazy { binding.cTimer }
     var timerDuration = 0
 
-    lateinit var cbText: TextView
-    lateinit var cbCross: ImageView
+    val cbText: TextView by lazy { binding.captureButtonText }
+    val cbCross: ImageView by lazy { binding.captureButtonCross }
 
-    lateinit var gCircleFrame: FrameLayout
+    val gCircleFrame: FrameLayout by lazy {  binding.gCircleFrame }
 
-    private lateinit var gAngleTextView: TextView
-    private lateinit var gCircle: LinearLayout
+    private val gAngleTextView: TextView by lazy { binding.gCircleText }
+    private val gCircle: LinearLayout by lazy { binding.gCircle }
 
-    private lateinit var gLineX: View
-    private lateinit var gLineZ: View
+    private val gLineX: View by lazy { binding.gCircleLineX }
+    private val gLineZ: View by lazy { binding.gCircleLineZ }
 
-    private lateinit var gLeftDash: View
-    private lateinit var gRightDash: View
+    private val gLeftDash: View by lazy { binding.gCircleLeftDash }
+    private val gRightDash: View by lazy { binding.gCircleRightDash }
 
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
 
@@ -223,16 +219,16 @@ open class MainActivity : AppCompatActivity(),
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private lateinit var snackBar: Snackbar
+    private val snackBar: Snackbar by lazy { Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG) }
 
-    private lateinit var focusRing: ImageView
+    private val focusRing: ImageView by lazy { binding.focusRing }
 
     private val focusRingHandler: Handler = Handler(Looper.getMainLooper())
     private val focusRingCallback: Runnable = Runnable {
         focusRing.visibility = View.INVISIBLE
     }
 
-    lateinit var micOffIcon: ImageView
+    val micOffIcon: ImageView by lazy { binding.micOff }
 
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
@@ -533,21 +529,13 @@ open class MainActivity : AppCompatActivity(),
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-        snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
         gestureDetectorCompat = GestureDetectorCompat(this, this)
 
         camConfig = CamConfig(this)
-        mainOverlay = binding.mainOverlay
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
-        thirdOption = binding.thirdOption
-        previewLoader = binding.previewLoading
-        imagePreview = binding.imagePreview
-        previewView = binding.preview
         previewView.scaleType = PreviewView.ScaleType.FIT_START
-        previewContainer = binding.previewContainer
-        bottomOverlay = binding.bottomOverlay
         scaleGestureDetector = ScaleGestureDetector(this, this)
         dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -571,8 +559,6 @@ open class MainActivity : AppCompatActivity(),
             }
         })
 
-        tabLayout = binding.cameraModeTabs
-
         tabLayout.setOnTouchListener { _, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP) {
                 val tab = tabLayout.getTabAtX(tabLayout.scrollX)
@@ -583,7 +569,6 @@ open class MainActivity : AppCompatActivity(),
             return@setOnTouchListener false
         }
 
-        timerView = binding.timer
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
@@ -605,9 +590,6 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
-        flipCameraCircle = binding.flipCameraCircle
-
-        flipCamIcon = binding.flipCameraIconContent
 
         var tapDownTimestamp: Long = 0
         flipCameraCircle.setOnTouchListener { _, event ->
@@ -668,7 +650,6 @@ open class MainActivity : AppCompatActivity(),
             it.startAnimation(rotate)
             camConfig.toggleCameraSelector()
         }
-        thirdCircle = binding.thirdCircle
         thirdCircle.setOnClickListener {
             resetAutoSleep()
             if (videoCapturer.isRecording) {
@@ -698,11 +679,9 @@ open class MainActivity : AppCompatActivity(),
             } else {
                 shareLatestMedia()
             }
-
             return@setOnLongClickListener true
         }
 
-        captureButton = binding.captureButton
         captureButton.setOnClickListener {
             resetAutoSleep()
             if (camConfig.isVideoMode) {
@@ -733,7 +712,6 @@ open class MainActivity : AppCompatActivity(),
             }
         }
 
-        cancelButtonView = binding.cancelButton
 //        cancelButtonView.setOnClickListener(object : View.OnClickListener {
 //
 //            val SWITCH_ANIM_DURATION = 150
@@ -767,20 +745,8 @@ open class MainActivity : AppCompatActivity(),
 //            }
 //        })
 
-        zoomBar = binding.zoomBar
         zoomBar.setMainActivity(this)
-
-        zoomBarPanel = binding.zoomBarPanel
-
-        exposureBar = binding.exposureBar
         exposureBar.setMainActivity(this)
-
-        exposureBarPanel = binding.exposureBarPanel
-
-        qrOverlay = binding.qrOverlay
-
-        threeButtons = binding.threeButtons
-        settingsIcon = binding.settingsOption
         settingsIcon.setOnClickListener {
             if (!camConfig.isQRMode)
                 settingsDialog.show()
@@ -806,20 +772,7 @@ open class MainActivity : AppCompatActivity(),
                 }
             })
 
-        exposurePlusIcon = binding.exposurePlusIcon
-        exposureNegIcon = binding.exposureNegIcon
-
-        zoomInIcon = binding.zoomInIcon
-        zoomOutIcon = binding.zoomOutIcon
-
-        previewGrid = binding.previewGrid
         previewGrid.setMainActivity(this)
-
-        rootView = binding.root
-
-        mainFrame = binding.mainFrame
-
-        qrScanToggles = binding.qrScanToggles
 
         var isInsetSet = false
 
@@ -879,21 +832,11 @@ open class MainActivity : AppCompatActivity(),
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        cdTimer = binding.cTimer
         cdTimer.setMainActivity(this)
-
-        cbText = binding.captureButtonText
-        cbCross = binding.captureButtonCross
-
-        settingsDialog = SettingsDialog(this)
 
         SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
             forceUpdateOrientationSensor()
         }
-
-        focusRing = binding.focusRing
-
-        micOffIcon = binding.micOff
 
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
@@ -905,39 +848,23 @@ open class MainActivity : AppCompatActivity(),
             }
         )
 
-        moreOptionsToggle = binding.moreOptions
         moreOptionsToggle.setOnClickListener {
             camConfig.showMoreOptionsForQR()
         }
 
-        qrToggle = binding.qrScanToggle
         qrToggle.mActivity = this
         qrToggle.key = BarcodeFormat.QR_CODE.name
 
-        dmToggle = binding.dataMatrixToggle
         dmToggle.mActivity = this
         dmToggle.key = BarcodeFormat.DATA_MATRIX.name
 
-        cBToggle = binding.pdf417Toggle
         cBToggle.mActivity = this
         cBToggle.key = BarcodeFormat.PDF_417.name
 
-        azToggle = binding.aztecToggle
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
         camConfig.loadSettings()
-
-        gCircle = binding.gCircle
-        gAngleTextView = binding.gCircleText
-
-        gLineX = binding.gCircleLineX
-        gLineZ = binding.gCircleLineZ
-
-        gLeftDash = binding.gCircleLeftDash
-        gRightDash = binding.gCircleRightDash
-
-        gCircleFrame = binding.gCircleFrame
     }
 
     private fun repositionTabLayout() {
