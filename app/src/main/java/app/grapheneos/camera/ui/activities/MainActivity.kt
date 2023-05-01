@@ -80,6 +80,7 @@ import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.capturer.isTakingPicture
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
+import app.grapheneos.camera.ktx.SystemSettingsObserver
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -224,13 +225,6 @@ open class MainActivity : AppCompatActivity(),
     private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var snackBar: Snackbar
-
-    private val autoRotateSettingObserver =
-        object : ContentObserver(Handler(Looper.myLooper()!!)) {
-            override fun onChange(selfChange: Boolean) {
-                forceUpdateOrientationSensor()
-            }
-        }
 
     private lateinit var focusRing: ImageView
 
@@ -927,11 +921,9 @@ open class MainActivity : AppCompatActivity(),
 
         settingsDialog = SettingsDialog(this)
 
-        contentResolver.registerContentObserver(
-            Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION),
-            true,
-            autoRotateSettingObserver
-        )
+        SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
+            forceUpdateOrientationSensor()
+        }
 
         focusRing = binding.focusRing
 
