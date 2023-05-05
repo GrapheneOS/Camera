@@ -1333,9 +1333,6 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun showMoreOptionsForQR() {
-        val builder = AlertDialog.Builder(mActivity)
-        builder.setTitle(mActivity.resources.getString(R.string.more_options))
-
         val optionNames = arrayListOf<String>()
         val optionValues = arrayListOf<Boolean>()
 
@@ -1354,60 +1351,54 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
-        builder.setMultiChoiceItems(
-            optionNames.toArray(arrayOf<String>()),
-            optionValues.toBooleanArray()
-        ) { _, index, isChecked ->
-            optionValues[index] = isChecked
-        }
+        AlertDialog.Builder(mActivity)
+            .setTitle(mActivity.resources.getString(R.string.more_options))
+            .setMultiChoiceItems(optionNames.toArray(arrayOf<String>()),
+                optionValues.toBooleanArray()
+            ) { _, index, isChecked ->
+                optionValues[index] = isChecked
+            }
+            .setPositiveButton(getString(R.string.ok)) { _, _ ->
 
-        // Add OK and Cancel buttons
-        builder.setPositiveButton(getString(R.string.ok)) { _, _ ->
+                commonPref.edit {
+                    for (index in 0 until optionNames.size) {
 
-            commonPref.edit {
-                for (index in 0 until optionNames.size) {
+                        val optionName = optionNames[index]
+                        val optionValue = optionValues[index]
 
-                    val optionName = optionNames[index]
-                    val optionValue = optionValues[index]
+                        val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
 
-                    val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
+                        val format = BarcodeFormat.valueOf(optionName)
 
-                    val format = BarcodeFormat.valueOf(optionName)
+                        if (optionValue) {
+                            allowedFormats.add(format)
 
-                    if (optionValue) {
-                        allowedFormats.add(format)
+                            putBoolean(formatSRep, true)
+                        } else if (format in allowedFormats) {
+                            if (allowedFormats.size == 1) {
+                                mActivity.showMessage(
+                                    getString(R.string.no_barcode_selected)
+                                )
+                            } else {
+                                allowedFormats.remove(format)
 
-                        putBoolean(formatSRep, true)
-                    } else if (format in allowedFormats) {
-                        if (allowedFormats.size == 1) {
-                            mActivity.showMessage(
-                                getString(R.string.no_barcode_selected)
-                            )
-                        } else {
-                            allowedFormats.remove(format)
-
-                            putBoolean(formatSRep, false)
+                                putBoolean(formatSRep, false)
+                            }
                         }
                     }
                 }
+
+                qrAnalyzer?.refreshHints()
             }
+            .setNegativeButton(R.string.cancel, null)
+            .create().apply {
+                setOnShowListener {
+                    val button: Button = (this as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
+                    button.setOnClickListener {
 
-            qrAnalyzer?.refreshHints()
-        }
-
-        builder.setNegativeButton(R.string.cancel, null)
-
-        // Create and show the alert dialog
-        val dialog = builder.create()
-
-        dialog.setOnShowListener {
-            val button: Button = (dialog as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
-            button.setOnClickListener {
-
-            }
-        }
-
-        dialog.show()
+                    }
+                }
+            }.show()
     }
 
     fun onStorageLocationNotFound() {
