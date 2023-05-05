@@ -454,80 +454,52 @@ class SettingsDialog(val mActivity: MainActivity) :
 
     fun selfIllumination() {
 
-        if (camConfig.selfIlluminate) {
+        val colorFrom: Int? = if (camConfig.selfIlluminate) Color.BLACK
+        else if (wasSelfIlluminationOn) mActivity.getColor(R.color.self_illumination_light)
+        else null
 
-            val colorFrom: Int = Color.BLACK
-            val colorTo: Int = mActivity.getColor(R.color.self_illumination_light)
+        val colorTo: Int? = if (camConfig.selfIlluminate) mActivity.getColor(R.color.self_illumination_light)
+        else if (wasSelfIlluminationOn) Color.BLACK
+        else null
 
-            val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
-            colorAnimation1.duration = 300
-            colorAnimation1.addUpdateListener { animator ->
-                val color = animator.animatedValue as Int
-                mActivity.previewView.setBackgroundColor(color)
-                mActivity.rootView.setBackgroundColor(color)
-                mActivity.bottomOverlay.setBackgroundColor(color)
-                window?.statusBarColor = color
-            }
+        val brightness : Float? = if (camConfig.selfIlluminate) 1f
+        else if (wasSelfIlluminationOn) getSystemBrightness()
+        else null
 
-            val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, Color.BLACK)
-            colorAnimation2.duration = 300
-            colorAnimation2.addUpdateListener { animator ->
-                mActivity.tabLayout.setTabTextColors(
-                    animator.animatedValue as Int,
-                    Color.WHITE
-                )
-            }
-
-            val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), bgBlue, Color.BLACK)
-            colorAnimation3.duration = 300
-            colorAnimation3.addUpdateListener { animator ->
-                mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
-            }
-
-            colorAnimation1.start()
-            colorAnimation2.start()
-            colorAnimation3.start()
-
-            setBrightness(1f)
-
-        } else if (wasSelfIlluminationOn) {
-
-            val colorFrom: Int = mActivity.getColor(R.color.self_illumination_light)
-            val colorTo: Int = Color.BLACK
-
-            val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
-            colorAnimation1.duration = 300
-            colorAnimation1.addUpdateListener { animator ->
-                val color = animator.animatedValue as Int
-                mActivity.previewView.setBackgroundColor(color)
-                mActivity.rootView.setBackgroundColor(color)
-                mActivity.bottomOverlay.setBackgroundColor(color)
-                window?.statusBarColor = color
-            }
-
-            val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, Color.WHITE)
-            colorAnimation2.duration = 300
-            colorAnimation2.addUpdateListener { animator ->
-                mActivity.tabLayout.setTabTextColors(
-                    animator.animatedValue as Int,
-                    Color.WHITE
-                )
-            }
-
-            val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, bgBlue)
-            colorAnimation3.duration = 300
-            colorAnimation3.addUpdateListener { animator ->
-                mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
-            }
-
-            colorAnimation1.start()
-            colorAnimation2.start()
-            colorAnimation3.start()
-
-            setBrightness(getSystemBrightness())
+        if (colorFrom == null || colorTo == null ) {
+            wasSelfIlluminationOn = camConfig.selfIlluminate
+            return
         }
 
-        wasSelfIlluminationOn = camConfig.selfIlluminate
+        val colorAnimation1 = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
+        colorAnimation1.duration = 300
+        colorAnimation1.addUpdateListener { animator ->
+            val color = animator.animatedValue as Int
+            mActivity.previewView.setBackgroundColor(color)
+            mActivity.rootView.setBackgroundColor(color)
+            mActivity.bottomOverlay.setBackgroundColor(color)
+            window?.statusBarColor = color
+        }
+
+        val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, Color.BLACK)
+        colorAnimation2.duration = 300
+        colorAnimation2.addUpdateListener { animator ->
+            mActivity.tabLayout.setTabTextColors(
+                animator.animatedValue as Int,
+                Color.WHITE
+            )
+        }
+
+        val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), bgBlue, Color.BLACK)
+        colorAnimation3.duration = 300
+        colorAnimation3.addUpdateListener { animator ->
+            mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
+        }
+
+        colorAnimation1.start()
+        colorAnimation2.start()
+        colorAnimation3.start()
+        brightness?.let { setBrightness(it) }
     }
 
     private val slideDownAnimation: Animation by lazy {
