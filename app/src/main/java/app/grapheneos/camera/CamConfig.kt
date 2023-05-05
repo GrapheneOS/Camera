@@ -1197,58 +1197,34 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun snapPreview() {
+        val animation: Animation = AlphaAnimation(0f, 0.8f).apply {
+            duration = if (selfIlluminate) PREVIEW_SL_OVERLAY_DUR else PREVIEW_SNAP_DURATION
+            interpolator = LinearInterpolator()
+            if (selfIlluminate) fillAfter = true
+            repeatMode = Animation.REVERSE
+        }
 
-        if (selfIlluminate) {
+        val imageSource = if (selfIlluminate) android.R.color.white else android.R.color.black
+        mActivity.mainOverlay.setImageResource(imageSource)
 
-            val animation: Animation = AlphaAnimation(0f, 0.8f)
-            animation.duration = PREVIEW_SL_OVERLAY_DUR
-            animation.interpolator = LinearInterpolator()
-            animation.fillAfter = true
-
-            mActivity.mainOverlay.setImageResource(android.R.color.white)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {}
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
+        animation.setAnimationListener(
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.VISIBLE
                 }
-            )
 
-            mActivity.mainOverlay.startAnimation(animation)
-
-        } else {
-
-            val animation: Animation = AlphaAnimation(1f, 0f)
-            animation.duration = PREVIEW_SNAP_DURATION
-            animation.interpolator = LinearInterpolator()
-            animation.repeatMode = Animation.REVERSE
-
-            mActivity.mainOverlay.setImageResource(android.R.color.black)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {
+                override fun onAnimationEnd(p0: Animation?) {
+                    if (!selfIlluminate) {
                         mActivity.mainOverlay.visibility = View.INVISIBLE
                         mActivity.mainOverlay.setImageResource(android.R.color.transparent)
                     }
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
                 }
-            )
 
-            mActivity.mainOverlay.startAnimation(animation)
-        }
+                override fun onAnimationRepeat(p0: Animation?) {}
+
+            }
+        )
+        mActivity.mainOverlay.startAnimation(animation)
     }
 
     private fun availableModes(): Set<CameraMode> {
