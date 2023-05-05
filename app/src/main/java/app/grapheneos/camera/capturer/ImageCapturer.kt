@@ -109,33 +109,32 @@ class ImageCapturer(val mActivity: MainActivity) {
         camConfig.snapPreview()
 
         mActivity.previewLoader.visibility = View.VISIBLE
-        if (camConfig.selfIlluminate) {
+        if (!camConfig.selfIlluminate) return
 
-            val animation: Animation = AlphaAnimation(0.8f, 0f)
-            animation.duration = 200
-            animation.interpolator = LinearInterpolator()
-            animation.fillAfter = true
-
-            mActivity.mainOverlay.setImageResource(android.R.color.white)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.INVISIBLE
-                        mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                    }
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
-                }
-            )
-
-            mActivity.mainOverlay.startAnimation(animation)
+        val animation: Animation = AlphaAnimation(0.8f, 0f).apply {
+            duration = 200
+            interpolator = LinearInterpolator()
+            fillAfter = true
         }
+
+        mActivity.mainOverlay.setImageResource(android.R.color.white)
+        animation.setAnimationListener(
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.VISIBLE
+                }
+
+                override fun onAnimationEnd(p0: Animation?) {
+                    mActivity.mainOverlay.visibility = View.INVISIBLE
+                    mActivity.mainOverlay.setImageResource(android.R.color.transparent)
+                }
+
+                override fun onAnimationRepeat(p0: Animation?) {}
+
+            }
+        )
+
+        mActivity.mainOverlay.startAnimation(animation)
     }
 
     fun onCaptureError(exception: ImageCaptureException) {
