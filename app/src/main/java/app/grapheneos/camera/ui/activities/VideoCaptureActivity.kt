@@ -10,16 +10,13 @@ import app.grapheneos.camera.R
 
 class VideoCaptureActivity : CaptureActivity() {
 
-    private lateinit var whiteOptionCircle: ImageView
-    private lateinit var playPreview: ImageView
+    private val whiteOptionCircle: ImageView by lazy { binding.whiteOptionCircle }
+    private val playPreview: ImageView by lazy { binding.playPreview }
 
     private var savedUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        whiteOptionCircle = findViewById(R.id.white_option_circle)
-        playPreview = findViewById(R.id.play_preview)
 
         captureButton.setImageResource(R.drawable.recording)
 
