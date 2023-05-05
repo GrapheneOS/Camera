@@ -828,26 +828,26 @@ class CamConfig(private val mActivity: MainActivity) {
                 false
             )
 
-            if (isEnabled) {
-                if (format !in allowedFormats) {
-                    allowedFormats.add(format)
-                }
+            if (!isEnabled) continue
 
-                if (format == BarcodeFormat.QR_CODE) {
-                    mActivity.qrToggle.isSelected = true
-                }
+            if (format !in allowedFormats) {
+                allowedFormats.add(format)
+            }
 
-                if (format == BarcodeFormat.AZTEC) {
-                    mActivity.azToggle.isSelected = true
-                }
+            if (format == BarcodeFormat.QR_CODE) {
+                mActivity.qrToggle.isSelected = true
+            }
 
-                if (format == BarcodeFormat.PDF_417) {
-                    mActivity.cBToggle.isSelected = true
-                }
+            if (format == BarcodeFormat.AZTEC) {
+                mActivity.azToggle.isSelected = true
+            }
 
-                if (format == BarcodeFormat.DATA_MATRIX) {
-                    mActivity.dmToggle.isSelected = true
-                }
+            if (format == BarcodeFormat.PDF_417) {
+                mActivity.cBToggle.isSelected = true
+            }
+
+            if (format == BarcodeFormat.DATA_MATRIX) {
+                mActivity.dmToggle.isSelected = true
             }
         }
 
