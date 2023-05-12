@@ -41,8 +41,7 @@
                     app:layout_constraintTop_toTopOf="@id/preview"
                     app:layout_constraintStart_toStartOf="@id/preview"
                     app:layout_constraintEnd_toEndOf="@id/preview"
-                    app:layout_constraintBottom_toBottomOf="@id/preview"
-                    android:layerType="software"/>
+                    app:layout_constraintBottom_toBottomOf="@id/preview" />
 
                 <ImageView
                     android:layout_width="84dp"
