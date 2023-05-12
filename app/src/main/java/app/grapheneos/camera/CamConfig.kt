@@ -1112,18 +1112,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
             )
 
-        @androidx.camera.camera2.interop.ExperimentalCamera2Interop
-        if (isVideoMode && enableEIS) {
-            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
-                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON
-            )
-        } else {
-            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
-                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
-            )
-        }
+        setStabilizationEnabled(previewBuilder,isVideoMode && enableEIS)
 
         preview = previewBuilder.build().also {
             useCaseGroupBuilder.addUseCase(it)
@@ -1194,6 +1183,18 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             mActivity.gCircleFrame.visibility = View.GONE
         }
+    }
+
+    @androidx.camera.camera2.interop.ExperimentalCamera2Interop
+    private fun setStabilizationEnabled(previewBuilder: Preview.Builder, enabled : Boolean) {
+        val mode =
+            if (enabled) CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON
+            else CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+
+        Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
+            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+            mode
+        )
     }
 
     fun snapPreview() {
