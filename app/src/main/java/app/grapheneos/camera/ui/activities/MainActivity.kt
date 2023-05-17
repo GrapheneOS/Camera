@@ -312,37 +312,44 @@ open class MainActivity : AppCompatActivity(),
         focusRing.visibility = View.VISIBLE
         focusRing.alpha = 1f
 
-        if (areSystemAnimationsEnabled()) {
-            // Animate the focus ring to disappear
-            focusRing.animate()
-                .setStartDelay(500)
-                .setDuration(300)
-                .alpha(0f)
-                .setListener(object : Animator.AnimatorListener {
+        val alphaValueHidden = 0f
+        val focusAnimationStartDurationMilli = 500L
+        val focusAnimationDurationMilli = 300L
+        val totalAnimationDuration = focusAnimationStartDurationMilli + focusAnimationDurationMilli
 
-                    var isCancelled = false
-
-                    override fun onAnimationStart(animation: Animator) {}
-
-                    override fun onAnimationEnd(animator: Animator) {
-
-                        if (!isCancelled) {
-                            focusRing.visibility = View.INVISIBLE
-                        }
-
-                        isCancelled = false
-                    }
-
-                    override fun onAnimationCancel(animation: Animator) {
-                        isCancelled = true
-                    }
-
-                    override fun onAnimationRepeat(animation: Animator) {}
-                }).start()
-        } else {
+        if (!areSystemAnimationsEnabled()) {
             focusRingHandler.removeCallbacks(focusRingCallback)
-            focusRingHandler.postDelayed(focusRingCallback, 800)
+            focusRingHandler.postDelayed(focusRingCallback, totalAnimationDuration)
+            return
         }
+
+        // Animate the focus ring to disappear
+        focusRing.animate()
+            .setStartDelay(focusAnimationStartDurationMilli)
+            .setDuration(focusAnimationDurationMilli)
+            .alpha(alphaValueHidden)
+            .setListener(object : Animator.AnimatorListener {
+
+                var isCancelled = false
+
+                override fun onAnimationStart(animation: Animator) {}
+
+                override fun onAnimationEnd(animator: Animator) {
+
+                    if (!isCancelled) {
+                        focusRing.visibility = View.INVISIBLE
+                    }
+
+                    isCancelled = false
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                    isCancelled = true
+                }
+
+                override fun onAnimationRepeat(animation: Animator) {}
+            }).start()
+
     }
 
     private fun areSystemAnimationsEnabled(): Boolean {
