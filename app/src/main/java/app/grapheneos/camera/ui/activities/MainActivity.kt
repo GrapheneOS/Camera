@@ -1151,22 +1151,22 @@ open class MainActivity : AppCompatActivity(),
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
 
     private fun rotateView(view: View?, angle: Float) {
-        if (view != null) {
-            view.animate().cancel()
+        if (view == null ) return
 
-            // Ensuring that the rotation seems continuous
-            if (view.rotation == 0f && angle == 270f)
-                view.rotation = 360f
+        view.animate().cancel()
 
-            if (view.rotation == 270f && angle == 0f)
-                view.rotation = -90f
+        // Ensuring that the rotation seems continuous
+        if (view.rotation == 0f && angle == 270f)
+            view.rotation = 360f
 
-            view.animate()
-                .rotation(angle)
-                .setDuration(400)
-                .setInterpolator(LinearInterpolator())
-                .start()
-        }
+        if (view.rotation == 270f && angle == 0f)
+            view.rotation = -90f
+
+        view.animate()
+            .rotation(angle)
+            .setDuration(400)
+            .setInterpolator(LinearInterpolator())
+            .start()
     }
 
     @SuppressLint("RestrictedApi")
