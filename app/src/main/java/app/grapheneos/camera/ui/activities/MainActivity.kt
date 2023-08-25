@@ -1341,21 +1341,25 @@ open class MainActivity : AppCompatActivity(),
         return false
     }
 
-    override fun onScroll(p0: MotionEvent, p1: MotionEvent, p2: Float, p3: Float): Boolean {
+    override fun onScroll(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
         return false
     }
 
     override fun onLongPress(p0: MotionEvent) {}
 
     override fun onFling(
-        e1: MotionEvent, e2: MotionEvent,
-        velocityX: Float, velocityY: Float
+        p0: MotionEvent?,
+        e1: MotionEvent,
+        velocityX: Float,
+        velocityY: Float
     ): Boolean {
 
         var result = false
         try {
-            val diffY = e2.y - e1.y
-            val diffX = e2.x - e1.x
+            p0 ?: return false
+
+            val diffY = e1.y - p0.y
+            val diffX = e1.x - p0.x
 
             if (abs(diffX) > abs(diffY)) {
                 if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
