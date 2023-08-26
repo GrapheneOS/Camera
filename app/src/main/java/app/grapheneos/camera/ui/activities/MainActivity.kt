@@ -1331,35 +1331,40 @@ open class MainActivity : AppCompatActivity(),
         private const val SWIPE_VELOCITY_THRESHOLD = 100
     }
 
-    override fun onDown(p0: MotionEvent): Boolean {
+    override fun onDown(e: MotionEvent): Boolean {
         return false
     }
 
-    override fun onShowPress(p0: MotionEvent) {}
+    override fun onShowPress(e: MotionEvent) {}
 
-    override fun onSingleTapUp(p0: MotionEvent): Boolean {
+    override fun onSingleTapUp(e: MotionEvent): Boolean {
         return false
     }
 
-    override fun onScroll(p0: MotionEvent?, p1: MotionEvent, p2: Float, p3: Float): Boolean {
+    override fun onScroll(
+        e1: MotionEvent?,
+        e2: MotionEvent,
+        distanceX: Float,
+        distanceY: Float
+    ): Boolean {
         return false
     }
 
-    override fun onLongPress(p0: MotionEvent) {}
+    override fun onLongPress(e: MotionEvent) {}
 
     override fun onFling(
-        p0: MotionEvent?,
-        e1: MotionEvent,
+        e1: MotionEvent?,
+        e2: MotionEvent,
         velocityX: Float,
         velocityY: Float
     ): Boolean {
 
         var result = false
         try {
-            p0 ?: return false
+            e1 ?: return false
 
-            val diffY = e1.y - p0.y
-            val diffX = e1.x - p0.x
+            val diffY = e2.y - e1.y
+            val diffX = e2.x - e1.x
 
             if (abs(diffX) > abs(diffY)) {
                 if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
