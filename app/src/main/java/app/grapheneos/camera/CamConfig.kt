@@ -1165,7 +1165,7 @@ class CamConfig(private val mActivity: MainActivity) {
         loadTabs()
 
         camera?.cameraInfo?.zoomState?.observe(mActivity) {
-            if (it.linearZoom != 0f) {
+            if (it.linearZoom != 0f || it.zoomRatio != 1f) {
                 mActivity.zoomBar.updateThumb()
             }
         }
