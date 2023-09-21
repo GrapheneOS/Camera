@@ -90,6 +90,7 @@ import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
+import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.resolveActivity
@@ -501,6 +502,12 @@ open class MainActivity : AppCompatActivity(),
                 // CameraX will start the continuous autofocus (if supported) automatically
                 previewView.controller?.cameraControl?.cancelFocusAndMetering()
             }
+            KeyEvent.KEYCODE_ZOOM_IN -> {
+                cameraControl.zoomIn()
+            }
+            KeyEvent.KEYCODE_ZOOM_OUT -> {
+                cameraControl.zoomOut()
+            }
         }
         return true
     }
@@ -574,6 +581,7 @@ open class MainActivity : AppCompatActivity(),
         gestureDetectorCompat = GestureDetectorCompat(this, this)
 
         camConfig = CamConfig(this)
+        cameraControl = CameraControl(camConfig)
         mainOverlay = binding.mainOverlay
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
@@ -1332,6 +1340,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     lateinit var camConfig: CamConfig
+    private lateinit var cameraControl: CameraControl
 
     companion object {
         private const val TAG = "GOCam"
