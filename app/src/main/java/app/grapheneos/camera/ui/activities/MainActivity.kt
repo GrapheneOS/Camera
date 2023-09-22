@@ -496,6 +496,11 @@ open class MainActivity : AppCompatActivity(),
             KeyEvent.KEYCODE_CAMERA -> {
                 captureButton.performClick()
             }
+            KeyEvent.KEYCODE_FOCUS -> {
+                // cancel any manual focus
+                // CameraX will start the continuous autofocus (if supported) automatically
+                previewView.controller?.cameraControl?.cancelFocusAndMetering()
+            }
         }
         return true
     }
