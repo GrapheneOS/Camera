@@ -485,13 +485,19 @@ open class MainActivity : AppCompatActivity(),
             return true
         }
 
-        if (!camConfig.isQRMode && (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
-                    keyCode == KeyEvent.KEYCODE_VOLUME_UP)
-        ) {
-            captureButton.performClick()
-            return true
+        // there are no camera controls in qr mode
+        if (camConfig.isQRMode) {
+            return super.onKeyUp(keyCode, event)
         }
-        return super.onKeyUp(keyCode, event)
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_DOWN,
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_CAMERA -> {
+                captureButton.performClick()
+            }
+        }
+        return true
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
