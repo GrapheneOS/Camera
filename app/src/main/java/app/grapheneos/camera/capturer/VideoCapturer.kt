@@ -210,13 +210,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         when (event.error) {
                             VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
                                 ctx.showMessage(R.string.recording_too_short_to_be_saved)
+                                return@start
                             }
-
-                            else -> {
+                            VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED -> {
                                 ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                                return@start
+                            }
+                            else -> {
+                                ctx.showMessage(ctx.getString(R.string.error_during_recording, event.error))
                             }
                         }
-                        return@start
                     }
 
                     val uri = recordingCtx.uri
