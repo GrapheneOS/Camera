@@ -198,7 +198,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         beforeRecordingStarts()
         isRecording = true
-        camConfig.mPlayer.playVRStartSound(handler, {
+        camConfig.mPlayer.playVRStartSound(handler) {
             startTimer()
             recording = pendingRecording.start(ctx.mainExecutor) { event ->
                 if (event is VideoRecordEvent.Finalize) {
@@ -249,7 +249,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        })
+        }
     }
 
     private val dp16 = 16 * mActivity.resources.displayMetrics.density
