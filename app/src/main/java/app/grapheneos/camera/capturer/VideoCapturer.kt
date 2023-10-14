@@ -207,7 +207,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     camConfig.mPlayer.playVRStopSound()
 
                     if (event.hasError()) {
-                        if (event.error == 8) {
+                        if (event.error == VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA) {
                             ctx.showMessage(R.string.recording_too_short_to_be_saved)
                         } else {
                             ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
