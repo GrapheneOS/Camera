@@ -167,6 +167,7 @@
     <string name="recording_too_short_to_be_saved">Recording too short to be saved</string>
     <string name="unable_to_save_video">Unable to save this video</string>
     <string name="unable_to_save_video_verbose">Unable to save this video, error code: %d</string>
+    <string name="error_during_recording">A error has occurred finishing the current recording, error code: %d</string>
     <string name="unable_to_access_output_file">Unable to access output file</string>
     <string name="please_wait_for_image_to_get_captured_before_opening">Please wait for the image to get captured before trying to open the gallery.</string>
     <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
