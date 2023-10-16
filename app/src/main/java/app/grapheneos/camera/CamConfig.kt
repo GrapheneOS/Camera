@@ -914,10 +914,10 @@ class CamConfig(private val mActivity: MainActivity) {
             // Else revert back to the old facing (while displaying an error message
             // to the user)
             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                mActivity.showMessage(getString(R.string.front_camera_unavailable))
+                mActivity.showMessage(getString(R.string.rear_camera_unavailable))
                 CameraSelector.LENS_FACING_FRONT
             } else {
-                mActivity.showMessage(getString(R.string.rear_camera_unavailable))
+                mActivity.showMessage(getString(R.string.front_camera_unavailable))
                 CameraSelector.LENS_FACING_BACK
             }
         }
