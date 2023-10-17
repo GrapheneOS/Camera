@@ -174,7 +174,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             if (ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PERMISSION_GRANTED) {
                 includeAudio = true
             } else {
-                ctx.requestAudioPermission()
+                ctx.restartRecordingWithMicPermission()
                 return
             }
         }
