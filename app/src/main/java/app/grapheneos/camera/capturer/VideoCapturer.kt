@@ -212,7 +212,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                                 ctx.showMessage(R.string.recording_too_short_to_be_saved)
                                 return@start
                             }
-                            VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED -> {
+                            VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
+                            VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
+                            VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
                                 ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
                                 return@start
                             }
