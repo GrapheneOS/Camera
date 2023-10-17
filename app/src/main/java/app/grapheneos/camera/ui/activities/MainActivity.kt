@@ -119,7 +119,6 @@ open class MainActivity : AppCompatActivity(),
 
     private lateinit var binding: ActivityMainBinding
 
-    private val audioPermission = arrayOf(Manifest.permission.RECORD_AUDIO)
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
     lateinit var previewView: PreviewView
@@ -244,6 +243,18 @@ open class MainActivity : AppCompatActivity(),
         handler.removeCallbacks(runnable)
     }
 
+    private val restartRecordingWithAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            videoCapturer.startRecording()
+            return@registerForActivityResult
+        }
+        showAudioPermissionDeniedDialog {
+            videoCapturer.startRecording()
+        }
+    }
+
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
@@ -255,28 +266,7 @@ open class MainActivity : AppCompatActivity(),
                 Log.i(TAG, "Permission granted for recording audio.")
             } else {
                 Log.i(TAG, "Permission denied for recording audio.")
-                val builder =
-                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                builder.setTitle(R.string.audio_permission_dialog_title)
-                builder.setMessage(R.string.audio_permission_dialog_message)
-
-                // Open the settings menu for the current app
-                builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    val uri = Uri.fromParts(
-                        "package",
-                        packageName, null
-                    )
-                    intent.data = uri
-                    startActivity(intent)
-                }
-                builder.setNegativeButton(R.string.cancel, null)
-
-                builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-                    camConfig.includeAudio = false
-                }
-
-                audioPermissionDialog = builder.show()
+                showAudioPermissionDeniedDialog()
             }
         }
         if (permissions.containsKey(Manifest.permission.CAMERA)) {
@@ -309,6 +299,32 @@ open class MainActivity : AppCompatActivity(),
         }
 
         Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
+    }
+
+    private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {
+        val builder =
+            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        builder.setTitle(R.string.audio_permission_dialog_title)
+        builder.setMessage(R.string.audio_permission_dialog_message)
+
+        // Open the settings menu for the current app
+        builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            val uri = Uri.fromParts(
+                "package",
+                packageName, null
+            )
+            intent.data = uri
+            startActivity(intent)
+        }
+        builder.setNegativeButton(R.string.cancel, null)
+
+        builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
+            camConfig.includeAudio = false
+            onDisableAudio()
+        }
+
+        audioPermissionDialog = builder.show()
     }
 
     fun updateLastFrame() {
@@ -1048,8 +1064,8 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    fun requestAudioPermission() {
-        requestPermissionLauncher.launch(audioPermission)
+    fun restartRecordingWithMicPermission() {
+        restartRecordingWithAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     private fun shareLatestMedia() {
