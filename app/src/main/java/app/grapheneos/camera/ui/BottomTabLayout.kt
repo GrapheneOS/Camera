@@ -27,7 +27,7 @@ class BottomTabLayout @JvmOverloads constructor(
 
         if (tabCount == 0) return
 
-        tabParent = getChildAt(0) as ViewGroup
+        tabParent = getChildAt(0) as ViewGroup? ?: return
         val firstTab = tabParent.getChildAt(0)
         val lastTab = tabParent.getChildAt(tabParent.childCount - 1)
         sp = width / 2 - firstTab.width / 2
