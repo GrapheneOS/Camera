@@ -192,6 +192,13 @@
             android:screenOrientation="nosensor"
             android:excludeFromRecents="true"/>
 
+        <activity
+            android:name=".ui.activities.LockscreenQrScanner"
+            android:exported="true"
+            android:showWhenLocked="true"
+            android:screenOrientation="nosensor"
+            android:excludeFromRecents="true"/>
+
     </application>
 
 </manifest>

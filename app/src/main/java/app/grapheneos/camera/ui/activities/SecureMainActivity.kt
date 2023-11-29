@@ -5,7 +5,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.util.EphemeralSharedPrefsNamespace
 import app.grapheneos.camera.util.getPrefs
 
-class SecureMainActivity : MainActivity(), SecureActivity {
+open class SecureMainActivity : MainActivity(), SecureActivity {
     val capturedItems = ArrayList<CapturedItem>()
     val ephemeralPrefsNamespace = EphemeralSharedPrefsNamespace()
 

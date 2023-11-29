@@ -1722,6 +1722,10 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    fun disableCameraModeSwitcher() {
+        tabLayout.removeAllViews()
+    }
+
     private fun resetAutoSleep() {
         application.resetPreventScreenFromSleeping()
     }
