@@ -66,6 +66,7 @@ class SettingsDialog(val mActivity: MainActivity) :
 
     var includeAudioToggle: SwitchCompat
     var enableEISToggle: SwitchCompat
+    var enable60fpsToggle: SwitchCompat
 
     var selfIlluminationToggle: SwitchCompat
 
@@ -73,6 +74,7 @@ class SettingsDialog(val mActivity: MainActivity) :
 
     private var includeAudioSetting: View
     private var enableEISSetting: View
+    private var enable60fpsSetting: View
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
@@ -316,6 +318,7 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         includeAudioSetting = binding.includeAudioSetting
         enableEISSetting = binding.enableEisSetting
+        enable60fpsSetting = binding.enable60fpsSetting
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
@@ -333,6 +336,14 @@ class SettingsDialog(val mActivity: MainActivity) :
             camConfig.enableEIS = enableEISToggle.isChecked
         }
         enableEISToggle.setOnCheckedChangeListener { _, _ ->
+            camConfig.startCamera(true)
+        }
+
+        enable60fpsToggle = binding.enable60fpsSwitch
+        enable60fpsToggle.setOnClickListener {
+            camConfig.enable60fps = enable60fpsToggle.isChecked
+        }
+        enable60fpsToggle.setOnCheckedChangeListener { _, _ ->
             camConfig.startCamera(true)
         }
 
@@ -375,10 +386,12 @@ class SettingsDialog(val mActivity: MainActivity) :
                         if (mode == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON)
                             enableEISSetting.visibility = View.VISIBLE
             }
+            enable60fpsSetting.visibility = View.VISIBLE
             videoQualitySetting.visibility = View.VISIBLE
         } else {
             includeAudioSetting.visibility = View.GONE
             enableEISSetting.visibility = View.GONE
+            enable60fpsSetting.visibility = View.GONE
             videoQualitySetting.visibility = View.GONE
         }
 

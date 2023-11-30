@@ -286,6 +286,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = false
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
+        mActivity.settingsDialog.enable60fpsToggle.isEnabled = false
 
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
         isPaused = false
@@ -324,6 +325,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = true
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
         mActivity.settingsDialog.enableEISToggle.isEnabled = true
+        mActivity.settingsDialog.enable60fpsToggle.isEnabled = true
 
         if (mActivity !is VideoCaptureActivity) {
             mActivity.thirdOption.visibility = View.VISIBLE

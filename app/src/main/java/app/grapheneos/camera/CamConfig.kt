@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import android.util.Size
 import android.view.MotionEvent
 import android.view.View
@@ -89,6 +90,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
             const val ENABLE_EIS = "enable_eis"
+            const val ENABLE_60FPS = "enable_60fps"
             const val SCAN = "scan"
             const val SCAN_ALL_CODES = "scan_all_codes"
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
@@ -136,6 +138,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val INCLUDE_AUDIO = true
 
             const val ENABLE_EIS = true
+
+            const val ENABLE_60FPS = false
 
             const val SCAN_ALL_CODES = false
 
@@ -439,6 +443,18 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
 
             mActivity.settingsDialog.enableEISToggle.isChecked = value
+        }
+
+    var enable60fps: Boolean
+        get() {
+            return mActivity.settingsDialog.enable60fpsToggle.isChecked
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.ENABLE_60FPS, value)
+            editor.apply()
+
+            mActivity.settingsDialog.enable60fpsToggle.isChecked = value
         }
 
     var enableZsl: Boolean
@@ -750,6 +766,13 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
+        if (!commonPref.contains(SettingValues.Key.ENABLE_60FPS)) {
+            editor.putBoolean(
+                SettingValues.Key.ENABLE_60FPS,
+                SettingValues.Default.ENABLE_60FPS
+            )
+        }
+
         if (!commonPref.contains(SettingValues.Key.ASPECT_RATIO)) {
             editor.putInt(
                 SettingValues.Key.ASPECT_RATIO,
@@ -816,6 +839,11 @@ class CamConfig(private val mActivity: MainActivity) {
         enableEIS = commonPref.getBoolean(
             SettingValues.Key.ENABLE_EIS,
             SettingValues.Default.ENABLE_EIS
+        )
+
+        enable60fps = commonPref.getBoolean(
+            SettingValues.Key.ENABLE_60FPS,
+            SettingValues.Default.ENABLE_60FPS
         )
 
         allowedFormats.clear()
@@ -1113,16 +1141,25 @@ class CamConfig(private val mActivity: MainActivity) {
             )
 
         @androidx.camera.camera2.interop.ExperimentalCamera2Interop
-        if (isVideoMode && enableEIS) {
-            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
-                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+        if (isVideoMode) {
+            val stabilizationMode = if (enableEIS) {
                 CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON
-            )
-        } else {
-            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
-                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+            } else {
                 CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+            }
+            Camera2Interop.Extender(previewBuilder).setCaptureRequestOption(
+            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                stabilizationMode
             )
+
+            if (enable60fps) {
+                // is 60 fps toggle is enabled, set target frame rate to 60 FPS
+                Camera2Interop.Extender(previewBuilder)
+                    .setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                        Range<Int>(60, 60)
+                    )
+            }
         }
 
         preview = previewBuilder.build().also {

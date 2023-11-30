@@ -250,6 +250,29 @@
 
                     </LinearLayout>
 
+                    <LinearLayout
+                        android:id="@+id/enable_60fps_setting"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:text="@string/enable_60fps" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/enable_60fps_switch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end"
+                            android:checked="false" />
+
+                    </LinearLayout>
+
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
