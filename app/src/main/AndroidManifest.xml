@@ -31,7 +31,6 @@
         android:theme="@style/Theme.App"
         tools:ignore="UnusedAttribute">
 
-
         <!-- The main activity of the app (supports all modes) -->
         <activity
             android:name=".ui.activities.MainActivity"
