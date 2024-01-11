@@ -102,9 +102,6 @@
     <string name="copied_text_to_clipboard">Copied text to clipboard</string>
     <string name="share_text_via">Share text via</string>
 
-    <string name="editing_permission_error">Could not read the image due to the editor not providing read access.</string>
-    <string name="editing_unexpected_error">An unexpected error occurred after editing.</string>
-
     <string name="unable_to_obtain_file_details">Unable to obtain file details</string>
 
     <string name="edit_successfully">Edit successful</string>

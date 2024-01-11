@@ -60,35 +60,6 @@ class InAppGallery : AppCompatActivity() {
     var isSecureMode = false
         private set
 
-    private val editIntentLauncher =
-        registerForActivityResult(StartActivityForResult())
-        { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                saveEditedImage(result.data?.data)
-            }
-        }
-
-    private fun unexpectedError() = showMessage(getString(R.string.editing_unexpected_error))
-
-    private fun saveEditedImage(editingUri : Uri?) {
-        val contentUri = editingUri ?: return unexpectedError()
-        try {
-            contentResolver.openInputStream(contentUri).use { inStream ->
-                inStream?.readBytes()?.let { editedStream ->
-                    contentResolver.openOutputStream(getCurrentItem().uri)?.use { outputStream ->
-                        outputStream.write(editedStream)
-                    }
-                    showMessage(getString(R.string.edit_successfully))
-                    recreate()
-                }
-            }
-        } catch (ignored: SecurityException) {
-            showMessage(getString(R.string.editing_permission_error))
-        } catch (e: FileNotFoundException) {
-            unexpectedError()
-        }
-    }
-
     private lateinit var rootView: View
 
     companion object {
@@ -210,17 +181,15 @@ class InAppGallery : AppCompatActivity() {
 
         if (withDefault) {
             try {
-                editIntentLauncher.launch(editIntent)
+                startActivity(editIntent)
             } catch (ignored: ActivityNotFoundException) {
                 showMessage(getString(R.string.no_editor_app_error))
             }
         } else {
-            editIntentLauncher.launch(
-                Intent.createChooser(
-                     editIntent,
-                     getString(R.string.edit_image)
-                ).putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE, false)
-            )
+            val chooser = Intent.createChooser(editIntent, getString(R.string.edit_image)).apply {
+                putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE, false)
+            }
+            startActivity(chooser)
         }
     }
 
