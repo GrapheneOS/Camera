@@ -11,9 +11,17 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.PrintStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.RejectedExecutionException
+
+fun Throwable.printStackTraceToString(): String {
+    val baos = ByteArrayOutputStream(1000)
+    this.printStackTrace(PrintStream(baos));
+    return baos.toString()
+}
 
 fun getTreeDocumentUri(treeUri: Uri): Uri {
     val treeId = DocumentsContract.getTreeDocumentId(treeUri)
