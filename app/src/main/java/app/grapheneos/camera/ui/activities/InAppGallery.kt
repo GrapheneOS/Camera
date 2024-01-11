@@ -43,7 +43,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.Executors
-import kotlin.collections.ArrayList
 import kotlin.properties.Delegates
 
 class InAppGallery : AppCompatActivity() {
@@ -203,12 +202,12 @@ class InAppGallery : AppCompatActivity() {
 
         val curItem = getCurrentItem()
 
-        val editIntent = Intent(Intent.ACTION_EDIT)
+        val editIntent = Intent(Intent.ACTION_EDIT).apply {
+            setDataAndType(curItem.uri, curItem.mimeType())
+            putExtra(Intent.EXTRA_STREAM, curItem.uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
 
-        editIntent.putExtra(Intent.EXTRA_STREAM, curItem.uri)
-        editIntent.data = curItem.uri
-
-        editIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         if (withDefault) {
             try {
                 editIntentLauncher.launch(editIntent)
