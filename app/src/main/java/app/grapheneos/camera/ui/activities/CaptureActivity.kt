@@ -9,7 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore.EXTRA_OUTPUT
+import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
@@ -19,6 +19,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
+import app.grapheneos.camera.util.getParcelableExtra
 import java.io.ByteArrayOutputStream
 import java.lang.Exception
 import java.nio.ByteBuffer
@@ -45,8 +46,8 @@ open class CaptureActivity : MainActivity() {
 
         confirmButton = findViewById(R.id.confirm_button)
 
-        if (intent.extras?.containsKey(EXTRA_OUTPUT) == true) {
-            outputUri = intent.extras?.get(EXTRA_OUTPUT) as Uri
+        getParcelableExtra<Uri>(intent, MediaStore.EXTRA_OUTPUT)?.let {
+            outputUri = it
         }
 
         // Disable capture button for a while (to avoid picture capture)

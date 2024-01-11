@@ -35,6 +35,8 @@ import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
+import app.grapheneos.camera.util.getParcelableArrayListExtra
+import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.snackbar.Snackbar
 import java.io.FileNotFoundException
@@ -429,8 +431,11 @@ class InAppGallery : AppCompatActivity() {
         snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
         gallerySlider.setPageTransformer(GSlideTransformer())
 
+        val intent = this.intent
+
         val showVideosOnly = intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
-        val listOfSecureModeCapturedItems = intent.getParcelableArrayListExtra<CapturedItem>(INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
+        val listOfSecureModeCapturedItems = getParcelableArrayListExtra<CapturedItem>(
+            intent, INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
 
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
@@ -463,7 +468,7 @@ class InAppGallery : AppCompatActivity() {
             mainExecutor.execute { asyncResultReady(items) }
         }
 
-        val lastCapturedItem = intent.getParcelableExtra<CapturedItem>(INTENT_KEY_LAST_CAPTURED_ITEM)
+        val lastCapturedItem = getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
 
         if (lastCapturedItem != null) {
             val list = ArrayList<CapturedItem>()

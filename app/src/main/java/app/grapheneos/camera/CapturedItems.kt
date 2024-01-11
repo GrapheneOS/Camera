@@ -48,7 +48,7 @@ class CapturedItem(
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeByte(type.toByte())
         dest.writeString(dateString)
-        dest.writeParcelable(uri, 0)
+        uri.writeToParcel(dest, 0)
     }
 
     override fun hashCode(): Int {
@@ -69,7 +69,7 @@ class CapturedItem(
             override fun createFromParcel(source: Parcel): CapturedItem {
                 val type = source.readByte().toInt()
                 val dateString = source.readString()!!
-                val uri = source.readParcelable<Uri>(null)!!
+                val uri = Uri.CREATOR.createFromParcel(source)
                 return CapturedItem(type, dateString, uri)
             }
 
