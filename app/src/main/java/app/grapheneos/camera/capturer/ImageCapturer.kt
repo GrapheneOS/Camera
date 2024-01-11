@@ -8,12 +8,12 @@ import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import android.widget.FrameLayout
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -22,6 +22,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import app.grapheneos.camera.util.printStackTraceToString
 
 private const val imageFileFormat = ".jpg"
 var isTakingPicture: Boolean = false
@@ -198,12 +199,16 @@ class ImageCapturer(val mActivity: MainActivity) {
         AlertDialog.Builder(ctx).apply {
             setMessage(message)
             setPositiveButton(R.string.show_details) { _, _ ->
-                val list = exception.asStringList()
+                val pkgName = ctx.packageName
+                val pkgVersion = ctx.packageManager.getPackageInfo(pkgName, 0).longVersionCode
+                val text = "osVersion: ${Build.FINGERPRINT}" +
+                        "\npackage: $pkgName:$pkgVersion" +
+                        "\n\n${exception.printStackTraceToString()}"
 
                 AlertDialog.Builder(ctx).apply {
-                    setItems(list.toTypedArray(), null)
+                    setItems(text.lines().toTypedArray(), null)
                     setNeutralButton(R.string.copy_to_clipboard) { _, _ ->
-                        val clipData = ClipData.newPlainText(exception.javaClass.name, list.joinToString("\n"))
+                        val clipData = ClipData.newPlainText(exception.javaClass.name, text)
                         val cm = mActivity.getSystemService(ClipboardManager::class.java)
                         cm.setPrimaryClip(clipData)
                         ctx.showMessage(R.string.copied_text_to_clipboard)
