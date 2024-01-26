@@ -1788,4 +1788,6 @@ open class MainActivity : AppCompatActivity(),
             }
         }
     }
+
+    open fun shouldShowCameraModeTabs() = true
 }
