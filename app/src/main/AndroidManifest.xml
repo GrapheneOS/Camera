@@ -189,6 +189,7 @@
         <activity
             android:name=".ui.activities.QrTile"
             android:exported="true"
+            android:showWhenLocked="true"
             android:screenOrientation="nosensor"
             android:excludeFromRecents="true"/>
 
