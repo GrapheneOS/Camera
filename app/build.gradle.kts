@@ -113,5 +113,5 @@ dependencies {
     implementation("androidx.camera:camera-view:$cameraVersion")
     implementation("androidx.camera:camera-extensions:$cameraVersion")
 
-    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.google.zxing:core:3.5.3")
 }
