@@ -94,6 +94,7 @@ class BottomTabLayout @JvmOverloads constructor(
     }
 
     fun centerTab(tab: Tab) {
+        if (!this::tabParent.isInitialized) return
         val targetScrollX = calculateScrollXForTab(tab.position)
 
         if (scrollX != targetScrollX)
