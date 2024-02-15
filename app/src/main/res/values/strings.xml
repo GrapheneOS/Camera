@@ -137,7 +137,6 @@
     <string name="more_settings_unavailable_during_recording">Cannot switch activities when recording</string>
     <string name="toggle_geo_tagging_unsupported_while_recording">Can\'t toggle geo-tagging for ongoing recording</string>
     <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
-    <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
     <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
     <string name="unexpected_error_while_setting_focus_timeout">An unexpected error occurred while setting focus timeout</string>
     <string name="storage_location_updated">Storage location successfully updated to %s</string>
