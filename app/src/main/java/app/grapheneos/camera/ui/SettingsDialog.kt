@@ -32,14 +32,16 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import java.util.Collections
 
 class SettingsDialog(val mActivity: MainActivity) :
     Dialog(mActivity, R.style.Theme_App) {
@@ -607,9 +609,8 @@ class SettingsDialog(val mActivity: MainActivity) :
     }
 
     private fun getAvailableQualities(): List<Quality> {
-        return QualitySelector.getSupportedQualities(
-            camConfig.camera!!.cameraInfo
-        )
+        val cameraInfo = camConfig.camera?.cameraInfo ?: return Collections.emptyList()
+        return Recorder.getVideoCapabilities(cameraInfo).getSupportedQualities(DynamicRange.SDR)
     }
 
     private fun getAvailableQTitles(): List<String> {
