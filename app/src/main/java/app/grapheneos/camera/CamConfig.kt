@@ -278,9 +278,6 @@ class CamConfig(private val mActivity: MainActivity) {
     var aspectRatio: Int
         get() {
             return when {
-                isVideoMode -> {
-                    AspectRatio.RATIO_16_9
-                }
                 isQRMode -> {
                     AspectRatio.RATIO_4_3
                 }
@@ -1056,6 +1053,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 videoCapture =
                     VideoCapture.withOutput(
                         Recorder.Builder()
+                            .setAspectRatio(aspectRatio)
                             .setQualitySelector(QualitySelector.from(videoQuality))
                             .build()
                     )
