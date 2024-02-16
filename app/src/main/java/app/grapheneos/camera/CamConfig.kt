@@ -18,7 +18,9 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import androidx.annotation.StringRes
+import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -39,6 +41,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.item.WhiteBalance
 import app.grapheneos.camera.ktx.markAs16by9Layout
 import app.grapheneos.camera.ktx.markAs4by3Layout
 import app.grapheneos.camera.ui.activities.CaptureActivity
@@ -186,6 +189,7 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     var camera: Camera? = null
+    private var mode : WhiteBalance = WhiteBalance.Auto
 
     var cameraProvider: ProcessCameraProvider? = null
     private var extensionsManager: ExtensionsManager? = null
@@ -970,6 +974,19 @@ class CamConfig(private val mActivity: MainActivity) {
         return cameraProvider?.hasCamera(tCameraSelector) ?: false
     }
 
+    fun updateWhiteBalanceMode(mode: WhiteBalance) {
+        this.mode = mode
+        val control = camera?.cameraControl ?: return
+        Camera2CameraControl.from(control).addCaptureRequestOptions(
+            CaptureRequestOptions.Builder()
+                .setCaptureRequestOption(
+                    CaptureRequest.CONTROL_AWB_MODE,
+                    mode.value
+                )
+                .build()
+        )
+    }
+
     // Start the camera with latest hard configuration
     fun startCamera(forced: Boolean = false) {
         if ((!forced && camera != null) || cameraProvider == null) return
@@ -1123,6 +1140,7 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
 
+        updateWhiteBalanceMode(mode)
         preview = previewBuilder.build().also {
             useCaseGroupBuilder.addUseCase(it)
             it.setSurfaceProvider(mActivity.previewView.surfaceProvider)
