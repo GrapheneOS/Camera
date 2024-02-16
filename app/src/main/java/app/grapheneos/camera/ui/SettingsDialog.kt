@@ -40,7 +40,7 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.MorePreferenceActivity
 import java.util.Collections
 
 class SettingsDialog(val mActivity: MainActivity) :
@@ -96,7 +96,7 @@ class SettingsDialog(val mActivity: MainActivity) :
         moreSettingsButton = binding.moreSettings
         moreSettingsButton.setOnClickListener {
             if (!mActivity.videoCapturer.isRecording) {
-                MoreSettings.start(mActivity)
+                MorePreferenceActivity.start(mActivity)
             } else {
                 mActivity.showMessage(getString(R.string.more_settings_unavailable_during_recording))
             }

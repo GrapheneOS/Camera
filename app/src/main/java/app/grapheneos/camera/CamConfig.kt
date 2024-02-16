@@ -43,7 +43,7 @@ import app.grapheneos.camera.ktx.markAs16by9Layout
 import app.grapheneos.camera.ktx.markAs4by3Layout
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.MorePreferenceActivity
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -1445,7 +1445,7 @@ class CamConfig(private val mActivity: MainActivity) {
         builder.setMessage(R.string.reverting_to_default_folder)
         builder.setPositiveButton(R.string.ok, null)
         builder.setNeutralButton(R.string.more_settings) { _, _ ->
-            MoreSettings.start(mActivity)
+            MorePreferenceActivity.start(mActivity)
         }
         val alertDialog: AlertDialog = builder.create()
         alertDialog.setCancelable(false)
