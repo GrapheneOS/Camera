@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:orderingFromXml="true">
+
+    <androidx.preference.PreferenceCategory app:title="@string/general">
+
+        <!-- defaultValue is based on SettingValues.Default.GYROSCOPE_SUGGESTIONS-->
+        <androidx.preference.SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/straighten"
+            app:key="gyroscope_suggestions"
+            app:summary="@string/gyroscope_setting_desc"
+            app:title="@string/gyroscope_suggestions" />
+
+
+        <!-- defaultValue is based on SettingValues.Default.CAMERA_SOUNDS-->
+        <androidx.preference.SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/volume_up"
+            app:key="camera_sounds"
+            app:summary="@string/camera_sounds_desc"
+            app:title="@string/camera_sounds" />
+
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory app:title="@string/photo">
+
+        <!-- defaultValue is based on SettingValues.Default.ENABLE_ZSL-->
+        <androidx.preference.SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/zsl"
+            app:key="enable_zsl"
+            app:summary="@string/zsl_setting_desc"
+            app:title="@string/zsl_setting_title" />
+
+        <!-- defaultValue is based on SettingValues.Default.SAVE_IMAGE_AS_PREVIEW-->
+        <androidx.preference.SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:icon="@drawable/selfie_preview"
+            app:key="save_image_as_preview"
+            app:summary="@string/save_as_image_preview_desc"
+            app:title="@string/save_image_as_previewed" />
+
+        <androidx.preference.SeekBarPreference
+            app:icon="@drawable/image_quality"
+            app:key="photo_quality"
+            app:showSeekBarValue="true"
+            app:summary="@string/image_quality_seekbar_desc"
+            app:title="@string/image_quality" />
+
+        <!-- defaultValue is based on SettingValues.Default.REMOVE_EXIF_AFTER_CAPTURE-->
+        <androidx.preference.SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:icon="@drawable/info_adaptable"
+            app:key="remove_exif_after_capture"
+            app:summary="@string/remove_exif_subtitle"
+            app:title="@string/remove_exif_title" />
+
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        app:key="storage_category_key"
+        app:title="@string/storage">
+
+        <Preference
+            android:icon="@drawable/storage"
+            android:title="@string/storage_location"
+            app:key="storage_location" />
+
+    </androidx.preference.PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

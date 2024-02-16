@@ -165,6 +165,21 @@
             android:exported="false"/>
 
         <activity
+            android:name=".ui.activities.MorePreferenceActivity"
+            android:theme="@style/Theme.Material3.DayNight"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:label="@string/more_settings" />
+
+        <activity
+            android:name=".ui.activities.SecureMorePreferenceActivity"
+            android:theme="@style/Theme.Material3.DayNight"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:label="@string/more_settings"/>
+
+        <activity
             android:name=".ui.activities.InAppGallery"
             android:theme="@style/OverlayActionBar"
             android:taskAffinity=".ui.activities.InAppGallery"
