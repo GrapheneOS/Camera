@@ -68,7 +68,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
-import app.grapheneos.camera.BlurBitmap
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CameraMode
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
@@ -94,6 +93,7 @@ import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.resolveActivity
+import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -657,8 +657,9 @@ open class MainActivity : AppCompatActivity(),
                 }
             } else {
                 previewGrid.visibility = View.INVISIBLE
+                val lastFrame = lastFrame
                 if (lastFrame != null && this !is CaptureActivity) {
-                    mainOverlay.setImageBitmap(blurBitmap(lastFrame!!))
+                    setBlurBitmapCompat(mainOverlay, lastFrame)
                     settingsIcon.visibility = View.INVISIBLE
                     settingsIcon.isEnabled = false
                     mainOverlay.visibility = View.VISIBLE
@@ -1215,10 +1216,6 @@ open class MainActivity : AppCompatActivity(),
 
             dialog.show()
         }
-    }
-
-    private fun blurBitmap(bitmap: Bitmap): Bitmap {
-        return BlurBitmap[bitmap]
     }
 
 //    private val fTHandler : Handler = Handler(Looper.getMainLooper())
