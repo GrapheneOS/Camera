@@ -33,6 +33,7 @@
     <string name="include_audio">Include Audio</string>
     <string name="enable_eis">Enable EIS</string>
     <string name="video_quality">Video Quality</string>
+    <string name="white_balance">White Balance</string>
     <string name="optimize_for">Optimize for</string>
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>

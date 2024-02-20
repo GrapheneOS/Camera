@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +21,7 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
@@ -36,9 +38,12 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
+import androidx.core.content.ContextCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
+import app.grapheneos.camera.databinding.SpinnerItemWithIconBinding
+import app.grapheneos.camera.item.WhiteBalance
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
 import java.util.Collections
@@ -86,6 +91,38 @@ class SettingsDialog(val mActivity: MainActivity) :
     private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
 
     private fun getString(@StringRes id: Int) = mActivity.getString(id)
+
+    class WhiteBalanceAdapter(
+        private val layoutInflater: LayoutInflater,
+        private val values: Array<WhiteBalance>
+    ) : BaseAdapter() {
+
+        override fun getCount(): Int = values.size
+
+        override fun getItem(position: Int): Any {
+            return values[position]
+        }
+
+        override fun getItemId(position: Int): Long {
+            return position.toLong()
+        }
+
+        override fun hasStableIds(): Boolean = true
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+
+            val item = values[position]
+            val views =
+                if (convertView != null) SpinnerItemWithIconBinding.bind(convertView)
+                else SpinnerItemWithIconBinding.inflate(layoutInflater)
+
+            views.apply {
+                title.text = ContextCompat.getString(title.context, item.uiName)
+                icon.setImageResource(item.icon)
+            }
+            return views.root
+        }
+
+    }
 
     init {
         setContentView(binding.root)
@@ -230,6 +267,24 @@ class SettingsDialog(val mActivity: MainActivity) :
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
+
+        val options = WhiteBalance.entries.toTypedArray()
+        val whiteBalanceAdapter = WhiteBalanceAdapter(layoutInflater, options)
+        val whiteBalanceSpinner = binding.whiteBalanceSpinner
+        whiteBalanceSpinner.adapter = whiteBalanceAdapter
+        whiteBalanceSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                camConfig.updateWhiteBalanceMode(options.elementAt(position))
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
 
         qRadio = binding.qualityRadio
         lRadio = binding.latencyRadio
