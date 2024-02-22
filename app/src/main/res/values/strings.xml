@@ -186,6 +186,27 @@
     <string name="zsl_setting_title">Use ZSL in Latency mode</string>
     <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
 
+    <string name="address">Address</string>
+    <string name="contact_card_me_card">Contact Card (MeCard)</string>
+    <string name="contact_card_vcard">Contact Card (vCard)</string>
+    <string name="connect_to_wifi">Connect To Network (Wi-Fi)</string>
+    <string name="phone">Phone</string>
+    <string name="message">Message</string>
+    <string name="mail">Email</string>
+
+    <string name="open_in_maps">Navigate</string>
+    <string name="call">Call</string>
+    <string name="add_to_contacts">Add to contacts</string>
+    <string name="connect">Connect</string>
+
+    <string name="address_message">Do you want to navigate to longitude %s and latitude %s?</string>
+    <string name="mecard_message">Do you want to save this contact info?</string>
+    <string name="vcard_message">Do you want to import this contact info?</string>
+    <string name="wifi_message">Do you want to connect to %s Wi-Fi network?</string>
+    <string name="call_message">Do you want to call %s?</string>
+    <string name="sms_message">Do you want to chat with %s?</string>
+    <string name="mail_message">Do you want to send email to %s?</string>
+
     <string name="wifi_dialog_title">Wifi Details</string>
     <string name="wifi_dialog_message">You can connect to %s Wi-Fi network from settings.</string>
     <string name="wifi_dialog_button_positive">Copy Password</string>
