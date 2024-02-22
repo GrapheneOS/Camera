@@ -87,6 +87,7 @@ import app.grapheneos.camera.ui.CustomGrid
 import app.grapheneos.camera.ui.QROverlay
 import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
+import app.grapheneos.camera.ui.dialog.showActionableDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.util.CameraControl
@@ -1126,6 +1127,10 @@ open class MainActivity : AppCompatActivity(),
         if (isQRDialogShowing) return
 
         isQRDialogShowing = true
+
+        if (showActionableDialog(this, rawText) { isQRDialogShowing = false }) {
+            return
+        }
 
         val hString = bytesToHex(
             rawText.toByteArray(StandardCharsets.UTF_8)
