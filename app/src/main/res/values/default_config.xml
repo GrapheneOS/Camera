@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="pref_def_gyroscope_suggestions">false</bool>
+    <bool name="pref_def_enable_zsl">false</bool>
+    <bool name="pref_def_camera_sounds">true</bool>
+    <bool name="pref_def_save_image_as_preview">false</bool>
+    <bool name="pref_def_remove_exif_after_capture">true</bool>
+</resources>
