@@ -17,6 +17,7 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
+import androidx.annotation.BoolRes
 import androidx.annotation.StringRes
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.AspectRatio
@@ -43,7 +44,7 @@ import app.grapheneos.camera.ktx.markAs16by9Layout
 import app.grapheneos.camera.ktx.markAs4by3Layout
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.MorePreferenceActivity
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -138,19 +139,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val SCAN_ALL_CODES = false
 
-            const val SAVE_IMAGE_AS_PREVIEW = false
-
             const val STORAGE_LOCATION = ""
 
             const val PHOTO_QUALITY = 0
-
-            const val REMOVE_EXIF_AFTER_CAPTURE = true
-
-            const val GYROSCOPE_SUGGESTIONS = false
-
-            const val CAMERA_SOUNDS = true
-
-            const val ENABLE_ZSL = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -374,7 +365,7 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.CAMERA_SOUNDS,
-                SettingValues.Default.CAMERA_SOUNDS
+                getBoolean(R.bool.pref_def_camera_sounds)
             )
         }
         set(value) {
@@ -440,7 +431,7 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.ENABLE_ZSL,
-                SettingValues.Default.ENABLE_ZSL
+                getBoolean(R.bool.pref_def_enable_zsl)
             )
         }
         set(value) {
@@ -453,7 +444,7 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
-                SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
+                getBoolean(R.bool.pref_def_save_image_as_preview)
             )
         }
         set(value) {
@@ -497,7 +488,7 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
-                SettingValues.Default.REMOVE_EXIF_AFTER_CAPTURE
+                getBoolean(R.bool.pref_def_remove_exif_after_capture)
             )
         }
         set(value) {
@@ -513,7 +504,7 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             return commonPref.getBoolean(
                 SettingValues.Key.GYROSCOPE_SUGGESTIONS,
-                SettingValues.Default.GYROSCOPE_SUGGESTIONS
+                getBoolean(R.bool.pref_def_gyroscope_suggestions)
             )
         }
         set(value) {
@@ -574,6 +565,8 @@ class CamConfig(private val mActivity: MainActivity) {
 //            )
 //            editor.apply()
 //        }
+
+    private fun getBoolean(@BoolRes id: Int) = mActivity.resources.getBoolean(id)
 
     private fun saveLastCapturedItem(item: CapturedItem, editor: SharedPreferences.Editor) {
         editor.putInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, item.type)
@@ -705,13 +698,13 @@ class CamConfig(private val mActivity: MainActivity) {
         val editor = commonPref.edit()
 
         if (!commonPref.contains(SettingValues.Key.CAMERA_SOUNDS)) {
-            editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
+            editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, getBoolean(R.bool.pref_def_camera_sounds))
         }
 
         if (!commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
             editor.putBoolean(
                 SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
-                SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
+                getBoolean(R.bool.pref_def_save_image_as_preview)
             )
         }
 
@@ -1443,7 +1436,7 @@ class CamConfig(private val mActivity: MainActivity) {
         builder.setMessage(R.string.reverting_to_default_folder)
         builder.setPositiveButton(R.string.ok, null)
         builder.setNeutralButton(R.string.more_settings) { _, _ ->
-            MoreSettings.start(mActivity)
+            MorePreferenceActivity.start(mActivity)
         }
         val alertDialog: AlertDialog = builder.create()
         alertDialog.setCancelable(false)
