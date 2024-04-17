@@ -96,7 +96,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.core:core:1.12.0")
 
-    val cameraVersion = "1.4.0-alpha04"
+    val cameraVersion = "1.4.0-alpha05"
     implementation("androidx.camera:camera-core:$cameraVersion")
     implementation("androidx.camera:camera-camera2:$cameraVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraVersion")
