@@ -180,7 +180,14 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         aRToggle = binding.aspectRatioToggle
         aRToggle.setOnClickListener {
-            camConfig.toggleAspectRatio()
+            if (camConfig.isVideoMode) {
+                aRToggle.isChecked = true
+                mActivity.showMessage(
+                    getString(R.string.four_by_three_unsupported_in_video)
+                )
+            } else {
+                camConfig.toggleAspectRatio()
+            }
         }
 
         torchToggle = binding.torchToggleOption
@@ -668,7 +675,11 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         updateFlashMode()
 
-        aRToggle.isChecked = camConfig.aspectRatio == AspectRatio.RATIO_16_9
+        if (camConfig.isVideoMode) {
+            aRToggle.isChecked = true
+        } else {
+            aRToggle.isChecked = camConfig.aspectRatio == AspectRatio.RATIO_16_9
+        }
 
         torchToggle.isChecked = camConfig.isTorchOn
 
