@@ -1175,6 +1175,14 @@ class CamConfig(private val mActivity: MainActivity) {
                     }
                     imageCapture = null
 
+                    if (videoAspectRatio == AspectRatio.RATIO_4_3) {
+                        videoAspectRatio = AspectRatio.RATIO_16_9
+                        mActivity.showMessage(mActivity.getString(R.string.aspect_ratio_unsupported_by_selected_resolution))
+                        startCamera(true)
+                        mActivity.settingsDialog.showOnlyRelevantSettings()
+                        return
+                    }
+
                     camera = cameraProvider!!.bindToLifecycle(
                         mActivity, cameraSelector,
                         newUseCaseGroupBuilder.build()
