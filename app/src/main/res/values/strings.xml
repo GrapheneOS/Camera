@@ -86,6 +86,7 @@
 
     <string name="image_quality">Image Quality</string>
     <string name="image_quality_desc" formatted="false">Adjust the quality of an image captured by the app from 1% to 100%. This field can be left empty to avoid explicitly setting the image quality.</string>
+    <string name="image_quality_seekbar_desc" formatted="false">Adjust the quality of an image captured by the app from 1% to 100%. This field can be left at 0 to avoid explicitly setting the image quality.</string>
     <string name="photo">Photo</string>
     <string name="remove_exif_title">Remove EXIF data after capture</string>
     <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
@@ -182,6 +183,9 @@
     <string name="inaccessible_video">Video %s is inaccessible</string>
 
     <string name="main_storage">Main storage</string>
+    <string name="custom_storage_title">You can choose any custom directory/folder to store your images.</string>
+    <string name="selection_default">default</string>
+    <string name="selection_custom">custom</string>
 
     <string name="zsl_setting_title">Use ZSL in Latency mode</string>
     <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
