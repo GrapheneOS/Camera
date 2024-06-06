@@ -70,7 +70,10 @@
     <string name="general">General</string>
 
     <string name="save_image_as_previewed">Save image as previewed</string>
-    <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion)</string>
+    <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion in front camera)</string>
+
+    <string name="save_video_as_previewed">Save video as previewed</string>
+    <string name="save_as_video_preview_desc">Save output video as visible on preview (fixes inversion in front camera)</string>
 
     <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
     <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
@@ -89,6 +92,7 @@
     <string name="photo">Photo</string>
     <string name="remove_exif_title">Remove EXIF data after capture</string>
     <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
+    <string name="video_setting_title">Video</string>
     <string name="degree_format">%d°</string>
     <string name="percent_symbol">%</string>
 
