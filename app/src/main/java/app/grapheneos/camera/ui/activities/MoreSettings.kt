@@ -96,6 +96,14 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 sIAPToggle.isChecked
         }
 
+        val sVAPToggle = binding.saveVideoAsPreviewToggle
+
+        sVAPToggle.isChecked = camConfig.saveVideoAsPreviewed
+
+        sVAPToggle.setOnClickListener {
+            camConfig.saveVideoAsPreviewed = sVAPToggle.isChecked
+        }
+
         rootView = binding.rootView
 
         sLField = binding.storageLocationField
@@ -199,6 +207,11 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         val sIAPSetting = binding.saveImageAsPreviewSetting
         sIAPSetting.setOnClickListener {
             sIAPToggle.performClick()
+        }
+
+        val sVAPSetting = binding.saveVideoAsPreviewSetting
+        sVAPSetting.setOnClickListener {
+            sVAPToggle.performClick()
         }
 
         val sLS = binding.storageLocationSetting
