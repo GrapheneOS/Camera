@@ -24,6 +24,7 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.MirrorMode
 import androidx.camera.core.Preview
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
@@ -91,6 +92,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SCAN = "scan"
             const val SCAN_ALL_CODES = "scan_all_codes"
             const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
+            const val SAVE_VIDEO_AS_PREVIEW = "save_video_as_preview"
 
             const val STORAGE_LOCATION = "storage_location"
             const val PREVIOUS_SAF_TREES = "previous_saf_trees"
@@ -139,6 +141,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SCAN_ALL_CODES = false
 
             const val SAVE_IMAGE_AS_PREVIEW = false
+
+            const val SAVE_VIDEO_AS_PREVIEW = false
 
             const val STORAGE_LOCATION = ""
 
@@ -462,6 +466,19 @@ class CamConfig(private val mActivity: MainActivity) {
         set(value) {
             val editor = commonPref.edit()
             editor.putBoolean(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW, value)
+            editor.apply()
+        }
+
+    var saveVideoAsPreviewed: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
+                SettingValues.Default.SAVE_VIDEO_AS_PREVIEW
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.SAVE_VIDEO_AS_PREVIEW, value)
             editor.apply()
         }
 
