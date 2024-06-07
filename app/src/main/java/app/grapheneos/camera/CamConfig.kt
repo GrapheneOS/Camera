@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Range
 import android.util.Size
 import android.view.MotionEvent
 import android.view.View
@@ -86,6 +87,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
             const val FOCUS_TIMEOUT = "focus_timeout"
             const val VIDEO_QUALITY = "video_quality"
+            const val VIDEO_FRAME_RATE = "video_frame_rate"
             const val ASPECT_RATIO = "aspect_ratio"
             const val INCLUDE_AUDIO = "include_audio"
             const val ENABLE_EIS = "enable_eis"
@@ -123,6 +125,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val ASPECT_RATIO = AspectRatio.RATIO_4_3
 
             val VIDEO_QUALITY = Quality.HIGHEST
+
+            val VIDEO_FRAME_RATE = Range<Int>(30, 30)
 
             const val SELF_ILLUMINATION = false
 
@@ -355,6 +359,36 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             return "${SettingValues.Key.VIDEO_QUALITY}_$pf"
+        }
+
+    var videoFrameRate: Range<Int> = SettingValues.Default.VIDEO_FRAME_RATE
+        get() {
+            return if (modePref.contains(videoFrameRateKey)) {
+                mActivity.settingsDialog.titleToFrameRateRange(
+                    modePref.getString(videoFrameRateKey, "")!!
+                )
+
+            } else {
+                SettingValues.Default.VIDEO_FRAME_RATE
+            }
+        }
+        set(value) {
+            modePref.edit {
+                putString(videoFrameRateKey, mActivity.settingsDialog.getTitleForFrameRateRange(value))
+            }
+
+            field = value
+        }
+
+    val videoFrameRateKey : String
+        get() {
+            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                "FRONT"
+            } else {
+                "BACK"
+            }
+
+            return "${SettingValues.Key.VIDEO_FRAME_RATE}_$pf"
         }
 
     var flashMode: Int
@@ -711,7 +745,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             if (isVideoMode) {
-                mActivity.settingsDialog.reloadQualities()
+                mActivity.settingsDialog.reloadVideoSettings()
             }
 
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
