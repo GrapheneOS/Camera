@@ -1,8 +1,10 @@
 package app.grapheneos.camera.ui
 
+import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.Dialog
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
@@ -36,6 +38,7 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
+import androidx.core.app.ActivityCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
@@ -324,6 +327,31 @@ class SettingsDialog(val mActivity: MainActivity) :
 
         includeAudioToggle = binding.includeAudioSwitch
         includeAudioToggle.setOnClickListener {
+            if (mActivity.videoCapturer.isRecording) {
+                if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                    // Inform the user why enabling this option isn't possible
+                    mActivity.showMessage("Unable to request for audio permission in between a recording")
+
+                    // Ensure the option is visually off
+                    includeAudioToggle.isChecked = false
+                    return@setOnClickListener
+                }
+
+                if  (includeAudioToggle.isChecked) {
+                    mActivity.videoCapturer.unmuteRecording()
+                } else {
+                    mActivity.videoCapturer.muteRecording()
+                }
+            }
+
+            mActivity.micOffIcon.visibility = if (includeAudioToggle.isChecked) {
+                View.GONE
+            } else {
+                View.VISIBLE
+            }
+
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
 
