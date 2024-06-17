@@ -1,5 +1,9 @@
 package app.grapheneos.camera.ui
 
+import android.animation.Animator
+import android.animation.Animator.AnimatorListener
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Matrix
 
@@ -8,7 +12,10 @@ import android.view.ScaleGestureDetector
 import android.view.MotionEvent
 
 import android.graphics.PointF
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 
 import androidx.appcompat.widget.AppCompatImageView
@@ -40,6 +47,13 @@ class ZoomableImageView @JvmOverloads constructor(
 
     private var isZoomingDisabled = true
 
+    private var singleClickHandler = Handler(Looper.getMainLooper())
+    private var singleClickRunnable = Runnable {
+        onSingleClick()
+    }
+
+    private var scaleAnimator : ValueAnimator? = null
+
     lateinit var gActivity: InAppGallery
 
     init {
@@ -64,6 +78,7 @@ class ZoomableImageView @JvmOverloads constructor(
         isZoomingDisabled = true
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun sharedConstructing() {
         super.setClickable(true)
         mScaleDetector = ScaleGestureDetector(context, ScaleListener())
@@ -77,6 +92,7 @@ class ZoomableImageView @JvmOverloads constructor(
 
             if (currentInstance.isZoomingDisabled) {
                 if (event.action == MotionEvent.ACTION_UP) {
+                    this.onClickEvent(event)
                     return@setOnTouchListener performClick()
                 }
                 return@setOnTouchListener false
@@ -113,7 +129,10 @@ class ZoomableImageView @JvmOverloads constructor(
                     currentInstance.mode = NONE
                     val xDiff = abs(curr.x - currentInstance.start.x).toInt()
                     val yDiff = abs(curr.y - currentInstance.start.y).toInt()
-                    if (xDiff < CLICK && yDiff < CLICK) performClick()
+                    if (xDiff < CLICK && yDiff < CLICK) {
+                        currentInstance.onClickEvent(event)
+                        performClick()
+                    }
                 }
                 MotionEvent.ACTION_POINTER_UP -> currentInstance.mode = NONE
             }
@@ -123,9 +142,111 @@ class ZoomableImageView @JvmOverloads constructor(
         }
     }
 
+    private var lastClickTimestampMs : Long = 0L
+
+    private fun onClickEvent(event : MotionEvent) {
+        if ((event.eventTime - lastClickTimestampMs) <= DOUBLE_TAP_DELAY) {
+            singleClickHandler.removeCallbacks(singleClickRunnable)
+            onDoubleClick(event)
+        } else {
+            singleClickHandler.postDelayed(singleClickRunnable, DOUBLE_TAP_DELAY)
+        }
+        lastClickTimestampMs = event.eventTime
+    }
+
+    private fun onSingleClick() {
+        gActivity.toggleActionBarState()
+    }
+
+    private fun onDoubleClick(event: MotionEvent) {
+        // The user hasn't zoomed in
+        if (saveScale != 1f) {
+            scaleAnimator?.cancel()
+            scaleAnimator = ValueAnimator.ofFloat(saveScale, 1f)
+            scaleAnimator?.duration = SCALE_ANIMATION_DURATION
+            scaleAnimator?.addUpdateListener {
+                scaleImageTo(width / 2f, height / 2f, it.animatedValue as Float)
+            }
+
+            scaleAnimator?.addListener(object: AnimatorListener {
+
+                var isAnimationCancelled = false
+
+                override fun onAnimationStart(p0: Animator) {}
+
+                override fun onAnimationEnd(p0: Animator) {
+                    if (!isAnimationCancelled)
+                        gActivity.gallerySlider.isUserInputEnabled = true
+                }
+
+                override fun onAnimationCancel(p0: Animator) {
+                    isAnimationCancelled = true
+                }
+
+                override fun onAnimationRepeat(p0: Animator) {}
+            })
+
+            scaleAnimator?.start()
+            // Use value animator to animate from saveScale to 1f
+        } else {
+            // Something similar here
+            scaleAnimator?.cancel()
+            scaleAnimator = ValueAnimator.ofFloat(1f, DOUBLE_TAP_SCALE)
+            scaleAnimator?.duration = SCALE_ANIMATION_DURATION
+            scaleAnimator?.addUpdateListener {
+                scaleImageTo(event.x, event.y, it.animatedValue as Float)
+            }
+            scaleAnimator?.start()
+        }
+    }
+
+    private fun scaleImageTo(pointX: Float, pointY: Float, newScale: Float) {
+        val scaleFactor = newScale / saveScale
+        scaleImageBy(pointX, pointY, scaleFactor)
+    }
+
+    private fun scaleImageBy(pointX: Float, pointY: Float, scaleFactor: Float) {
+
+        val origScale = saveScale
+        var sFactor = scaleFactor
+        saveScale *= sFactor
+
+        if (saveScale > maxScale) {
+            saveScale = maxScale
+            sFactor = maxScale / origScale
+        } else if (saveScale < minScale) {
+            saveScale = minScale
+            sFactor = minScale / origScale
+        }
+
+        if (origWidth * saveScale <= viewWidth
+            || origHeight * saveScale <= viewHeight
+        ) mMatrix.postScale(
+            sFactor, sFactor, viewWidth / 2f,
+            viewHeight / 2f
+        ) else mMatrix.postScale(
+            sFactor, sFactor,
+            pointX, pointY
+        )
+
+        fixTrans()
+
+        if (saveScale == 1f) {
+            moveOutOfZoomMode()
+        } else {
+            moveIntoZoomMode()
+        }
+
+        currentInstance.imageMatrix = currentInstance.mMatrix
+        currentInstance.invalidate()
+    }
+
     private inner class ScaleListener : SimpleOnScaleGestureListener() {
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             mode = ZOOM
+
+            // Cancel ongoing scaling animation (for e.g. on double tap)
+            scaleAnimator?.cancel()
 
             if (isZoomingDisabled) {
                 gActivity.showActionBar()
@@ -137,38 +258,8 @@ class ZoomableImageView @JvmOverloads constructor(
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-
             if (isZoomingDisabled) return true
-
-            var mScaleFactor = detector.scaleFactor
-            val origScale = saveScale
-            saveScale *= mScaleFactor
-            if (saveScale > maxScale) {
-                saveScale = maxScale
-                mScaleFactor = maxScale / origScale
-            } else if (saveScale < minScale) {
-                saveScale = minScale
-                mScaleFactor = minScale / origScale
-            }
-
-            if (origWidth * saveScale <= viewWidth
-                || origHeight * saveScale <= viewHeight
-            ) mMatrix.postScale(
-                mScaleFactor, mScaleFactor, viewWidth / 2f,
-                viewHeight / 2f
-            ) else mMatrix.postScale(
-                mScaleFactor, mScaleFactor,
-                detector.focusX, detector.focusY
-            )
-
-            fixTrans()
-
-            if (saveScale == 1f) {
-                moveOutOfZoomMode()
-            } else {
-                moveIntoZoomMode()
-            }
-
+            scaleImageBy(detector.focusX, detector.focusY, detector.scaleFactor)
             return true
         }
 
@@ -201,6 +292,7 @@ class ZoomableImageView @JvmOverloads constructor(
         isInZoomMode = false
 
         gActivity.showActionBar()
+        gActivity.vibrateDevice()
     }
 
     fun fixTrans() {
@@ -282,5 +374,10 @@ class ZoomableImageView @JvmOverloads constructor(
         const val DRAG = 1
         const val ZOOM = 2
         const val CLICK = 3
+
+        private const val DOUBLE_TAP_DELAY = 200L
+        private const val DOUBLE_TAP_SCALE = 1.75F
+
+        private const val SCALE_ANIMATION_DURATION = 300L
     }
 }
