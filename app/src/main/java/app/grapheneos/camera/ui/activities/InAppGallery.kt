@@ -14,6 +14,8 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
@@ -559,5 +561,10 @@ class InAppGallery : AppCompatActivity() {
     fun showMessage(msg: String) {
         snackBar.setText(msg)
         snackBar.show()
+    }
+
+    fun vibrateDevice() {
+        val vibrator = getSystemService(Vibrator::class.java)
+        vibrator?.vibrate(VibrationEffect.createOneShot(50, 10))
     }
 }
