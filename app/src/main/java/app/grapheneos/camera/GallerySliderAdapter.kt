@@ -88,8 +88,6 @@ class GallerySliderAdapter(
                                 intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
 
                                 gActivity.startActivity(intent)
-                            } else {
-                                gActivity.toggleActionBarState()
                             }
                         }
                     } else  {
