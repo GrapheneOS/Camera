@@ -6,10 +6,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".ui.activities.VideoPlayer">
 
-    <VideoView
-        android:id="@+id/video_player"
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/player_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"/>
+        android:layout_height="match_parent"/>
 
 </FrameLayout>
