@@ -1,20 +1,19 @@
 package app.grapheneos.camera.ui.activities
 
 import android.graphics.drawable.ColorDrawable
-import android.media.AudioManager
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.widget.MediaController
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.VideoPlayerBinding
 import app.grapheneos.camera.util.getParcelableExtra
-import kotlin.concurrent.thread
-
 
 class VideoPlayer : AppCompatActivity() {
 
@@ -26,13 +25,19 @@ class VideoPlayer : AppCompatActivity() {
 
     private lateinit var binding: VideoPlayerBinding
 
+    private lateinit var playerView: PlayerView
+
+    private lateinit var player: Player
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val intent = this.intent
         if (intent.getBooleanExtra(IN_SECURE_MODE, false)) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
         }
+
         binding = VideoPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -44,64 +49,40 @@ class VideoPlayer : AppCompatActivity() {
 
         val uri = getParcelableExtra<Uri>(intent, VIDEO_URI)!!
 
-        val videoView = binding.videoPlayer
+        playerView = binding.playerView
+        setupPlayerView()
 
-        val mediaController = object : MediaController(this) {
-            override fun show() {
-                super.show()
-                supportActionBar?.show()
-            }
+        player = ExoPlayer.Builder(this).build()
+        playerView.player = player
 
-            override fun hide() {
-                super.hide()
-                supportActionBar?.hide()
-            }
-        }
+        val mediaItem = MediaItem.Builder()
+            .setUri(uri)
+            .build()
 
-        thread {
-            var hasAudio = true
-            try {
-                MediaMetadataRetriever().use {
-                    it.setDataSource(this, uri)
-                    hasAudio = it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) != null
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "", e)
-            }
+        player.setMediaItem(mediaItem)
+        player.prepare()
 
-            mainExecutor.execute {
-                val lifecycleState = lifecycle.currentState
+        player.play()
+    }
 
-                if (lifecycleState == Lifecycle.State.DESTROYED) {
-                    return@execute
-                }
+    @OptIn(UnstableApi::class)
+    private fun setupPlayerView() {
+        playerView.controllerShowTimeoutMs = 1000
+    }
 
-                val audioFocus = if (hasAudio) AudioManager.AUDIOFOCUS_GAIN else AudioManager.AUDIOFOCUS_NONE
-                videoView.setAudioFocusRequest(audioFocus)
+    override fun onPause() {
+        super.onPause()
+        player.pause()
+    }
 
-                videoView.setOnPreparedListener { _ ->
-                    videoView.setMediaController(mediaController)
-
-                    if (lifecycleState == Lifecycle.State.RESUMED) {
-                        videoView.start()
-                    }
-
-                    supportActionBar?.show()
-                    mediaController.show(0)
-                }
-
-                videoView.setVideoURI(uri)
-            }
-        }
+    override fun onStop() {
+        super.onStop()
+        player.stop()
+        player.release()
     }
 
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
-    }
-
-    override fun onResume() {
-        super.onResume()
-        supportActionBar?.show()
     }
 }
