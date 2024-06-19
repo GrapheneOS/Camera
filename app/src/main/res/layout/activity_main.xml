@@ -68,7 +68,8 @@
                 android:id="@+id/g_circle_frame"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_gravity="center">
+                android:layout_gravity="center"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:id="@+id/g_circle"
