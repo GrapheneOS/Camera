@@ -570,12 +570,6 @@ open class MainActivity : AppCompatActivity(),
             requestLocation()
         }
 
-        gCircleFrame.visibility = if (camConfig.gSuggestions) {
-            View.VISIBLE
-        } else {
-            View.INVISIBLE
-        }
-
         // If the preview of video capture activity isn't showing
         if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
             if (!isQRDialogShowing) {
