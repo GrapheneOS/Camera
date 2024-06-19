@@ -86,10 +86,18 @@ class SensorOrientationChangeNotifier private constructor(
         var lastX = 0f
         var lastZ = 0f
 
+        private val ALPHA = 0.7f
+        private val filteredValues = FloatArray(3)
+
         override fun onSensorChanged(event: SensorEvent) {
-            val x = event.values[0]
-            val y = event.values[1]
-            val z = event.values[2]
+
+            filteredValues[0] = ALPHA * filteredValues[0] + (1 - ALPHA) * event.values[0]
+            filteredValues[1] = ALPHA * filteredValues[1] + (1 - ALPHA) * event.values[1]
+            filteredValues[2] = ALPHA * filteredValues[2] + (1 - ALPHA) * event.values[2]
+
+            var x : Float = filteredValues[0]
+            val y : Float = filteredValues[1]
+            var z : Float = filteredValues[2]
 
             var newOrientation = mOrientation
             if (x < 5 && x > -5 && y > 5) newOrientation =
