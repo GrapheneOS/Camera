@@ -10,9 +10,8 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import java.lang.ref.WeakReference
 import kotlin.math.abs
 import kotlin.math.atan
-import kotlin.math.atan2
-import kotlin.math.round
-
+import kotlin.math.floor
+import kotlin.math.sqrt
 
 class SensorOrientationChangeNotifier private constructor(
     private val mainActivity: MainActivity
@@ -110,54 +109,45 @@ class SensorOrientationChangeNotifier private constructor(
                 notifyListeners()
             }
 
-            if (!mainActivity.camConfig.shouldShowGyroscope()) return
-
-            val dAngle = if (mainActivity.gCircleFrame.rotation == 270f) {
-                90f
-            } else {
-                mainActivity.gCircleFrame.rotation
-            }
-
-            val zAngle = (atan(z) / (Math.PI / 180)).toFloat()
-
-            if (zAngle < Z_EXIT_MIN || zAngle > Z_EXIT_MAX) {
+            if (!mainActivity.camConfig.shouldShowGyroscope()) {
                 mainActivity.gCircleFrame.visibility = View.GONE
                 return
             }
 
-            val hAngle = atan2(x, y) / (Math.PI / 180)
-            val aAngle = abs(hAngle)
-            val rAngle = (round(aAngle) - dAngle) % 90
+            x = ((180 / Math.PI) * atan(x / sqrt(y * y + z * z))).toFloat()
+            z = ((180 / Math.PI) * atan(z / sqrt(y * y + x * x))).toFloat()
 
-            val fAngle = if (hAngle < 0) {
-                -rAngle
-            } else {
-                rAngle
-            }.toFloat()
-
-
-            if (fAngle < X_EXIT_MIN || fAngle > X_EXIT_MAX) {
+            if (z < Z_EXIT_MIN || z > Z_EXIT_MAX) {
                 mainActivity.gCircleFrame.visibility = View.GONE
                 return
             }
 
-            if (fAngle in X_ENTRY_MIN..X_ENTRY_MAX) {
-                if (abs(fAngle - lastX) < X_THRESHOLD) {
-                    if (zAngle in Z_ENTRY_MIN..Z_ENTRY_MAX) {
-                        if (abs(zAngle - lastZ) < Z_THRESHOLD) {
+            if (x < X_EXIT_MIN || x > X_EXIT_MAX) {
+                mainActivity.gCircleFrame.visibility = View.GONE
+                return
+            }
+
+            if (x in X_ENTRY_MIN..X_ENTRY_MAX) {
+                if (abs(x - lastX) < X_THRESHOLD) {
+                    if (z in Z_ENTRY_MIN..Z_ENTRY_MAX) {
+                        if (abs(z - lastZ) < Z_THRESHOLD) {
                             mainActivity.gCircleFrame.visibility = View.VISIBLE
                         }
                     }
                 }
             }
 
-            updateGyro(fAngle, zAngle)
+            updateGyro(x, z)
         }
 
-        fun updateGyro(fAngle: Float, zAngle: Float) {
-            mainActivity.onDeviceAngleChange(fAngle, zAngle)
+        fun updateGyro(xAngle: Float, zAngle: Float) {
 
-            lastX = fAngle
+            val xAngle = floor(xAngle)
+            val zAngle = floor(zAngle)
+
+            mainActivity.onDeviceAngleChange(xAngle, zAngle)
+
+            lastX = xAngle
             lastZ = zAngle
         }
 
