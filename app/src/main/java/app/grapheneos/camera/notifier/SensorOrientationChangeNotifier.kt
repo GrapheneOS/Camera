@@ -36,8 +36,8 @@ class SensorOrientationChangeNotifier private constructor(
         // The gyroscope shall be explicitly made visible only if it's within the ENTRY_
         // CRITERIA and if the device isn't moving too fast i.e. (lastX - currentX) is below
         // threshold
-        private const val X_ENTRY_MIN = -10F
-        private const val X_ENTRY_MAX = 10F
+        private const val X_ENTRY_MIN = -8F
+        private const val X_ENTRY_MAX = 8F
 
         // If the current angle for a given axis is beyond the EXIT_CRITERIA the listener
         // will just hide the gyroscope (and just return the control back from the method as
@@ -48,11 +48,11 @@ class SensorOrientationChangeNotifier private constructor(
 
         private const val Z_THRESHOLD = 5
 
-        private const val Z_ENTRY_MIN = -60F
-        private const val Z_ENTRY_MAX = 60F
+        private const val Z_ENTRY_MIN = -10F
+        private const val Z_ENTRY_MAX = 10F
 
-        private const val Z_EXIT_MIN = -60F
-        private const val Z_EXIT_MAX = 60F
+        private const val Z_EXIT_MIN = -45F
+        private const val Z_EXIT_MAX = 45F
     }
 
     var mOrientation = mainActivity.getRotation()
