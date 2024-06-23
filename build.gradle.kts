@@ -10,7 +10,3 @@ allprojects {
         compilerArgs.add("-Xlint:deprecation")
     }
 }
-
-tasks.register("clean", Delete::class) {
-    delete(rootProject.layout.buildDirectory)
-}
