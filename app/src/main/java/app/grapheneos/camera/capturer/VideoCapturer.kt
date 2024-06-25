@@ -182,10 +182,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         beforeRecordingStarts()
+
         isRecording = true
+
         camConfig.mPlayer.playVRStartSound(handler) {
 
             recording = pendingRecording.start(ctx.mainExecutor) { event ->
+
+                if (event is VideoRecordEvent.Start) {
+                    onRecordingStart()
+                }
 
                 if (event is VideoRecordEvent.Status) {
                     updateTimerTime(event.recordingStats.recordedDurationNanos)
@@ -255,9 +261,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val dp8 = 8 * mActivity.resources.displayMetrics.density
 
     private fun beforeRecordingStarts() {
-
         mActivity.previewView.keepScreenOn = true
+    }
 
+    private fun onRecordingStart() {
         // TODO: Uncomment this once the main indicator UI gets implemented
         // mActivity.micOffIcon.visibility = View.GONE
 
