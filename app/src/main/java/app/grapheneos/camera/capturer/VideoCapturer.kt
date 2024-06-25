@@ -52,11 +52,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
             if (isRecording) {
                 if (value) {
                     recording?.pause()
-                    pauseTimer()
                     mActivity.flipCamIcon.setImageResource(R.drawable.play)
                 } else {
                     recording?.resume()
-                    startTimer()
                     mActivity.flipCamIcon.setImageResource(R.drawable.pause)
                 }
             }
@@ -64,36 +62,20 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
     private val handler = Handler(Looper.getMainLooper())
-    private var elapsedSeconds: Int = 0
-    private val runnable = Runnable {
-        ++elapsedSeconds
-        val secs = padTo2(elapsedSeconds % 60)
-        val min = padTo2(elapsedSeconds / 60 % 60)
-        val hours = padTo2(elapsedSeconds / 3600)
-        val timerText: String = if (hours == "00") {
-            "$min:$secs"
+
+    private fun updateTimerTime(timeInNanos: Long) {
+        val timeInSec = timeInNanos / (1000 * 1000 * 1000)
+        val sec = timeInSec % 60
+        val min = timeInSec / 60 % 60
+        val hour = timeInSec / 3600
+
+        val timerText: String = if (hour == 0L) {
+            String.format(Locale.ROOT, "%02d:%02d", min, sec)
         } else {
-            "$hours:$min:$secs"
+            String.format(Locale.ROOT, "%02d:%02d:%02d", hour, min, sec)
         }
+
         mActivity.timerView.text = timerText
-        startTimer()
-    }
-
-    private fun padTo2(time: Int): String {
-        return String.format("%1$" + 2 + "s", time).replace(' ', '0')
-    }
-
-    private fun startTimer() {
-        handler.postDelayed(runnable, 1000)
-    }
-
-    private fun cancelTimer() {
-        elapsedSeconds = 0
-        handler.removeCallbacks(runnable)
-    }
-
-    private fun pauseTimer() {
-        handler.removeCallbacks(runnable)
     }
 
     private class RecordingContext(
@@ -199,8 +181,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
         beforeRecordingStarts()
         isRecording = true
         camConfig.mPlayer.playVRStartSound(handler) {
-            startTimer()
+
             recording = pendingRecording.start(ctx.mainExecutor) { event ->
+
+                if (event is VideoRecordEvent.Status) {
+                    updateTimerTime(event.recordingStats.recordedDurationNanos)
+                }
+
                 if (event is VideoRecordEvent.Finalize) {
                     afterRecordingStops()
 
@@ -339,7 +326,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE
         }
-        cancelTimer()
 
         mActivity.previewView.keepScreenOn = false
 
