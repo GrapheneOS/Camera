@@ -185,4 +185,5 @@
 
     <string name="zsl_setting_title">Use ZSL in Latency mode</string>
     <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) in Latency mode for faster capture. Certain devices may have a buggy implementation for this.</string>
+    <string name="audio_permission_failed_in_recording">Unable to request for audio permission in between a recording</string>
 </resources>
