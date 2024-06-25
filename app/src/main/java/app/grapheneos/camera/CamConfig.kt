@@ -1070,12 +1070,16 @@ class CamConfig(private val mActivity: MainActivity) {
                         View.VISIBLE
                     }
 
-                videoCapture =
-                    VideoCapture.withOutput(
-                        Recorder.Builder()
-                            .setQualitySelector(QualitySelector.from(videoQuality))
-                            .build()
-                    )
+                val videoCaptureBuilder = VideoCapture.Builder(
+                    Recorder.Builder()
+                    .setQualitySelector(QualitySelector.from(videoQuality))
+                    .build()
+                )
+
+                if (mActivity.camConfig.saveVideoAsPreviewed)
+                    videoCaptureBuilder.setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
+
+                videoCapture = videoCaptureBuilder.build()
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
             }
