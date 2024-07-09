@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -12,6 +11,7 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.provider.DocumentsContract
@@ -23,9 +23,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.os.BundleCompat
 import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.CapturedItem
@@ -39,7 +39,6 @@ import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.snackbar.Snackbar
-import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -64,11 +63,15 @@ class InAppGallery : AppCompatActivity() {
 
     private lateinit var rootView: View
 
+    private var lastViewedMediaItem : CapturedItem? = null
+
     companion object {
         const val INTENT_KEY_SECURE_MODE = "is_secure_mode"
         const val INTENT_KEY_VIDEO_ONLY_MODE = "video_only_mode"
         const val INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS = "secure_mode_items"
         const val INTENT_KEY_LAST_CAPTURED_ITEM = "last_captured_item"
+
+        const val LAST_VIEWED_ITEM_KEY = "LAST_VIEWED_ITEM_KEY"
 
         @SuppressLint("SimpleDateFormat")
         fun convertTime(time: Long, showTimeZone: Boolean = true): String {
@@ -431,6 +434,10 @@ class InAppGallery : AppCompatActivity() {
         snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
         gallerySlider.setPageTransformer(GSlideTransformer())
 
+        if (savedInstanceState != null) {
+            lastViewedMediaItem = BundleCompat.getParcelable(savedInstanceState, LAST_VIEWED_ITEM_KEY, CapturedItem::class.java)
+        }
+
         val intent = this.intent
 
         val showVideosOnly = intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
@@ -468,23 +475,25 @@ class InAppGallery : AppCompatActivity() {
             mainExecutor.execute { asyncResultReady(items) }
         }
 
-        val lastCapturedItem = getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
+        if (lastViewedMediaItem == null) {
+            val lastCapturedItem = getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
 
-        if (lastCapturedItem != null) {
-            val list = ArrayList<CapturedItem>()
-            list.add(lastCapturedItem)
-            GallerySliderAdapter(this, list).let {
-                gallerySliderAdapter = it
-                gallerySlider.adapter = it
-            }
-        } else {
-            Handler(mainLooper).postDelayed({
-                if (gallerySliderAdapter == null) {
-                    binding.placeholderText.root.visibility = View.VISIBLE
+            if (lastCapturedItem != null) {
+                val list = ArrayList<CapturedItem>()
+                list.add(lastCapturedItem)
+                GallerySliderAdapter(this, list).let {
+                    gallerySliderAdapter = it
+                    gallerySlider.adapter = it
                 }
-            }, 500)
+            } else {
+                Handler(mainLooper).postDelayed({
+                    if (gallerySliderAdapter == null) {
+                        binding.placeholderText.root.visibility = View.VISIBLE
+                    }
+                }, 500)
 
-            hideActionBar()
+                hideActionBar()
+            }
         }
     }
 
@@ -497,6 +506,17 @@ class InAppGallery : AppCompatActivity() {
             Toast.makeText(applicationContext, R.string.empty_gallery, Toast.LENGTH_SHORT).show()
             finish()
             return
+        }
+
+        var capturedItemPosition = 0
+
+        if (lastViewedMediaItem != null) {
+            for (i in 0..<items.size) {
+                val capturedItem = items[i]
+                if (capturedItem == lastViewedMediaItem) {
+                    capturedItemPosition = i
+                }
+            }
         }
 
         binding.placeholderText.root.visibility = View.GONE
@@ -523,6 +543,7 @@ class InAppGallery : AppCompatActivity() {
             }
             existingAdapter.notifyItemRangeInserted(1, items.size - 1)
         }
+        gallerySlider.setCurrentItem(capturedItemPosition, false)
         showActionBar()
     }
 
@@ -559,5 +580,13 @@ class InAppGallery : AppCompatActivity() {
     fun showMessage(msg: String) {
         snackBar.setText(msg)
         snackBar.show()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        gallerySliderAdapter?.let {
+            outState.putParcelable(LAST_VIEWED_ITEM_KEY, it.items[gallerySlider.currentItem])
+        }
     }
 }
