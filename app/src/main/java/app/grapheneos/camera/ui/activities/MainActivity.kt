@@ -235,6 +235,8 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var micOffIcon: ImageView
 
+    private var shouldRestartRecording = false
+
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
     }
@@ -247,7 +249,8 @@ open class MainActivity : AppCompatActivity(),
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            videoCapturer.startRecording()
+            shouldRestartRecording = true
+            camConfig.startCamera(true)
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
@@ -655,6 +658,8 @@ open class MainActivity : AppCompatActivity(),
                     }
                     settingsIcon.isEnabled = true
                 }
+
+                restartRecordingIfPermissionsWasUnavailable()
             } else {
                 previewGrid.visibility = View.INVISIBLE
                 val lastFrame = lastFrame
@@ -1787,4 +1792,11 @@ open class MainActivity : AppCompatActivity(),
     }
 
     open fun shouldShowCameraModeTabs() = true
+
+    private fun restartRecordingIfPermissionsWasUnavailable() {
+        if (shouldRestartRecording) {
+            shouldRestartRecording = false
+            videoCapturer.startRecording()
+        }
+    }
 }
