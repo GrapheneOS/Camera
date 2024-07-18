@@ -1191,6 +1191,8 @@ class CamConfig(private val mActivity: MainActivity) {
                 if (mActivity.camConfig.saveVideoAsPreviewed)
                     videoCaptureBuilder.setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
 
+                videoCaptureBuilder.setTargetFrameRate(mActivity.camConfig.videoFrameRate)
+
                 videoCapture = videoCaptureBuilder.build()
 
                 useCaseGroupBuilder.addUseCase(videoCapture!!)
