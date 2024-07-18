@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
-import android.hardware.camera2.CameraMetadata
-import android.hardware.camera2.CaptureRequest
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -18,9 +16,9 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import androidx.annotation.StringRes
-import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -221,6 +219,10 @@ class CamConfig(private val mActivity: MainActivity) {
     private lateinit var modePref: SharedPreferences
 
     var lastCapturedItem: CapturedItem? = null
+
+    private var frontCameraInfo : CameraInfo? = null
+
+    private var rearCameraInfo : CameraInfo? = null
 
     init {
         if (mActivity !is SecureActivity) {
@@ -433,7 +435,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var enableEIS: Boolean
         get() {
-            return mActivity.settingsDialog.enableEISToggle.isChecked
+            return isStabilizationSupported() && mActivity.settingsDialog.enableEISToggle.isChecked
         }
         set(value) {
             val editor = commonPref.edit()
@@ -547,6 +549,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
     val isZslSupported : Boolean by lazy {
         camera!!.cameraInfo.isZslSupported
+    }
+
+    fun isStabilizationSupported() : Boolean {
+        return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
     fun shouldShowGyroscope(): Boolean {
@@ -911,6 +917,11 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
+    private fun getCurrentCameraInfo() : CameraInfo {
+        return if (lensFacing == CameraSelector.LENS_FACING_BACK) rearCameraInfo!!
+        else frontCameraInfo!!
+    }
+
     fun toggleCameraSelector() {
 
         // Manually switch to the opposite lens facing
@@ -954,6 +965,12 @@ class CamConfig(private val mActivity: MainActivity) {
                 return
             }
 
+            // Select a single camera for front/rear facing
+            for (cameraInfo in cameraProvider!!.availableCameraInfos) {
+                if (cameraInfo.lensFacing == CameraSelector.LENS_FACING_FRONT) frontCameraInfo = cameraInfo
+                else if (cameraInfo.lensFacing == CameraSelector.LENS_FACING_BACK) rearCameraInfo = cameraInfo
+            }
+
             // Manually switch to the other lens facing (if the default lens facing isn't
             // supported for the current device)
             if (!isLensFacingSupported(lensFacing)) {
@@ -980,11 +997,11 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     private fun isLensFacingSupported(lensFacing : Int) : Boolean {
-        val tCameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
-
-        return cameraProvider?.hasCamera(tCameraSelector) ?: false
+        return when(lensFacing) {
+            CameraSelector.LENS_FACING_FRONT -> frontCameraInfo != null
+            CameraSelector.LENS_FACING_BACK -> rearCameraInfo != null
+            else -> false
+        }
     }
 
     // Start the camera with latest hard configuration
@@ -1010,6 +1027,15 @@ class CamConfig(private val mActivity: MainActivity) {
 
         cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
+            .addCameraFilter {
+                return@addCameraFilter listOf(
+                    if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                        rearCameraInfo
+                    } else {
+                        frontCameraInfo
+                    }
+                )
+            }
             .build()
 
         val builder = ImageCapture.Builder()
