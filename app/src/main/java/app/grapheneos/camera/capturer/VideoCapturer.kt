@@ -350,14 +350,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.forceUpdateOrientationSensor()
     }
 
-    fun muteRecording() {
-        recording?.mute(true)
-    }
-
-    fun unmuteRecording() {
-        recording?.mute(false)
-    }
-
     fun stopRecording() {
         recording?.stop()
         recording?.close()
