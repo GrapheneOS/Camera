@@ -283,6 +283,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         animator.start()
 
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = false
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
@@ -320,6 +321,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.timerView.visibility = View.GONE
         mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
 
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = true
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
         mActivity.settingsDialog.enableEISToggle.isEnabled = true
 
