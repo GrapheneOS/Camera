@@ -329,7 +329,7 @@ class SettingsDialog(val mActivity: MainActivity) :
                     != PackageManager.PERMISSION_GRANTED) {
 
                     // Inform the user why enabling this option isn't possible
-                    mActivity.showMessage(context.getString(R.string.audio_permission_failed_in_recording))
+                    mActivity.showMessage("Unable to request for audio permission in between a recording")
 
                     // Ensure the option is visually off
                     includeAudioToggle.isChecked = false
