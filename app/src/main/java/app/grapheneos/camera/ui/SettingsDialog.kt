@@ -323,6 +323,9 @@ class SettingsDialog(val mActivity: MainActivity) :
         includeAudioToggle.setOnClickListener {
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
+        includeAudioToggle.setOnCheckedChangeListener { _, _ ->
+            camConfig.startCamera(true)
+        }
 
         enableEISToggle = binding.enableEisSwitch
         enableEISToggle.setOnClickListener {
