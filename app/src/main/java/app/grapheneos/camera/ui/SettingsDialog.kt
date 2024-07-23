@@ -336,6 +336,12 @@ class SettingsDialog(val mActivity: MainActivity) :
                     return@setOnClickListener
                 }
 
+                if (!mActivity.videoCapturer.includeAudio) {
+                    mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")
+                    includeAudioToggle.isChecked = false
+                    return@setOnClickListener
+                }
+
                 if  (includeAudioToggle.isChecked) {
                     mActivity.videoCapturer.unmuteRecording()
                 } else {

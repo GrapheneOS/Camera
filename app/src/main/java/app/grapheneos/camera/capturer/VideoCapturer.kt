@@ -38,6 +38,7 @@ import java.util.Date
 import java.util.Locale
 
 class VideoCapturer(private val mActivity: MainActivity) {
+
     val camConfig = mActivity.camConfig
 
     var isRecording = false
@@ -46,6 +47,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     private var recording: Recording? = null
+
+    var includeAudio: Boolean = false
 
     var isPaused = false
         set(value) {
@@ -166,7 +169,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
 
-        var includeAudio = false
+        includeAudio = false
 
         val ctx = mActivity
 
