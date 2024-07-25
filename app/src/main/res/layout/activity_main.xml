@@ -162,6 +162,21 @@
 
         </FrameLayout>
 
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/mute_toggle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/mic_on"
+            android:background="@color/red"
+            app:contentPadding="8dp"
+            android:layout_marginBottom="12dp"
+            android:layout_above="@+id/three_buttons"
+            android:layout_centerInParent="true"
+            app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+            android:tooltipText="@string/tap_to_mute_audio"
+            android:elevation="10dp"
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/three_buttons"
             android:layout_height="wrap_content"
