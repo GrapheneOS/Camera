@@ -1019,11 +1019,13 @@ open class MainActivity : AppCompatActivity(),
                 muteToggle.setImageResource(R.drawable.mic_on)
                 muteToggle.setBackgroundColor(getColor(R.color.red))
                 muteToggle.tooltipText = getString(R.string.tap_to_mute_audio)
+                showMessage(R.string.video_audio_recording_unmuted)
             } else {
                 videoCapturer.muteRecording()
                 muteToggle.setImageResource(R.drawable.mic_off)
                 muteToggle.setBackgroundColor(getColor(android.R.color.darker_gray))
                 muteToggle.tooltipText = getString(R.string.tap_to_unmute_audio)
+                showMessage(R.string.video_audio_recording_muted)
             }
         }
     }
