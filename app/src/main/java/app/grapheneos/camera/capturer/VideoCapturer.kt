@@ -48,6 +48,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private var recording: Recording? = null
 
+    var isMuted = false
+        private set
+
     var includeAudio: Boolean = false
 
     var isPaused = false
@@ -298,6 +301,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
+
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = false
+
+        if (camConfig.includeAudio) {
+            isMuted = false
+            mActivity.muteToggle.setImageResource(R.drawable.mic_on)
+            mActivity.muteToggle.setBackgroundColor(mActivity.getColor(R.color.red))
+            mActivity.muteToggle.tooltipText = mActivity.getString(R.string.tap_to_mute_audio)
+            mActivity.muteToggle.visibility = View.VISIBLE
+        }
     }
 
     private fun afterRecordingStops() {
@@ -341,16 +354,23 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // if (!mActivity.config.includeAudio)
         //   mActivity.micOffIcon.visibility = View.VISIBLE
 
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = true
+        mActivity.muteToggle.visibility = View.GONE
+
         isRecording = false
 
         mActivity.forceUpdateOrientationSensor()
     }
 
     fun muteRecording() {
+        check(isRecording && camConfig.includeAudio)
+        isMuted = true
         recording?.mute(true)
     }
 
     fun unmuteRecording() {
+        check(isRecording && camConfig.includeAudio)
+        isMuted = false
         recording?.mute(false)
     }
 
