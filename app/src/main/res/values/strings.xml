@@ -192,4 +192,7 @@
 
     <string name="tap_to_mute_audio">Tap to mute audio</string>
     <string name="tap_to_unmute_audio">Tap to unmute audio</string>
+
+    <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
+    <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
 </resources>
