@@ -138,9 +138,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val SCAN_ALL_CODES = false
 
-            const val SAVE_IMAGE_AS_PREVIEW = false
+            const val SAVE_IMAGE_AS_PREVIEW = true
 
-            const val SAVE_VIDEO_AS_PREVIEW = false
+            const val SAVE_VIDEO_AS_PREVIEW = true
 
             const val STORAGE_LOCATION = ""
 
