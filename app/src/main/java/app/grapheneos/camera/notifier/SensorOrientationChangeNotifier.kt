@@ -95,7 +95,7 @@ class SensorOrientationChangeNotifier private constructor(
             filteredValues[2] = ALPHA * filteredValues[2] + (1 - ALPHA) * event.values[2]
 
             var x : Float = filteredValues[0]
-            val y : Float = filteredValues[1]
+            var y : Float = filteredValues[1]
             var z : Float = filteredValues[2]
 
             var newOrientation = mOrientation
@@ -112,6 +112,12 @@ class SensorOrientationChangeNotifier private constructor(
             if (!mainActivity.camConfig.shouldShowGyroscope()) {
                 mainActivity.gCircleFrame.visibility = View.GONE
                 return
+            }
+
+            if (newOrientation == 90 || newOrientation == 270) {
+                val t = x
+                x = y
+                y = t
             }
 
             x = ((180 / Math.PI) * atan(x / sqrt(y * y + z * z))).toFloat()
