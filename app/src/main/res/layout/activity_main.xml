@@ -162,20 +162,43 @@
 
         </FrameLayout>
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/mute_toggle"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/mic_on"
-            android:background="@color/red"
-            app:contentPadding="8dp"
-            android:layout_marginBottom="12dp"
-            android:layout_above="@+id/three_buttons"
-            android:layout_centerInParent="true"
-            app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
-            android:tooltipText="@string/tap_to_mute_audio"
-            android:elevation="10dp"
-            android:visibility="gone" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:weightSum="3"
+            android:layout_above="@id/three_buttons"
+            android:layout_marginBottom="8dp">
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/mute_toggle"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/mic_on"
+                    android:background="@color/red"
+                    app:contentPadding="8dp"
+                    android:layout_gravity="center"
+                    app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                    android:tooltipText="@string/tap_to_mute_audio"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/three_buttons"
