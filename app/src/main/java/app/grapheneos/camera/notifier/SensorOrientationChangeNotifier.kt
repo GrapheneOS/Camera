@@ -47,8 +47,8 @@ class SensorOrientationChangeNotifier private constructor(
 
         private const val Z_THRESHOLD = 5
 
-        private const val Z_ENTRY_MIN = -10F
-        private const val Z_ENTRY_MAX = 10F
+        private const val Z_ENTRY_MIN = -25F
+        private const val Z_ENTRY_MAX = 25F
 
         private const val Z_EXIT_MIN = -45F
         private const val Z_EXIT_MAX = 45F
