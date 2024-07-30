@@ -220,10 +220,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var lastCapturedItem: CapturedItem? = null
 
-    private var frontCameraInfo : CameraInfo? = null
-
-    private var rearCameraInfo : CameraInfo? = null
-
     init {
         if (mActivity !is SecureActivity) {
             CapturedItems.init(mActivity, this)
@@ -306,7 +302,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var lensFacing = DEFAULT_LENS_FACING
 
-    private lateinit var cameraSelector: CameraSelector
+    private var cameraSelector: CameraSelector = CameraSelector.Builder()
+        .requireLensFacing(DEFAULT_LENS_FACING)
+        .build()
 
     var gridType: GridType = SettingValues.Default.GRID_TYPE
         set(value) {
@@ -917,9 +915,9 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
+    @SuppressLint("RestrictedApi")
     private fun getCurrentCameraInfo() : CameraInfo {
-        return if (lensFacing == CameraSelector.LENS_FACING_BACK) rearCameraInfo!!
-        else frontCameraInfo!!
+        return cameraProvider!!.getCameraInfo(cameraSelector)
     }
 
     fun toggleCameraSelector() {
@@ -965,12 +963,6 @@ class CamConfig(private val mActivity: MainActivity) {
                 return
             }
 
-            // Select a single camera for front/rear facing
-            for (cameraInfo in cameraProvider!!.availableCameraInfos) {
-                if (cameraInfo.lensFacing == CameraSelector.LENS_FACING_FRONT) frontCameraInfo = cameraInfo
-                else if (cameraInfo.lensFacing == CameraSelector.LENS_FACING_BACK) rearCameraInfo = cameraInfo
-            }
-
             // Manually switch to the other lens facing (if the default lens facing isn't
             // supported for the current device)
             if (!isLensFacingSupported(lensFacing)) {
@@ -997,11 +989,17 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     private fun isLensFacingSupported(lensFacing : Int) : Boolean {
-        return when(lensFacing) {
-            CameraSelector.LENS_FACING_FRONT -> frontCameraInfo != null
-            CameraSelector.LENS_FACING_BACK -> rearCameraInfo != null
-            else -> false
+        var tCameraSelector = CameraSelector.Builder()
+            .requireLensFacing(lensFacing)
+            .build()
+
+        if (currentMode.extensionMode != ExtensionMode.NONE) {
+            extensionsManager?.let { em ->
+                tCameraSelector = em.getExtensionEnabledCameraSelector(tCameraSelector, currentMode.extensionMode)
+            }
         }
+
+        return cameraProvider?.hasCamera(tCameraSelector) ?: false
     }
 
     // Start the camera with latest hard configuration
@@ -1027,15 +1025,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
-            .addCameraFilter {
-                return@addCameraFilter listOf(
-                    if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                        rearCameraInfo
-                    } else {
-                        frontCameraInfo
-                    }
-                )
-            }
             .build()
 
         val builder = ImageCapture.Builder()
