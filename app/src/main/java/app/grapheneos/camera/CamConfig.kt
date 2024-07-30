@@ -185,6 +185,14 @@ class CamConfig(private val mActivity: MainActivity) {
         val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
 
         const val COMMON_SHARED_PREFS_NAME = "commons"
+
+        val FRONT_CAMERA_SELECTOR = CameraSelector.Builder()
+            .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
+            .build()
+
+        val REAR_CAMERA_SELECTOR = CameraSelector.Builder()
+            .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+            .build()
     }
 
     var camera: Camera? = null
@@ -1014,7 +1022,14 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (currentMode.extensionMode != ExtensionMode.NONE) {
             extensionsManager?.let { em ->
-                tCameraSelector = em.getExtensionEnabledCameraSelector(tCameraSelector, currentMode.extensionMode)
+                if (!em.isExtensionAvailable(tCameraSelector, currentMode.extensionMode))
+                    return false
+
+                try {
+                    tCameraSelector = em.getExtensionEnabledCameraSelector(tCameraSelector, currentMode.extensionMode)
+                } catch (e : IllegalArgumentException) {
+                    return false
+                }
             }
         }
 
@@ -1041,6 +1056,20 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         if (mActivity.isDestroyed || mActivity.isFinishing) return
+
+        // Test whether the current lens facing is supported by the current device
+        // If not then silently switch to the other lens facing
+        // (Snackbar/popup message can be shown before startCamera is called
+        // in specific cases of explicitly switching to another side or if
+        // the camera is expected)
+        if (!isLensFacingSupported(lensFacing)) {
+            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                CameraSelector.LENS_FACING_FRONT
+            } else {
+                CameraSelector.LENS_FACING_BACK
+            }
+        }
+
 
         cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
@@ -1298,13 +1327,18 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     private fun availableModes(): Set<CameraMode> {
-        return CameraMode.values().filter {
+        return CameraMode.entries.filter {
             when (it) {
                 CameraMode.CAMERA, CameraMode.VIDEO -> true
                 CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
                 else -> {
                     check(it.extensionMode != ExtensionMode.NONE)
-                    extensionsManager?.isExtensionAvailable(cameraSelector, it.extensionMode) ?: false
+                    val em = extensionsManager
+                    if (em != null) {
+                        em.isExtensionAvailable(FRONT_CAMERA_SELECTOR, it.extensionMode) || em.isExtensionAvailable(REAR_CAMERA_SELECTOR, it.extensionMode)
+                    } else {
+                        false
+                    }
                 }
             }
         }.toSet()
