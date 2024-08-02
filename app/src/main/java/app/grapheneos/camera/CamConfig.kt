@@ -734,10 +734,33 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
         }
 
+        // Note: This is a workaround to keep save image/video as previewed 'on' by 
+        // default starting from v73 and 'off' by default for versions before that
+        //
+        // If its not a fresh install (before v73)
+        if (commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
+            // If save video as previewed was not previously set
+            if (!commonPref.contains(SettingValues.Key.SAVE_VIDEO_AS_PREVIEW)) {
+                // Explicitly set the value for this setting as false for them
+                // to ensure consistent behavior
+                editor.putBoolean(
+                    SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
+                    false
+                )
+            }
+        }
+        
         if (!commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
             editor.putBoolean(
                 SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
                 SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
+            )
+        }
+
+        if (!commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
+            editor.putBoolean(
+                SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
+                SettingValues.Default.SAVE_VIDEO_AS_PREVIEW
             )
         }
 
