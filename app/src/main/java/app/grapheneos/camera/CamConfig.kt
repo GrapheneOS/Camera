@@ -441,7 +441,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var enableEIS: Boolean
         get() {
-            return isStabilizationSupported() && mActivity.settingsDialog.enableEISToggle.isChecked
+            return isVideoStabilizationSupported() && mActivity.settingsDialog.enableEISToggle.isChecked
         }
         set(value) {
             val editor = commonPref.edit()
@@ -557,7 +557,16 @@ class CamConfig(private val mActivity: MainActivity) {
         camera!!.cameraInfo.isZslSupported
     }
 
-    fun isStabilizationSupported() : Boolean {
+    fun isVideoStabilizationSupported() : Boolean {
+        return isRecorderStabilizationSupported()
+    }
+
+    private fun isPreviewStabilizationSupported() : Boolean {
+        return Preview.getPreviewCapabilities(getCurrentCameraInfo()).isStabilizationSupported
+    }
+
+
+    private fun isRecorderStabilizationSupported() : Boolean {
         return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
@@ -1196,7 +1205,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
             )
 
-        if (isVideoMode) {
+        if (isVideoMode && isPreviewStabilizationSupported()) {
             previewBuilder.setPreviewStabilizationEnabled(enableEIS)
         }
 
