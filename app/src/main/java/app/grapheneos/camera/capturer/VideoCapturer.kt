@@ -284,6 +284,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         animator.start()
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
+        mActivity.settingsDialog.videoFrameRateSpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
         mActivity.flipCamIcon.setImageResource(R.drawable.pause)
@@ -331,6 +332,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
+        mActivity.settingsDialog.videoFrameRateSpinner.isEnabled = true
         mActivity.settingsDialog.enableEISToggle.isEnabled = true
 
         if (mActivity !is VideoCaptureActivity) {

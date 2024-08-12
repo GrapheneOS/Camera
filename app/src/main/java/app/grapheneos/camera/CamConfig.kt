@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.markAs16by9Layout
 import app.grapheneos.camera.ktx.markAs4by3Layout
+import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -332,7 +333,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var videoQuality: Quality = SettingValues.Default.VIDEO_QUALITY
         get() {
             return if (modePref.contains(videoQualityKey)) {
-                mActivity.settingsDialog.titleToQuality(
+                SettingsDialog.titleToQuality(
                     modePref.getString(videoQualityKey, "")!!
                 )
             } else {
@@ -364,10 +365,9 @@ class CamConfig(private val mActivity: MainActivity) {
     var videoFrameRate: Range<Int> = SettingValues.Default.VIDEO_FRAME_RATE
         get() {
             return if (modePref.contains(videoFrameRateKey)) {
-                mActivity.settingsDialog.titleToFrameRateRange(
+                SettingsDialog.titleToFrameRateRange(
                     modePref.getString(videoFrameRateKey, "")!!
                 )
-
             } else {
                 SettingValues.Default.VIDEO_FRAME_RATE
             }
