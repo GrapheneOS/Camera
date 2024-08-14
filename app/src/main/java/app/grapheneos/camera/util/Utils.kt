@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
@@ -84,4 +85,10 @@ fun removePendingFlagFromUri(contentResolver: ContentResolver, uri: Uri) {
     if (contentResolver.update(uri, cv, null, null) != 1) {
         throw IOException("unable to remove IS_PENDING flag")
     }
+}
+
+fun getImageOrientationFromUri(context: Context, uri: Uri) : Int {
+    return context.contentResolver.openInputStream(uri)?.use { inputStream ->
+        ExifInterface(inputStream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+    } ?: ExifInterface.ORIENTATION_NORMAL
 }
