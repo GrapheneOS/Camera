@@ -67,6 +67,8 @@ class InAppGallery : AppCompatActivity() {
 
     private var lastViewedMediaItem : CapturedItem? = null
 
+    private var backgroundAnimator : ValueAnimator? = null
+
     companion object {
         const val INTENT_KEY_SECURE_MODE = "is_secure_mode"
         const val INTENT_KEY_VIDEO_ONLY_MODE = "video_only_mode"
@@ -349,44 +351,46 @@ class InAppGallery : AppCompatActivity() {
 
     private fun animateBackgroundToBlack() {
 
+        backgroundAnimator?.cancel()
+
         val cBgColor = (rootView.background as ColorDrawable).color
 
-        if (cBgColor == Color.BLACK) {
-            return
-        }
+        if (cBgColor == Color.BLACK) return
 
-        val bgColorAnim = ValueAnimator.ofObject(
+        backgroundAnimator = ValueAnimator.ofObject(
             ArgbEvaluator(),
             ogColor,
             Color.BLACK
-        )
-        bgColorAnim.duration = 300
-        bgColorAnim.addUpdateListener { animator ->
-            val color = animator.animatedValue as Int
-            rootView.setBackgroundColor(color)
+        ).apply {
+            duration = 300
+            addUpdateListener { animator ->
+                val color = animator.animatedValue as Int
+                rootView.setBackgroundColor(color)
+            }
+            start()
         }
-        bgColorAnim.start()
     }
 
     private fun animateBackgroundToOriginal() {
 
+        backgroundAnimator?.cancel()
+
         val cBgColor = (rootView.background as ColorDrawable).color
 
-        if (cBgColor == ogColor) {
-            return
-        }
+        if (cBgColor == ogColor) return
 
-        val bgColorAnim = ValueAnimator.ofObject(
+        backgroundAnimator = ValueAnimator.ofObject(
             ArgbEvaluator(),
             Color.BLACK,
             ogColor,
-        )
-        bgColorAnim.duration = 300
-        bgColorAnim.addUpdateListener { animator ->
-            val color = animator.animatedValue as Int
-            this.rootView.setBackgroundColor(color)
+        ).apply {
+            duration = 300
+            addUpdateListener { animator ->
+                val color = animator.animatedValue as Int
+                rootView.setBackgroundColor(color)
+            }
+            start()
         }
-        bgColorAnim.start()
     }
 
     private fun shareCurrentMedia() {
