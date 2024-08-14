@@ -1,8 +1,10 @@
 package app.grapheneos.camera
 
+import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.graphics.PointF
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,17 +12,23 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.databinding.GallerySlideBinding
-import app.grapheneos.camera.ui.ZoomableImageView
+import app.grapheneos.camera.ktx.fixOrientationForImage
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide
 import app.grapheneos.camera.util.executeIfAlive
+import com.davemorrissey.labs.subscaleview.ImageSource
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import kotlin.math.max
 
 class GallerySliderAdapter(
     private val gActivity: InAppGallery,
     val items: ArrayList<CapturedItem>
 ) : RecyclerView.Adapter<GallerySlide>() {
+
+    companion object {
+        private const val TAG = "GallerySliderAdapter"
+    }
 
     var atLeastOneBindViewHolderCall = false
 
@@ -34,74 +42,147 @@ class GallerySliderAdapter(
         return items[position].hashCode().toLong()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
-        val mediaPreview: ZoomableImageView = holder.binding.slidePreview
-//        Log.d("GallerySliderAdapter", "postiion $position, preview ${System.identityHashCode(mediaPreview)}")
+        holder.currentPostion = position
+
+        val mediaPreview: SubsamplingScaleImageView = holder.binding.slidePreview
         val playButton: ImageView = holder.binding.playButton
         val item = items[position]
-
-        mediaPreview.setGalleryActivity(gActivity)
-        mediaPreview.disableZooming()
-        mediaPreview.setOnClickListener(null)
-        mediaPreview.visibility = View.INVISIBLE
-        mediaPreview.setImageBitmap(null)
 
         val placeholderText = holder.binding.placeholderText.root
         if (atLeastOneBindViewHolderCall) {
             placeholderText.visibility = View.VISIBLE
-            placeholderText.setText("…")
+            placeholderText.text = "…"
         }
         atLeastOneBindViewHolderCall = true
 
         playButton.visibility = View.GONE
 
-        holder.currentPostion = position
+        mediaPreview.isPanEnabled = false
+        mediaPreview.isZoomEnabled = false
 
-        gActivity.asyncImageLoader.executeIfAlive {
-            val bitmap: Bitmap? = try {
-                if (item.type == ITEM_TYPE_VIDEO) {
-                    getVideoThumbnail(gActivity, item.uri)
-                } else {
-                    val source = ImageDecoder.createSource(gActivity.contentResolver, item.uri)
-                    ImageDecoder.decodeBitmap(source, ImageDownscaler)
-                }
-            } catch (e: Exception) { null }
+        mediaPreview.setExecutor(gActivity.asyncImageLoader)
 
-            gActivity.mainExecutor.execute {
-                if (holder.currentPostion == position) {
-                    if (bitmap != null) {
-                        placeholderText.visibility = View.GONE
-                        mediaPreview.visibility = View.VISIBLE
-                        mediaPreview.setImageBitmap(bitmap)
+        mediaPreview.maxScale = 3f
 
-                        if (item.type == ITEM_TYPE_VIDEO) {
-                            playButton.visibility = View.VISIBLE
-                        } else if (item.type == ITEM_TYPE_IMAGE) {
-                            mediaPreview.enableZooming()
-                        }
+        mediaPreview.setDoubleTapZoomScale(1.5F)
+        mediaPreview.setDoubleTapZoomDuration(300)
 
-                        mediaPreview.setOnClickListener {
-                            val curItem = getCurrentItem()
-                            if (curItem.type == ITEM_TYPE_VIDEO) {
-                                val intent = Intent(gActivity, VideoPlayer::class.java)
-                                intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
-                                intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
+        mediaPreview.setOnImageEventListener(object : SubsamplingScaleImageView.OnImageEventListener {
+            override fun onReady() {}
 
-                                gActivity.startActivity(intent)
-                            }
-                        }
-                    } else  {
-                        mediaPreview.visibility = View.INVISIBLE
+            override fun onImageLoaded() {
+                mediaPreview.visibility = View.VISIBLE
+                placeholderText.visibility = View.GONE
 
-                        val resId = if (item.type == ITEM_TYPE_IMAGE) {
-                            R.string.inaccessible_image
-                        } else { R.string.inaccessible_video }
+                if (item.type == ITEM_TYPE_IMAGE) {
+                    mediaPreview.isPanEnabled = true
+                    mediaPreview.isZoomEnabled = true
 
-                        placeholderText.visibility = View.VISIBLE
-                        placeholderText.setText(gActivity.getString(resId, item.dateString))
+                    mediaPreview.setOnClickListener {
+                        gActivity.toggleActionBarState()
                     }
                 } else {
-                    bitmap?.recycle()
+                    playButton.visibility = View.VISIBLE
+
+                    mediaPreview.setOnClickListener {
+                        val curItem = getCurrentItem()
+                        if (curItem.type == ITEM_TYPE_VIDEO) {
+                            val intent = Intent(gActivity, VideoPlayer::class.java)
+                            intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
+                            intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
+
+                            gActivity.startActivity(intent)
+                        }
+                    }
+                }
+            }
+
+            override fun onImageLoadError(e: java.lang.Exception?) {
+                Log.i(TAG, "onImageLoadError: Failed to load image")
+                if (e == null) {
+                    Log.d(TAG, "onImageLoadError received null as an exception")
+                } else {
+                    e.printStackTrace()
+                }
+
+                onErrorLoadingMedia()
+            }
+
+            override fun onTileLoadError(e: java.lang.Exception?) {
+                Log.i(TAG, "onTileLoadError: An unexpected error occurred while loading a tile")
+                if (e == null) {
+                    Log.d(TAG, "onTileLoadError: Received null as an exception")
+                } else {
+                    e.printStackTrace()
+                }
+
+                onErrorLoadingMedia()
+            }
+
+            override fun onPreviewLoadError(e: java.lang.Exception?) {}
+
+            override fun onPreviewReleased() {}
+
+            fun onErrorLoadingMedia() {
+                mediaPreview.visibility = View.INVISIBLE
+
+                val placeholderTextFormat = if (item.type == ITEM_TYPE_VIDEO) {
+                    R.string.inaccessible_video
+                } else {
+                    R.string.inaccessible_image
+                }
+
+                placeholderText.visibility = View.VISIBLE
+                placeholderText.text = gActivity.getString(placeholderTextFormat, item.dateString)
+            }
+        })
+
+        // Ensure that the touch events are being sent to the most recently viewed media
+        mediaPreview.setOnTouchListener { v, event ->
+            gActivity.gallerySlider.getChildAt(0).findViewById<SubsamplingScaleImageView>(R.id.slide_preview).onTouchEvent(event)
+        }
+
+        mediaPreview.setOnStateChangedListener(object: SubsamplingScaleImageView.OnStateChangedListener {
+            override fun onScaleChanged(newScale: Float, origin: Int) {
+                gActivity.let {
+                    if (newScale == mediaPreview.minScale) {
+                        gActivity.gallerySlider.isUserInputEnabled = true
+                        it.showActionBar()
+                        it.vibrateDevice()
+                    } else {
+                        gActivity.gallerySlider.isUserInputEnabled = false
+                        it.hideActionBar()
+                    }
+                }
+            }
+
+            override fun onCenterChanged(newCenter: PointF?, origin: Int) {}
+
+        })
+
+        if (item.type == ITEM_TYPE_IMAGE) {
+            mediaPreview.fixOrientationForImage(item.uri)
+            mediaPreview.setImage(ImageSource.uri(item.uri))
+        } else {
+            gActivity.asyncImageLoader.executeIfAlive {
+                val thumbnailBitmap = getVideoThumbnail(gActivity, item.uri)
+
+                if (thumbnailBitmap != null) {
+                    gActivity.mainExecutor.execute {
+                        if (holder.currentPostion == position) {
+                            thumbnailBitmap.let {
+                                mediaPreview.setImage(ImageSource.bitmap(thumbnailBitmap))
+                            }
+                        } else {
+                            thumbnailBitmap.recycle()
+                        }
+                    }
+                } else {
+                    mediaPreview.visibility = View.INVISIBLE
+                    placeholderText.visibility = View.VISIBLE
+                    placeholderText.text = gActivity.getString(R.string.inaccessible_video, item.dateString)
                 }
             }
         }
