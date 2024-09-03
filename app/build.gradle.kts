@@ -27,6 +27,7 @@ android {
                 storePassword = keystoreProperties["storePassword"] as String
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
+                enableV4Signing = true
             }
 
             create("play") {
