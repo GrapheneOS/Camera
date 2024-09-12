@@ -1481,6 +1481,20 @@ class CamConfig(private val mActivity: MainActivity) {
         // Add OK and Cancel buttons
         builder.setPositiveButton(getString(R.string.ok)) { _, _ ->
 
+            val commonFormatsEnabled = commonFormats.count {
+                allowedFormats.contains(it)
+            }
+
+            if (commonFormatsEnabled == 0) {
+                val otherFormatsEnabled = optionValues.count { it }
+                if (otherFormatsEnabled == 0) {
+                    mActivity.showMessage(
+                        getString(R.string.no_barcode_selected)
+                    )
+                    return@setPositiveButton
+                }
+            }
+
             commonPref.edit {
                 for (index in 0 until optionNames.size) {
 
@@ -1492,20 +1506,15 @@ class CamConfig(private val mActivity: MainActivity) {
                     val format = BarcodeFormat.valueOf(optionName)
 
                     if (optionValue) {
-                        allowedFormats.add(format)
-
-                        putBoolean(formatSRep, true)
-                    } else if (format in allowedFormats) {
-                        if (allowedFormats.size == 1) {
-                            mActivity.showMessage(
-                                getString(R.string.no_barcode_selected)
-                            )
-                        } else {
+                        if (format !in allowedFormats)
+                            allowedFormats.add(format)
+                    } else {
+                        if (format in allowedFormats) {
                             allowedFormats.remove(format)
-
-                            putBoolean(formatSRep, false)
                         }
                     }
+
+                    putBoolean(formatSRep, optionValue)
                 }
             }
 
