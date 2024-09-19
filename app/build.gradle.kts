@@ -49,7 +49,7 @@ android {
         applicationId = "app.grapheneos.camera"
         minSdk = 29
         targetSdk = 34
-        versionCode = 74
+        versionCode = 75
         versionName = versionCode.toString()
         resourceConfigurations.add("en")
     }
