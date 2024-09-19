@@ -951,7 +951,6 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
-    @SuppressLint("RestrictedApi")
     private fun getCurrentCameraInfo() : CameraInfo {
         return cameraProvider!!.getCameraInfo(cameraSelector)
     }
