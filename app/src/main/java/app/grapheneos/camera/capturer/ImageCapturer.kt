@@ -25,10 +25,13 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.util.printStackTraceToString
 
 private const val imageFileFormat = ".jpg"
-var isTakingPicture: Boolean = false
 
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
+
+    var isTakingPicture: Boolean = false
+
+    private var currentImageSaver : ImageSaver? = null
 
     private fun fadeCaptureButton() {
         mActivity.captureButton.isEnabled = false
@@ -98,8 +101,19 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         isTakingPicture = true
 
+        currentImageSaver = imageSaver
+
         imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
         fadeCaptureButton()
+    }
+
+    fun cancelPendingCaptureRequest() {
+        if (isTakingPicture) {
+            currentImageSaver?.cancelCaptureRequest()
+
+            unfadeCaptureButton()
+            isTakingPicture = false
+        }
     }
 
     fun onCaptureSuccess() {

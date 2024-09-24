@@ -76,7 +76,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
-import app.grapheneos.camera.capturer.isTakingPicture
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.ktx.SystemSettingsObserver
@@ -585,6 +584,8 @@ open class MainActivity : AppCompatActivity(),
         pauseOrientationSensor()
         if (camConfig.isQRMode) {
             cancelFocusTimer()
+        } else {
+            imageCapturer.cancelPendingCaptureRequest()
         }
         lastFrame = null
     }
@@ -740,13 +741,7 @@ open class MainActivity : AppCompatActivity(),
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
-                if (isTakingPicture) {
-                    showMessage(
-                        getString(R.string.please_wait_for_image_to_get_captured_before_opening)
-                    )
-                } else {
-                    openGallery()
-                }
+                openGallery()
                 Log.i(TAG, "Attempting to open gallery...")
             }
         }
@@ -755,13 +750,7 @@ open class MainActivity : AppCompatActivity(),
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
-                if (isTakingPicture) {
-                    showMessage(
-                        getString(R.string.please_wait_for_image_to_get_captured_before_sharing)
-                    )
-                } else {
-                    shareLatestMedia()
-                }
+                shareLatestMedia()
 
             }
 
