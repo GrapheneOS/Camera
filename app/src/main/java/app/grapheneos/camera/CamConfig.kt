@@ -1050,6 +1050,9 @@ class CamConfig(private val mActivity: MainActivity) {
     fun startCamera(forced: Boolean = false) {
         if ((!forced && camera != null) || cameraProvider == null) return
 
+        // Cancel any pending capture requests
+        mActivity.imageCapturer.cancelPendingCaptureRequest()
+
         mActivity.exposureBar.hidePanel()
         modePref = mActivity.getSharedPreferences(currentMode.name, Context.MODE_PRIVATE)
 

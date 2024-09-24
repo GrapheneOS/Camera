@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 // see com.android.externalstorage.ExternalStorageProvider and
 // com.android.internal.content.FileSystemProvider
@@ -73,17 +74,33 @@ class ImageSaver(
     val contentResolver = appContext.contentResolver
     val mainThreadExecutor = appContext.mainExecutor
 
-    override fun onCaptureSuccess(image: ImageProxy) {
-        mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
+    private var isCancelled = false
 
-        try {
-            extractJpegBytes(image)
-        } catch (e: Exception) {
-            handleError(ImageSaverException(Place.IMAGE_EXTRACTION, e))
-            return
+    fun cancelCaptureRequest() {
+        isCancelled = true
+    }
+
+    override fun onCaptureSuccess(image: ImageProxy) {
+        mainThreadExecutor.execute mainExecutor@ {
+            if (isCancelled) return@mainExecutor
+
+            imageCapturer.onCaptureSuccess()
+
+            imageCaptureCallbackExecutor.execute iccExecutor@ {
+                try {
+                    extractJpegBytes(image)
+                } catch (e: Exception) {
+                    handleError(ImageSaverException(Place.IMAGE_EXTRACTION, e))
+                    return@iccExecutor
+                }
+
+                imageWriterExecutor.execute(this::saveImage)
+            }
         }
 
-        imageWriterExecutor.execute(this::saveImage)
+
+
+
     }
 
     // based on androidx.camera.core.ImageSaver#imageToJpegByteArray(),
@@ -324,7 +341,10 @@ class ImageSaver(
 
     // implementation of ImageCapture.OnImageCapturedCallback.onError
     override fun onError(exception: ImageCaptureException) {
-        mainThreadExecutor.execute{ imageCapturer.onCaptureError(exception) }
+        mainThreadExecutor.execute {
+            if (isCancelled) return@execute
+            imageCapturer.onCaptureError(exception)
+        }
     }
 
     private var skipErrorDialog = false
