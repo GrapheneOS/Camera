@@ -5,8 +5,6 @@ plugins {
 
 allprojects {
     tasks.withType<JavaCompile> {
-        val compilerArgs = options.compilerArgs
-        compilerArgs.add("-Xlint:unchecked")
-        compilerArgs.add("-Xlint:deprecation")
+        options.compilerArgs.addAll(listOf("-Xlint", "-Xlint:-cast", "-Xlint:-rawtypes", "-Xlint:-serial"))
     }
 }
