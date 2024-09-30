@@ -212,7 +212,8 @@ object CapturedItems {
         list.add(0, treeUri)
 
         while (list.size > MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES) {
-            list.removeLast()
+            // list.removeLast() requires API level 35 now due to Java adding it
+            list.removeAt(list.lastIndex)
         }
 
         prefs.edit {

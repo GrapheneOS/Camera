@@ -5,6 +5,6 @@ plugins {
 
 allprojects {
     tasks.withType<JavaCompile> {
-        options.compilerArgs.addAll(listOf("-Xlint", "-Xlint:-cast", "-Xlint:-rawtypes", "-Xlint:-serial"))
+        options.compilerArgs.addAll(listOf("-Xlint", "-Xlint:-cast", "-Xlint:-classfile", "-Xlint:-rawtypes", "-Xlint:-serial"))
     }
 }

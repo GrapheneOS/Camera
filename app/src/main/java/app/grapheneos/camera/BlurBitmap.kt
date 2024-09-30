@@ -11,7 +11,7 @@ object BlurBitmap {
         val width = (sentBitmap.width * 0.1f).roundToInt()
         val height = (sentBitmap.height * 0.1f).roundToInt()
         sentBitmap = Bitmap.createScaledBitmap(sentBitmap, width, height, false)
-        val bitmap = sentBitmap.copy(sentBitmap.config, true)
+        val bitmap = sentBitmap.copy(sentBitmap.config!!, true)
         val w = bitmap.width
         val h = bitmap.height
         val pix = IntArray(w * h)
