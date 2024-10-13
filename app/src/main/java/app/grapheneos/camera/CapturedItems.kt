@@ -76,6 +76,19 @@ class CapturedItem(
         }
     }
 
+    fun delete(context: Context) : Boolean {
+        try {
+            return if (uri.authority == MediaStore.AUTHORITY) {
+                context.contentResolver.delete(uri, null, null) > 0
+            } else {
+                DocumentsContract.deleteDocument(context.contentResolver, uri)
+            }
+        } catch (e : Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
     override fun describeContents() = 0
 }
 
