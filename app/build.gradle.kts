@@ -41,7 +41,7 @@ android {
 
     compileSdk = 35
     buildToolsVersion = "35.0.0"
-    ndkVersion = "27.2.12479018"
+    ndkVersion = "27.1.12297006"
 
     namespace = "app.grapheneos.camera"
 
@@ -94,7 +94,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.core:core:1.13.1")
+    implementation("androidx.core:core:1.15.0")
 
     val cameraVersion = "1.5.0-alpha02"
     implementation("androidx.camera:camera-core:$cameraVersion")
