@@ -23,8 +23,7 @@
             android:layout_gravity="center_vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/settings_bg"
-            android:paddingVertical="@dimen/settings_dialog_padding_vertical"
+            android:paddingTop="@dimen/settings_dialog_padding_vertical"
             android:layout_marginTop="16dp"
             android:orientation="vertical"
             tools:ignore="UselessParent">
@@ -69,6 +68,7 @@
                         android:textOn="@string/aspect_ratio_16_9"
                         android:textOff="@string/aspect_ratio_4_3"
                         android:textSize="17dp"
+                        android:textColor="?attr/colorOnPrimary"
                         android:checked="false"
                         android:scaleType="centerCrop"
                         android:background="@drawable/aspect_ratio"
@@ -128,13 +128,11 @@
 
             </LinearLayout>
 
-            <View
-                android:layout_marginTop="14dp"
-                android:layout_marginBottom="4dp"
+            <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
-                android:layout_height="0.5dp"
-                android:layout_marginHorizontal="@dimen/settings_dialog_padding_horizontal"
-                android:background="@android:color/darker_gray"/>
+                android:layout_height="1dp"
+                android:layout_marginTop="14dp"
+                android:layout_marginHorizontal="@dimen/settings_dialog_padding_horizontal" />
 
             <ScrollView
                 android:id="@+id/settings_scrollview"
@@ -151,10 +149,11 @@
                     <LinearLayout
                         android:id="@+id/self_illumination_setting"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
                         android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
                         <TextView
                             android:layout_height="wrap_content"
@@ -162,7 +161,7 @@
                             android:layout_gravity="center_vertical"
                             android:text="@string/self_illumination"/>
 
-                        <androidx.appcompat.widget.SwitchCompat
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/self_illumination_switch"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -174,10 +173,11 @@
                     <LinearLayout
                         android:id="@+id/video_quality_setting"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
                         android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
                         android:layout_gravity="end"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <TextView
@@ -207,10 +207,11 @@
                     <LinearLayout
                         android:id="@+id/include_audio_setting"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
                         android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
                         <TextView
                             android:layout_height="wrap_content"
@@ -218,7 +219,7 @@
                             android:layout_gravity="center_vertical"
                             android:text="@string/include_audio"/>
 
-                        <androidx.appcompat.widget.SwitchCompat
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/include_audio_switch"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -242,7 +243,7 @@
                             android:layout_gravity="center_vertical"
                             android:text="@string/enable_eis"/>
 
-                        <androidx.appcompat.widget.SwitchCompat
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/enable_eis_switch"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -253,10 +254,11 @@
 
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
                         <TextView
                             android:layout_alignParentStart="true"
@@ -275,7 +277,7 @@
                             android:layout_gravity="center_vertical|end"
                             android:orientation="horizontal">
 
-                            <RadioButton
+                            <com.google.android.material.radiobutton.MaterialRadioButton
                                 android:id="@+id/quality_radio"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -286,7 +288,7 @@
                                 android:layout_width="6dp"
                                 android:layout_height="0dp"/>
 
-                            <RadioButton
+                            <com.google.android.material.radiobutton.MaterialRadioButton
                                 android:id="@+id/latency_radio"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -300,10 +302,11 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
                         android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
                         android:layout_gravity="end"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <TextView
@@ -334,10 +337,11 @@
                     <LinearLayout
                         android:id="@+id/timer_setting"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
                         android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
                         android:layout_gravity="end"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <TextView
@@ -365,19 +369,24 @@
                         </FrameLayout>
                     </LinearLayout>
 
+                    <!-- Extra padding for the bottom of the list -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp" />
+
                 </LinearLayout>
+
             </ScrollView>
 
         </LinearLayout>
 
         <TextView
             android:id="@+id/more_settings"
-            android:visibility="gone"
+            android:visibility="invisible"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:layout_below="@id/settings_dialog"
             android:layout_alignParentEnd="true"
-            android:textColor="@color/white"
             android:background="@drawable/settings_bg"
             android:foreground="@drawable/more_settings_bg"
             android:layout_marginEnd="@dimen/settings_dialog_horizontal_margin"
