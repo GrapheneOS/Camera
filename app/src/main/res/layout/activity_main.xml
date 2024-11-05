@@ -430,6 +430,8 @@
             app:tabIndicator="@drawable/mode_indicator"
             android:overScrollMode="never"
             app:tabIndicatorHeight="30dp"
+            app:tabTextColor="@android:color/white"
+            app:tabSelectedTextColor="?attr/colorOnPrimary"
             android:background="@android:color/transparent"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="4dp" />
