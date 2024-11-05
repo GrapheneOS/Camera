@@ -160,28 +160,28 @@
 
         <activity
             android:name=".ui.activities.VideoPlayer"
-            android:theme="@style/OverlayActionBar"
+            android:theme="@style/Theme.Viewer"
             android:taskAffinity=".ui.activities.VideoPlayer"
             android:excludeFromRecents="true"
             android:exported="false"/>
 
         <activity
             android:name=".ui.activities.InAppGallery"
-            android:theme="@style/OverlayActionBar"
+            android:theme="@style/Theme.Viewer"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
             android:exported="false"/>
 
         <activity
             android:name=".ui.activities.MoreSettings"
-            android:theme="@style/OverlayActionBar"
+            android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
             android:exported="false"/>
 
         <activity
             android:name=".ui.activities.MoreSettingsSecure"
-            android:theme="@style/OverlayActionBar"
+            android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"
