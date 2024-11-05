@@ -11,6 +11,7 @@ import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import com.google.android.material.color.DynamicColors
 
 class App : Application() {
     private var activity: MainActivity? = null
@@ -91,6 +92,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(activityLifeCycleHelper)
+        DynamicColors.applyToActivitiesIfAvailable(this)
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_COARSE_LOCATION])
