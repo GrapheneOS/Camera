@@ -9,17 +9,17 @@
         <shape android:shape="oval">
 
             <stroke
-                android:color="@color/white"
-                android:width="4dp"/>
+                android:width="4dp"
+                android:color="@android:color/white" />
             <solid android:color="@android:color/transparent"/>
         </shape>
     </item>
 
 
     <item
-        android:drawable="@drawable/torch_off"
+        android:drawable="@drawable/torch_off_white"
         android:gravity="center"
-        android:height="36dp"
-        android:width="36dp"/>
+        android:width="36dp"
+        android:height="36dp"/>
 
 </layer-list>

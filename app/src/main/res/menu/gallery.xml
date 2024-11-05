@@ -25,7 +25,7 @@
 
     <item
         android:id="@+id/share_icon"
-        android:icon="@drawable/share"
+        android:icon="@drawable/share_white"
         android:title="@string/share_media"
         app:showAsAction="always" />
 

@@ -8,7 +8,7 @@
             <padding
                 android:left="8dp"
                 android:right="8dp"/>
-            <solid android:color="@color/unselected_option_bg"/>
+            <solid android:color="?attr/colorSurface"/>
             <corners android:radius="100dp"/>
         </shape>
     </item>
