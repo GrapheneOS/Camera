@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.Dialog
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Handler
@@ -22,13 +23,11 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.ToggleButton
 import androidx.annotation.StringRes
-import androidx.appcompat.widget.SwitchCompat
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
@@ -36,15 +35,21 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.radiobutton.MaterialRadioButton
 import java.util.Collections
+import kotlin.math.max
 
-class SettingsDialog(val mActivity: MainActivity) :
-    Dialog(mActivity, R.style.Theme_App) {
+class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
+    Dialog(themedContext) {
     val camConfig = mActivity.camConfig
 
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
@@ -63,13 +68,13 @@ class SettingsDialog(val mActivity: MainActivity) :
     var mScrollViewContent: View
 
     var cmRadioGroup: RadioGroup
-    var qRadio: RadioButton
-    var lRadio: RadioButton
+    var qRadio: MaterialRadioButton
+    var lRadio: MaterialRadioButton
 
-    var includeAudioToggle: SwitchCompat
-    var enableEISToggle: SwitchCompat
+    var includeAudioToggle: MaterialSwitch
+    var enableEISToggle: MaterialSwitch
 
-    var selfIlluminationToggle: SwitchCompat
+    var selfIlluminationToggle: MaterialSwitch
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
@@ -83,7 +88,8 @@ class SettingsDialog(val mActivity: MainActivity) :
 
     private var moreSettingsButton: View
 
-    private val bgBlue = mActivity.getColor(R.color.selected_option_bg)
+    private val tabSelectedColor =
+        MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorPrimary)
 
     private fun getString(@StringRes id: Int) = mActivity.getString(id)
 
@@ -372,6 +378,18 @@ class SettingsDialog(val mActivity: MainActivity) :
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         )
+
+        var backgroundColor = ContextCompat.getColor(context, android.R.color.black)
+        backgroundColor = ColorUtils.setAlphaComponent(backgroundColor, 150)
+        val settingsDialogBackgroundDrawable =
+            ContextCompat.getDrawable(context, R.drawable.settings_bg)
+        settingsDialogBackgroundDrawable?.setTint(backgroundColor)
+        binding.settingsDialog.background = settingsDialogBackgroundDrawable
+
+        val moreSettingsBackgroundDrawable =
+            ContextCompat.getDrawable(context, R.drawable.settings_bg)
+        moreSettingsBackgroundDrawable?.setTint(backgroundColor)
+        binding.moreSettings.background = moreSettingsBackgroundDrawable
     }
 
     private fun resize() {
@@ -381,14 +399,26 @@ class SettingsDialog(val mActivity: MainActivity) :
 
                 mScrollViewContent.viewTreeObserver.removeOnGlobalLayoutListener(this)
 
-                val sdHM =
-                    mActivity.resources.getDimension(R.dimen.settings_dialog_horizontal_margin)
+                val settingsDialogHorizontalMargin =
+                    mActivity.resources.getDimensionPixelSize(R.dimen.settings_dialog_horizontal_margin)
+                val moreSettingsButtonTopPadding =
+                    (8 * mActivity.resources.displayMetrics.density).toInt()
+                val totalDialogHeight = moreSettingsButton.height + moreSettingsButtonTopPadding +
+                        dialog.height
+                val availableWidth = dialog.width - (settingsDialogHorizontalMargin * 4)
+                val availableHeight = availableWidth - (totalDialogHeight - mScrollView.height)
 
-                val sH = (mScrollViewContent.width - (sdHM * 8)).toInt()
-
+                val height = if (mScrollViewContent.height < mScrollView.height) {
+                    mScrollViewContent.height
+                } else {
+                    max(
+                        mScrollView.height.coerceAtMost(availableHeight),
+                        mScrollViewContent.height.coerceAtMost(availableHeight),
+                    )
+                }
                 val lp = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    sH.coerceAtMost(mScrollViewContent.height)
+                    height,
                 )
 
                 mScrollView.layoutParams = lp
@@ -497,27 +527,38 @@ class SettingsDialog(val mActivity: MainActivity) :
                 mActivity.previewView.setBackgroundColor(color)
                 mActivity.rootView.setBackgroundColor(color)
                 mActivity.bottomOverlay.setBackgroundColor(color)
-                window?.statusBarColor = color
             }
 
             val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, Color.BLACK)
             colorAnimation2.duration = 300
+
+            val selectedTextColor =
+                MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnPrimary)
+            val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), selectedTextColor, Color.WHITE)
+            colorAnimation3.duration = 300
+
+            var currentUnselectedColor = Color.WHITE
             colorAnimation2.addUpdateListener { animator ->
+                currentUnselectedColor = animator.animatedValue as Int
+            }
+            colorAnimation3.addUpdateListener { animator ->
                 mActivity.tabLayout.setTabTextColors(
-                    animator.animatedValue as Int,
-                    Color.WHITE
+                    currentUnselectedColor,
+                    animator.animatedValue as Int
                 )
             }
 
-            val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), bgBlue, Color.BLACK)
-            colorAnimation3.duration = 300
-            colorAnimation3.addUpdateListener { animator ->
+            val colorAnimation4 =
+                ValueAnimator.ofObject(ArgbEvaluator(), tabSelectedColor, Color.BLACK)
+            colorAnimation4.duration = 300
+            colorAnimation4.addUpdateListener { animator ->
                 mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
             }
 
             colorAnimation1.start()
             colorAnimation2.start()
             colorAnimation3.start()
+            colorAnimation4.start()
 
             setBrightness(1f)
 
@@ -533,27 +574,37 @@ class SettingsDialog(val mActivity: MainActivity) :
                 mActivity.previewView.setBackgroundColor(color)
                 mActivity.rootView.setBackgroundColor(color)
                 mActivity.bottomOverlay.setBackgroundColor(color)
-                window?.statusBarColor = color
             }
 
             val colorAnimation2 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, Color.WHITE)
             colorAnimation2.duration = 300
+
+            val selectedTextColor =
+                MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnPrimary)
+            val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), Color.WHITE, selectedTextColor)
+            colorAnimation3.duration = 300
+
+            var currentUnselectedTextColor = Color.BLACK
             colorAnimation2.addUpdateListener { animator ->
+                currentUnselectedTextColor = animator.animatedValue as Int
+            }
+            colorAnimation3.addUpdateListener { animator ->
                 mActivity.tabLayout.setTabTextColors(
-                    animator.animatedValue as Int,
-                    Color.WHITE
+                    currentUnselectedTextColor,
+                    animator.animatedValue as Int
                 )
             }
 
-            val colorAnimation3 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, bgBlue)
-            colorAnimation3.duration = 300
-            colorAnimation3.addUpdateListener { animator ->
+            val colorAnimation4 = ValueAnimator.ofObject(ArgbEvaluator(), Color.BLACK, tabSelectedColor)
+            colorAnimation4.duration = 300
+            colorAnimation4.addUpdateListener { animator ->
                 mActivity.tabLayout.setSelectedTabIndicatorColor(animator.animatedValue as Int)
             }
 
             colorAnimation1.start()
             colorAnimation2.start()
             colorAnimation3.start()
+            colorAnimation4.start()
 
             setBrightness(getSystemBrightness())
         }
@@ -596,7 +647,7 @@ class SettingsDialog(val mActivity: MainActivity) :
             object : Animation.AnimationListener {
 
                 override fun onAnimationStart(p0: Animation?) {
-                    moreSettingsButton.visibility = View.GONE
+                    moreSettingsButton.visibility = View.INVISIBLE
                 }
 
                 override fun onAnimationEnd(p0: Animation?) {

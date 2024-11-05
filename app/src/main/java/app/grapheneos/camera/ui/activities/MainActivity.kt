@@ -93,6 +93,7 @@ import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.resolveActivity
 import app.grapheneos.camera.util.setBlurBitmapCompat
+import com.google.android.material.color.DynamicColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
@@ -958,7 +959,8 @@ open class MainActivity : AppCompatActivity(),
         cbText = binding.captureButtonText
         cbCross = binding.captureButtonCross
 
-        settingsDialog = SettingsDialog(this)
+        val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
+        settingsDialog = SettingsDialog(this, themedContext)
 
         SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
             forceUpdateOrientationSensor()

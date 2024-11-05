@@ -9,6 +9,11 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
+    <style name="Theme.SettingsDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog.Centered">
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+    </style>
+
     <style name="ShapeAppearance.Image.PILL" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
