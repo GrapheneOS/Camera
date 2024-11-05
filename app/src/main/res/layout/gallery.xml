@@ -16,4 +16,16 @@
         layout="@layout/gallery_placeholder"
         android:id="@+id/placeholder_text"
     />
+
+    <View
+        android:id="@+id/shade"
+        android:layout_width="match_parent"
+        android:layout_height="0dp" />
+
+    <View
+        android:id="@+id/snackbar_anchor"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true" />
+
 </RelativeLayout>

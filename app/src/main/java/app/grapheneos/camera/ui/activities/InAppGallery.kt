@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -11,7 +10,6 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.VibrationEffect
@@ -24,10 +22,16 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.CapturedItem
@@ -67,6 +71,8 @@ class InAppGallery : AppCompatActivity() {
     private lateinit var rootView: View
 
     private var lastViewedMediaItem : CapturedItem? = null
+
+    private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
     companion object {
         const val INTENT_KEY_SECURE_MODE = "is_secure_mode"
@@ -388,6 +394,28 @@ class InAppGallery : AppCompatActivity() {
         bgColorAnim.start()
     }
 
+    private fun animateShadeToTransparent() {
+        if (binding.shade.alpha == 0f) {
+            return
+        }
+
+        binding.shade.animate().apply {
+            duration = 300
+            alpha(0f)
+        }
+    }
+
+    private fun animateShadeToOriginal() {
+        if (binding.shade.alpha == 1f) {
+            return
+        }
+
+        binding.shade.animate().apply {
+            duration = 300
+            alpha(1f)
+        }
+    }
+
     private fun shareCurrentMedia() {
         if (isSecureMode) {
             showMessage(getString(R.string.sharing_not_allowed))
@@ -408,6 +436,12 @@ class InAppGallery : AppCompatActivity() {
         isSecureMode = intent.getBooleanExtra(INTENT_KEY_SECURE_MODE, false)
 
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        windowInsetsController = WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+            show(WindowInsetsCompat.Type.systemBars())
+        }
 
         if (isSecureMode) {
             setShowWhenLocked(true)
@@ -419,7 +453,6 @@ class InAppGallery : AppCompatActivity() {
         setContentView(binding.root)
 
         supportActionBar?.let {
-            it.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.appbar)))
             it.setDisplayShowTitleEnabled(false)
             it.setDisplayHomeAsUpEnabled(true)
         }
@@ -427,13 +460,20 @@ class InAppGallery : AppCompatActivity() {
         rootView = binding.rootView
         rootView.setOnClickListener {
             if (gallerySliderAdapter != null) {
-                toggleActionBarState()
+                toggleUIState()
             }
         }
 
         gallerySlider = binding.gallerySlider
-        snackBar = Snackbar.make(gallerySlider, "", Snackbar.LENGTH_LONG)
+        snackBar = Snackbar.make(binding.snackbarAnchor, "", Snackbar.LENGTH_LONG)
         gallerySlider.setPageTransformer(GSlideTransformer())
+        ViewCompat.setOnApplyWindowInsetsListener(binding.snackbarAnchor) { view, insets ->
+            val systemBars =
+                insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
+            view.y = -systemBars.bottom.toFloat()
+            snackBar.setAnchorView(view)
+            insets
+        }
 
         if (savedInstanceState != null) {
             lastViewedMediaItem = BundleCompat.getParcelable(savedInstanceState, LAST_VIEWED_ITEM_KEY, CapturedItem::class.java)
@@ -492,10 +532,27 @@ class InAppGallery : AppCompatActivity() {
                         binding.placeholderText.root.visibility = View.VISIBLE
                     }
                 }, 500)
-
-                hideActionBar()
             }
         }
+
+        supportActionBar?.setBackgroundDrawable(null)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.shade) { view, insets ->
+            val systemBars = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
+            val actionBarHeight = resources.getDimensionPixelSize(R.dimen.action_bar_height)
+            view.layoutParams =
+                RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.MATCH_PARENT,
+                    systemBars.top + actionBarHeight
+                )
+            view.background = ContextCompat.getDrawable(this@InAppGallery, R.drawable.shade)
+            insets
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showUI()
     }
 
     fun asyncResultReady(items: ArrayList<CapturedItem>) {
@@ -545,31 +602,35 @@ class InAppGallery : AppCompatActivity() {
             existingAdapter.notifyItemRangeInserted(1, items.size - 1)
         }
         gallerySlider.setCurrentItem(capturedItemPosition, false)
-        showActionBar()
+        showUI()
     }
 
-    fun toggleActionBarState() {
+    fun toggleUIState() {
         supportActionBar?.let {
             if (it.isShowing) {
-                hideActionBar()
+                hideUI()
             } else {
-                showActionBar()
+                showUI()
             }
         }
     }
 
-    fun showActionBar() {
+    fun showUI() {
         supportActionBar?.let {
             it.show()
             animateBackgroundToOriginal()
         }
+        animateShadeToOriginal()
+        windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
     }
 
-    fun hideActionBar() {
+    fun hideUI() {
         supportActionBar?.let {
             it.hide()
             animateBackgroundToBlack()
         }
+        animateShadeToTransparent()
+        windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
     }
 
     override fun onDestroy() {

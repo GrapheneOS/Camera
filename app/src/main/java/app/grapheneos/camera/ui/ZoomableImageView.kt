@@ -154,7 +154,7 @@ class ZoomableImageView @JvmOverloads constructor(
     }
 
     private fun onSingleClick() {
-        gActivity.toggleActionBarState()
+        gActivity.toggleUIState()
     }
 
     private fun onDoubleClick(event: MotionEvent) {
@@ -249,7 +249,7 @@ class ZoomableImageView @JvmOverloads constructor(
             scaleAnimator?.cancel()
 
             if (isZoomingDisabled) {
-                gActivity.showActionBar()
+                gActivity.showUI()
             } else {
                 gActivity.gallerySlider.isUserInputEnabled = false
             }
@@ -280,7 +280,7 @@ class ZoomableImageView @JvmOverloads constructor(
         isInZoomMode = true
 
         gActivity.let {
-            it.hideActionBar()
+            it.hideUI()
             it.gallerySlider.isUserInputEnabled = false
         }
     }
@@ -291,7 +291,7 @@ class ZoomableImageView @JvmOverloads constructor(
 
         isInZoomMode = false
 
-        gActivity.showActionBar()
+        gActivity.showUI()
         gActivity.vibrateDevice()
     }
 
