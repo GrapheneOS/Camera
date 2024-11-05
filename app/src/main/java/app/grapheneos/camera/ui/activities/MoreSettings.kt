@@ -14,7 +14,6 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
@@ -22,6 +21,7 @@ import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.util.storageLocationToUiString
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 
 open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
@@ -120,7 +120,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         rSLocation = binding.refreshStorageLocation
         rSLocation.setOnClickListener {
 
-            val dialog = AlertDialog.Builder(this)
+            val dialog = MaterialAlertDialogBuilder(this)
 
             dialog.setTitle(R.string.are_you_sure)
 

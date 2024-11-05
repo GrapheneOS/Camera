@@ -1,7 +1,6 @@
 package app.grapheneos.camera.capturer
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -23,6 +22,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.util.printStackTraceToString
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 private const val imageFileFormat = ".jpg"
 var isTakingPicture: Boolean = false
@@ -196,7 +196,7 @@ class ImageCapturer(val mActivity: MainActivity) {
     private fun showErrorDialog(message: String, exception: Throwable) {
         val ctx = mActivity
 
-        AlertDialog.Builder(ctx).apply {
+        MaterialAlertDialogBuilder(ctx).apply {
             setMessage(message)
             setPositiveButton(R.string.show_details) { _, _ ->
                 val pkgName = ctx.packageName
@@ -205,7 +205,7 @@ class ImageCapturer(val mActivity: MainActivity) {
                         "\npackage: $pkgName:$pkgVersion" +
                         "\n\n${exception.printStackTraceToString()}"
 
-                AlertDialog.Builder(ctx).apply {
+                MaterialAlertDialogBuilder(ctx).apply {
                     setItems(text.lines().toTypedArray(), null)
                     setNeutralButton(R.string.copy_to_clipboard) { _, _ ->
                         val clipData = ClipData.newPlainText(exception.javaClass.name, text)

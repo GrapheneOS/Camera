@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.Manifest
 import android.animation.Animator
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.app.Dialog
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -11,7 +10,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.Point
@@ -51,6 +49,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
@@ -94,6 +93,7 @@ import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.resolveActivity
 import app.grapheneos.camera.util.setBlurBitmapCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -305,10 +305,9 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {
-        val builder =
-            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-        builder.setTitle(R.string.audio_permission_dialog_title)
-        builder.setMessage(R.string.audio_permission_dialog_message)
+        val builder = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.audio_permission_dialog_title)
+            .setMessage(R.string.audio_permission_dialog_message)
 
         // Open the settings menu for the current app
         builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
@@ -446,10 +445,9 @@ open class MainActivity : AppCompatActivity(),
 
                 // Don't build and show a new dialog if it's already visible
                 if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) return
-                val builder =
-                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                builder.setTitle(R.string.camera_permission_dialog_title)
-                builder.setMessage(R.string.camera_permission_dialog_message)
+                val builder = MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.camera_permission_dialog_title)
+                    .setMessage(R.string.camera_permission_dialog_message)
                 val positiveClicked = AtomicBoolean(false)
 
                 // Open the settings menu for the current app
@@ -1088,8 +1086,6 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    private lateinit var dialog: Dialog
-
     open fun bytesToHex(bytes: ByteArray): String {
         if (bytes.isEmpty()) return "" // outLen will be wrong for empty inputs
 
@@ -1137,10 +1133,9 @@ open class MainActivity : AppCompatActivity(),
         )
 
         runOnUiThread {
-            dialog = Dialog(this, R.style.Theme_Dialog)
-            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            val builder = MaterialAlertDialogBuilder(this)
             val dialogBinding = ScanResultDialogBinding.inflate(layoutInflater)
-            dialog.setContentView(dialogBinding.root)
+            builder.setView(dialogBinding.root)
 
             val tabLayout: TabLayout = dialogBinding.encodingTabs
             val textView = dialogBinding.scanResultText
@@ -1212,14 +1207,14 @@ open class MainActivity : AppCompatActivity(),
                 )
             }
 
-            dialog.setOnDismissListener {
+            builder.setOnDismissListener {
                 isQRDialogShowing = false
                 camConfig.startCamera(true)
             }
 
             camConfig.cameraProvider?.unbindAll()
 
-            dialog.show()
+            builder.show()
         }
     }
 
@@ -1681,7 +1676,7 @@ open class MainActivity : AppCompatActivity(),
             ) && ActivityCompat.shouldShowRequestPermissionRationale(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION
             ) -> {
-                AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).let {
+                MaterialAlertDialogBuilder(this).let {
                     it.setTitle(R.string.location_permission_dialog_title)
                     it.setMessage(R.string.location_permission_dialog_message)
 

@@ -1,7 +1,6 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
@@ -16,6 +15,7 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -48,6 +48,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.util.edit
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
@@ -1517,7 +1518,7 @@ class CamConfig(private val mActivity: MainActivity) {
         val dialog = builder.create()
 
         dialog.setOnShowListener {
-            val button: Button = (dialog as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
+            val button: Button = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
             button.setOnClickListener {
 
             }
@@ -1530,14 +1531,14 @@ class CamConfig(private val mActivity: MainActivity) {
         // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
         storageLocation = SettingValues.Default.STORAGE_LOCATION
 
-        val builder = AlertDialog.Builder(mActivity)
-        builder.setTitle(R.string.folder_not_found)
-        builder.setMessage(R.string.reverting_to_default_folder)
-        builder.setPositiveButton(R.string.ok, null)
-        builder.setNeutralButton(R.string.more_settings) { _, _ ->
-            MoreSettings.start(mActivity)
-        }
-        val alertDialog: AlertDialog = builder.create()
+        val builder = MaterialAlertDialogBuilder(mActivity)
+            .setTitle(R.string.folder_not_found)
+            .setMessage(R.string.reverting_to_default_folder)
+            .setPositiveButton(R.string.ok, null)
+            .setNeutralButton(R.string.more_settings) { _, _ ->
+                MoreSettings.start(mActivity)
+            }
+        val alertDialog = builder.create()
         alertDialog.setCancelable(false)
         alertDialog.show()
     }

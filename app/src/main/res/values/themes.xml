@@ -14,11 +14,6 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <style name="Theme_Dialog" parent="android:Theme.DeviceDefault.Light.Dialog">
-        <item name="android:windowMinWidthMajor">80%</item>
-        <item name="android:windowMinWidthMinor">80%</item>
-    </style>
-
     <style name="OverlayActionBar" parent="Theme.AppCompat.DayNight.DarkActionBar">
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowActionBarOverlay">true</item>
