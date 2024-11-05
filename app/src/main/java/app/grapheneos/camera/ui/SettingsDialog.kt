@@ -366,6 +366,8 @@ class SettingsDialog(val mActivity: MainActivity) :
             camConfig.startCamera(true)
         }
 
+        window?.attributes?.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
         window?.setFlags(
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE

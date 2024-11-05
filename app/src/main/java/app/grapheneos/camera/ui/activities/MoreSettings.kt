@@ -10,11 +10,15 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.OnApplyWindowInsetsListener
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
@@ -71,6 +75,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val camConfig = obtainCamConfig(intent)
         if (camConfig == null) {
@@ -81,9 +86,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         binding = MoreSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setTitle(R.string.more_settings)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        window.navigationBarColor = Color.TRANSPARENT
 
         val showStorageSettings = this !is MoreSettingsSecure
 
@@ -236,6 +238,23 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         if (!showStorageSettings) {
             binding.storageLocationSettings.visibility = View.GONE
+        }
+
+        binding.appBar.setNavigationOnClickListener {
+            finish()
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.scrollView) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val cutouts = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            v.setPadding(cutouts.left, 0, cutouts.right, systemBars.bottom)
+            insets
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.appBar) { v, insets ->
+            val cutouts = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            v.setPadding(cutouts.left, 0, cutouts.right, 0)
+            insets
         }
     }
 

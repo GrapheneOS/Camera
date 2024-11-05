@@ -432,8 +432,7 @@
             app:tabIndicatorHeight="30dp"
             android:background="@android:color/transparent"
             android:layout_marginTop="12dp"
-            android:layout_marginBottom="4dp"
-            android:layout_marginHorizontal="8dp"/>
+            android:layout_marginBottom="4dp" />
 
         <FrameLayout
             android:layout_height="26dp"

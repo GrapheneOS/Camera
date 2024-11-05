@@ -6,9 +6,15 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.widget.FrameLayout
 import android.widget.MediaController
+import android.widget.RelativeLayout
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.VideoPlayerBinding
@@ -28,6 +34,13 @@ class VideoPlayer : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = false
+        windowInsetsController.isAppearanceLightNavigationBars = false
+        windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+
         val intent = this.intent
         if (intent.getBooleanExtra(IN_SECURE_MODE, false)) {
             setShowWhenLocked(true)
@@ -49,13 +62,29 @@ class VideoPlayer : AppCompatActivity() {
         val mediaController = object : MediaController(this) {
             override fun show() {
                 super.show()
-                supportActionBar?.show()
+                showActionBar()
+                windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
             }
 
             override fun hide() {
                 super.hide()
-                supportActionBar?.hide()
+                hideActionBar()
+                windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
             }
+        }
+
+        supportActionBar?.setBackgroundDrawable(null)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.shade) { view, insets ->
+            val systemBars = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
+            val actionBarHeight = resources.getDimensionPixelSize(R.dimen.action_bar_height)
+            view.layoutParams =
+                FrameLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.MATCH_PARENT,
+                    systemBars.top + actionBarHeight
+                )
+            view.background = ContextCompat.getDrawable(this@VideoPlayer, R.drawable.shade)
+            insets
         }
 
         thread {
@@ -86,7 +115,7 @@ class VideoPlayer : AppCompatActivity() {
                         videoView.start()
                     }
 
-                    supportActionBar?.show()
+                    showActionBar()
                     mediaController.show(0)
                 }
 
@@ -102,6 +131,38 @@ class VideoPlayer : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        showActionBar()
+    }
+
+    private fun hideActionBar() {
+        supportActionBar?.hide()
+        animateShadeToTransparent()
+    }
+
+    private fun showActionBar() {
         supportActionBar?.show()
+        animateShadeToOriginal()
+    }
+
+    private fun animateShadeToTransparent() {
+        if (binding.shade.alpha == 0f) {
+            return
+        }
+
+        binding.shade.animate().apply {
+            duration = 300
+            alpha(0f)
+        }
+    }
+
+    private fun animateShadeToOriginal() {
+        if (binding.shade.alpha == 1f) {
+            return
+        }
+
+        binding.shade.animate().apply {
+            duration = 300
+            alpha(1f)
+        }
     }
 }

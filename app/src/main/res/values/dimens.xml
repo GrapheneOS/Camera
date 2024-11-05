@@ -15,4 +15,6 @@
     <dimen name="settings_dialog_menu_item_vertical">8dp</dimen>
 
     <dimen name="settings_dialog_horizontal_margin">12dp</dimen>
+
+    <dimen name="action_bar_height">60dp</dimen>
 </resources>
