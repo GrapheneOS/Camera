@@ -2,7 +2,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:gravity="center">
         <shape android:shape="oval">
-            <solid android:color="@color/selected_option_bg"/>
+            <solid android:color="?attr/colorPrimary" />
             <padding
                 android:left="@dimen/grid_on_toggle_button_padding"
                 android:right="@dimen/grid_on_toggle_button_padding"

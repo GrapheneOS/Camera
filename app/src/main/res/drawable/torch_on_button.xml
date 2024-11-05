@@ -8,7 +8,7 @@
 
         <shape android:shape="oval">
             <stroke
-                android:color="@color/white"
+                android:color="@android:color/white"
                 android:width="4dp"/>
             <solid android:color="@color/unselected_option_bg"/>
         </shape>
@@ -16,9 +16,9 @@
 
 
     <item
-        android:drawable="@drawable/torch_on"
+        android:drawable="@drawable/torch_on_white"
         android:gravity="center"
-        android:height="36dp"
-        android:width="36dp"/>
+        android:width="36dp"
+        android:height="36dp"/>
 
 </layer-list>

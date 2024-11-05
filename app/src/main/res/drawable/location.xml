@@ -4,7 +4,7 @@
         <layer-list>
             <item>
                 <shape android:shape="oval">
-                    <solid android:color="@color/unselected_option_bg"/>
+                    <solid android:color="?attr/colorSurfaceContainer"/>
                     <padding
                         android:left="@dimen/toggle_button_padding"
                         android:right="@dimen/toggle_button_padding"
@@ -20,7 +20,7 @@
         <layer-list>
             <item>
                 <shape android:shape="oval">
-                    <solid android:color="@color/selected_option_bg"/>
+                    <solid android:color="?attr/colorPrimary"/>
                     <padding
                         android:left="@dimen/toggle_button_padding"
                         android:right="@dimen/toggle_button_padding"

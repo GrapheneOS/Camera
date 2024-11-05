@@ -4,15 +4,8 @@
     <item
         android:left="-12dp"
         android:right="-12dp">
-
         <shape android:shape="rectangle">
-
-            <solid android:color="@color/white"/>
-            <corners android:radius="27.5dp"/>
-            <stroke
-                android:width="0.5dp"
-                android:color="#fff"/>
-
+            <corners android:radius="27.5dp" />
         </shape>
     </item>
 </layer-list>

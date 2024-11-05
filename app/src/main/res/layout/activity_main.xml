@@ -5,13 +5,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     tools:context=".ui.activities.MainActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/root"
-        android:background="@color/default_bg"
         tools:context=".ui.activities.MainActivity">
 
         <FrameLayout
@@ -58,7 +58,7 @@
                     android:id="@+id/bottom_overlay"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:background="@color/default_bg"
+                    android:background="@android:color/black"
                     app:layout_constraintTop_toBottomOf="@id/preview"
                     app:layout_constraintBottom_toBottomOf="parent"/>
 
@@ -90,7 +90,7 @@
                         android:shadowDx="1.5"
                         android:shadowDy="1.3"
                         android:shadowRadius="1.6"
-                        android:textColor="@color/white"
+                        android:textColor="@android:color/white"
                         android:textAlignment="center"/>
 
                     <View
@@ -146,7 +146,7 @@
                 android:shadowDx="1.5"
                 android:shadowDy="1.3"
                 android:shadowRadius="1.6"
-                android:textColor="@color/white"/>
+                android:textColor="@android:color/white"/>
 
             <app.grapheneos.camera.ui.CustomGrid
                 android:id="@+id/preview_grid"
@@ -476,7 +476,7 @@
             android:layout_below="@id/three_buttons"
             android:layout_centerHorizontal="true"
             android:visibility="gone"
-            android:textColor="@color/white"
+            android:textColor="@android:color/white"
             android:textSize="16sp"
             android:text="@string/start_value_timer"/>
 
