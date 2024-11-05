@@ -36,7 +36,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     private lateinit var sLField: EditText
 
-    private lateinit var rSLocation: ImageView
+    private lateinit var rSLocation: Button
 
     private lateinit var rootView: View
 
