@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.App" parent="Theme.AppCompat.NoActionBar">
-        <item name="colorAccent">@color/selected_option_bg</item>
+    <style name="Theme.App" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
 
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -19,7 +18,7 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <style name="OverlayActionBar" parent="Theme.AppCompat.DayNight.DarkActionBar">
+    <style name="Theme.Viewer" parent="Theme.Material3.DayNight">
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowActionBarOverlay">true</item>
         <item name="android:windowActionBar">true</item>
@@ -27,5 +26,15 @@
         <item name="windowActionModeOverlay">true</item>
         <item name="windowActionBarOverlay">true</item>
         <item name="windowActionBar">true</item>
+
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+
+        <item name="android:homeAsUpIndicator">@drawable/back_white</item>
+
+        <item name="actionOverflowButtonStyle">@style/WhiteOverflowButtonStyle</item>
+    </style>
+
+    <style name="WhiteOverflowButtonStyle" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:tint">@android:color/white</item>
     </style>
 </resources>
