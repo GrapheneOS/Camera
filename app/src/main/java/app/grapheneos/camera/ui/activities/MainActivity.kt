@@ -1631,10 +1631,9 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    // Vibrates the device for 100 milliseconds.
     private fun vibrateDevice() {
         val vibrator = getSystemService(Vibrator::class.java)
-        vibrator?.vibrate(VibrationEffect.createOneShot(50, 10))
+        vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
     }
 
     override fun onDestroy() {

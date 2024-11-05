@@ -580,7 +580,7 @@ class InAppGallery : AppCompatActivity() {
 
     fun vibrateDevice() {
         val vibrator = getSystemService(Vibrator::class.java)
-        vibrator?.vibrate(VibrationEffect.createOneShot(50, 10))
+        vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
     }
 
     fun showMessage(msg: String) {
