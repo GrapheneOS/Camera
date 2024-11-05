@@ -40,6 +40,7 @@ import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -203,7 +204,7 @@ class InAppGallery : AppCompatActivity() {
     private fun deleteCurrentMedia() {
         val curItem = getCurrentItem()
 
-        AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_title)
             .setMessage(getString(R.string.delete_description, curItem.uiName()))
             .setPositiveButton(R.string.delete) { _, _ ->
@@ -293,10 +294,8 @@ class InAppGallery : AppCompatActivity() {
         }
 
 
-        val alertDialog: AlertDialog.Builder =
-            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-
-        alertDialog.setTitle(getString(R.string.file_details))
+        val alertDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.file_details))
 
         val detailsBuilder = StringBuilder()
 
