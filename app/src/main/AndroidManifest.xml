@@ -39,7 +39,8 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Camera">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -72,7 +73,8 @@
             android:screenOrientation="nosensor"
             android:showWhenLocked="true"
             android:excludeFromRecents="true"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Camera">
 
             <intent-filter>
                 <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE"/>
