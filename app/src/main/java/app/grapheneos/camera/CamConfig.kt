@@ -1509,9 +1509,7 @@ class CamConfig(private val mActivity: MainActivity) {
                         if (format !in allowedFormats)
                             allowedFormats.add(format)
                     } else {
-                        if (format in allowedFormats) {
-                            allowedFormats.remove(format)
-                        }
+                        allowedFormats.remove(format)
                     }
 
                     putBoolean(formatSRep, optionValue)
