@@ -1482,13 +1482,18 @@ class CamConfig(private val mActivity: MainActivity) {
         // Add OK and Cancel buttons
         builder.setPositiveButton(getString(R.string.ok)) { _, _ ->
 
-            val commonFormatsEnabled = commonFormats.count {
+            val allCommonFormatsDisabled = commonFormats.none {
                 allowedFormats.contains(it)
             }
 
-            if (commonFormatsEnabled == 0) {
-                val otherFormatsEnabled = optionValues.count { it }
-                if (otherFormatsEnabled == 0) {
+            // If all formats displayed outside the dialog are disabled (main QR scanner
+            // UI)
+            if (allCommonFormatsDisabled) {
+                val noOptionWasChecked = optionValues.none { it }
+
+                // If no option is selected within the check box too (implying no barcode format
+                // is selected at all) - don't make apply the selction made by the user
+                if (noOptionWasChecked) {
                     mActivity.showMessage(
                         getString(R.string.no_barcode_selected)
                     )
