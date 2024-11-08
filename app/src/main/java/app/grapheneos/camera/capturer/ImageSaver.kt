@@ -84,8 +84,6 @@ class ImageSaver(
         mainThreadExecutor.execute mainExecutor@ {
             if (isCancelled) return@mainExecutor
 
-            imageCapturer.onCaptureSuccess()
-
             imageCaptureCallbackExecutor.execute iccExecutor@ {
                 try {
                     extractJpegBytes(image)
@@ -96,6 +94,8 @@ class ImageSaver(
 
                 imageWriterExecutor.execute(this::saveImage)
             }
+
+            imageCapturer.onCaptureSuccess()
         }
 
 
