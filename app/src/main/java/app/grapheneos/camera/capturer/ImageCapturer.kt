@@ -29,7 +29,8 @@ private const val imageFileFormat = ".jpg"
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
 
-    var isTakingPicture: Boolean = false
+    val isTakingPicture: Boolean
+        get() = currentImageSaver != null
 
     private var currentImageSaver : ImageSaver? = null
 
@@ -99,8 +100,6 @@ class ImageCapturer(val mActivity: MainActivity) {
             targetThumbnailHeight = preview.height,
         )
 
-        isTakingPicture = true
-
         currentImageSaver = imageSaver
 
         imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
@@ -112,13 +111,13 @@ class ImageCapturer(val mActivity: MainActivity) {
             currentImageSaver?.cancelCaptureRequest()
 
             unfadeCaptureButton()
-            isTakingPicture = false
+            currentImageSaver = null
         }
     }
 
     fun onCaptureSuccess() {
         unfadeCaptureButton()
-        isTakingPicture = false
+        currentImageSaver = null
 
         camConfig.mPlayer.playShutterSound()
         camConfig.snapPreview()
@@ -157,7 +156,7 @@ class ImageCapturer(val mActivity: MainActivity) {
         Log.e(TAG, "onCaptureError", exception)
 
         unfadeCaptureButton()
-        isTakingPicture = false
+        currentImageSaver = null
         mActivity.previewLoader.visibility = View.GONE
 
         if (mActivity.isStarted) {
