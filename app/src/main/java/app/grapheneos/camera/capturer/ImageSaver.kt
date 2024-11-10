@@ -81,26 +81,16 @@ class ImageSaver(
     }
 
     override fun onCaptureSuccess(image: ImageProxy) {
-        mainThreadExecutor.execute mainExecutor@ {
-            if (isCancelled) return@mainExecutor
+        mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
 
-            imageCaptureCallbackExecutor.execute iccExecutor@ {
-                try {
-                    extractJpegBytes(image)
-                } catch (e: Exception) {
-                    handleError(ImageSaverException(Place.IMAGE_EXTRACTION, e))
-                    return@iccExecutor
-                }
-
-                imageWriterExecutor.execute(this::saveImage)
-            }
-
-            imageCapturer.onCaptureSuccess()
+        try {
+            extractJpegBytes(image)
+        } catch (e: Exception) {
+            handleError(ImageSaverException(Place.IMAGE_EXTRACTION, e))
+            return
         }
 
-
-
-
+        imageWriterExecutor.execute(this::saveImage)
     }
 
     // based on androidx.camera.core.ImageSaver#imageToJpegByteArray(),
