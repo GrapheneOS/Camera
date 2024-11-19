@@ -204,6 +204,8 @@ open class MainActivity : AppCompatActivity(),
     private lateinit var gLeftDash: View
     private lateinit var gRightDash: View
 
+    private var bottomNavigationBarPadding: Int = 0
+
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
 
     private val runnable = Runnable {
@@ -905,11 +907,15 @@ open class MainActivity : AppCompatActivity(),
                     insets.left,
                     0,
                     insets.right,
-                    insets.bottom,
+                    0,
                 )
 
                 it
             }
+
+            zoomBarPanel.setPadding(0, 0, 0, insets.bottom)
+            exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
+            bottomNavigationBarPadding = insets.bottom
 
             if (insets.top != 0 && !isInsetSet) {
                 mainFrame.layoutParams =
@@ -1045,7 +1051,7 @@ open class MainActivity : AppCompatActivity(),
                                 if (extraHeight169 > 0) {
                                     extraHeight169
                                 } else {
-                                    it.bottomMargin
+                                    bottomNavigationBarPadding
                                 }
                             )
 
