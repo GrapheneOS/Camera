@@ -21,6 +21,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.printStackTraceToString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -213,10 +214,10 @@ class ImageCapturer(val mActivity: MainActivity) {
                         cm.setPrimaryClip(clipData)
                         ctx.showMessage(R.string.copied_text_to_clipboard)
                     }
-                    show()
+                    showIgnoringShortEdgeMode()
                 }
             }
-            show()
+            showIgnoringShortEdgeMode()
         }
     }
 
