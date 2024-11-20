@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui
 import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.pm.PackageManager
@@ -48,6 +49,7 @@ import com.google.android.material.radiobutton.MaterialRadioButton
 import java.util.Collections
 import kotlin.math.max
 
+@SuppressLint("ClickableViewAccessibility")
 class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     Dialog(themedContext) {
     val camConfig = mActivity.camConfig
@@ -254,8 +256,13 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
-        selfIlluminationToggle.setOnClickListener {
-            camConfig.selfIlluminate = selfIlluminationToggle.isChecked
+        selfIlluminationToggle.setOnCheckedChangeListener { _, isChecked ->
+            camConfig.selfIlluminate = isChecked
+        }
+        binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
+            event.setLocation(0f, 0f)
+            selfIlluminationToggle.dispatchTouchEvent(event)
+            true
         }
 
         focusTimeoutSpinner = binding.focusTimeoutSpinner
@@ -329,7 +336,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         timerSetting = binding.timerSetting
 
         includeAudioToggle = binding.includeAudioSwitch
-        includeAudioToggle.setOnClickListener {
+        includeAudioToggle.setOnCheckedChangeListener { _, _ ->
             if (mActivity.videoCapturer.isRecording) {
                 if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -339,13 +346,13 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
                     // Ensure the option is visually off
                     includeAudioToggle.isChecked = false
-                    return@setOnClickListener
+                    return@setOnCheckedChangeListener
                 }
 
                 if (!mActivity.videoCapturer.includeAudio) {
                     mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")
                     includeAudioToggle.isChecked = false
-                    return@setOnClickListener
+                    return@setOnCheckedChangeListener
                 }
 
                 if  (includeAudioToggle.isChecked) {
@@ -363,13 +370,21 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
+        binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
+            event.setLocation(0f, 0f)
+            includeAudioToggle.dispatchTouchEvent(event)
+            true
+        }
 
         enableEISToggle = binding.enableEisSwitch
-        enableEISToggle.setOnClickListener {
-            camConfig.enableEIS = enableEISToggle.isChecked
-        }
-        enableEISToggle.setOnCheckedChangeListener { _, _ ->
+        enableEISToggle.setOnCheckedChangeListener { _, isChecked ->
+            camConfig.enableEIS = isChecked
             camConfig.startCamera(true)
+        }
+        binding.enableEisSwitchContainer.setOnTouchListener { _, event ->
+            event.setLocation(0f, 0f)
+            enableEISToggle.dispatchTouchEvent(event)
+            true
         }
 
         window?.attributes?.layoutInDisplayCutoutMode =
