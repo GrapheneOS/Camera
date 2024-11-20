@@ -88,6 +88,7 @@ import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
+import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -329,7 +330,7 @@ open class MainActivity : AppCompatActivity(),
             onDisableAudio()
         }
 
-        audioPermissionDialog = builder.show()
+        audioPermissionDialog = builder.showIgnoringShortEdgeMode()
     }
 
     fun updateLastFrame() {
@@ -474,7 +475,7 @@ open class MainActivity : AppCompatActivity(),
                         finish()
                     }
                 }
-                cameraPermissionDialog = builder.show()
+                cameraPermissionDialog = builder.showIgnoringShortEdgeMode()
             }
 
             // Request for the permission (Android will actually popup the permission
@@ -1222,7 +1223,7 @@ open class MainActivity : AppCompatActivity(),
 
             camConfig.cameraProvider?.unbindAll()
 
-            builder.show()
+            builder.showIgnoringShortEdgeMode()
         }
     }
 
@@ -1703,7 +1704,7 @@ open class MainActivity : AppCompatActivity(),
                             camConfig.requireLocation = false
                         }
                     }
-                }.show()
+                }.showIgnoringShortEdgeMode()
             }
 
             (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)

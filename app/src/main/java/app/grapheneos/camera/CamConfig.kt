@@ -47,6 +47,7 @@ import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.edit
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
@@ -1450,7 +1451,7 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     fun showMoreOptionsForQR() {
-        val builder = AlertDialog.Builder(mActivity)
+        val builder = MaterialAlertDialogBuilder(mActivity)
         builder.setTitle(mActivity.resources.getString(R.string.more_options))
 
         val optionNames = arrayListOf<String>()
@@ -1524,7 +1525,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-        dialog.show()
+        dialog.showIgnoringShortEdgeMode()
     }
 
     fun onStorageLocationNotFound() {
@@ -1540,6 +1541,6 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         val alertDialog = builder.create()
         alertDialog.setCancelable(false)
-        alertDialog.show()
+        alertDialog.showIgnoringShortEdgeMode()
     }
 }
