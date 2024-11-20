@@ -137,7 +137,8 @@
             <ScrollView
                 android:id="@+id/settings_scrollview"
                 android:layout_height="wrap_content"
-                android:layout_width="wrap_content">
+                android:layout_width="wrap_content"
+                android:fadeScrollbars="false">
 
                 <LinearLayout
                     android:id="@+id/settings_scrollview_content"
@@ -161,12 +162,21 @@
                             android:layout_gravity="center_vertical"
                             android:text="@string/self_illumination"/>
 
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/self_illumination_switch"
+                        <LinearLayout
+                            android:id="@+id/self_illumination_switch_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:checked="false"
-                            android:layout_gravity="end"/>
+                            android:gravity="end|center_vertical">
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/self_illumination_switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/settings_dialog_switch_height"
+                                android:scaleX="@integer/settings_dialog_switch_scale"
+                                android:scaleY="@integer/settings_dialog_switch_scale"
+                                android:checked="false"/>
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
@@ -219,12 +229,21 @@
                             android:layout_gravity="center_vertical"
                             android:text="@string/include_audio"/>
 
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/include_audio_switch"
+                        <LinearLayout
+                            android:id="@+id/include_audio_switch_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:layout_gravity="end"/>
+                            android:gravity="end|center_vertical">
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/include_audio_switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/settings_dialog_switch_height"
+                                android:scaleX="@integer/settings_dialog_switch_scale"
+                                android:scaleY="@integer/settings_dialog_switch_scale"
+                                android:checked="true"/>
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
@@ -243,12 +262,21 @@
                             android:layout_gravity="center_vertical"
                             android:text="@string/enable_eis"/>
 
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/enable_eis_switch"
+                        <LinearLayout
+                            android:id="@+id/enable_eis_switch_container"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:layout_gravity="end"/>
+                            android:gravity="end|center_vertical">
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/enable_eis_switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/settings_dialog_switch_height"
+                                android:scaleX="@integer/settings_dialog_switch_scale"
+                                android:scaleY="@integer/settings_dialog_switch_scale"
+                                android:checked="true"/>
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
