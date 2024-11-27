@@ -168,7 +168,6 @@
 
         <activity
             android:name=".ui.activities.VideoPlayer"
-            android:theme="@style/Theme.Viewer"
             android:theme="@style/Theme.Design.NoActionBar"
             android:taskAffinity=".ui.activities.VideoPlayer"
             android:excludeFromRecents="true"
@@ -176,7 +175,6 @@
 
         <activity
             android:name=".ui.activities.InAppGallery"
-            android:theme="@style/Theme.Viewer"
             android:theme="@style/Theme.Design.NoActionBar"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
