@@ -11,4 +11,8 @@
     <color name="self_illumination_light">#ffe8cf</color>
 
     <color name="z_yellow">#ffdf00</color>
+
+    <color name="qr_result_background">#E1E3E5</color>
+
+    <color name="red">#ff0000</color>
 </resources>
