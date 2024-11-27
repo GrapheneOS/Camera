@@ -361,7 +361,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     mActivity.videoCapturer.muteRecording()
                 }
             }
+        }
 
+        includeAudioToggle.setOnClickListener {
             mActivity.micOffIcon.visibility = if (includeAudioToggle.isChecked) {
                 View.GONE
             } else {
