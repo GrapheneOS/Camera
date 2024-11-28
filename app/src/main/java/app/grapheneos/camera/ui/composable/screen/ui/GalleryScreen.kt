@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.composable.screen.ui
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -26,6 +27,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 
@@ -37,11 +39,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.grapheneos.camera.CapturedItem
@@ -73,6 +79,12 @@ fun GalleryScreen(
     onExitAction: () -> Unit = {},
 ) {
     val context = LocalContext.current
+
+    val window = (context as Activity).window
+
+    val insetsController = WindowCompat.getInsetsController(window, LocalView.current).apply {
+        systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+    }
 
     val zoomableState = rememberZoomableState()
 
@@ -122,6 +134,20 @@ fun GalleryScreen(
         zoomableState.zoomFraction?.let { zoomFraction ->
             val isZoomedIn = zoomFraction >= 0.01f
             viewModel.updateZoomedState(isZoomedIn)
+        }
+    }
+
+    LaunchedEffect(viewModel.inFocusMode) {
+        if (viewModel.inFocusMode) {
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            insetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -224,7 +250,7 @@ fun GalleryScreen(
                                 // material guidelines)
                                 0.dp,
                                 innerPadding.calculateEndPadding(LayoutDirection.Ltr),
-                                innerPadding.calculateBottomPadding(),
+                                0.dp,
                             )
                             .fillMaxSize()
                     ) { page ->
