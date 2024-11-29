@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 
 import androidx.compose.runtime.Composable
@@ -63,6 +65,7 @@ import me.saket.telephoto.zoomable.zoomable
 
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.composable.component.SnackBarMessageHandler
 import app.grapheneos.camera.ui.composable.component.tooltip.QuickTooltip
 import app.grapheneos.camera.ui.composable.component.tooltip.QuickTooltipVerticalDirection
 
@@ -90,9 +93,22 @@ fun GalleryScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
+    val snackBarHostState = remember {
+        SnackbarHostState()
+    }
+
     val viewModel = viewModel {
         GalleryViewModel(context)
     }
+
+    val pagerState = rememberPagerState {
+        viewModel.capturedItems.size
+    }
+
+    SnackBarMessageHandler(
+        snackBarHostState = snackBarHostState,
+        snackBarMessage = viewModel.snackBarMessage
+    )
 
     val backgroundColor by animateColorAsState(
         label = "background_color_animation",
@@ -111,7 +127,7 @@ fun GalleryScreen(
 
         val focusIndex = viewModel.capturedItems.indexOf(focusItem)
         if (focusIndex != -1) {
-            viewModel.pagerState.scrollToPage(focusIndex)
+            pagerState.scrollToPage(focusIndex)
         }
     }
 
@@ -121,8 +137,9 @@ fun GalleryScreen(
     }
 
     // Update the current focus item when the user slides between pages
-    LaunchedEffect(viewModel.pagerState.currentPage) {
-        val page = viewModel.pagerState.currentPage
+    LaunchedEffect(pagerState.currentPage) {
+        val page = pagerState.currentPage
+        viewModel.currentPage = page
         if (page < viewModel.capturedItems.size) {
             viewModel.focusItem = viewModel.capturedItems[page]
         }
@@ -169,7 +186,7 @@ fun GalleryScreen(
     Scaffold(
         containerColor = backgroundColor,
 
-        snackbarHost = { SnackbarHost(hostState = viewModel.snackbarHostState) },
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
 
         floatingActionButton = {
             AnimatedVisibility(
@@ -239,7 +256,7 @@ fun GalleryScreen(
             } else {
                 if (viewModel.hasCapturedItems) {
                     HorizontalPager(
-                        state = viewModel.pagerState,
+                        state = pagerState,
                         userScrollEnabled = !viewModel.isZoomedIn,
                         beyondViewportPageCount = 1,
                         modifier = Modifier

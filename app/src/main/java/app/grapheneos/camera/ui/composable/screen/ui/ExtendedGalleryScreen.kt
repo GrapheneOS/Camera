@@ -27,8 +27,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +45,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ktx.header
 import app.grapheneos.camera.ktx.requestDeviceUnlock
+import app.grapheneos.camera.ui.composable.component.SnackBarMessageHandler
 import app.grapheneos.camera.ui.composable.component.dialog.MultipleFileDeletionDialog
 import app.grapheneos.camera.ui.composable.component.mediapreview.SQUARE_MEDIA_PREVIEW_SIZE
 import app.grapheneos.camera.ui.composable.component.mediapreview.SquareMediaPreview
@@ -61,6 +64,15 @@ fun ExtendedGalleryScreen(
     val viewModel = viewModel {
         ExtendedGalleryViewModel(context)
     }
+
+    val snackBarHostState = remember {
+        SnackbarHostState()
+    }
+
+    SnackBarMessageHandler(
+        snackBarHostState = snackBarHostState,
+        snackBarMessage = viewModel.snackBarMessage,
+    )
 
     BackHandler {
         if (viewModel.selectMode) {
@@ -83,7 +95,7 @@ fun ExtendedGalleryScreen(
 
     Scaffold (
         snackbarHost = {
-            SnackbarHost(viewModel.snackBarHostState)
+            SnackbarHost(snackBarHostState)
         },
 
         topBar = {

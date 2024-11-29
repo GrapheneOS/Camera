@@ -10,11 +10,15 @@ suspend fun SnackbarHostState.showOrReplaceSnackbar(
     duration: SnackbarDuration =
         if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Indefinite
 ) {
-    currentSnackbarData?.dismiss()
+    dismissSnackBarIfVisible()
     showSnackbar(
         message = message,
         actionLabel = actionLabel,
         withDismissAction = withDismissAction,
         duration = duration
     )
+}
+
+fun SnackbarHostState.dismissSnackBarIfVisible() {
+    currentSnackbarData?.dismiss()
 }

@@ -6,8 +6,6 @@ import android.content.Intent
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,8 +19,9 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ktx.isDeviceLocked
-import app.grapheneos.camera.ktx.showOrReplaceSnackbar
 import app.grapheneos.camera.ui.composable.model.MediaItemDetails
+import app.grapheneos.camera.ui.composable.model.NoDataSnackBarMessage
+import app.grapheneos.camera.ui.composable.model.SnackBarMessage
 import kotlinx.coroutines.launch
 
 private const val TAG = "GalleryViewModel"
@@ -39,8 +38,10 @@ class GalleryViewModel(context: Context) : ViewModel() {
 
     var deletionItem by mutableStateOf<CapturedItem?>(null)
 
+    var currentPage = 0
+
     private val currentItem: CapturedItem
-        get() = capturedItems[pagerState.currentPage]
+        get() = capturedItems[currentPage]
 
     private val capturedItemsViewModel = CapturedItemsRepository.get(context)
 
@@ -54,18 +55,21 @@ class GalleryViewModel(context: Context) : ViewModel() {
         capturedItemsViewModel.isLoading
     }
 
-    val snackbarHostState = SnackbarHostState()
+    var snackBarMessage by mutableStateOf<SnackBarMessage>(NoDataSnackBarMessage)
+        private set
 
-    val pagerState = PagerState(
-        pageCount = {
-            capturedItems.size
-        }
-    )
+    fun showSnackBar(message: String) {
+        snackBarMessage = SnackBarMessage(message)
+    }
+
+    fun hideSnackBar() {
+        snackBarMessage = NoDataSnackBarMessage
+    }
 
     fun displayMediaInfo(context: Context, item: CapturedItem = currentItem) {
         viewModelScope.launch {
             if (!hasCapturedItems) {
-                snackbarHostState.showOrReplaceSnackbar(
+                showSnackBar(
                     context.getString(R.string.unable_to_obtain_file_details)
                 )
                 return@launch
@@ -76,7 +80,7 @@ class GalleryViewModel(context: Context) : ViewModel() {
             } catch (e: Exception) {
                 Log.i(TAG, "Unable to obtain file details for MediaInfoDialog")
                 e.printStackTrace()
-                snackbarHostState.showOrReplaceSnackbar(
+                showSnackBar(
                     context.getString(R.string.unable_to_obtain_file_details)
                 )
             }
@@ -112,12 +116,12 @@ class GalleryViewModel(context: Context) : ViewModel() {
                         .show()
                     onLastItemDeletion()
                 } else {
-                    snackbarHostState.showOrReplaceSnackbar(
+                    showSnackBar(
                         context.getString(R.string.deleted_successfully)
                     )
                 }
             } else {
-                snackbarHostState.showOrReplaceSnackbar(
+                showSnackBar(
                     context.getString(R.string.deleting_unexpected_error)
                 )
             }
@@ -138,7 +142,7 @@ class GalleryViewModel(context: Context) : ViewModel() {
     ) {
         viewModelScope.launch {
             if (context.isDeviceLocked()) {
-                snackbarHostState.showOrReplaceSnackbar(
+                showSnackBar(
                     context.getString(R.string.edit_not_allowed)
                 )
                 return@launch
@@ -166,7 +170,7 @@ class GalleryViewModel(context: Context) : ViewModel() {
                 try {
                     context.startActivity(editIntent)
                 } catch (ignored: ActivityNotFoundException) {
-                    snackbarHostState.showOrReplaceSnackbar(
+                    showSnackBar(
                         context.getString(R.string.no_editor_app_error)
                     )
                 }
@@ -180,7 +184,7 @@ class GalleryViewModel(context: Context) : ViewModel() {
     ) {
         viewModelScope.launch {
             if (context.isDeviceLocked()) {
-                snackbarHostState.showOrReplaceSnackbar(
+                showSnackBar(
                     context.getString(R.string.sharing_not_allowed)
                 )
                 return@launch

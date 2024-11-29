@@ -9,13 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
-import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.viewModelScope
 
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ktx.isDeviceLocked
-import app.grapheneos.camera.ktx.showOrReplaceSnackbar
+import app.grapheneos.camera.ui.composable.model.NoDataSnackBarMessage
+import app.grapheneos.camera.ui.composable.model.SnackBarMessage
 import app.grapheneos.camera.util.getMimeTypeForItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -58,14 +58,21 @@ class ExtendedGalleryViewModel(context: Context) : ViewModel() {
 
     var isDeletionDialogVisible by mutableStateOf(false)
 
-    val snackBarHostState = SnackbarHostState()
+    var snackBarMessage by mutableStateOf<SnackBarMessage>(NoDataSnackBarMessage)
+        private set
+
+    fun showSnackBar(message: String) {
+        snackBarMessage = SnackBarMessage(message)
+    }
+
+    fun hideSnackBar() {
+        snackBarMessage = NoDataSnackBarMessage
+    }
 
     fun showDeletionDialog(context: Context) {
         viewModelScope.launch {
             if (selectedItems.isEmpty()) {
-                snackBarHostState.showOrReplaceSnackbar(
-                    context.getString(R.string.select_an_item_request)
-                )
+                showSnackBar(context.getString(R.string.select_an_item_request))
                 return@launch
             }
             isDeletionDialogVisible = true
@@ -165,16 +172,12 @@ class ExtendedGalleryViewModel(context: Context) : ViewModel() {
     fun shareSelectedItems(context: Context) {
         viewModelScope.launch {
             if (context.isDeviceLocked()) {
-                snackBarHostState.showOrReplaceSnackbar(
-                    context.getString(R.string.sharing_not_allowed)
-                )
+                showSnackBar(context.getString(R.string.sharing_not_allowed))
                 return@launch
             }
 
             if (selectedItems.isEmpty()) {
-                snackBarHostState.showOrReplaceSnackbar(
-                    context.getString(R.string.select_an_item_request)
-                )
+                showSnackBar(context.getString(R.string.select_an_item_request))
                 return@launch
             }
 
@@ -218,13 +221,7 @@ class ExtendedGalleryViewModel(context: Context) : ViewModel() {
             }
 
             if (failedDeletions != 0) {
-                snackBarHostState.showOrReplaceSnackbar(
-                    context.getString(
-                        R.string.failed_multiple_deletion_message,
-                        failedDeletions,
-                        selectedItemsSize
-                    )
-                )
+                showSnackBar(context.getString(R.string.failed_multiple_deletion_message, failedDeletions, selectedItemsSize))
             }
         }
     }
