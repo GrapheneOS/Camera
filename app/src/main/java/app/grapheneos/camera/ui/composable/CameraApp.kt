@@ -50,13 +50,12 @@ fun CameraApp(
                 ExitTransition.None
             }
         ) {
-            composable<GalleryRoute> { backStackEntry ->
+            composable<GalleryRoute>(typeMap = GalleryRoute.typeMap) { backStackEntry ->
 
-                val focusItem = backStackEntry.savedStateHandle
-                    .get<CapturedItem?>("FOCUS_ITEM")
+                val args = backStackEntry.toRoute<GalleryRoute>()
 
                 GalleryScreen(
-                    focusItem = focusItem,
+                    focusItem = args.focusItem,
                     showVideoPlayerAction = { capturedItem ->
                         navController.navigate(
                             VideoPlayerRoute(videoUri = VideoUri(capturedItem.uri))
@@ -79,9 +78,11 @@ fun CameraApp(
                                 )
                             )
                         } else {
-                            navController.previousBackStackEntry?.savedStateHandle
-                                ?.set("FOCUS_ITEM", capturedItem)
-                            navController.popBackStack(GalleryRoute, false)
+                            navController.navigate(
+                                GalleryRoute(
+                                    focusItem = capturedItem
+                                )
+                            )
                         }
 
                     },

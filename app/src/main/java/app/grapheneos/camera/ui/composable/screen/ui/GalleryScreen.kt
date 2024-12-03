@@ -189,30 +189,32 @@ fun GalleryScreen(
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
 
         floatingActionButton = {
-            AnimatedVisibility(
-                visible = !viewModel.inFocusMode,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                QuickTooltip(
-                    message = stringResource(R.string.search_images),
-                    defaultDirection = QuickTooltipVerticalDirection.TOP
+            if (focusItem == null) {
+                AnimatedVisibility(
+                    visible = !viewModel.inFocusMode,
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    FloatingActionButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                if (zoomableState.zoomFraction != 0f) {
-                                    zoomableState.resetZoom()
-                                }
-                                showExtendedGalleryAction()
-                            }
-                        },
-                        shape = CircleShape,
+                    QuickTooltip(
+                        message = stringResource(R.string.search_images),
+                        defaultDirection = QuickTooltipVerticalDirection.TOP
                     ) {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = stringResource(R.string.search_images),
-                        )
+                        FloatingActionButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    if (zoomableState.zoomFraction != 0f) {
+                                        zoomableState.resetZoom()
+                                    }
+                                    showExtendedGalleryAction()
+                                }
+                            },
+                            shape = CircleShape,
+                        ) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = stringResource(R.string.search_images),
+                            )
+                        }
                     }
                 }
             }
