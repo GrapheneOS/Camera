@@ -134,7 +134,7 @@ fun VideoPlayerScreen(
                 factory = { context ->
                     PlayerView(context).apply {
                         player = exoPlayer
-                        controllerShowTimeoutMs = 2000
+                        controllerShowTimeoutMs = 1200
                     }
                 }
             )
