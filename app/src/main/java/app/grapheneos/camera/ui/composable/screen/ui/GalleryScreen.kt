@@ -20,7 +20,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -196,7 +196,7 @@ fun GalleryScreen(
                     exit = fadeOut()
                 ) {
                     QuickTooltip(
-                        message = stringResource(R.string.search_images),
+                        message = stringResource(R.string.grid_view),
                         defaultDirection = QuickTooltipVerticalDirection.TOP
                     ) {
                         FloatingActionButton(
@@ -211,7 +211,7 @@ fun GalleryScreen(
                             shape = CircleShape,
                         ) {
                             Icon(
-                                Icons.Default.Search,
+                                Icons.Default.GridOn,
                                 contentDescription = stringResource(R.string.search_images),
                             )
                         }
