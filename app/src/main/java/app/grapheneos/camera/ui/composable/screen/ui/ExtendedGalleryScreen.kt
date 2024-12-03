@@ -30,6 +30,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 
 import androidx.compose.ui.Alignment
@@ -73,6 +74,13 @@ fun ExtendedGalleryScreen(
         snackBarHostState = snackBarHostState,
         snackBarMessage = viewModel.snackBarMessage,
     )
+
+    // Clear snackbar message on dispose
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.hideSnackBar()
+        }
+    }
 
     BackHandler {
         if (viewModel.selectMode) {

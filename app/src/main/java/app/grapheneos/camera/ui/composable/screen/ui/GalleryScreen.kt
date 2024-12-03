@@ -110,6 +110,12 @@ fun GalleryScreen(
         snackBarMessage = viewModel.snackBarMessage
     )
 
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.hideSnackBar()
+        }
+    }
+
     val backgroundColor by animateColorAsState(
         label = "background_color_animation",
         targetValue = if (viewModel.inFocusMode) Color.Black else AppColor.BackgroundColor,
