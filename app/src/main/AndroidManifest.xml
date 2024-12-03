@@ -29,7 +29,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.App"
-        android:enableOnBackInvokedCallback="true"
         tools:ignore="UnusedAttribute">
 
         <!-- The main activity of the app (supports all modes) -->
