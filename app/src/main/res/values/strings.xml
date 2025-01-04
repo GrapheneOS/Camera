@@ -108,7 +108,6 @@
 
     <string name="unable_to_obtain_file_details">Unable to obtain file details</string>
 
-    <string name="edit_successfully">Edit successful</string>
     <string name="no_editor_app_error">You may not have a proper app for editing this content</string>
     <string name="edit_not_allowed">Editing images in secure mode is not allowed.</string>
     <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
@@ -128,7 +127,6 @@
     <string name="camera_provider_init_failure">Failed to load camera provider due to OS or hardware issue. Try rebooting.</string>
     <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
     <string name="unsupported_taking_picture_while_recording">Your device doesn\'t support taking pictures while recording video with the current settings.</string>
-    <string name="image_processing_pending">Please wait for the last image to get processed…</string>
     <string name="location_unavailable">Couldn\'t attach location to image/video since it\'s  currently unavailable</string>
     <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
     <string name="no_barcode_selected">Please ensure that at least one barcode is selected in manual mode</string>
