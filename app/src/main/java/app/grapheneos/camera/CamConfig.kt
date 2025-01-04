@@ -1211,6 +1211,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (isVideoMode && isPreviewStabilizationSupported()) {
             previewBuilder.setPreviewStabilizationEnabled(enableEIS)
+        } else {
+            previewBuilder.setPreviewStabilizationEnabled(false)
         }
 
         preview = previewBuilder.build().also {
