@@ -16,12 +16,11 @@
 
 package androidxc.camera.core.impl.utils;
 
-import android.annotation.SuppressLint;
 import android.location.Location;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Logger;
 import androidxc.exifinterface.media.ExifInterface;
@@ -38,18 +37,20 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Utility class for modifying metadata on JPEG files.
  *
  * <p>Call {@link #save()} to persist changes to disc.
  */
-@SuppressLint("RestrictedApi")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Exif {
 
     /** Timestamp value indicating a timestamp value that is either not set or not valid */
     public static final long INVALID_TIMESTAMP = -1;
+    // Forked from ExifInterface.TAG_THUMBNAIL_ORIENTATION. The value is library-internal so we
+    // can't depend on it directly.
+    public static final String TAG_THUMBNAIL_ORIENTATION = "ThumbnailOrientation";
 
     private static final String TAG = Exif.class.getSimpleName();
 
@@ -94,7 +95,7 @@ public final class Exif {
             ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT_LENGTH,
             ExifInterface.TAG_THUMBNAIL_IMAGE_LENGTH,
             ExifInterface.TAG_THUMBNAIL_IMAGE_WIDTH,
-            ExifInterface.TAG_THUMBNAIL_ORIENTATION);
+            TAG_THUMBNAIL_ORIENTATION);
 
     private final ExifInterface mExifInterface;
 
@@ -187,7 +188,8 @@ public final class Exif {
         exifTags.removeAll(DO_NOT_COPY_EXIF_TAGS);
         for (String tag : exifTags) {
             String originalValue = mExifInterface.getAttribute(tag);
-            if (originalValue != null) {
+            String croppedExifValue = croppedExif.mExifInterface.getAttribute(tag);
+            if (originalValue != null && !Objects.equals(originalValue, croppedExifValue)) {
                 croppedExif.mExifInterface.setAttribute(tag, originalValue);
             }
         }
@@ -603,6 +605,17 @@ public final class Exif {
         mExifInterface.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(orientation));
     }
 
+    @VisibleForTesting
+    @Nullable
+    public String getMetadata() {
+        return mExifInterface.getAttribute(ExifInterface.TAG_XMP);
+    }
+
+    @NonNull
+    public ExifInterface getExifInterface() {
+        return mExifInterface;
+    }
+
     /** Attaches the current timestamp to the file. */
     public void attachTimestamp() {
         long now = System.currentTimeMillis();
@@ -690,11 +703,6 @@ public final class Exif {
         static Converter fromKilometersPerHour(double kph) {
             return new Converter(kph * 0.621371);
         }
-
-        static Converter fromMetersPerSecond(double mps) {
-            return new Converter(mps * 2.23694);
-        }
-
         static Converter fromMilesPerHour(double mph) {
             return new Converter(mph);
         }
@@ -708,18 +716,6 @@ public final class Exif {
 
             Converter(double mph) {
                 mMph = mph;
-            }
-
-            double toKilometersPerHour() {
-                return mMph / 0.621371;
-            }
-
-            double toMilesPerHour() {
-                return mMph;
-            }
-
-            double toKnots() {
-                return mMph / 1.15078;
             }
 
             double toMetersPerSecond() {
@@ -873,7 +869,7 @@ public final class Exif {
                 ExifInterface.TAG_INTEROPERABILITY_INDEX,
                 ExifInterface.TAG_THUMBNAIL_IMAGE_LENGTH,
                 ExifInterface.TAG_THUMBNAIL_IMAGE_WIDTH,
-                ExifInterface.TAG_THUMBNAIL_ORIENTATION,
+                TAG_THUMBNAIL_ORIENTATION,
                 ExifInterface.TAG_DNG_VERSION,
                 ExifInterface.TAG_DEFAULT_CROP_SIZE,
                 ExifInterface.TAG_ORF_THUMBNAIL_IMAGE,
@@ -889,10 +885,6 @@ public final class Exif {
                 ExifInterface.TAG_XMP,
                 ExifInterface.TAG_NEW_SUBFILE_TYPE,
                 ExifInterface.TAG_SUBFILE_TYPE);
-    }
-
-    public ExifInterface getExifInterface() {
-        return mExifInterface;
     }
 }
 

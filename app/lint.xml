@@ -1,0 +1,6 @@
+<lint>
+    <issue id="RestrictedApi">
+        <!-- Forked from CameraX -->
+        <ignore path="src/main/java/androidxc/camera/core/impl/utils/Exif.java"/>
+    </issue>
+</lint>
