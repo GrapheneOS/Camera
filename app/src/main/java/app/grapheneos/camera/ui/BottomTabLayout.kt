@@ -31,8 +31,7 @@ class BottomTabLayout @JvmOverloads constructor(
         val firstTab = tabParent.getChildAt(0)
         val lastTab = tabParent.getChildAt(tabParent.childCount - 1)
         sp = width / 2 - firstTab.width / 2
-        ViewCompat.setPaddingRelative(
-            getChildAt(0),
+        getChildAt(0).setPaddingRelative(
             sp,
             0,
             width / 2 - lastTab.width / 2,
