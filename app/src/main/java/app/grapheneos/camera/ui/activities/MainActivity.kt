@@ -59,7 +59,6 @@ import androidx.camera.view.PreviewView.StreamState
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -596,7 +595,7 @@ open class MainActivity : AppCompatActivity(),
         lastFrame = null
     }
 
-    lateinit var gestureDetectorCompat: GestureDetectorCompat
+    lateinit var gestureDetectorCompat: GestureDetector
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -604,7 +603,7 @@ open class MainActivity : AppCompatActivity(),
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
-        gestureDetectorCompat = GestureDetectorCompat(this, this)
+        gestureDetectorCompat = GestureDetector(this, this)
 
         camConfig = CamConfig(this)
         cameraControl = CameraControl(camConfig)
