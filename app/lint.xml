@@ -1,4 +1,15 @@
 <lint>
+    <issue id="DefaultLocale">
+        <!-- Forked from AndroidX ExifInterface -->
+        <ignore path="src/main/java/androidxc/exifinterface/media/ExifInterface.java"/>
+    </issue>
+
+    <issue id="ObsoleteSdkInt">
+        <!-- Forked from AndroidX ExifInterface -->
+        <ignore path="src/main/java/androidxc/exifinterface/media/ExifInterface.java"/>
+        <ignore path="src/main/java/androidxc/exifinterface/media/ExifInterfaceUtils.java"/>
+    </issue>
+
     <issue id="RestrictedApi">
         <!-- Forked from CameraX -->
         <ignore path="src/main/java/androidxc/camera/core/impl/utils/Exif.java"/>
