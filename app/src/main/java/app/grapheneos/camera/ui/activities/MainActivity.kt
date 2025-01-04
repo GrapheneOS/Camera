@@ -587,7 +587,7 @@ open class MainActivity : AppCompatActivity(),
         lastFrame = null
     }
 
-    lateinit var gestureDetectorCompat: GestureDetector
+    lateinit var gestureDetector: GestureDetector
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -595,7 +595,7 @@ open class MainActivity : AppCompatActivity(),
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
-        gestureDetectorCompat = GestureDetector(this, this)
+        gestureDetector = GestureDetector(this, this)
 
         camConfig = CamConfig(this)
         cameraControl = CameraControl(camConfig)
@@ -1237,7 +1237,7 @@ open class MainActivity : AppCompatActivity(),
     override fun onTouch(v: View, event: MotionEvent): Boolean {
         dbTapGestureDetector.onTouchEvent(event)
         scaleGestureDetector.onTouchEvent(event)
-        gestureDetectorCompat.onTouchEvent(event)
+        gestureDetector.onTouchEvent(event)
 
         if (event.action == MotionEvent.ACTION_DOWN) return true else if (event.action == MotionEvent.ACTION_UP) {
 

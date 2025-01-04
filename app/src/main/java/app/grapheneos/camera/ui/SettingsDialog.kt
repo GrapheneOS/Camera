@@ -131,7 +131,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     ev: MotionEvent?,
                     disallowIntercept: Boolean
                 ): Boolean {
-                    return mActivity.gestureDetectorCompat.onTouchEvent(ev!!)
+                    return mActivity.gestureDetector.onTouchEvent(ev!!)
                 }
 
                 override fun onTouchEvent(
