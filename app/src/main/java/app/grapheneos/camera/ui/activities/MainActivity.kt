@@ -1179,7 +1179,8 @@ open class MainActivity : AppCompatActivity(),
                         }
 
                         "UTF-8" -> {
-                            textView.autoLinkMask = Linkify.ALL
+                            textView.autoLinkMask =
+                                Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
                             textView.text = rawText
                         }
                     }
