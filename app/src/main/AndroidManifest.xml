@@ -40,7 +40,8 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:exported="true"
-            android:theme="@style/Theme.Camera">
+            android:theme="@style/Theme.Camera"
+            tools:ignore="DiscouragedApi">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -74,7 +75,8 @@
             android:showWhenLocked="true"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:theme="@style/Theme.Camera">
+            android:theme="@style/Theme.Camera"
+            tools:ignore="DiscouragedApi">
 
             <intent-filter>
                 <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE"/>
@@ -92,7 +94,8 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="DiscouragedApi">
 
             <intent-filter>
                 <action android:name="android.media.action.VIDEO_CAMERA"/>
@@ -111,7 +114,8 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:visibleToInstantApps="true"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="DiscouragedApi">
 
             <intent-filter>
                 <action android:name="android.media.action.IMAGE_CAPTURE"/>
@@ -131,7 +135,8 @@
             android:screenOrientation="nosensor"
             android:showWhenLocked="true"
             android:excludeFromRecents="true"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="DiscouragedApi">
 
             <intent-filter>
                 <action android:name="android.media.action.IMAGE_CAPTURE_SECURE"/>
@@ -151,7 +156,8 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
             android:screenOrientation="nosensor"
             android:visibleToInstantApps="true"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="DiscouragedApi">
 
             <intent-filter>
                 <action android:name="android.media.action.VIDEO_CAPTURE"/>
@@ -194,7 +200,8 @@
             android:exported="true"
             android:showWhenLocked="true"
             android:screenOrientation="nosensor"
-            android:excludeFromRecents="true"/>
+            android:excludeFromRecents="true"
+            tools:ignore="DiscouragedApi" />
 
     </application>
 
