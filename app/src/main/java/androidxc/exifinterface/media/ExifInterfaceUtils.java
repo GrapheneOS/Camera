@@ -18,13 +18,11 @@ package androidxc.exifinterface.media;
 
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
-import android.os.Build;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.util.Log;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.RequiresApi;
 
 import java.io.Closeable;
 import java.io.FileDescriptor;
@@ -146,21 +144,14 @@ class ExifInterfaceUtils {
      * Closes a file descriptor that has been duplicated.
      */
     static void closeFileDescriptor(FileDescriptor fd) {
-        // Os.dup and Os.close was introduced in API 21 so this method shouldn't be called
-        // in API < 21.
-        if (Build.VERSION.SDK_INT >= 21) {
-            try {
-                Api21Impl.close(fd);
-                // Catching ErrnoException will raise error in API < 21
-            } catch (Exception ex) {
-                Log.e(TAG, "Error closing fd.");
-            }
-        } else {
-            Log.e(TAG, "closeFileDescriptor is called in API < 21, which must be wrong.");
+        try {
+            Api21Impl.close(fd);
+            // Catching ErrnoException will raise error in API < 21
+        } catch (Exception ex) {
+            Log.e(TAG, "Error closing fd.");
         }
     }
 
-    @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {}
 
@@ -180,7 +171,6 @@ class ExifInterfaceUtils {
         }
     }
 
-    @RequiresApi(23)
     static class Api23Impl {
         private Api23Impl() {}
 

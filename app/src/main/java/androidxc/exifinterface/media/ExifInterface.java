@@ -31,7 +31,6 @@ import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
-import android.os.Build;
 import android.system.OsConstants;
 import android.util.Log;
 import android.util.Pair;
@@ -3969,7 +3968,7 @@ public class ExifInterface {
         mFilename = null;
 
         boolean isFdDuped = false;
-        if (Build.VERSION.SDK_INT >= 21 && isSeekableFD(fileDescriptor)) {
+        if (isSeekableFD(fileDescriptor)) {
             mSeekableFileDescriptor = fileDescriptor;
             // Keep the original file descriptor in order to save attributes when it's seekable.
             // Otherwise, just close the given file descriptor after reading it because the save
@@ -4635,18 +4634,15 @@ public class ExifInterface {
     }
 
     private static boolean isSeekableFD(FileDescriptor fd) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            try {
-                Api21Impl.lseek(fd, 0, OsConstants.SEEK_CUR);
-                return true;
-            } catch (Exception e) {
-                if (DEBUG) {
-                    Log.d(TAG, "The file descriptor for the given input is not seekable");
-                }
-                return false;
+        try {
+            Api21Impl.lseek(fd, 0, OsConstants.SEEK_CUR);
+            return true;
+        } catch (Exception e) {
+            if (DEBUG) {
+                Log.d(TAG, "The file descriptor for the given input is not seekable");
             }
+            return false;
         }
-        return false;
     }
 
     // Prints out attributes for debugging.
@@ -4708,12 +4704,8 @@ public class ExifInterface {
             if (mFilename != null) {
                 in = new FileInputStream(mFilename);
             } else {
-                // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this check
-                // is needed to prevent calling Os.lseek at runtime for SDK < 21.
-                if (Build.VERSION.SDK_INT >= 21) {
-                    Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
-                    in = new FileInputStream(mSeekableFileDescriptor);
-                }
+                Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
+                in = new FileInputStream(mSeekableFileDescriptor);
             }
             out = new FileOutputStream(tempFile);
             copy(in, out);
@@ -4735,12 +4727,8 @@ public class ExifInterface {
             if (mFilename != null) {
                 out = new FileOutputStream(mFilename);
             } else {
-                // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this check
-                // is needed to prevent calling Os.lseek at runtime for SDK < 21.
-                if (Build.VERSION.SDK_INT >= 21) {
-                    Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
-                    out = new FileOutputStream(mSeekableFileDescriptor);
-                }
+                Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
+                out = new FileOutputStream(mSeekableFileDescriptor);
             }
             bufferedIn = new BufferedInputStream(in);
             bufferedOut = new BufferedOutputStream(out);
@@ -4762,12 +4750,8 @@ public class ExifInterface {
                 if (mFilename != null) {
                     out = new FileOutputStream(mFilename);
                 } else {
-                    // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this
-                    // check is needed to prevent calling Os.lseek at runtime for SDK < 21.
-                    if (Build.VERSION.SDK_INT >= 21) {
-                        Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
-                        out = new FileOutputStream(mSeekableFileDescriptor);
-                    }
+                    Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
+                    out = new FileOutputStream(mSeekableFileDescriptor);
                 }
                 copy(in, out);
             } catch (Exception exception) {
@@ -4883,13 +4867,9 @@ public class ExifInterface {
             } else if (mFilename != null) {
                 in = new FileInputStream(mFilename);
             } else {
-                // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this check
-                // is needed to prevent calling Os.lseek and Os.dup at runtime for SDK < 21.
-                if (Build.VERSION.SDK_INT >= 21) {
-                    newFileDescriptor = Api21Impl.dup(mSeekableFileDescriptor);
-                    Api21Impl.lseek(newFileDescriptor, 0, OsConstants.SEEK_SET);
-                    in = new FileInputStream(newFileDescriptor);
-                }
+                newFileDescriptor = Api21Impl.dup(mSeekableFileDescriptor);
+                Api21Impl.lseek(newFileDescriptor, 0, OsConstants.SEEK_SET);
+                in = new FileInputStream(newFileDescriptor);
             }
             if (in == null) {
                 // Should not be reached this.
@@ -5855,163 +5835,158 @@ public class ExifInterface {
     // Support for getting MediaMetadataRetriever.METADATA_KEY_EXIF_OFFSET and
     // MediaMetadataRetriever.METADATA_KEY_EXIF_LENGTH was added SDK 28.
     private void getHeifAttributes(final SeekableByteOrderedDataInputStream in) throws IOException {
-        if (Build.VERSION.SDK_INT >= 28) {
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            try {
-                Api23Impl.setDataSource(retriever, new MediaDataSource() {
-                    long mPosition;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            Api23Impl.setDataSource(retriever, new MediaDataSource() {
+                long mPosition;
 
-                    @Override
-                    public void close() throws IOException {}
+                @Override
+                public void close() throws IOException {}
 
-                    @Override
-                    public int readAt(long position, byte[] buffer, int offset, int size)
-                            throws IOException {
-                        if (size == 0) {
-                            return 0;
-                        }
-                        if (position < 0) {
-                            return -1;
-                        }
-                        try {
-                            if (mPosition != position) {
-                                // We don't allow seek to positions after the available bytes,
-                                // the input stream won't be able to seek back then.
-                                // However, if we hit an exception before (mPosition set to -1),
-                                // let it try the seek in hope it might recover.
-                                if (mPosition >= 0 && position >= mPosition + in.available()) {
-                                    return -1;
-                                }
-                                in.seek(position);
-                                mPosition = position;
-                            }
-
-                            // If the read will cause us to go over the available bytes,
-                            // reduce the size so that we stay in the available range.
-                            // Otherwise the input stream may not be able to seek back.
-                            if (size > in.available()) {
-                                size = in.available();
-                            }
-
-                            int bytesRead = in.read(buffer, offset, size);
-                            if (bytesRead >= 0) {
-                                mPosition += bytesRead;
-                                return bytesRead;
-                            }
-                        } catch (IOException e) {
-                            // do nothing
-                        }
-                        mPosition = -1; // need to seek on next read
+                @Override
+                public int readAt(long position, byte[] buffer, int offset, int size)
+                        throws IOException {
+                    if (size == 0) {
+                        return 0;
+                    }
+                    if (position < 0) {
                         return -1;
                     }
+                    try {
+                        if (mPosition != position) {
+                            // We don't allow seek to positions after the available bytes,
+                            // the input stream won't be able to seek back then.
+                            // However, if we hit an exception before (mPosition set to -1),
+                            // let it try the seek in hope it might recover.
+                            if (mPosition >= 0 && position >= mPosition + in.available()) {
+                                return -1;
+                            }
+                            in.seek(position);
+                            mPosition = position;
+                        }
 
-                    @Override
-                    public long getSize() throws IOException {
-                        return -1;
+                        // If the read will cause us to go over the available bytes,
+                        // reduce the size so that we stay in the available range.
+                        // Otherwise the input stream may not be able to seek back.
+                        if (size > in.available()) {
+                            size = in.available();
+                        }
+
+                        int bytesRead = in.read(buffer, offset, size);
+                        if (bytesRead >= 0) {
+                            mPosition += bytesRead;
+                            return bytesRead;
+                        }
+                    } catch (IOException e) {
+                        // do nothing
                     }
-                });
-
-                String exifOffsetStr = retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_EXIF_OFFSET);
-                String exifLengthStr = retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_EXIF_LENGTH);
-                String hasImage = retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_HAS_IMAGE);
-                String hasVideo = retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO);
-
-                String width = null;
-                String height = null;
-                String rotation = null;
-                final String metadataValueYes = "yes";
-                // If the file has both image and video, prefer image info over video info.
-                // App querying ExifInterface is most likely using the bitmap path which
-                // picks the image first.
-                if (metadataValueYes.equals(hasImage)) {
-                    width = retriever.extractMetadata(
-                            MediaMetadataRetriever.METADATA_KEY_IMAGE_WIDTH);
-                    height = retriever.extractMetadata(
-                            MediaMetadataRetriever.METADATA_KEY_IMAGE_HEIGHT);
-                    rotation = retriever.extractMetadata(
-                            MediaMetadataRetriever.METADATA_KEY_IMAGE_ROTATION);
-                } else if (metadataValueYes.equals(hasVideo)) {
-                    width = retriever.extractMetadata(
-                            MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-                    height = retriever.extractMetadata(
-                            MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-                    rotation = retriever.extractMetadata(
-                            MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+                    mPosition = -1; // need to seek on next read
+                    return -1;
                 }
 
-                if (width != null) {
-                    mAttributes[IFD_TYPE_PRIMARY].put(TAG_IMAGE_WIDTH,
-                            ExifAttribute.createUShort(Integer.parseInt(width), mExifByteOrder));
+                @Override
+                public long getSize() throws IOException {
+                    return -1;
                 }
+            });
 
-                if (height != null) {
-                    mAttributes[IFD_TYPE_PRIMARY].put(TAG_IMAGE_LENGTH,
-                            ExifAttribute.createUShort(Integer.parseInt(height), mExifByteOrder));
-                }
+            String exifOffsetStr = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_EXIF_OFFSET);
+            String exifLengthStr = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_EXIF_LENGTH);
+            String hasImage = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_HAS_IMAGE);
+            String hasVideo = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO);
 
-                if (rotation != null) {
-                    int orientation = ExifInterface.ORIENTATION_NORMAL;
-
-                    // all rotation angles in CW
-                    switch (Integer.parseInt(rotation)) {
-                        case 90:
-                            orientation = ExifInterface.ORIENTATION_ROTATE_90;
-                            break;
-                        case 180:
-                            orientation = ExifInterface.ORIENTATION_ROTATE_180;
-                            break;
-                        case 270:
-                            orientation = ExifInterface.ORIENTATION_ROTATE_270;
-                            break;
-                    }
-
-                    mAttributes[IFD_TYPE_PRIMARY].put(TAG_ORIENTATION,
-                            ExifAttribute.createUShort(orientation, mExifByteOrder));
-                }
-
-                if (exifOffsetStr != null && exifLengthStr != null) {
-                    int offset = Integer.parseInt(exifOffsetStr);
-                    int length = Integer.parseInt(exifLengthStr);
-                    if (length <= 6) {
-                        throw new IOException("Invalid exif length");
-                    }
-                    in.seek(offset);
-                    byte[] identifier = new byte[6];
-                    if (in.read(identifier) != 6) {
-                        throw new IOException("Can't read identifier");
-                    }
-                    offset += 6;
-                    length -= 6;
-                    if (!Arrays.equals(identifier, IDENTIFIER_EXIF_APP1)) {
-                        throw new IOException("Invalid identifier");
-                    }
-
-                    // TODO: Need to handle potential OutOfMemoryError
-                    byte[] bytes = new byte[length];
-                    if (in.read(bytes) != length) {
-                        throw new IOException("Can't read exif");
-                    }
-                    // Save offset to EXIF data for handling thumbnail and attribute offsets.
-                    mOffsetToExifData = offset;
-                    readExifSegment(bytes, IFD_TYPE_PRIMARY);
-                }
-
-                if (DEBUG) {
-                    Log.d(TAG, "Heif meta: " + width + "x" + height + ", rotation " + rotation);
-                }
-            } catch (RuntimeException e) {
-                throw new UnsupportedOperationException("Failed to read EXIF from HEIF file. "
-                        + "Given stream is either malformed or unsupported.");
-            } finally {
-                retriever.release();
+            String width = null;
+            String height = null;
+            String rotation = null;
+            final String metadataValueYes = "yes";
+            // If the file has both image and video, prefer image info over video info.
+            // App querying ExifInterface is most likely using the bitmap path which
+            // picks the image first.
+            if (metadataValueYes.equals(hasImage)) {
+                width = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_IMAGE_WIDTH);
+                height = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_IMAGE_HEIGHT);
+                rotation = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_IMAGE_ROTATION);
+            } else if (metadataValueYes.equals(hasVideo)) {
+                width = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                height = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+                rotation = retriever.extractMetadata(
+                        MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
             }
-        } else {
-            throw new UnsupportedOperationException("Reading EXIF from HEIF files "
-                    + "is supported from SDK 28 and above");
+
+            if (width != null) {
+                mAttributes[IFD_TYPE_PRIMARY].put(TAG_IMAGE_WIDTH,
+                        ExifAttribute.createUShort(Integer.parseInt(width), mExifByteOrder));
+            }
+
+            if (height != null) {
+                mAttributes[IFD_TYPE_PRIMARY].put(TAG_IMAGE_LENGTH,
+                        ExifAttribute.createUShort(Integer.parseInt(height), mExifByteOrder));
+            }
+
+            if (rotation != null) {
+                int orientation = ExifInterface.ORIENTATION_NORMAL;
+
+                // all rotation angles in CW
+                switch (Integer.parseInt(rotation)) {
+                    case 90:
+                        orientation = ExifInterface.ORIENTATION_ROTATE_90;
+                        break;
+                    case 180:
+                        orientation = ExifInterface.ORIENTATION_ROTATE_180;
+                        break;
+                    case 270:
+                        orientation = ExifInterface.ORIENTATION_ROTATE_270;
+                        break;
+                }
+
+                mAttributes[IFD_TYPE_PRIMARY].put(TAG_ORIENTATION,
+                        ExifAttribute.createUShort(orientation, mExifByteOrder));
+            }
+
+            if (exifOffsetStr != null && exifLengthStr != null) {
+                int offset = Integer.parseInt(exifOffsetStr);
+                int length = Integer.parseInt(exifLengthStr);
+                if (length <= 6) {
+                    throw new IOException("Invalid exif length");
+                }
+                in.seek(offset);
+                byte[] identifier = new byte[6];
+                if (in.read(identifier) != 6) {
+                    throw new IOException("Can't read identifier");
+                }
+                offset += 6;
+                length -= 6;
+                if (!Arrays.equals(identifier, IDENTIFIER_EXIF_APP1)) {
+                    throw new IOException("Invalid identifier");
+                }
+
+                // TODO: Need to handle potential OutOfMemoryError
+                byte[] bytes = new byte[length];
+                if (in.read(bytes) != length) {
+                    throw new IOException("Can't read exif");
+                }
+                // Save offset to EXIF data for handling thumbnail and attribute offsets.
+                mOffsetToExifData = offset;
+                readExifSegment(bytes, IFD_TYPE_PRIMARY);
+            }
+
+            if (DEBUG) {
+                Log.d(TAG, "Heif meta: " + width + "x" + height + ", rotation " + rotation);
+            }
+        } catch (RuntimeException e) {
+            throw new UnsupportedOperationException("Failed to read EXIF from HEIF file. "
+                    + "Given stream is either malformed or unsupported.");
+        } finally {
+            retriever.release();
         }
     }
 
