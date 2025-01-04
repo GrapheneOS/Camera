@@ -509,12 +509,6 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            finish()
-            return true
-        }
-
         // there are no camera controls in qr mode
         if (camConfig.isQRMode) {
             return super.onKeyUp(keyCode, event)
