@@ -507,11 +507,6 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            finish()
-            return true
-        }
-
         // there are no camera controls in qr mode
         if (camConfig.isQRMode) {
             return super.onKeyUp(keyCode, event)
@@ -535,7 +530,7 @@ open class MainActivity : AppCompatActivity(),
                 cameraControl.zoomOut()
             }
         }
-        return true
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -543,7 +538,7 @@ open class MainActivity : AppCompatActivity(),
             // Pretend as if the event was handled by the app (avoid volume bar from appearing)
             return true
         }
-        return super.onKeyUp(keyCode, event)
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onResume() {
