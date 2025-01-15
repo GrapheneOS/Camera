@@ -87,10 +87,6 @@ android {
     androidResources {
         localeFilters += listOf("en")
     }
-
-    lint {
-        disable += setOf("LintError")
-    }
 }
 
 dependencies {
