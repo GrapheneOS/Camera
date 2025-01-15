@@ -51,7 +51,6 @@ android {
         targetSdk = 35
         versionCode = 78
         versionName = versionCode.toString()
-        resourceConfigurations.add("en")
     }
 
     buildTypes {
@@ -83,6 +82,10 @@ android {
     buildFeatures {
         viewBinding = true
         buildConfig = true
+    }
+
+    androidResources {
+        localeFilters += listOf("en")
     }
 
     lint {
