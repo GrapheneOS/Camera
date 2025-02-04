@@ -1361,6 +1361,9 @@ open class MainActivity : AppCompatActivity(),
         rotateView(zoomInIcon, iconRotation)
         rotateView(zoomOutIcon, iconRotation)
         rotateView(settingsDialog.settingsFrame, iconRotation)
+
+        rotateView(micOffIcon, iconRotation)
+        rotateView(muteToggle, iconRotation)
     }
 
     lateinit var camConfig: CamConfig
