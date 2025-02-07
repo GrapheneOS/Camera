@@ -34,6 +34,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
+import app.grapheneos.camera.AutoFinishOnSleep
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.GSlideTransformer
@@ -69,6 +70,8 @@ class InAppGallery : AppCompatActivity() {
         private set
 
     private lateinit var rootView: View
+
+    private val autoFinisher = AutoFinishOnSleep(this)
 
     private var lastViewedMediaItem : CapturedItem? = null
 
@@ -446,6 +449,7 @@ class InAppGallery : AppCompatActivity() {
         if (isSecureMode) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+            autoFinisher.start()
         }
 
         ogColor = ContextCompat.getColor(this, R.color.system_neutral1_900)
@@ -637,6 +641,9 @@ class InAppGallery : AppCompatActivity() {
         super.onDestroy()
         asyncLoaderOfCapturedItems.shutdownNow()
         asyncImageLoader.shutdownNow()
+        if (isSecureMode) {
+            autoFinisher.stop()
+        }
     }
 
     fun vibrateDevice() {
