@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
+import app.grapheneos.camera.AutoFinishOnSleep
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.VideoPlayerBinding
 import app.grapheneos.camera.util.getParcelableExtra
@@ -32,6 +33,10 @@ class VideoPlayer : AppCompatActivity() {
 
     private lateinit var binding: VideoPlayerBinding
 
+    private val autoFinisher = AutoFinishOnSleep(this)
+
+    private var isSecureMode = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -42,10 +47,15 @@ class VideoPlayer : AppCompatActivity() {
         windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
 
         val intent = this.intent
-        if (intent.getBooleanExtra(IN_SECURE_MODE, false)) {
+
+        isSecureMode = intent.getBooleanExtra(IN_SECURE_MODE, false)
+
+        if (isSecureMode) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+            autoFinisher.start()
         }
+
         binding = VideoPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -163,6 +173,13 @@ class VideoPlayer : AppCompatActivity() {
         binding.shade.animate().apply {
             duration = 300
             alpha(1f)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isSecureMode) {
+            this.autoFinisher.stop()
         }
     }
 }
