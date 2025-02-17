@@ -150,6 +150,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun startRecording() {
         if (camConfig.camera == null) return
         val recorder = camConfig.videoCapture?.output ?: return
+        if (isRecording) return
+        isRecording = true
 
         val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
@@ -163,6 +165,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 includeAudio = true
             } else {
                 ctx.restartRecordingWithMicPermission()
+                isRecording = false
                 return
             }
         }
@@ -175,6 +178,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 camConfig.onStorageLocationNotFound()
             }
             ctx.showMessage(R.string.unable_to_access_output_file)
+            isRecording = false
             return
         }
 
@@ -185,8 +189,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         beforeRecordingStarts()
-
-        isRecording = true
 
         camConfig.mPlayer.playVRStartSound(handler) {
 
