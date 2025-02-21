@@ -365,13 +365,15 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun muteRecording() {
-        check(isRecording && camConfig.includeAudio)
+        if (!isRecording) return
+        check(camConfig.includeAudio)
         isMuted = true
         recording?.mute(true)
     }
 
     fun unmuteRecording() {
-        check(isRecording && camConfig.includeAudio)
+        if (!isRecording) return
+        check(camConfig.includeAudio)
         isMuted = false
         recording?.mute(false)
     }
