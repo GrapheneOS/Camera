@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -273,7 +274,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // TODO: Uncomment this once the main indicator UI gets implemented
         // mActivity.micOffIcon.visibility = View.GONE
 
-        val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
+        val drawable = mActivity.captureButton.drawable
+
+        val gd: GradientDrawable = if (drawable is StateListDrawable) {
+            drawable.current as GradientDrawable
+        } else {
+            drawable as GradientDrawable
+        }
 
         val animator = ValueAnimator.ofFloat(dp16, dp8)
 
@@ -317,7 +324,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private fun afterRecordingStops() {
 
-        val gd: GradientDrawable = mActivity.captureButton.drawable as GradientDrawable
+        val drawable = mActivity.captureButton.drawable
+
+        val gd: GradientDrawable = if (drawable is StateListDrawable) {
+            drawable.current as GradientDrawable
+        } else {
+            drawable as GradientDrawable
+        }
 
         val animator = ValueAnimator.ofFloat(dp8, dp16)
 
