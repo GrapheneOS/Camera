@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.location.Location
 import android.media.MediaMetadataRetriever
@@ -278,6 +279,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         val gd: GradientDrawable = if (drawable is StateListDrawable) {
             drawable.current as GradientDrawable
+        } else if (drawable is LayerDrawable) {
+            drawable.current as GradientDrawable
         } else {
             drawable as GradientDrawable
         }
@@ -327,6 +330,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val drawable = mActivity.captureButton.drawable
 
         val gd: GradientDrawable = if (drawable is StateListDrawable) {
+            drawable.current as GradientDrawable
+        } else if (drawable is LayerDrawable) {
             drawable.current as GradientDrawable
         } else {
             drawable as GradientDrawable
