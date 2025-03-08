@@ -61,6 +61,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
@@ -1043,6 +1044,11 @@ open class MainActivity : AppCompatActivity(),
                             tabLayout.height -
                             10 * resources.displayMetrics.density.toInt()
 
+                    // When there's no extra space in 16:9 for even the bottom nav bar to be present without
+                    // obscuring the preview or if there's sufficient space for the entire bottom UI to exist
+                    val shouldSnapAboveBottomNav = extraHeight169 < bottomNavigationBarPadding
+                            || extraHeight169 >= (threeButtons.height + tabLayout.height + tabLayout.marginTop)
+
                     tabLayout.layoutParams =
                         (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
 
@@ -1050,10 +1056,10 @@ open class MainActivity : AppCompatActivity(),
                                 it.leftMargin,
                                 it.topMargin,
                                 it.rightMargin,
-                                if (extraHeight169 > 0) {
-                                    extraHeight169
-                                } else {
+                                if (shouldSnapAboveBottomNav) {
                                     bottomNavigationBarPadding
+                                } else {
+                                    extraHeight169
                                 }
                             )
 
