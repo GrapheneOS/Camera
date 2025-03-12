@@ -3,8 +3,8 @@
     <item>
         <shape android:shape="rectangle">
             <size
-                android:height="12dp"
-                android:width="28dp"/>
+                android:height="18dp"
+                android:width="35dp"/>
             <padding
                 android:left="8dp"
                 android:right="8dp"/>
@@ -12,5 +12,8 @@
             <corners android:radius="100dp"/>
         </shape>
     </item>
-    <item android:drawable="@drawable/dropdown"/>
+    <item android:drawable="@drawable/dropdown"
+        android:width="24dp"
+        android:height="24dp"
+        android:gravity="center"/>
 </layer-list>
