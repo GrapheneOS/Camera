@@ -63,6 +63,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var gridToggle: ImageView
     var videoQualitySpinner: Spinner
     private lateinit var vQAdapter: ArrayAdapter<String>
+
+    var imageFormatSpinner: Spinner
+    private lateinit var imageFormatAdapter: ArrayAdapter<String>
+
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
 
@@ -84,6 +88,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var enableEISSetting: View
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
+    private var imageFormatSetting: View
     private var timerSetting: View
 
     var settingsFrame: View
@@ -226,18 +231,35 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         videoQualitySpinner.onItemSelectedListener =
             object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
-                    p0: AdapterView<*>?,
-                    p1: View?,
+                    parent: AdapterView<*>?,
+                    view: View?,
                     position: Int,
-                    p3: Long
+                    id: Long
                 ) {
 
                     val choice = vQAdapter.getItem(position) as String
                     updateVideoQuality(choice)
                 }
 
-                override fun onNothingSelected(p0: AdapterView<*>?) {}
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
+
+        imageFormatSpinner = binding.imageFormatSpinner
+
+        imageFormatSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                val choice = imageFormatAdapter.getItem(position) as String
+                updateOutputImageFormat(choice)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+
+        }
 
         qRadio = binding.qualityRadio
         lRadio = binding.latencyRadio
@@ -333,6 +355,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         enableEISSetting = binding.enableEisSetting
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
+        imageFormatSetting = binding.imageFormatSetting
         timerSetting = binding.timerSetting
 
         includeAudioToggle = binding.includeAudioSwitch
@@ -512,6 +535,21 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         } else {
             videoQualitySpinner.setSelection(getAvailableQTitles().indexOf(choice))
 
+        }
+    }
+
+    fun updateOutputImageFormat(choice: String, resCam: Boolean = true) {
+
+        val imageFormat = titleToImageFormat(choice)
+
+        if (imageFormat == camConfig.outputImageFormat) return
+
+        camConfig.outputImageFormat = imageFormat
+
+        if (resCam) {
+            camConfig.startCamera(true)
+        } else {
+            imageFormatSpinner.setSelection(getAvailableQTitles().indexOf(choice))
         }
     }
 
@@ -740,6 +778,40 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
     }
 
+    private fun getAvailableImageFormatTitles(): List<String> {
+        val titles = arrayListOf<String>()
+
+        camConfig.getAvailableImageFormats().forEach { format ->
+            titles.add(getTitleForImageFormat(format))
+        }
+
+        return titles
+    }
+
+    fun getTitleForImageFormat(format: Int): String {
+        return when (format) {
+            ImageCapture.OUTPUT_FORMAT_RAW -> "DNG"
+            ImageCapture.OUTPUT_FORMAT_JPEG -> "JPEG"
+            ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR -> "JPEG (UHD)"
+            else -> {
+                Log.e("TAG", "Unknown image format constant: $format")
+                "Unknown"
+            }
+        }
+    }
+
+    fun titleToImageFormat(title: String): Int {
+        return when (title) {
+            "DNG" -> ImageCapture.OUTPUT_FORMAT_RAW
+            "JPEG" -> ImageCapture.OUTPUT_FORMAT_JPEG
+            "JPEG (UHD)" -> ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR
+            else -> {
+                Log.e("TAG", "Unknown title for image format: $title")
+                ImageCapture.OUTPUT_FORMAT_JPEG
+            }
+        }
+    }
+
     fun updateGridToggleUI() {
         mActivity.previewGrid.postInvalidate()
         gridToggle.setImageResource(
@@ -786,6 +858,34 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         super.show()
 
         slideDialogDown()
+    }
+
+    fun reloadSettings() {
+        if (camConfig.isVideoMode) {
+            reloadQualities()
+        }
+
+        reloadImageFormats()
+    }
+
+    fun reloadImageFormats() {
+        val imageFormats = getAvailableImageFormatTitles()
+
+        imageFormatAdapter = ArrayAdapter<String>(
+            mActivity,
+            android.R.layout.simple_spinner_item,
+            imageFormats
+        )
+
+        imageFormatAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
+        imageFormatSpinner.adapter = imageFormatAdapter
+
+        imageFormatSpinner.setSelection(
+            camConfig.getAvailableImageFormats().indexOf(camConfig.outputImageFormat)
+        )
     }
 
     fun reloadQualities() {
