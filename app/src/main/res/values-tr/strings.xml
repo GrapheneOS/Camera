@@ -1,0 +1,198 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="camera_permission_dialog_title">Kamera izni gerekli</string>
+    <string name="camera_permission_dialog_message">
+        Uygulamanın çalışabilmesi için kamera erişim iznine ihtiyacı var. Lütfen bu uygulamayı kullanabilmek için Ayarlar’dan gerekli izni verin.
+    </string>
+
+    <string name="audio_permission_dialog_title">Ses izni gerekli</string>
+    <string name="audio_permission_dialog_message">
+        Uygulamanın ses içeren video kaydedebilmesi için mikrofon erişim iznine ihtiyacı var. Lütfen bu ayar ile devam edebilmek için Ayarlar’dan gerekli izni verin. Eğer videonuzun ses içermesine gerek yoksa, sesi devre dışı bırakabilirsiniz (ve daha sonra Ayarlar’dan tekrar etkinleştirebilirsiniz).
+    </string>
+
+    <string name="location_permission_dialog_title">Konum izni gerekli</string>
+    <string name="location_permission_dialog_message">
+        Uygulamanın coğrafi etiketleme yapabilmesi için konum iznine ihtiyacı var. Lütfen bu uygulamayı kullanabilmek için Ayarlar’dan gerekli izni verin.
+    </string>
+
+    <string name="focus_ring">Odak Halkası</string>
+    <string name="flip_camera">Kamerayı Çevir</string>
+    <string name="loading_camera">Kamera yükleniyor</string>
+    <string name="flash_mode">Flaş Modu</string>
+    <string name="capture_mode">Çekim Modu</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">Yakınlaştır</string>
+    <string name="zoom_out">Uzaklaştır</string>
+    <string name="scan_result">Tarama Sonucu</string>
+    <string name="share_qr_text">QR Metnini Paylaş</string>
+    <string name="open_with">Şununla Aç</string>
+    <string name="copy_to_clipboard">Panoya Kopyala</string>
+    <string name="retake">Yeniden Çek</string>
+    <string name="play_preview">Önizlemeyi Oynat</string>
+    <string name="toggle_button">Aç/Kapa Düğmesi</string>
+    <string name="aspect_ratio">En-Boy Oranı</string>
+    <string name="toggle_flash">Flaşı Aç/Kapa</string>
+    <string name="grid_toggle">Izgara Aç/Kapa</string>
+    <string name="include_audio">Sesi Dahil Et</string>
+    <string name="enable_eis">EIS’yi Etkinleştir</string>
+    <string name="video_quality">Video Kalitesi</string>
+    <string name="optimize_for">Şunun için Optimize Et</string>
+    <string name="quality">Kalite</string>
+    <string name="latency">Gecikme</string>
+    <string name="preview">Önizleme</string>
+    <string name="file_info">Dosya Bilgisi</string>
+    <string name="delete_file">Dosyayı Sil</string>
+    <string name="edit">Düzenle</string>
+    <string name="self_illumination">Kendi Aydınlatması</string>
+    <string name="focus_timeout">Odak Zaman Aşımı</string>
+    <string name="timer">Zamanlayıcı</string>
+    <string name="cancel_timer">Zamanlayıcıyı İptal Et</string>
+    <string name="video_capture_label">Video Kaydet</string>
+
+    <string name="camera">KAMERA</string>
+    <string name="video">VİDEO</string>
+    <string name="portrait_mode">PORTRE</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">GECE</string>
+    <string name="face_retouch_mode">YÜZ DÜZELTME</string>
+    <string name="auto_mode">OTOMATİK</string>
+    <string name="qr_scan_mode">QR TARAMA</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">Medyayı Paylaş</string>
+    <string name="edit_with">Şununla Düzenle</string>
+    <string name="rec_without_audio">Sesi olmadan kaydetmeye başla</string>
+    <string name="qr_scan_toggle">QR Tarama Aç/Kapa</string>
+    <string name="qr_scan">QR Kodu</string>
+    <string name="data_matrix">Veri Matrisi</string>
+    <string name="aztec_code">Aztek Kodu</string>
+    <string name="more_options">Daha Fazla Seçenek</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">Daha Fazla Ayar</string>
+
+    <string name="general">Genel</string>
+
+    <string name="save_image_as_previewed">Görüntüyü önizlendiği gibi kaydet</string>
+    <string name="save_as_image_preview_desc">Çıktı görüntüsünü önizlemede göründüğü gibi kaydeder (ön kameradaki tersliği düzeltir)</string>
+
+    <string name="save_video_as_previewed">Videoyu önizlendiği gibi kaydet</string>
+    <string name="save_as_video_preview_desc">Çıktı videosunu önizlemede göründüğü gibi kaydeder (ön kameradaki tersliği düzeltir)</string>
+
+    <string name="gyroscope_suggestions">Jiroskop Önerileri</string>
+    <string name="gyroscope_setting_desc">Düzgün ve iyi açılı görüntüler için ara sıra görsel öneriler alın</string>
+
+    <string name="camera_sounds">Kamera Sesleri</string>
+    <string name="camera_sounds_desc">Deklanşör sesi ve diğer sesli ipuçları</string>
+
+    <string name="storage">Depolama</string>
+    <string name="storage_location">Depolama Konumu</string>
+    <string name="image_file_name_format">Görüntü Dosya Adı Formatı</string>
+    <string name="video_file_name_format">Video Dosya Adı Formatı</string>
+    <string name="revert_back_to_dcim">DCIM’e geri dön</string>
+
+    <string name="image_quality">Görüntü Kalitesi</string>
+    <string name="image_quality_desc" formatted="false">Uygulama tarafından çekilen görüntünün kalitesini %1 ile %100 arasında ayarlayın. Görüntü kalitesini açıkça ayarlamamak için bu alan boş bırakılabilir.</string>
+    <string name="photo">Fotoğraf</string>
+    <string name="remove_exif_title">Çekimden sonra EXIF verilerini kaldır</string>
+    <string name="remove_exif_subtitle">Not: Coğrafi etiketleme/Konum seçeneği bu ayardan bağımsızdır</string>
+    <string name="video_setting_title">Video</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+    <string name="location_is_disabled">Konum devre dışı</string>
+    <string name="settings">Ayarlar</string>
+    <string name="enable">Etkinleştir</string>
+    <string name="ok">Tamam</string>
+    <string name="yes">Evet</string>
+    <string name="no">Hayır</string>
+    <string name="disable_audio">Sesi Devre Dışı Bırak</string>
+    <string name="copied_text_to_clipboard">Metin panoya kopyalandı</string>
+    <string name="share_text_via">Metni şununla paylaş</string>
+
+    <string name="unable_to_obtain_file_details">Dosya detayları alınamadı</string>
+
+    <string name="no_editor_app_error">Bu içeriği düzenlemek için uygun bir uygulamanız olmayabilir</string>
+    <string name="edit_not_allowed">Güvenli modda görüntü düzenleme yapılamaz.</string>
+    <string name="sharing_not_allowed">Güvenli modda görüntü paylaşımı yapılamaz.</string>
+    <string name="edit_image">Görüntüyü Düzenle</string>
+    <string name="share_image">Görüntüyü Paylaş</string>
+    <string name="delete">Sil</string>
+    <string name="delete_title">Emin misiniz?</string>
+    <string name="deleted_successfully">Dosya başarıyla silindi</string>
+    <string name="deleting_unexpected_error">Bu dosyayı silerken beklenmeyen bir hata oluştu</string>
+    <string name="delete_description">Bu dosyayı (%s) gerçekten silmek istiyor musunuz?</string>
+    <string name="cancel">İptal</string>
+    <string name="no_image">Lütfen görüntüleri/videoları görüntülemeye çalışmadan önce bir fotoğraf veya video çekin.</string>
+
+    <string name="empty_gallery">Çekilen fotoğraflar/videolar bulunamadı</string>
+
+    <string name="bind_failure">İşletim sistemi veya donanım sorunu nedeniyle kamera açılamadı. Yeniden başlatmayı deneyin.</string>
+    <string name="camera_provider_init_failure">İşletim sistemi veya donanım sorunu nedeniyle kamera sağlayıcısı yüklenemedi. Yeniden başlatmayı deneyin.</string>
+    <string name="extensions_manager_init_failure">İşletim sistemi veya donanım sorunu nedeniyle uzantı yöneticisi yüklenemedi. Uzantı modları kullanılamıyor. Yeniden başlatmayı deneyin.</string>
+    <string name="unsupported_taking_picture_while_recording">Cihazınız mevcut ayarlarla video kaydederken fotoğraf çekmeyi desteklemiyor.</string>
+    <string name="location_unavailable">Konum şu anda kullanılamadığı için görüntüye/videoya konum eklenemedi</string>
+    <string name="existing_no_image">Görüntü bulunamadı. Uygulama içi galeriden çıkılıyor.</string>
+    <string name="no_barcode_selected">Lütfen manuel modda en az bir barkod türünün seçili olduğundan emin olun</string>
+    <string name="flash_unavailable_in_selected_mode">Flaş mevcut modda kullanılamıyor.</string>
+    <string name="front_camera_unavailable">Ön kamera algılanamadı. Lütfen daha sonra tekrar deneyin!</string>
+    <string name="rear_camera_unavailable">Arka kamera algılanamadı. Lütfen daha sonra tekrar deneyin!</string>
+    <string name="qr_rear_camera_unavailable">Arka kamera kullanılamıyor gibi görünüyor. QR modu için ön kamera kullanılıyor.</string>
+    <string name="folder_not_found">Depolama konumu bulunamadı</string>
+    <string name="reverting_to_default_folder">Önceden seçilen özel depolama konumu silinmiş gibi göründüğü için varsayılan DCIM dizinine geri dönülüyor. Lütfen gerekirse depolama konumunu başka bir klasörle değiştirin.</string>
+    <string name="more_settings_unavailable_during_recording">Kayıt sırasında etkinlikler değiştirilemez</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">Devam eden kayıt için coğrafi etiketleme açılamaz/kapatılamaz</string>
+    <string name="flash_switch_unsupported">Bu modda flaş modu değiştirilemez</string>
+    <string name="four_by_three_unsupported_in_video">Video modunda 4:3 desteklenmiyor</string>
+    <string name="flash_unavailable_in_current_mode">Flaş/Torch bu modda kullanılamıyor</string>
+    <string name="unexpected_error_while_setting_focus_timeout">Odak zaman aşımı ayarlanırken beklenmeyen bir hata oluştu</string>
+    <string name="storage_location_updated">Depolama konumu %s olarak başarıyla güncellendi</string>
+    <string name="no_directory_selected">Seçici tarafından bir dizin seçilmedi</string>
+    <string name="choose_storage_location">Depolama konumu seç</string>
+    <string name="are_you_sure">Emin misiniz?</string>
+    <string name="revert_to_default_directory">Varsayılan dizine geri dönmek istiyor musunuz?</string>
+    <string name="reverted_to_default_directory">Varsayılan depolama konumuna geri dönüldü</string>
+    <string name="already_using_default_directory">Zaten varsayılan depolama konumu kullanılıyor</string>
+    <string name="photo_quality_was_set_to_auto">Fotoğraf kalitesi otomatik moda ayarlandı</string>
+    <string name="photo_quality_number_limit" tools:ignore="PluralsCandidate">Fotoğraf kalitesi yalnızca %1$d ile %2$d arasında olabilir</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Bu modda çekilen görüntüler ekstra EXIF verisi içermez</string>
+    <string name="file_already_exists">%s konumunda dosya zaten var</string>
+    <string name="file_does_not_exist">%s konumunda dosya bulunmuyor</string>
+    <string name="couldnt_exclude_qr_format">%s formatı çıkarılamadı. Lütfen manuel modda en az bir formatın seçili olduğundan emin olun.</string>
+
+    <string name="capturing_image">Görüntü Çekiliyor…</string>
+    <string name="image_captured_successfully">Görüntü başarıyla çekildi</string>
+    <string name="unable_to_capture_image">Görüntü çekilemedi</string>
+    <string name="unable_to_capture_image_verbose">Görüntü çekilemedi, hata kodu: %d</string>
+    <string name="unable_to_save_image">Görüntü kaydedilemedi</string>
+    <string name="unable_to_save_image_verbose">Görüntü kaydedilemedi, hata şu aşamada oluştu: %s</string>
+    <string name="show_details">Ayrıntıları göster</string>
+    <string name="recording_too_short_to_be_saved">Kayıt, kaydedilemeyecek kadar kısa</string>
+    <string name="unable_to_save_video">Bu video kaydedilemedi</string>
+    <string name="unable_to_save_video_verbose">Bu video kaydedilemedi, hata kodu: %d</string>
+    <string name="error_during_recording">Mevcut kaydı sonlandırırken bir hata oluştu, hata kodu: %d</string>
+    <string name="unable_to_access_output_file">Çıktı dosyasına erişilemedi</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Paylaşmak için uzun basmadan önce lütfen görüntünün çekilmesini bekleyin</string>
+
+    <string name="file_details">Dosya Ayrıntıları</string>
+    <string name="file_name_generic">Dosya Adı: </string>
+    <string name="not_found_generic">Bulunamadı</string>
+    <string name="loading_generic">Yükleniyor…</string>
+    <string name="file_size">Dosya Boyutu: </string>
+    <string name="file_path">Dosya Yolu: </string>
+    <string name="file_created_on">Oluşturulma Tarihi: </string>
+    <string name="last_modified_on">Son Değiştirilme Tarihi: </string>
+
+    <string name="inaccessible_image">Fotoğraf %s erişilemez</string>
+    <string name="inaccessible_video">Video %s erişilemez</string>
+
+    <string name="main_storage">Ana depolama</string>
+
+    <string name="zsl_setting_title">Gecikme modunda ZSL kullan</string>
+    <string name="zsl_setting_desc">Daha hızlı çekim için Gecikme modunda Sıfır Deklanşör Gecikmesi (ZSL) kullanır. Bazı cihazlarda bu özellik hatalı çalışabilir.</string>
+    <string name="audio_permission_failed_in_recording">Kayıt sırasında ses izni talep edilemedi</string>
+
+    <string name="tap_to_mute_audio">Sesi kapatmak için dokunun</string>
+    <string name="tap_to_unmute_audio">Sesi açmak için dokunun</string>
+
+    <string name="video_audio_recording_muted">Videonun ses kaydı kapatıldı</string>
+    <string name="video_audio_recording_unmuted">Videonun ses kaydı açıldı</string>
+</resources>
