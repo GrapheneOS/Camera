@@ -193,4 +193,8 @@
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
+
+    <string name="misc">Miscellaneous</string>
+    <string name="persist_exposure_level">Persist exposure level</string>
+    <string name="persist_exposure_level_setting_description">Saves the last exposure level that was set by the user</string>
 </resources>
