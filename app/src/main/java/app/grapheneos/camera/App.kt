@@ -14,6 +14,11 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
 
 class App : Application() {
+
+    companion object {
+        private const val STALE_LOCATION_THRESHOLD = 15 * 1000L
+    }
+
     private var activity: MainActivity? = null
     private var location: Location? = null
 
@@ -26,7 +31,7 @@ class App : Application() {
     private val locationListener: LocationListener by lazy {
         object : LocationListener {
             override fun onLocationChanged(changedLocation: Location) {
-                location = listOf(location, changedLocation).getAccurateOne()
+                location = listOf(location, changedLocation).getOptimalLocation()
             }
 
             override fun onProviderDisabled(provider: String) {
@@ -36,7 +41,7 @@ class App : Application() {
             }
 
             override fun onLocationChanged(locations: MutableList<Location>) {
-                val location = locations.getAccurateOne()
+                val location = locations.getOptimalLocation()
                 if (location != null) {
                     this@App.location = location
                 }
@@ -75,18 +80,32 @@ class App : Application() {
         return false
     }
 
-    fun List<Location?>.getAccurateOne(): Location? {
+    fun List<Location?>.getOptimalLocation(): Location? {
         if (isNullOrEmpty()) return null
 
-        var lastBestAccuracy = 0f
-        var response: Location? = null
+        var optimalLocation: Location? = null
         forEach { location ->
-            if (location != null && location.accuracy > lastBestAccuracy) {
-                lastBestAccuracy = location.accuracy
-                response = location
+            if (location != null) {
+                if (optimalLocation == null) {
+                    optimalLocation = location
+                    return@forEach
+                }
+
+                val timeDifference = (location.time - optimalLocation.time)
+
+                // If the location is older than STALE_LOCATION_THRESHOLD ms
+                if (timeDifference > STALE_LOCATION_THRESHOLD) {
+                    optimalLocation = location
+                } else {
+                    // Compare their accuracy instead of time if the difference is below
+                    // threshold
+                    if (location.accuracy > optimalLocation.accuracy) {
+                        optimalLocation = location
+                    }
+                }
             }
         }
-        return response
+        return optimalLocation
     }
 
     override fun onCreate() {
@@ -110,7 +129,7 @@ class App : Application() {
             val locations = providers.map {
                 locationManager.getLastKnownLocation(it)
             }
-            val fetchedLocation = locations.getAccurateOne()
+            val fetchedLocation = locations.getOptimalLocation()
             if (fetchedLocation != null) {
                 location = fetchedLocation
             }
