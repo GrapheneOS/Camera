@@ -6,10 +6,12 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.CountDownTimer
 import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
+import app.grapheneos.camera.ktx.isSystemApp
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
 
@@ -125,7 +127,11 @@ class App : Application() {
         }
         isLocationFetchInProgress = true
         if (location == null) {
-            val providers = locationManager.allProviders
+            val providers = if (applicationInfo.isSystemApp() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                listOf<String>(LocationManager.FUSED_PROVIDER)
+            } else {
+                locationManager.allProviders
+            }
             val locations = providers.map {
                 locationManager.getLastKnownLocation(it)
             }
