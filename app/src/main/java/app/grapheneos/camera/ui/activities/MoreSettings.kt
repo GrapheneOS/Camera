@@ -236,6 +236,18 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             }
         }
 
+        val highResSetting = binding.highestResSetting
+        val highResToggle = binding.highestResSettingToggle
+        highResToggle.isChecked = camConfig.selectHighestResolution
+
+        highResToggle.setOnClickListener {
+            camConfig.selectHighestResolution = !camConfig.selectHighestResolution
+        }
+
+        highResSetting.setOnClickListener {
+            highResToggle.performClick()
+        }
+
         if (!showStorageSettings) {
             binding.storageLocationSettings.visibility = View.GONE
         }
