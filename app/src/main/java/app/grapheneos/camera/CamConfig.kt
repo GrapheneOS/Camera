@@ -114,6 +114,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = "enable_zsl"
 
+            const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -158,6 +160,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val ENABLE_ZSL = false
+
+            const val SELECT_HIGHEST_RESOLUTION = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -927,6 +931,19 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
+    var selectHighestResolution: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.SELECT_HIGHEST_RESOLUTION,
+                SettingValues.Default.SELECT_HIGHEST_RESOLUTION
+            )
+        }
+        set(value) {
+            commonPref.edit {
+                putBoolean(SettingValues.Key.SELECT_HIGHEST_RESOLUTION, value)
+            }
+        }
+
     fun toggleTorchState() {
         isTorchOn = !isTorchOn
     }
@@ -1185,11 +1202,14 @@ class CamConfig(private val mActivity: MainActivity) {
                             ?: rotation
                     )
 
-                    it.setResolutionSelector(
-                        ResolutionSelector.Builder()
-                            .setAspectRatioStrategy(aspectRatioStrategy)
-                            .build()
-                    )
+                    var resolutionSelectorBuilder = ResolutionSelector.Builder()
+                        .setAspectRatioStrategy(aspectRatioStrategy)
+
+                    if (selectHighestResolution) {
+                        resolutionSelectorBuilder.setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
+                    }
+
+                    it.setResolutionSelector(resolutionSelectorBuilder.build())
 
                     it.setFlashMode(flashMode)
 
