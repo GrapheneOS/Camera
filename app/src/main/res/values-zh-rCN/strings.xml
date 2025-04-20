@@ -1,0 +1,196 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="camera_permission_dialog_title">需要相机权限</string>
+    <string name="camera_permission_dialog_message">
+        此应用需要获得访问相机的权限才能运行。请通过系统设置提供所需权限以使用此应用。
+    </string>
+
+    <string name="audio_permission_dialog_title">需要录音权限</string>
+    <string name="audio_permission_dialog_message">应用需要访问麦克风权限才能录制带声音的视频。请通过系统设置提供所需权限以继续配置。如果您不需要视频包含声音，可以禁用它（稍后可在设置中重新启用）。</string>
+
+    <string name="location_permission_dialog_title">需要位置权限</string>
+    <string name="location_permission_dialog_message">
+        应用需要位置权限用于地理标记。请通过系统设置提供所需权限以使用此应用。
+    </string>
+
+    <string name="focus_ring">对焦环</string>
+    <string name="flip_camera">切换摄像头</string>
+    <string name="loading_camera">正在加载相机</string>
+    <string name="flash_mode">闪光模式</string>
+    <string name="capture_mode">拍摄模式</string>
+    <string name="start_value_timer">00:00</string>
+    <string name="zoom_in">放大</string>
+    <string name="zoom_out">缩小</string>
+    <string name="scan_result">扫描结果</string>
+    <string name="share_qr_text">分享二维码文本</string>
+    <string name="open_with">打开方式</string>
+    <string name="copy_to_clipboard">复制到剪贴板</string>
+    <string name="retake">重新拍摄</string>
+    <string name="play_preview">播放预览</string>
+    <string name="toggle_button">切换按钮</string>
+    <string name="aspect_ratio">宽高比</string>
+    <string name="toggle_flash">切换闪光灯</string>
+    <string name="grid_toggle">切换网格</string>
+    <string name="include_audio">包含音频</string>
+    <string name="enable_eis">启用 EIS</string>
+    <string name="video_quality">视频质量</string>
+    <string name="optimize_for">优化方案</string>
+    <string name="quality">质量</string>
+    <string name="latency">延迟</string>
+    <string name="preview">预览</string>
+    <string name="file_info">文件信息</string>
+    <string name="delete_file">删除文件</string>
+    <string name="edit">编辑</string>
+    <string name="self_illumination">自动照明</string>
+    <string name="focus_timeout">对焦超时</string>
+    <string name="timer">倒计时</string>
+    <string name="cancel_timer">取消倒计时</string>
+    <string name="video_capture_label">录制视频</string>
+
+    <string name="camera">拍照</string>
+    <string name="video">视频</string>
+    <string name="portrait_mode">人像</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">夜景</string>
+    <string name="face_retouch_mode">美颜</string>
+    <string name="auto_mode">自动</string>
+    <string name="qr_scan_mode">扫码</string>
+    <string name="aspect_ratio_16_9">16:9</string>
+    <string name="aspect_ratio_4_3">4:3</string>
+    <string name="share_media">分享媒体</string>
+    <string name="edit_with">编辑</string>
+    <string name="rec_without_audio">无声录制</string>
+    <string name="qr_scan_toggle">扫码切换</string>
+    <string name="qr_scan">QR 码</string>
+    <string name="data_matrix">数据矩阵</string>
+    <string name="aztec_code">Aztec 码</string>
+    <string name="more_options">更多选项</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="more_settings">更多设置</string>
+
+    <string name="general">通用</string>
+
+    <string name="save_image_as_previewed">翻转前置摄像头</string>
+    <string name="save_as_image_preview_desc">以所见即所得的方式存储照片</string>
+
+    <string name="save_video_as_previewed">翻转前置摄像头</string>
+    <string name="save_as_video_preview_desc">以所见即所得的方式存储视频</string>
+
+    <string name="gyroscope_suggestions">水平提示</string>
+    <string name="gyroscope_setting_desc">显示基于陀螺仪的水平提示，以协助调整拍摄角度</string>
+
+    <string name="camera_sounds">快门声</string>
+    <string name="camera_sounds_desc">快门声及其他声音提示</string>
+
+    <string name="storage">存储</string>
+    <string name="storage_location">存储位置</string>
+    <string name="image_file_name_format">图像文件名格式</string>
+    <string name="video_file_name_format">视频文件名格式</string>
+    <string name="revert_back_to_dcim">重置为 DCIM</string>
+
+    <string name="image_quality">图像质量</string>
+    <string name="image_quality_desc" formatted="false">在 1% 到 100% 范围内调整照片质量，可以留空以避免显式设定</string>
+    <string name="photo">照片</string>
+    <string name="remove_exif_title">拍摄后移除 EXIF 元信息</string>
+    <string name="remove_exif_subtitle">提示：位置元信息选项是一项独立设置</string>
+    <string name="video_setting_title">视频</string>
+    <string name="degree_format">%d°</string>
+    <string name="percent_symbol">%</string>
+
+    <string name="location_is_disabled">定位已禁用</string>
+    <string name="settings">设置</string>
+    <string name="enable">启用</string>
+    <string name="ok">完成</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="disable_audio">禁用声音</string>
+    <string name="copied_text_to_clipboard">已复制到剪贴板</string>
+    <string name="share_text_via">分享文本</string>
+
+    <string name="unable_to_obtain_file_details">无法获取文件详情</string>
+
+    <string name="no_editor_app_error">没有找到合适的编辑器应用</string>
+    <string name="edit_not_allowed">安全模式下不允许编辑图像。</string>
+    <string name="sharing_not_allowed">安全模式下不允许分享图像。</string>
+    <string name="edit_image">编辑图像</string>
+    <string name="share_image">分享图像</string>
+    <string name="delete">删除</string>
+    <string name="delete_title">确定要删除吗？</string>
+    <string name="deleted_successfully">文件删除成功</string>
+    <string name="deleting_unexpected_error">删除文件时发生意外错误</string>
+    <string name="delete_description">"确定要删除此文件（%s）吗？"</string>
+    <string name="cancel">取消</string>
+    <string name="no_image">在预览前请先拍摄照片或视频。</string>
+
+    <string name="empty_gallery">未找到拍摄的照片和视频</string>
+
+    <string name="bind_failure">由于系统或硬件问题无法打开相机，请尝试重启设备。</string>
+    <string name="camera_provider_init_failure">由于系统或硬件问题无法加载相机提供程序，请尝试重启设备。</string>
+    <string name="extensions_manager_init_failure">由于系统或硬件问题无法加载扩展管理器。扩展模式不可用，请尝试重启设备。</string>
+    <string name="unsupported_taking_picture_while_recording">在当前设置下，您的设备不支持录制视频时拍照。</string>
+    <string name="location_unavailable">当前位置信息不可用，无法为图像或视频添加位置信息</string>
+    <string name="existing_no_image">没有找到图像。退出内置图库。</string>
+    <string name="no_barcode_selected">请确保在手动模式下至少选择了一种条形码</string>
+    <string name="flash_unavailable_in_selected_mode">闪光灯在当前模式下不可用。</string>
+    <string name="front_camera_unavailable">无法检测到前置摄像头。请稍后再试！</string>
+    <string name="rear_camera_unavailable">无法检测到后置摄像头。请稍后再试！</string>
+    <string name="qr_rear_camera_unavailable">后置摄像头似乎不可用。改用前置摄像头进行二维码扫描。</string>
+    <string name="folder_not_found">未找到存储位置</string>
+    <string name="reverting_to_default_folder">由于之前选择的自定义存储位置已被删除，正在恢复到默认的 DCIM 目录。如有需要，请更改存储位置到其他文件夹。</string>
+    <string name="more_settings_unavailable_during_recording">录制时无法切换功能</string>
+    <string name="toggle_geo_tagging_unsupported_while_recording">录制过程中无法切换地理标记</string>
+    <string name="flash_switch_unsupported">此模式下无法切换闪光灯模式</string>
+    <string name="four_by_three_unsupported_in_video">4:3 在录像模式下不支持</string>
+    <string name="flash_unavailable_in_current_mode">此模式下闪光灯与手电筒不可用</string>
+    <string name="unexpected_error_while_setting_focus_timeout">设置对焦超时时发生意外错误</string>
+    <string name="storage_location_updated">存储位置已成功更新到 %s</string>
+    <string name="no_directory_selected">未选择任何目录</string>
+    <string name="choose_storage_location">选择存储位置</string>
+    <string name="are_you_sure">确定吗？</string>
+    <string name="revert_to_default_directory">是否要恢复到默认目录？</string>
+    <string name="reverted_to_default_directory">已切换回默认存储位置</string>
+    <string name="already_using_default_directory">当前设置即默认存储位置</string>
+    <string name="photo_quality_was_set_to_auto">照片质量已设置为自动模式</string>
+    <string name="photo_quality_number_limit" tools:ignore="PluralsCandidate">照片质量只能在 %1$d 和 %2$d 之间</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">在此模式下拍摄的图像不包含额外的 EXIF 元数据</string>
+    <string name="file_already_exists">%s 处已有文件存在</string>
+    <string name="file_does_not_exist">%s 处文件不存在</string>
+    <string name="couldnt_exclude_qr_format">无法排除 %s 格式。请确保在手动模式下至少选择了一种格式。</string>
+
+    <string name="capturing_image">拍摄图像…</string>
+    <string name="image_captured_successfully">成功拍摄图像</string>
+    <string name="unable_to_capture_image">无法拍摄图像</string>
+    <string name="unable_to_capture_image_verbose">无法拍摄图像，错误码：%d</string>
+    <string name="unable_to_save_image">无法保存图像</string>
+    <string name="unable_to_save_image_verbose">无法保存图像，错误阶段：%s</string>
+    <string name="show_details">显示详情</string>
+    <string name="recording_too_short_to_be_saved">录像时长过短，无法保存。</string>
+    <string name="unable_to_save_video">无法保存该视频</string>
+    <string name="unable_to_save_video_verbose">无法保存视频，错误码：%d</string>
+    <string name="error_during_recording">完成当前录制时出现错误，错误代码：%d</string>
+    <string name="unable_to_access_output_file">无法访问输出文件</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">请等待图像拍摄完成后再尝试通过长按分享</string>
+
+    <string name="file_details">文件详情</string>
+    <string name="file_name_generic">文件名：</string>
+    <string name="not_found_generic">未知</string>
+    <string name="loading_generic">加载中…</string>
+    <string name="file_size">文件大小：</string>
+    <string name="file_path">文件路径：</string>
+    <string name="file_created_on">创建时间：</string>
+    <string name="last_modified_on">修改时间：</string>
+
+    <string name="inaccessible_image">照片 %s 无法打开</string>
+    <string name="inaccessible_video">视频 %s 无法打开</string>
+
+    <string name="main_storage">主存储空间</string>
+
+    <string name="zsl_setting_title">在延迟模式下使用 ZSL</string>
+    <string name="zsl_setting_desc">在延迟模式下使用 Zero Shutter Lag （ZSL，零快门延迟），部分设备的实现可能有错误</string>
+    <string name="audio_permission_failed_in_recording">无法在录制过程中请求录音权限</string>
+
+    <string name="tap_to_mute_audio">点击静音</string>
+    <string name="tap_to_unmute_audio">点击取消静音</string>
+
+    <string name="video_audio_recording_muted">该视频录制时已静音</string>
+    <string name="video_audio_recording_unmuted">该视频录制时已解除静音</string>
+</resources>
