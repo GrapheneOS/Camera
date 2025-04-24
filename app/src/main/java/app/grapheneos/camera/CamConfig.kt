@@ -1303,7 +1303,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
         loadTabs()
 
-        camera?.cameraInfo?.zoomState?.observe(mActivity) {
+        val cameraInfo = camera!!.cameraInfo
+
+        if (cameraInfo.isLowLightBoostSupported && lowLightBoost) {
+            camera!!.cameraControl.enableLowLightBoostAsync(lowLightBoost)
+        }
+
+        cameraInfo.zoomState?.observe(mActivity) {
             if (it.linearZoom != 0f || it.zoomRatio != 1f) {
                 mActivity.zoomBar.updateThumb()
             }
