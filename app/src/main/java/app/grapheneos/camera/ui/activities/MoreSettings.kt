@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -233,6 +234,22 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
             zslSetting.setOnClickListener {
                 zslToggle.performClick()
+            }
+        }
+
+        // Setting only for Android 15 and above
+        val lowLightBoostSetting = binding.lowLightBoostSetting
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            lowLightBoostSetting.visibility = View.VISIBLE
+
+            val lowLightToggle = binding.lowLightBoostToggle
+            lowLightToggle.isChecked = camConfig.lowLightBoost
+            lowLightToggle.setOnClickListener {
+                camConfig.lowLightBoost = !camConfig.lowLightBoost
+            }
+
+            lowLightBoostSetting.setOnClickListener {
+                lowLightToggle.performClick()
             }
         }
 
