@@ -185,6 +185,7 @@
             android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false"/>
 
         <activity
