@@ -48,7 +48,7 @@
                         android:textOff=""
                         android:checked="false"
                         android:layout_gravity="center"
-                        android:background="@drawable/location"
+                        android:background="@drawable/location_toggle"
                         android:text="@string/toggle_button"/>
 
                 </FrameLayout>
