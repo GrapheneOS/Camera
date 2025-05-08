@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
+import android.location.Location
 import android.os.Build
 import android.util.Log
 import android.view.View
@@ -77,7 +78,14 @@ class ImageCapturer(val mActivity: MainActivity) {
                 && camConfig.saveImageAsPreviewed
 
         if (camConfig.requireLocation) {
-            val location = (mActivity.applicationContext as App).getLocation()
+            val location = if (camConfig.mockLocationEnabled) {
+                val loc = Location("")
+                loc.latitude = camConfig.mockLocationLatitude.toDouble()
+                loc.longitude = camConfig.mockLocationLongitude.toDouble()
+                loc
+            } else {
+                (mActivity.applicationContext as App).getLocation()
+            }
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
             } else {

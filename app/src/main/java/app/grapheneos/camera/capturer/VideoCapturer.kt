@@ -134,7 +134,15 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         var location: Location? = null
         if (camConfig.requireLocation) {
-            location = (mActivity.applicationContext as App).getLocation()
+            val location = if (camConfig.mockLocationEnabled) {
+                val loc = Location("")
+                loc.latitude = camConfig.mockLocationLatitude.toDouble()
+                loc.longitude = camConfig.mockLocationLongitude.toDouble()
+                loc
+            } else {
+                (mActivity.applicationContext as App).getLocation()
+            }
+
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
             }
