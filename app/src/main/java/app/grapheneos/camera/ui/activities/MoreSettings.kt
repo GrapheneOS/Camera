@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.KeyEvent
@@ -16,12 +15,11 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
-import app.grapheneos.camera.NumInputFilter
+import app.grapheneos.camera.NumLimitFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.util.storageLocationToUiString
@@ -150,8 +148,98 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             pQField.setText(camConfig.photoQuality.toString())
         }
 
-        pQField.filters = arrayOf(NumInputFilter(this))
+        pQField.filters = arrayOf(NumLimitFilter(
+            min = PHOTO_QUALITY_MIN,
+            max = PHOTO_QUALITY_MAX,
+            onOutOfRange = {
+                showMessage(getString(R.string.photo_quality_number_limit, PHOTO_QUALITY_MIN, PHOTO_QUALITY_MAX))
+            }
+        ))
+
+        pQField.onFocusChangeListener = object: View.OnFocusChangeListener {
+            override fun onFocusChange(v: View, hasFocus: Boolean) {
+                if (!hasFocus) {
+                    if (pQField.text.isEmpty()) {
+                        camConfig.photoQuality = 0
+
+                        showMessage(
+                            getString(R.string.photo_quality_was_set_to_auto)
+                        )
+                    } else {
+                        try {
+                            camConfig.photoQuality =
+                                Integer.parseInt(pQField.text.toString())
+                        } catch (exception: Exception) {
+                            camConfig.photoQuality = 0
+
+                        }
+                    }
+                }
+            }
+        }
         pQField.setOnEditorActionListener(this)
+
+        val latitudeField = binding.latitudeTextfield
+        latitudeField.setText(camConfig.mockLocationLatitude.toString())
+        latitudeField.filters = arrayOf(NumLimitFilter(
+            min = LATITUDE_MIN,
+            max = LATITUDE_MAX,
+            onOutOfRange = {
+                showMessage(getString(R.string.latitude_number_limit, LATITUDE_MIN, LATITUDE_MAX))
+            }
+        ))
+        latitudeField.onFocusChangeListener = object: View.OnFocusChangeListener {
+            override fun onFocusChange(v: View, hasFocus: Boolean) {
+                if (!hasFocus) {
+                    if (latitudeField.text?.isEmpty() != false) {
+                        latitudeField.setText(camConfig.mockLocationLatitude.toString())
+                        showMessage(getString(R.string.latitude_number_limit, LATITUDE_MIN, LATITUDE_MAX))
+                    } else {
+                        try {
+                            camConfig.mockLocationLatitude = latitudeField.text.toString().toFloat()
+                        } catch (exception: Exception) {
+                            camConfig.mockLocationLatitude = 0f
+                            showMessage(getString(R.string.latitude_number_limit, LATITUDE_MIN, LATITUDE_MAX))
+
+                        }
+                    }
+                }
+            }
+        }
+        latitudeField.setOnEditorActionListener(this)
+
+        val longitudeField = binding.longitudeTextfield
+        longitudeField.setText(camConfig.mockLocationLongitude.toString())
+        longitudeField.filters = arrayOf(NumLimitFilter(
+            min = LONGITUDE_MIN.toFloat(),
+            max = LONGITUDE_MAX.toFloat(),
+            onOutOfRange = {
+                showMessage(getString(R.string.longitude_number_limit, LONGITUDE_MIN, LONGITUDE_MAX))
+            }
+        ))
+        longitudeField.onFocusChangeListener = object: View.OnFocusChangeListener {
+            override fun onFocusChange(v: View, hasFocus: Boolean) {
+                if (!hasFocus) {
+                    if (longitudeField.text?.isEmpty() != false) {
+                        longitudeField.setText(camConfig.mockLocationLongitude.toString())
+                        showMessage(getString(R.string.longitude_number_limit, LONGITUDE_MIN, LONGITUDE_MAX))
+                    } else {
+                        try {
+                            camConfig.mockLocationLongitude = longitudeField.text.toString().toFloat()
+                        } catch (exception: Exception) {
+                            camConfig.mockLocationLongitude = 0f
+                            showMessage(getString(R.string.longitude_number_limit, LONGITUDE_MIN, LONGITUDE_MAX))
+                        }
+                    }
+                }
+            }
+        }
+        longitudeField.setOnEditorActionListener(this)
+
+        binding.mockLocationSettingSwitch.isChecked = camConfig.mockLocationEnabled
+        binding.mockLocationSettingSwitch.setOnClickListener {
+            camConfig.mockLocationEnabled = !camConfig.mockLocationEnabled
+        }
 
         iFField = binding.imageFormatSettingField
         iFField.setOnEditorActionListener(this)
@@ -267,7 +355,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 v.getGlobalVisibleRect(outRect)
                 if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
                     clearFocus()
-                    dumpData()
+//                    dumpData()
                 }
             }
         }
@@ -287,24 +375,10 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private fun dumpData() {
 
         // Dump state of photo quality
-        if (pQField.text.isEmpty()) {
-            camConfig.photoQuality = 0
 
-            showMessage(
-                getString(R.string.photo_quality_was_set_to_auto)
-            )
-        } else {
-            try {
 
-                camConfig.photoQuality =
-                    Integer.parseInt(pQField.text.toString())
+        // Dump state of image format
 
-            } catch (exception: Exception) {
-
-                camConfig.photoQuality = 0
-
-            }
-        }
 
 //        // Dump state of image format
 //        camConfig.imageFormat = iFField.text.toString()
@@ -332,6 +406,15 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     companion object {
+        const val PHOTO_QUALITY_MIN = 1
+        const val PHOTO_QUALITY_MAX = 100
+
+        const val LATITUDE_MIN = -90f
+        const val LATITUDE_MAX = 90f
+
+        const val LONGITUDE_MIN = -180f
+        const val LONGITUDE_MAX = 180f
+
         private var camConfigId = 0L
         private var staticCamConfig: CamConfig? = null
 
