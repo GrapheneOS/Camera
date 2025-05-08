@@ -2,9 +2,15 @@ package app.grapheneos.camera
 
 import android.text.InputFilter
 import android.text.Spanned
-import app.grapheneos.camera.ui.activities.MoreSettings
 
-class NumInputFilter(private val settings: MoreSettings) : InputFilter {
+// Ensures that the field is within the min/max limits for a number type input field
+class NumLimitFilter(
+    val min: Float,
+    val max: Float,
+    val onOutOfRange: () -> Unit,
+) : InputFilter {
+
+    constructor(min: Int, max: Int, onOutOfRange: () -> Unit) : this(min.toFloat(), max.toFloat(), onOutOfRange)
 
     override fun filter(
         source: CharSequence,
@@ -18,25 +24,20 @@ class NumInputFilter(private val settings: MoreSettings) : InputFilter {
             val input = (dest.subSequence(0, dstart).toString() + source + dest.subSequence(
                 dend,
                 dest.length
-            )).toInt()
+            )).toFloat()
             if (isInRange(input)) {
                 return null
             } else {
-                settings.showMessage(settings.getString(
-                    R.string.photo_quality_number_limit, min, max))
+                this.onOutOfRange()
             }
         } catch (e: NumberFormatException) {
             e.printStackTrace()
+            return null
         }
         return ""
     }
 
-    private fun isInRange(value: Int): Boolean {
-        return value in min..max
-    }
-
-    companion object {
-        const val min = 1
-        const val max = 100
+    private fun isInRange(value: Float): Boolean {
+        return value in this.min..this.max
     }
 }
