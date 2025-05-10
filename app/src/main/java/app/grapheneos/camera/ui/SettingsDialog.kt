@@ -69,14 +69,12 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     var mScrollView: ScrollView
     var mScrollViewContent: View
 
-    var cmRadioGroup: RadioGroup
-    var qRadio: MaterialRadioButton
-    var lRadio: MaterialRadioButton
-
     var includeAudioToggle: MaterialSwitch
     var enableEISToggle: MaterialSwitch
 
     var selfIlluminationToggle: MaterialSwitch
+
+    var waitForFocusLockSwitch: MaterialSwitch
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
@@ -239,17 +237,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
 
-        qRadio = binding.qualityRadio
-        lRadio = binding.latencyRadio
-
         if (mActivity.requiresVideoModeOnly) {
-            qRadio.isEnabled = false
-            lRadio.isEnabled = false
+            binding.waitForFocusLockSetting.visibility = View.GONE
         }
 
-        cmRadioGroup = binding.cmRadioGroup
-        cmRadioGroup.setOnCheckedChangeListener { _, _ ->
-            camConfig.emphasisQuality = qRadio.isChecked
+        waitForFocusLockSwitch = binding.waitForFocusLockSwitch
+        waitForFocusLockSwitch.isChecked = camConfig.emphasisQuality
+        waitForFocusLockSwitch.setOnClickListener {
+            camConfig.emphasisQuality = waitForFocusLockSwitch.isChecked
             if (camConfig.cameraProvider != null) {
                 camConfig.startCamera(true)
             }
