@@ -861,12 +861,6 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.settingsDialog.updateFocusTimeout(it)
             }
 
-        if (emphasisQuality) {
-            mActivity.settingsDialog.cmRadioGroup.check(R.id.quality_radio)
-        } else {
-            mActivity.settingsDialog.cmRadioGroup.check(R.id.latency_radio)
-        }
-
         aspectRatio = commonPref.getInt(
             SettingValues.Key.ASPECT_RATIO,
             SettingValues.Default.ASPECT_RATIO

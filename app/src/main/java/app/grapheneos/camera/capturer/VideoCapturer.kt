@@ -306,8 +306,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.thirdOption.visibility = View.INVISIBLE
         }
 
-        mActivity.settingsDialog.lRadio.isEnabled = false
-        mActivity.settingsDialog.qRadio.isEnabled = false
+        mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
 
         mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
         mActivity.tabLayout.visibility = View.INVISIBLE
@@ -358,8 +357,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         if (!mActivity.requiresVideoModeOnly) {
-            mActivity.settingsDialog.lRadio.isEnabled = true
-            mActivity.settingsDialog.qRadio.isEnabled = true
+            mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = true
         }
 
         if (mActivity !is VideoCaptureActivity) {
