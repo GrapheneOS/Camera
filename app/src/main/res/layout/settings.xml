@@ -280,52 +280,37 @@
 
                     </LinearLayout>
 
-                    <RelativeLayout
+                    <LinearLayout
+                        android:id="@+id/wait_for_focus_lock_setting"
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/settings_dialog_menu_item_height"
-                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:layout_height="wrap_content"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:orientation="horizontal">
 
                         <TextView
-                            android:layout_alignParentStart="true"
-                            android:layout_centerVertical="true"
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical|start"
-                            android:text="@string/optimize_for"/>
+                            android:layout_gravity="center_vertical"
+                            android:text="@string/wait_for_focus_lock"/>
 
-                        <RadioGroup
-                            android:id="@+id/cm_radio_group"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
+                        <LinearLayout
+                            android:id="@+id/wait_for_focus_lock_container"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical|end"
-                            android:orientation="horizontal">
+                            android:gravity="end|center_vertical">
 
-                            <com.google.android.material.radiobutton.MaterialRadioButton
-                                android:id="@+id/quality_radio"
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/wait_for_focus_lock_switch"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/quality"
+                                android:layout_height="@dimen/settings_dialog_switch_height"
+                                android:scaleX="@integer/settings_dialog_switch_scale"
+                                android:scaleY="@integer/settings_dialog_switch_scale"
                                 android:checked="true"/>
 
-                            <View
-                                android:layout_width="6dp"
-                                android:layout_height="0dp"/>
+                        </LinearLayout>
 
-                            <com.google.android.material.radiobutton.MaterialRadioButton
-                                android:id="@+id/latency_radio"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/latency"
-                                android:checked="false"/>
-
-                        </RadioGroup>
-
-                    </RelativeLayout>
+                    </LinearLayout>
 
 
                     <LinearLayout
