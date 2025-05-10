@@ -195,5 +195,7 @@
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
 
     <string name="highest_res_setting">Opt for highest resolution</string>
-    <string name="highest_res_setting_desc">Opts for the highest resolution image when \"Optimize for\" in quick settings is set to \"Quality\" mode. Warning: Can lead to very large images on certain devices</string>
+    <string name="highest_res_setting_desc">Opts for the highest resolution image when enabled. Warning: Can lead to very large images on certain devices</string>
+
+    <string name="wait_for_focus_lock">Wait for Focus Lock</string>
 </resources>
