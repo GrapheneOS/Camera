@@ -18,7 +18,7 @@ import com.google.android.material.color.DynamicColors
 class App : Application() {
 
     companion object {
-        private const val STALE_LOCATION_THRESHOLD = 15 * 1000L
+        private const val STALE_LOCATION_THRESHOLD = 11 * 1000L
     }
 
     private var activity: MainActivity? = null
@@ -93,7 +93,7 @@ class App : Application() {
                     return@forEach
                 }
 
-                val timeDifference = (location.time - optimalLocation.time)
+                val timeDifference = location.time - optimalLocation.time
 
                 // If the location is older than STALE_LOCATION_THRESHOLD ms
                 if (timeDifference > STALE_LOCATION_THRESHOLD) {
