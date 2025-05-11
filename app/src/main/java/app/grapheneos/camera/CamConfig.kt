@@ -151,7 +151,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val STORAGE_LOCATION = ""
 
-            const val PHOTO_QUALITY = 0
+            const val PHOTO_QUALITY = 95
 
             const val REMOVE_EXIF_AFTER_CAPTURE = true
 
