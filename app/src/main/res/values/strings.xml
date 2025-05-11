@@ -149,7 +149,6 @@
     <string name="revert_to_default_directory">Do you want to revert back to the default directory?</string>
     <string name="reverted_to_default_directory">Switched back to the default storage location</string>
     <string name="already_using_default_directory">Already using the default storage location</string>
-    <string name="photo_quality_was_set_to_auto">Photo quality was set to auto mode</string>
     <string name="photo_quality_number_limit" tools:ignore="PluralsCandidate">Photo quality can only be between %1$d and %2$d</string>
     <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
     <string name="file_already_exists">File exists at %s</string>
@@ -198,4 +197,5 @@
     <string name="highest_res_setting_desc">Opts for the highest resolution image when enabled. Warning: Can lead to very large images on certain devices</string>
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
+    <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
 </resources>
