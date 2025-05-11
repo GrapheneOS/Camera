@@ -146,9 +146,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         pQField = binding.photoQuality
 
-        if (camConfig.photoQuality != 0) {
-            pQField.setText(camConfig.photoQuality.toString())
-        }
+        pQField.setText(camConfig.photoQuality.toString())
 
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
@@ -300,21 +298,16 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         // Dump state of photo quality
         if (pQField.text.isEmpty()) {
-            camConfig.photoQuality = 0
-
-            showMessage(
-                getString(R.string.photo_quality_was_set_to_auto)
-            )
+            // Revert back to the original value if invalid number was found
+            pQField.setText(camConfig.photoQuality.toString())
+            showMessage(getString(R.string.invalid_photo_quality_value))
         } else {
             try {
-
-                camConfig.photoQuality =
-                    Integer.parseInt(pQField.text.toString())
-
+                camConfig.photoQuality = Integer.parseInt(pQField.text.toString())
             } catch (exception: Exception) {
-
-                camConfig.photoQuality = 0
-
+                // Revert back to the original value if invalid number was found
+                pQField.setText(camConfig.photoQuality.toString())
+                showMessage(getString(R.string.invalid_photo_quality_value))
             }
         }
 
