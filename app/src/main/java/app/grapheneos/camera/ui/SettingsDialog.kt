@@ -242,9 +242,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         waitForFocusLockSwitch = binding.waitForFocusLockSwitch
-        waitForFocusLockSwitch.isChecked = camConfig.emphasisQuality
+        waitForFocusLockSwitch.isChecked = camConfig.waitForFocusLock
         waitForFocusLockSwitch.setOnClickListener {
-            camConfig.emphasisQuality = waitForFocusLockSwitch.isChecked
+            camConfig.waitForFocusLock = waitForFocusLockSwitch.isChecked
             if (camConfig.cameraProvider != null) {
                 camConfig.startCamera(true)
             }

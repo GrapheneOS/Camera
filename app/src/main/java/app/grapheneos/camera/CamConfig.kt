@@ -116,6 +116,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
 
+            const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -162,6 +164,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val ENABLE_ZSL = false
 
             const val SELECT_HIGHEST_RESOLUTION = false
+
+            const val WAIT_FOR_FOCUS_LOCK = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -793,12 +797,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.putString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)
         }
 
-        if (!commonPref.contains(SettingValues.Key.EMPHASIS_ON_QUALITY)) {
-            editor.putBoolean(
-                SettingValues.Key.EMPHASIS_ON_QUALITY,
-                SettingValues.Default.EMPHASIS_ON_QUALITY
-            )
-        }
+        migrateFromOptimizationMode()
 
         if (!commonPref.contains(SettingValues.Key.INCLUDE_AUDIO)) {
             editor.putBoolean(
@@ -912,16 +911,29 @@ class CamConfig(private val mActivity: MainActivity) {
         qrAnalyzer?.refreshHints()
     }
 
-    var emphasisQuality: Boolean
+//    var emphasisQuality: Boolean
+//        get() {
+//            return commonPref.getBoolean(
+//                SettingValues.Key.EMPHASIS_ON_QUALITY,
+//                SettingValues.Default.EMPHASIS_ON_QUALITY
+//            )
+//        }
+//        set(value) {
+//            commonPref.edit {
+//                putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, value)
+//            }
+//        }
+
+    var waitForFocusLock: Boolean
         get() {
             return commonPref.getBoolean(
-                SettingValues.Key.EMPHASIS_ON_QUALITY,
-                SettingValues.Default.EMPHASIS_ON_QUALITY
+                SettingValues.Key.WAIT_FOR_FOCUS_LOCK,
+                SettingValues.Default.WAIT_FOR_FOCUS_LOCK
             )
         }
         set(value) {
             commonPref.edit {
-                putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, value)
+                putBoolean(SettingValues.Key.WAIT_FOR_FOCUS_LOCK, value)
             }
         }
 
@@ -937,6 +949,29 @@ class CamConfig(private val mActivity: MainActivity) {
                 putBoolean(SettingValues.Key.SELECT_HIGHEST_RESOLUTION, value)
             }
         }
+
+    fun migrateFromOptimizationMode() {
+        // If emphasis on quality/optimization was previously set by the user
+        if (commonPref.contains(SettingValues.Key.EMPHASIS_ON_QUALITY)) {
+            // If the photo quality key has not previously been set
+            if (!commonPref.contains(SettingValues.Key.PHOTO_QUALITY)) {
+                val optimizeForQuality =
+                    commonPref.getBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, false)
+
+                photoQuality = if (optimizeForQuality) {
+                    100
+                } else {
+                    95
+                }
+            }
+
+            // Remove the key to avoid re-execution of the above code
+            commonPref.edit {
+                remove(SettingValues.Key.EMPHASIS_ON_QUALITY)
+            }
+        }
+    }
+
 
     fun toggleTorchState() {
         isTorchOn = !isTorchOn
@@ -1180,16 +1215,17 @@ class CamConfig(private val mActivity: MainActivity) {
             if (!mActivity.requiresVideoModeOnly) {
                 imageCapture = builder.let {
                     it.setCaptureMode(
-                        if (emphasisQuality) {
-                            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+                        if (enableZsl) {
+                            ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
                         } else {
-                            if (enableZsl) {
-                                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+                            if (waitForFocusLock) {
+                                ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                             } else {
                                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                             }
                         }
                     )
+
 
                     it.setTargetRotation(
                         imageCapture?.targetRotation
@@ -1207,9 +1243,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
                     it.setFlashMode(flashMode)
 
-                    if (photoQuality != SettingValues.Default.PHOTO_QUALITY) {
-                        it.setJpegQuality(photoQuality)
-                    }
+                    it.setJpegQuality(photoQuality)
 
                     it.build()
                 }
