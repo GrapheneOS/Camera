@@ -365,6 +365,15 @@
                     android:layout_gravity="center"
                     android:contentDescription="@string/play_preview"/>
 
+                <ImageView
+                    android:id="@+id/select_image_icon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/image_search"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/select_image_from_picker"
+                    android:visibility="gone"/>
+
             </FrameLayout>
 
         </LinearLayout>
