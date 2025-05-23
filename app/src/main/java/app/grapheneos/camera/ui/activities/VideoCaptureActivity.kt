@@ -33,6 +33,19 @@ class VideoCaptureActivity : CaptureActivity() {
 
         captureButton.setImageResource(R.drawable.recording)
 
+        thirdCircle.setOnClickListener {
+            if (isPreviewShown) {
+                val i = Intent(
+                    this@VideoCaptureActivity,
+                    VideoPlayer::class.java
+                )
+                i.putExtra("videoUri", savedUri)
+                startActivity(i)
+            } else {
+                videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+            }
+        }
+
         captureButton.setOnClickListener OnClickListener@{
             if (videoCapturer.isRecording) {
                 videoCapturer.stopRecording()
@@ -41,18 +54,9 @@ class VideoCaptureActivity : CaptureActivity() {
             }
         }
 
-        playPreview.setOnClickListener {
-            val i = Intent(
-                this@VideoCaptureActivity,
-                VideoPlayer::class.java
-            )
-            i.putExtra("videoUri", savedUri)
-            startActivity(i)
-        }
-
         imagePreview.visibility = View.GONE
         whiteOptionCircle.visibility = View.GONE
-        playPreview.visibility = View.VISIBLE
+        // playPreview.visibility = View.VISIBLE
 
         confirmButton.setOnClickListener {
             confirmCapturedVideo()
@@ -74,6 +78,9 @@ class VideoCaptureActivity : CaptureActivity() {
     override fun showPreview() {
         super.showPreview()
         thirdOption.visibility = View.VISIBLE
+        selectImageIcon.visibility = View.GONE
+        playPreview.visibility = View.VISIBLE
+        thirdCircle.setImageResource(R.drawable.option_circle)
     }
 
     private fun confirmCapturedVideo() {
@@ -103,6 +110,7 @@ class VideoCaptureActivity : CaptureActivity() {
 
     override fun hidePreview() {
         super.hidePreview()
-        thirdOption.visibility = View.INVISIBLE
+        selectImageIcon.visibility = View.VISIBLE
+        playPreview.visibility = View.GONE
     }
 }
