@@ -193,4 +193,9 @@
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
+
+    <string name="select_media_from_picker">Select media from picker</string>
+    <string name="no_image_selected">No image selected from picker</string>
+    <string name="no_video_selected">No video selected from picker</string>
+    <string name="unexpected_error_occurred">An unexpected error occurred</string>
 </resources>

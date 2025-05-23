@@ -371,7 +371,7 @@
                     android:layout_height="32dp"
                     android:src="@drawable/image_search"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/select_image_from_picker"
+                    android:contentDescription="@string/select_media_from_picker"
                     android:visibility="gone"/>
 
             </FrameLayout>
