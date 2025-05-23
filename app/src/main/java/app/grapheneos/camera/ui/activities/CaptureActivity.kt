@@ -4,14 +4,19 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
+import android.view.animation.Animation
+import android.view.animation.LinearInterpolator
+import android.view.animation.RotateAnimation
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.activity.result.PickVisualMediaRequest
@@ -23,12 +28,15 @@ import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.util.getParcelableExtra
 import java.io.ByteArrayOutputStream
-import java.lang.Exception
 import java.nio.ByteBuffer
+import androidx.core.graphics.scale
+import app.grapheneos.camera.ktx.transfer
+import kotlin.Exception
 
 open class CaptureActivity : MainActivity() {
 
     companion object {
+        private const val TAG = "CaptureActivity"
         private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
     }
 
@@ -36,6 +44,8 @@ open class CaptureActivity : MainActivity() {
     lateinit var bitmap: Bitmap
 
     private lateinit var retakeIcon: ImageView
+    private lateinit var whiteOptionCircle: ImageView
+    protected lateinit var selectImageIcon: ImageView
 
     private lateinit var flipCameraContent: ImageView
 
@@ -59,6 +69,8 @@ open class CaptureActivity : MainActivity() {
         super.onCreate(savedInstanceState)
 
         retakeIcon = findViewById(R.id.retake_icon)
+        selectImageIcon = findViewById(R.id.select_image_icon)
+        whiteOptionCircle = findViewById(R.id.white_option_circle)
         flipCameraContent = findViewById(R.id.flip_camera_icon_content)
 
         confirmButton = findViewById(R.id.confirm_button)
@@ -67,9 +79,21 @@ open class CaptureActivity : MainActivity() {
             outputUri = it
         }
 
+        imagePreview.visibility = View.GONE
+        whiteOptionCircle.visibility = View.GONE
+        selectImageIcon.visibility = View.VISIBLE
+
+        thirdCircle.setOnClickListener {
+            imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+
         // Disable capture button for a while (to avoid picture capture)
         captureButton.isEnabled = false
         captureButton.alpha = 0f
+
+        // Disable capture button for a while (to avoid picture capture)
+        thirdCircle.isEnabled = false
+        thirdOption.alpha = 0f
 
         // Enable the capture button after a while
         Handler(Looper.getMainLooper()).postDelayed({
@@ -79,6 +103,13 @@ open class CaptureActivity : MainActivity() {
                 .setDuration(300)
                 .withEndAction {
                     captureButton.isEnabled = true
+                }
+
+            thirdOption.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .withEndAction {
+                    thirdCircle.isEnabled = true
                 }
 
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
@@ -106,9 +137,6 @@ open class CaptureActivity : MainActivity() {
             finish()
         }
 
-        // Remove the third option/circle from the UI
-        thirdOption.visibility = View.INVISIBLE
-
         captureButton.setOnClickListener {
             if (timerDuration == 0) {
                 takePicture()
@@ -121,8 +149,36 @@ open class CaptureActivity : MainActivity() {
             }
         }
 
-        retakeIcon.setOnClickListener {
-            hidePreview()
+        flipCameraCircle.setOnClickListener {
+            if (isPreviewShown) {
+                hidePreview()
+                return@setOnClickListener
+            }
+
+            if (videoCapturer.isRecording) {
+                videoCapturer.isPaused = !videoCapturer.isPaused
+                return@setOnClickListener
+            }
+
+            val rotation: Float = if (flipCameraIcon.rotation < 180) {
+                180f
+            } else {
+                360f
+            }
+
+            val rotate = RotateAnimation(
+                0F,
+                rotation,
+                Animation.RELATIVE_TO_SELF,
+                0.5f,
+                Animation.RELATIVE_TO_SELF,
+                0.5f
+            )
+            rotate.duration = 400
+            rotate.interpolator = LinearInterpolator()
+
+            it.startAnimation(rotate)
+            camConfig.toggleCameraSelector()
         }
 
         confirmButton.setOnClickListener {
@@ -184,6 +240,8 @@ open class CaptureActivity : MainActivity() {
         confirmButton.visibility = View.VISIBLE
 
         previewView.visibility = View.INVISIBLE
+
+        thirdOption.visibility = View.INVISIBLE
     }
 
     open fun hidePreview() {
@@ -201,6 +259,8 @@ open class CaptureActivity : MainActivity() {
         confirmButton.visibility = View.INVISIBLE
 
         previewView.visibility = View.VISIBLE
+
+        thirdOption.visibility = View.VISIBLE
     }
 
     private fun confirmPickedImage(uri: Uri) {

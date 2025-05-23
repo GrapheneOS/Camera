@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import app.grapheneos.camera.R
 
 class VideoCaptureActivity : CaptureActivity() {
@@ -14,6 +16,14 @@ class VideoCaptureActivity : CaptureActivity() {
     private lateinit var playPreview: ImageView
 
     private var savedUri: Uri? = null
+
+    private val videoPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            confirmSelectedVideo(uri)
+        } else {
+            showMessage(R.string.no_video_selected)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +55,7 @@ class VideoCaptureActivity : CaptureActivity() {
         playPreview.visibility = View.VISIBLE
 
         confirmButton.setOnClickListener {
-            confirmVideo()
+            confirmCapturedVideo()
         }
 
     }
@@ -66,7 +76,7 @@ class VideoCaptureActivity : CaptureActivity() {
         thirdOption.visibility = View.VISIBLE
     }
 
-    private fun confirmVideo() {
+    private fun confirmCapturedVideo() {
         if (savedUri == null) {
             setResult(RESULT_CANCELED)
         } else {
@@ -79,6 +89,15 @@ class VideoCaptureActivity : CaptureActivity() {
             )
             setResult(RESULT_OK, resultIntent)
         }
+        finish()
+    }
+
+    private fun confirmSelectedVideo(uri: Uri) {
+        val resultIntent = Intent()
+        resultIntent.data = uri
+        resultIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        resultIntent.putExtra(EXTRA_OUTPUT, uri)
+        setResult(RESULT_OK, resultIntent)
         finish()
     }
 
