@@ -14,6 +14,8 @@ import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -40,6 +42,14 @@ open class CaptureActivity : MainActivity() {
     protected var isPreviewShown = false
 
     lateinit var confirmButton: ImageButton
+
+    private val imagePicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            confirmPickedImage(uri)
+        } else {
+            showMessage(R.string.no_image_selected)
+        }
+    }
 
     fun isOutputUriAvailable(): Boolean {
         return ::outputUri.isInitialized
@@ -116,7 +126,7 @@ open class CaptureActivity : MainActivity() {
         }
 
         confirmButton.setOnClickListener {
-            confirmImage()
+            confirmCapturedImage()
         }
 
         // Display the activity
@@ -193,7 +203,51 @@ open class CaptureActivity : MainActivity() {
         previewView.visibility = View.VISIBLE
     }
 
-    private fun confirmImage() {
+    private fun confirmPickedImage(uri: Uri) {
+
+        val resultIntent = Intent("inline-data")
+
+        if (::outputUri.isInitialized) {
+
+            try {
+                val fis = contentResolver.openInputStream(uri)
+                if (fis != null) {
+                    fis.use {
+                        val fos = contentResolver.openOutputStream(outputUri)
+                        if (fos != null) {
+                            fos.use {
+                                fis.transfer(fos)
+                                setResult(RESULT_OK)
+                                finish()
+                            }
+                        } else {
+                            showMessage(R.string.unexpected_error_occurred)
+                            Log.e(TAG, "Output URI's output stream found null")
+                        }
+                    }
+                } else {
+                    showMessage(R.string.unexpected_error_occurred)
+                    Log.e(TAG, "Chosen Image URI's input stream found null")
+                }
+            } catch (e: Exception) {
+                showMessage(R.string.unexpected_error_occurred)
+                Log.e(TAG, "Error occurred while writing back image to output URI", e)
+            }
+        } else {
+            try {
+                bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
+                bitmap = resizeImage(bitmap)
+                resultIntent.putExtra("data", bitmap)
+                setResult(RESULT_OK, resultIntent)
+                finish()
+            } catch (e: Exception) {
+                showMessage(R.string.unexpected_error_occurred)
+                Log.e(TAG, "Error while sending bitmap to caller activity", e)
+            }
+        }
+    }
+
+    private fun confirmCapturedImage() {
 
         val resultIntent = Intent("inline-data")
 
