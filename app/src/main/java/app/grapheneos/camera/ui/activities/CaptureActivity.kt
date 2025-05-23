@@ -234,16 +234,17 @@ open class CaptureActivity : MainActivity() {
 
     private fun resizeImage(image: Bitmap): Bitmap {
 
+        // If within supported 1 megabyte size
+        if (image.byteCount <= 0x100000)
+            return image
+
         val width = image.width
         val height = image.height
 
         val scaleWidth = width / 10
         val scaleHeight = height / 10
 
-        if (image.byteCount <= 1000000)
-            return image
-
-        return Bitmap.createScaledBitmap(image, scaleWidth, scaleHeight, false)
+        return image.scale(scaleWidth, scaleHeight, false)
     }
 
     private fun Bitmap.rotate(degrees: Float): Bitmap {
