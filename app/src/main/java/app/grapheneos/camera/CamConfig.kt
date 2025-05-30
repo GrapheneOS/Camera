@@ -1206,10 +1206,15 @@ class CamConfig(private val mActivity: MainActivity) {
                         View.VISIBLE
                     }
 
-                val videoCaptureBuilder = VideoCapture.Builder(
-                    Recorder.Builder()
+                val recorderBuilder = Recorder.Builder()
                     .setQualitySelector(QualitySelector.from(videoQuality))
-                    .build()
+
+                if (mActivity.camConfig.videoBitRateValue != 0) {
+                    recorderBuilder.setTargetVideoEncodingBitRate(mActivity.camConfig.videoBitRate)
+                }
+
+                val videoCaptureBuilder = VideoCapture.Builder(
+                    recorderBuilder.build()
                 )
 
                 videoCaptureBuilder.setVideoStabilizationEnabled(mActivity.camConfig.enableEIS)
