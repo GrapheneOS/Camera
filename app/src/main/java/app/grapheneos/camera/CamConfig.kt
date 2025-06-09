@@ -1585,9 +1585,13 @@ class CamConfig(private val mActivity: MainActivity) {
         dialog.showIgnoringShortEdgeMode()
     }
 
-    fun onStorageLocationNotFound() {
-        // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
-        storageLocation = SettingValues.Default.STORAGE_LOCATION
+    fun onStorageLocationNotFound(inVideoMode: Boolean = false) {
+        // Reverting back to default path
+        if (inVideoMode && separateVideoStorage) {
+            videoStorageLocation = SettingValues.Default.STORAGE_LOCATION
+        } else {
+            storageLocation = SettingValues.Default.STORAGE_LOCATION
+        }
 
         val builder = MaterialAlertDialogBuilder(mActivity)
             .setTitle(R.string.folder_not_found)
