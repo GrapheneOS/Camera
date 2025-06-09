@@ -193,4 +193,7 @@
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
+
+    <string name="video_storage_location">Video Storage Location</string>
+    <string name="video_storage_location_description">When enabled, stores the video in the below specified location over the above default storage location.</string>
 </resources>
