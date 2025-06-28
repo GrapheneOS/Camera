@@ -30,6 +30,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App"
         android:enableOnBackInvokedCallback="true"
+        android:memtagMode="async"
         tools:ignore="UnusedAttribute">
 
         <!-- The main activity of the app (supports all modes) -->
