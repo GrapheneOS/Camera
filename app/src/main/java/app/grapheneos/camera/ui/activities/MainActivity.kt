@@ -1567,7 +1567,18 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    fun onDeviceAngleChange(xAngle: Float, zAngle: Float) {
+    fun onDeviceAngleChange(xDegrees: Float, zDegrees: Float) {
+
+        val reverseDirection = sensorNotifier?.mOrientation == 270 || sensorNotifier?.mOrientation == 180
+
+        val xAngle = if (reverseDirection) {
+            -xDegrees
+        } else {
+            xDegrees
+        }
+
+        val zAngle = zDegrees
+
         // If we are in photo mode and the countdown timer isn't running
         if (!(camConfig.isVideoMode || camConfig.isVideoMode || cdTimer.isRunning)) {
 
