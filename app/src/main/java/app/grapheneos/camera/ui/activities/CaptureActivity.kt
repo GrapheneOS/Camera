@@ -26,6 +26,10 @@ import java.nio.ByteBuffer
 
 open class CaptureActivity : MainActivity() {
 
+    companion object {
+        private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
+    }
+
     lateinit var outputUri: Uri
     lateinit var bitmap: Bitmap
 
@@ -64,7 +68,7 @@ open class CaptureActivity : MainActivity() {
                     captureButton.isEnabled = true
                 }
 
-        }, 2000)
+        }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
         // Remove the modes tab layout as we do not want the user to be able to switch to
         // another custom mode in this state
