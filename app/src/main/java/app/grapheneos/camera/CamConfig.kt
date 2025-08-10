@@ -20,12 +20,15 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.MirrorMode
 import androidx.camera.core.Preview
+import androidx.camera.core.SessionConfig
 import androidx.camera.core.TorchState
-import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.UseCase
+import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -1047,6 +1050,8 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     // Start the camera with latest hard configuration
+    @OptIn(ExperimentalSessionConfig::class)
+    @SuppressLint("RestrictedApi")
     fun startCamera(forced: Boolean = false) {
         if ((!forced && camera != null) || cameraProvider == null) return
 
@@ -1107,7 +1112,8 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-        val useCaseGroupBuilder = UseCaseGroup.Builder()
+        val useCasesList = arrayListOf<UseCase>()
+
         val aspectRatioStrategy = AspectRatioStrategy(
             aspectRatio, AspectRatioStrategy.FALLBACK_RULE_AUTO
         )
@@ -1134,7 +1140,7 @@ class CamConfig(private val mActivity: MainActivity) {
                         CameraSelector.LENS_FACING_FRONT
                     })
                 .build()
-            useCaseGroupBuilder.addUseCase(mIAnalyzer)
+            useCasesList.add(mIAnalyzer)
 
         } else {
             if (isVideoMode) {
@@ -1159,7 +1165,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 videoCapture = videoCaptureBuilder.build()
 
-                useCaseGroupBuilder.addUseCase(videoCapture!!)
+                useCasesList.add(videoCapture!!)
             }
 
             if (!mActivity.requiresVideoModeOnly) {
@@ -1196,7 +1202,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     it.build()
                 }
 
-                useCaseGroupBuilder.addUseCase(imageCapture!!)
+                useCasesList.add(imageCapture!!)
             }
         }
 
@@ -1216,7 +1222,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         preview = previewBuilder.build().also {
-            useCaseGroupBuilder.addUseCase(it)
+            useCasesList.add(it)
             it.setSurfaceProvider(mActivity.previewView.surfaceProvider)
         }
 
@@ -1224,24 +1230,50 @@ class CamConfig(private val mActivity: MainActivity) {
 
         try {
             try {
+                val preferredFeatures = arrayListOf<GroupableFeature>()
+
+                if (enableEIS && isVideoMode) {
+                    preferredFeatures.add(
+                        GroupableFeature.PREVIEW_STABILIZATION
+                    )
+                }
+
+                val sessionConfig = SessionConfig(
+                    useCases = useCasesList,
+                    preferredFeatureGroup = preferredFeatures
+                )
+
                 camera = cameraProvider!!.bindToLifecycle(
                     mActivity, cameraSelector,
-                    useCaseGroupBuilder.build()
+                    sessionConfig
                 )
             } catch (exception: IllegalArgumentException) {
                 if (isVideoMode) {
-                    val newUseCaseGroupBuilder = UseCaseGroup.Builder()
+                    val newUseCaseList = arrayListOf<UseCase>()
+                    val newPreferredFeatures = arrayListOf<GroupableFeature>()
+
+                    if (enableEIS && isVideoMode) {
+                        newPreferredFeatures.add(
+                            GroupableFeature.PREVIEW_STABILIZATION
+                        )
+                    }
+
                     videoCapture?.let {
-                        newUseCaseGroupBuilder.addUseCase(it)
+                        newUseCaseList.add(it)
                     }
                     preview?.let {
-                        newUseCaseGroupBuilder.addUseCase(it)
+                        newUseCaseList.add(it)
                     }
                     imageCapture = null
 
+                    val sessionConfig = SessionConfig(
+                        useCases = newUseCaseList,
+                        preferredFeatureGroup = newPreferredFeatures
+                    )
+
                     camera = cameraProvider!!.bindToLifecycle(
                         mActivity, cameraSelector,
-                        newUseCaseGroupBuilder.build()
+                        sessionConfig
                     )
                 } else {
                     throw exception
