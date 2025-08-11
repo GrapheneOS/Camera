@@ -444,7 +444,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun showOnlyRelevantSettings() {
-        @androidx.camera.camera2.interop.ExperimentalCamera2Interop
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
             enableEISSetting.visibility = View.GONE
