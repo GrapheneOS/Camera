@@ -114,6 +114,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = "enable_zsl"
 
+            const val VIDEO_BITRATE_VALUE = "video_bitrate_value"
+
+            const val VIDEO_BITRATE_UNIT = "video_bitrate_unit"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -159,6 +163,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = false
 
+            const val VIDEO_BITRATE_VALUE = 0 // auto
+
+            const val VIDEO_BITRATE_UNIT = "b/s"
+
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
         }
@@ -177,6 +185,12 @@ class CamConfig(private val mActivity: MainActivity) {
             BarcodeFormat.QR_CODE,
             BarcodeFormat.DATA_MATRIX,
             BarcodeFormat.PDF_417,
+        )
+
+        val VIDEO_BITRATE_UNITS = arrayOf(
+            "b/s",
+            "kb/s",
+            "mb/s"
         )
 
         val imageCollectionUri: Uri = MediaStore.Images.Media.getContentUri(
@@ -556,6 +570,52 @@ class CamConfig(private val mActivity: MainActivity) {
                 value
             )
             editor.apply()
+        }
+
+    // The value of bit rate set by the user (the effective value can be different based on the selected unit)
+    var videoBitRateValue: Int
+        get() {
+            return commonPref.getInt(
+                SettingValues.Key.VIDEO_BITRATE_VALUE,
+                SettingValues.Default.VIDEO_BITRATE_VALUE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putInt(SettingValues.Key.VIDEO_BITRATE_VALUE, value)
+            editor.apply()
+        }
+
+    // The unit of bit rate set by the user (impacts the effective value of bit rate sent)
+    var videoBitRateUnit: String
+        get() {
+            return commonPref.getString(
+                SettingValues.Key.VIDEO_BITRATE_UNIT,
+                SettingValues.Default.VIDEO_BITRATE_UNIT
+            ) ?: SettingValues.Default.VIDEO_BITRATE_UNIT
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putString(SettingValues.Key.VIDEO_BITRATE_UNIT, value)
+            editor.apply()
+        }
+
+    // Returns a multiplier value based on the
+    val videoBitRateMultiplier : Int
+        get() {
+            return if (videoBitRateUnit == "kb/s") {
+                1000
+            } else if (videoBitRateUnit == "mb/s") {
+                1000000
+            } else {
+                1
+            }
+        }
+
+    // The effective video bit rate based on [videoBitRateValue] and [videoBitRateUnit]
+    val videoBitRate : Int
+        get() {
+            return videoBitRateMultiplier * videoBitRateValue
         }
 
     val isZslSupported : Boolean by lazy {
@@ -1152,10 +1212,15 @@ class CamConfig(private val mActivity: MainActivity) {
                         View.VISIBLE
                     }
 
-                val videoCaptureBuilder = VideoCapture.Builder(
-                    Recorder.Builder()
+                val recorderBuilder = Recorder.Builder()
                     .setQualitySelector(QualitySelector.from(videoQuality))
-                    .build()
+
+                if (mActivity.camConfig.videoBitRateValue != 0) {
+                    recorderBuilder.setTargetVideoEncodingBitRate(mActivity.camConfig.videoBitRate)
+                }
+
+                val videoCaptureBuilder = VideoCapture.Builder(
+                    recorderBuilder.build()
                 )
 
                 videoCaptureBuilder.setVideoStabilizationEnabled(mActivity.camConfig.enableEIS)

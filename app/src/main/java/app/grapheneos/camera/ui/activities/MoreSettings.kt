@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.KeyEvent
@@ -10,20 +9,23 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
-import app.grapheneos.camera.NumInputFilter
+import app.grapheneos.camera.inputfilter.NumLimitFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.MoreSettingsBinding
+import app.grapheneos.camera.inputfilter.CustomNumFilter
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -43,6 +45,10 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var pQField: EditText
     private lateinit var iFField: EditText
     private lateinit var vFField: EditText
+
+    private lateinit var videoBitRateValueField: EditText
+    private lateinit var videoBitRateUnitField: AutoCompleteTextView
+    private lateinit var videoBitRateUnitFieldAdapter: ArrayAdapter<String>
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -150,8 +156,129 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             pQField.setText(camConfig.photoQuality.toString())
         }
 
-        pQField.filters = arrayOf(NumInputFilter(this))
+        pQField.filters = arrayOf(NumLimitFilter(
+            min = PHOTO_QUALITY_MIN,
+            max = PHOTO_QUALITY_MAX,
+            onOutOfRange = {
+                showMessage(getString(R.string.photo_quality_number_limit, PHOTO_QUALITY_MIN, PHOTO_QUALITY_MAX))
+            }
+        ))
+        pQField.onFocusChangeListener = object: View.OnFocusChangeListener {
+            override fun onFocusChange(v: View, hasFocus: Boolean) {
+                if (!hasFocus) {
+                    if (pQField.text.isEmpty()) {
+                        camConfig.photoQuality = 0
+
+                        showMessage(
+                            getString(R.string.photo_quality_was_set_to_auto)
+                        )
+                    } else {
+                        try {
+                            camConfig.photoQuality =
+                                Integer.parseInt(pQField.text.toString())
+                        } catch (_: Exception) {
+                            camConfig.photoQuality = 0
+
+                        }
+                    }
+                }
+            }
+        }
         pQField.setOnEditorActionListener(this)
+
+        // Video bitrate value field
+        videoBitRateValueField = binding.videoBitrateValueField
+
+        if (camConfig.videoBitRateValue != 0) {
+            videoBitRateValueField.setText(camConfig.videoBitRateValue.toString())
+        }
+
+        videoBitRateValueField.filters = arrayOf(
+            CustomNumFilter(
+                shouldAcceptNumber = { value ->
+                    val calculatedBitRate = value * camConfig.videoBitRateMultiplier
+                    if (calculatedBitRate >= VIDEO_BITRATE_MIN && calculatedBitRate <= VIDEO_BITRATE_MAX) {
+                        true
+                   } else {
+                        val minVideoBitrateInUnits = (VIDEO_BITRATE_MIN.toFloat() / camConfig.videoBitRateMultiplier).coerceAtLeast(1f).toInt()
+                        val maxVideoBitrateInUnits = VIDEO_BITRATE_MAX / camConfig.videoBitRateMultiplier
+
+                        showMessage(getString(R.string.video_bitrate_number_limit, minVideoBitrateInUnits, camConfig.videoBitRateUnit, maxVideoBitrateInUnits, camConfig.videoBitRateUnit))
+                        false
+                    }
+                }
+            )
+        )
+        videoBitRateValueField.onFocusChangeListener = object: View.OnFocusChangeListener {
+            override fun onFocusChange(v: View, hasFocus: Boolean) {
+                if (!hasFocus) {
+                    if (videoBitRateValueField.text.isEmpty()) {
+                        camConfig.videoBitRateValue = 0
+
+                        showMessage(
+                            getString(R.string.video_bitrate_was_set_to_auto)
+                        )
+                    } else {
+                        try {
+                            camConfig.videoBitRateValue =
+                                Integer.parseInt(videoBitRateValueField.text.toString())
+                        } catch (exception: Exception) {
+                            camConfig.videoBitRateValue = 0
+                            showMessage(
+                                getString(R.string.video_bitrate_was_set_to_auto)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        videoBitRateValueField.setOnEditorActionListener(this)
+
+        // Video bit rate unit field
+        videoBitRateUnitField = binding.videoBitrateUnitSpinner
+
+        videoBitRateUnitFieldAdapter = ArrayAdapter<String>(
+            this,
+            android.R.layout.simple_spinner_item,
+            CamConfig.VIDEO_BITRATE_UNITS
+        )
+
+        videoBitRateUnitFieldAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
+        videoBitRateUnitField.setAdapter(videoBitRateUnitFieldAdapter)
+
+        videoBitRateUnitField.setText(camConfig.videoBitRateUnit, false)
+
+        videoBitRateUnitField.onItemClickListener = object : AdapterView.OnItemClickListener {
+            override fun onItemClick(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                val selectedBitRateUnit = CamConfig.VIDEO_BITRATE_UNITS[position]
+                camConfig.videoBitRateUnit = selectedBitRateUnit
+
+                // Update bitrate value to highest possible valid value when it exceeds VIDEO_BITRATE_MAX
+                // while switching to a higher value unit (as a fallback to prevent overflow while switching
+                // from say MAX_INT b/s to MAX_INT mb/s (b/s --> mb/s) which would lead to unexpected behavior
+                val maxVideoBitrateWithUnits = VIDEO_BITRATE_MAX / camConfig.videoBitRateMultiplier
+                if (camConfig.videoBitRateValue > maxVideoBitrateWithUnits) {
+                    camConfig.videoBitRateValue = maxVideoBitrateWithUnits
+                    videoBitRateValueField.setText(maxVideoBitrateWithUnits.toString())
+                }
+            }
+        }
+
+        binding.refreshVideoBitrate.setOnClickListener {
+            camConfig.videoBitRateValue = 0
+            videoBitRateValueField.setText("")
+            showMessage(
+                getString(R.string.video_bitrate_was_set_to_auto)
+            )
+        }
 
         iFField = binding.imageFormatSettingField
         iFField.setOnEditorActionListener(this)
@@ -267,7 +394,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 v.getGlobalVisibleRect(outRect)
                 if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
                     clearFocus()
-                    dumpData()
+//                    dumpData()
                 }
             }
         }
@@ -284,39 +411,10 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
     }
 
-    private fun dumpData() {
-
-        // Dump state of photo quality
-        if (pQField.text.isEmpty()) {
-            camConfig.photoQuality = 0
-
-            showMessage(
-                getString(R.string.photo_quality_was_set_to_auto)
-            )
-        } else {
-            try {
-
-                camConfig.photoQuality =
-                    Integer.parseInt(pQField.text.toString())
-
-            } catch (exception: Exception) {
-
-                camConfig.photoQuality = 0
-
-            }
-        }
-
-//        // Dump state of image format
-//        camConfig.imageFormat = iFField.text.toString()
-//
-//        // Dump state of video format
-//        camConfig.videoFormat = vFField.text.toString()
-    }
-
     override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {
         return if (id == EditorInfo.IME_ACTION_DONE) {
             clearFocus()
-            dumpData()
+//            dumpData()
             true
         } else false
     }
@@ -332,6 +430,13 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     companion object {
+        const val PHOTO_QUALITY_MIN = 1
+        const val PHOTO_QUALITY_MAX = 100
+
+        // Video bitrate in bs
+        const val VIDEO_BITRATE_MIN = 1
+        const val VIDEO_BITRATE_MAX = Integer.MAX_VALUE
+
         private var camConfigId = 0L
         private var staticCamConfig: CamConfig? = null
 

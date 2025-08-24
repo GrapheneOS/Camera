@@ -193,4 +193,11 @@
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
+
+    <string name="video_bitrate_was_set_to_auto">Video bitrate was set to auto mode</string>
+    <string name="video_bitrate">Video Bitrate</string>
+    <string name="video_bitrate_description">Adjust the video bitrate of a video recording to a specified bitrate. The specified value will be taken as a hint and may not be the exact video rate at all times while recording.</string>
+    <string name="reset_video_bitrate">Reset video bitrate</string>
+    <string name="video_bitrate_number_limit" tools:ignore="PluralsCandidate">Video bitrate can only be between %1$d %2$s and %3$d %4$s</string>
+    <string name="unit">Unit</string>
 </resources>
