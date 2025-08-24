@@ -165,6 +165,118 @@
 
                 </LinearLayout>
 
+                <LinearLayout
+                    android:id="@+id/mock_location_settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="horizontal"
+                    android:paddingTop="8dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="10dp">
+
+                    <ImageView
+                        android:id="@+id/mock_location_setting_icon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/mock_location"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="8dp"
+                        android:src="@drawable/location" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="4dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/mock_location_setting_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/mock_location"
+                            android:textColor="?android:textColorPrimary"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/mock_location_setting_description"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="10dp"
+                            android:paddingBottom="8dp"
+                            android:text="@string/mock_location_description"
+                            android:textSize="14sp"
+                            tools:ignore="RtlSymmetry" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="5dp"
+                                android:layout_marginLeft="5dp"
+                                android:layout_marginEnd="5dp"
+                                android:layout_marginRight="5dp"
+                                android:padding="3dp">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/latitude_textfield"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="@string/latitude"
+                                    app:suffixText="@string/degree_symbol"
+                                    android:imeOptions="actionNext"
+                                    android:nextFocusRight="@id/longitude_textfield"
+                                    android:inputType="numberDecimal|numberSigned" />
+
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="5dp"
+                                android:layout_marginLeft="5dp"
+                                android:layout_marginEnd="5dp"
+                                android:layout_marginRight="5dp"
+                                android:padding="3dp">
+
+                                <!--android:maxLength="13"-->
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/longitude_textfield"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="@string/longitude"
+                                    app:suffixText="@string/degree_symbol"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="numberDecimal|numberSigned" />
+
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/mock_location_setting_switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="0dp" />
+
+                </LinearLayout>
+
             </LinearLayout>
 
             <LinearLayout

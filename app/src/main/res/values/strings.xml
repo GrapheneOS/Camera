@@ -193,4 +193,14 @@
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
+
+    <string name="mock_location">Use Mock Location</string>
+    <string name="mock_location_description">When enabled uses below location over the location provided by device for geo-tagging</string>
+
+    <string name="degree_symbol">°</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+
+    <string name="latitude_number_limit">Latitude can only be between %1$.1f and %2$.1f</string>
+    <string name="longitude_number_limit">Longitude can only be between %1$.1f and %2$.1f</string>
 </resources>

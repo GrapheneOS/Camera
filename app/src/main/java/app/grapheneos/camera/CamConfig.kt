@@ -114,6 +114,11 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = "enable_zsl"
 
+            const val MOCK_LOCATION_STATE = "mock_location_state"
+
+            const val MOCK_LOCATION_LATITUDE = "mock_location_latitude"
+            const val MOCK_LOCATION_LONGITUDE = "mock_location_longitude"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -158,6 +163,11 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val ENABLE_ZSL = false
+
+            const val MOCK_LOCATION_STATE = false
+
+            const val MOCK_LOCATION_LATITUDE = 0.0f
+            const val MOCK_LOCATION_LONGITUDE = 0.0f
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -555,6 +565,48 @@ class CamConfig(private val mActivity: MainActivity) {
                 SettingValues.Key.GYROSCOPE_SUGGESTIONS,
                 value
             )
+            editor.apply()
+        }
+
+    var mockLocationEnabled: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.MOCK_LOCATION_STATE,
+                SettingValues.Default.MOCK_LOCATION_STATE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(
+                SettingValues.Key.MOCK_LOCATION_STATE,
+                value
+            )
+            editor.apply()
+        }
+
+    var mockLocationLatitude: Float
+        get() {
+            return commonPref.getFloat(
+                SettingValues.Key.MOCK_LOCATION_LATITUDE,
+                SettingValues.Default.MOCK_LOCATION_LATITUDE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putFloat(SettingValues.Key.MOCK_LOCATION_LATITUDE, value)
+            editor.apply()
+        }
+
+    var mockLocationLongitude: Float
+        get() {
+            return commonPref.getFloat(
+                SettingValues.Key.MOCK_LOCATION_LONGITUDE,
+                SettingValues.Default.MOCK_LOCATION_LONGITUDE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putFloat(SettingValues.Key.MOCK_LOCATION_LONGITUDE, value)
             editor.apply()
         }
 
