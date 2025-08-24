@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import app.grapheneos.camera.R
 
 class VideoCaptureActivity : CaptureActivity() {
@@ -15,6 +17,14 @@ class VideoCaptureActivity : CaptureActivity() {
 
     private var savedUri: Uri? = null
 
+    private val videoPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            confirmSelectedVideo(uri)
+        } else {
+            showMessage(R.string.no_video_selected)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -22,6 +32,19 @@ class VideoCaptureActivity : CaptureActivity() {
         playPreview = findViewById(R.id.play_preview)
 
         captureButton.setImageResource(R.drawable.recording)
+
+        thirdCircle.setOnClickListener {
+            if (isPreviewShown) {
+                val i = Intent(
+                    this@VideoCaptureActivity,
+                    VideoPlayer::class.java
+                )
+                i.putExtra("videoUri", savedUri)
+                startActivity(i)
+            } else {
+                videoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+            }
+        }
 
         captureButton.setOnClickListener OnClickListener@{
             if (videoCapturer.isRecording) {
@@ -31,21 +54,12 @@ class VideoCaptureActivity : CaptureActivity() {
             }
         }
 
-        playPreview.setOnClickListener {
-            val i = Intent(
-                this@VideoCaptureActivity,
-                VideoPlayer::class.java
-            )
-            i.putExtra("videoUri", savedUri)
-            startActivity(i)
-        }
-
         imagePreview.visibility = View.GONE
         whiteOptionCircle.visibility = View.GONE
-        playPreview.visibility = View.VISIBLE
+        // playPreview.visibility = View.VISIBLE
 
         confirmButton.setOnClickListener {
-            confirmVideo()
+            confirmCapturedVideo()
         }
 
     }
@@ -64,9 +78,12 @@ class VideoCaptureActivity : CaptureActivity() {
     override fun showPreview() {
         super.showPreview()
         thirdOption.visibility = View.VISIBLE
+        selectImageIcon.visibility = View.GONE
+        playPreview.visibility = View.VISIBLE
+        thirdCircle.setImageResource(R.drawable.option_circle)
     }
 
-    private fun confirmVideo() {
+    private fun confirmCapturedVideo() {
         if (savedUri == null) {
             setResult(RESULT_CANCELED)
         } else {
@@ -82,8 +99,18 @@ class VideoCaptureActivity : CaptureActivity() {
         finish()
     }
 
+    private fun confirmSelectedVideo(uri: Uri) {
+        val resultIntent = Intent()
+        resultIntent.data = uri
+        resultIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        resultIntent.putExtra(EXTRA_OUTPUT, uri)
+        setResult(RESULT_OK, resultIntent)
+        finish()
+    }
+
     override fun hidePreview() {
         super.hidePreview()
-        thirdOption.visibility = View.INVISIBLE
+        selectImageIcon.visibility = View.VISIBLE
+        playPreview.visibility = View.GONE
     }
 }

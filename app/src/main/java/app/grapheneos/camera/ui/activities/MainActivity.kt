@@ -193,6 +193,8 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var gCircleFrame: FrameLayout
 
+    lateinit var flipCameraIcon: ImageView
+
     private lateinit var gAngleTextView: TextView
     private lateinit var gCircle: LinearLayout
 
@@ -712,7 +714,6 @@ open class MainActivity : AppCompatActivity(),
                 return@setOnClickListener
             }
 
-            val flipCameraIcon: ImageView = binding.flipCameraIcon
             val rotation: Float = if (flipCameraIcon.rotation < 180) {
                 180f
             } else {
@@ -785,6 +786,8 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
+
+        flipCameraIcon = binding.flipCameraIcon
 
         cancelButtonView = binding.cancelButton
 //        cancelButtonView.setOnClickListener(object : View.OnClickListener {
