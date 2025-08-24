@@ -108,6 +108,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
 
+            const val PERSIST_EXPOSURE_LEVEL = "persist_exposure_level"
+
+            const val EXPOSURE_LEVEL = "exposure_level"
+
             const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
 
             const val CAMERA_SOUNDS = "camera_sounds"
@@ -152,6 +156,10 @@ class CamConfig(private val mActivity: MainActivity) {
             const val PHOTO_QUALITY = 0
 
             const val REMOVE_EXIF_AFTER_CAPTURE = true
+
+            const val PERSIST_EXPOSURE_LEVEL = false
+
+            const val EXPOSURE_LEVEL = 0
 
             const val GYROSCOPE_SUGGESTIONS = false
 
@@ -537,6 +545,50 @@ class CamConfig(private val mActivity: MainActivity) {
             val editor = commonPref.edit()
             editor.putBoolean(
                 SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
+                value
+            )
+            editor.apply()
+        }
+
+    var persistExposureLevel: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.PERSIST_EXPOSURE_LEVEL,
+                SettingValues.Default.PERSIST_EXPOSURE_LEVEL
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(
+                SettingValues.Key.PERSIST_EXPOSURE_LEVEL,
+                value
+            )
+            editor.apply()
+        }
+
+    private val exposureLevelKey: String
+        get() {
+
+            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                "FRONT"
+            } else {
+                "BACK"
+            }
+
+            return "${SettingValues.Key.EXPOSURE_LEVEL}_$pf"
+        }
+
+    var exposureLevel: Int
+        get() {
+            return modePref.getInt(
+                exposureLevelKey,
+                SettingValues.Default.EXPOSURE_LEVEL,
+            )
+        }
+        set(value) {
+            val editor = modePref.edit()
+            editor.putInt(
+                exposureLevelKey,
                 value
             )
             editor.apply()
@@ -1293,6 +1345,10 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         mActivity.zoomBar.updateThumb(false)
+
+        if (persistExposureLevel) {
+            camera?.cameraControl?.setExposureCompensationIndex(exposureLevel)
+        }
 
         camera?.cameraInfo?.exposureState?.let { mActivity.exposureBar.setExposureConfig(it) }
 

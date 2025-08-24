@@ -236,6 +236,14 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             }
         }
 
+        val persistExposureToggle = binding.persistExposureLevelToggle
+
+        persistExposureToggle.isChecked = camConfig.persistExposureLevel
+
+        persistExposureToggle.setOnClickListener {
+            camConfig.persistExposureLevel = persistExposureToggle.isChecked
+        }
+
         if (!showStorageSettings) {
             binding.storageLocationSettings.visibility = View.GONE
         }

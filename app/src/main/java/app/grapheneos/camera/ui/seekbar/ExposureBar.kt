@@ -46,12 +46,7 @@ class ExposureBar : AppCompatSeekBar {
         max = exposureState.exposureCompensationRange.upper
         min = exposureState.exposureCompensationRange.lower
 
-        incrementProgressBy(exposureState.exposureCompensationIndex)
-
-        Log.i("TAG", "Setting progress from setExposureConfig")
-        progress = (exposureState.exposureCompensationStep.numerator
-                / exposureState.exposureCompensationStep.denominator) *
-                exposureState.exposureCompensationIndex
+        progress = exposureState.exposureCompensationIndex
 
         onSizeChanged(width, height, 0, 0)
     }
@@ -109,11 +104,10 @@ class ExposureBar : AppCompatSeekBar {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
                 progress = max - (max * event.y / (height / 2)).toInt()
 
-                Log.i("progress", progress.toString())
-                Log.i("max", max.toString())
+                Log.d("progress", progress.toString())
+                Log.d("max", max.toString())
 
-                mainActivity.camConfig.camera?.cameraControl
-                    ?.setExposureCompensationIndex(progress)
+                updateExposureCompensationIndex(progress)
 
                 showPanel()
 
@@ -123,5 +117,14 @@ class ExposureBar : AppCompatSeekBar {
             }
         }
         return true
+    }
+
+    private fun updateExposureCompensationIndex(exposureCompensationIndex: Int) {
+        mainActivity.camConfig.camera?.cameraControl
+            ?.setExposureCompensationIndex(progress)
+
+        if (mainActivity.camConfig.persistExposureLevel) {
+            mainActivity.camConfig.exposureLevel = exposureCompensationIndex
+        }
     }
 }
