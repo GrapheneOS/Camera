@@ -102,7 +102,7 @@ class ImageSaver(
             cropRect = if (ImageUtil.shouldCropImage(image)) image.cropRect else null
             val imageFormat = image.format
 
-            origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
+            origJpegBytes = if (imageFormat == ImageFormat.JPEG || imageFormat == ImageFormat.JPEG_R) {
                 ImageUtil.jpegImageToJpegByteArray(image)
             } else if (imageFormat == ImageFormat.YUV_420_888) {
                 ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)

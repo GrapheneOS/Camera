@@ -54,6 +54,7 @@ import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.edit
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
+import java.util.Collections
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 
@@ -114,6 +115,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = "enable_zsl"
 
+            const val OUTPUT_IMAGE_FORMAT = "output_image_format"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -159,6 +162,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = false
 
+            const val OUTPUT_IMAGE_FORMAT = "JPEG"
+
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
         }
@@ -198,6 +203,13 @@ class CamConfig(private val mActivity: MainActivity) {
         val REAR_CAMERA_SELECTOR = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
+
+        // Array of image formats currently supported by the camera app
+        private val supportedImageFormats = arrayOf(
+            ImageCapture.OUTPUT_FORMAT_RAW,
+            ImageCapture.OUTPUT_FORMAT_JPEG,
+            ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR,
+        )
     }
 
     var camera: Camera? = null
@@ -558,6 +570,40 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
+    var outputImageFormat : Int
+        get() {
+            return mActivity.settingsDialog.titleToImageFormat(
+                modePref.getString(
+                    outputImageFormatKey,
+                    SettingValues.Default.OUTPUT_IMAGE_FORMAT
+                )!!
+            )
+        }
+        set(format) {
+            val formatTitle = mActivity.settingsDialog.getTitleForImageFormat(format)
+
+            val editor = modePref.edit()
+            editor.putString(outputImageFormatKey, formatTitle)
+            editor.apply()
+        }
+
+    private val outputImageFormatKey: String
+        get() {
+            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                "FRONT"
+            } else {
+                "BACK"
+            }
+
+            return "${SettingValues.Key.OUTPUT_IMAGE_FORMAT}_$pf"
+        }
+
+    fun getAvailableImageFormats() : Set<Int> {
+        val cameraInfo = camera?.cameraInfo ?: return Collections.emptySet()
+        return ImageCapture.getImageCaptureCapabilities(cameraInfo)
+            .supportedOutputFormats.filter { it in supportedImageFormats }.toSet()
+    }
+
     val isZslSupported : Boolean by lazy {
         camera!!.cameraInfo.isZslSupported
     }
@@ -713,9 +759,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
             }
 
-            if (isVideoMode) {
-                mActivity.settingsDialog.reloadQualities()
-            }
+            mActivity.settingsDialog.reloadSettings()
 
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
@@ -1198,6 +1242,8 @@ class CamConfig(private val mActivity: MainActivity) {
                     if (photoQuality != SettingValues.Default.PHOTO_QUALITY) {
                         it.setJpegQuality(photoQuality)
                     }
+
+                    it.setOutputFormat(outputImageFormat)
 
                     it.build()
                 }
