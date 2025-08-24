@@ -36,7 +36,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
     private lateinit var sLField: EditText
 
-    private lateinit var rSLocation: Button
+    private lateinit var vSLField: EditText
 
     private lateinit var rootView: View
 
@@ -44,9 +44,10 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var iFField: EditText
     private lateinit var vFField: EditText
 
-    private val dirPickerHandler = registerForActivityResult(
+    private val defaultStorageDirPicker = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) {
+    ) { it ->
+
         val intent = it.data
         val uri = intent?.data?.let {
             if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) {
@@ -60,9 +61,9 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 
             val uriString = uri.toString()
-            camConfig.storageLocation = uriString
-
             val uiString = storageLocationToUiString(this, uriString)
+
+            camConfig.storageLocation = uriString
             sLField.setText(uiString)
 
             showMessage(getString(R.string.storage_location_updated, uiString))
@@ -72,6 +73,35 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
     }
 
+    private val videoStorageDirPicker = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { it ->
+
+        val intent = it.data
+
+        val uri = intent?.data?.let {
+            if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) {
+                null
+            } else {
+                it
+            }
+        }
+
+        if (uri != null) {
+            contentResolver.takePersistableUriPermission(uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+
+            val uriString = uri.toString()
+            val uiString = storageLocationToUiString(this, uriString)
+
+            camConfig.videoStorageLocation = uriString
+            vSLField.setText(uiString)
+
+            showMessage(getString(R.string.storage_location_updated, uiString))
+        } else {
+            showMessage(getString(R.string.no_directory_selected))
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,35 +143,48 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         sLField.setText(storageLocationToUiString(this, camConfig.storageLocation))
 
         sLField.setOnClickListener {
-            val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            dirPickerHandler.launch(Intent.createChooser(i, getString(R.string.choose_storage_location)))
+            val dirPickerIntent = Intent.createChooser(
+                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE),
+                getString(R.string.choose_storage_location)
+            )
+            defaultStorageDirPicker.launch(dirPickerIntent)
+        }
+
+        vSLField = binding.videoStorageLocationField
+
+        vSLField.setText(storageLocationToUiString(this, camConfig.videoStorageLocation))
+
+        vSLField.setOnClickListener {
+            val dirPickerIntent = Intent.createChooser(
+                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE),
+                getString(R.string.choose_storage_location)
+            )
+            videoStorageDirPicker.launch(dirPickerIntent)
+        }
+
+        binding.videoStorageSettingToggle.isChecked = camConfig.separateVideoStorage
+
+        binding.videoStorageSettingToggle.setOnClickListener {
+            binding.videoStorageSettingToggle.isChecked.let {
+                camConfig.separateVideoStorage = it
+                vSLField.isEnabled = it
+                binding.refreshVideoStorageLocation.isEnabled = it
+            }
+        }
+
+        if (!camConfig.separateVideoStorage) {
+            vSLField.isEnabled = false
+            binding.refreshVideoStorageLocation.isEnabled = false
         }
 
         snackBar = Snackbar.make(rootView, "", Snackbar.LENGTH_LONG)
 
-        rSLocation = binding.refreshStorageLocation
-        rSLocation.setOnClickListener {
+        binding.refreshStorageLocation.setOnClickListener {
+            promptUserToResetStorageLocation()
+        }
 
-            val dialog = MaterialAlertDialogBuilder(this)
-
-            dialog.setTitle(R.string.are_you_sure)
-
-            dialog.setMessage(R.string.revert_to_default_directory)
-
-            dialog.setPositiveButton(R.string.yes) { _, _ ->
-                val defaultLocation = CamConfig.SettingValues.Default.STORAGE_LOCATION
-
-                if (camConfig.storageLocation != defaultLocation) {
-                    showMessage(getString(R.string.reverted_to_default_directory))
-                    camConfig.storageLocation = defaultLocation
-                    sLField.setText(storageLocationToUiString(this, defaultLocation))
-                } else {
-                    showMessage(getString(R.string.already_using_default_directory))
-                }
-            }
-
-            dialog.setNegativeButton(R.string.no, null)
-            dialog.show()
+        binding.refreshVideoStorageLocation.setOnClickListener {
+            promptUserToResetStorageLocation(forVideo = true)
         }
 
         pQField = binding.photoQuality
@@ -311,6 +354,41 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 //
 //        // Dump state of video format
 //        camConfig.videoFormat = vFField.text.toString()
+    }
+
+    private fun promptUserToResetStorageLocation(forVideo: Boolean = false) {
+        val dialog = MaterialAlertDialogBuilder(this)
+
+        dialog.setTitle(R.string.are_you_sure)
+
+        dialog.setMessage(R.string.revert_to_default_directory)
+
+        dialog.setPositiveButton(R.string.yes) { _, _ ->
+            val defaultLocation = CamConfig.SettingValues.Default.STORAGE_LOCATION
+            val currentLocation = if (forVideo) {
+                camConfig.videoStorageLocation
+            } else {
+                camConfig.storageLocation
+            }
+
+            if (currentLocation != defaultLocation) {
+                showMessage(getString(R.string.reverted_to_default_directory))
+
+                if (forVideo) {
+                    camConfig.videoStorageLocation = defaultLocation
+                    vSLField.setText(storageLocationToUiString(this, defaultLocation))
+                } else {
+                    camConfig.storageLocation = defaultLocation
+                    sLField.setText(storageLocationToUiString(this, defaultLocation))
+                }
+            } else {
+                showMessage(getString(R.string.already_using_default_directory))
+            }
+        }
+
+        dialog.setNegativeButton(R.string.no, null)
+        dialog.show()
+
     }
 
     override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {

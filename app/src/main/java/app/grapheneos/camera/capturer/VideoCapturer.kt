@@ -109,7 +109,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
             uri = ctx.outputUri
             shouldAddToGallery = false
         } else {
-            val storageLocation = camConfig.storageLocation
+            val storageLocation = if (camConfig.separateVideoStorage) {
+                camConfig.videoStorageLocation
+            } else {
+                camConfig.storageLocation
+            }
 
             if (storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION) {
                 val contentValues = ContentValues().apply {
@@ -177,7 +181,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         } catch (exception: Exception) {
             val foreignUri = ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()
             if (!foreignUri) {
-                camConfig.onStorageLocationNotFound()
+                camConfig.onStorageLocationNotFound(inVideoMode = true)
             }
             ctx.showMessage(R.string.unable_to_access_output_file)
             isRecording = false

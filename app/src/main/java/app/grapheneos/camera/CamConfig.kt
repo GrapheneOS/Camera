@@ -114,6 +114,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val ENABLE_ZSL = "enable_zsl"
 
+            const val SEPARATE_VIDEO_STORAGE = "separate_video_storage"
+
+            const val VIDEO_STORAGE_LOCATION = "video_storage_location"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -158,6 +162,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val CAMERA_SOUNDS = true
 
             const val ENABLE_ZSL = false
+
+            const val SEPARATE_VIDEO_STORAGE = false
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -510,6 +516,40 @@ class CamConfig(private val mActivity: MainActivity) {
 
             val editor = commonPref.edit()
             editor.putString(SettingValues.Key.STORAGE_LOCATION, value)
+            editor.apply()
+        }
+
+    var videoStorageLocation: String
+        get() {
+            return commonPref.getString(
+                SettingValues.Key.VIDEO_STORAGE_LOCATION,
+                SettingValues.Default.STORAGE_LOCATION
+            )!!
+        }
+        set(value) {
+            val cur = videoStorageLocation
+            if (cur != SettingValues.Default.STORAGE_LOCATION) {
+                CapturedItems.savePreviousSafTree(Uri.parse(cur), commonPref)
+            }
+
+            val editor = commonPref.edit()
+            editor.putString(SettingValues.Key.VIDEO_STORAGE_LOCATION, value)
+            editor.apply()
+        }
+
+    var separateVideoStorage: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.SEPARATE_VIDEO_STORAGE,
+                SettingValues.Default.SEPARATE_VIDEO_STORAGE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(
+                SettingValues.Key.SEPARATE_VIDEO_STORAGE,
+                value
+            )
             editor.apply()
         }
 
@@ -1577,9 +1617,13 @@ class CamConfig(private val mActivity: MainActivity) {
         dialog.showIgnoringShortEdgeMode()
     }
 
-    fun onStorageLocationNotFound() {
-        // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
-        storageLocation = SettingValues.Default.STORAGE_LOCATION
+    fun onStorageLocationNotFound(inVideoMode: Boolean = false) {
+        // Reverting back to default path
+        if (inVideoMode && separateVideoStorage) {
+            videoStorageLocation = SettingValues.Default.STORAGE_LOCATION
+        } else {
+            storageLocation = SettingValues.Default.STORAGE_LOCATION
+        }
 
         val builder = MaterialAlertDialogBuilder(mActivity)
             .setTitle(R.string.folder_not_found)
