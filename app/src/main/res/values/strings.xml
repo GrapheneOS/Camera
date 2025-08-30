@@ -193,4 +193,6 @@
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
+    <string name="low_light_boost">Low Light Boost</string>
+    <string name="low_light_boost_description">Activates low light boost whenever available and required for better pictures in darker environment</string>
 </resources>
