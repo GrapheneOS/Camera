@@ -1158,8 +1158,6 @@ class CamConfig(private val mActivity: MainActivity) {
                     .build()
                 )
 
-                videoCaptureBuilder.setVideoStabilizationEnabled(mActivity.camConfig.enableEIS)
-
                 if (mActivity.camConfig.saveVideoAsPreviewed)
                     videoCaptureBuilder.setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
 
@@ -1214,12 +1212,6 @@ class CamConfig(private val mActivity: MainActivity) {
             .setResolutionSelector(
                 ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
             )
-
-        if (isVideoMode && isPreviewStabilizationSupported()) {
-            previewBuilder.setPreviewStabilizationEnabled(enableEIS)
-        } else {
-            previewBuilder.setPreviewStabilizationEnabled(false)
-        }
 
         preview = previewBuilder.build().also {
             useCasesList.add(it)
