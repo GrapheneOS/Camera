@@ -797,7 +797,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.putString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)
         }
 
-        migrateFromOptimizationMode()
+        migrateFromLegacyPhotoQuality()
 
         if (!commonPref.contains(SettingValues.Key.INCLUDE_AUDIO)) {
             editor.putBoolean(
@@ -950,7 +950,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-    fun migrateFromOptimizationMode() {
+    fun migrateFromLegacyPhotoQuality() {
         // If emphasis on quality/optimization was previously set by the user
         if (commonPref.contains(SettingValues.Key.EMPHASIS_ON_QUALITY)) {
             // If the photo quality key has not previously been set
@@ -969,6 +969,10 @@ class CamConfig(private val mActivity: MainActivity) {
             commonPref.edit {
                 remove(SettingValues.Key.EMPHASIS_ON_QUALITY)
             }
+        }
+
+        if (photoQuality == 0) {
+            photoQuality = 95;
         }
     }
 
