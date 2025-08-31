@@ -193,8 +193,8 @@
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
 
-    <string name="highest_res_setting">Opt for highest resolution</string>
-    <string name="highest_res_setting_desc">Opts for the highest resolution image when enabled. Warning: Can lead to very large images on certain devices</string>
+    <string name="highest_res_setting">Use highest photo resolution</string>
+    <string name="highest_res_setting_desc">Enable using the highest supported resolution for images instead of the default. This can lead to very large images on certain devices.</string>
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
     <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
