@@ -86,6 +86,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GEO_TAGGING = "geo_tagging"
             const val FLASH_MODE = "flash_mode"
             const val GRID = "grid"
+            // obsolete, split into WAIT_FOR_FOCUS_LOCK and PHOTO_QUALITY
             const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
             const val FOCUS_TIMEOUT = "focus_timeout"
             const val VIDEO_QUALITY = "video_quality"
@@ -136,8 +137,6 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GEO_TAGGING = false
 
             const val FLASH_MODE = ImageCapture.FLASH_MODE_OFF
-
-            const val EMPHASIS_ON_QUALITY = false
 
             const val FOCUS_TIMEOUT = "5s"
 
@@ -910,19 +909,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         qrAnalyzer?.refreshHints()
     }
-
-//    var emphasisQuality: Boolean
-//        get() {
-//            return commonPref.getBoolean(
-//                SettingValues.Key.EMPHASIS_ON_QUALITY,
-//                SettingValues.Default.EMPHASIS_ON_QUALITY
-//            )
-//        }
-//        set(value) {
-//            commonPref.edit {
-//                putBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, value)
-//            }
-//        }
 
     var waitForFocusLock: Boolean
         get() {
