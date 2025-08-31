@@ -1215,11 +1215,11 @@ class CamConfig(private val mActivity: MainActivity) {
             if (!mActivity.requiresVideoModeOnly) {
                 imageCapture = builder.let {
                     it.setCaptureMode(
-                        if (enableZsl) {
-                            ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+                        if (waitForFocusLock) {
+                            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                         } else {
-                            if (waitForFocusLock) {
-                                ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+                            if (enableZsl) {
+                                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
                             } else {
                                 ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
                             }
