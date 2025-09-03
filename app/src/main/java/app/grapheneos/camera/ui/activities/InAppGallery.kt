@@ -594,7 +594,10 @@ class InAppGallery : AppCompatActivity() {
             val adapterItems = existingAdapter.items
             adapterItems.ensureCapacity(items.size)
 
-            val preloadedItem = adapterItems[0]
+            // At times the first item could get deleted before the others get
+            // loaded especially on relatively slower devices, allowing null without throwing
+            // an exception enables handling of such scenarios
+            val preloadedItem = adapterItems.getOrNull(0)
 
             items.forEachIndexed { index, item ->
                 // this check is needed to avoid showing preloaded item twice (it's not guaranteed
