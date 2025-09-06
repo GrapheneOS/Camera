@@ -89,7 +89,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var moreSettingsButton: View
 
     private val tabSelectedColor =
-        MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorPrimary)
+        MaterialColors.getColor(binding.root, androidx.appcompat.R.attr.colorPrimary)
 
     private fun getString(@StringRes id: Int) = mActivity.getString(id)
 
