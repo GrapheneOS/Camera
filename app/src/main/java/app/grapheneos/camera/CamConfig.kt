@@ -1251,6 +1251,12 @@ class CamConfig(private val mActivity: MainActivity) {
                 ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
             )
 
+        // Pixels and potentially other devices enable EIS by default, which reduces the field of
+        // view and image quality for image capture if it's not explicitly disabled
+        if (!enableEIS || !isVideoMode) {
+            previewBuilder.setPreviewStabilizationEnabled(false)
+        }
+
         preview = previewBuilder.build().also {
             useCasesList.add(it)
             it.setSurfaceProvider(mActivity.previewView.surfaceProvider)
