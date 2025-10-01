@@ -453,7 +453,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var enableEIS: Boolean
         get() {
-            return isVideoStabilizationSupported() && mActivity.settingsDialog.enableEISToggle.isChecked
+            return mActivity.settingsDialog.enableEISToggle.isChecked
         }
         set(value) {
             val editor = commonPref.edit()
