@@ -69,11 +69,11 @@
 
     <string name="general">General</string>
 
-    <string name="save_image_as_previewed">Save image as previewed</string>
-    <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion in front camera)</string>
+    <string name="fix_inversion_for_photos">Fix front camera inversion</string>
+    <string name="fix_inversion_for_photos_desc">Fixes inversion while taking a photo via the front camera</string>
 
-    <string name="save_video_as_previewed">Save video as previewed</string>
-    <string name="save_as_video_preview_desc">Save output video as visible on preview (fixes inversion in front camera)</string>
+    <string name="fix_inversion_for_videos">Fix front camera inversion</string>
+    <string name="fix_inversion_for_videos_desc">Fixes inversion while recording a video via the front camera</string>
 
     <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
     <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
