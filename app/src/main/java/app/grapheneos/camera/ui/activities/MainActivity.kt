@@ -269,6 +269,19 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            Log.i(TAG, "Gallery result: ${data?.getBooleanExtra(InAppGallery.EMPTY_GALLERY, false)}")
+            if (data?.getBooleanExtra(InAppGallery.EMPTY_GALLERY, false) == true) {
+                Log.i(TAG, "Gallery is empty.")
+                camConfig.clearLastCapturedItem()
+            }
+        }
+    }
+
     // Used to request permission from the user
     private val requestPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
@@ -421,6 +434,10 @@ open class MainActivity : AppCompatActivity(),
                 }
                 it.putParcelableArrayListExtra(InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS, list)
             } else {
+                if(camConfig.lastCapturedItem == null) {
+                    showMessage(R.string.no_image)
+                    return
+                }
                 it.putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, requiresVideoModeOnly)
             }
 
@@ -428,7 +445,7 @@ open class MainActivity : AppCompatActivity(),
                 it.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, camConfig.lastCapturedItem)
             }
 
-            startActivity(it)
+            galleryLauncher.launch(it)
         }
 
     }
