@@ -11,6 +11,7 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.system.Os
 import android.util.Log
+import android.view.View
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
 import androidx.camera.core.ImageCapture
