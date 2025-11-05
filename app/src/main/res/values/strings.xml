@@ -217,6 +217,5 @@
     <string name="pq_no_keys_warning">Please generate encryption keys first</string>
     <string name="pq_encryption_warning_title">Enable Encryption?</string>
     <string name="pq_encryption_warning_message">When encryption is enabled:\n\n• Photos are encrypted immediately after capture\n• No preview or thumbnail is shown\n• You must use the decryption tool on a computer to view photos\n\nMake sure you have exported and saved your private key!</string>
-    <string name="enable">Enable</string>
     <string name="pq_private_key_filename">camera_private_key.txt</string>
 </resources>
