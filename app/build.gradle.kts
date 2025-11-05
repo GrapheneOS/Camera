@@ -95,9 +95,6 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("androidx.core:core-ktx:1.17.0")
 
-    // Kotlin coroutines for async operations
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-
     val cameraVersion = "1.5.0"
     implementation("androidx.camera:camera-core:$cameraVersion")
     implementation("androidx.camera:camera-camera2:$cameraVersion")

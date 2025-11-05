@@ -32,10 +32,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.content.ContentValues
 import java.io.OutputStreamWriter
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
 
 open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var camConfig: CamConfig
@@ -281,10 +278,11 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             showMessage(getString(R.string.pq_generating_keys))
             pqGenerateKeysButton.isEnabled = false
 
-            CoroutineScope(Dispatchers.IO).launch {
+            val executor = Executors.newSingleThreadExecutor()
+            executor.execute {
                 try {
                     val keyPair = PQEncryption.generateKeyPair()
-                    withContext(Dispatchers.Main) {
+                    runOnUiThread {
                         camConfig.pqPublicKey = keyPair.publicKeyBase64()
 
                         // Store private key temporarily in memory for export
@@ -298,11 +296,12 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
                         showMessage(getString(R.string.pq_keys_generated_success))
                     }
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
+                    runOnUiThread {
                         pqGenerateKeysButton.isEnabled = true
                         showMessage("Key generation failed: ${e.message}")
                     }
                 }
+                executor.shutdown()
             }
         }
 
