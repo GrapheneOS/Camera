@@ -104,4 +104,7 @@ dependencies {
     implementation("androidx.camera:camera-extensions:$cameraVersion")
 
     implementation("com.google.zxing:core:3.5.3")
+
+    // Post-quantum cryptography (Kyber) and AES-GCM
+    implementation("org.bouncycastle:bcprov-jdk18on:1.79")
 }

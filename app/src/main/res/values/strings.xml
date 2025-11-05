@@ -198,4 +198,25 @@
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
     <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
+
+    <!-- Post-Quantum Encryption -->
+    <string name="pq_encryption">Post-Quantum Encryption</string>
+    <string name="pq_encryption_desc">Encrypt photos with post-quantum cryptography (no preview)</string>
+    <string name="pq_encryption_enabled">Encryption enabled</string>
+    <string name="pq_encryption_disabled">Encryption disabled</string>
+    <string name="pq_generate_keys">Generate Encryption Keys</string>
+    <string name="pq_export_private_key">Export Private Key</string>
+    <string name="pq_keys_not_generated">Keys not generated</string>
+    <string name="pq_keys_generated">Keys generated</string>
+    <string name="pq_generating_keys">Generating encryption keys...</string>
+    <string name="pq_keys_generated_success">Encryption keys generated successfully!</string>
+    <string name="pq_export_key_title">Export Private Decryption Key</string>
+    <string name="pq_export_key_message">Save your private key securely. You\'ll need it to decrypt photos on your computer. This key will be saved to your Downloads folder.</string>
+    <string name="pq_export_key_success">Private key exported to Downloads</string>
+    <string name="pq_export_key_failed">Failed to export private key</string>
+    <string name="pq_no_keys_warning">Please generate encryption keys first</string>
+    <string name="pq_encryption_warning_title">Enable Encryption?</string>
+    <string name="pq_encryption_warning_message">When encryption is enabled:\n\n• Photos are encrypted immediately after capture\n• No preview or thumbnail is shown\n• You must use the decryption tool on a computer to view photos\n\nMake sure you have exported and saved your private key!</string>
+    <string name="enable">Enable</string>
+    <string name="pq_private_key_filename">camera_private_key.txt</string>
 </resources>

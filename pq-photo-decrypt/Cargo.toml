@@ -1,0 +1,25 @@
+[package]
+name = "pq-photo-decrypt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Post-quantum cryptography (Kyber)
+pqcrypto-kyber = "0.8"
+pqcrypto-traits = "0.3"
+
+# AES-GCM for symmetric decryption
+aes-gcm = "0.10"
+
+# Command-line argument parsing
+clap = { version = "4.5", features = ["derive"] }
+
+# Base64 decoding for keys
+base64 = "0.22"
+
+# File I/O and error handling
+anyhow = "1.0"
+
+[[bin]]
+name = "pq-decrypt"
+path = "src/main.rs"

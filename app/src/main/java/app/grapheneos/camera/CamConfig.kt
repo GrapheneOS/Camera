@@ -119,6 +119,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
 
+            const val PQ_ENCRYPTION_ENABLED = "pq_encryption_enabled"
+            const val PQ_PUBLIC_KEY = "pq_public_key"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -165,6 +168,9 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SELECT_HIGHEST_RESOLUTION = false
 
             const val WAIT_FOR_FOCUS_LOCK = false
+
+            const val PQ_ENCRYPTION_ENABLED = false
+            const val PQ_PUBLIC_KEY = ""
 
             // const val IMAGE_FILE_FORMAT = ""
             // const val VIDEO_FILE_FORMAT = ""
@@ -933,6 +939,32 @@ class CamConfig(private val mActivity: MainActivity) {
         set(value) {
             commonPref.edit {
                 putBoolean(SettingValues.Key.SELECT_HIGHEST_RESOLUTION, value)
+            }
+        }
+
+    var pqEncryptionEnabled: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.PQ_ENCRYPTION_ENABLED,
+                SettingValues.Default.PQ_ENCRYPTION_ENABLED
+            )
+        }
+        set(value) {
+            commonPref.edit {
+                putBoolean(SettingValues.Key.PQ_ENCRYPTION_ENABLED, value)
+            }
+        }
+
+    var pqPublicKey: String
+        get() {
+            return commonPref.getString(
+                SettingValues.Key.PQ_PUBLIC_KEY,
+                SettingValues.Default.PQ_PUBLIC_KEY
+            ) ?: SettingValues.Default.PQ_PUBLIC_KEY
+        }
+        set(value) {
+            commonPref.edit {
+                putString(SettingValues.Key.PQ_PUBLIC_KEY, value)
             }
         }
 

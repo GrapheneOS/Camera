@@ -503,6 +503,108 @@
 
             </LinearLayout>
 
+            <!-- Post-Quantum Encryption Settings -->
+            <LinearLayout
+                android:id="@+id/pq_encryption_settings"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/TextAppearance.Material3.LabelLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="12dp"
+                    android:layout_marginStart="78dp"
+                    android:text="@string/pq_encryption" />
+
+                <LinearLayout
+                    android:id="@+id/pq_encryption_toggle_setting"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="horizontal"
+                    android:paddingTop="8dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="10dp">
+
+                    <ImageView
+                        android:id="@+id/pq_encryption_icon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/pq_encryption"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="8dp"
+                        android:src="@drawable/lock" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="4dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/pq_encryption_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:paddingBottom="2dp"
+                            android:text="@string/pq_encryption"
+                            android:textColor="?android:textColorPrimary"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/pq_encryption_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="10dp"
+                            android:text="@string/pq_encryption_desc"
+                            android:textSize="14sp"
+                            tools:ignore="RtlSymmetry" />
+
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/pq_encryption_toggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="0dp" />
+
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/pq_generate_keys_button"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="66dp"
+                    android:layout_marginVertical="8dp"
+                    android:text="@string/pq_generate_keys" />
+
+                <Button
+                    android:id="@+id/pq_export_key_button"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="66dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/pq_export_private_key" />
+
+                <TextView
+                    android:id="@+id/pq_key_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="78dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/pq_keys_not_generated"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
             <LinearLayout
                 android:id="@+id/video_settings"
                 android:layout_width="match_parent"

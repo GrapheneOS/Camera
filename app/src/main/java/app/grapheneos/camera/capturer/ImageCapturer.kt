@@ -99,6 +99,8 @@ class ImageCapturer(val mActivity: MainActivity) {
             camConfig.removeExifAfterCapture,
             targetThumbnailWidth = preview.width,
             targetThumbnailHeight = preview.height,
+            pqEncryptionEnabled = camConfig.pqEncryptionEnabled,
+            pqPublicKey = camConfig.pqPublicKey,
         )
 
         currentImageSaver = imageSaver

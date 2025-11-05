@@ -24,9 +24,18 @@ import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.MoreSettingsBinding
+import app.grapheneos.camera.util.PQEncryption
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import android.os.Environment
+import android.provider.MediaStore
+import android.content.ContentValues
+import java.io.OutputStreamWriter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var camConfig: CamConfig
@@ -244,6 +253,137 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         highResSetting.setOnClickListener {
             highResToggle.performClick()
+        }
+
+        // Post-Quantum Encryption settings
+        val pqEncryptionToggle = binding.pqEncryptionToggle
+        val pqGenerateKeysButton = binding.pqGenerateKeysButton
+        val pqExportKeyButton = binding.pqExportKeyButton
+        val pqKeyStatus = binding.pqKeyStatus
+        val pqEncryptionSetting = binding.pqEncryptionToggleSetting
+
+        // Update UI based on current state
+        fun updatePQUI() {
+            pqEncryptionToggle.isChecked = camConfig.pqEncryptionEnabled
+            val hasKeys = camConfig.pqPublicKey.isNotEmpty()
+            pqKeyStatus.text = if (hasKeys) {
+                getString(R.string.pq_keys_generated)
+            } else {
+                getString(R.string.pq_keys_not_generated)
+            }
+            pqEncryptionToggle.isEnabled = hasKeys
+        }
+
+        updatePQUI()
+
+        // Generate keys button
+        pqGenerateKeysButton.setOnClickListener {
+            showMessage(getString(R.string.pq_generating_keys))
+            pqGenerateKeysButton.isEnabled = false
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val keyPair = PQEncryption.generateKeyPair()
+                    withContext(Dispatchers.Main) {
+                        camConfig.pqPublicKey = keyPair.publicKeyBase64()
+
+                        // Store private key temporarily in memory for export
+                        // We'll clear it after the user exports it or closes settings
+                        getSharedPreferences("pq_temp", MODE_PRIVATE).edit()
+                            .putString("temp_private_key", keyPair.privateKeyBase64())
+                            .apply()
+
+                        updatePQUI()
+                        pqGenerateKeysButton.isEnabled = true
+                        showMessage(getString(R.string.pq_keys_generated_success))
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        pqGenerateKeysButton.isEnabled = true
+                        showMessage("Key generation failed: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        // Export private key button
+        pqExportKeyButton.setOnClickListener {
+            val tempPrefs = getSharedPreferences("pq_temp", MODE_PRIVATE)
+            val privateKeyB64 = tempPrefs.getString("temp_private_key", "")
+
+            if (privateKeyB64.isNullOrEmpty()) {
+                showMessage(getString(R.string.pq_no_keys_warning))
+                return@setOnClickListener
+            }
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.pq_export_key_title)
+                .setMessage(R.string.pq_export_key_message)
+                .setPositiveButton(R.string.ok) { _, _ ->
+                    try {
+                        val filename = getString(R.string.pq_private_key_filename)
+                        val cv = ContentValues().apply {
+                            put(MediaStore.Downloads.DISPLAY_NAME, filename)
+                            put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                        }
+
+                        val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv)
+                        if (uri != null) {
+                            contentResolver.openOutputStream(uri)?.use { outputStream ->
+                                OutputStreamWriter(outputStream).use { writer ->
+                                    writer.write("# GrapheneOS Camera - Post-Quantum Encryption Private Key\n")
+                                    writer.write("# KEEP THIS FILE SECURE - Anyone with this key can decrypt your photos\n")
+                                    writer.write("# Use the provided decryption tool to decrypt photos\n\n")
+                                    writer.write(privateKeyB64)
+                                }
+                            }
+                            showMessage(getString(R.string.pq_export_key_success))
+                        } else {
+                            showMessage(getString(R.string.pq_export_key_failed))
+                        }
+                    } catch (e: Exception) {
+                        showMessage("${getString(R.string.pq_export_key_failed)}: ${e.message}")
+                    }
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+
+        // Encryption toggle
+        pqEncryptionToggle.setOnClickListener {
+            if (!pqEncryptionToggle.isChecked) {
+                // Disabling encryption - just do it
+                camConfig.pqEncryptionEnabled = false
+                updatePQUI()
+            } else {
+                // Enabling encryption - show warning
+                if (camConfig.pqPublicKey.isEmpty()) {
+                    showMessage(getString(R.string.pq_no_keys_warning))
+                    pqEncryptionToggle.isChecked = false
+                    return@setOnClickListener
+                }
+
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.pq_encryption_warning_title)
+                    .setMessage(R.string.pq_encryption_warning_message)
+                    .setPositiveButton(R.string.enable) { _, _ ->
+                        camConfig.pqEncryptionEnabled = true
+                        updatePQUI()
+                    }
+                    .setNegativeButton(R.string.cancel) { _, _ ->
+                        pqEncryptionToggle.isChecked = false
+                    }
+                    .show()
+            }
+        }
+
+        pqEncryptionSetting.setOnClickListener {
+            if (pqEncryptionToggle.isEnabled) {
+                pqEncryptionToggle.performClick()
+            } else {
+                showMessage(getString(R.string.pq_no_keys_warning))
+            }
         }
 
         if (!showStorageSettings) {

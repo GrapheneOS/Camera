@@ -27,9 +27,11 @@ import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.PQEncryption
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
+import android.util.Base64
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -68,6 +70,8 @@ class ImageSaver(
     val removeExifAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
+    val pqEncryptionEnabled: Boolean = false,
+    val pqPublicKey: String = "",
 ) : ImageCapture.OnImageCapturedCallback()
 {
     val captureTime = Date()
@@ -131,7 +135,15 @@ class ImageSaver(
             return
         }
 
-        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
+        // Skip thumbnail generation for encrypted photos (no preview)
+        if (!(pqEncryptionEnabled && pqPublicKey.isNotEmpty())) {
+            imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
+        } else {
+            // For encrypted photos, hide the loader immediately
+            mainThreadExecutor.execute {
+                imageCapturer.mActivity.previewLoader.visibility = View.GONE
+            }
+        }
     }
 
     private var cropRect: Rect? = null
@@ -158,6 +170,16 @@ class ImageSaver(
         }
 
         processedJpegBytes = processExif(uncroppedJpegBytes)
+
+        // Encrypt the photo if PQ encryption is enabled
+        if (pqEncryptionEnabled && pqPublicKey.isNotEmpty()) {
+            try {
+                val publicKeyBytes = Base64.decode(pqPublicKey, Base64.NO_WRAP)
+                processedJpegBytes = PQEncryption.encrypt(processedJpegBytes, publicKeyBytes)
+            } catch (e: Exception) {
+                throw ImageSaverException(Place.FILE_WRITE, Exception("Encryption failed: ${e.message}", e))
+            }
+        }
 
         val startOfWriting = timestamp()
 
@@ -291,10 +313,20 @@ class ImageSaver(
         SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
 
     private fun fileName(): String {
-        return IMAGE_NAME_PREFIX + dateString() + imageFileFormat
+        val extension = if (pqEncryptionEnabled && pqPublicKey.isNotEmpty()) {
+            PQEncryption.getEncryptedFileExtension()
+        } else {
+            imageFileFormat
+        }
+        return IMAGE_NAME_PREFIX + dateString() + extension
     }
 
-    private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
+    private fun mimeType(): String {
+        if (pqEncryptionEnabled && pqPublicKey.isNotEmpty()) {
+            return "application/octet-stream"
+        }
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
+    }
 
     @Throws(Exception::class)
     fun obtainOutputUri(): Uri? {
