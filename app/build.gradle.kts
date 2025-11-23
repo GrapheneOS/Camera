@@ -41,7 +41,7 @@ android {
 
     compileSdk = 36
     buildToolsVersion = "36.0.0"
-    ndkVersion = "28.2.13676358"
+    ndkVersion = "29.0.14206865"
 
     namespace = "app.grapheneos.camera"
 
