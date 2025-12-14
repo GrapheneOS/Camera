@@ -1257,6 +1257,17 @@ class CamConfig(private val mActivity: MainActivity) {
             previewBuilder.setPreviewStabilizationEnabled(false)
         }
 
+        // Adapt
+        if ((lensFacing == CameraSelector.LENS_FACING_FRONT) && (isVideoMode && saveVideoAsPreviewed) || (isInPhotoMode && saveImageAsPreviewed)) {
+            previewBuilder.setMirrorMode(
+                MirrorMode.MIRROR_MODE_ON
+            )
+        } else {
+            previewBuilder.setMirrorMode(
+                MirrorMode.MIRROR_MODE_OFF
+            )
+        }
+
         preview = previewBuilder.build().also {
             useCasesList.add(it)
             it.setSurfaceProvider(mActivity.previewView.surfaceProvider)
