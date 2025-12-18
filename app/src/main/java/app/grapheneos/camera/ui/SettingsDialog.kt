@@ -65,6 +65,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private lateinit var vQAdapter: ArrayAdapter<String>
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
+    private var captureResolutionSpinner: Spinner
+    private lateinit var captureResolutionAdapter: ArrayAdapter<String>
+    private var availableResolutions: List<android.util.Size> = emptyList()
+    private var aspectRatioForResolutions: Int? = null;
 
     var mScrollView: ScrollView
     var mScrollViewContent: View
@@ -83,6 +87,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
+    private var captureResolutionSetting: View
 
     var settingsFrame: View
 
@@ -321,6 +326,22 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
 
+        captureResolutionSpinner = binding.captureResolutionSpinner
+        captureResolutionSpinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    p0: AdapterView<*>?,
+                    p1: View?,
+                    position: Int,
+                    p3: Long
+                ) {
+                    camConfig.captureResolution = indexToResolution(position)
+                    camConfig.startCamera(true)
+                }
+
+                override fun onNothingSelected(p0: AdapterView<*>?) {}
+            }
+
         mScrollView = binding.settingsScrollview
         mScrollViewContent = binding.settingsScrollviewContent
 
@@ -329,6 +350,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
+        captureResolutionSetting = binding.captureResolutionSetting
 
         includeAudioToggle = binding.includeAudioSwitch
         includeAudioToggle.setOnCheckedChangeListener { _, _ ->
@@ -466,8 +488,55 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         } else {
             View.VISIBLE
         }
+
+        captureResolutionSetting.visibility = if (camConfig.isVideoMode) {
+            View.GONE
+        } else {
+            View.VISIBLE
+        }
     }
 
+    private fun resolutionToIndex(size: android.util.Size?): Int {
+        if (size == null) return 0  // Highest resolution
+        return availableResolutions.indexOfFirst { it.width == size.width && it.height == size.height }
+    }
+
+    private fun indexToResolution(index: Int): android.util.Size? {
+        return if (index >= 0 && index < availableResolutions.size) {
+            availableResolutions[index]
+        } else {
+            null
+        }
+    }
+
+    fun reloadResolutions() {
+        if (aspectRatioForResolutions !== null && aspectRatioForResolutions?.equals(camConfig.aspectRatio) == true) {
+            // Use cached data
+            return;
+        }
+
+        availableResolutions = camConfig.getAvailableImageResolutions()
+
+        val titles = mutableListOf<String>()
+        availableResolutions.forEach { size ->
+            titles.add("${size.width}x${size.height}")
+        }
+
+        captureResolutionAdapter = ArrayAdapter<String>(
+            mActivity,
+            android.R.layout.simple_spinner_item,
+            titles
+        )
+
+        captureResolutionAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
+        captureResolutionSpinner.adapter = captureResolutionAdapter
+        captureResolutionSpinner.setSelection(resolutionToIndex(camConfig.captureResolution))
+
+        aspectRatioForResolutions = camConfig.aspectRatio;
+    }
 
     fun updateFocusTimeout(selectedOption: String) {
 

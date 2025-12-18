@@ -382,6 +382,40 @@
                         </FrameLayout>
                     </LinearLayout>
 
+                    <LinearLayout
+                        android:id="@+id/capture_resolution_setting"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
+                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:layout_gravity="end"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:text="@string/capture_resolution"/>
+
+                        <FrameLayout
+                            android:layout_height="wrap_content"
+                            android:padding="0dp"
+                            android:layout_margin="0dp"
+                            android:layout_width="match_parent">
+
+                            <Spinner
+                                android:id="@+id/capture_resolution_spinner"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                android:padding="0dp"
+                                android:layout_margin="0dp"
+                                android:layout_gravity="end"/>
+
+                        </FrameLayout>
+                    </LinearLayout>
+
                     <!-- Extra padding for the bottom of the list -->
                     <View
                         android:layout_width="match_parent"

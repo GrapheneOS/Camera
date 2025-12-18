@@ -43,6 +43,7 @@
     <string name="self_illumination">Self Illumination</string>
     <string name="focus_timeout">Focus Timeout</string>
     <string name="timer">Timer</string>
+    <string name="capture_resolution">Capture Resolution</string>
     <string name="cancel_timer">Cancel Timer</string>
     <string name="video_capture_label">Record Video</string>
 
