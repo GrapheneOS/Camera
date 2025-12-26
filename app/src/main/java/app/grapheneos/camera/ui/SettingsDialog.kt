@@ -364,6 +364,11 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             } else {
                 View.VISIBLE
             }
+            mActivity.muteToggle.visibility = if (includeAudioToggle.isChecked) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
             camConfig.includeAudio = includeAudioToggle.isChecked
         }
