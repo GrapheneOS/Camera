@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.MotionEvent
+import android.view.Surface
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -1097,17 +1098,7 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.exposureBar.hidePanel()
         modePref = mActivity.getSharedPreferences(currentMode.name, Context.MODE_PRIVATE)
 
-        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val display = mActivity.display
-            display?.rotation ?: @Suppress("DEPRECATION")
-            mActivity.windowManager.defaultDisplay.rotation
-        } else {
-            // We don't really have any option here, but this initialization
-            // ensures that the app doesn't break later when the below
-            // deprecated option gets removed post Android R
-            @Suppress("DEPRECATION")
-            mActivity.windowManager.defaultDisplay.rotation
-        }
+        val rotation = mActivity.sensorNotifier?.getSurfaceRotation() ?: Surface.ROTATION_0
 
         if (mActivity.isDestroyed || mActivity.isFinishing) return
 
