@@ -650,6 +650,15 @@ class CamConfig(private val mActivity: MainActivity) {
         lastCapturedItem = item
     }
 
+    fun clearLastCapturedItem() {
+        commonPref.edit {
+            remove(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE)
+            remove(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING)
+            remove(SettingValues.Key.LAST_CAPTURED_ITEM_URI)
+        }
+        lastCapturedItem = null
+    }
+
     var requireLocation: Boolean = false
         get() {
             return mActivity.settingsDialog.locToggle.isChecked
