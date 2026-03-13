@@ -65,7 +65,7 @@
                         android:id="@+id/gyroscope_setting_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:contentDescription="@string/fix_inversion_for_photos"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/straighten" />
@@ -257,7 +257,7 @@
                         android:id="@+id/save_image_as_preview_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:contentDescription="@string/fix_inversion_for_photos"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/selfie_preview" />
@@ -275,7 +275,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
                             android:paddingBottom="2dp"
-                            android:text="@string/save_image_as_previewed"
+                            android:text="@string/fix_inversion_for_photos"
                             android:textColor="?android:textColorPrimary"
                             android:textSize="16sp" />
 
@@ -284,7 +284,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:paddingStart="10dp"
-                            android:text="@string/save_as_image_preview_desc"
+                            android:text="@string/fix_inversion_for_photos_desc"
                             android:textSize="14sp"
                             tools:ignore="RtlSymmetry" />
 
@@ -459,7 +459,7 @@
                         android:id="@+id/remove_exif_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:contentDescription="@string/fix_inversion_for_photos"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/info_adaptable" />
@@ -533,7 +533,7 @@
                         android:id="@+id/save_video_as_preview_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_video_as_previewed"
+                        android:contentDescription="@string/fix_inversion_for_videos"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/selfie_preview" />
@@ -551,7 +551,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
                             android:paddingBottom="2dp"
-                            android:text="@string/save_video_as_previewed"
+                            android:text="@string/fix_inversion_for_videos"
                             android:textColor="?android:textColorPrimary"
                             android:textSize="16sp" />
 
@@ -560,7 +560,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:paddingStart="10dp"
-                            android:text="@string/save_as_video_preview_desc"
+                            android:text="@string/fix_inversion_for_videos_desc"
                             android:textSize="14sp"
                             tools:ignore="RtlSymmetry" />
 
@@ -607,7 +607,7 @@
                         android:id="@+id/storage_location_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:contentDescription="@string/fix_inversion_for_photos"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/storage" />
