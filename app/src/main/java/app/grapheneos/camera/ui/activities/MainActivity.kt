@@ -1542,30 +1542,13 @@ open class MainActivity : AppCompatActivity(),
     }
 
     fun forceUpdateOrientationSensor() {
-        sensorNotifier?.notifyListeners(true)
+        sensorNotifier?.notifyListeners()
     }
 
     val sensorNotifier: SensorOrientationChangeNotifier?
         get() {
             return SensorOrientationChangeNotifier.getInstance(this)
         }
-
-    fun getRotation(): Int {
-        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            display?.rotation ?: @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.rotation
-        } else {
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.rotation
-        }
-
-        return when (rotation) {
-            Surface.ROTATION_90 -> 270
-            Surface.ROTATION_180 -> 180
-            Surface.ROTATION_270 -> 90
-            else -> 0
-        }
-    }
 
     fun onDeviceAngleChange(xDegrees: Float, zDegrees: Float) {
 
