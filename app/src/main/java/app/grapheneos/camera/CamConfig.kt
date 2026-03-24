@@ -3,6 +3,8 @@ package app.grapheneos.camera
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.ImageFormat
+import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -32,6 +34,7 @@ import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -56,6 +59,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
+import kotlin.math.log
 
 // note that enum constant name is used as a name of a SharedPreferences instance
 enum class CameraMode(val extensionMode: Int, val uiName: Int) {
@@ -119,6 +123,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
 
+            const val CAPTURE_RESOLUTION = "capture_resolution"
+
             // const val IMAGE_FILE_FORMAT = "image_quality"
             // const val VIDEO_FILE_FORMAT = "video_quality"
         }
@@ -178,6 +184,14 @@ class CamConfig(private val mActivity: MainActivity) {
         private const val PREVIEW_SL_OVERLAY_DUR = 200L
 
         const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
+
+        fun aspectRatioToWidthHeight(aspectRatio: Int): Pair<Int, Int> {
+            return when (aspectRatio) {
+                AspectRatio.RATIO_16_9 -> Pair(16, 9)
+                AspectRatio.RATIO_4_3 -> Pair(4, 3)
+                else -> throw IllegalArgumentException("Unknown aspect ratio: $aspectRatio")
+            }
+        }
 
         val commonFormats = arrayOf(
             BarcodeFormat.AZTEC,
@@ -722,6 +736,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (isVideoMode) {
                 mActivity.settingsDialog.reloadQualities()
+            } else {
+                mActivity.settingsDialog.reloadResolutions()
             }
 
             if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
@@ -923,6 +939,27 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
+    var captureResolution: Size?
+        get() {
+            val value = commonPref.getString(SettingValues.Key.CAPTURE_RESOLUTION, null)
+            if (value.isNullOrEmpty()) return null
+            return try {
+                val parts = value.split("x")
+                Size(parts[0].toInt(), parts[1].toInt())
+            } catch (e: Exception) {
+                null
+            }
+        }
+        set(value) {
+            commonPref.edit {
+                if (value == null) {
+                    remove(SettingValues.Key.CAPTURE_RESOLUTION)
+                } else {
+                    putString(SettingValues.Key.CAPTURE_RESOLUTION, "${value.width}x${value.height}")
+                }
+            }
+        }
+
     var selectHighestResolution: Boolean
         get() {
             return commonPref.getBoolean(
@@ -989,11 +1026,35 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             AspectRatio.RATIO_16_9
         }
+        // Clear capture resolution since available resolutions depend on aspect ratio
+        captureResolution = null
         startCamera(true)
     }
 
     private fun getCurrentCameraInfo() : CameraInfo {
         return cameraProvider!!.getCameraInfo(cameraSelector)
+    }
+
+    fun getAvailableImageResolutions(): List<Size> {
+        val cameraInfo = camera?.cameraInfo ?: return emptyList()
+        val camera2Info = Camera2CameraInfo.from(cameraInfo)
+        val characteristics = camera2Info.getCameraCharacteristic(
+            CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
+        ) ?: return emptyList()
+
+        val sizes = characteristics.getOutputSizes(ImageFormat.JPEG) ?: return emptyList()
+
+        // Filter by current aspect ratio with 2% tolerance
+        val targetRatio = when (aspectRatio) {
+            AspectRatio.RATIO_16_9 -> 16.0 / 9.0
+            AspectRatio.RATIO_4_3 -> 4.0 / 3.0
+            else -> 4.0 / 3.0
+        }
+
+        return sizes.filter { size ->
+            val ratio = size.width.toDouble() / size.height.toDouble()
+            kotlin.math.abs(ratio - targetRatio) / targetRatio < 0.02
+        }.sortedByDescending { it.width * it.height }
     }
 
     fun toggleCameraSelector() {
@@ -1227,6 +1288,12 @@ class CamConfig(private val mActivity: MainActivity) {
 
                     if (selectHighestResolution) {
                         resolutionSelectorBuilder.setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
+                    }
+
+                    captureResolution?.let { size ->
+                        resolutionSelectorBuilder.setResolutionStrategy(
+                            ResolutionStrategy(size, ResolutionStrategy.FALLBACK_RULE_NONE)
+                        )
                     }
 
                     it.setResolutionSelector(resolutionSelectorBuilder.build())
