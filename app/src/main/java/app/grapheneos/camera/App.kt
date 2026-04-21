@@ -100,8 +100,9 @@ class App : Application() {
                     optimalLocation = location
                 } else {
                     // Compare their accuracy instead of time if the difference is below
-                    // threshold
-                    if (location.accuracy > optimalLocation.accuracy) {
+                    // threshold. Location.getAccuracy() is a radius in meters, so a
+                    // smaller value means a more accurate fix.
+                    if (location.accuracy < optimalLocation.accuracy) {
                         optimalLocation = location
                     }
                 }
