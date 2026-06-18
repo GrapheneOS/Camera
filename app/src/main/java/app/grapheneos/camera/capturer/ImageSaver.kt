@@ -249,11 +249,9 @@ class ImageSaver(
         }
 
         if (removeICCAfterCapture) {
-            //todo: clear ICC ...somehow...
-            //exifInterface.clearICC() ?
-            Log.e("test", "remove ICC is on!")
-        } else {
-            Log.e("test", "remove ICC is off.")
+            // TODO does this belong somewhere else? just put here for now...
+            //exifInterface.clearICC()
+            extractIccFromJpeg(uncroppedJpegBytes)
         }
 
         // location metadata setting intentionally ignores the "clear EXIF after capture" setting
@@ -280,6 +278,132 @@ class ImageSaver(
         logDuration(startOfExifProcessing) {"exif processing"}
 
         return res
+    }
+
+
+    /**
+     * Extracts the ICC profile from a JPEG that is already loaded into memory.
+     * Based off iccDEV -> iccJpegDump
+     * @param jpegBytes   The JPEG file contents.
+     * @return            The ICC profile bytes, or an empty array if none was found.
+     */
+    fun extractIccFromJpeg(jpegBytes: ByteArray): ByteArray {
+        val tag = "ICC_PROFILE"
+
+        if (jpegBytes.size < 2 || jpegBytes[0] != 0xFF.toByte() || jpegBytes[1] != 0xD8.toByte()) {
+            Log.e(tag, "Input data is not a valid JPEG (missing SOI).")
+            return ByteArray(0)
+        }
+
+        // ICC profiles are carried in one or more APP2 segments, each beginning with
+        // the 12-byte "ICC_PROFILE\0" signature followed by a 1-based chunk number and
+        // a chunk count; the profile is those chunks concatenated in order (ITU-T T.871
+        // / ICC Annex B). Walk the JPEG marker structure and reassemble them.
+        val iccSig = byteArrayOf(
+            'I'.code.toByte(), 'C'.code.toByte(), 'C'.code.toByte(), '_'.code.toByte(),
+            'P'.code.toByte(), 'R'.code.toByte(), 'O'.code.toByte(), 'F'.code.toByte(),
+            'I'.code.toByte(), 'L'.code.toByte(), 'E'.code.toByte(), 0x00.toByte()
+        )   // "ICC_PROFILE\0"
+
+        var pos = 2     // skip SOI
+        var totalChunks = 0
+        var seenChunks: BooleanArray? = null
+        val chunks: MutableList<ByteArray?> = mutableListOf()
+
+        while (pos < jpegBytes.size) {
+            if (jpegBytes[pos] != 0xFF.toByte()) {
+                pos++
+                continue // resync – skip stray byte
+            }
+
+            // Skip any padding 0xFF bytes that can appear before the marker code
+            while (pos < jpegBytes.size && jpegBytes[pos] == 0xFF.toByte()) pos++
+            if (pos >= jpegBytes.size) break
+
+            val marker = jpegBytes[pos].toInt() and 0xFF
+            pos++   // move past the marker code
+
+            // EOI, or SOS (entropy data follows)
+            if (marker == 0xD9 || marker == 0xDA) break
+
+            // standalone markers (no length)
+            if (marker == 0x01 || (marker in 0xD0..0xD7)) continue
+
+            if (pos + 1 >= jpegBytes.size) break   // malformed JPEG
+
+            val segLen = ((jpegBytes[pos].toInt() and 0xFF) shl 8) or
+                    (jpegBytes[pos + 1].toInt() and 0xFF)
+            pos += 2
+
+            if (segLen < 2 || pos + (segLen - 2) > jpegBytes.size) break
+
+            val payloadLen = segLen - 2
+            val segStart = pos
+
+            // Handle APP2 segments that may contain ICC data
+            if (marker == 0xE2 && payloadLen >= 14) {
+                if (jpegBytes.copyOfRange(segStart, segStart + 12).contentEquals(iccSig)) {
+                    val seq = jpegBytes[segStart + 12].toInt() and 0xFF
+                    val total = jpegBytes[segStart + 13].toInt() and 0xFF
+
+                    if (seq == 0 || total == 0 || seq > total) {
+                        Log.e(tag, "Invalid ICC_PROFILE APP2 chunk sequence (seq=$seq, total=$total).")
+                        return ByteArray(0)
+                    }
+
+                    if (totalChunks == 0) {
+                        totalChunks = total
+                        chunks.clear()
+                        repeat(total) { chunks.add(null) }
+                        seenChunks = BooleanArray(total) { false }
+                    } else if (total != totalChunks) {
+                        Log.e(tag, "Inconsistent ICC_PROFILE APP2 chunk count (expected $totalChunks, found $total).")
+                        return ByteArray(0)
+                    }
+
+                    if (seenChunks!![seq - 1]) {
+                        Log.e(tag, "Duplicate ICC_PROFILE APP2 chunk number $seq.")
+                        return ByteArray(0)
+                    }
+
+                    // Store the payload (excluding the 12‑byte signature + 2‑byte header)
+                    val chunkData = jpegBytes.copyOfRange(segStart + 14, segStart + payloadLen)
+                    chunks[seq - 1] = chunkData
+                    seenChunks[seq - 1] = true
+
+                    Log.d(tag, "ICC_PROFILE APP2 chunk ${seq}}/${total} (${chunkData.size} bytes).")
+                }
+            }
+
+            // Advance to next marker
+            pos += payloadLen
+        }
+
+        if (totalChunks == 0) {
+            Log.e(tag, "No ICC_PROFILE APP2 markers found in JPEG.")
+            return ByteArray(0)
+        }
+
+        // Verify all chunks were seen
+        for ((index, seen) in seenChunks!!.withIndex()) {
+            if (!seen) {
+                Log.e(tag, "Missing ICC_PROFILE APP2 chunk number ${index + 1}.")
+                return ByteArray(0)
+            }
+        }
+
+        // Concatenate all chunks
+        val iccStream = ByteArrayOutputStream()
+        for (chunk in chunks) {
+            iccStream.write(chunk!!)
+        }
+        val iccBytes = iccStream.toByteArray()
+
+        Log.d(tag, "ICC Profile found! Size: ${iccBytes.size}. Total chunks: ${totalChunks}.")
+        val preview = iccBytes.joinToString(" ") { "%02X".format(it) }
+        Log.d(tag, preview)
+
+        return iccBytes
     }
 
     private fun generateThumbnail() {
