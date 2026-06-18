@@ -371,7 +371,7 @@ class ImageSaver(
                     chunks[seq - 1] = chunkData
                     seenChunks[seq - 1] = true
 
-                    Log.d(tag, "ICC_PROFILE APP2 chunk ${seq}}/${total} (${chunkData.size} bytes).")
+                    Log.d(tag, "ICC_PROFILE APP2 chunk ${seq}/${total} (${chunkData.size} bytes).")
                 }
             }
 
@@ -399,7 +399,7 @@ class ImageSaver(
         }
         val iccBytes = iccStream.toByteArray()
 
-        Log.d(tag, "ICC Profile found! Size: ${iccBytes.size}. Total chunks: ${totalChunks}.")
+        Log.d(tag, "ICC Profile found! Size: ${iccBytes.size} bytes. Total chunks: ${totalChunks}.")
         val preview = iccBytes.joinToString(" ") { "%02X".format(it) }
         Log.d(tag, preview)
 
