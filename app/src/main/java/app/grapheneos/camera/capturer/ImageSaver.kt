@@ -66,6 +66,7 @@ class ImageSaver(
     val imageFileFormat: String,
     val imageCaptureMetadata: ImageCapture.Metadata,
     val removeExifAfterCapture: Boolean,
+    val removeICCAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
 ) : ImageCapture.OnImageCapturedCallback()
@@ -245,6 +246,14 @@ class ImageSaver(
             exifInterface.clearExif()
         } else {
             exifInterface.fixExif(captureTime)
+        }
+
+        if (removeICCAfterCapture) {
+            //todo: clear ICC ...somehow...
+            //exifInterface.clearICC() ?
+            Log.e("test", "remove ICC is on!")
+        } else {
+            Log.e("test", "remove ICC is off.")
         }
 
         // location metadata setting intentionally ignores the "clear EXIF after capture" setting

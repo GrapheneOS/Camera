@@ -109,6 +109,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
 
+            const val REMOVE_ICC_AFTER_CAPTURE = "remove_icc_after_capture"
+
             const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
 
             const val CAMERA_SOUNDS = "camera_sounds"
@@ -155,6 +157,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val PHOTO_QUALITY = 95
 
             const val REMOVE_EXIF_AFTER_CAPTURE = true
+
+            const val REMOVE_ICC_AFTER_CAPTURE = false
 
             const val GYROSCOPE_SUGGESTIONS = false
 
@@ -544,6 +548,22 @@ class CamConfig(private val mActivity: MainActivity) {
             val editor = commonPref.edit()
             editor.putBoolean(
                 SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
+                value
+            )
+            editor.apply()
+        }
+
+    var removeICCAfterCapture: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.REMOVE_ICC_AFTER_CAPTURE,
+                SettingValues.Default.REMOVE_ICC_AFTER_CAPTURE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(
+                SettingValues.Key.REMOVE_ICC_AFTER_CAPTURE,
                 value
             )
             editor.apply()
