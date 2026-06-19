@@ -38,7 +38,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 // see com.android.externalstorage.ExternalStorageProvider and
 // com.android.internal.content.FileSystemProvider
@@ -282,7 +281,7 @@ class ImageSaver(
 
 
     /**
-     * Extracts the ICC profile from a JPEG that is already loaded into memory.
+     * Extracts the ICC profile from a JPEG byte array.
      * Based off iccDEV -> iccJpegDump
      * @param jpegBytes   The JPEG file contents.
      * @return            The ICC profile bytes, or an empty array if none was found.
@@ -331,17 +330,17 @@ class ImageSaver(
 
             if (pos + 1 >= jpegBytes.size) break   // malformed JPEG
 
-            val segLen = ((jpegBytes[pos].toInt() and 0xFF) shl 8) or
+            val segLength = ((jpegBytes[pos].toInt() and 0xFF) shl 8) or
                     (jpegBytes[pos + 1].toInt() and 0xFF)
             pos += 2
 
-            if (segLen < 2 || pos + (segLen - 2) > jpegBytes.size) break
+            if (segLength < 2 || pos + (segLength - 2) > jpegBytes.size) break
 
-            val payloadLen = segLen - 2
+            val payloadLength = segLength - 2
             val segStart = pos
 
             // Handle APP2 segments that may contain ICC data
-            if (marker == 0xE2 && payloadLen >= 14) {
+            if (marker == 0xE2 && payloadLength >= 14) {
                 if (jpegBytes.copyOfRange(segStart, segStart + 12).contentEquals(iccSig)) {
                     val seq = jpegBytes[segStart + 12].toInt() and 0xFF
                     val total = jpegBytes[segStart + 13].toInt() and 0xFF
@@ -367,7 +366,7 @@ class ImageSaver(
                     }
 
                     // Store the payload (excluding the 12‑byte signature + 2‑byte header)
-                    val chunkData = jpegBytes.copyOfRange(segStart + 14, segStart + payloadLen)
+                    val chunkData = jpegBytes.copyOfRange(segStart + 14, segStart + payloadLength)
                     chunks[seq - 1] = chunkData
                     seenChunks[seq - 1] = true
 
@@ -376,7 +375,7 @@ class ImageSaver(
             }
 
             // Advance to next marker
-            pos += payloadLen
+            pos += payloadLength
         }
 
         if (totalChunks == 0) {
