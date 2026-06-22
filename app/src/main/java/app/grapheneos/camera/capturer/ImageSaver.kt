@@ -162,19 +162,13 @@ class ImageSaver(
         processedJpegBytes = processExif(uncroppedJpegBytes)
 
         if (removeICCAfterCapture) {
-            val start = System.nanoTime()
-            val icc = extractIccFromJpeg(processedJpegBytes)
-            if (icc != null) {
-                val originalSize = processedJpegBytes.size
+            val iccProfile = extractIccFromJpeg(processedJpegBytes)
+            if (iccProfile != null) {
                 try {
-                    processedJpegBytes = stripBytes(processedJpegBytes, icc.start, icc.end)
+                    processedJpegBytes = stripBytes(processedJpegBytes, iccProfile.app2SectionStart, iccProfile.app2SectionLength)
                 } catch (e: Exception) {
                     Log.e("ICC_Profile", "Failed to strip ICC APP2 section: ${e.message}")
                 }
-                val end = System.nanoTime()
-                val durationMs = (end - start) / 1_000_000.0
-                Log.d("ICC_PROFILE",
-                    "stripped in ${durationMs}ms. orig: ${originalSize}, cur: ${processedJpegBytes.size} (${originalSize - processedJpegBytes.size})")
             }
         }
 
