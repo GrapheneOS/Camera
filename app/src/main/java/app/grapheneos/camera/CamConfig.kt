@@ -113,6 +113,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val CAMERA_SOUNDS = "camera_sounds"
 
+            const val QUICK_VIDEO_HOLD = "quick_video_hold"
+
             const val ENABLE_ZSL = "enable_zsl"
 
             const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
@@ -159,6 +161,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GYROSCOPE_SUGGESTIONS = false
 
             const val CAMERA_SOUNDS = true
+
+            const val QUICK_VIDEO_HOLD = true
 
             const val ENABLE_ZSL = false
 
@@ -297,6 +301,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
     private var currentMode: CameraMode = DEFAULT_CAMERA_MODE
 
+    val mode: CameraMode
+        get() = currentMode
+
     var aspectRatio: Int
         get() {
             return when {
@@ -407,6 +414,19 @@ class CamConfig(private val mActivity: MainActivity) {
         set(value) {
             val editor = commonPref.edit()
             editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, value)
+            editor.apply()
+        }
+
+    var quickVideoHold: Boolean
+        get() {
+            return commonPref.getBoolean(
+                SettingValues.Key.QUICK_VIDEO_HOLD,
+                SettingValues.Default.QUICK_VIDEO_HOLD
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putBoolean(SettingValues.Key.QUICK_VIDEO_HOLD, value)
             editor.apply()
         }
 
@@ -759,6 +779,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (!commonPref.contains(SettingValues.Key.CAMERA_SOUNDS)) {
             editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
+        }
+
+        if (!commonPref.contains(SettingValues.Key.QUICK_VIDEO_HOLD)) {
+            editor.putBoolean(
+                SettingValues.Key.QUICK_VIDEO_HOLD,
+                SettingValues.Default.QUICK_VIDEO_HOLD
+            )
         }
 
         // Note: This is a workaround to keep save image/video as previewed 'on' by 

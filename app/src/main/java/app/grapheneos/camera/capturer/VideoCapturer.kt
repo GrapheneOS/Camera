@@ -49,6 +49,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     private var recording: Recording? = null
+    private var onFinalizeCallback: (() -> Unit)? = null
+    private var forceAudioOnNextStart = false
 
     var isMuted = false
         private set
@@ -149,7 +151,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         return null
     }
 
-    fun startRecording() {
+    fun startRecording(forceAudio: Boolean = false) {
+        if (forceAudio) {
+            forceAudioOnNextStart = true
+        }
+
         if (camConfig.camera == null) return
         val recorder = camConfig.videoCapture?.output ?: return
         if (isRecording) return
@@ -161,8 +167,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
         includeAudio = false
 
         val ctx = mActivity
+        val shouldIncludeAudio = forceAudioOnNextStart || ctx.settingsDialog.includeAudioToggle.isChecked
 
-        if (ctx.settingsDialog.includeAudioToggle.isChecked) {
+        if (shouldIncludeAudio) {
             if (ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PERMISSION_GRANTED) {
                 includeAudio = true
             } else {
@@ -171,6 +178,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 return
             }
         }
+        forceAudioOnNextStart = false
 
         val recordingCtx = try {
             createRecordingContext(recorder, fileName)!!
@@ -205,6 +213,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 }
 
                 if (event is VideoRecordEvent.Finalize) {
+                    val finalizeCallback = onFinalizeCallback
+                    onFinalizeCallback = null
+
                     afterRecordingStops()
 
                     camConfig.mPlayer.playVRStopSound()
@@ -213,12 +224,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         when (event.error) {
                             VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
                                 ctx.showMessage(R.string.recording_too_short_to_be_saved)
+                                finalizeCallback?.invoke()
                                 return@start
                             }
                             VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
                             VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
                             VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
                                 ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                                finalizeCallback?.invoke()
                                 return@start
                             }
                             else -> {
@@ -251,6 +264,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (ctx is VideoCaptureActivity) {
                         ctx.afterRecording(uri)
                     }
+
+                    finalizeCallback?.invoke()
                 }
             }
 
@@ -394,10 +409,15 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording?.mute(false)
     }
 
-    fun stopRecording() {
+    fun stopRecording(onStopped: (() -> Unit)? = null) {
+        onFinalizeCallback = onStopped
         recording?.stop()
         recording?.close()
         recording = null
+    }
+
+    fun clearForceAudioForNextStart() {
+        forceAudioOnNextStart = false
     }
 }
 

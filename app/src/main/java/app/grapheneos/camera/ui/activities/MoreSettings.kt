@@ -204,6 +204,17 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             csSwitch.performClick()
         }
 
+        val qvhSwitch = binding.quickVideoHoldSwitch
+        qvhSwitch.isChecked = camConfig.quickVideoHold
+        qvhSwitch.setOnClickListener {
+            camConfig.quickVideoHold = qvhSwitch.isChecked
+        }
+
+        val qvhSetting = binding.quickVideoHoldSetting
+        qvhSetting.setOnClickListener {
+            qvhSwitch.performClick()
+        }
+
         val sIAPSetting = binding.saveImageAsPreviewSetting
         sIAPSetting.setOnClickListener {
             sIAPToggle.performClick()
