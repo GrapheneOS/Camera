@@ -71,6 +71,7 @@ import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
+import app.grapheneos.camera.capturer.QuickVideoController
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -247,6 +248,7 @@ open class MainActivity : AppCompatActivity(),
     lateinit var micOffIcon: ImageView
 
     private var shouldRestartRecording = false
+    private val quickVideo = QuickVideoController(this)
 
     fun startFocusTimer() {
         handler.postDelayed(runnable, autoCenterFocusDuration)
@@ -265,6 +267,7 @@ open class MainActivity : AppCompatActivity(),
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
+            videoCapturer.clearForceAudioForNextStart()
             videoCapturer.startRecording()
         }
     }
@@ -508,6 +511,10 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (quickVideo.onHardwareKeyRelease(keyCode)) {
+            return true
+        }
+
         // there are no camera controls in qr mode
         if (camConfig.isQRMode) {
             return super.onKeyUp(keyCode, event)
@@ -536,10 +543,22 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            if (event?.repeatCount == 0) {
+                event.startTracking()
+            }
             // Pretend as if the event was handled by the app (avoid volume bar from appearing)
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            quickVideo.startFromHardwareKey(keyCode)
+            return true
+        }
+
+        return super.onKeyLongPress(keyCode, event)
     }
 
     override fun onResume() {
@@ -659,6 +678,7 @@ open class MainActivity : AppCompatActivity(),
                 }
 
                 restartRecordingIfPermissionsWasUnavailable()
+                quickVideo.onCameraReady()
             } else {
                 previewGrid.visibility = View.INVISIBLE
                 val lastFrame = lastFrame
@@ -756,7 +776,30 @@ open class MainActivity : AppCompatActivity(),
         }
 
         captureButton = binding.captureButton
+        captureButton.setOnLongClickListener {
+            quickVideo.start()
+        }
+        captureButton.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    quickVideo.onPressDown()
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    if (quickVideo.release()) {
+                        return@setOnTouchListener true
+                    }
+                }
+            }
+
+            false
+        }
         captureButton.setOnClickListener {
+            if (quickVideo.isEngaged) {
+                return@setOnClickListener
+            }
+
             resetAutoSleep()
             if (camConfig.isVideoMode) {
                 if (videoCapturer.isRecording) {
@@ -1776,6 +1819,7 @@ open class MainActivity : AppCompatActivity(),
     override fun onStop() {
         super.onStop()
         isStarted = false
+        quickVideo.reset()
         if (this::videoCapturer.isInitialized && videoCapturer.isRecording) {
             videoCapturer.stopRecording()
         }

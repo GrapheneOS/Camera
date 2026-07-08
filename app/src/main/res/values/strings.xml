@@ -80,6 +80,8 @@
 
     <string name="camera_sounds">Camera Sounds</string>
     <string name="camera_sounds_desc">Shutter sound and other audio cues</string>
+    <string name="quick_video_hold">Hold shutter for video</string>
+    <string name="quick_video_hold_desc">Press and hold the shutter button or volume keys in photo mode to record a video until release.</string>
 
     <string name="storage">Storage</string>
     <string name="storage_location">Storage Location</string>
