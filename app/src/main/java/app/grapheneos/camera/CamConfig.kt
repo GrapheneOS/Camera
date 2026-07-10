@@ -1187,6 +1187,12 @@ class CamConfig(private val mActivity: MainActivity) {
                     } else {
                         View.VISIBLE
                     }
+                mActivity.muteToggle.visibility =
+                    if (includeAudio) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
 
                 val videoCaptureBuilder = VideoCapture.Builder(
                     Recorder.Builder()
@@ -1494,8 +1500,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
             mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
             mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
-
-            mActivity.micOffIcon.visibility = View.GONE
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
@@ -1510,10 +1514,11 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.captureButton.setImageResource(R.drawable.recording)
             } else {
                 mActivity.captureButton.setImageResource(R.drawable.camera_shutter)
-                mActivity.micOffIcon.visibility = View.GONE
             }
         }
 
+        mActivity.micOffIcon.visibility = View.GONE
+        mActivity.muteToggle.visibility = View.GONE
         mActivity.cbText.visibility = if (isQRMode || isVideoMode || mActivity.timerDuration == 0) {
             View.INVISIBLE
         } else {
