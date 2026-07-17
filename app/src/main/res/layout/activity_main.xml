@@ -365,6 +365,18 @@
                     android:layout_gravity="center"
                     android:contentDescription="@string/play_preview"/>
 
+                <ImageButton
+                    android:id="@+id/qr_image_import"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_gravity="center"
+                    android:padding="16dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/scan_from_image"
+                    android:background="@drawable/option_circle"
+                    android:visibility="gone"
+                    android:contentDescription="@string/scan_from_image"/>
+
             </FrameLayout>
 
         </LinearLayout>

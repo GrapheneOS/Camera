@@ -61,6 +61,9 @@
     <string name="rec_without_audio">Start recording without audio</string>
     <string name="qr_scan_toggle">QR Scan toggle</string>
     <string name="qr_scan">QR Code</string>
+    <string name="scan_from_image">Scan code from an image</string>
+    <string name="no_code_found_in_image">No code found in the selected image.</string>
+    <string name="could_not_read_image">Could not read the selected image.</string>
     <string name="data_matrix">Data Matrix</string>
     <string name="aztec_code">Aztec Code</string>
     <string name="more_options">More Options</string>
