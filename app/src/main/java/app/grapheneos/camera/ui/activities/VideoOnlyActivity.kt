@@ -8,7 +8,7 @@ class VideoOnlyActivity : MainActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        captureButton.setImageResource(R.drawable.recording)
+        setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
 
         tabLayout.alpha = 0f
         tabLayout.isClickable = false

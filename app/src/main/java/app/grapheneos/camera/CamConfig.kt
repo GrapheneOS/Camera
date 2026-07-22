@@ -429,13 +429,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (isQRMode) {
                 if (value) {
-                    mActivity.flipCamIcon.setImageResource(
-                        R.drawable.cancel
+                    mActivity.setFlipCameraIcon(
+                        R.drawable.cancel, R.string.stop_scanning_all_formats
                     )
                     mActivity.qrScanToggles.visibility = View.GONE
                 } else {
-                    mActivity.flipCamIcon.setImageResource(
-                        R.drawable.auto
+                    mActivity.setFlipCameraIcon(
+                        R.drawable.auto, R.string.scan_all_formats
                     )
                     mActivity.qrScanToggles.visibility = View.VISIBLE
                 }
@@ -2005,13 +2005,13 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.thirdOption.visibility = View.INVISIBLE
 
             if (scanAllCodes) {
-                mActivity.flipCamIcon.setImageResource(
-                    R.drawable.cancel
+                mActivity.setFlipCameraIcon(
+                    R.drawable.cancel, R.string.stop_scanning_all_formats
                 )
                 mActivity.qrScanToggles.visibility = View.GONE
             } else {
-                mActivity.flipCamIcon.setImageResource(
-                    R.drawable.auto
+                mActivity.setFlipCameraIcon(
+                    R.drawable.auto, R.string.scan_all_formats
                 )
                 mActivity.qrScanToggles.visibility = View.VISIBLE
             }
@@ -2019,13 +2019,14 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.cancelButtonView.visibility = View.INVISIBLE
 
             mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
-            mActivity.captureButton.setImageResource(R.drawable.torch_off_button)
+            // Entering QR mode always leaves the torch off
+            mActivity.setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
 
             mActivity.micOffIcon.visibility = View.GONE
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
-            mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
+            mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
             mActivity.cancelButtonView.visibility = View.VISIBLE
 
             mActivity.qrScanToggles.visibility = View.GONE
@@ -2033,9 +2034,9 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
 
             if (isVideoMode) {
-                mActivity.captureButton.setImageResource(R.drawable.recording)
+                mActivity.setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
             } else {
-                mActivity.captureButton.setImageResource(R.drawable.camera_shutter)
+                mActivity.setCaptureButtonIcon(R.drawable.camera_shutter, R.string.capture)
                 mActivity.micOffIcon.visibility = View.GONE
             }
         }
