@@ -94,6 +94,10 @@ open class CaptureActivity : MainActivity() {
             finish()
         }
 
+        // This is the only screen where the button has a drawable and does something, so it is
+        // also the only screen where it should be reachable by accessibility services.
+        cancelButtonView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+
         // Remove the third option/circle from the UI
         thirdOption.visibility = View.INVISIBLE
 
