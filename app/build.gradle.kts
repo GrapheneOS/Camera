@@ -38,8 +38,8 @@ android {
         }
     }
 
-    compileSdk = 36
-    buildToolsVersion = "36.1.0"
+    compileSdk = 37
+    buildToolsVersion = "37.0.0"
     ndkVersion = "29.0.14206865"
 
     namespace = "app.grapheneos.camera"
@@ -47,7 +47,7 @@ android {
     defaultConfig {
         applicationId = "app.grapheneos.camera"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 90
         versionName = versionCode.toString()
     }
