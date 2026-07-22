@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
@@ -47,6 +48,7 @@ import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -199,7 +201,7 @@ class InAppGallery : AppCompatActivity() {
         if (withDefault) {
             try {
                 startActivity(editIntent)
-            } catch (ignored: ActivityNotFoundException) {
+            } catch (_: ActivityNotFoundException) {
                 showMessage(getString(R.string.no_editor_app_error))
             }
         } else {
@@ -242,6 +244,61 @@ class InAppGallery : AppCompatActivity() {
 
     }
 
+    /**
+     * A provider is free to ignore the projection it was handed and answer with its own columns
+     * -- the DocumentsProvider contract explicitly allows it -- so reading by position can hand
+     * back an unrelated column, e.g. a document id that then renders as a 1970 date. Look the
+     * column up by name instead and treat "absent" the same as "not set".
+     */
+    private fun Cursor.optionalLong(column: String): Long? =
+        getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
+
+    private fun Cursor.optionalString(column: String): String? =
+        getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getString(it) }
+
+    /**
+     * Best-effort creation and modification timestamps, in milliseconds, for media whose Exif
+     * has been stripped. MediaStore and the Storage Access Framework disagree both on the column
+     * names and on the unit, and each provider rejects the columns it does not know, so the two
+     * are queried separately and every failure just leaves the value unknown.
+     */
+    private fun queryStoredTimestamps(uri: Uri): Pair<Long?, Long?> {
+        var created: Long? = null
+        var modified: Long? = null
+
+        try {
+            val projection = arrayOf(MediaColumns.DATE_ADDED, MediaColumns.DATE_MODIFIED)
+            contentResolver.query(uri, projection, null, null)?.use {
+                if (it.moveToFirst()) {
+                    // Seconds since the epoch, and 0 stands for "not set"
+                    created = it.optionalLong(MediaColumns.DATE_ADDED)
+                        ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
+                    modified = it.optionalLong(MediaColumns.DATE_MODIFIED)
+                        ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("queryStoredTimestamps", "no MediaStore timestamps from ${uri.authority}", e)
+        }
+
+        if (modified == null) {
+            try {
+                val projection = arrayOf(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                contentResolver.query(uri, projection, null, null)?.use {
+                    if (it.moveToFirst()) {
+                        // Already in milliseconds here
+                        modified = it.optionalLong(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                            ?.takeIf { millis -> millis > 0 }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("queryStoredTimestamps", "no document timestamp from ${uri.authority}", e)
+            }
+        }
+
+        return Pair(created, modified)
+    }
+
     private fun showCurrentMediaDetails() {
         val curItem = getCurrentItem()
 
@@ -253,14 +310,15 @@ class InAppGallery : AppCompatActivity() {
         var dateModified: String? = null
 
         try {
-            // note that the first column (RELATIVE_PATH) is undefined for SAF Uris
+            // note that RELATIVE_PATH is undefined for SAF Uris, which the by-name lookups below
+            // report as absent rather than as whatever column happened to land in that position
             val projection = arrayOf(MediaColumns.RELATIVE_PATH, OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
 
             contentResolver.query(curItem.uri, projection, null,null)?.use {
                 if (it.moveToFirst()) {
-                    relativePath = it.getString(0)
-                    fileName = it.getString(1)
-                    size = it.getLong(2)
+                    relativePath = it.optionalString(MediaColumns.RELATIVE_PATH)
+                    fileName = it.optionalString(OpenableColumns.DISPLAY_NAME)
+                    size = it.optionalLong(OpenableColumns.SIZE) ?: 0
                 }
             }
 
@@ -272,8 +330,17 @@ class InAppGallery : AppCompatActivity() {
             if (curItem.type == ITEM_TYPE_VIDEO) {
                 MediaMetadataRetriever().use {
                     it.setDataSource(this, curItem.uri)
-                    dateAdded = convertTimeForVideo(it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)!!)
-                    dateModified = dateAdded
+                    // Not every container carries a creation date, and one that is missing or
+                    // malformed must not take the whole dialog down with it
+                    val date = it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
+                    if (date != null) {
+                        try {
+                            dateAdded = convertTimeForVideo(date)
+                            dateModified = dateAdded
+                        } catch (e: ParseException) {
+                            Log.d("showCurrentMediaDetails", "unparseable video date: $date", e)
+                        }
+                    }
                 }
             } else {
                 contentResolver.openInputStream(curItem.uri)?.use { stream ->
@@ -296,6 +363,18 @@ class InAppGallery : AppCompatActivity() {
                     }
                 }
             }
+
+            // Photos carry no Exif dates when "Remove Exif data after capture" is on, which is
+            // the default, so fall back to the timestamps the storage layer keeps.
+            if (dateAdded == null || dateModified == null) {
+                val (created, modified) = queryStoredTimestamps(curItem.uri)
+                if (dateAdded == null && created != null) {
+                    dateAdded = convertTime(created)
+                }
+                if (dateModified == null && modified != null) {
+                    dateModified = convertTime(modified)
+                }
+            }
         } catch (e: Exception) {
             Log.d("showCurrentMediaDetails", "unable to obtain file details", e)
             showMessage(getString(R.string.unable_to_obtain_file_details))
@@ -313,7 +392,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append(getString(R.string.file_path), "\n")
-        detailsBuilder.append(getRelativePath(this, curItem.uri, relativePath, fileName!!))
+        detailsBuilder.append(getRelativePath(this, curItem.uri, relativePath, fileName))
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append(getString(R.string.file_size), "\n")
@@ -492,7 +571,7 @@ class InAppGallery : AppCompatActivity() {
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
                 CapturedItems.get(this)
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 // activity was destroyed and exectutor.shutdownNow() was called, which interrupts
                 // executor threads
                 return@execute
