@@ -107,7 +107,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/toggle_button_size"
                         android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/toggle_flash"/>
+                        android:contentDescription="@string/flash_off"/>
 
                 </FrameLayout>
 
@@ -122,7 +122,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/toggle_button_size"
                         android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/grid_toggle"/>
+                        android:contentDescription="@string/grid_off"/>
 
                 </FrameLayout>
 

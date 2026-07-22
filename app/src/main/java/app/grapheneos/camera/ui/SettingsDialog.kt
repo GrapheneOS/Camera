@@ -735,28 +735,31 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
     fun updateGridToggleUI() {
         mActivity.previewGrid.postInvalidate()
-        gridToggle.setImageResource(
-            when (camConfig.gridType) {
-                CamConfig.GridType.NONE -> R.drawable.grid_off_circle
-                CamConfig.GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle
-                CamConfig.GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
-                CamConfig.GridType.GOLDEN_RATIO -> R.drawable.grid_goldenratio_circle
-            }
-        )
+        // The description has to travel with the drawable: this control cycles through four
+        // states, so a fixed "Grid Toggle" label left a screen reader unable to report any of them
+        val (icon, description) = when (camConfig.gridType) {
+            CamConfig.GridType.NONE -> R.drawable.grid_off_circle to R.string.grid_off
+            CamConfig.GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle to R.string.grid_3x3
+            CamConfig.GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle to R.string.grid_4x4
+            CamConfig.GridType.GOLDEN_RATIO ->
+                R.drawable.grid_goldenratio_circle to R.string.grid_golden_ratio
+        }
+        gridToggle.setImageResource(icon)
+        gridToggle.contentDescription = mActivity.getString(description)
     }
 
     fun updateFlashMode() {
-        flashToggle.setImageResource(
-            if (camConfig.isFlashAvailable) {
-                when (camConfig.flashMode) {
-                    ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle
-                    ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle
-                    else -> R.drawable.flash_off_circle
-                }
-            } else {
-                R.drawable.flash_off_circle
+        val (icon, description) = if (camConfig.isFlashAvailable) {
+            when (camConfig.flashMode) {
+                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
+                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
+                else -> R.drawable.flash_off_circle to R.string.flash_off
             }
-        )
+        } else {
+            R.drawable.flash_off_circle to R.string.flash_off
+        }
+        flashToggle.setImageResource(icon)
+        flashToggle.contentDescription = mActivity.getString(description)
     }
 
     override fun show() {

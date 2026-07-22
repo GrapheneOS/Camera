@@ -185,6 +185,7 @@
                     android:layout_gravity="center"
                     app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
                     android:tooltipText="@string/tap_to_mute_audio"
+                    android:contentDescription="@string/mute_audio"
                     android:visibility="gone" />
 
             </FrameLayout>

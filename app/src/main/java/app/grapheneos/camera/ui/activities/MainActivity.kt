@@ -47,6 +47,7 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -766,13 +767,11 @@ open class MainActivity : AppCompatActivity(),
                 }
             } else if (camConfig.isQRMode) {
                 camConfig.toggleTorchState()
-                captureButton.setImageResource(
-                    if (camConfig.isTorchOn) {
-                        R.drawable.torch_on_button
-                    } else {
-                        R.drawable.torch_off_button
-                    }
-                )
+                if (camConfig.isTorchOn) {
+                    setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
+                } else {
+                    setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
+                }
             } else {
                 if (timerDuration == 0) {
                     imageCapturer.takePicture()
@@ -1010,15 +1009,11 @@ open class MainActivity : AppCompatActivity(),
         muteToggle.setOnClickListener {
             if (videoCapturer.isMuted) {
                 videoCapturer.unmuteRecording()
-                muteToggle.setImageResource(R.drawable.mic_on)
-                muteToggle.setBackgroundColor(getColor(R.color.red))
-                muteToggle.tooltipText = getString(R.string.tap_to_mute_audio)
+                setMuteToggleState(muted = false)
                 showMessage(R.string.video_audio_recording_unmuted)
             } else {
                 videoCapturer.muteRecording()
-                muteToggle.setImageResource(R.drawable.mic_off)
-                muteToggle.setBackgroundColor(getColor(android.R.color.darker_gray))
-                muteToggle.tooltipText = getString(R.string.tap_to_unmute_audio)
+                setMuteToggleState(muted = true)
                 showMessage(R.string.video_audio_recording_muted)
             }
         }
@@ -1513,6 +1508,55 @@ open class MainActivity : AppCompatActivity(),
 
     fun showMessage(@StringRes msg: Int, action: String? = null, callback: View.OnClickListener? = null) {
         showMessage(getString(msg), action, callback)
+    }
+
+    /**
+     * The icon in the left circle stands for whatever [flipCameraCircle] does right now — flip
+     * the camera, pause/resume the recording, or toggle scanning of every barcode format. Swap
+     * its description together with its drawable so that it is never announced as the wrong
+     * button.
+     */
+    fun setFlipCameraIcon(@DrawableRes icon: Int, @StringRes description: Int) {
+        flipCamIcon.setImageResource(icon)
+        flipCamIcon.contentDescription = getString(description)
+    }
+
+    /**
+     * The big middle button is a shutter, a record/stop button and a torch switch depending on
+     * the mode, so its description has to travel with its drawable exactly like the one in
+     * [setFlipCameraIcon] does.
+     */
+    fun setCaptureButtonIcon(@DrawableRes icon: Int, @StringRes description: Int) {
+        captureButton.setImageResource(icon)
+        captureButton.contentDescription = getString(description)
+    }
+
+    /**
+     * [thirdCircle] is the view that carries the click listener, so it is the one that has to be
+     * described: it opens the gallery, except while a video is being recorded, when it takes a
+     * still instead.
+     */
+    fun setThirdCircleIcon(@DrawableRes icon: Int, @StringRes description: Int) {
+        thirdCircle.setImageResource(icon)
+        thirdCircle.contentDescription = getString(description)
+    }
+
+    /**
+     * The mute toggle signals its state through an icon, a background colour and a tooltip, and a
+     * tooltip is supplementary text rather than a view's label, so the state was never described
+     * to accessibility services at all. Set all four together here so they cannot drift apart.
+     */
+    fun setMuteToggleState(muted: Boolean) {
+        muteToggle.setImageResource(if (muted) R.drawable.mic_off else R.drawable.mic_on)
+        muteToggle.setBackgroundColor(
+            if (muted) getColor(android.R.color.darker_gray) else getColor(R.color.red)
+        )
+        muteToggle.tooltipText = getString(
+            if (muted) R.string.tap_to_unmute_audio else R.string.tap_to_mute_audio
+        )
+        muteToggle.contentDescription = getString(
+            if (muted) R.string.unmute_audio else R.string.mute_audio
+        )
     }
 
     fun showMessage(msg: String, action: String? = null, callback: View.OnClickListener? = null) {

@@ -60,10 +60,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
             if (isRecording) {
                 if (value) {
                     recording?.pause()
-                    mActivity.flipCamIcon.setImageResource(R.drawable.play)
+                    mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
                 } else {
                     recording?.resume()
-                    mActivity.flipCamIcon.setImageResource(R.drawable.pause)
+                    mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
                 }
             }
             field = value
@@ -298,9 +298,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
-        mActivity.flipCamIcon.setImageResource(R.drawable.pause)
+        mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
         isPaused = false
         mActivity.cancelButtonView.visibility = View.GONE
+
+        // Only the description changes: the drawable stays the same one the corner-radius
+        // animation above is holding on to, and replacing it would cut that animation short.
+        mActivity.captureButton.contentDescription = mActivity.getString(R.string.stop_recording)
 
         if (mActivity.requiresVideoModeOnly) {
             mActivity.thirdOption.visibility = View.INVISIBLE
@@ -308,7 +312,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
 
-        mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
+        // While recording, the gallery button turns into a shutter for stills
+        mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
@@ -317,9 +322,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         if (camConfig.includeAudio) {
             isMuted = false
-            mActivity.muteToggle.setImageResource(R.drawable.mic_on)
-            mActivity.muteToggle.setBackgroundColor(mActivity.getColor(R.color.red))
-            mActivity.muteToggle.tooltipText = mActivity.getString(R.string.tap_to_mute_audio)
+            mActivity.setMuteToggleState(muted = false)
             mActivity.muteToggle.visibility = View.VISIBLE
         }
     }
@@ -347,7 +350,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
         animator.start()
 
         mActivity.timerView.visibility = View.GONE
-        mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
+        mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
+        mActivity.captureButton.contentDescription =
+            mActivity.getString(R.string.start_recording)
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
         mActivity.settingsDialog.enableEISToggle.isEnabled = true
@@ -360,8 +365,15 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = true
         }
 
+        // Always restore the third-circle icon and its accessibility label to the gallery button:
+        // at record start it was repurposed into an in-video shutter ("Capture") unconditionally,
+        // so restoring it only for non-VideoCaptureActivity would strand a stale "Capture" label
+        // there. The non-recording third-circle click opens the gallery in every activity, so
+        // open_gallery is the accurate label. Cancel/tab visibility stays guarded, as those don't
+        // apply to VideoCaptureActivity.
+        mActivity.setThirdCircleIcon(R.drawable.option_circle, R.string.open_gallery)
+
         if (mActivity !is VideoCaptureActivity) {
-            mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
             mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE
         }
