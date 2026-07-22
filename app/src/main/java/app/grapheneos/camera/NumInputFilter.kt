@@ -25,8 +25,12 @@ class NumInputFilter(private val settings: MoreSettings) : InputFilter {
                 settings.showMessage(settings.getString(
                     R.string.photo_quality_number_limit, min, max))
             }
-        } catch (e: NumberFormatException) {
-            e.printStackTrace()
+        } catch (_: NumberFormatException) {
+            // Nothing numeric to range-check: either the field is being emptied (deleting the
+            // last digit is a legitimate edit that produces "") or the edit is not a number at
+            // all. Both end up rejected below, which for a deletion is a no-op because the
+            // replacement text is already empty. MoreSettings.dumpData() restores the stored
+            // value if the field is left empty.
         }
         return ""
     }
