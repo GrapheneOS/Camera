@@ -227,14 +227,14 @@
                     android:layout_height="64dp"
                     android:src="@drawable/circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:src="@drawable/option_circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:id="@+id/flip_camera_icon_content"
@@ -268,7 +268,7 @@
                     android:layout_gravity="center"
                     android:src="@drawable/camera_shutter"
                     android:background="@drawable/cbutton_bg"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:contentDescription="@string/capture"/>
 
                 <ImageButton
                     android:id="@+id/confirm_button"
@@ -278,7 +278,7 @@
                     android:layout_gravity="center"
                     android:src="@drawable/done"
                     android:background="@drawable/cbutton_bg"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:contentDescription="@string/confirm"/>
 
                 <!-- Sp usage was ignore because -->
                 <TextView
@@ -319,7 +319,8 @@
                 android:layout_height="96dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_gravity="center">
+                android:layout_gravity="center"
+                android:importantForAccessibility="no">
 
                 <ImageView
                     android:id="@+id/white_option_circle"
@@ -327,7 +328,7 @@
                     android:layout_height="64dp"
                     android:src="@drawable/white_option_circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/image_preview"
@@ -337,7 +338,7 @@
                     android:layout_gravity="center"
                     android:scaleType="centerCrop"
                     app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:id="@+id/third_circle"
@@ -345,7 +346,7 @@
                     android:layout_height="64dp"
                     android:src="@drawable/option_circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:contentDescription="@string/open_gallery"/>
 
                 <ProgressBar
                     android:indeterminateDrawable="@drawable/progress_bar_style"
@@ -488,7 +489,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="?actionBarItemBackground"
-                android:contentDescription="@string/capture_mode"/>
+                android:importantForAccessibility="no"
+                android:contentDescription="@string/cancel"/>
 
         </FrameLayout>
 
@@ -504,7 +506,7 @@
             android:paddingHorizontal="16dp"
             android:background="@null"
             android:src="@drawable/settings_icon"
-            android:contentDescription="@string/capture_mode"/>
+            android:contentDescription="@string/settings"/>
 
         <TextView
             android:id="@+id/timer"
@@ -544,7 +546,8 @@
                         android:layout_height="@dimen/qr_toggle_button_size"
                         android:layout_gravity="center"
                         android:src="@drawable/qr_code"
-                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                        android:contentDescription="@string/qr_scan"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -577,7 +580,7 @@
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
                         app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
-                        android:contentDescription="@string/qr_scan_toggle"/>
+                        android:contentDescription="@string/data_matrix"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -609,7 +612,8 @@
                         android:src="@drawable/aztec"
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
-                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                        android:contentDescription="@string/aztec_code"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -641,7 +645,8 @@
                     android:src="@drawable/pdf417"
                     android:layout_width="@dimen/qr_toggle_button_size"
                     android:layout_height="@dimen/qr_toggle_button_size"
-                    app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+                    app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                    android:contentDescription="@string/pdf_417"/>
 
                 <TextView
                     android:alpha="0.8"
@@ -673,7 +678,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
-                        android:contentDescription="@string/grid_toggle"/>
+                        android:contentDescription="@string/more_options"/>
 
                     <TextView
                         android:alpha="0.8"
