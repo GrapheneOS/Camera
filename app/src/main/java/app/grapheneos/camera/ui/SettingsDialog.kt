@@ -441,9 +441,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     fun showOnlyRelevantSettings() {
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
-            enableEISSetting.visibility = View.GONE
             videoQualitySetting.visibility = View.VISIBLE
-            enableEISSetting.visibility = if (camConfig.isVideoStabilizationSupported()) {
+            enableEISSetting.visibility = if (camConfig.canApplyVideoStabilization()) {
                 View.VISIBLE
             } else {
                 View.GONE

@@ -23,6 +23,7 @@ import app.grapheneos.camera.util.getParcelableExtra
 import java.io.ByteArrayOutputStream
 import java.lang.Exception
 import java.nio.ByteBuffer
+import androidx.core.graphics.scale
 
 open class CaptureActivity : MainActivity() {
 
@@ -243,7 +244,7 @@ open class CaptureActivity : MainActivity() {
         if (image.byteCount <= 1000000)
             return image
 
-        return Bitmap.createScaledBitmap(image, scaleWidth, scaleHeight, false)
+        return image.scale(scaleWidth, scaleHeight, false)
     }
 
     private fun Bitmap.rotate(degrees: Float): Bitmap {

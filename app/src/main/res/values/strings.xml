@@ -124,6 +124,19 @@
     <string name="empty_gallery">Captured photos/videos not found</string>
 
     <string name="bind_failure">Failed to open camera due to an OS or hardware issue. Try rebooting.</string>
+    <!-- Shown after a camera-extension mode (e.g. Night) is applied but its vendor implementation
+         fails to bind: the mode is disabled and the camera falls back to a normal mode. Unlike
+         bind_failure this is a handled, mode-specific recovery, not an OS/hardware failure, so it
+         does not suggest rebooting. -->
+    <string name="extension_mode_unavailable">This mode is unavailable on this device.</string>
+
+    <!-- Shown when the camera can't record at the video quality the settings currently ask for,
+         so that the settings screen doesn't keep claiming a quality that isn't actually in effect.
+         %1$s is a quality such as "2160p (UHD)". A dropped quality is described as "a different
+         quality" rather than a lower one because the fallback is Recorder's default order (1080p,
+         then 720p, then 480p), which is higher than the requested quality if 480p was what got
+         dropped. Stabilization outcomes are deliberately never surfaced (see onFeaturesSelected). -->
+    <string name="quality_unsupported">%1$s isn\'t supported on this camera. Recording at a different quality.</string>
     <string name="camera_provider_init_failure">Failed to load camera provider due to OS or hardware issue. Try rebooting.</string>
     <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
     <string name="unsupported_taking_picture_while_recording">Your device doesn\'t support taking pictures while recording video with the current settings.</string>
