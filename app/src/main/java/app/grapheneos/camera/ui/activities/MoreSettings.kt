@@ -294,21 +294,32 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
     }
 
-    private fun dumpData() {
+    override fun onPause() {
+        // dispatchTouchEvent and onEditorAction only fire when the user taps outside the field
+        // or presses the IME action key. Leaving the screen any other way (Back, gesture back,
+        // the up arrow, Home, task switch) used to drop whatever had been typed, silently.
+        // Commit here so that every exit path persists; a snackbar would be pointless on a
+        // screen that is going away, so the invalid-value complaint is suppressed.
+        // onCreate() can bail out before the views exist (no CamConfig in the intent) and the
+        // lifecycle still runs through onPause, hence the initialization check.
+        if (this::pQField.isInitialized) {
+            dumpData(notifyOnInvalidValue = false)
+        }
+        super.onPause()
+    }
+
+    private fun dumpData(notifyOnInvalidValue: Boolean = true) {
 
         // Dump state of photo quality
-        if (pQField.text.isEmpty()) {
+        val quality = pQField.text.toString().toIntOrNull()
+        if (quality == null) {
             // Revert back to the original value if invalid number was found
             pQField.setText(camConfig.photoQuality.toString())
-            showMessage(getString(R.string.invalid_photo_quality_value))
-        } else {
-            try {
-                camConfig.photoQuality = Integer.parseInt(pQField.text.toString())
-            } catch (exception: Exception) {
-                // Revert back to the original value if invalid number was found
-                pQField.setText(camConfig.photoQuality.toString())
+            if (notifyOnInvalidValue) {
                 showMessage(getString(R.string.invalid_photo_quality_value))
             }
+        } else {
+            camConfig.photoQuality = quality
         }
 
 //        // Dump state of image format
