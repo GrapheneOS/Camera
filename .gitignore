@@ -52,6 +52,11 @@ captures/
 .idea/modules.xml
 # Comment next line if keeping position of elements in Navigation Editor is relevant for you
 .idea/navEditor.xml
+.idea/AndroidProjectSystem.xml
+.idea/deploymentTargetSelector.xml
+.idea/markdown.xml
+.idea/migrations.xml
+.idea/runConfigurations.xml
 
 # Keystore files
 *.jks
