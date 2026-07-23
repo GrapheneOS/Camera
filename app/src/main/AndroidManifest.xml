@@ -13,6 +13,13 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
+    <!--
+      androidx.media3:media3-common declares this for ExoPlayer's network playback. We only pull
+      media3 in transitively through camera-video, which uses media3-muxer to write MP4s locally,
+      so nothing we ship reads it and the app has no INTERNET permission to pair it with.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
