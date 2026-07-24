@@ -50,6 +50,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private var recording: Recording? = null
 
+    // Invoking this abandons a start still queued behind the record-start sound.
+    private var cancelDeferredStart: (() -> Unit)? = null
+
     var isMuted = false
         private set
 
@@ -192,7 +195,28 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         beforeRecordingStarts()
 
+        // The sound callback may fire more than once; a second PendingRecording.start() throws.
+        var consumed = false
+
+        cancelDeferredStart = {
+            consumed = true
+            cancelDeferredStart = null
+            try {
+                recordingCtx.fileDescriptor.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            discardUnusedOutput(recordingCtx)
+            afterRecordingStops()
+        }
+
         camConfig.mPlayer.playVRStartSound(handler) {
+            if (consumed) {
+                return@playVRStartSound
+            }
+
+            consumed = true
+            cancelDeferredStart = null
 
             recording = pendingRecording.start(ctx.mainExecutor) { event ->
 
@@ -212,12 +236,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (event.hasError()) {
                         when (event.error) {
                             VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
+                                discardUnusedOutput(recordingCtx)
                                 ctx.showMessage(R.string.recording_too_short_to_be_saved)
                                 return@start
                             }
                             VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
                             VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
                             VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
+                                discardUnusedOutput(recordingCtx)
                                 ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
                                 return@start
                             }
@@ -254,6 +280,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 }
             }
 
+            // The Recording didn't exist yet when the mute/pause setters ran.
+            if (isMuted) {
+                recording?.mute(true)
+            }
+            if (isPaused) {
+                recording?.pause()
+            }
+
             try {
                 // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
                 // caller, and that it's safe to do so as soon as pendingRecording.start() returns
@@ -268,6 +302,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val dp8 = 8 * mActivity.resources.displayMetrics.density
 
     private fun beforeRecordingStarts() {
+        // Don't leak paused/muted state from the previous recording into this one.
+        isPaused = false
+        isMuted = false
+
         mActivity.previewView.keepScreenOn = true
     }
 
@@ -298,8 +336,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
-        mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
-        isPaused = false
+        // The user may have paused before the recording actually started.
+        if (isPaused) {
+            mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
+        } else {
+            mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
+        }
         mActivity.cancelButtonView.visibility = View.GONE
 
         // Only the description changes: the drawable stays the same one the corner-radius
@@ -321,8 +363,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = false
 
         if (camConfig.includeAudio) {
-            isMuted = false
-            mActivity.setMuteToggleState(muted = false)
+            mActivity.setMuteToggleState(muted = isMuted)
             mActivity.muteToggle.visibility = View.VISIBLE
         }
     }
@@ -407,9 +448,30 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun stopRecording() {
+        cancelDeferredStart?.let {
+            it()
+            return
+        }
+
         recording?.stop()
         recording?.close()
         recording = null
+    }
+
+    private fun discardUnusedOutput(recordingCtx: RecordingContext) {
+        if (!recordingCtx.shouldAddToGallery) {
+            return
+        }
+
+        try {
+            if (recordingCtx.isPendingMediaStoreUri) {
+                mActivity.contentResolver.delete(recordingCtx.uri, null, null)
+            } else {
+                DocumentsContract.deleteDocument(mActivity.contentResolver, recordingCtx.uri)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
 

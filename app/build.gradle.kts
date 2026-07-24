@@ -50,6 +50,8 @@ android {
         targetSdk = 37
         versionCode = 90
         versionName = versionCode.toString()
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -98,4 +100,9 @@ dependencies {
     implementation(libs.bundles.camerax)
 
     implementation(libs.zxing.core)
+
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.ext.junit.ktx)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
 }
