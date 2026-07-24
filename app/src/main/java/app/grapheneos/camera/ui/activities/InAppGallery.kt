@@ -55,6 +55,8 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.Executors
 import kotlin.properties.Delegates
+import androidx.core.view.size
+import androidx.core.view.get
 
 class InAppGallery : AppCompatActivity() {
 
@@ -140,8 +142,9 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
-    private fun getCurrentItem(): CapturedItem {
-        return gallerySliderAdapter!!.getCurrentItem()
+    // Null while the async media scan is still running (or once the last item is gone)
+    private fun getCurrentItem(): CapturedItem? {
+        return gallerySliderAdapter?.getCurrentItem()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -152,6 +155,15 @@ class InAppGallery : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.gallery, menu)
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        // Every item is a media action; none of them apply until the scan has delivered items
+        val hasMedia = gallerySliderAdapter != null
+        for (i in 0 until menu.size) {
+            menu[i].isVisible = hasMedia
+        }
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -190,7 +202,7 @@ class InAppGallery : AppCompatActivity() {
             return
         }
 
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
         val editIntent = Intent(Intent.ACTION_EDIT).apply {
             setDataAndType(curItem.uri, curItem.mimeType())
@@ -213,7 +225,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun deleteCurrentMedia() {
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_title)
@@ -234,7 +246,7 @@ class InAppGallery : AppCompatActivity() {
 
                 if (res) {
                     showMessage(getString(R.string.deleted_successfully))
-                    gallerySliderAdapter!!.removeItem(curItem)
+                    gallerySliderAdapter?.removeItem(curItem)
                 } else {
                     showMessage(getString(R.string.deleting_unexpected_error))
                 }
@@ -300,7 +312,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun showCurrentMediaDetails() {
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
         var relativePath: String? = null
         var fileName: String? = null
@@ -504,7 +516,7 @@ class InAppGallery : AppCompatActivity() {
             return
         }
 
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
         val share = Intent(Intent.ACTION_SEND)
         share.putExtra(Intent.EXTRA_STREAM, curItem.uri)
@@ -669,6 +681,7 @@ class InAppGallery : AppCompatActivity() {
                 gallerySliderAdapter = it
                 gallerySlider.adapter = it
             }
+            invalidateOptionsMenu()
         } else {
             val adapterItems = existingAdapter.items
             adapterItems.ensureCapacity(items.size)
@@ -741,8 +754,8 @@ class InAppGallery : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        gallerySliderAdapter?.let {
-            outState.putParcelable(LAST_VIEWED_ITEM_KEY, it.items[gallerySlider.currentItem])
+        gallerySliderAdapter?.getCurrentItem()?.let {
+            outState.putParcelable(LAST_VIEWED_ITEM_KEY, it)
         }
     }
 }
