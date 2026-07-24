@@ -1,7 +1,9 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ContentResolver
+import android.content.Intent
 import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
@@ -78,6 +80,24 @@ class CapturedItem(
     }
 
     override fun describeContents() = 0
+}
+
+// Some OEM builds grant the shared uri to the target inside startActivity(), which throws a
+// SecurityException when this app has itself lost access to the item (e.g. it was deleted
+// externally, or its persisted uri came from a restored backup)
+internal fun Activity.shareCapturedItem(item: CapturedItem): Boolean {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        putExtra(Intent.EXTRA_STREAM, item.uri)
+        setDataAndType(item.uri, item.mimeType())
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return try {
+        startActivity(Intent.createChooser(intent, getString(R.string.share_image)))
+        true
+    } catch (e: SecurityException) {
+        Log.e(CapturedItems.TAG, "unable to share ${item.uiName()}", e)
+        false
+    }
 }
 
 object CapturedItems {

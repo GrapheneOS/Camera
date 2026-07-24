@@ -72,6 +72,7 @@ import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
+import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -1090,10 +1091,8 @@ open class MainActivity : AppCompatActivity(),
             return
         }
 
-        Intent(Intent.ACTION_SEND).let {
-            it.putExtra(Intent.EXTRA_STREAM, item.uri)
-            it.setDataAndType(item.uri, item.mimeType())
-            startActivity(Intent.createChooser(it, getString(R.string.share_image)))
+        if (!shareCapturedItem(item)) {
+            showMessage(R.string.unable_to_share_media)
         }
     }
 

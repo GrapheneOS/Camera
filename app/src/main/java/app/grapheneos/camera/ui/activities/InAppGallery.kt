@@ -43,6 +43,7 @@ import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
+import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
@@ -518,12 +519,9 @@ class InAppGallery : AppCompatActivity() {
 
         val curItem = getCurrentItem() ?: return
 
-        val share = Intent(Intent.ACTION_SEND)
-        share.putExtra(Intent.EXTRA_STREAM, curItem.uri)
-        share.setDataAndType(curItem.uri, curItem.mimeType())
-        share.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-
-        startActivity(Intent.createChooser(share, getString(R.string.share_image)))
+        if (!shareCapturedItem(curItem)) {
+            showMessage(getString(R.string.unable_to_share_media))
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
