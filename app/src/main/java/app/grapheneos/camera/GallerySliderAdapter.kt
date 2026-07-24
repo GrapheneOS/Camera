@@ -81,7 +81,7 @@ class GallerySliderAdapter(
                         }
 
                         mediaPreview.setOnClickListener {
-                            val curItem = getCurrentItem()
+                            val curItem = getCurrentItem() ?: return@setOnClickListener
                             if (curItem.type == ITEM_TYPE_VIDEO) {
                                 val intent = Intent(gActivity, VideoPlayer::class.java)
                                 intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
@@ -125,8 +125,8 @@ class GallerySliderAdapter(
         notifyItemRemoved(index)
     }
 
-    fun getCurrentItem(): CapturedItem {
-        return items[gActivity.gallerySlider.currentItem]
+    fun getCurrentItem(): CapturedItem? {
+        return items.getOrNull(gActivity.gallerySlider.currentItem)
     }
 
     override fun getItemCount(): Int {
