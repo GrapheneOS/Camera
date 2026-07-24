@@ -9,6 +9,8 @@ import android.util.Log
 import android.widget.FrameLayout
 import android.widget.MediaController
 import android.widget.RelativeLayout
+import android.widget.Toast
+import android.widget.VideoView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -109,9 +111,7 @@ class VideoPlayer : AppCompatActivity() {
             }
 
             mainExecutor.execute {
-                val lifecycleState = lifecycle.currentState
-
-                if (lifecycleState == Lifecycle.State.DESTROYED) {
+                if (lifecycle.currentState == Lifecycle.State.DESTROYED) {
                     return@execute
                 }
 
@@ -121,7 +121,7 @@ class VideoPlayer : AppCompatActivity() {
                 videoView.setOnPreparedListener { _ ->
                     videoView.setMediaController(mediaController)
 
-                    if (lifecycleState == Lifecycle.State.RESUMED) {
+                    if (lifecycle.currentState == Lifecycle.State.RESUMED) {
                         videoView.start()
                     }
 
@@ -129,8 +129,20 @@ class VideoPlayer : AppCompatActivity() {
                     mediaController.show(0)
                 }
 
-                videoView.setVideoURI(uri)
+                playVideo(videoView, uri)
             }
+        }
+    }
+
+    // When the media service dies during setup, VideoView lets prepareAsync()'s
+    // IllegalStateException escape instead of routing it to its error dialog
+    internal fun playVideo(videoView: VideoView, uri: Uri) {
+        try {
+            videoView.setVideoURI(uri)
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "Unable to play video", e)
+            Toast.makeText(applicationContext, R.string.unable_to_play_video, Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 
