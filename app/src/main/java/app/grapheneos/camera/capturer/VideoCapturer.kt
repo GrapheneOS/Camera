@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
@@ -301,6 +302,31 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val dp16 = 16 * mActivity.resources.displayMetrics.density
     private val dp8 = 8 * mActivity.resources.displayMetrics.density
 
+    // Skinned devices wrap the capture button shape in selectors and layer-lists
+    private fun findGradientDrawable(drawable: Drawable?): GradientDrawable? {
+        return when (drawable) {
+            is GradientDrawable -> drawable
+            is StateListDrawable -> findGradientDrawable(drawable.current)
+            is LayerDrawable -> {
+                (0 until drawable.numberOfLayers)
+                    .firstNotNullOfOrNull { findGradientDrawable(drawable.getDrawable(it)) }
+            }
+            else -> null
+        }
+    }
+
+    // If no shape can be dug out, skip the cosmetic animation rather than crash
+    private fun animateCaptureButtonCorners(from: Float, to: Float) {
+        val gd = findGradientDrawable(mActivity.captureButton.drawable) ?: return
+
+        val animator = ValueAnimator.ofFloat(from, to)
+        animator.setDuration(300)
+            .addUpdateListener { animation ->
+                gd.cornerRadius = animation.animatedValue as Float
+            }
+        animator.start()
+    }
+
     private fun beforeRecordingStarts() {
         // Don't leak paused/muted state from the previous recording into this one.
         isPaused = false
@@ -313,25 +339,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // TODO: Uncomment this once the main indicator UI gets implemented
         // mActivity.micOffIcon.visibility = View.GONE
 
-        val drawable = mActivity.captureButton.drawable
-
-        val gd: GradientDrawable = if (drawable is StateListDrawable) {
-            drawable.current as GradientDrawable
-        } else if (drawable is LayerDrawable) {
-            drawable.current as GradientDrawable
-        } else {
-            drawable as GradientDrawable
-        }
-
-        val animator = ValueAnimator.ofFloat(dp16, dp8)
-
-        animator.setDuration(300)
-            .addUpdateListener { animation ->
-                val value = animation.animatedValue as Float
-                gd.cornerRadius = value
-            }
-
-        animator.start()
+        animateCaptureButtonCorners(dp16, dp8)
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
@@ -369,26 +377,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun afterRecordingStops() {
-
-        val drawable = mActivity.captureButton.drawable
-
-        val gd: GradientDrawable = if (drawable is StateListDrawable) {
-            drawable.current as GradientDrawable
-        } else if (drawable is LayerDrawable) {
-            drawable.current as GradientDrawable
-        } else {
-            drawable as GradientDrawable
-        }
-
-        val animator = ValueAnimator.ofFloat(dp8, dp16)
-
-        animator.setDuration(300)
-            .addUpdateListener { animation ->
-                val value = animation.animatedValue as Float
-                gd.cornerRadius = value
-            }
-
-        animator.start()
+        animateCaptureButtonCorners(dp8, dp16)
 
         mActivity.timerView.visibility = View.GONE
         mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)

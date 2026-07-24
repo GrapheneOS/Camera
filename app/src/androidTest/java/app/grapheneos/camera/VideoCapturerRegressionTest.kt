@@ -2,11 +2,18 @@ package app.grapheneos.camera
 
 import android.Manifest
 import android.content.ContentResolver
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
+import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
+import android.util.StateSet
+import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,6 +26,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.math.abs
 
 @RunWith(AndroidJUnit4::class)
 class VideoCapturerRegressionTest {
@@ -182,6 +190,71 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
 
             assertEquals(pendingBefore, pendingVideoCount())
+
+            deleteNewCapture(scenario, capturedBefore)
+        }
+    }
+
+    /**
+     * Regression test for the production crash: skinned devices wrap the capture button shape
+     * in a selector or layer-list, and the corner-radius animation cast the wrapper straight
+     * to GradientDrawable (ClassCastException in onRecordingStart/afterRecordingStops).
+     */
+    @Test
+    fun recordingUiAnimations_unwrapWrappedCaptureButtonDrawable() {
+        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
+            waitUntil(scenario, "video use case is bound") {
+                it.camConfig.camera != null && it.camConfig.videoCapture != null
+            }
+            val capturedBefore = lastCapturedUri(scenario)
+
+            val shape = GradientDrawable()
+            var dp8 = 0f
+            var dp16 = 0f
+            scenario.onActivity { activity ->
+                dp8 = 8 * activity.resources.displayMetrics.density
+                dp16 = 16 * activity.resources.displayMetrics.density
+                val selector = StateListDrawable().apply { addState(StateSet.WILD_CARD, shape) }
+                activity.captureButton.setImageDrawable(LayerDrawable(arrayOf(selector)))
+                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.videoCapturer.startRecording()
+            }
+
+            // The animation reaching the nested shape proves the unwrapping worked.
+            waitUntil(scenario, "corner radius animated to the recording shape") {
+                abs(shape.cornerRadius - dp8) < 0.5f
+            }
+
+            scenario.onActivity { it.videoCapturer.stopRecording() }
+            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            waitUntil(scenario, "corner radius animated back") {
+                abs(shape.cornerRadius - dp16) < 0.5f
+            }
+
+            deleteNewCapture(scenario, capturedBefore)
+        }
+    }
+
+    /** A drawable with no shape inside must skip the animation, not crash the recording. */
+    @Test
+    fun recordingUi_toleratesUnknownCaptureButtonDrawable() {
+        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
+            waitUntil(scenario, "video use case is bound") {
+                it.camConfig.camera != null && it.camConfig.videoCapture != null
+            }
+            val capturedBefore = lastCapturedUri(scenario)
+
+            scenario.onActivity { activity ->
+                activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
+                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.videoCapturer.startRecording()
+            }
+            waitUntil(scenario, "recording UI is shown") {
+                it.timerView.visibility == View.VISIBLE
+            }
+
+            scenario.onActivity { it.videoCapturer.stopRecording() }
+            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
 
             deleteNewCapture(scenario, capturedBefore)
         }
