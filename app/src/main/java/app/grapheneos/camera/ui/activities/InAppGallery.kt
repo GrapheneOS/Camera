@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
@@ -43,6 +42,7 @@ import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
+import app.grapheneos.camera.editCapturedItem
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
@@ -205,23 +205,8 @@ class InAppGallery : AppCompatActivity() {
 
         val curItem = getCurrentItem() ?: return
 
-        val editIntent = Intent(Intent.ACTION_EDIT).apply {
-            setDataAndType(curItem.uri, curItem.mimeType())
-            putExtra(Intent.EXTRA_STREAM, curItem.uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        if (withDefault) {
-            try {
-                startActivity(editIntent)
-            } catch (_: ActivityNotFoundException) {
-                showMessage(getString(R.string.no_editor_app_error))
-            }
-        } else {
-            val chooser = Intent.createChooser(editIntent, getString(R.string.edit_image)).apply {
-                putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE, false)
-            }
-            startActivity(chooser)
+        editCapturedItem(this, curItem, useDefaultEditor = withDefault)?.let {
+            showMessage(getString(it))
         }
     }
 
@@ -519,7 +504,7 @@ class InAppGallery : AppCompatActivity() {
 
         val curItem = getCurrentItem() ?: return
 
-        if (!shareCapturedItem(curItem)) {
+        if (!shareCapturedItem(this, curItem)) {
             showMessage(getString(R.string.unable_to_share_media))
         }
     }
