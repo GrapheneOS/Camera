@@ -16,6 +16,7 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.widget.Button
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -234,7 +235,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var iAnalyzer: ImageAnalysis? = null
 
-    val mPlayer = TunePlayer(mActivity)
+    @set:VisibleForTesting
+    var mPlayer = TunePlayer(mActivity)
 
     // note that Activities which implement SecureActivity interface (meaning they are accessible
     // from the lock screen) are forced to override getSharedPreferences()
