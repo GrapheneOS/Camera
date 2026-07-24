@@ -132,6 +132,7 @@
     <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
     <string name="edit_image">Edit Image</string>
     <string name="share_image">Share Image</string>
+    <string name="unable_to_share_media">Unable to share this file</string>
     <string name="delete">Delete</string>
     <string name="delete_title">Are you sure?</string>
     <string name="deleted_successfully">File deleted successfully</string>
