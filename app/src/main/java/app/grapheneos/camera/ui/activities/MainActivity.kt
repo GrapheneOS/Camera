@@ -1091,7 +1091,7 @@ open class MainActivity : AppCompatActivity(),
             return
         }
 
-        if (!shareCapturedItem(item)) {
+        if (!shareCapturedItem(this, item)) {
             showMessage(R.string.unable_to_share_media)
         }
     }

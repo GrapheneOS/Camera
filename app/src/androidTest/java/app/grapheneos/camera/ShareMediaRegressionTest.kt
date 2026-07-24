@@ -39,7 +39,7 @@ class ShareMediaRegressionTest {
     fun share_whenUriGrantIsDenied_reportsFailureInsteadOfCrashing() {
         val host = OemPreGrantHostActivity().attached()
 
-        assertFalse(host.shareCapturedItem(staleItem))
+        assertFalse(shareCapturedItem(host, staleItem))
     }
 
     @Test
@@ -47,7 +47,7 @@ class ShareMediaRegressionTest {
     fun share_launchesChooserWithItemUri() {
         val host = ChooserRecordingHostActivity().attached()
 
-        assertTrue(host.shareCapturedItem(staleItem))
+        assertTrue(shareCapturedItem(host, staleItem))
 
         val chooser = host.launched
         assertNotNull(chooser)
