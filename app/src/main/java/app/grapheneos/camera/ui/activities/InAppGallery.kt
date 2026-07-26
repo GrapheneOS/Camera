@@ -4,7 +4,6 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.database.Cursor
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -32,6 +31,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.get
+import androidx.core.view.size
 import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.AutoFinishOnSleep
@@ -56,8 +57,6 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.Executors
 import kotlin.properties.Delegates
-import androidx.core.view.size
-import androidx.core.view.get
 
 class InAppGallery : AppCompatActivity() {
 
@@ -78,7 +77,7 @@ class InAppGallery : AppCompatActivity() {
 
     private val autoFinisher = AutoFinishOnSleep(this)
 
-    private var lastViewedMediaItem : CapturedItem? = null
+    private var lastViewedMediaItem: CapturedItem? = null
 
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
@@ -174,10 +173,12 @@ class InAppGallery : AppCompatActivity() {
                 editCurrentMedia()
                 true
             }
+
             R.id.edit_with -> {
                 editCurrentMedia(withDefault = false)
                 true
             }
+
             R.id.delete_icon -> {
                 deleteCurrentMedia()
                 true
@@ -326,11 +327,11 @@ class InAppGallery : AppCompatActivity() {
             }
 
             if (curItem.type == ITEM_TYPE_VIDEO) {
-                MediaMetadataRetriever().use {
-                    it.setDataSource(this, curItem.uri)
+                MediaMetadataRetriever().use { retriever ->
+                    retriever.setDataSource(this, curItem.uri)
                     // Not every container carries a creation date, and one that is missing or
                     // malformed must not take the whole dialog down with it
-                    val date = it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
+                    val date = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
                     if (date != null) {
                         try {
                             dateAdded = convertTimeForVideo(date)
@@ -549,19 +550,24 @@ class InAppGallery : AppCompatActivity() {
             val systemBars =
                 insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
             view.y = -systemBars.bottom.toFloat()
-            snackBar.setAnchorView(view)
+            snackBar.anchorView = view
             insets
         }
 
         if (savedInstanceState != null) {
-            lastViewedMediaItem = BundleCompat.getParcelable(savedInstanceState, LAST_VIEWED_ITEM_KEY, CapturedItem::class.java)
+            lastViewedMediaItem = BundleCompat.getParcelable(
+                savedInstanceState,
+                LAST_VIEWED_ITEM_KEY,
+                CapturedItem::class.java
+            )
         }
 
         val intent = this.intent
 
         val showVideosOnly = intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
         val listOfSecureModeCapturedItems = getParcelableArrayListExtra<CapturedItem>(
-            intent, INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
+            intent, INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS
+        )
 
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
@@ -595,7 +601,8 @@ class InAppGallery : AppCompatActivity() {
         }
 
         if (lastViewedMediaItem == null) {
-            val lastCapturedItem = getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
+            val lastCapturedItem =
+                getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
 
             if (lastCapturedItem != null) {
                 val list = ArrayList<CapturedItem>()
@@ -616,7 +623,8 @@ class InAppGallery : AppCompatActivity() {
         supportActionBar?.setBackgroundDrawable(null)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.shade) { view, insets ->
-            val systemBars = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
+            val systemBars =
+                insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
             val actionBarHeight = resources.getDimensionPixelSize(R.dimen.action_bar_height)
             view.layoutParams =
                 RelativeLayout.LayoutParams(
