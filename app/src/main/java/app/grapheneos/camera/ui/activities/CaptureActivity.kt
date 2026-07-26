@@ -71,8 +71,8 @@ open class CaptureActivity : MainActivity() {
 
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
-        // Remove the modes tab layout as we do not want the user to be able to switch to
-        // another custom mode in this state
+        // Redundant now that no tabs get built here (see shouldShowCameraModeTabs), but kept so a
+        // regression in that override cannot hand the user a mode switcher mid-capture
         tabLayout.visibility = View.INVISIBLE
 
         // Remove the margin so that that the previewView can take some more space
@@ -123,6 +123,12 @@ open class CaptureActivity : MainActivity() {
 
         // Display the activity
     }
+
+    /**
+     * Hiding the strip is not enough on its own: a fling reads the tab model rather than the strip,
+     * so it switched modes here anyway. There is no mode to switch to in a capture session.
+     */
+    override fun shouldShowCameraModeTabs() = false
 
     fun takePicture() {
 

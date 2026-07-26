@@ -1018,8 +1018,10 @@ open class MainActivity : AppCompatActivity(),
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
+            // The strip has to follow the touch even when the mode does not change, so do not
+            // leave this to switchMode(), which returns early for the mode it is already in.
+            tabLayout.selectTab(selectedTab)
             tabLayout.centerTab(selectedTab)
-            tab?.let { tabLayout.centerTab(it) }
             camConfig.switchMode(mode)
             resetAutoSleep()
         }
