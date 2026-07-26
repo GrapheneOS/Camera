@@ -240,6 +240,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
                             }
                             else -> {
                                 ctx.showMessage(ctx.getString(R.string.error_during_recording, event.error))
+                                // The errors left unnamed here (the camera going away, storage
+                                // running out) finalize whatever was written before they hit, which
+                                // is worth keeping — but only if anything was.
+                                if (event.recordingStats.numBytesRecorded == 0L) {
+                                    discardUnusedOutput(recordingCtx)
+                                    return@start
+                                }
                             }
                         }
                     }
