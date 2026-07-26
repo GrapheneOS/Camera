@@ -1054,6 +1054,11 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun shareLatestMedia() {
+        if (this is SecureActivity) {
+            showMessage(R.string.sharing_not_allowed)
+            return
+        }
+
         val item = camConfig.lastCapturedItem
         if (item == null) {
             showMessage(R.string.please_wait_for_image_to_get_captured_before_sharing)
