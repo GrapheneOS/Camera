@@ -2,6 +2,7 @@ package app.grapheneos.camera
 
 import android.Manifest
 import android.content.ContentResolver
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
@@ -19,9 +20,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -225,7 +228,105 @@ class VideoCapturerRegressionTest {
 
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+        }
+    }
 
+    /**
+     * A fling used to rebind the camera out from under a running recorder. VIDEO is the last mode
+     * in the strip, so the reachable direction out of it is the one onSwipeRight() serves; that is
+     * where the guard has to hold.
+     */
+    @Test
+    fun flingWhileRecording_leavesTheRecordingAlone() {
+        // Not recordingTest(): that waits for a bound video use case at launch, and MainActivity
+        // starts in whichever mode was last used -- the switch below is what binds the recorder.
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitModeTabs(scenario)
+
+            scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
+            waitUntil(scenario, "video use case is bound") { it.camConfig.videoCapture != null }
+
+            val capturedBefore = lastCapturedUri(scenario)
+
+            try {
+                scenario.onActivity { activity ->
+                    activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                    activity.videoCapturer.startRecording()
+                }
+                waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+
+                var mode: CameraMode? = null
+                var stillRecording = false
+                scenario.onActivity { activity ->
+                    // Prove the fling reaches a mode it could switch to, so the assertions below
+                    // cannot pass merely because there was nowhere to go.
+                    val tabs = activity.tabLayout
+                    assertNotNull(
+                        "no mode to the right of ${activity.camConfig.currentMode}",
+                        tabs.getTabAt(tabs.selectedTabPosition - 1)
+                    )
+
+                    flingRight(activity)
+                    mode = activity.camConfig.currentMode
+                    stillRecording = activity.videoCapturer.isRecording
+                }
+
+                assertEquals(CameraMode.VIDEO, mode)
+                assertTrue("the recording was cut short", stillRecording)
+            } finally {
+                stopAndDeleteRecording(scenario, capturedBefore)
+            }
+        }
+    }
+
+    /**
+     * The strip is only hidden once a recording really starts, so a tap on it while the start sound
+     * still played rebound the camera and left the queued recording to start on a dead recorder.
+     */
+    @Test
+    fun tappingAModeTabDuringTheDeferredStart_leavesTheModeAlone() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            waitUntil(scenario, "camera is bound") { it.camConfig.camera != null }
+            waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
+
+            scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
+            waitUntil(scenario, "video use case is bound") { it.camConfig.videoCapture != null }
+
+            lateinit var player: ManualTunePlayer
+            var mode: CameraMode? = null
+            var highlighted: CameraMode? = null
+            val capturedBefore = lastCapturedUri(scenario)
+
+            try {
+                scenario.onActivity { activity ->
+                    player = ManualTunePlayer(activity)
+                    activity.camConfig.mPlayer = player
+                    activity.videoCapturer.startRecording()
+                    assertTrue(activity.videoCapturer.isRecording)
+
+                    val cameraTab = activity.tabLayout.getTabForMode(CameraMode.CAMERA)
+                    assertNotNull("no CAMERA tab to tap", cameraTab)
+
+                    // What both of the strip's touch listeners do with a tap
+                    activity.finalizeMode(cameraTab)
+
+                    mode = activity.camConfig.currentMode
+                    highlighted = activity.tabLayout.selectedTab?.tag as CameraMode?
+                }
+
+                // Abandon the queued start rather than record for real: the damage is done or not
+                // by now, and a cancelled start leaves nothing behind to clean up.
+                scenario.onActivity { activity ->
+                    activity.videoCapturer.stopRecording()
+                    player.deferred!!.run()
+                    assertFalse(activity.videoCapturer.isRecording)
+                }
+
+                assertEquals(CameraMode.VIDEO, mode)
+                assertEquals(CameraMode.VIDEO, highlighted)
+            } finally {
+                stopAndDeleteRecording(scenario, capturedBefore)
+            }
         }
     }
 
@@ -268,6 +369,10 @@ class VideoCapturerRegressionTest {
         }
         runCatching { deleteNewCapture(scenario, capturedBefore) }
     }
+
+    private val targetContext
+        get() = InstrumentationRegistry.getInstrumentation().targetContext
+
     /** Pending entries are how in-flight and orphaned outputs appear in MediaStore. */
     private fun pendingVideoCount(): Int {
         val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver

@@ -1015,6 +1015,17 @@ open class MainActivity : AppCompatActivity(),
 
     fun finalizeMode(tab: TabLayout.Tab? = null) {
 
+        // The strip is untouchable during a recording but not while its start sound still plays, and
+        // rebinding the camera there starts the queued recording on a dead recorder. The touch may
+        // already have dragged the strip, so put it back on the mode the camera is really in.
+        if (videoCapturer.isRecording) {
+            tabLayout.getTabForMode(camConfig.currentMode)?.let {
+                tabLayout.selectTab(it)
+                tabLayout.centerTab(it)
+            }
+            return
+        }
+
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
@@ -1419,7 +1430,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeLeft() {
-        if (isZooming || cdTimer.isRunning) return
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording) return
 
         if (this is VideoOnlyActivity) return
 
