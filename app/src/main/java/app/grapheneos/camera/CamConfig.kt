@@ -298,7 +298,8 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-    private var currentMode: CameraMode = DEFAULT_CAMERA_MODE
+    var currentMode: CameraMode = DEFAULT_CAMERA_MODE
+        private set
 
     var aspectRatio: Int
         get() {
@@ -1709,23 +1710,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
             // The bind never completed: currentMode still names the mode that was just disabled
             // and nothing is rendering into the preview. Refreshing the tabs alone would only
-            // *visually* select the default tab, leaving a frozen preview behind a lying tab
-            // bar. Switch for real -- switchMode() rebinds and its startCamera() refreshes the
-            // tabs -- and then align the visible selection for the case where the failed mode
-            // survives on the other lens, which keeps availableModes() unchanged so loadTabs()
-            // rebuilds nothing. Recursion stops because the default mode uses no extension.
+            // *visually* select another tab, leaving a frozen preview behind a lying tab bar.
+            // Switch for real -- switchMode() rebinds, moves the highlight and refreshes the tabs.
+            // Recursion stops because the default mode uses no extension.
             switchMode(DEFAULT_CAMERA_MODE)
-            if (mActivity.shouldShowCameraModeTabs()) {
-                val tabLayout = mActivity.tabLayout
-                for (i in 0 until tabLayout.tabCount) {
-                    val tab = tabLayout.getTabAt(i) ?: continue
-                    if (tab.tag == DEFAULT_CAMERA_MODE) {
-                        tabLayout.selectTab(tab)
-                        tabLayout.centerTab(tab)
-                        break
-                    }
-                }
-            }
             return
         }
 
@@ -1948,7 +1936,9 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
                 tab.tag = mode
 
-                tabLayout.addTab(tab, mode == DEFAULT_CAMERA_MODE)
+                // Highlight the mode the camera is really in, not the default one: the tabs are
+                // also rebuilt long after startup, once the extension probes report back.
+                tabLayout.addTab(tab, mode == currentMode)
             }
         }
     }
@@ -1959,6 +1949,15 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         currentMode = mode
+
+        // The strip highlights whatever the user last touched, but a mode can also change without
+        // a touch: keep the highlight on the mode the camera is actually in.
+        if (mActivity.shouldShowCameraModeTabs()) {
+            mActivity.tabLayout.getTabForMode(mode)?.let { tab ->
+                mActivity.tabLayout.selectTab(tab)
+                mActivity.tabLayout.centerTab(tab)
+            }
+        }
 
         mActivity.cancelFocusTimer()
 

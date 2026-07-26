@@ -21,6 +21,17 @@ class BottomTabLayout @JvmOverloads constructor(
             return getTabAt(selectedTabPosition)
         }
 
+    fun getTabForMode(mode: CameraMode): Tab? {
+        for (index in 0 until tabCount) {
+            val tab = getTabAt(index)
+            if (tab?.tag == mode) {
+                return tab
+            }
+        }
+
+        return null
+    }
+
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
 
