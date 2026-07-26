@@ -44,6 +44,7 @@ import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
+import androidx.camera.video.internal.muxer.MediaMuxerImpl
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.markAs16by9Layout
@@ -1501,6 +1502,13 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
 
                 val recorderBuilder = Recorder.Builder()
+
+                // camera-video 1.6 writes mp4 through the media3 muxer, which cannot keep up with
+                // 2160p on a Tensor device: the audio queue overflows a few seconds in and stop
+                // then has to drain everything the muxer is behind by. The platform muxer, which
+                // is what every release up to 1.5 used, keeps up. Both live in an internal
+                // package, so this has to be re-checked on every camera-video upgrade.
+                recorderBuilder.setMuxerFactory { MediaMuxerImpl() }
 
                 if (!usesFeatureGroup) {
                     recorderBuilder.setQualitySelector(QualitySelector.from(videoQuality))
