@@ -38,6 +38,7 @@ import androidx.camera.video.Recorder
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.ViewCompat
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
@@ -197,12 +198,13 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         aRToggle = binding.aspectRatioToggle
         aRToggle.setOnClickListener {
             if (camConfig.isVideoMode) {
-                aRToggle.isChecked = true
+                updateAspectRatioToggle(is16by9 = true)
                 mActivity.showMessage(
                     getString(R.string.four_by_three_unsupported_in_video)
                 )
             } else {
                 camConfig.toggleAspectRatio()
+                updateAspectRatioToggle(camConfig.aspectRatio == AspectRatio.RATIO_16_9)
             }
         }
 
@@ -783,6 +785,16 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         flashToggle.contentDescription = mActivity.getString(description)
     }
 
+    /**
+     * The ratio itself is the toggle's on/off text, which its content description hides from
+     * accessibility services: announce it as the toggle's state instead.
+     */
+    private fun updateAspectRatioToggle(is16by9: Boolean) {
+        aRToggle.isChecked = is16by9
+        val ratio = if (is16by9) R.string.aspect_ratio_16_9 else R.string.aspect_ratio_4_3
+        ViewCompat.setStateDescription(aRToggle, mActivity.getString(ratio))
+    }
+
     override fun show() {
 
         this.resize()
@@ -790,9 +802,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         updateFlashMode()
 
         if (camConfig.isVideoMode) {
-            aRToggle.isChecked = true
+            updateAspectRatioToggle(is16by9 = true)
         } else {
-            aRToggle.isChecked = camConfig.aspectRatio == AspectRatio.RATIO_16_9
+            updateAspectRatioToggle(camConfig.aspectRatio == AspectRatio.RATIO_16_9)
         }
 
         torchToggle.isChecked = camConfig.isTorchOn
