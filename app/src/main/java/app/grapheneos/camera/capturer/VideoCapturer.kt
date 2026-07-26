@@ -34,6 +34,7 @@ import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.text.SimpleDateFormat
@@ -76,18 +77,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val handler = Handler(Looper.getMainLooper())
 
     private fun updateTimerTime(timeInNanos: Long) {
-        val timeInSec = timeInNanos / (1000 * 1000 * 1000)
-        val sec = timeInSec % 60
-        val min = timeInSec / 60 % 60
-        val hour = timeInSec / 3600
-
-        val timerText: String = if (hour == 0L) {
-            String.format(Locale.ROOT, "%02d:%02d", min, sec)
-        } else {
-            String.format(Locale.ROOT, "%02d:%02d:%02d", hour, min, sec)
-        }
-
-        mActivity.timerView.text = timerText
+        mActivity.timerView.text = formatVideoDuration(timeInNanos / 1_000_000_000)
     }
 
     private class RecordingContext(

@@ -14,6 +14,7 @@ import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.PrintStream
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.RejectedExecutionException
 
@@ -21,6 +22,19 @@ fun Throwable.printStackTraceToString(): String {
     val baos = ByteArrayOutputStream(1000)
     this.printStackTrace(PrintStream(baos));
     return baos.toString()
+}
+
+/** Video length as mm:ss, widening to hh:mm:ss only once there is an hour to show. */
+fun formatVideoDuration(totalSeconds: Long): String {
+    val seconds = totalSeconds % 60
+    val minutes = totalSeconds / 60 % 60
+    val hours = totalSeconds / 3600
+
+    return if (hours == 0L) {
+        String.format(Locale.ROOT, "%02d:%02d", minutes, seconds)
+    } else {
+        String.format(Locale.ROOT, "%02d:%02d:%02d", hours, minutes, seconds)
+    }
 }
 
 fun getTreeDocumentUri(treeUri: Uri): Uri {
