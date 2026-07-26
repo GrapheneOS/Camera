@@ -4993,7 +4993,7 @@ public class ExifInterface {
     public void saveAttributes(InputStream original, OutputStream out) throws IOException {
         if (!isSupportedFormatForSavingAttributes(mMimeType)) {
             throw new IOException("ExifInterface only supports saving attributes for JPEG, PNG, "
-                    + "and DNG formats.");
+                    + "and WebP formats.");
         }
 
         if (mHasThumbnail && mHasThumbnailStrips && !mAreThumbnailStripsConsecutive) {
