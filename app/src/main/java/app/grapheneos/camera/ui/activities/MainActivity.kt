@@ -24,7 +24,6 @@ import android.provider.Settings
 import android.text.util.Linkify
 import android.util.Log
 import android.view.GestureDetector
-import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -153,7 +152,6 @@ open class MainActivity : AppCompatActivity(),
     lateinit var captureButton: ImageButton
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
-    private lateinit var dbTapGestureDetector: GestureDetector
     lateinit var timerView: TextView
     lateinit var thirdOption: View
     lateinit var imagePreview: ShapeableImageView
@@ -613,27 +611,6 @@ open class MainActivity : AppCompatActivity(),
         previewContainer = binding.previewContainer
         bottomOverlay = binding.bottomOverlay
         scaleGestureDetector = ScaleGestureDetector(this, this)
-        dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                Log.i(TAG, "===============Double tap detected.=========")
-//                val zoomState = config.camera!!.cameraInfo.zoomState.value
-//                if (zoomState != null) {
-//                    val start = zoomState.linearZoom
-//                    var end = start * 1.5f
-//                    if (end < 0.25f) end = 0.25f else if (end > zoomState.maxZoomRatio) end =
-//                        zoomState.maxZoomRatio
-//                    val animator = ValueAnimator.ofFloat(start, end)
-//                    animator.duration = 300
-//                    animator.addUpdateListener { valueAnimator: ValueAnimator ->
-//                        config.camera!!.cameraControl.setLinearZoom(
-//                            valueAnimator.animatedValue as Float
-//                        )
-//                    }
-//                    animator.start()
-//                }
-                return super.onDoubleTap(e)
-            }
-        })
 
         tabLayout = binding.cameraModeTabs
 
@@ -787,38 +764,6 @@ open class MainActivity : AppCompatActivity(),
         }
 
         cancelButtonView = binding.cancelButton
-//        cancelButtonView.setOnClickListener(object : View.OnClickListener {
-//
-//            val SWITCH_ANIM_DURATION = 150
-//            override fun onClick(v: View) {
-//
-//                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
-//                config.switchCameraMode()
-//                val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
-//                val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
-//                oa1.interpolator = DecelerateInterpolator()
-//                oa2.interpolator = AccelerateDecelerateInterpolator()
-//                oa1.duration = SWITCH_ANIM_DURATION.toLong()
-//                oa2.duration = SWITCH_ANIM_DURATION.toLong()
-//                oa1.addListener(object : AnimatorListenerAdapter() {
-//                    override fun onAnimationEnd(animation: Animator) {
-//                        super.onAnimationEnd(animation)
-//                        cancelButtonView.setImageResource(imgID)
-//                        oa2.start()
-//                    }
-//                })
-//                oa1.start()
-//                if (config.isVideoMode) {
-//                    captureButton.setImageResource(R.drawable.recording)
-//                    cbText.visibility = View.INVISIBLE
-//                } else {
-//                    captureButton.setImageResource(R.drawable.camera_shutter)
-//                    if (timerDuration != 0) {
-//                        cbText.visibility = View.VISIBLE
-//                    }
-//                }
-//            }
-//        })
 
         zoomBar = binding.zoomBar
         zoomBar.setMainActivity(this)
@@ -1229,13 +1174,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-//    private val fTHandler : Handler = Handler(Looper.getMainLooper())
-//    private val fTRunnable : Runnable = Runnable {
-//        config.mPlayer.playFocusCompleteSound()
-//    }
-
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        dbTapGestureDetector.onTouchEvent(event)
         scaleGestureDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
 
@@ -1270,8 +1209,6 @@ open class MainActivity : AppCompatActivity(),
                 focusBuilder.disableAutoCancel()
             } else {
                 focusBuilder.setAutoCancelDuration(camConfig.focusTimeout, TimeUnit.SECONDS)
-//                fTHandler.removeCallbacks(fTRunnable)
-//                fTHandler.postDelayed(fTRunnable, focusTimeout * 1000)
             }
 
             camConfig.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
