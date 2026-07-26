@@ -17,6 +17,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.StringRes
 import app.grapheneos.camera.CamConfig.SettingValues
+import app.grapheneos.camera.util.EphemeralSharedPrefs
 import app.grapheneos.camera.util.edit
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -172,6 +173,65 @@ object CapturedItems {
                 remove(legacyPrefKey)
             }
         }
+
+        releaseUntrackedSafTrees(ctx, prefs)
+    }
+
+    // A directory the user picks as the storage location is granted to us persistably, which lasts
+    // until we release it or the app is uninstalled. Trees drop off the tracked list once the user
+    // has picked enough different directories to push one past
+    // MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES, and the grant used to stay behind, leaving the app
+    // with indefinite read/write access to a folder it no longer has any use for. Reconcile the two.
+    fun releaseUntrackedSafTrees(ctx: Context, prefs: SharedPreferences) {
+        // A secure session reads a throwaway copy of the preferences, so the tracked list it sees is
+        // not the durable one and must never drive a durable revoke.
+        if (prefs is EphemeralSharedPrefs) {
+            return
+        }
+
+        val tracked = getSafTrees(prefs)
+        val resolver = ctx.contentResolver
+
+        resolver.persistedUriPermissions.forEach { permission ->
+            val uri = permission.uri
+            val flags = safTreeFlagsToRelease(
+                uri, permission.isReadPermission, permission.isWritePermission, tracked
+            )
+            if (flags == 0) {
+                return@forEach
+            }
+
+            try {
+                resolver.releasePersistableUriPermission(uri, flags)
+            } catch (e: Exception) {
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "unable to release the grant for $uri", e)
+                }
+            }
+        }
+    }
+
+    // Split out of the loop above so that the decision can be tested: an app cannot construct the
+    // UriPermission the loop reads it from.
+    internal fun safTreeFlagsToRelease(
+        uri: Uri, isRead: Boolean, isWrite: Boolean, tracked: Collection<Uri>
+    ): Int {
+        // Storage locations are the only tree grants this app takes; anything else persisted here
+        // belongs to a different feature and is none of our business.
+        if (!DocumentsContract.isTreeUri(uri) || tracked.contains(uri)) {
+            return 0
+        }
+
+        var flags = 0
+        if (isRead) {
+            flags = flags or Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }
+
+        if (isWrite) {
+            flags = flags or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        }
+
+        return flags
     }
 
     @Throws(InterruptedException::class)

@@ -524,6 +524,11 @@ class CamConfig(private val mActivity: MainActivity) {
             val editor = commonPref.edit()
             editor.putString(SettingValues.Key.STORAGE_LOCATION, value)
             editor.apply()
+
+            // Strictly after the write: the tree being picked only becomes tracked once it is the
+            // stored location, and re-picking a tree that savePreviousSafTree() just pushed off the
+            // tail of the tracked list would otherwise have its grant revoked out from under it.
+            CapturedItems.releaseUntrackedSafTrees(mActivity, commonPref)
         }
 
     var photoQuality: Int
