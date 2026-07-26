@@ -125,8 +125,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
 
-            // const val IMAGE_FILE_FORMAT = "image_quality"
-            // const val VIDEO_FILE_FORMAT = "video_quality"
         }
 
         object Default {
@@ -172,8 +170,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = false
 
-            // const val IMAGE_FILE_FORMAT = ""
-            // const val VIDEO_FILE_FORMAT = ""
         }
     }
 
@@ -618,38 +614,6 @@ class CamConfig(private val mActivity: MainActivity) {
         get() {
             return mActivity is CaptureActivity
         }
-
-//    var imageFormat : String
-//        get() {
-//            return commonPref.getString(
-//                SettingValues.Key.IMAGE_FILE_FORMAT,
-//                SettingValues.Default.IMAGE_FILE_FORMAT
-//            )!!
-//        }
-//        set(value) {
-//            val editor = commonPref.edit()
-//            editor.putString(
-//                SettingValues.Key.IMAGE_FILE_FORMAT,
-//                value
-//            )
-//            editor.apply()
-//        }
-//
-//    var videoFormat : String
-//        get() {
-//            return commonPref.getString(
-//                SettingValues.Key.VIDEO_FILE_FORMAT,
-//                SettingValues.Default.VIDEO_FILE_FORMAT
-//            )!!
-//        }
-//        set(value) {
-//            val editor = commonPref.edit()
-//            editor.putString(
-//                SettingValues.Key.VIDEO_FILE_FORMAT,
-//                value
-//            )
-//            editor.apply()
-//        }
 
     private fun saveLastCapturedItem(item: CapturedItem, editor: SharedPreferences.Editor) {
         editor.putInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, item.type)
