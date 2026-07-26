@@ -113,19 +113,22 @@ class CapturedItem(
 
 // Some OEM builds grant the shared uri to the target inside startActivity(), which throws a
 // SecurityException when this app has itself lost access to the item (e.g. it was deleted
-// externally, or its persisted uri came from a restored backup)
-internal fun shareCapturedItem(activity: Activity, item: CapturedItem): Boolean {
+// externally, or its persisted uri came from a restored backup). Returns the error message to
+// show, or null on success
+@StringRes
+internal fun shareCapturedItem(activity: Activity, item: CapturedItem): Int? {
     val intent = Intent(Intent.ACTION_SEND).apply {
         putExtra(Intent.EXTRA_STREAM, item.uri)
         setDataAndType(item.uri, item.mimeType())
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
+
     return try {
         activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.share_image)))
-        true
+        null
     } catch (e: SecurityException) {
         Log.e(CapturedItems.TAG, "unable to share ${item.uiName()}", e)
-        false
+        R.string.unable_to_share_media
     }
 }
 

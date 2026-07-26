@@ -71,9 +71,9 @@ import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
-import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.ktx.SystemSettingsObserver
@@ -1060,9 +1060,7 @@ open class MainActivity : AppCompatActivity(),
             return
         }
 
-        if (!shareCapturedItem(this, item)) {
-            showMessage(R.string.unable_to_share_media)
-        }
+        shareCapturedItem(this, item)?.let { showMessage(it) }
     }
 
     open fun bytesToHex(bytes: ByteArray): String {
