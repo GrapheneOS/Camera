@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.ViewGroup
 import app.grapheneos.camera.CameraMode
 import com.google.android.material.tabs.TabLayout
@@ -13,6 +14,8 @@ class BottomTabLayout @JvmOverloads constructor(
     private var sp = 0
 
     private val snapPoints: ArrayList<Int> = arrayListOf()
+
+    private var isDragging = false
 
     private lateinit var tabParent: ViewGroup
 
@@ -30,6 +33,16 @@ class BottomTabLayout @JvmOverloads constructor(
         }
 
         return null
+    }
+
+    // Called for every event dispatched to the strip, tabs included, so this sees the whole gesture
+    // even once a tab's own view has taken the touch.
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        when (ev.action) {
+            MotionEvent.ACTION_MOVE -> isDragging = true
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> isDragging = false
+        }
+        return super.onInterceptTouchEvent(ev)
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
@@ -70,6 +83,15 @@ class BottomTabLayout @JvmOverloads constructor(
         // snapPoints is empty until the first layout pass, and goes stale when the tab set is
         // rebuilt, so an index taken from it may no longer name a tab.
         if (snapPoints.isEmpty() || snapPoints.last() == 0) {
+            return
+        }
+
+        // Only a finger on the strip picks a mode this way. Centering a tab animates the scroll
+        // position through the snap ranges of every tab in between, and switching mode blocks the
+        // main thread for long enough that those frames arrive after the switch -- the first of them
+        // still at the tab the animation started from, which would drag the highlight back onto the
+        // mode the camera just left.
+        if (!isDragging) {
             return
         }
 
