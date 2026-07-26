@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui
 import android.content.Context
 import android.util.AttributeSet
 import android.view.ViewGroup
-import androidx.core.view.ViewCompat
 import app.grapheneos.camera.CameraMode
 import com.google.android.material.tabs.TabLayout
 
@@ -57,27 +56,31 @@ class BottomTabLayout @JvmOverloads constructor(
     override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
         super.onScrollChanged(x, y, oldX, oldY)
 
-        if (snapPoints.last() != 0) {
+        // snapPoints is empty until the first layout pass, and goes stale when the tab set is
+        // rebuilt, so an index taken from it may no longer name a tab.
+        if (snapPoints.isEmpty() || snapPoints.last() == 0) {
+            return
+        }
 
-            for (i in 0 until snapPoints.size step 2) {
+        for (i in snapPoints.indices step 2) {
 
-                val start = snapPoints[i]
-                val end = snapPoints[i + 1]
+            val start = snapPoints[i]
+            val end = snapPoints[i + 1]
 
-                if (x in start..end) {
-                    val index = i / 2
-                    if (selectedTabPosition != index) {
-                        return selectTab(getTabAt(index))
-                    }
+            if (x in start..end) {
+                val index = i / 2
+                val tab = getTabAt(index) ?: return
+                if (selectedTabPosition != index) {
+                    selectTab(tab)
                 }
-
+                return
             }
+
         }
     }
 
     fun getTabAtX(x: Int): Tab? {
-        for (i in 0 until snapPoints.size step 2) {
-
+        for (i in snapPoints.indices step 2) {
             val start = snapPoints[i]
             val end = snapPoints[i + 1]
 
@@ -89,6 +92,7 @@ class BottomTabLayout @JvmOverloads constructor(
             }
 
         }
+
         return null
     }
 
