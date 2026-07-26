@@ -43,6 +43,9 @@ class GallerySliderAdapter(
         mediaPreview.setGalleryActivity(gActivity)
         mediaPreview.disableZooming()
         mediaPreview.setOnClickListener(null)
+        // Clearing the listener leaves behind the clickability the last item bound here needed
+        mediaPreview.isClickable = false
+        mediaPreview.contentDescription = gActivity.getString(R.string.preview)
         mediaPreview.visibility = View.INVISIBLE
         mediaPreview.setImageBitmap(null)
 
@@ -76,19 +79,25 @@ class GallerySliderAdapter(
 
                         if (item.type == ITEM_TYPE_VIDEO) {
                             playButton.visibility = View.VISIBLE
+                            // Tapping the preview is what opens the player; the button drawn over
+                            // it is only the affordance, so the preview carries the label
+                            mediaPreview.contentDescription =
+                                gActivity.getString(R.string.play_video)
+
+                            mediaPreview.setOnClickListener {
+                                val curItem = getCurrentItem() ?: return@setOnClickListener
+                                if (curItem.type == ITEM_TYPE_VIDEO) {
+                                    val intent = Intent(gActivity, VideoPlayer::class.java)
+                                    intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
+                                    intent.putExtra(
+                                        VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode
+                                    )
+
+                                    gActivity.startActivity(intent)
+                                }
+                            }
                         } else if (item.type == ITEM_TYPE_IMAGE) {
                             mediaPreview.enableZooming()
-                        }
-
-                        mediaPreview.setOnClickListener {
-                            val curItem = getCurrentItem() ?: return@setOnClickListener
-                            if (curItem.type == ITEM_TYPE_VIDEO) {
-                                val intent = Intent(gActivity, VideoPlayer::class.java)
-                                intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
-                                intent.putExtra(VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode)
-
-                                gActivity.startActivity(intent)
-                            }
                         }
                     } else  {
                         mediaPreview.visibility = View.INVISIBLE
