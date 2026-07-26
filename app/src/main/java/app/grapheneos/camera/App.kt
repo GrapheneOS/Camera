@@ -11,9 +11,11 @@ import android.os.CountDownTimer
 import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
+import app.grapheneos.camera.capturer.deleteStalePendingRecordings
 import app.grapheneos.camera.ktx.isSystemApp
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
+import kotlin.concurrent.thread
 
 class App : Application() {
 
@@ -114,6 +116,10 @@ class App : Application() {
         super.onCreate()
         registerActivityLifecycleCallbacks(activityLifeCycleHelper)
         DynamicColors.applyToActivitiesIfAvailable(this)
+
+        thread {
+            deleteStalePendingRecordings(this)
+        }
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_COARSE_LOCATION])

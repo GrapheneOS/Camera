@@ -17,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -458,6 +459,34 @@ class VideoCapturer(private val mActivity: MainActivity) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+}
+
+private const val STALE_PENDING_RECORDING_AGE = 60 * 60 * 1000L
+
+// A recording that dies with its process (swipe-away from Recents, OOM kill, crash) never reaches
+// the Finalize callback that clears IS_PENDING, so it leaves a half-written file that is invisible
+// to the user until MediaProvider expires it a week later, and unplayable in the meantime since it
+// has no moov atom. Deleting is the honest outcome. Pending rows are only visible to the app that
+// owns them, so this can never reach another app's in-flight write, and the age cutoff keeps it
+// clear of a recording that is still being muxed.
+fun deleteStalePendingRecordings(
+    context: Context,
+    maxAge: Long = STALE_PENDING_RECORDING_AGE,
+) {
+    val selection = "${MediaColumns.IS_PENDING} = 1" +
+            " AND ${MediaColumns.DISPLAY_NAME} LIKE ?" +
+            " AND ${MediaColumns.DATE_ADDED} < ?"
+    val cutoffSeconds = (System.currentTimeMillis() - maxAge) / 1000L
+    val args = arrayOf("$VIDEO_NAME_PREFIX%", cutoffSeconds.toString())
+
+    try {
+        // Pending rows are filtered out of every operation unless they are explicitly asked for.
+        @Suppress("DEPRECATION")
+        val collection = MediaStore.setIncludePending(CamConfig.videoCollectionUri)
+        context.contentResolver.delete(collection, selection, args)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 

@@ -2,6 +2,7 @@ package app.grapheneos.camera
 
 import android.Manifest
 import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -19,6 +20,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import app.grapheneos.camera.capturer.deleteStalePendingRecordings
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
@@ -232,6 +234,34 @@ class VideoCapturerRegressionTest {
     }
 
     /**
+     * A recording killed with the process leaves its output entry pending forever, holding the name
+     * and the space. Nothing used to clean those up.
+     */
+    @Test
+    fun stalePendingRecordings_areReaped() {
+        val uri = insertPendingRecording()
+        try {
+            // A cutoff in the future stands in for an entry old enough to be an orphan
+            deleteStalePendingRecordings(targetContext, maxAge = -2000L)
+            assertFalse(pendingRecordingExists(uri))
+        } finally {
+            deletePendingRecording(uri)
+        }
+    }
+
+    /** An in-flight recording is pending too, and reaping one would throw away the capture. */
+    @Test
+    fun freshPendingRecordings_surviveTheReaper() {
+        val uri = insertPendingRecording()
+        try {
+            deleteStalePendingRecordings(targetContext)
+            assertTrue(pendingRecordingExists(uri))
+        } finally {
+            deletePendingRecording(uri)
+        }
+    }
+
+    /**
      * A fling used to rebind the camera out from under a running recorder. VIDEO is the last mode
      * in the strip, so the reachable direction out of it is the one onSwipeRight() serves; that is
      * where the guard has to hold.
@@ -372,6 +402,30 @@ class VideoCapturerRegressionTest {
 
     private val targetContext
         get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    private fun insertPendingRecording(): Uri {
+        val values = ContentValues().apply {
+            put(MediaColumns.DISPLAY_NAME, "${VIDEO_NAME_PREFIX}20260724_153012_stale.mp4")
+            put(MediaColumns.MIME_TYPE, "video/mp4")
+            put(MediaColumns.IS_PENDING, 1)
+        }
+        return targetContext.contentResolver.insert(CamConfig.videoCollectionUri, values)!!
+    }
+
+    /** Deleting an entry the reaper already took throws, so only clean up what is still there. */
+    private fun deletePendingRecording(uri: Uri) {
+        if (pendingRecordingExists(uri)) {
+            targetContext.contentResolver.delete(uri, null, null)
+        }
+    }
+
+    private fun pendingRecordingExists(uri: Uri): Boolean {
+        @Suppress("DEPRECATION")
+        val pendingUri = MediaStore.setIncludePending(uri)
+        return targetContext.contentResolver
+            .query(pendingUri, arrayOf(MediaColumns._ID), null, null, null)
+            ?.use { it.count == 1 } ?: false
+    }
 
     /** Pending entries are how in-flight and orphaned outputs appear in MediaStore. */
     private fun pendingVideoCount(): Int {
