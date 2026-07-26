@@ -209,6 +209,16 @@ class CamConfig(private val mActivity: MainActivity) {
         val REAR_CAMERA_SELECTOR = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
+
+        // Whether a vendor extension is usable, keyed by lens facing and extension mode (see
+        // probeExtension). A verdict describes the device rather than any one activity and costs
+        // binder round trips to reach, so it is kept for the process: every lock screen launch used
+        // to re-probe what the session underneath it had already answered.
+        private val extensionUsability = HashMap<Pair<Int, Int>, Boolean>()
+
+        // The provider the verdicts above were probed through. A different instance means the
+        // camera stack was reinitialized and none of them describe it any more.
+        private var probedCameraProvider: ProcessCameraProvider? = null
     }
 
     var camera: Camera? = null
@@ -1044,11 +1054,12 @@ class CamConfig(private val mActivity: MainActivity) {
                 return
             }
 
-            if (provider !== cameraProvider) {
+            if (provider !== probedCameraProvider) {
                 // A different provider instance means the camera stack was reinitialized:
                 // extension verdicts probed through the previous instance (including bind-time
                 // blacklists, see startCamera) describe vendor state that no longer exists.
                 extensionUsability.clear()
+                probedCameraProvider = provider
             }
             cameraProvider = provider
 
@@ -1108,18 +1119,17 @@ class CamConfig(private val mActivity: MainActivity) {
     // only safe option is to stop offering the mode.
     //
     // getCameraInfo() performs exactly the same vendor init that bindToLifecycle() does, so it is
-    // a faithful probe. Verdicts are cached because every step of the probe -- including the
-    // availability query, see probeExtension -- costs a binder round trip. A negative verdict is
-    // only cached when the failure is known to be persistent: caching a transient probe failure
-    // would make the mode's tab vanish for the rest of the process lifetime over a condition
-    // that clears seconds later.
+    // a faithful probe. Verdicts are cached (extensionUsability) because every step of the probe
+    // -- including the availability query, see probeExtension -- costs a binder round trip. A
+    // negative verdict is only cached when the failure is known to be persistent: caching a
+    // transient probe failure would make the mode's tab vanish for the rest of the process
+    // lifetime over a condition that clears seconds later.
     //
-    // The cache is read and written on the main thread only. probeExtension() itself also runs
-    // on the probe thread that loadTabs() spawns, but its results come back through the main
-    // executor, which keeps the provider-change invalidation in initializeCamera() and these
-    // writes free of cross-thread races.
-    private val extensionUsability = HashMap<Pair<Int, Int>, Boolean>()
-
+    // The cache is read and written on the main thread only, which is also what keeps the two
+    // activities that can share it (a secure session over a running one) from racing each other.
+    // probeExtension() itself also runs on the probe thread that loadTabs() spawns, but its
+    // results come back through the main executor.
+    //
     // true/false is a verdict that is safe to cache; null is a failure that may be transient
     // and must not be (see extensionUsability above). The provider and manager are parameters
     // rather than the fields because this also runs off the main thread, where the fields could
@@ -1904,7 +1914,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 extensionProbesInFlight = false
                 if (mActivity.isDestroyed || mActivity.isFinishing) return@execute
 
-                if (cameraProvider !== provider) {
+                if (probedCameraProvider !== provider) {
                     // The camera stack was reinitialized while probing: these verdicts describe
                     // vendor state that no longer exists (the same reasoning as the cache clear
                     // in initializeCamera). Any refresh that ran for the new provider found this
