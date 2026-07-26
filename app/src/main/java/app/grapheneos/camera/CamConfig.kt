@@ -651,8 +651,13 @@ class CamConfig(private val mActivity: MainActivity) {
         }
         set(value) {
             mActivity.locationCamConfigChanged(value)
-            modePref.edit {
-                putBoolean(SettingValues.Key.GEO_TAGGING, value)
+
+            // A permission result is delivered before the first onResume of an activity the system
+            // recreated, so this can run before startCamera() has picked the prefs for a mode
+            if (::modePref.isInitialized) {
+                modePref.edit {
+                    putBoolean(SettingValues.Key.GEO_TAGGING, value)
+                }
             }
 
             mActivity.settingsDialog.locToggle.isChecked = value
@@ -734,10 +739,14 @@ class CamConfig(private val mActivity: MainActivity) {
             SettingValues.Default.FLASH_MODE
         )
 
+        // A stored "on" is written before a permission request resolves, and it outlives a later
+        // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
+        // startup that the user never asked for. Coercing it here settles the stale value through
+        // the setter, and leaves every dialog in the app originating from an explicit toggle.
         requireLocation = modePref.getBoolean(
             SettingValues.Key.GEO_TAGGING,
             SettingValues.Default.GEO_TAGGING
-        )
+        ) && !(mActivity.applicationContext as App).shouldAskForLocationPermission()
 
         selfIlluminate = modePref.getBoolean(
             SettingValues.Key.SELF_ILLUMINATION,

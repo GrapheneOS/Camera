@@ -1701,7 +1701,11 @@ open class MainActivity : AppCompatActivity(),
     private val enableLocationLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        requestLocation(application.isAnyLocationProvideActive())
+        // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
+        // mode this returns to
+        if (camConfig.requireLocation) {
+            requestLocation(application.isAnyLocationProvideActive())
+        }
     }
 
     // Used to request permission from the user
