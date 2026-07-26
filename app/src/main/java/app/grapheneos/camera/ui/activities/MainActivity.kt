@@ -1587,7 +1587,7 @@ open class MainActivity : AppCompatActivity(),
         val zAngle = zDegrees
 
         // If we are in photo mode and the countdown timer isn't running
-        if (!(camConfig.isVideoMode || camConfig.isVideoMode || cdTimer.isRunning)) {
+        if (!(camConfig.isQRMode || camConfig.isVideoMode || cdTimer.isRunning)) {
 
             if (gCircle.rotation != xAngle) {
                 gCircle.rotation = xAngle
