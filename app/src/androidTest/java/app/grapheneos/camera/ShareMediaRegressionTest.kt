@@ -9,8 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.util.getParcelableExtra
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +39,7 @@ class ShareMediaRegressionTest {
     fun share_whenUriGrantIsDenied_reportsFailureInsteadOfCrashing() {
         val host = OemPreGrantHostActivity().attached()
 
-        assertFalse(shareCapturedItem(host, staleItem))
+        assertEquals(R.string.unable_to_share_media, shareCapturedItem(host, staleItem))
     }
 
     @Test
@@ -47,7 +47,7 @@ class ShareMediaRegressionTest {
     fun share_launchesChooserWithItemUri() {
         val host = ChooserRecordingHostActivity().attached()
 
-        assertTrue(shareCapturedItem(host, staleItem))
+        assertNull(shareCapturedItem(host, staleItem))
 
         val chooser = host.launched
         assertNotNull(chooser)

@@ -595,8 +595,8 @@ class InAppGallery : AppCompatActivity() {
 
         val curItem = getCurrentItem() ?: return
 
-        if (!shareCapturedItem(this, curItem)) {
-            showMessage(getString(R.string.unable_to_share_media))
+        shareCapturedItem(this, curItem)?.let {
+            showMessage(getString(it))
         }
     }
 
