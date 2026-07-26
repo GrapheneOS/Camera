@@ -16,6 +16,7 @@ import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.util.StateSet
 import android.view.View
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -306,6 +307,38 @@ class VideoCapturerRegressionTest {
             } finally {
                 stopAndDeleteRecording(scenario, capturedBefore)
             }
+        }
+    }
+
+    /**
+     * Leaving a capture session while it records finalizes the recording after the preview is gone:
+     * the confirm UI used to be built there and then, off a PreviewView with no bitmap left to give.
+     */
+    @Test
+    fun leavingACaptureSessionWhileRecording_defersThePreview() {
+        val intent = Intent(targetContext, VideoCaptureActivity::class.java)
+            .setAction(MediaStore.ACTION_VIDEO_CAPTURE)
+
+        recordingTest({ ActivityScenario.launch<VideoCaptureActivity>(intent) }) { scenario ->
+            scenario.onActivity { activity ->
+                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.videoCapturer.startRecording()
+            }
+            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+
+            // Stops the activity, which stops the recording; the finalize event that used to crash
+            // lands afterwards, on the main thread of a stopped activity.
+            scenario.moveToState(Lifecycle.State.CREATED)
+            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+
+            scenario.moveToState(Lifecycle.State.RESUMED)
+
+            var confirmVisibility = View.GONE
+            scenario.onActivity { confirmVisibility = it.confirmButton.visibility }
+            assertEquals(
+                "the preview the finalize deferred never arrived",
+                View.VISIBLE, confirmVisibility
+            )
         }
     }
 
