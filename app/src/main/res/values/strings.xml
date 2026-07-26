@@ -57,6 +57,7 @@
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>
     <string name="preview">Preview</string>
+    <string name="play_video">Play video</string>
     <string name="file_info">File Info</string>
     <string name="delete_file">Delete file</string>
     <string name="edit">Edit</string>
