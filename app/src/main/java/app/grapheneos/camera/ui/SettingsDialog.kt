@@ -28,6 +28,7 @@ import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.ToggleButton
+import androidx.activity.OnBackPressedCallback
 import androidx.annotation.StringRes
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
@@ -93,8 +94,18 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
     private fun getString(@StringRes id: Int) = mActivity.getString(id)
 
+    // The panel window is not focusable, so it never sees the back event itself and back would
+    // otherwise fall through to the activity and close the app.
+    private val backCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            slideDialogUp()
+        }
+    }
+
     init {
         setContentView(binding.root)
+
+        mActivity.onBackPressedDispatcher.addCallback(mActivity, backCallback)
 
         dialog = binding.settingsDialog
         dialog.setOnClickListener {}
@@ -716,6 +727,11 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun slideDialogUp() {
+        // Restarting the animation would bounce the panel back into view and postpone the dismissal
+        // its end schedules, so ignore any further request to close while it plays out.
+        if (slideUpAnimation.hasStarted() && !slideUpAnimation.hasEnded()) {
+            return
+        }
         settingsFrame.startAnimation(slideUpAnimation)
     }
 
@@ -794,8 +810,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
+        backCallback.isEnabled = true
 
         slideDialogDown()
+    }
+
+    override fun dismiss() {
+        backCallback.isEnabled = false
+        super.dismiss()
     }
 
     fun reloadQualities() {
