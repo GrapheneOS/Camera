@@ -85,8 +85,7 @@ class ZoomBar : AppCompatSeekBar {
     }
 
     fun updateThumb(shouldShowPanel: Boolean = true) {
-        val zoomState: ZoomState? = camConfig.camera?.cameraInfo?.zoomState
-            ?.value
+        val zoomState: ZoomState? = camConfig.zoomState
 
         if (shouldShowPanel) {
             showPanel()
