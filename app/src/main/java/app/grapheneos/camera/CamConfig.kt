@@ -31,6 +31,7 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
+import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -46,6 +47,8 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.internal.muxer.MediaMuxerImpl
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.markAs16by9Layout
 import app.grapheneos.camera.ktx.markAs4by3Layout
@@ -223,6 +226,22 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     var camera: Camera? = null
+
+    // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
+    // extension is bound, because CameraX then queries the extension's zoom range through
+    // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
+    // of the camera on any path that runs more than once per bind.
+    var zoomState: ZoomState? = null
+        private set
+
+    private var zoomStateSource: LiveData<ZoomState>? = null
+
+    private val zoomStateObserver = Observer<ZoomState> {
+        zoomState = it
+        if (it.linearZoom != 0f || it.zoomRatio != 1f) {
+            mActivity.zoomBar.updateThumb()
+        }
+    }
 
     var cameraProvider: ProcessCameraProvider? = null
     private var extensionsManager: ExtensionsManager? = null
@@ -1753,11 +1772,16 @@ class CamConfig(private val mActivity: MainActivity) {
 
         loadTabs()
 
-        camera?.cameraInfo?.zoomState?.observe(mActivity) {
-            if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-                mActivity.zoomBar.updateThumb()
-            }
+        // Every bind hands out a fresh LiveData in extension modes, and the old observer would
+        // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
+        // thumb once per bind that had ever happened.
+        zoomStateSource?.removeObserver(zoomStateObserver)
+        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
+            it.observe(mActivity, zoomStateObserver)
         }
+        // The observer above has already run if the activity is started; this covers the case where
+        // it has not, so the bar does not claim 1.0x while the camera is zoomed.
+        zoomState = zoomStateSource?.value
 
         mActivity.zoomBar.updateThumb(false)
 

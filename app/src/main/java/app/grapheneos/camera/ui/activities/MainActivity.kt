@@ -1250,7 +1250,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
-        val zoomState = camConfig.camera!!.cameraInfo.zoomState.value
+        val zoomState = camConfig.zoomState
         var scale = 1f
         if (zoomState != null) {
             scale = zoomState.zoomRatio * detector.scaleFactor
