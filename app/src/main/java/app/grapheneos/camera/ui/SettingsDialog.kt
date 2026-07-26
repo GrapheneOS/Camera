@@ -292,34 +292,25 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
                     val selectedOption = timerSpinner.selectedItem.toString()
 
-                    if (selectedOption == "Off") {
-                        mActivity.timerDuration = 0
-                        mActivity.cbText.visibility = View.INVISIBLE
+                    if (selectedOption == timeOptions[0]) {
+                        updateTimerDuration(0)
                     } else {
-
                         try {
                             val durS = selectedOption.substring(0, selectedOption.length - 1)
-                            val dur = durS.toInt()
-
-                            mActivity.timerDuration = dur
-
-                            mActivity.cbText.text = selectedOption
-                            mActivity.cbText.visibility = View.VISIBLE
-
+                            updateTimerDuration(durS.toInt())
                         } catch (exception: Exception) {
-
                             mActivity.showMessage(
-                                getString(R.string.unexpected_error_while_setting_focus_timeout)
+                                getString(R.string.unexpected_error_while_setting_timer_duration)
                             )
-
                         }
-
                     }
 
                 }
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
+
+        restoreTimerDuration()
 
         mScrollView = binding.settingsScrollview
         mScrollViewContent = binding.settingsScrollviewContent
@@ -490,6 +481,29 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
+    }
+
+    private fun updateTimerDuration(duration: Int) {
+        mActivity.timerDuration = duration
+        mActivity.updateSelfTimerBadge()
+        // commonPref rather than modePref: the self-timer is not per-mode, and modePref is not
+        // assigned until the camera starts, which happens after this dialog is built.
+        camConfig.commonPref.edit()
+            .putInt(CamConfig.SettingValues.Key.SELF_TIMER_DURATION, duration)
+            .apply()
+    }
+
+    private fun restoreTimerDuration() {
+        val duration = camConfig.commonPref.getInt(
+            CamConfig.SettingValues.Key.SELF_TIMER_DURATION,
+            CamConfig.SettingValues.Default.SELF_TIMER_DURATION
+        )
+        // Apply directly: Spinner.setSelection() only posts its selection callback, so the duration
+        // would otherwise stay unset for a looper pass.
+        updateTimerDuration(duration)
+
+        val option = if (duration == 0) timeOptions[0] else "${duration}s"
+        timerSpinner.setSelection(timeOptions.indexOf(option).coerceAtLeast(0), false)
     }
 
     fun updateVideoQuality(choice: String, resCam: Boolean = true) {

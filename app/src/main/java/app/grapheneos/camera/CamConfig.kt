@@ -125,6 +125,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
 
+            const val SELF_TIMER_DURATION = "self_timer_duration"
         }
 
         object Default {
@@ -170,6 +171,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = false
 
+            const val SELF_TIMER_DURATION = 0
         }
     }
 
@@ -2006,11 +2008,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-        mActivity.cbText.visibility = if (isQRMode || isVideoMode || mActivity.timerDuration == 0) {
-            View.INVISIBLE
-        } else {
-            View.VISIBLE
-        }
+        mActivity.updateSelfTimerBadge()
 
         startCamera(true)
     }

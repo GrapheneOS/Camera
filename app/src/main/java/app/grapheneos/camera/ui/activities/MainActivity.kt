@@ -580,6 +580,9 @@ open class MainActivity : AppCompatActivity(),
     override fun onPause() {
         super.onPause()
         pauseOrientationSensor()
+        // The countdown would otherwise keep ticking while the app is in the background and fire a
+        // capture into a camera that has already been unbound.
+        cdTimer.cancelTimer()
         if (camConfig.isQRMode) {
             cancelFocusTimer()
         } else {
@@ -1036,6 +1039,14 @@ open class MainActivity : AppCompatActivity(),
             camConfig.switchMode(mode)
             resetAutoSleep()
         }
+    }
+
+    /** Shows the pending self-timer duration on the capture button, where it applies at all. */
+    fun updateSelfTimerBadge() {
+        cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
+        // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
+        val applies = timerDuration != 0 && !camConfig.isQRMode && !camConfig.isVideoMode
+        cbText.visibility = if (applies) View.VISIBLE else View.INVISIBLE
     }
 
     fun restartRecordingWithMicPermission() {

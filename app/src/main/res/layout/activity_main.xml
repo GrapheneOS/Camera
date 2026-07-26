@@ -292,6 +292,7 @@
                     android:textColor="#333"
                     tools:ignore="SpUsage"/>
 
+                <!-- Decoration drawn over the capture button, which announces the cancel itself -->
                 <ImageView
                     android:id="@+id/capture_button_cross"
                     android:layout_height="36dp"
@@ -299,7 +300,7 @@
                     android:src="@drawable/cancel"
                     android:layout_gravity="center"
                     android:visibility="invisible"
-                    android:contentDescription="@string/cancel_timer"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:id="@+id/mic_off"
