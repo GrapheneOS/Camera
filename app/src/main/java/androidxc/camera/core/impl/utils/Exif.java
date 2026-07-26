@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// Fork of androidx.camera.core.impl.utils.Exif from androidx.camera:camera-core:1.6.1, moved into
+// the androidxc package so that it can use the forked ExifInterface. Local changes are marked
+// "androidxc:" — keep them when syncing with a newer upstream release.
 package androidxc.camera.core.impl.utils;
 
 import android.location.Location;
@@ -606,6 +609,7 @@ public final class Exif {
         return mExifInterface.getAttribute(ExifInterface.TAG_XMP);
     }
 
+    // androidxc: upstream marks this @VisibleForTesting, but ImageSaver writes EXIF through it
     public @NonNull ExifInterface getExifInterface() {
         return mExifInterface;
     }
