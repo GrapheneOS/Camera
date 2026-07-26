@@ -49,7 +49,7 @@
                     android:id="@+id/focusRing"
                     android:src="@drawable/focus_ring"
                     android:visibility="invisible"
-                    android:contentDescription="@string/focus_ring"
+                    android:importantForAccessibility="no"
                     app:layout_constraintTop_toTopOf="@id/preview"
                     app:layout_constraintStart_toStartOf="@id/preview"/>
 
@@ -389,13 +389,14 @@
                 android:layout_gravity="center_horizontal"
                 android:src="@drawable/zoom_in"
                 android:layout_marginBottom="10dp"
-                android:contentDescription="@string/zoom_in"/>
+                android:importantForAccessibility="no"/>
 
             <app.grapheneos.camera.ui.seekbar.ZoomBar
                 android:id="@+id/zoom_bar"
                 android:layout_width="wrap_content"
                 android:progressTint="@android:color/transparent"
-                android:layout_height="250dp"/>
+                android:layout_height="250dp"
+                android:contentDescription="@string/zoom"/>
 
             <ImageView
                 android:id="@+id/zoom_out_icon"
@@ -405,7 +406,7 @@
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="32dp"
                 android:layout_gravity="center_horizontal"
-                android:contentDescription="@string/zoom_out"/>
+                android:importantForAccessibility="no"/>
 
         </LinearLayout>
 
@@ -426,7 +427,7 @@
                 android:layout_gravity="center_horizontal"
                 android:src="@drawable/exposure_plus"
                 android:layout_marginBottom="8dp"
-                android:contentDescription="@string/zoom_in"/>
+                android:importantForAccessibility="no"/>
 
             <FrameLayout
                 android:layout_width="wrap_content"
@@ -443,7 +444,8 @@
                     android:layout_width="wrap_content"
                     android:progressTint="@android:color/transparent"
                     android:thumb="@drawable/exposure_thumb"
-                    android:layout_height="250dp"/>
+                    android:layout_height="250dp"
+                    android:contentDescription="@string/exposure_compensation"/>
 
             </FrameLayout>
 
@@ -455,7 +457,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="24dp"
                 android:layout_gravity="center_horizontal"
-                android:contentDescription="@string/zoom_out"/>
+                android:importantForAccessibility="no"/>
 
         </LinearLayout>
 
@@ -565,7 +567,8 @@
                         android:textStyle="bold"
                         android:textSize="13sp"
                         android:text="@string/qr_scan"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -598,7 +601,8 @@
                         android:textStyle="bold"
                         android:textSize="13sp"
                         android:text="@string/data_matrix"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -631,7 +635,8 @@
                         android:textStyle="bold"
                         android:textSize="13sp"
                         android:text="@string/aztec_code"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -664,7 +669,8 @@
                     android:textStyle="bold"
                     android:textSize="13sp"
                     android:text="@string/pdf_417"
-                    android:textColor="@android:color/white"/>
+                    android:textColor="@android:color/white"
+                    android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -696,7 +702,8 @@
                         android:shadowDy="1.3"
                         android:shadowRadius="1.6"
                         android:text="@string/more_options"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
