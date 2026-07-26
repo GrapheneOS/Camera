@@ -37,6 +37,10 @@ class VideoCapturerRegressionTest {
         Manifest.permission.RECORD_AUDIO,
     )
 
+    /** Recording only starts once the preview window is visible and producing frames. */
+    @get:Rule
+    val screenAwake = ScreenAwakeRule()
+
     /** Fires the callback twice, like a MediaPlayer error followed by normal completion. */
     private class DoubleFiringTunePlayer(activity: MainActivity) : TunePlayer(activity) {
         override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
@@ -66,12 +70,7 @@ class VideoCapturerRegressionTest {
      */
     @Test
     fun startRecording_toleratesDuplicateStartSoundCallback() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
-            waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
-            }
-            val capturedBefore = lastCapturedUri(scenario)
-
+        recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.camConfig.mPlayer = DoubleFiringTunePlayer(activity)
                 activity.videoCapturer.startRecording()
@@ -81,8 +80,6 @@ class VideoCapturerRegressionTest {
 
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
-
-            deleteNewCapture(scenario, capturedBefore)
         }
     }
 
@@ -92,11 +89,7 @@ class VideoCapturerRegressionTest {
      */
     @Test
     fun stopRecording_duringDeferredStart_cancelsTheStart() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
-            waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
-            }
-            val capturedBefore = lastCapturedUri(scenario)
+        recordingTest { scenario ->
             val pendingBefore = pendingVideoCount()
 
             lateinit var player: ManualTunePlayer
@@ -123,20 +116,13 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
-
-            deleteNewCapture(scenario, capturedBefore)
         }
     }
 
     /** A pause requested while the start is queued must apply once the recording starts. */
     @Test
     fun pauseDuringDeferredStart_appliesWhenRecordingStarts() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
-            waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
-            }
-            val capturedBefore = lastCapturedUri(scenario)
-
+        recordingTest { scenario ->
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
@@ -146,6 +132,8 @@ class VideoCapturerRegressionTest {
                 player.deferred!!.run()
             }
 
+            // A fixed dwell, not a waitUntil: the assertion below is that the timer does *not*
+            // tick, and an absence cannot be polled for. Three seconds spans several tick periods.
             Thread.sleep(3000)
 
             scenario.onActivity { activity ->
@@ -158,8 +146,6 @@ class VideoCapturerRegressionTest {
                 activity.videoCapturer.stopRecording()
             }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
-
-            deleteNewCapture(scenario, capturedBefore)
         }
     }
 
@@ -170,11 +156,7 @@ class VideoCapturerRegressionTest {
      */
     @Test
     fun failedRecording_doesNotLeaveOrphanedOutputEntry() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
-            waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
-            }
-            val capturedBefore = lastCapturedUri(scenario)
+        recordingTest { scenario ->
             val pendingBefore = pendingVideoCount()
 
             lateinit var player: ManualTunePlayer
@@ -185,13 +167,13 @@ class VideoCapturerRegressionTest {
                 activity.videoCapturer.isPaused = true
                 player.deferred!!.run()
             }
+            // Let the recorder reach paused-recording, so that stopping it finalizes with
+            // ERROR_NO_VALID_DATA rather than racing the start
             Thread.sleep(300)
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
 
             assertEquals(pendingBefore, pendingVideoCount())
-
-            deleteNewCapture(scenario, capturedBefore)
         }
     }
 
@@ -202,12 +184,7 @@ class VideoCapturerRegressionTest {
      */
     @Test
     fun recordingUiAnimations_unwrapWrappedCaptureButtonDrawable() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
-            waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
-            }
-            val capturedBefore = lastCapturedUri(scenario)
-
+        recordingTest { scenario ->
             val shape = GradientDrawable()
             var dp8 = 0f
             var dp16 = 0f
@@ -230,20 +207,13 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "corner radius animated back") {
                 abs(shape.cornerRadius - dp16) < 0.5f
             }
-
-            deleteNewCapture(scenario, capturedBefore)
         }
     }
 
     /** A drawable with no shape inside must skip the animation, not crash the recording. */
     @Test
     fun recordingUi_toleratesUnknownCaptureButtonDrawable() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
-            waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
-            }
-            val capturedBefore = lastCapturedUri(scenario)
-
+        recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
                 activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
@@ -256,10 +226,48 @@ class VideoCapturerRegressionTest {
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
 
-            deleteNewCapture(scenario, capturedBefore)
         }
     }
 
+    private fun recordingTest(body: (ActivityScenario<VideoOnlyActivity>) -> Unit) {
+        recordingTest({ ActivityScenario.launch(VideoOnlyActivity::class.java) }, body)
+    }
+
+    /**
+     * Hands [body] an activity whose recorder is ready, and cleans up after it either way: a failed
+     * assertion used to leave the recording it had started behind on the device.
+     */
+    private fun <A : MainActivity> recordingTest(
+        launch: () -> ActivityScenario<A>,
+        body: (ActivityScenario<A>) -> Unit,
+    ) {
+        launch().use { scenario ->
+            waitUntil(scenario, "video use case is bound") {
+                it.camConfig.camera != null && it.camConfig.videoCapture != null
+            }
+            val capturedBefore = lastCapturedUri(scenario)
+            try {
+                body(scenario)
+            } finally {
+                stopAndDeleteRecording(scenario, capturedBefore)
+            }
+        }
+    }
+
+    /**
+     * Every step is best-effort: this also runs after a failed assertion, where the activity may
+     * already be gone and where throwing would replace the failure the test is reporting.
+     */
+    private fun <A : MainActivity> stopAndDeleteRecording(
+        scenario: ActivityScenario<A>,
+        capturedBefore: Uri?,
+    ) {
+        runCatching { scenario.onActivity { it.videoCapturer.stopRecording() } }
+        runCatching {
+            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+        }
+        runCatching { deleteNewCapture(scenario, capturedBefore) }
+    }
     /** Pending entries are how in-flight and orphaned outputs appear in MediaStore. */
     private fun pendingVideoCount(): Int {
         val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
@@ -293,21 +301,5 @@ class VideoCapturerRegressionTest {
                 }
             }
         }
-    }
-
-    private fun <A : MainActivity> waitUntil(
-        scenario: ActivityScenario<A>,
-        description: String,
-        timeoutMs: Long = 10_000,
-        condition: (A) -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            var satisfied = false
-            scenario.onActivity { satisfied = condition(it) }
-            if (satisfied) return
-            Thread.sleep(100)
-        }
-        throw AssertionError("Timed out after ${timeoutMs}ms waiting until $description")
     }
 }

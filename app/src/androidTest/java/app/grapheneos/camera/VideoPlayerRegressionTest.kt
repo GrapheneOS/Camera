@@ -10,11 +10,16 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class VideoPlayerRegressionTest {
+
+    /** Launching an activity into a dozing, locked device gives it no visible window. */
+    @get:Rule
+    val screenAwake = ScreenAwakeRule()
 
     /**
      * Regression test for the production crash: an IllegalStateException out of
