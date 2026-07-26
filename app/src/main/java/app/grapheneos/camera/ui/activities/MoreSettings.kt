@@ -211,6 +211,16 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             sLField.performClick()
         }
 
+        // Every other row here acts on the control it holds. This one held a 36dp field and did
+        // nothing, while still announcing itself as activatable.
+        val pQSetting = binding.photoQualitySetting
+        pQSetting.setOnClickListener {
+            pQField.requestFocus()
+            pQField.setSelection(pQField.text.length)
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(pQField, 0)
+        }
+
         val zslSetting = binding.zslSetting
         if (camConfig.isZslSupported) {
             zslSetting.visibility = View.VISIBLE
