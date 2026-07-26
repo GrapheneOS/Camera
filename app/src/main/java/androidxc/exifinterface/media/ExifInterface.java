@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// Fork of androidx.exifinterface:exifinterface:1.4.2, moved into the androidxc package so that it
+// can be modified. Local changes are marked "androidxc:" — keep them when syncing with a newer
+// upstream release.
 package androidxc.exifinterface.media;
 
 import static androidxc.exifinterface.media.ExifInterfaceUtils.closeFileDescriptor;
@@ -4983,6 +4986,10 @@ public class ExifInterface {
         mThumbnailBytes = null;
     }
 
+    /**
+     * androidxc: writes the image data of {@code original} out to {@code out} with the attributes
+     * of this instance, so that a capture can be edited without a temporary file on disk.
+     */
     public void saveAttributes(InputStream original, OutputStream out) throws IOException {
         if (!isSupportedFormatForSavingAttributes(mMimeType)) {
             throw new IOException("ExifInterface only supports saving attributes for JPEG, PNG, "
