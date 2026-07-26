@@ -32,7 +32,8 @@ open class CaptureActivity : MainActivity() {
     }
 
     lateinit var outputUri: Uri
-    lateinit var bitmap: Bitmap
+
+    var bitmap: Bitmap? = null
 
     private lateinit var retakeIcon: ImageView
 
@@ -200,8 +201,14 @@ open class CaptureActivity : MainActivity() {
 
         val resultIntent = Intent("inline-data")
 
-        if (::outputUri.isInitialized) {
+        val bitmap = bitmap
+        if (bitmap == null) {
+            setResult(RESULT_CANCELED)
+            finish()
+            return
+        }
 
+        if (::outputUri.isInitialized) {
             val bos = ByteArrayOutputStream()
 
             val cf: CompressFormat =
@@ -227,8 +234,9 @@ open class CaptureActivity : MainActivity() {
 
             setResult(result)
         } else {
-            bitmap = resizeImage(bitmap)
-            resultIntent.putExtra("data", bitmap)
+            val resized = resizeImage(bitmap)
+            this.bitmap = resized
+            resultIntent.putExtra("data", resized)
             setResult(RESULT_OK, resultIntent)
         }
 

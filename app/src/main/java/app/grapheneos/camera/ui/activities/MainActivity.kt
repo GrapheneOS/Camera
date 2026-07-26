@@ -129,7 +129,8 @@ open class MainActivity : AppCompatActivity(),
     // is already visible and to dismiss it if the permission gets granted.
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
-    private var lastFrame: Bitmap? = null
+    var lastFrame: Bitmap? = null
+        private set
 
     private lateinit var mainFrame: View
     lateinit var rootView: View
@@ -1785,11 +1786,13 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onStop() {
-        super.onStop()
         isStarted = false
+        // Stop explicitly rather than letting the unbind tear the recording down for us.
         if (this::videoCapturer.isInitialized && videoCapturer.isRecording) {
+            updateLastFrame()
             videoCapturer.stopRecording()
         }
+        super.onStop()
     }
 
     var isThumbnailLoaded = false
