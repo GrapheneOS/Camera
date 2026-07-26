@@ -10,7 +10,6 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
@@ -641,7 +640,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             colorAnimation3.start()
             colorAnimation4.start()
 
-            setBrightness(getSystemBrightness())
+            setBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
         }
 
         wasSelfIlluminationOn = camConfig.selfIlluminate
@@ -698,14 +697,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         )
 
         anim
-    }
-
-    private fun getSystemBrightness(): Float {
-        return Settings.System.getInt(
-            context.contentResolver,
-            Settings.System.SCREEN_BRIGHTNESS,
-            -1
-        ) / 255f
     }
 
     private fun setBrightness(brightness: Float) {
