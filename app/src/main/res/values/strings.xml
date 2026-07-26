@@ -206,9 +206,10 @@
     <string name="file_details">File Details</string>
     <string name="file_name_generic">File Name: </string>
     <string name="not_found_generic">Not Found</string>
-    <string name="loading_generic">Loading…</string>
     <string name="file_size">File Size: </string>
     <string name="file_path">File Path: </string>
+    <string name="resolution">Resolution: </string>
+    <string name="duration">Duration: </string>
     <string name="file_created_on">File Created On: </string>
     <string name="last_modified_on">Last Modified On: </string>
 

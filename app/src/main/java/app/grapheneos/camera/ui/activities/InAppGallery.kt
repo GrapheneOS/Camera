@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.database.Cursor
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
@@ -18,6 +19,7 @@ import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.provider.OpenableColumns
 import android.util.Log
+import android.util.Size
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -45,6 +47,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.editCapturedItem
 import app.grapheneos.camera.shareCapturedItem
+import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
@@ -298,26 +301,59 @@ class InAppGallery : AppCompatActivity() {
         return Pair(created, modified)
     }
 
+    /**
+     * The dimensions a photo presents at, which is the stored frame with its Exif orientation
+     * applied. Only the header is read, so the full bitmap is never decoded.
+     */
+    private fun readImageResolution(uri: Uri, orientation: Int): Size? {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, options)
+        }
+
+        val width = options.outWidth
+        val height = options.outHeight
+        if (width <= 0 || height <= 0) {
+            return null
+        }
+
+        val quarterTurned = orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
+                orientation == ExifInterface.ORIENTATION_ROTATE_270 ||
+                orientation == ExifInterface.ORIENTATION_TRANSPOSE ||
+                orientation == ExifInterface.ORIENTATION_TRANSVERSE
+
+        return if (quarterTurned) Size(height, width) else Size(width, height)
+    }
+
     private fun showCurrentMediaDetails() {
         val curItem = getCurrentItem() ?: return
 
         var relativePath: String? = null
         var fileName: String? = null
-        var size: Long = 0
+        // Absent rather than zero: a provider that reports no size at all used to be rendered as
+        // "Loading…", which is not what was happening and never resolved
+        var size: Long? = null
 
         var dateAdded: String? = null
         var dateModified: String? = null
 
+        var resolution: Size? = null
+        var durationMillis: Long? = null
+
         try {
             // note that RELATIVE_PATH is undefined for SAF Uris, which the by-name lookups below
             // report as absent rather than as whatever column happened to land in that position
-            val projection = arrayOf(MediaColumns.RELATIVE_PATH, OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
+            val projection = arrayOf(
+                MediaColumns.RELATIVE_PATH,
+                OpenableColumns.DISPLAY_NAME,
+                OpenableColumns.SIZE
+            )
 
-            contentResolver.query(curItem.uri, projection, null,null)?.use {
+            contentResolver.query(curItem.uri, projection, null, null)?.use {
                 if (it.moveToFirst()) {
                     relativePath = it.optionalString(MediaColumns.RELATIVE_PATH)
                     fileName = it.optionalString(OpenableColumns.DISPLAY_NAME)
-                    size = it.optionalLong(OpenableColumns.SIZE) ?: 0
+                    size = it.optionalLong(OpenableColumns.SIZE)
                 }
             }
 
@@ -340,10 +376,41 @@ class InAppGallery : AppCompatActivity() {
                             Log.d("showCurrentMediaDetails", "unparseable video date: $date", e)
                         }
                     }
+
+                    durationMillis = retriever
+                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        ?.toLongOrNull()?.takeIf { millis -> millis > 0 }
+
+                    val width = retriever
+                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                        ?.toIntOrNull()
+
+                    val height = retriever
+                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                        ?.toIntOrNull()
+
+                    if (width != null && height != null && width > 0 && height > 0) {
+                        // A track holds its frames as encoded plus the rotation a player has to
+                        // apply, so a recording taken in portrait is stored landscape
+                        val rotation = retriever
+                            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+                            ?.toIntOrNull() ?: 0
+                        resolution = if (rotation == 90 || rotation == 270) {
+                            Size(height, width)
+                        } else {
+                            Size(width, height)
+                        }
+                    }
                 }
             } else {
+                var orientation = ExifInterface.ORIENTATION_NORMAL
+
                 contentResolver.openInputStream(curItem.uri)?.use { stream ->
                     val eInterface = ExifInterface(stream)
+
+                    orientation = eInterface.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
+                    )
 
                     val offset = eInterface.getAttribute(ExifInterface.TAG_OFFSET_TIME)
 
@@ -361,6 +428,8 @@ class InAppGallery : AppCompatActivity() {
                         )
                     }
                 }
+
+                resolution = readImageResolution(curItem.uri, orientation)
             }
 
             // Photos carry no Exif dates when "Remove Exif data after capture" is on, which is
@@ -373,6 +442,15 @@ class InAppGallery : AppCompatActivity() {
                 if (dateModified == null && modified != null) {
                     dateModified = convertTime(modified)
                 }
+            }
+
+            // Neither source has a creation time to give for a stripped photo kept through the
+            // Storage Access Framework, but the app named the file after the moment it captured it.
+            // A name records wall-clock time and not the zone it was read in, so this one is shown
+            // without a zone: after the device travels, the digits are still the time the camera
+            // showed at capture, but naming a zone for them would assert the wrong one.
+            if (dateAdded == null) {
+                curItem.captureTime()?.let { dateAdded = convertTime(it, showTimeZone = false) }
             }
         } catch (e: Exception) {
             Log.d("showCurrentMediaDetails", "unable to obtain file details", e)
@@ -395,16 +473,28 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append(getString(R.string.file_size), "\n")
-        if (size == 0L) {
-            detailsBuilder.append(getString(R.string.loading_generic))
-        } else {
+        detailsBuilder.append(
+            size
+                ?.let {
+                    String.format(Locale.getDefault(), "%.2f MB", it / (1000f * 1000f))
+                }
+                ?: getString(R.string.not_found_generic)
+        )
+
+        detailsBuilder.append("\n\n")
+
+        detailsBuilder.append(getString(R.string.resolution), "\n")
+        detailsBuilder.append(resolution?.toString() ?: getString(R.string.not_found_generic))
+
+        if (curItem.type == ITEM_TYPE_VIDEO) {
+            detailsBuilder.append("\n\n")
+
+            detailsBuilder.append(getString(R.string.duration), "\n")
             detailsBuilder.append(
-                String.format(
-                    "%.2f",
-                    (size / (1000f * 1000f))
-                )
+                durationMillis
+                    ?.let { formatVideoDuration(it / 1000) }
+                    ?: getString(R.string.not_found_generic)
             )
-            detailsBuilder.append(" MB")
         }
 
         detailsBuilder.append("\n\n")
