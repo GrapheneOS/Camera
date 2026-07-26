@@ -102,8 +102,6 @@
 
     <string name="storage">Storage</string>
     <string name="storage_location">Storage Location</string>
-    <string name="image_file_name_format">Image File Name Format</string>
-    <string name="video_file_name_format">Video File Name Format</string>
     <string name="revert_back_to_dcim">Revert back to DCIM</string>
 
     <string name="image_quality">Image Quality</string>

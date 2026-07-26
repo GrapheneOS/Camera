@@ -41,8 +41,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var rootView: View
 
     private lateinit var pQField: EditText
-    private lateinit var iFField: EditText
-    private lateinit var vFField: EditText
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -150,12 +148,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
-
-        iFField = binding.imageFormatSettingField
-        iFField.setOnEditorActionListener(this)
-
-        vFField = binding.videoFormatSettingField
-        vFField.setOnEditorActionListener(this)
 
         val exifToggle = binding.removeExifToggle
         val exifToggleSetting = binding.removeExifSetting
@@ -321,12 +313,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         } else {
             camConfig.photoQuality = quality
         }
-
-//        // Dump state of image format
-//        camConfig.imageFormat = iFField.text.toString()
-//
-//        // Dump state of video format
-//        camConfig.videoFormat = vFField.text.toString()
     }
 
     override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {
