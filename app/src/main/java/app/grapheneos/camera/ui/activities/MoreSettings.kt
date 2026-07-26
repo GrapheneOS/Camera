@@ -314,7 +314,11 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         // Dump state of photo quality
         val quality = pQField.text.toString().toIntOrNull()
-        if (quality == null) {
+        // NumInputFilter keeps out-of-range values from being typed, but it cannot stop them being
+        // deleted into place: the empty replacement it returns to reject an edit is the very edit a
+        // deletion asks for, so deleting the leading digit of "10" leaves "0" behind. Committing
+        // that made ImageCapture reject the quality and crash the next bind.
+        if (quality == null || quality !in NumInputFilter.min..NumInputFilter.max) {
             // Revert back to the original value if invalid number was found
             pQField.setText(camConfig.photoQuality.toString())
             if (notifyOnInvalidValue) {
