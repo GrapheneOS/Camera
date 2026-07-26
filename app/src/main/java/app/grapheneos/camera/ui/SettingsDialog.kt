@@ -471,7 +471,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
     fun updateFocusTimeout(selectedOption: String) {
 
-        if (selectedOption == "Off") {
+        if (selectedOption == timeOptions[0]) {
             camConfig.focusTimeout = 0
         } else {
 
