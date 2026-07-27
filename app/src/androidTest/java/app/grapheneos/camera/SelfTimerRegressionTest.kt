@@ -116,6 +116,66 @@ class SelfTimerRegressionTest {
     }
 
     /**
+     * The capture button's two branches are mutually exclusive, so a running countdown is proof the
+     * tap was not spent taking a photo. Checking this from the outside is awkward enough to invite
+     * being skipped: a dump waits for an idle UI, and the countdown retexts itself every second.
+     */
+    @Test
+    fun captureButton_withATimerSet_startsTheCountdownInsteadOfCapturing() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            waitUntil(scenario, "camera is bound") { it.camConfig.camera != null }
+
+            scenario.onActivity { activity ->
+                activity.camConfig.switchMode(CameraMode.CAMERA)
+                activity.timerDuration = 10
+                activity.updateSelfTimerBadge()
+
+                activity.captureButton.performClick()
+
+                assertTrue(activity.cdTimer.isRunning)
+                assertEquals(View.VISIBLE, activity.cdTimer.visibility)
+                assertEquals(View.VISIBLE, activity.cbCross.visibility)
+                assertEquals(View.INVISIBLE, activity.settingsIcon.visibility)
+                assertEquals(View.INVISIBLE, activity.tabLayout.visibility)
+                assertEquals(
+                    activity.getString(R.string.cancel_timer),
+                    activity.captureButton.contentDescription
+                )
+
+                activity.cdTimer.cancelTimer()
+            }
+        }
+    }
+
+    /** The same button cancels the countdown it started, and owes back everything it hid. */
+    @Test
+    fun captureButton_duringACountdown_cancelsItAndPutsTheControlsBack() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            waitUntil(scenario, "camera is bound") { it.camConfig.camera != null }
+
+            scenario.onActivity { activity ->
+                activity.camConfig.switchMode(CameraMode.CAMERA)
+                activity.timerDuration = 10
+                activity.updateSelfTimerBadge()
+                val shutterDescription = activity.captureButton.contentDescription
+
+                activity.captureButton.performClick()
+                assertTrue(activity.cdTimer.isRunning)
+
+                activity.captureButton.performClick()
+
+                assertFalse(activity.cdTimer.isRunning)
+                assertEquals(View.GONE, activity.cdTimer.visibility)
+                assertEquals(View.INVISIBLE, activity.cbCross.visibility)
+                assertEquals(View.VISIBLE, activity.settingsIcon.visibility)
+                assertEquals(View.VISIBLE, activity.tabLayout.visibility)
+                assertEquals(View.VISIBLE, activity.cbText.visibility)
+                assertEquals(shutterDescription, activity.captureButton.contentDescription)
+            }
+        }
+    }
+
+    /**
      * The self-timer is inherited from the last photo session, so a video-only activity can hold a
      * duration it will never use. It must not advertise one.
      */
