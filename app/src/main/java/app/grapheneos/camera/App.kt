@@ -133,6 +133,11 @@ class App : Application() {
         locationManager.removeUpdates(locationListener)
     }
 
+    fun disableLocationFetching() {
+        dropLocationUpdates()
+        location = null
+    }
+
     fun getLocation(): Location? = location
 
     private fun isLocationEnabled(): Boolean = locationManager.isLocationEnabled
