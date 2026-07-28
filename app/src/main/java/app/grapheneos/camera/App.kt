@@ -12,7 +12,6 @@ import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.capturer.deleteStalePendingRecordings
-import app.grapheneos.camera.ktx.isSystemApp
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
 import kotlin.concurrent.thread
@@ -98,17 +97,14 @@ class App : Application() {
         }
         isLocationFetchInProgress = true
 
-        val providers = if (applicationInfo.isSystemApp() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            listOf<String>(LocationManager.FUSED_PROVIDER)
-        } else {
-            locationManager.allProviders
-        }
+        val providers = locationProviders
+
         val lastKnownLocations = providers.map {
             locationManager.getLastKnownLocation(it)
         }
         location = getOptimalLocation(lastKnownLocations + location)
 
-        locationManager.allProviders.forEach { provider ->
+        providers.forEach { provider ->
             locationManager.requestLocationUpdates(
                 provider,
                 2000,
@@ -117,6 +113,20 @@ class App : Application() {
             )
         }
     }
+
+    private val locationProviders: List<String>
+        get() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                locationManager.hasProvider(LocationManager.FUSED_PROVIDER)
+            ) {
+                return listOf(LocationManager.FUSED_PROVIDER)
+            }
+            return locationManager.allProviders.filter {
+                it == LocationManager.GPS_PROVIDER ||
+                    it == LocationManager.NETWORK_PROVIDER ||
+                    it == LocationManager.PASSIVE_PROVIDER
+            }
+        }
 
     fun dropLocationUpdates() {
         isLocationFetchInProgress = false
