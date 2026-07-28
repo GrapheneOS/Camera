@@ -19,10 +19,6 @@ import kotlin.concurrent.thread
 
 class App : Application() {
 
-    companion object {
-        private const val STALE_LOCATION_THRESHOLD = 11 * 1000L
-    }
-
     private var activity: MainActivity? = null
     private var location: Location? = null
 
@@ -35,7 +31,7 @@ class App : Application() {
     private val locationListener: LocationListener by lazy {
         object : LocationListener {
             override fun onLocationChanged(changedLocation: Location) {
-                location = listOf(location, changedLocation).getOptimalLocation()
+                location = getOptimalLocation(listOf(location, changedLocation))
             }
 
             override fun onProviderDisabled(provider: String) {
@@ -45,10 +41,7 @@ class App : Application() {
             }
 
             override fun onLocationChanged(locations: MutableList<Location>) {
-                val location = locations.getOptimalLocation()
-                if (location != null) {
-                    this@App.location = location
-                }
+                location = getOptimalLocation(locations + location)
             }
 
             override fun onProviderEnabled(provider: String) {}
@@ -84,34 +77,6 @@ class App : Application() {
         return false
     }
 
-    fun List<Location?>.getOptimalLocation(): Location? {
-        if (isNullOrEmpty()) return null
-
-        var optimalLocation: Location? = null
-        forEach { location ->
-            if (location != null) {
-                if (optimalLocation == null) {
-                    optimalLocation = location
-                    return@forEach
-                }
-
-                val timeDifference = location.time - optimalLocation.time
-
-                // If the location is older than STALE_LOCATION_THRESHOLD ms
-                if (timeDifference > STALE_LOCATION_THRESHOLD) {
-                    optimalLocation = location
-                } else {
-                    // Compare their accuracy instead of time if the difference is below
-                    // threshold
-                    if (location.accuracy > optimalLocation.accuracy) {
-                        optimalLocation = location
-                    }
-                }
-            }
-        }
-        return optimalLocation
-    }
-
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(activityLifeCycleHelper)
@@ -132,20 +97,16 @@ class App : Application() {
             dropLocationUpdates()
         }
         isLocationFetchInProgress = true
-        if (location == null) {
-            val providers = if (applicationInfo.isSystemApp() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                listOf<String>(LocationManager.FUSED_PROVIDER)
-            } else {
-                locationManager.allProviders
-            }
-            val locations = providers.map {
-                locationManager.getLastKnownLocation(it)
-            }
-            val fetchedLocation = locations.getOptimalLocation()
-            if (fetchedLocation != null) {
-                location = fetchedLocation
-            }
+
+        val providers = if (applicationInfo.isSystemApp() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            listOf<String>(LocationManager.FUSED_PROVIDER)
+        } else {
+            locationManager.allProviders
         }
+        val lastKnownLocations = providers.map {
+            locationManager.getLastKnownLocation(it)
+        }
+        location = getOptimalLocation(lastKnownLocations + location)
 
         locationManager.allProviders.forEach { provider ->
             locationManager.requestLocationUpdates(
