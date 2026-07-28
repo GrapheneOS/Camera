@@ -8,15 +8,22 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.CountDownTimer
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.capturer.deleteStalePendingRecordings
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 class App : Application() {
+
+    companion object {
+        // Must stay above the ~10 min throttle the OS applies to coarse-only apps.
+        private const val MAX_LOCATION_AGE = 15 * 60 * 1000L
+    }
 
     private var activity: MainActivity? = null
     private var location: Location? = null
@@ -108,7 +115,7 @@ class App : Application() {
             locationManager.requestLocationUpdates(
                 provider,
                 2000,
-                10f,
+                0f,
                 locationListener
             )
         }
@@ -138,7 +145,17 @@ class App : Application() {
         location = null
     }
 
-    fun getLocation(): Location? = location
+    fun getLocation(): Location? {
+        val location = this.location ?: return null
+        val ageMs = TimeUnit.NANOSECONDS.toMillis(
+            SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos
+        )
+        if (ageMs > MAX_LOCATION_AGE) {
+            this.location = null
+            return null
+        }
+        return location
+    }
 
     private fun isLocationEnabled(): Boolean = locationManager.isLocationEnabled
 
