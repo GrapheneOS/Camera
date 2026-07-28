@@ -589,6 +589,9 @@ open class MainActivity : AppCompatActivity(),
         } else {
             imageCapturer.cancelPendingCaptureRequest()
         }
+        if (camConfig.requireLocation) {
+            application.dropLocationUpdates()
+        }
         lastFrame = null
     }
 
@@ -1698,7 +1701,7 @@ open class MainActivity : AppCompatActivity(),
         if (required) {
             requestLocation()
         } else {
-            application.dropLocationUpdates()
+            application.disableLocationFetching()
         }
     }
 
