@@ -129,6 +129,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
             const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
 
+            const val MAX_IMAGE_LONG_EDGE = "max_image_long_edge"
+
             const val SELF_TIMER_DURATION = "self_timer_duration"
         }
 
@@ -174,6 +176,9 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SELECT_HIGHEST_RESOLUTION = false
 
             const val WAIT_FOR_FOCUS_LOCK = false
+
+            // 0 = no cap (use the largest resolution for the chosen aspect ratio)
+            const val MAX_IMAGE_LONG_EDGE = 0
 
             const val SELF_TIMER_DURATION = 0
         }
@@ -571,6 +576,21 @@ class CamConfig(private val mActivity: MainActivity) {
         set(value) {
             val editor = commonPref.edit()
             editor.putInt(SettingValues.Key.PHOTO_QUALITY, value)
+            editor.apply()
+        }
+
+    // Cap for the long edge of captured photos, in pixels. 0 = no cap. Keeps documentation
+    // photos small independently of the aspect ratio / sensor.
+    var maxImageLongEdge: Int
+        get() {
+            return commonPref.getInt(
+                SettingValues.Key.MAX_IMAGE_LONG_EDGE,
+                SettingValues.Default.MAX_IMAGE_LONG_EDGE
+            )
+        }
+        set(value) {
+            val editor = commonPref.edit()
+            editor.putInt(SettingValues.Key.MAX_IMAGE_LONG_EDGE, value)
             editor.apply()
         }
 
@@ -1578,8 +1598,27 @@ class CamConfig(private val mActivity: MainActivity) {
                     val resolutionSelectorBuilder = ResolutionSelector.Builder()
                         .setAspectRatioStrategy(aspectRatioStrategy)
 
-                    if (selectHighestResolution) {
+                    // The cap and "highest resolution" are mutually exclusive in the UI; if both
+                    // are somehow set, the cap below takes precedence.
+                    if (selectHighestResolution && maxImageLongEdge == 0) {
                         resolutionSelectorBuilder.setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
+                    }
+
+                    // Cap the capture resolution when configured (0 = no cap). Picks the largest
+                    // supported size whose long edge is <= the cap for the current aspect ratio.
+                    val longEdgeCap = maxImageLongEdge
+                    if (longEdgeCap > 0) {
+                        val target = if (aspectRatio == AspectRatio.RATIO_16_9) {
+                            Size(longEdgeCap, longEdgeCap * 9 / 16)
+                        } else {
+                            Size(longEdgeCap, longEdgeCap * 3 / 4)
+                        }
+                        resolutionSelectorBuilder.setResolutionStrategy(
+                            ResolutionStrategy(
+                                target,
+                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                            )
+                        )
                     }
 
                     it.setResolutionSelector(resolutionSelectorBuilder.build())
