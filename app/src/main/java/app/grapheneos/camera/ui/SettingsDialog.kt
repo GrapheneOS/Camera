@@ -162,6 +162,12 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         binding.root.viewTreeObserver.addOnPreDrawListener { updatePanelRegion() }
 
+        // The preview belongs to the activity's window, so resizing it schedules no traversal in
+        // this one: without this the panel would keep the bounds of the preview it was opened over.
+        mActivity.previewView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updatePanelRegion()
+        }
+
         locToggle = binding.locationToggle
         locToggle.setOnClickListener {
             if (mActivity.videoCapturer.isRecording) {
