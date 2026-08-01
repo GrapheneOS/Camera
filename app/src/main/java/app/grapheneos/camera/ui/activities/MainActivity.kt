@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.Point
@@ -77,6 +78,7 @@ import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.ktx.SystemSettingsObserver
+import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -1303,7 +1305,7 @@ open class MainActivity : AppCompatActivity(),
 
         if (videoCapturer.isRecording) return
 
-        var iconRotation = (360f - orientation) % 360
+        var iconRotation = (360f - ((orientation - getRotation() + 360) % 360)) % 360
 
         // Rotate views that should rotate irrespective of the auto-rotate setting
         rotateView(gCircleFrame, iconRotation)
@@ -1541,6 +1543,21 @@ open class MainActivity : AppCompatActivity(),
         ) {
             enableLocationLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // The activity declares configChanges for orientation, so nothing else refreshes
+        // rotation-dependent state.
+        // The preview follows the window; the capture use cases follow the sensor and are updated
+        // by onOrientationChange.
+        camConfig.preview?.targetRotation = previewView.display?.rotation ?: Surface.ROTATION_0
+        camConfig.camera?.cameraInfo?.let {
+            previewView.applyPreviewRatio(camConfig.aspectRatio, it)
+        }
+
+        rootView.post { sensorNotifier?.notifyListeners() }
     }
 
     private fun pauseOrientationSensor() {
