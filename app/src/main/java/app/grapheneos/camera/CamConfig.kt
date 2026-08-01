@@ -76,6 +76,7 @@ enum class CameraMode(val extensionMode: Int, val uiName: Int) {
     HDR(ExtensionMode.HDR, R.string.hdr_mode),
     CAMERA(ExtensionMode.NONE, R.string.camera),
     VIDEO(ExtensionMode.NONE, R.string.video),
+    MANUAL(ExtensionMode.NONE, R.string.manual_mode)
 }
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -1860,7 +1861,7 @@ class CamConfig(private val mActivity: MainActivity) {
     private fun availableModes(): Set<CameraMode> {
         return CameraMode.entries.filter {
             when (it) {
-                CameraMode.CAMERA, CameraMode.VIDEO -> true
+                CameraMode.CAMERA, CameraMode.VIDEO, CameraMode.MANUAL -> true
                 CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
                 else -> {
                     check(it.extensionMode != ExtensionMode.NONE)
