@@ -48,7 +48,7 @@ android {
         applicationId = "app.grapheneos.camera"
         minSdk = 29
         targetSdk = 37
-        versionCode = 92
+        versionCode = 93
         versionName = versionCode.toString()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
