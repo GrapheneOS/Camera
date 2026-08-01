@@ -248,7 +248,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var imageCapture: ImageCapture? = null
         private set
 
-    private var preview: Preview? = null
+    var preview: Preview? = null
 
     val allowedFormats: ArrayList<BarcodeFormat> = arrayListOf()
 
