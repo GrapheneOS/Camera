@@ -660,6 +660,7 @@ open class MainActivity : AppCompatActivity(),
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
                 camConfig.reloadSettings()
+                isoSeekBar.refreshIsoValues()
                 if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     if (!settingsDialog.isShowing) {
@@ -801,10 +802,13 @@ open class MainActivity : AppCompatActivity(),
                 isoButton.setBackgroundResource(R.drawable.manual_button_pressed_bg)
                 isoButton.setTextColor(Color.BLACK)
                 isoSliderContainer.visibility = View.VISIBLE
+                camConfig.setISO(isoSeekBar.getCurrentIsoValue())
             } else {
                 isoButton.setBackgroundResource(R.drawable.manual_button_bg)
                 isoButton.setTextColor(Color.WHITE)
                 isoSliderContainer.visibility = View.GONE
+                // Reset to Auto Exposure when closing the slider
+                camConfig.setISO(-1)
             }
         }
 

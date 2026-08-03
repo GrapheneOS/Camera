@@ -65,6 +65,10 @@ import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
+import androidx.camera.camera2.interop.Camera2CameraControl
+import androidx.camera.camera2.interop.CaptureRequestOptions
+import android.hardware.camera2.CaptureRequest
+import android.util.Range
 
 // note that enum constant name is used as a name of a SharedPreferences instance
 enum class CameraMode(val extensionMode: Int, val uiName: Int) {
@@ -1018,6 +1022,30 @@ class CamConfig(private val mActivity: MainActivity) {
                 getString(R.string.flash_unavailable_in_selected_mode)
             )
         }
+    }
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    fun getIsoRange(): Range<Int>? {
+        val cameraInfo = camera?.cameraInfo ?: return null
+        return Camera2CameraInfo.from(cameraInfo)
+            .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE)
+    }
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    fun setISO(isoValue: Int) {
+        val cameraControl = camera?.cameraControl ?: return
+        val camera2CameraControl = Camera2CameraControl.from(cameraControl)
+
+        val builder = CaptureRequestOptions.Builder()
+
+        if (isoValue == -1) {
+            builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+        } else {
+            builder.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, isoValue)
+            builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+        }
+
+        camera2CameraControl.setCaptureRequestOptions(builder.build())
     }
 
     fun toggleAspectRatio() {
@@ -2043,6 +2071,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
             mActivity.micOffIcon.visibility = View.GONE
             mActivity.isoButton.visibility = View.GONE
+            mActivity.isoButton.isSelected = false
+            mActivity.isoSliderContainer.visibility = View.GONE
+            setISO(-1)
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
@@ -2061,6 +2092,11 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             mActivity.isoButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
+            if (!isManualMode) {
+                mActivity.isoButton.isSelected = false
+                mActivity.isoSliderContainer.visibility = View.GONE
+                setISO(-1)
+            }
         }
 
         mActivity.updateSelfTimerBadge()

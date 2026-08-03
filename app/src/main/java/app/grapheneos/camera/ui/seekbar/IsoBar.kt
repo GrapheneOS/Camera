@@ -9,13 +9,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 class IsoBar : AppCompatSeekBar {
 
 
-    private val isoValues = arrayOf(
-        50, 100, 125, 150, 175,
-        200, 225, 250, 275,
-        300, 325, 350, 375,
-        400, 425, 450, 475,
-        500, 600, 700, 800
-    )
+    private var isoValues: List<Int> = listOf(50, 100, 200, 400, 800, 1600)
     private lateinit var mainActivity: MainActivity
 
     constructor(context: Context) : super(context)
@@ -25,15 +19,22 @@ class IsoBar : AppCompatSeekBar {
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
+
+        val range = mainActivity.camConfig.getIsoRange()
+
+        if (range != null) {
+            val minIso = range.lower
+            val maxIso = range.upper
+            isoValues = listOf(minIso, 100, 200, 400, 800, 1600, maxIso).distinct().sorted()
+        }
+        this.max = isoValues.size - 1
+
         this.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if(progress < isoValues.size){
                     val selectedIso = isoValues[progress]
-
                     mainActivity.isoValueText.text = selectedIso.toString();
-
-                    // Future implementation of
-                    // camConfig.setISO(selectedIso)
+                    mainActivity.camConfig.setISO(selectedIso)
                 }
             }
 
@@ -41,4 +42,27 @@ class IsoBar : AppCompatSeekBar {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
     }
+
+    fun refreshIsoValues() {
+        val range = mainActivity.camConfig.getIsoRange()
+        if (range != null) {
+            val minIso = range.lower
+            val maxIso = range.upper
+            isoValues = listOf(minIso, 100, 200, 400, 800, 1600, maxIso).distinct().sorted()
+            this.max = isoValues.size - 1
+            
+            // Sync UI
+            if (this.progress >= isoValues.size) {
+                this.progress = 0
+            }
+            val selectedIso = isoValues[this.progress]
+            mainActivity.isoValueText.text = selectedIso.toString()
+            mainActivity.isoButton.text = "ISO $selectedIso"
+        }
+    }
+
+    fun getCurrentIsoValue(): Int {
+        return if (progress < isoValues.size) isoValues[progress] else isoValues.last()
+    }
+
 }
