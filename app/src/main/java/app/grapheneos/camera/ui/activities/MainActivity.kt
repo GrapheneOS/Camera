@@ -811,14 +811,13 @@ open class MainActivity : AppCompatActivity(),
 
             if (it.isSelected) {
                 isoSliderContainer.visibility = View.VISIBLE
-                // Apply current ISO when opening the slider
-                camConfig.manualIsoValue = isoSeekBar.getCurrentIsoValue()
+                if (camConfig.manualIsoValue == null) {
+                    camConfig.manualIsoValue = isoSeekBar.getCurrentIsoValue()
+                    camConfig.applyManualSettings()
+                }
             } else {
                 isoSliderContainer.visibility = View.GONE
-                // Reset to Auto Exposure when closing the slider
-                camConfig.manualIsoValue = null
             }
-            camConfig.applyManualSettings()
         }
 
         cancelButtonView = binding.cancelButton
