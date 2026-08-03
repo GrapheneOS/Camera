@@ -248,6 +248,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     lateinit var micOffIcon: ImageView
+    lateinit var isoButton: TextView
 
     private var shouldRestartRecording = false
 
@@ -922,6 +923,8 @@ open class MainActivity : AppCompatActivity(),
         focusRing = binding.focusRing
 
         micOffIcon = binding.micOff
+
+        isoButton = binding.isoButton
 
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {

@@ -314,6 +314,9 @@ class CamConfig(private val mActivity: MainActivity) {
     var isQRMode = false
         private set
 
+    var isManualMode = false
+        private set
+
     val isFlashAvailable: Boolean
         get() = camera?.cameraInfo?.hasFlashUnit() ?: false
 
@@ -2014,6 +2017,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         isVideoMode = mode == CameraMode.VIDEO
 
+        isManualMode = mode == CameraMode.MANUAL
+
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.thirdOption.visibility = View.INVISIBLE
@@ -2037,6 +2042,7 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
 
             mActivity.micOffIcon.visibility = View.GONE
+            mActivity.isoButton.visibility = View.GONE
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
@@ -2053,6 +2059,8 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.setCaptureButtonIcon(R.drawable.camera_shutter, R.string.capture)
                 mActivity.micOffIcon.visibility = View.GONE
             }
+
+            mActivity.isoButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
         }
 
         mActivity.updateSelfTimerBadge()

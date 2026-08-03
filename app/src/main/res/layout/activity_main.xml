@@ -215,6 +215,24 @@
 
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/iso_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/iso"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:background="@drawable/manual_button_bg"
+            android:layout_above="@id/three_buttons"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"/>
+
         <LinearLayout
             android:id="@+id/three_buttons"
             android:layout_height="wrap_content"
