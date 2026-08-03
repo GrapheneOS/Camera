@@ -89,6 +89,7 @@ import app.grapheneos.camera.ui.QROverlay
 import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
+import app.grapheneos.camera.ui.seekbar.IsoBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.CameraControl
@@ -252,8 +253,9 @@ open class MainActivity : AppCompatActivity(),
     lateinit var micOffIcon: ImageView
     lateinit var isoButton: TextView
 
-    private lateinit var isoSeekBar: SeekBar
-    private lateinit var isoSliderContainer: View
+    lateinit var isoSeekBar: IsoBar
+    lateinit var isoSliderContainer: View
+    lateinit var isoValueText: TextView
 
     private var shouldRestartRecording = false
 
@@ -624,8 +626,12 @@ open class MainActivity : AppCompatActivity(),
         cameraControl = CameraControl(camConfig)
         mainOverlay = binding.mainOverlay
         isoButton = binding.isoButton
+
         isoSeekBar = binding.isoSeekbar
+        isoSeekBar.setMainActivity(this)
+
         isoSliderContainer = binding.isoSliderContainer
+        isoValueText = binding.isoValueText
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = binding.thirdOption

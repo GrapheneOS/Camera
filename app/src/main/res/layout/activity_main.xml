@@ -219,6 +219,9 @@
             android:id="@+id/iso_slider_container"
             android:layout_width="280dp"
             android:layout_height="wrap_content"
+            android:paddingTop="24dp"
+            android:paddingBottom="12dp"
+            android:paddingHorizontal="12dp"
             android:layout_above="@id/iso_button"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="12dp"
@@ -226,11 +229,28 @@
             android:padding="12dp"
             android:visibility="gone">
 
+            <TextView
+                android:id="@+id/iso_value_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center_horizontal"
+                android:text="100"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+
+                android:layout_marginTop="2dp"
+                android:shadowColor="#000000"
+                android:shadowDx="1.5"
+                android:shadowDy="1.3"
+                android:shadowRadius="1.6" />
+
             <app.grapheneos.camera.ui.seekbar.IsoBar
                 android:id="@+id/iso_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="9"
+                android:layout_marginTop="18dp"
+                android:max="21"
                 android:progress="3"
                 android:thumbTint="@android:color/white"
                 android:progressTint="@android:color/white" />

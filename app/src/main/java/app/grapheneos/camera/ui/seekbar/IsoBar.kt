@@ -9,7 +9,13 @@ import app.grapheneos.camera.ui.activities.MainActivity
 class IsoBar : AppCompatSeekBar {
 
 
-    private val isoValues = arrayOf(50, 100, 200, 400, 800, 1600)
+    private val isoValues = arrayOf(
+        50, 100, 125, 150, 175,
+        200, 225, 250, 275,
+        300, 325, 350, 375,
+        400, 425, 450, 475,
+        500, 600, 700, 800
+    )
     private lateinit var mainActivity: MainActivity
 
     constructor(context: Context) : super(context)
@@ -21,10 +27,14 @@ class IsoBar : AppCompatSeekBar {
         this.mainActivity = mainActivity
         this.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val selectedIso = isoValues[progress]
+                if(progress < isoValues.size){
+                    val selectedIso = isoValues[progress]
 
-                // Future implementation of
-                // camConfig.setISO(selectedIso)
+                    mainActivity.isoValueText.text = selectedIso.toString();
+
+                    // Future implementation of
+                    // camConfig.setISO(selectedIso)
+                }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
