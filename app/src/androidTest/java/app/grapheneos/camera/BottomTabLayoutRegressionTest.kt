@@ -3,6 +3,7 @@ package app.grapheneos.camera
 import android.Manifest
 import android.animation.ValueAnimator
 import android.graphics.Bitmap
+import android.graphics.RectF
 import android.view.View
 import android.view.ViewGroup
 import androidx.camera.view.PreviewView
@@ -370,6 +371,47 @@ class BottomTabLayoutRegressionTest {
 
             scenario.moveToState(Lifecycle.State.RESUMED)
             waitUntil(scenario, "the camera came back") { it.camConfig.camera != null }
+        }
+    }
+
+    /**
+     * Photo and video preview at different aspect ratios, so a switch between them resizes the box
+     * the transition still is sitting in -- and the still is of the camera being left behind. Left
+     * to the layout's fitStart it shrank to fit the new shape, putting a black bar down the side of
+     * the preview for as long as the new camera took to start streaming.
+     */
+    @Test
+    fun aSwitchThatReshapesThePreview_leavesNoBarBesideTheTransitionStill() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitStrip(scenario)
+
+            for (mode in listOf(CameraMode.VIDEO, CameraMode.CAMERA)) {
+                scenario.onActivity { it.finalizeMode(it.tabLayout.getTabForMode(mode)) }
+
+                // The rebind that applies the new ratio runs whole inside one message, so a poll
+                // that sees the mode has landed sees a layout the resize has already asked for.
+                waitUntil(scenario, "the preview took $mode's aspect ratio") {
+                    it.camConfig.currentMode == mode && !it.previewView.isLayoutRequested
+                }
+
+                scenario.onActivity { activity ->
+                    // Once the still is up its geometry outlives the transition, so this reads the
+                    // same mismatch the eye had to catch mid-switch.
+                    val overlay = activity.mainOverlay
+                    val still = overlay.drawable
+                    val drawn = RectF(
+                        0f, 0f, still.intrinsicWidth.toFloat(), still.intrinsicHeight.toFloat()
+                    )
+                    overlay.imageMatrix.mapRect(drawn)
+
+                    assertTrue(
+                        "entering $mode drew the still as ${drawn.width()}x${drawn.height()} in a " +
+                                "${overlay.width}x${overlay.height} preview",
+                        drawn.left <= 0f && drawn.top <= 0f &&
+                                drawn.right >= overlay.width && drawn.bottom >= overlay.height
+                    )
+                }
+            }
         }
     }
 

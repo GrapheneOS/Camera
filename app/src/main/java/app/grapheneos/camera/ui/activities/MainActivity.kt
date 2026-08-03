@@ -368,6 +368,11 @@ open class MainActivity : AppCompatActivity(),
         val lastFrame = lastFrame
         if (lastFrame == null || this is CaptureActivity) return
 
+        // The still is of the camera being left behind, and the box under it takes the new camera's
+        // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's
+        // fitStart, which is there for the captured photo CaptureActivity shows in this same view,
+        // would leave a bar down the side of the preview until the new camera streams.
+        mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
         setBlurBitmapCompat(mainOverlay, lastFrame)
         settingsIcon.visibility = View.INVISIBLE
         settingsIcon.isEnabled = false
