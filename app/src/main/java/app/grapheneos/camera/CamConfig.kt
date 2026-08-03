@@ -6,6 +6,8 @@ import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
@@ -256,7 +258,8 @@ class CamConfig(private val mActivity: MainActivity) {
     // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
     // extension is bound, because CameraX then queries the extension's zoom range through
     // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
-    // of the camera on any path that runs more than once per bind.
+    // of the camera on any path that runs more than once per bind. It is null from the moment a
+    // bind starts until attachZoomState has run, which is where that query was moved to.
     var zoomState: ZoomState? = null
         private set
 
@@ -267,6 +270,18 @@ class CamConfig(private val mActivity: MainActivity) {
         if (it.linearZoom != 0f || it.zoomRatio != 1f) {
             mActivity.zoomBar.updateThumb()
         }
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val attachZoomState = Runnable {
+        if (mActivity.isDestroyed || mActivity.isFinishing) return@Runnable
+
+        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
+            it.observe(mActivity, zoomStateObserver)
+        }
+
+        zoomState = zoomStateSource?.value
     }
 
     var cameraProvider: ProcessCameraProvider? = null
@@ -1827,12 +1842,13 @@ class CamConfig(private val mActivity: MainActivity) {
         // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
         // thumb once per bind that had ever happened.
         zoomStateSource?.removeObserver(zoomStateObserver)
-        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
-            it.observe(mActivity, zoomStateObserver)
-        }
-        // The observer above has already run if the activity is started; this covers the case where
-        // it has not, so the bar does not claim 1.0x while the camera is zoomed.
-        zoomState = zoomStateSource?.value
+        zoomStateSource = null
+        zoomState = null
+        // Reading the new one is what costs ~100 ms behind an extension, and nothing before the
+        // next message needs it: the bar below draws a freshly bound camera's 1.0x either way, and
+        // every other reader is a gesture.
+        handler.removeCallbacks(attachZoomState)
+        handler.post(attachZoomState)
 
         mActivity.zoomBar.updateThumb(false)
 

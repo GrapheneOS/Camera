@@ -7,6 +7,7 @@ import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
@@ -105,6 +106,52 @@ class ModeSwitchLatencyRegressionTest {
                 } finally {
                     selectVideoQuality(activity, original)
                 }
+            }
+        }
+    }
+
+    /**
+     * Behind a vendor extension, reading the zoom state off the camera costs another tenth of a
+     * second, spent with the main thread blocked in the middle of a mode switch. Nothing needs the
+     * answer before the switch returns, so it is read from the next message instead.
+     */
+    @Test
+    fun bindingACamera_doesNotReadTheZoomStateOnTheBindPath() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitModeTabs(scenario)
+            waitUntil(scenario, "the zoom state is attached") { it.camConfig.zoomState != null }
+
+            scenario.onActivity {
+                it.camConfig.switchMode(CameraMode.VIDEO)
+
+                assertNull("the bind read the zoom state", it.camConfig.zoomState)
+            }
+
+            waitUntil(scenario, "the zoom state is attached again") {
+                it.camConfig.zoomState != null
+            }
+        }
+    }
+
+    /**
+     * The other side of the deferral: the zoom state has to come back, and it has to describe the
+     * camera that was just bound rather than the one it replaced.
+     */
+    @Test
+    fun switchingModes_leavesTheZoomBarUsable() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitModeTabs(scenario)
+
+            scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
+            waitUntil(scenario, "the zoom state is attached") { it.camConfig.zoomState != null }
+
+            scenario.onActivity { it.camConfig.camera!!.cameraControl.setLinearZoom(0.5f) }
+
+            waitUntil(scenario, "the zoom bar caught up with the camera") {
+                it.zoomBar.progress == 50
+            }
+            scenario.onActivity {
+                assertEquals(0.5f, it.camConfig.zoomState!!.linearZoom, 0.01f)
             }
         }
     }
