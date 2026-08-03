@@ -257,6 +257,16 @@ open class MainActivity : AppCompatActivity(),
     lateinit var isoSliderContainer: View
     lateinit var isoValueText: TextView
 
+    fun updateIsoButtonUI() {
+        if (isoButton.isSelected) {
+            isoButton.setBackgroundResource(R.drawable.manual_button_pressed_bg)
+            isoButton.setTextColor(Color.BLACK)
+        } else {
+            isoButton.setBackgroundResource(R.drawable.manual_button_bg)
+            isoButton.setTextColor(Color.WHITE)
+        }
+    }
+
     private var shouldRestartRecording = false
 
     fun startFocusTimer() {
@@ -797,19 +807,18 @@ open class MainActivity : AppCompatActivity(),
 
         isoButton.setOnClickListener {
             it.isSelected = !it.isSelected
+            updateIsoButtonUI()
 
             if (it.isSelected) {
-                isoButton.setBackgroundResource(R.drawable.manual_button_pressed_bg)
-                isoButton.setTextColor(Color.BLACK)
                 isoSliderContainer.visibility = View.VISIBLE
-                camConfig.setISO(isoSeekBar.getCurrentIsoValue())
+                // Apply current ISO when opening the slider
+                camConfig.manualIsoValue = isoSeekBar.getCurrentIsoValue()
             } else {
-                isoButton.setBackgroundResource(R.drawable.manual_button_bg)
-                isoButton.setTextColor(Color.WHITE)
                 isoSliderContainer.visibility = View.GONE
                 // Reset to Auto Exposure when closing the slider
-                camConfig.setISO(-1)
+                camConfig.manualIsoValue = null
             }
+            camConfig.applyManualSettings()
         }
 
         cancelButtonView = binding.cancelButton

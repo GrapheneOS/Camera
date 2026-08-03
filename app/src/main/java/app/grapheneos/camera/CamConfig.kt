@@ -279,6 +279,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var lastCapturedItem: CapturedItem? = null
 
+    var manualIsoValue: Int? = null
+    var manualExposureValue: Int? = null
+
     init {
         if (mActivity !is SecureActivity) {
             CapturedItems.init(mActivity, this)
@@ -1032,21 +1035,27 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
-    fun setISO(isoValue: Int) {
+    fun applyManualSettings() {
         val cameraControl = camera?.cameraControl ?: return
         val camera2CameraControl = Camera2CameraControl.from(cameraControl)
-
         val builder = CaptureRequestOptions.Builder()
 
-        if (isoValue == -1) {
+        // Lógica inteligente de AE Mode
+        if (manualIsoValue == null && manualExposureValue == null) {
             builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
         } else {
-            builder.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, isoValue)
             builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+            manualIsoValue?.let {
+                builder.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, it)
+            }
+            manualExposureValue?.let {
+                builder.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, it.toLong())
+            }
         }
 
         camera2CameraControl.setCaptureRequestOptions(builder.build())
     }
+
 
     fun toggleAspectRatio() {
         aspectRatio = if (aspectRatio == AspectRatio.RATIO_16_9) {
@@ -2073,7 +2082,10 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.isoButton.visibility = View.GONE
             mActivity.isoButton.isSelected = false
             mActivity.isoSliderContainer.visibility = View.GONE
-            setISO(-1)
+            mActivity.updateIsoButtonUI()
+            manualIsoValue = null
+            manualExposureValue = null
+            applyManualSettings()
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
@@ -2095,7 +2107,10 @@ class CamConfig(private val mActivity: MainActivity) {
             if (!isManualMode) {
                 mActivity.isoButton.isSelected = false
                 mActivity.isoSliderContainer.visibility = View.GONE
-                setISO(-1)
+                mActivity.updateIsoButtonUI()
+                manualIsoValue = null
+                manualExposureValue = null
+                applyManualSettings()
             }
         }
 

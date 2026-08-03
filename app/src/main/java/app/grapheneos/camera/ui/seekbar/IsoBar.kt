@@ -34,7 +34,12 @@ class IsoBar : AppCompatSeekBar {
                 if(progress < isoValues.size){
                     val selectedIso = isoValues[progress]
                     mainActivity.isoValueText.text = selectedIso.toString();
-                    mainActivity.camConfig.setISO(selectedIso)
+
+                    // If manual button is active, apply the setting
+                    if (mainActivity.isoButton.isSelected) {
+                        mainActivity.camConfig.manualIsoValue = selectedIso
+                        mainActivity.camConfig.applyManualSettings()
+                    }
                 }
             }
 
@@ -57,7 +62,12 @@ class IsoBar : AppCompatSeekBar {
             }
             val selectedIso = isoValues[this.progress]
             mainActivity.isoValueText.text = selectedIso.toString()
-            mainActivity.isoButton.text = "ISO $selectedIso"
+            
+            // Sync current ISO to config if manual mode is active
+            if (mainActivity.isoButton.isSelected) {
+                mainActivity.camConfig.manualIsoValue = selectedIso
+                mainActivity.camConfig.applyManualSettings()
+            }
         }
     }
 
