@@ -346,6 +346,19 @@ open class MainActivity : AppCompatActivity(),
         audioPermissionDialog = builder.showIgnoringShortEdgeMode()
     }
 
+    // The blurred still that stands in for the preview whenever the camera is not streaming.
+    private fun showPreviewTransition() {
+        previewGrid.visibility = View.INVISIBLE
+
+        val lastFrame = lastFrame
+        if (lastFrame == null || this is CaptureActivity) return
+
+        setBlurBitmapCompat(mainOverlay, lastFrame)
+        settingsIcon.visibility = View.INVISIBLE
+        settingsIcon.isEnabled = false
+        mainOverlay.visibility = View.VISIBLE
+    }
+
     fun updateLastFrame() {
         lastFrame = previewView.bitmap
     }
@@ -585,7 +598,12 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
+
+        // Leaving a mode switch waiting on an animation that will never finish would strand the
+        // strip on a mode the camera never entered.
+        tabLayout.settleNow()
         pauseOrientationSensor()
+
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
@@ -651,14 +669,7 @@ open class MainActivity : AppCompatActivity(),
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
-                previewGrid.visibility = View.INVISIBLE
-                val lastFrame = lastFrame
-                if (lastFrame != null && this !is CaptureActivity) {
-                    setBlurBitmapCompat(mainOverlay, lastFrame)
-                    settingsIcon.visibility = View.INVISIBLE
-                    settingsIcon.isEnabled = false
-                    mainOverlay.visibility = View.VISIBLE
-                }
+                showPreviewTransition()
             }
         }
         flipCameraCircle = binding.flipCameraCircle
@@ -749,6 +760,11 @@ open class MainActivity : AppCompatActivity(),
         captureButton = binding.captureButton
         captureButton.setOnClickListener {
             resetAutoSleep()
+
+            // A mode the strip is still settling into has not reached the camera yet, and this
+            // would otherwise capture in the mode being left behind.
+            tabLayout.settleNow()
+
             if (camConfig.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
@@ -1032,8 +1048,7 @@ open class MainActivity : AppCompatActivity(),
         // already have dragged the strip, so put it back on the mode the camera is really in.
         if (videoCapturer.isRecording) {
             tabLayout.getTabForMode(camConfig.currentMode)?.let {
-                tabLayout.selectTab(it)
-                tabLayout.centerTab(it)
+                tabLayout.goToTab(it)
             }
             return
         }
@@ -1041,11 +1056,21 @@ open class MainActivity : AppCompatActivity(),
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
-            // The strip has to follow the touch even when the mode does not change, so do not
-            // leave this to switchMode(), which returns early for the mode it is already in.
-            tabLayout.selectTab(selectedTab)
-            tabLayout.centerTab(selectedTab)
-            camConfig.switchMode(mode)
+
+            // Blurred while the strip is still gliding, not once the camera has gone: the rebind
+            // holds the main thread for half a second, so a transition left to the stream state
+            // would only reach the screen after the wait it is there to explain. Guarded on the
+            // mode really changing, since nothing would rebind to take it back down again.
+            if (mode != camConfig.currentMode) {
+                showPreviewTransition()
+            }
+
+            // switchMode() puts the strip on the mode the camera actually ended up in, which is a
+            // different one when an extension fails to bind.
+            tabLayout.goToTab(selectedTab) {
+                camConfig.switchMode(mode)
+            }
+
             resetAutoSleep()
         }
     }

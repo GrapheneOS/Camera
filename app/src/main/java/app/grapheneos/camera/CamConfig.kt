@@ -2011,15 +2011,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         currentMode = mode
 
-        // The strip highlights whatever the user last touched, but a mode can also change without
-        // a touch: keep the highlight on the mode the camera is actually in.
-        if (mActivity.shouldShowCameraModeTabs()) {
-            mActivity.tabLayout.getTabForMode(mode)?.let { tab ->
-                mActivity.tabLayout.selectTab(tab)
-                mActivity.tabLayout.centerTab(tab)
-            }
-        }
-
         mActivity.cancelFocusTimer()
 
         isQRMode = mode == CameraMode.QR_SCAN
@@ -2070,6 +2061,16 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.updateSelfTimerBadge()
 
         startCamera(true)
+
+        // A mode can change with no touch involved, so the strip follows the camera and not the
+        // other way round - currentMode, because an extension that fails to bind falls back to
+        // another mode from inside startCamera(). Left until after that rebind, which blocks the
+        // main thread for long enough to swallow the animation whole.
+        if (mActivity.shouldShowCameraModeTabs()) {
+            mActivity.tabLayout.getTabForMode(currentMode)?.let { tab ->
+                mActivity.tabLayout.goToTab(tab)
+            }
+        }
     }
 
     fun showMoreOptionsForQR() {
