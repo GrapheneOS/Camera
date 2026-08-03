@@ -436,15 +436,18 @@ open class MainActivity : AppCompatActivity(),
 
     }
 
+    private fun hasCameraPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     private fun checkPermissions() {
         Log.i(TAG, "Checking camera status...")
 
         // Check if the app has access to the user's camera
         when {
-            ContextCompat.checkSelfPermission(
-                this, Manifest.permission.CAMERA
-            ) ==
-                    PackageManager.PERMISSION_GRANTED -> {
+            hasCameraPermission() -> {
 
                 // If the user has manually granted the permission, dismiss the dialog.
                 if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) cameraPermissionDialog!!.cancel()
@@ -570,7 +573,11 @@ open class MainActivity : AppCompatActivity(),
         // If the preview of video capture activity isn't showing
         if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
             if (!isQRDialogShowing) {
-                camConfig.initializeCamera(true)
+                if (hasCameraPermission()) {
+                    camConfig.initializeCamera(true)
+                } else {
+                    Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
+                }
             }
         }
     }
