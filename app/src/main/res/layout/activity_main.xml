@@ -215,6 +215,27 @@
 
         </LinearLayout>
 
+        <FrameLayout
+            android:id="@+id/iso_slider_container"
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/iso_button"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/manual_button_bg"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <SeekBar
+                android:id="@+id/iso_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="9"
+                android:progress="3"
+                android:thumbTint="@android:color/white"
+                android:progressTint="@android:color/white" />
+        </FrameLayout>
+
         <TextView
             android:id="@+id/iso_button"
             android:layout_width="wrap_content"
