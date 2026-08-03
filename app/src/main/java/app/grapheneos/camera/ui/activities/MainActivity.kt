@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.Point
 import android.graphics.Rect
@@ -777,6 +778,18 @@ open class MainActivity : AppCompatActivity(),
                         cdTimer.startTimer()
                     }
                 }
+            }
+        }
+
+        isoButton.setOnClickListener {
+            it.isSelected = !it.isSelected
+
+            if(it.isSelected){
+                isoButton.setTextColor(Color.BLACK)
+                isoButton.setBackgroundColor(Color.WHITE)
+            }else{
+                isoButton.setTextColor(Color.WHITE)
+                isoButton.setBackgroundColor(Color.BLACK)
             }
         }
 
