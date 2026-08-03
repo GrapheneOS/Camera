@@ -2,9 +2,11 @@ package app.grapheneos.camera
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
 import androidx.camera.view.PreviewView
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -13,6 +15,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
@@ -256,6 +259,53 @@ class BottomTabLayoutRegressionTest {
     }
 
     /**
+     * The switch blurs the last preview frame behind the transition, and taking that frame reads it
+     * back off the GPU synchronously -- a tenth of a second added to the freeze the rebind already
+     * costs. Touching the strip has to get the copy going early enough for the switch to find one
+     * waiting.
+     */
+    @Test
+    fun draggingTheStrip_hasTheTransitionFrameReadyForTheModeSwitch() {
+        assumeTrue("the switch cannot wait for a copy with animations off", animatorsEnabled())
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitStrip(scenario)
+
+            var startMode: CameraMode? = null
+            var target = 0
+            var travel = 0
+            scenario.onActivity { activity ->
+                val tabs = activity.tabLayout
+                startMode = activity.camConfig.currentMode
+                target = nextTo(tabs.selectedTabPosition, tabs.tabCount)
+                travel = (centreOf(tabs, target) - tabs.scrollX) * 2 / 3
+            }
+
+            var prefetched: Bitmap? = null
+            dragStrip(scenario, scrollPx = travel) { activity ->
+                assertEquals(
+                    "the camera switched before there was anything to check",
+                    startMode,
+                    activity.camConfig.currentMode,
+                )
+                prefetched = activity.lastFrame
+                assertNotNull("the drag started no copy of the preview", prefetched)
+            }
+
+            waitUntil(scenario, "the camera switched to tab $target") {
+                it.camConfig.currentMode == it.tabLayout.getTabAt(target)!!.tag
+            }
+            scenario.onActivity {
+                assertSame(
+                    "the switch read a fresh frame back instead of using the one waiting for it",
+                    prefetched,
+                    it.lastFrame,
+                )
+            }
+        }
+    }
+
+    /**
      * The rebind holds the main thread for half a second with the preview already gone, and the
      * stream state that used to raise the blurred stand-in only changes from inside that block --
      * so it reached the screen after the freeze it was there to cover, and the switch read as a
@@ -290,6 +340,36 @@ class BottomTabLayoutRegressionTest {
                     activity.mainOverlay.visibility,
                 )
             }
+        }
+    }
+
+    /**
+     * A copy that comes back empty is retried, and the touch that starts one can be the very touch
+     * that sends the activity away -- the shutter in video mode raises a permission dialog, and the
+     * surface goes with it. PixelCopy throws for a surface that has gone rather than reporting it,
+     * and the retry runs on a bare thread of its own, so that threw the whole process away.
+     */
+    @Test
+    fun leavingTheActivityUnderAPrefetch_doesNotTakeTheProcessDown() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitStrip(scenario)
+
+            scenario.onActivity { activity ->
+                val tabs = activity.tabLayout
+                // Started against a surface the rebind has just emptied, so the copy comes back
+                // with nothing and schedules the retry this is about.
+                activity.camConfig.switchMode(
+                    tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount))!!.tag
+                        as CameraMode
+                )
+                activity.prefetchLastFrame()
+            }
+            scenario.moveToState(Lifecycle.State.CREATED)
+            // Outlast the retries, which is where the copy meets the surface the exit took away.
+            Thread.sleep(RETRY_WINDOW_MS)
+
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            waitUntil(scenario, "the camera came back") { it.camConfig.camera != null }
         }
     }
 
@@ -328,4 +408,8 @@ class BottomTabLayoutRegressionTest {
 
     private fun tabViewAt(tabs: BottomTabLayout, position: Int): View =
         (tabs.getChildAt(0) as ViewGroup).getChildAt(position)
+
+    private companion object {
+        private const val RETRY_WINDOW_MS = 400L
+    }
 }
