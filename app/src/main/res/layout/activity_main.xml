@@ -226,7 +226,7 @@
             android:padding="12dp"
             android:visibility="gone">
 
-            <SeekBar
+            <app.grapheneos.camera.ui.seekbar.IsoBar
                 android:id="@+id/iso_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -44,6 +44,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -250,6 +251,9 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var micOffIcon: ImageView
     lateinit var isoButton: TextView
+
+    private lateinit var isoSeekBar: SeekBar
+    private lateinit var isoSliderContainer: View
 
     private var shouldRestartRecording = false
 
@@ -620,6 +624,8 @@ open class MainActivity : AppCompatActivity(),
         cameraControl = CameraControl(camConfig)
         mainOverlay = binding.mainOverlay
         isoButton = binding.isoButton
+        isoSeekBar = binding.isoSeekbar
+        isoSliderContainer = binding.isoSliderContainer
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = binding.thirdOption
@@ -788,9 +794,11 @@ open class MainActivity : AppCompatActivity(),
             if (it.isSelected) {
                 isoButton.setBackgroundResource(R.drawable.manual_button_pressed_bg)
                 isoButton.setTextColor(Color.BLACK)
+                isoSliderContainer.visibility = View.VISIBLE
             } else {
                 isoButton.setBackgroundResource(R.drawable.manual_button_bg)
                 isoButton.setTextColor(Color.WHITE)
+                isoSliderContainer.visibility = View.GONE
             }
         }
 
