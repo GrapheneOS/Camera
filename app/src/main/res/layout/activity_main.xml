@@ -222,7 +222,7 @@
             android:paddingTop="24dp"
             android:paddingBottom="12dp"
             android:paddingHorizontal="12dp"
-            android:layout_above="@id/iso_button"
+            android:layout_above="@id/manual_controls_layout"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="12dp"
             android:background="@drawable/manual_button_bg"
@@ -256,7 +256,56 @@
                 android:progressTint="@android:color/white" />
         </FrameLayout>
 
-        <TextView
+        <FrameLayout
+            android:id="@+id/shutter_speed_slider_container"
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:paddingTop="24dp"
+            android:paddingBottom="12dp"
+            android:paddingHorizontal="12dp"
+            android:layout_above="@id/manual_controls_layout"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/manual_button_bg"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/shutter_speed_value_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center_horizontal"
+                android:text="100"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+
+                android:layout_marginTop="2dp"
+                android:shadowColor="#000000"
+                android:shadowDx="1.5"
+                android:shadowDy="1.3"
+                android:shadowRadius="1.6" />
+
+            <app.grapheneos.camera.ui.seekbar.ShutterSpeedBar
+                android:id="@+id/shutter_speed_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:max="21"
+                android:progress="1"
+                android:thumbTint="@android:color/white"
+                android:progressTint="@android:color/white" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/manual_controls_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_above="@id/three_buttons"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="16dp">
+            <TextView
             android:id="@+id/iso_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -273,6 +322,29 @@
             android:visibility="gone"
             android:clickable="true"
             android:focusable="true"/>
+
+            <View android:layout_width="12dp" android:layout_height="0dp" />
+
+            <TextView
+                android:id="@+id/shutter_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/shutter_speed"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:background="@drawable/manual_button_bg"
+                android:layout_above="@id/three_buttons"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                android:clickable="true"
+                android:focusable="true"/>
+        </LinearLayout>
+
+
 
         <LinearLayout
             android:id="@+id/three_buttons"

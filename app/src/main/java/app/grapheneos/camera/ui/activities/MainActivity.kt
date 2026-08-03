@@ -90,6 +90,7 @@ import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.IsoBar
+import app.grapheneos.camera.ui.seekbar.ShutterSpeedBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.CameraControl
@@ -256,6 +257,11 @@ open class MainActivity : AppCompatActivity(),
     lateinit var isoSeekBar: IsoBar
     lateinit var isoSliderContainer: View
     lateinit var isoValueText: TextView
+
+    lateinit var shutterButton: TextView
+    lateinit var shutterSpeedBar: ShutterSpeedBar
+    lateinit var shutterSpeedSliderContainer: View
+    lateinit var shutterSpeedValueText: TextView
 
     fun updateIsoButtonUI() {
         if (isoButton.isSelected) {
@@ -642,6 +648,16 @@ open class MainActivity : AppCompatActivity(),
 
         isoSliderContainer = binding.isoSliderContainer
         isoValueText = binding.isoValueText
+
+        shutterButton = binding.shutterButton
+
+        shutterSpeedBar = binding.shutterSpeedSeekbar
+        shutterSpeedBar.setMainActivity(this)
+
+        shutterSpeedSliderContainer = binding.shutterSpeedSliderContainer
+        shutterSpeedValueText = binding.shutterSpeedValueText
+
+
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = binding.thirdOption
@@ -818,6 +834,22 @@ open class MainActivity : AppCompatActivity(),
             } else {
                 isoSliderContainer.visibility = View.GONE
             }
+        }
+
+        shutterButton.setOnClickListener {
+            it.isSelected = !it.isSelected
+            if (it.isSelected) {
+                shutterSpeedSliderContainer.visibility = View.VISIBLE
+
+                isoButton.isSelected = false
+                isoSliderContainer.visibility = View.GONE
+                updateIsoButtonUI()
+
+                camConfig.manualExposureValue = shutterSpeedBar.getCurrentShutterValue().toInt()
+            } else {
+                shutterSpeedSliderContainer.visibility = View.GONE
+            }
+            camConfig.applyManualSettings()
         }
 
         cancelButtonView = binding.cancelButton

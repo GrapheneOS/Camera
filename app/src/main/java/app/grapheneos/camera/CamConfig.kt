@@ -1035,6 +1035,13 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    fun getShutterRange(): Range<Long>? {
+        val cameraInfo = camera?.cameraInfo ?: return null
+        return Camera2CameraInfo.from(cameraInfo)
+            .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE)
+    }
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
     fun applyManualSettings() {
         val cameraControl = camera?.cameraControl ?: return
         val camera2CameraControl = Camera2CameraControl.from(cameraControl)
@@ -2104,9 +2111,14 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             mActivity.isoButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
+            mActivity.shutterButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
             if (!isManualMode) {
                 mActivity.isoButton.isSelected = false
                 mActivity.isoSliderContainer.visibility = View.GONE
+
+                mActivity.shutterButton.isSelected = false
+                mActivity.shutterSpeedSliderContainer.visibility = View.GONE
+
                 mActivity.updateIsoButtonUI()
                 manualIsoValue = null
                 manualExposureValue = null
