@@ -220,10 +220,36 @@ class CamConfig(private val mActivity: MainActivity) {
         // to re-probe what the session underneath it had already answered.
         private val extensionUsability = HashMap<Pair<Int, Int>, Boolean>()
 
+        // Every setting that reaches one of the three probed SessionConfigs has to appear in the
+        // key. A setting added to the ImageCapture, Recorder or Preview builder without being added
+        // here would be answered from a verdict that predates it, which either takes in-video
+        // snapshots away for no reason or keeps them on a camera that cannot bind them.
+        private val snapshotDropReason = HashMap<SnapshotProbeKey, String?>()
+
+        // A cache hit and a repeated probe reach the same verdict, so this is the only thing that
+        // tells them apart from the outside.
+        @VisibleForTesting
+        var snapshotProbeCount = 0
+            private set
+
+        @VisibleForTesting
+        fun clearSnapshotProbeCache() {
+            snapshotDropReason.clear()
+            snapshotProbeCount = 0
+        }
+
         // The provider the verdicts above were probed through. A different instance means the
         // camera stack was reinitialized and none of them describe it any more.
         private var probedCameraProvider: ProcessCameraProvider? = null
     }
+
+    private data class SnapshotProbeKey(
+        val lensFacing: Int,
+        val videoQuality: Quality,
+        val usesFeatureGroup: Boolean,
+        val captureMode: Int,
+        val selectHighestResolution: Boolean,
+    )
 
     var camera: Camera? = null
 
@@ -1085,6 +1111,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 // extension verdicts probed through the previous instance (including bind-time
                 // blacklists, see startCamera) describe vendor state that no longer exists.
                 extensionUsability.clear()
+                snapshotDropReason.clear()
                 probedCameraProvider = provider
             }
             cameraProvider = provider
@@ -1496,6 +1523,12 @@ class CamConfig(private val mActivity: MainActivity) {
             else -> null
         }
 
+        val captureMode = when {
+            waitForFocusLock -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+            enableZsl -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+            else -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        }
+
         if (isQRMode) {
             val analyzer = QRAnalyzer(mActivity)
             val strategy = ResolutionStrategy(
@@ -1569,17 +1602,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (!mActivity.requiresVideoModeOnly) {
                 imageCapture = builder.let {
-                    it.setCaptureMode(
-                        if (waitForFocusLock) {
-                            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-                        } else {
-                            if (enableZsl) {
-                                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-                            } else {
-                                ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-                            }
-                        }
-                    )
+                    it.setCaptureMode(captureMode)
 
 
                     it.setTargetRotation(
@@ -1673,46 +1696,62 @@ class CamConfig(private val mActivity: MainActivity) {
         // photo" apart from any other misconfiguration, and would answer both by silently
         // dropping in-video snapshots. A genuine bug then looked like a missing feature. This
         // asks the specific question, and leaves unexpected exceptions to surface as failures.
+        //
+        // Asking costs 80-140 ms, because the camera service resolves the whole feature group to
+        // answer it, so the verdict is cached (snapshotDropReason) and every entry into video mode
+        // after the first is free.
         val snapshotUseCase = imageCapture
         if (isVideoMode && snapshotUseCase != null) {
-            val cameraInfo = try {
-                cameraProvider?.getCameraInfo(cameraSelector)
-            } catch (exception: IllegalArgumentException) {
-                Log.e(TAG, "Failed to query camera info", exception)
-                mActivity.showMessage(mActivity.getString(R.string.bind_failure))
-                return
-            }
+            val probeKey = SnapshotProbeKey(
+                lensFacing, videoQuality, usesFeatureGroup, captureMode, selectHighestResolution
+            )
 
-            fun isSupported(useCases: List<UseCase>, features: Set<GroupableFeature>) =
-                cameraInfo?.isSessionConfigSupported(
-                    SessionConfig(useCases = useCases, requiredFeatureGroup = features)
-                ) == true
+            if (!snapshotDropReason.containsKey(probeKey)) {
+                snapshotProbeCount++
 
-            // When a quality feature is about to be requested, the probe has to require that
-            // quality too: a camera can be able to run the three plain streams yet not at the
-            // chosen quality, and a probe without it would keep the snapshot use case and leave
-            // the conflict to the feature-group resolver -- which resolves it by dropping the
-            // *quality*, with a notice blaming the camera for a quality it does support. The
-            // quality wins the conflict because it is an explicit choice from the settings while
-            // in-video snapshots are an implicit capability (the same reasoning as the preferred
-            // feature ordering above), and giving up the snapshots is already the established
-            // answer when they can't be bound at all. The second isSupported(useCasesList,
-            // emptySet()) arm keeps the snapshots when the quality is unreachable even without
-            // them: dropping them would buy nothing, and the resolver's "unsupported quality"
-            // notice is genuinely true then.
-            val dropReason = when {
-                videoQualityFeature == null -> when {
+                val cameraInfo = try {
+                    cameraProvider?.getCameraInfo(cameraSelector)
+                } catch (exception: IllegalArgumentException) {
+                    Log.e(TAG, "Failed to query camera info", exception)
+                    mActivity.showMessage(mActivity.getString(R.string.bind_failure))
+                    return
+                }
+
+                fun isSupported(useCases: List<UseCase>, features: Set<GroupableFeature>) =
+                    cameraInfo?.isSessionConfigSupported(
+                        SessionConfig(useCases = useCases, requiredFeatureGroup = features)
+                    ) == true
+
+                // When a quality feature is about to be requested, the probe has to require that
+                // quality too: a camera can be able to run the three plain streams yet not at the
+                // chosen quality, and a probe without it would keep the snapshot use case and leave
+                // the conflict to the feature-group resolver -- which resolves it by dropping the
+                // *quality*, with a notice blaming the camera for a quality it does support. The
+                // quality wins the conflict because it is an explicit choice from the settings while
+                // in-video snapshots are an implicit capability (the same reasoning as the preferred
+                // feature ordering above), and giving up the snapshots is already the established
+                // answer when they can't be bound at all. The second isSupported(useCasesList,
+                // emptySet()) arm keeps the snapshots when the quality is unreachable even without
+                // them: dropping them would buy nothing, and the resolver's "unsupported quality"
+                // notice is genuinely true then.
+                snapshotDropReason[probeKey] = when {
+                    videoQualityFeature == null -> when {
+                        isSupported(useCasesList, emptySet()) -> null
+                        else -> "Video, photo and preview can't be bound together on this camera"
+                    }
+
+                    isSupported(useCasesList, setOf(videoQualityFeature)) -> null
+                    isSupported(useCasesList - snapshotUseCase, setOf(videoQualityFeature)) -> {
+                        "This camera can't record at the selected video quality with in-video " +
+                                "snapshots enabled"
+                    }
+
                     isSupported(useCasesList, emptySet()) -> null
                     else -> "Video, photo and preview can't be bound together on this camera"
                 }
-                isSupported(useCasesList, setOf(videoQualityFeature)) -> null
-                isSupported(useCasesList - snapshotUseCase, setOf(videoQualityFeature)) ->
-                    "This camera can't record at the selected video quality with in-video " +
-                            "snapshots enabled"
-                isSupported(useCasesList, emptySet()) -> null
-                else -> "Video, photo and preview can't be bound together on this camera"
             }
 
+            val dropReason = snapshotDropReason[probeKey]
             if (dropReason != null) {
                 Log.i(TAG, "$dropReason; disabling snapshots while recording")
                 useCasesList.remove(snapshotUseCase)
