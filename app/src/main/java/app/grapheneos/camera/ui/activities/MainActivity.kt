@@ -785,12 +785,12 @@ open class MainActivity : AppCompatActivity(),
         isoButton.setOnClickListener {
             it.isSelected = !it.isSelected
 
-            if(it.isSelected){
+            if (it.isSelected) {
+                isoButton.setBackgroundResource(R.drawable.manual_button_pressed_bg)
                 isoButton.setTextColor(Color.BLACK)
-                isoButton.setBackgroundColor(Color.WHITE)
-            }else{
+            } else {
+                isoButton.setBackgroundResource(R.drawable.manual_button_bg)
                 isoButton.setTextColor(Color.WHITE)
-                isoButton.setBackgroundColor(Color.BLACK)
             }
         }
 
