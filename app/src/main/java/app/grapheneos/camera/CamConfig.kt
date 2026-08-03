@@ -24,6 +24,7 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.MirrorMode
@@ -39,7 +40,6 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.DynamicRange
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -95,6 +95,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GEO_TAGGING = "geo_tagging"
             const val FLASH_MODE = "flash_mode"
             const val GRID = "grid"
+
             // obsolete, split into WAIT_FOR_FOCUS_LOCK and PHOTO_QUALITY
             const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
             const val FOCUS_TIMEOUT = "focus_timeout"
@@ -269,7 +270,8 @@ class CamConfig(private val mActivity: MainActivity) {
     // from the lock screen) are forced to override getSharedPreferences()
     // and return an instance of in-memory EphemeralSharedPrefs, which are based on "real" prefs,
     // but never modify them
-    val commonPref: SharedPreferences = mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
+    val commonPref: SharedPreferences =
+        mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
     private lateinit var modePref: SharedPreferences
 
     var lastCapturedItem: CapturedItem? = null
@@ -305,7 +307,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     mActivity is VideoOnlyActivity
         }
 
-    val canTakePicture : Boolean
+    val canTakePicture: Boolean
         get() {
             return imageCapture != null
         }
@@ -338,9 +340,11 @@ class CamConfig(private val mActivity: MainActivity) {
                 isVideoMode -> {
                     AspectRatio.RATIO_16_9
                 }
+
                 isQRMode -> {
                     AspectRatio.RATIO_4_3
                 }
+
                 else -> {
                     commonPref.getInt(
                         SettingValues.Key.ASPECT_RATIO,
@@ -605,7 +609,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    val isZslSupported : Boolean by lazy {
+    val isZslSupported: Boolean by lazy {
         camera!!.cameraInfo.isZslSupported
     }
 
@@ -614,11 +618,11 @@ class CamConfig(private val mActivity: MainActivity) {
     // feature combinations, so a camera that can stabilize is not on its own enough: where the
     // group cannot be used nothing applies EIS, and offering the toggle there is offering a
     // control that does nothing.
-    fun canApplyVideoStabilization() : Boolean {
+    fun canApplyVideoStabilization(): Boolean {
         return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
     }
 
-    private fun isVideoStabilizationSupported() : Boolean {
+    private fun isVideoStabilizationSupported(): Boolean {
         // The toggle asks for both kinds of stabilization (see the preferred feature group in
         // startCamera), preferring the preview kind and falling back to the recording-only kind,
         // so it is meaningful whenever either one is available. Testing only the recorder
@@ -629,12 +633,12 @@ class CamConfig(private val mActivity: MainActivity) {
         return isPreviewStabilizationSupported() || isRecorderStabilizationSupported()
     }
 
-    private fun isPreviewStabilizationSupported() : Boolean {
+    private fun isPreviewStabilizationSupported(): Boolean {
         return Preview.getPreviewCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
 
-    private fun isRecorderStabilizationSupported() : Boolean {
+    private fun isRecorderStabilizationSupported(): Boolean {
         return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
@@ -666,7 +670,10 @@ class CamConfig(private val mActivity: MainActivity) {
         if (mActivity is SecureMainActivity) {
             // previous call updated ephemeral SharedPreferences that won't be accessible by the
             // "regular" MainActivity
-            mActivity.applicationContext.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE).edit {
+            mActivity.applicationContext.getSharedPreferences(
+                COMMON_SHARED_PREFS_NAME,
+                Context.MODE_PRIVATE
+            ).edit {
                 saveLastCapturedItem(item, this)
             }
         }
@@ -1025,7 +1032,7 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
-    private fun getCurrentCameraInfo() : CameraInfo {
+    private fun getCurrentCameraInfo(): CameraInfo {
         return cameraProvider!!.getCameraInfo(cameraSelector)
     }
 
@@ -1100,7 +1107,8 @@ class CamConfig(private val mActivity: MainActivity) {
             // listener has to run on the main thread, for the field write and startCamera().
             thread {
                 try {
-                    val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(mActivity, provider)
+                    val extensionsManagerFuture =
+                        ExtensionsManager.getInstanceAsync(mActivity, provider)
 
                     extensionsManagerFuture.addListener({
                         try {
@@ -1366,7 +1374,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    private fun isLensFacingSupported(lensFacing : Int) : Boolean {
+    private fun isLensFacingSupported(lensFacing: Int): Boolean {
         var tCameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
             .build()
@@ -1377,8 +1385,11 @@ class CamConfig(private val mActivity: MainActivity) {
                     return false
 
                 try {
-                    tCameraSelector = em.getExtensionEnabledCameraSelector(tCameraSelector, currentMode.extensionMode)
-                } catch (e : IllegalArgumentException) {
+                    tCameraSelector = em.getExtensionEnabledCameraSelector(
+                        tCameraSelector,
+                        currentMode.extensionMode
+                    )
+                } catch (e: IllegalArgumentException) {
                     return false
                 }
             }
@@ -1493,7 +1504,8 @@ class CamConfig(private val mActivity: MainActivity) {
             )
             val mIAnalyzer = ImageAnalysis.Builder()
                 .setResolutionSelector(
-                    ResolutionSelector.Builder().setResolutionStrategy(strategy).build())
+                    ResolutionSelector.Builder().setResolutionStrategy(strategy).build()
+                )
                 .setOutputImageRotationEnabled(true)
                 .build()
             qrAnalyzer = analyzer
@@ -1507,7 +1519,8 @@ class CamConfig(private val mActivity: MainActivity) {
                     } else {
                         mActivity.showMessage(R.string.qr_rear_camera_unavailable)
                         CameraSelector.LENS_FACING_FRONT
-                    })
+                    }
+                )
                 .build()
             useCasesList.add(mIAnalyzer)
 
