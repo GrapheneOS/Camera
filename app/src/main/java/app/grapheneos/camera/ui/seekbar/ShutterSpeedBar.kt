@@ -1,16 +1,12 @@
 package app.grapheneos.camera.ui.seekbar
 
 import android.content.Context
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
 import android.util.AttributeSet
-import android.util.Log
 import android.widget.SeekBar
 import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatSeekBar
-import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.core.content.ContextCompat.getSystemService
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class ShutterSpeedBar : AppCompatSeekBar {
@@ -43,7 +39,7 @@ class ShutterSpeedBar : AppCompatSeekBar {
                     mainActivity.shutterSpeedValueText.text = label
 
                     if(mainActivity.camConfig.isManualMode){
-                        mainActivity.camConfig.manualExposureValue = selectedNanos
+                        mainActivity.camConfig.manualExposureTimeValue = selectedNanos
                         mainActivity.camConfig.applyManualSettings()
                     }
                 }
@@ -77,11 +73,11 @@ class ShutterSpeedBar : AppCompatSeekBar {
 
     private fun formatShutterSpeed(seconds: Double): String {
         return when {
-            seconds >= 1.0 -> "${seconds.toInt()}s"
-            seconds == 0.3 || seconds == 0.5 -> "$seconds"
+            seconds >= 1.0 -> context.getString(R.string.shutter_speed_seconds, seconds.toInt())
+            seconds == 0.3 || seconds == 0.5 -> context.getString(R.string.shutter_speed_decimal, seconds)
             else -> {
                 val denominator = (1.0 / seconds + 0.5).toInt()
-                "1/$denominator"
+                context.getString(R.string.shutter_speed_fraction, denominator)
             }
         }
     }

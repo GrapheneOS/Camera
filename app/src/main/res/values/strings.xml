@@ -87,10 +87,13 @@
     <string name="more_options">More Options</string>
     <string name="pdf_417">PDF 417</string>
     <string name="more_settings">More Settings</string>
-    <string name="iso">ISO</string>
+    <string name="iso_button_label">ISO</string>
     <string name="default_iso_value">100</string>
-    <string name="shutter_speed">Shutter speed</string>
+    <string name="shutter_speed_button_label">Shutter speed</string>
     <string name="default_shutter_speed_value">100</string>
+    <string name="shutter_speed_fraction">1/%1$d</string>
+    <string name="shutter_speed_seconds">%1$ds</string>
+    <string name="shutter_speed_decimal">%1$.1f</string>
 
     <string name="general">General</string>
 

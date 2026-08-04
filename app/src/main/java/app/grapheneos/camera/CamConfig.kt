@@ -280,7 +280,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var lastCapturedItem: CapturedItem? = null
 
     var manualIsoValue: Int? = null
-    var manualExposureValue: Long? = null
+    var manualExposureTimeValue: Long? = null
 
     init {
         if (mActivity !is SecureActivity) {
@@ -1041,6 +1041,10 @@ class CamConfig(private val mActivity: MainActivity) {
             .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE)
     }
 
+    /**
+     * Applies manual ISO and Exposure Time settings to the camera hardware.
+     * If camera is not in manual mode, it restores Auto Exposure (AE) mode.
+     */
     @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
     fun applyManualSettings() {
         val cameraControl = camera?.cameraControl ?: return
@@ -1054,7 +1058,7 @@ class CamConfig(private val mActivity: MainActivity) {
             manualIsoValue?.let {
                 builder.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, it)
             }
-            manualExposureValue?.let {
+            manualExposureTimeValue?.let {
                 builder.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, it)
             }
         }
@@ -2092,7 +2096,7 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.isoSliderContainer.visibility = View.GONE
             //mActivity.updateIsoButtonUI()
             manualIsoValue = null
-            manualExposureValue = null
+            manualExposureTimeValue = null
             applyManualSettings()
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
@@ -2116,12 +2120,12 @@ class CamConfig(private val mActivity: MainActivity) {
             if (!isManualMode) {
                 mActivity.deselectAllManualControls()
                 manualIsoValue = null
-                manualExposureValue = null
+                manualExposureTimeValue = null
                 applyManualSettings()
                 mActivity.startFocusTimer()
             }else{
                 manualIsoValue = mActivity.isoSeekBar.getCurrentIsoValue()
-                manualExposureValue = mActivity.shutterSpeedBar.getCurrentShutterValue()
+                manualExposureTimeValue = mActivity.shutterSpeedBar.getCurrentShutterValue()
                 applyManualSettings()
                 mActivity.cancelFocusTimer()
             }

@@ -44,7 +44,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
-import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -868,7 +867,7 @@ open class MainActivity : AppCompatActivity(),
 
             if (it.isSelected) {
                 shutterSpeedSliderContainer.visibility = View.VISIBLE
-                camConfig.manualExposureValue = shutterSpeedBar.getCurrentShutterValue()
+                camConfig.manualExposureTimeValue = shutterSpeedBar.getCurrentShutterValue()
             } else {
                 shutterSpeedSliderContainer.visibility = View.GONE
             }
