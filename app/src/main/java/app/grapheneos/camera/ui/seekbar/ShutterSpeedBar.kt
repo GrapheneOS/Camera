@@ -1,9 +1,16 @@
 package app.grapheneos.camera.ui.seekbar
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.SeekBar
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatSeekBar
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.core.content.ContextCompat.getSystemService
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class ShutterSpeedBar : AppCompatSeekBar {
@@ -25,7 +32,6 @@ class ShutterSpeedBar : AppCompatSeekBar {
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
-        refreshShutterValues()
 
         this.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -47,12 +53,13 @@ class ShutterSpeedBar : AppCompatSeekBar {
         })
     }
 
+    @OptIn(ExperimentalCamera2Interop::class)
     fun refreshShutterValues() {
         val range = mainActivity.camConfig.getShutterRange()
         val minNanos = range?.lower ?: 100_000L // 1/10000s default
         val maxNanos = range?.upper ?: 1_000_000_000L // 1s default
 
-        val validPairs = shutterSpeeds.map { (it * 1_000_000_000L).toLong() to it }
+        val validPairs = shutterSpeeds.map { (it * 1_000_000_000.0).toLong() to it }
             .filter { it.first in minNanos..maxNanos }
 
         shutterValues = validPairs.map { it.first }

@@ -709,6 +709,7 @@ open class MainActivity : AppCompatActivity(),
                 mainOverlay.visibility = View.INVISIBLE
                 camConfig.reloadSettings()
                 isoSeekBar.refreshIsoValues()
+                shutterSpeedBar.refreshShutterValues()
                 if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     if (!settingsDialog.isShowing) {
