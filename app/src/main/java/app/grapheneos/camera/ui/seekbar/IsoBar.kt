@@ -52,15 +52,13 @@ class IsoBar : AppCompatSeekBar {
             val maxIso = range.upper
             isoValues = listOf(minIso, 100, 200, 400, 800, 1600, maxIso).distinct().sorted()
             this.max = isoValues.size - 1
-            
-            // Sync UI
+
             if (this.progress >= isoValues.size) {
                 this.progress = 0
             }
             val selectedIso = isoValues[this.progress]
             mainActivity.isoValueText.text = selectedIso.toString()
-            
-            // Sync current ISO to config if manual mode is active
+
             if (mainActivity.isoButton.isSelected) {
                 mainActivity.camConfig.manualIsoValue = selectedIso
                 mainActivity.camConfig.applyManualSettings()

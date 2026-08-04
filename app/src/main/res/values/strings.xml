@@ -88,7 +88,9 @@
     <string name="pdf_417">PDF 417</string>
     <string name="more_settings">More Settings</string>
     <string name="iso">ISO</string>
+    <string name="default_iso_value">100</string>
     <string name="shutter_speed">Shutter speed</string>
+    <string name="default_shutter_speed_value">100</string>
 
     <string name="general">General</string>
 

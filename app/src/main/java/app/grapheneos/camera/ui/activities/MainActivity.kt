@@ -263,13 +263,21 @@ open class MainActivity : AppCompatActivity(),
     lateinit var shutterSpeedSliderContainer: View
     lateinit var shutterSpeedValueText: TextView
 
-    fun updateIsoButtonUI() {
-        if (isoButton.isSelected) {
-            isoButton.setBackgroundResource(R.drawable.manual_button_pressed_bg)
-            isoButton.setTextColor(Color.BLACK)
+
+    fun updateManualButtonsUI(){
+        val buttons : List<TextView> = listOf(isoButton, shutterButton)
+        for(b in buttons){
+            updateManualButtonUI(b)
+        }
+    }
+
+   private fun updateManualButtonUI(button: TextView) {
+        if (button.isSelected) {
+            button.setBackgroundResource(R.drawable.manual_button_pressed_bg)
+            button.setTextColor(Color.BLACK)
         } else {
-            isoButton.setBackgroundResource(R.drawable.manual_button_bg)
-            isoButton.setTextColor(Color.WHITE)
+            button.setBackgroundResource(R.drawable.manual_button_bg)
+            button.setTextColor(Color.WHITE)
         }
     }
 
@@ -823,33 +831,38 @@ open class MainActivity : AppCompatActivity(),
 
         isoButton.setOnClickListener {
             it.isSelected = !it.isSelected
-            updateIsoButtonUI()
 
             if (it.isSelected) {
+
+                shutterButton.isSelected = false;
+                shutterSpeedSliderContainer.visibility = View.GONE;
+
                 isoSliderContainer.visibility = View.VISIBLE
                 if (camConfig.manualIsoValue == null) {
                     camConfig.manualIsoValue = isoSeekBar.getCurrentIsoValue()
-                    camConfig.applyManualSettings()
                 }
             } else {
                 isoSliderContainer.visibility = View.GONE
             }
+            camConfig.applyManualSettings()
+            updateManualButtonsUI()
         }
 
         shutterButton.setOnClickListener {
             it.isSelected = !it.isSelected
+
             if (it.isSelected) {
                 shutterSpeedSliderContainer.visibility = View.VISIBLE
 
                 isoButton.isSelected = false
                 isoSliderContainer.visibility = View.GONE
-                updateIsoButtonUI()
 
                 camConfig.manualExposureValue = shutterSpeedBar.getCurrentShutterValue().toInt()
             } else {
                 shutterSpeedSliderContainer.visibility = View.GONE
             }
             camConfig.applyManualSettings()
+            updateManualButtonsUI()
         }
 
         cancelButtonView = binding.cancelButton

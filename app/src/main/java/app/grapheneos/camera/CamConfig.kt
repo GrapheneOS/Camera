@@ -2089,7 +2089,7 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.isoButton.visibility = View.GONE
             mActivity.isoButton.isSelected = false
             mActivity.isoSliderContainer.visibility = View.GONE
-            mActivity.updateIsoButtonUI()
+            //mActivity.updateIsoButtonUI()
             manualIsoValue = null
             manualExposureValue = null
             applyManualSettings()
@@ -2119,7 +2119,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.shutterButton.isSelected = false
                 mActivity.shutterSpeedSliderContainer.visibility = View.GONE
 
-                mActivity.updateIsoButtonUI()
+                //mActivity.updateIsoButtonUI()
                 manualIsoValue = null
                 manualExposureValue = null
                 applyManualSettings()
