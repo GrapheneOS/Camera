@@ -224,7 +224,7 @@
             android:paddingHorizontal="12dp"
             android:layout_above="@id/manual_controls_layout"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/manual_button_bg"
             android:padding="12dp"
             android:visibility="gone">
@@ -266,7 +266,7 @@
             android:paddingHorizontal="12dp"
             android:layout_above="@id/manual_controls_layout"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/manual_button_bg"
             android:padding="12dp"
             android:visibility="gone">
@@ -305,7 +305,7 @@
             android:orientation="horizontal"
             android:layout_above="@id/three_buttons"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="6dp">
             <TextView
             android:id="@+id/iso_button"
             android:layout_width="wrap_content"
