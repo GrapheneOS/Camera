@@ -263,6 +263,13 @@ open class MainActivity : AppCompatActivity(),
     lateinit var shutterSpeedSliderContainer: View
     lateinit var shutterSpeedValueText: TextView
 
+    private val manualControlPairs by lazy {
+        listOf(
+            isoButton to isoSliderContainer,
+            shutterButton to shutterSpeedSliderContainer
+        )
+    }
+
 
     fun updateManualButtonsUI(){
         val buttons : List<TextView> = listOf(isoButton, shutterButton)
@@ -830,13 +837,11 @@ open class MainActivity : AppCompatActivity(),
         }
 
         isoButton.setOnClickListener {
-            it.isSelected = !it.isSelected
+            val targetState = !it.isSelected
+            deselectAllManualControls()
+            it.isSelected = targetState
 
             if (it.isSelected) {
-
-                shutterButton.isSelected = false;
-                shutterSpeedSliderContainer.visibility = View.GONE;
-
                 isoSliderContainer.visibility = View.VISIBLE
                 if (camConfig.manualIsoValue == null) {
                     camConfig.manualIsoValue = isoSeekBar.getCurrentIsoValue()
@@ -849,14 +854,12 @@ open class MainActivity : AppCompatActivity(),
         }
 
         shutterButton.setOnClickListener {
-            it.isSelected = !it.isSelected
+            val targetState = !it.isSelected
+            deselectAllManualControls()
+            it.isSelected = targetState
 
             if (it.isSelected) {
                 shutterSpeedSliderContainer.visibility = View.VISIBLE
-
-                isoButton.isSelected = false
-                isoSliderContainer.visibility = View.GONE
-
                 camConfig.manualExposureValue = shutterSpeedBar.getCurrentShutterValue().toInt()
             } else {
                 shutterSpeedSliderContainer.visibility = View.GONE
@@ -1890,6 +1893,15 @@ open class MainActivity : AppCompatActivity(),
     private fun resetAutoSleep() {
         application.resetPreventScreenFromSleeping()
     }
+
+    fun deselectAllManualControls() {
+        manualControlPairs.forEach { (button, container) ->
+            button.isSelected = false
+            container.visibility = View.GONE
+        }
+        updateManualButtonsUI()
+    }
+
 
     @Volatile var isStarted = false
 

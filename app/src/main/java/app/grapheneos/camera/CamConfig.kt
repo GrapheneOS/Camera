@@ -2113,13 +2113,7 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.isoButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
             mActivity.shutterButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
             if (!isManualMode) {
-                mActivity.isoButton.isSelected = false
-                mActivity.isoSliderContainer.visibility = View.GONE
-
-                mActivity.shutterButton.isSelected = false
-                mActivity.shutterSpeedSliderContainer.visibility = View.GONE
-
-                //mActivity.updateIsoButtonUI()
+                mActivity.deselectAllManualControls()
                 manualIsoValue = null
                 manualExposureValue = null
                 applyManualSettings()
