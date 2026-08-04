@@ -9,17 +9,17 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 
-class ShutterSpeedBar : AppCompatSeekBar {
+class ExposureTimeBar : AppCompatSeekBar {
 
     // Values in seconds (Double) to generate real ns
-    private val shutterSpeeds = listOf(
+    private val exposureTimes = listOf(
         1/6000.0, 1/4000.0, 1/3000.0, 1/2000.0, 1/1000.0, 1/750.0, 1/500.0,
         1/350.0, 1/250.0, 1/125.0, 1/60.0, 1/30.0, 1/25.0, 1/15.0, 1/10.0,
         1/8.0, 1/6.0, 1/4.0, 0.3, 0.5, 1.0, 2.0, 4.0, 8.0, 10.0, 15.0, 30.0
     )
 
 
-    private var shutterValues: List<Long> = emptyList()
+    private var exposureTimeValues: List<Long> = emptyList()
     private lateinit var mainActivity: MainActivity
 
     constructor(context: Context) : super(context)
@@ -31,12 +31,12 @@ class ShutterSpeedBar : AppCompatSeekBar {
 
         this.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (progress < shutterValues.size) {
-                    val selectedNanos = shutterValues[progress]
+                if (progress < exposureTimeValues.size) {
+                    val selectedNanos = exposureTimeValues[progress]
 
-                    val label = formatShutterSpeed(shutterSpeeds[progress])
-                    mainActivity.shutterSpeedValueText.text = label
-                    mainActivity.shutterSpeedValueText.text = label
+                    val label = formatExposureValuesSpeed(exposureTimes[progress])
+                    mainActivity.exposureTimeValueText.text = label
+                    mainActivity.exposureTimeValueText.text = label
 
                     if(mainActivity.camConfig.isManualMode){
                         mainActivity.camConfig.manualExposureTimeValue = selectedNanos
@@ -50,39 +50,39 @@ class ShutterSpeedBar : AppCompatSeekBar {
     }
 
     @OptIn(ExperimentalCamera2Interop::class)
-    fun refreshShutterValues() {
+    fun refreshExposureTimeValues() {
         val range = mainActivity.camConfig.getShutterRange()
         val minNanos = range?.lower ?: 100_000L // 1/10000s default
         val maxNanos = range?.upper ?: 1_000_000_000L // 1s default
 
-        val validPairs = shutterSpeeds.map { (it * 1_000_000_000.0).toLong() to it }
+        val validPairs = exposureTimes.map { (it * 1_000_000_000.0).toLong() to it }
             .filter { it.first in minNanos..maxNanos }
 
-        shutterValues = validPairs.map { it.first }
+        exposureTimeValues = validPairs.map { it.first }
         val filteredSpeeds = validPairs.map { it.second }
 
-        this.max = shutterValues.size - 1
+        this.max = exposureTimeValues.size - 1
 
-        if (this.progress >= shutterValues.size) {
+        if (this.progress >= exposureTimeValues.size) {
             this.progress = 0
         }
 
-        val initialLabel = formatShutterSpeed(filteredSpeeds[this.progress])
-        mainActivity.shutterSpeedValueText.text = initialLabel
+        val initialLabel = formatExposureValuesSpeed(filteredSpeeds[this.progress])
+        mainActivity.exposureTimeValueText.text = initialLabel
     }
 
-    private fun formatShutterSpeed(seconds: Double): String {
+    private fun formatExposureValuesSpeed(seconds: Double): String {
         return when {
-            seconds >= 1.0 -> context.getString(R.string.shutter_speed_seconds, seconds.toInt())
-            seconds == 0.3 || seconds == 0.5 -> context.getString(R.string.shutter_speed_decimal, seconds)
+            seconds >= 1.0 -> context.getString(R.string.exposure_time_seconds, seconds.toInt())
+            seconds == 0.3 || seconds == 0.5 -> context.getString(R.string.exposure_time_decimal, seconds)
             else -> {
                 val denominator = (1.0 / seconds + 0.5).toInt()
-                context.getString(R.string.shutter_speed_fraction, denominator)
+                context.getString(R.string.exposure_time_fraction, denominator)
             }
         }
     }
 
-    fun getCurrentShutterValue(): Long {
-        return if (progress < shutterValues.size) shutterValues[progress] else shutterValues.last()
+    fun getCurrentExposureTimeValue(): Long {
+        return if (progress < exposureTimeValues.size) exposureTimeValues[progress] else exposureTimeValues.last()
     }
 }

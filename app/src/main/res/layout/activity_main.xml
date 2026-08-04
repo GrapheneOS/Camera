@@ -257,7 +257,7 @@
         </FrameLayout>
 
         <FrameLayout
-            android:id="@+id/shutter_speed_slider_container"
+            android:id="@+id/exposure_time_slider_container"
             android:layout_width="280dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
@@ -272,11 +272,11 @@
             android:visibility="gone">
 
             <TextView
-                android:id="@+id/shutter_speed_value_text"
+                android:id="@+id/exposure_time_value_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|center_horizontal"
-                android:text="@string/default_shutter_speed_value"
+                android:text="@string/default_exposure_time_value"
                 android:textColor="@android:color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -287,8 +287,8 @@
                 android:shadowDy="1.3"
                 android:shadowRadius="1.6" />
 
-            <app.grapheneos.camera.ui.seekbar.ShutterSpeedBar
-                android:id="@+id/shutter_speed_seekbar"
+            <app.grapheneos.camera.ui.seekbar.ExposureTimeBar
+                android:id="@+id/exposure_time_seekbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -326,10 +326,10 @@
             <View android:layout_width="12dp" android:layout_height="0dp" />
 
             <TextView
-                android:id="@+id/shutter_button"
+                android:id="@+id/exposure_time_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/shutter_speed_button_label"
+                android:text="@string/exposure_time_button_label"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
                 android:textStyle="bold"

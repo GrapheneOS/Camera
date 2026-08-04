@@ -2116,7 +2116,7 @@ class CamConfig(private val mActivity: MainActivity) {
             }
 
             mActivity.isoButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
-            mActivity.shutterButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
+            mActivity.exposureTimeButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
             if (!isManualMode) {
                 mActivity.deselectAllManualControls()
                 manualIsoValue = null
@@ -2125,7 +2125,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.startFocusTimer()
             }else{
                 manualIsoValue = mActivity.isoSeekBar.getCurrentIsoValue()
-                manualExposureTimeValue = mActivity.shutterSpeedBar.getCurrentShutterValue()
+                manualExposureTimeValue = mActivity.exposureTimeBar.getCurrentExposureTimeValue()
                 applyManualSettings()
                 mActivity.cancelFocusTimer()
             }

@@ -89,7 +89,7 @@ import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.IsoBar
-import app.grapheneos.camera.ui.seekbar.ShutterSpeedBar
+import app.grapheneos.camera.ui.seekbar.ExposureTimeBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.CameraControl
@@ -264,21 +264,21 @@ open class MainActivity : AppCompatActivity(),
     lateinit var isoSliderContainer: View
     lateinit var isoValueText: TextView
 
-    lateinit var shutterButton: TextView
-    lateinit var shutterSpeedBar: ShutterSpeedBar
-    lateinit var shutterSpeedSliderContainer: View
-    lateinit var shutterSpeedValueText: TextView
+    lateinit var exposureTimeButton: TextView
+    lateinit var exposureTimeBar: ExposureTimeBar
+    lateinit var exposureTimeSliderContainer: View
+    lateinit var exposureTimeValueText: TextView
 
     private val manualControlPairs by lazy {
         listOf(
             isoButton to isoSliderContainer,
-            shutterButton to shutterSpeedSliderContainer
+            exposureTimeButton to exposureTimeSliderContainer
         )
     }
 
 
     fun updateManualButtonsUI(){
-        val buttons : List<TextView> = listOf(isoButton, shutterButton)
+        val buttons : List<TextView> = listOf(isoButton, exposureTimeButton)
         for(b in buttons){
             updateManualButtonUI(b)
         }
@@ -666,16 +666,16 @@ open class MainActivity : AppCompatActivity(),
 
         isoSliderContainer = binding.isoSliderContainer
         isoValueText = binding.isoValueText
-        shutterButton = binding.shutterButton
-        shutterSpeedValueText = binding.shutterSpeedValueText
+        exposureTimeButton = binding.exposureTimeButton
+        exposureTimeValueText = binding.exposureTimeValueText
 
         isoSeekBar = binding.isoSeekbar
-        shutterSpeedBar = binding.shutterSpeedSeekbar
+        exposureTimeBar = binding.exposureTimeSeekbar
 
         isoSeekBar.setMainActivity(this)
-        shutterSpeedBar.setMainActivity(this)
+        exposureTimeBar.setMainActivity(this)
 
-        shutterSpeedSliderContainer = binding.shutterSpeedSliderContainer
+        exposureTimeSliderContainer = binding.exposureTimeSliderContainer
 
 
 
@@ -708,7 +708,7 @@ open class MainActivity : AppCompatActivity(),
                 mainOverlay.visibility = View.INVISIBLE
                 camConfig.reloadSettings()
                 isoSeekBar.refreshIsoValues()
-                shutterSpeedBar.refreshShutterValues()
+                exposureTimeBar.refreshExposureTimeValues()
                 if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     if (!settingsDialog.isShowing) {
@@ -860,16 +860,16 @@ open class MainActivity : AppCompatActivity(),
             updateManualButtonsUI()
         }
 
-        shutterButton.setOnClickListener {
+        exposureTimeButton.setOnClickListener {
             val targetState = !it.isSelected
             deselectAllManualControls()
             it.isSelected = targetState
 
             if (it.isSelected) {
-                shutterSpeedSliderContainer.visibility = View.VISIBLE
-                camConfig.manualExposureTimeValue = shutterSpeedBar.getCurrentShutterValue()
+                exposureTimeSliderContainer.visibility = View.VISIBLE
+                camConfig.manualExposureTimeValue = exposureTimeBar.getCurrentExposureTimeValue()
             } else {
-                shutterSpeedSliderContainer.visibility = View.GONE
+                exposureTimeSliderContainer.visibility = View.GONE
             }
             camConfig.applyManualSettings()
             updateManualButtonsUI()

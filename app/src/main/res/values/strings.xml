@@ -89,11 +89,11 @@
     <string name="more_settings">More Settings</string>
     <string name="iso_button_label">ISO</string>
     <string name="default_iso_value">100</string>
-    <string name="shutter_speed_button_label">Shutter speed</string>
-    <string name="default_shutter_speed_value">100</string>
-    <string name="shutter_speed_fraction">1/%1$d</string>
-    <string name="shutter_speed_seconds">%1$ds</string>
-    <string name="shutter_speed_decimal">%1$.1f</string>
+    <string name="exposure_time_button_label">Exposure Time</string>
+    <string name="default_exposure_time_value">100</string>
+    <string name="exposure_time_fraction">1/%1$d</string>
+    <string name="exposure_time_seconds">%1$ds</string>
+    <string name="exposure_time_decimal">%1$.1f</string>
 
     <string name="general">General</string>
 
