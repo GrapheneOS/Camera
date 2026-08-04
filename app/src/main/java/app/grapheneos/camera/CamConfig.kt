@@ -2121,7 +2121,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity.startFocusTimer()
             }else{
                 manualIsoValue = mActivity.isoSeekBar.getCurrentIsoValue()
-                manualExposureValue = mActivity.shutterSpeedBar.getCurrentShutterValue().toInt()
+                manualExposureValue = mActivity.shutterSpeedBar.getCurrentShutterValue()
                 applyManualSettings()
                 mActivity.cancelFocusTimer()
             }

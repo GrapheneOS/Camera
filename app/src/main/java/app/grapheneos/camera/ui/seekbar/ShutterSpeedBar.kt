@@ -37,7 +37,7 @@ class ShutterSpeedBar : AppCompatSeekBar {
                     mainActivity.shutterSpeedValueText.text = label
 
                     if(mainActivity.camConfig.isManualMode){
-                        mainActivity.camConfig.manualExposureValue = selectedNanos.toInt()
+                        mainActivity.camConfig.manualExposureValue = selectedNanos
                         mainActivity.camConfig.applyManualSettings()
                     }
                 }
@@ -49,13 +49,24 @@ class ShutterSpeedBar : AppCompatSeekBar {
 
     fun refreshShutterValues() {
         val range = mainActivity.camConfig.getShutterRange()
-        val minNanos = range?.lower ?: 100_000L // 1/10000s por defecto
+        val minNanos = range?.lower ?: 100_000L // 1/10000s default
         val maxNanos = range?.upper ?: 1_000_000_000L // 1s default
 
-        shutterValues = shutterSpeeds.map { (it * 1_000_000_000L).toLong() }
-            .filter { it in minNanos..maxNanos }
+        val validPairs = shutterSpeeds.map { (it * 1_000_000_000L).toLong() to it }
+            .filter { it.first in minNanos..maxNanos }
+
+        shutterValues = validPairs.map { it.first }
+        val filteredSpeeds = validPairs.map { it.second }
 
         this.max = shutterValues.size - 1
+
+        if (this.progress >= shutterValues.size) {
+            this.progress = 0
+        }
+
+        val initialLabel = formatShutterSpeed(filteredSpeeds[this.progress])
+        mainActivity.shutterSpeedValueText.text = initialLabel
+        mainActivity.shutterButton.text = initialLabel
     }
 
     private fun formatShutterSpeed(seconds: Double): String {
