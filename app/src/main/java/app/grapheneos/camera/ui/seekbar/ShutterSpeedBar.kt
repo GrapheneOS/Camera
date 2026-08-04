@@ -8,11 +8,13 @@ import app.grapheneos.camera.ui.activities.MainActivity
 
 class ShutterSpeedBar : AppCompatSeekBar {
 
-    // Valores en segundos (Double) para generar los nanosegundos reales
+    // Values in seconds (Double) to generate real ns
     private val shutterSpeeds = listOf(
-        1/1000.0, 1/500.0, 1/250.0, 1/125.0, 1/60.0, 1/30.0,
-        1/15.0, 1/8.0, 1/4.0, 1/2.0, 1.0, 2.0
+        1/6000.0, 1/4000.0, 1/3000.0, 1/2000.0, 1/1000.0, 1/750.0, 1/500.0,
+        1/350.0, 1/250.0, 1/125.0, 1/60.0, 1/30.0, 1/25.0, 1/15.0, 1/10.0,
+        1/8.0, 1/6.0, 1/4.0, 0.3, 0.5, 1.0, 2.0, 4.0, 8.0, 10.0, 15.0, 30.0
     )
+
 
     private var shutterValues: List<Long> = emptyList()
     private lateinit var mainActivity: MainActivity
@@ -48,9 +50,8 @@ class ShutterSpeedBar : AppCompatSeekBar {
     fun refreshShutterValues() {
         val range = mainActivity.camConfig.getShutterRange()
         val minNanos = range?.lower ?: 100_000L // 1/10000s por defecto
-        val maxNanos = range?.upper ?: 1_000_000_000L // 1s por defecto
+        val maxNanos = range?.upper ?: 1_000_000_000L // 1s default
 
-        // Convertimos nuestra lista de segundos a nanosegundos (1s = 10^9 ns)
         shutterValues = shutterSpeeds.map { (it * 1_000_000_000L).toLong() }
             .filter { it in minNanos..maxNanos }
 
@@ -58,10 +59,13 @@ class ShutterSpeedBar : AppCompatSeekBar {
     }
 
     private fun formatShutterSpeed(seconds: Double): String {
-        return if (seconds < 1.0) {
-            "1/${(1.0 / seconds).toInt()}"
-        } else {
-            "${seconds.toInt()}s"
+        return when {
+            seconds >= 1.0 -> "${seconds.toInt()}s"
+            seconds == 0.3 || seconds == 0.5 -> "$seconds"
+            else -> {
+                val denominator = (1.0 / seconds + 0.5).toInt()
+                "1/$denominator"
+            }
         }
     }
 

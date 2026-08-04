@@ -280,7 +280,7 @@ class CamConfig(private val mActivity: MainActivity) {
     var lastCapturedItem: CapturedItem? = null
 
     var manualIsoValue: Int? = null
-    var manualExposureValue: Int? = null
+    var manualExposureValue: Long? = null
 
     init {
         if (mActivity !is SecureActivity) {
@@ -1055,7 +1055,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 builder.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, it)
             }
             manualExposureValue?.let {
-                builder.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, it.toLong())
+                builder.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, it)
             }
         }
 
