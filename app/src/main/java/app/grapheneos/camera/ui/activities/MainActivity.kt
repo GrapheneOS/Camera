@@ -1329,6 +1329,9 @@ open class MainActivity : AppCompatActivity(),
             if (camConfig.isQRMode)
                 return false
 
+            if(camConfig.isManualMode)
+                return false
+
             val x = event.x
             val y = event.y
 

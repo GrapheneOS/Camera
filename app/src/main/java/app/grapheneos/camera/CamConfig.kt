@@ -2118,6 +2118,12 @@ class CamConfig(private val mActivity: MainActivity) {
                 manualIsoValue = null
                 manualExposureValue = null
                 applyManualSettings()
+                mActivity.startFocusTimer()
+            }else{
+                manualIsoValue = mActivity.isoSeekBar.getCurrentIsoValue()
+                manualExposureValue = mActivity.shutterSpeedBar.getCurrentShutterValue().toInt()
+                applyManualSettings()
+                mActivity.cancelFocusTimer()
             }
         }
 
