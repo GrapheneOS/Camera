@@ -1047,8 +1047,7 @@ class CamConfig(private val mActivity: MainActivity) {
         val camera2CameraControl = Camera2CameraControl.from(cameraControl)
         val builder = CaptureRequestOptions.Builder()
 
-        // Lógica inteligente de AE Mode
-        if (manualIsoValue == null && manualExposureValue == null) {
+        if (!mActivity.camConfig.isManualMode) {
             builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
         } else {
             builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
@@ -1834,9 +1833,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         camera?.cameraInfo?.exposureState?.let { mActivity.exposureBar.setExposureConfig(it) }
 
-        if (isManualMode){
-            applyManualSettings()
-        }
+        applyManualSettings()
 
         mActivity.settingsDialog.torchToggle.isChecked = false
 

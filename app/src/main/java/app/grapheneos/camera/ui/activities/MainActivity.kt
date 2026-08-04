@@ -233,8 +233,15 @@ open class MainActivity : AppCompatActivity(),
             previewView.height / 2.0f, QROverlay.RATIO
         )
 
+        // In manual mode, we only want to focus (AF), not change exposure (AE)
+        val flags = if (camConfig.isManualMode) {
+            FocusMeteringAction.FLAG_AF
+        } else {
+            FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
+        }
+
         camConfig.camera?.cameraControl?.startFocusAndMetering(
-            FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
+            FocusMeteringAction.Builder(autoFocusPoint, flags).disableAutoCancel().build()
         )
 
         startFocusTimer()
@@ -1328,7 +1335,14 @@ open class MainActivity : AppCompatActivity(),
             val autoFocusPoint = previewView.meteringPointFactory.createPoint(x, y)
             animateFocusRing(x, y)
 
-            val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
+            // In manual mode, we only want to focus (AF), not change exposure (AE)
+            val flags = if (camConfig.isManualMode) {
+                FocusMeteringAction.FLAG_AF
+            } else {
+                FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
+            }
+
+            val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint, flags)
 
             if (!camConfig.isVideoMode) {
                 camConfig.mPlayer.playFocusStartSound()
