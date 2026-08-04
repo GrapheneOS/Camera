@@ -665,19 +665,19 @@ open class MainActivity : AppCompatActivity(),
         mainOverlay = binding.mainOverlay
         isoButton = binding.isoButton
 
-        isoSeekBar = binding.isoSeekbar
-        isoSeekBar.setMainActivity(this)
-
         isoSliderContainer = binding.isoSliderContainer
         isoValueText = binding.isoValueText
-
         shutterButton = binding.shutterButton
+        shutterSpeedValueText = binding.shutterSpeedValueText
 
+        isoSeekBar = binding.isoSeekbar
         shutterSpeedBar = binding.shutterSpeedSeekbar
+
+        isoSeekBar.setMainActivity(this)
         shutterSpeedBar.setMainActivity(this)
 
         shutterSpeedSliderContainer = binding.shutterSpeedSliderContainer
-        shutterSpeedValueText = binding.shutterSpeedValueText
+
 
 
         imageCapturer = ImageCapturer(this)
@@ -867,7 +867,7 @@ open class MainActivity : AppCompatActivity(),
 
             if (it.isSelected) {
                 shutterSpeedSliderContainer.visibility = View.VISIBLE
-                camConfig.manualExposureValue = shutterSpeedBar.getCurrentShutterValue().toInt()
+                camConfig.manualExposureValue = shutterSpeedBar.getCurrentShutterValue()
             } else {
                 shutterSpeedSliderContainer.visibility = View.GONE
             }

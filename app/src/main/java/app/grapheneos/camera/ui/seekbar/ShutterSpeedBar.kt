@@ -66,7 +66,6 @@ class ShutterSpeedBar : AppCompatSeekBar {
 
         val initialLabel = formatShutterSpeed(filteredSpeeds[this.progress])
         mainActivity.shutterSpeedValueText.text = initialLabel
-        mainActivity.shutterButton.text = initialLabel
     }
 
     private fun formatShutterSpeed(seconds: Double): String {
