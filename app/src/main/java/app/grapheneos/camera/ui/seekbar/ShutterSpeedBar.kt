@@ -30,14 +30,14 @@ class ShutterSpeedBar : AppCompatSeekBar {
                 if (progress < shutterValues.size) {
                     val selectedNanos = shutterValues[progress]
 
-                    // Actualizamos UI con formato legible
                     val label = formatShutterSpeed(shutterSpeeds[progress])
                     mainActivity.shutterSpeedValueText.text = label
                     mainActivity.shutterSpeedValueText.text = label
 
-                    // Aplicamos a la cámara
-                    mainActivity.camConfig.manualExposureValue = selectedNanos.toInt() // Nota: CamConfig usa Int o Long
-                    mainActivity.camConfig.applyManualSettings()
+                    if(mainActivity.camConfig.isManualMode){
+                        mainActivity.camConfig.manualExposureValue = selectedNanos.toInt()
+                        mainActivity.camConfig.applyManualSettings()
+                    }
                 }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}

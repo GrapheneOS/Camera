@@ -59,7 +59,7 @@ class IsoBar : AppCompatSeekBar {
             val selectedIso = isoValues[this.progress]
             mainActivity.isoValueText.text = selectedIso.toString()
 
-            if (mainActivity.isoButton.isSelected) {
+            if (mainActivity.camConfig.isManualMode) {
                 mainActivity.camConfig.manualIsoValue = selectedIso
                 mainActivity.camConfig.applyManualSettings()
             }
