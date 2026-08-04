@@ -84,6 +84,7 @@ class VideoCaptureActivity : CaptureActivity() {
     override fun showPreview() {
         super.showPreview()
         thirdOption.visibility = View.VISIBLE
+        micOffIcon.visibility = View.GONE
     }
 
     private fun confirmVideo() {
