@@ -1,7 +1,10 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.ContentResolver
+import android.content.Intent
 import android.content.ContentUris
 import android.content.Context
 import android.content.SharedPreferences
@@ -12,8 +15,13 @@ import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import androidx.annotation.StringRes
 import app.grapheneos.camera.CamConfig.SettingValues
+import app.grapheneos.camera.util.EphemeralSharedPrefs
 import app.grapheneos.camera.util.edit
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Locale
 import kotlin.jvm.Throws
 
 typealias ItemType = Int
@@ -43,6 +51,29 @@ class CapturedItem(
         }
 
         return "$prefix$dateString"
+    }
+
+    /**
+     * The capture time this item's own name encodes, in milliseconds. It is the last record of when
+     * media was taken once its Exif has been stripped and the provider keeps no creation timestamp,
+     * as the Storage Access Framework never does. Null if the name carries no usable timestamp.
+     */
+    fun captureTime(): Long? {
+        // ImageSaver appends milliseconds to the name and VideoCapturer does not. Both name in
+        // whatever the default time zone was at capture, which nothing records, so the name is read
+        // back in the current one: the wall-clock digits survive a change of zone, the instant does
+        // not. Callers must not present this as a zoned timestamp.
+        return parseDateString("yyyyMMdd_HHmmss_SSS") ?: parseDateString("yyyyMMdd_HHmmss")
+    }
+
+    private fun parseDateString(pattern: String): Long? {
+        val format = SimpleDateFormat(pattern, Locale.US)
+        format.isLenient = false
+        return try {
+            format.parse(dateString)?.time
+        } catch (e: ParseException) {
+            null
+        }
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -80,6 +111,54 @@ class CapturedItem(
     override fun describeContents() = 0
 }
 
+// Some OEM builds grant the shared uri to the target inside startActivity(), which throws a
+// SecurityException when this app has itself lost access to the item (e.g. it was deleted
+// externally, or its persisted uri came from a restored backup). Returns the error message to
+// show, or null on success
+@StringRes
+internal fun shareCapturedItem(activity: Activity, item: CapturedItem): Int? {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        putExtra(Intent.EXTRA_STREAM, item.uri)
+        setDataAndType(item.uri, item.mimeType())
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    return try {
+        activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.share_image)))
+        null
+    } catch (e: SecurityException) {
+        Log.e(CapturedItems.TAG, "unable to share ${item.uiName()}", e)
+        R.string.unable_to_share_media
+    }
+}
+
+// The uri grant for a directly started editor is computed inside startActivity() on all Android
+// versions (and inside the chooser start on the OEM builds mentioned above), failing the same way
+// when the item is no longer accessible. Returns the error message to show, or null on success
+@StringRes
+internal fun editCapturedItem(activity: Activity, item: CapturedItem, useDefaultEditor: Boolean): Int? {
+    val intent = Intent(Intent.ACTION_EDIT).apply {
+        setDataAndType(item.uri, item.mimeType())
+        putExtra(Intent.EXTRA_STREAM, item.uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    return try {
+        if (useDefaultEditor) {
+            activity.startActivity(intent)
+        } else {
+            activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.edit_image)).apply {
+                putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE, false)
+            })
+        }
+        null
+    } catch (e: ActivityNotFoundException) {
+        R.string.no_editor_app_error
+    } catch (e: SecurityException) {
+        Log.e(CapturedItems.TAG, "unable to edit ${item.uiName()}", e)
+        R.string.unable_to_edit_media
+    }
+}
+
 object CapturedItems {
     const val TAG = "CapturedItems"
 
@@ -97,6 +176,65 @@ object CapturedItems {
                 remove(legacyPrefKey)
             }
         }
+
+        releaseUntrackedSafTrees(ctx, prefs)
+    }
+
+    // A directory the user picks as the storage location is granted to us persistably, which lasts
+    // until we release it or the app is uninstalled. Trees drop off the tracked list once the user
+    // has picked enough different directories to push one past
+    // MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES, and the grant used to stay behind, leaving the app
+    // with indefinite read/write access to a folder it no longer has any use for. Reconcile the two.
+    fun releaseUntrackedSafTrees(ctx: Context, prefs: SharedPreferences) {
+        // A secure session reads a throwaway copy of the preferences, so the tracked list it sees is
+        // not the durable one and must never drive a durable revoke.
+        if (prefs is EphemeralSharedPrefs) {
+            return
+        }
+
+        val tracked = getSafTrees(prefs)
+        val resolver = ctx.contentResolver
+
+        resolver.persistedUriPermissions.forEach { permission ->
+            val uri = permission.uri
+            val flags = safTreeFlagsToRelease(
+                uri, permission.isReadPermission, permission.isWritePermission, tracked
+            )
+            if (flags == 0) {
+                return@forEach
+            }
+
+            try {
+                resolver.releasePersistableUriPermission(uri, flags)
+            } catch (e: Exception) {
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "unable to release the grant for $uri", e)
+                }
+            }
+        }
+    }
+
+    // Split out of the loop above so that the decision can be tested: an app cannot construct the
+    // UriPermission the loop reads it from.
+    internal fun safTreeFlagsToRelease(
+        uri: Uri, isRead: Boolean, isWrite: Boolean, tracked: Collection<Uri>
+    ): Int {
+        // Storage locations are the only tree grants this app takes; anything else persisted here
+        // belongs to a different feature and is none of our business.
+        if (!DocumentsContract.isTreeUri(uri) || tracked.contains(uri)) {
+            return 0
+        }
+
+        var flags = 0
+        if (isRead) {
+            flags = flags or Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }
+
+        if (isWrite) {
+            flags = flags or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        }
+
+        return flags
     }
 
     @Throws(InterruptedException::class)

@@ -3,9 +3,9 @@ package app.grapheneos.camera.ui.activities
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
+import android.database.Cursor
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
@@ -19,6 +19,7 @@ import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.provider.OpenableColumns
 import android.util.Log
+import android.util.Size
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -32,6 +33,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.get
+import androidx.core.view.size
 import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.AutoFinishOnSleep
@@ -42,11 +45,15 @@ import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
+import app.grapheneos.camera.editCapturedItem
+import app.grapheneos.camera.shareCapturedItem
+import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,7 +80,7 @@ class InAppGallery : AppCompatActivity() {
 
     private val autoFinisher = AutoFinishOnSleep(this)
 
-    private var lastViewedMediaItem : CapturedItem? = null
+    private var lastViewedMediaItem: CapturedItem? = null
 
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
@@ -138,8 +145,9 @@ class InAppGallery : AppCompatActivity() {
         }
     }
 
-    private fun getCurrentItem(): CapturedItem {
-        return gallerySliderAdapter!!.getCurrentItem()
+    // Null while the async media scan is still running (or once the last item is gone)
+    private fun getCurrentItem(): CapturedItem? {
+        return gallerySliderAdapter?.getCurrentItem()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -152,6 +160,15 @@ class InAppGallery : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        // Every item is a media action; none of them apply until the scan has delivered items
+        val hasMedia = gallerySliderAdapter != null
+        for (i in 0 until menu.size) {
+            menu[i].isVisible = hasMedia
+        }
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 
         return when (item.itemId) {
@@ -159,10 +176,12 @@ class InAppGallery : AppCompatActivity() {
                 editCurrentMedia()
                 true
             }
+
             R.id.edit_with -> {
                 editCurrentMedia(withDefault = false)
                 true
             }
+
             R.id.delete_icon -> {
                 deleteCurrentMedia()
                 true
@@ -188,30 +207,15 @@ class InAppGallery : AppCompatActivity() {
             return
         }
 
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
-        val editIntent = Intent(Intent.ACTION_EDIT).apply {
-            setDataAndType(curItem.uri, curItem.mimeType())
-            putExtra(Intent.EXTRA_STREAM, curItem.uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        if (withDefault) {
-            try {
-                startActivity(editIntent)
-            } catch (ignored: ActivityNotFoundException) {
-                showMessage(getString(R.string.no_editor_app_error))
-            }
-        } else {
-            val chooser = Intent.createChooser(editIntent, getString(R.string.edit_image)).apply {
-                putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE, false)
-            }
-            startActivity(chooser)
+        editCapturedItem(this, curItem, useDefaultEditor = withDefault)?.let {
+            showMessage(getString(it))
         }
     }
 
     private fun deleteCurrentMedia() {
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_title)
@@ -232,7 +236,7 @@ class InAppGallery : AppCompatActivity() {
 
                 if (res) {
                     showMessage(getString(R.string.deleted_successfully))
-                    gallerySliderAdapter!!.removeItem(curItem)
+                    gallerySliderAdapter?.removeItem(curItem)
                 } else {
                     showMessage(getString(R.string.deleting_unexpected_error))
                 }
@@ -242,25 +246,114 @@ class InAppGallery : AppCompatActivity() {
 
     }
 
+    /**
+     * A provider is free to ignore the projection it was handed and answer with its own columns
+     * -- the DocumentsProvider contract explicitly allows it -- so reading by position can hand
+     * back an unrelated column, e.g. a document id that then renders as a 1970 date. Look the
+     * column up by name instead and treat "absent" the same as "not set".
+     */
+    private fun Cursor.optionalLong(column: String): Long? =
+        getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
+
+    private fun Cursor.optionalString(column: String): String? =
+        getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getString(it) }
+
+    /**
+     * Best-effort creation and modification timestamps, in milliseconds, for media whose Exif
+     * has been stripped. MediaStore and the Storage Access Framework disagree both on the column
+     * names and on the unit, and each provider rejects the columns it does not know, so the two
+     * are queried separately and every failure just leaves the value unknown.
+     */
+    private fun queryStoredTimestamps(uri: Uri): Pair<Long?, Long?> {
+        var created: Long? = null
+        var modified: Long? = null
+
+        try {
+            val projection = arrayOf(MediaColumns.DATE_ADDED, MediaColumns.DATE_MODIFIED)
+            contentResolver.query(uri, projection, null, null)?.use {
+                if (it.moveToFirst()) {
+                    // Seconds since the epoch, and 0 stands for "not set"
+                    created = it.optionalLong(MediaColumns.DATE_ADDED)
+                        ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
+                    modified = it.optionalLong(MediaColumns.DATE_MODIFIED)
+                        ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("queryStoredTimestamps", "no MediaStore timestamps from ${uri.authority}", e)
+        }
+
+        if (modified == null) {
+            try {
+                val projection = arrayOf(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                contentResolver.query(uri, projection, null, null)?.use {
+                    if (it.moveToFirst()) {
+                        // Already in milliseconds here
+                        modified = it.optionalLong(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                            ?.takeIf { millis -> millis > 0 }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d("queryStoredTimestamps", "no document timestamp from ${uri.authority}", e)
+            }
+        }
+
+        return Pair(created, modified)
+    }
+
+    /**
+     * The dimensions a photo presents at, which is the stored frame with its Exif orientation
+     * applied. Only the header is read, so the full bitmap is never decoded.
+     */
+    private fun readImageResolution(uri: Uri, orientation: Int): Size? {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, options)
+        }
+
+        val width = options.outWidth
+        val height = options.outHeight
+        if (width <= 0 || height <= 0) {
+            return null
+        }
+
+        val quarterTurned = orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
+                orientation == ExifInterface.ORIENTATION_ROTATE_270 ||
+                orientation == ExifInterface.ORIENTATION_TRANSPOSE ||
+                orientation == ExifInterface.ORIENTATION_TRANSVERSE
+
+        return if (quarterTurned) Size(height, width) else Size(width, height)
+    }
+
     private fun showCurrentMediaDetails() {
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
         var relativePath: String? = null
         var fileName: String? = null
-        var size: Long = 0
+        // Absent rather than zero: a provider that reports no size at all used to be rendered as
+        // "Loading…", which is not what was happening and never resolved
+        var size: Long? = null
 
         var dateAdded: String? = null
         var dateModified: String? = null
 
-        try {
-            // note that the first column (RELATIVE_PATH) is undefined for SAF Uris
-            val projection = arrayOf(MediaColumns.RELATIVE_PATH, OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
+        var resolution: Size? = null
+        var durationMillis: Long? = null
 
-            contentResolver.query(curItem.uri, projection, null,null)?.use {
+        try {
+            // note that RELATIVE_PATH is undefined for SAF Uris, which the by-name lookups below
+            // report as absent rather than as whatever column happened to land in that position
+            val projection = arrayOf(
+                MediaColumns.RELATIVE_PATH,
+                OpenableColumns.DISPLAY_NAME,
+                OpenableColumns.SIZE
+            )
+
+            contentResolver.query(curItem.uri, projection, null, null)?.use {
                 if (it.moveToFirst()) {
-                    relativePath = it.getString(0)
-                    fileName = it.getString(1)
-                    size = it.getLong(2)
+                    relativePath = it.optionalString(MediaColumns.RELATIVE_PATH)
+                    fileName = it.optionalString(OpenableColumns.DISPLAY_NAME)
+                    size = it.optionalLong(OpenableColumns.SIZE)
                 }
             }
 
@@ -270,14 +363,54 @@ class InAppGallery : AppCompatActivity() {
             }
 
             if (curItem.type == ITEM_TYPE_VIDEO) {
-                MediaMetadataRetriever().use {
-                    it.setDataSource(this, curItem.uri)
-                    dateAdded = convertTimeForVideo(it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)!!)
-                    dateModified = dateAdded
+                MediaMetadataRetriever().use { retriever ->
+                    retriever.setDataSource(this, curItem.uri)
+                    // Not every container carries a creation date, and one that is missing or
+                    // malformed must not take the whole dialog down with it
+                    val date = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
+                    if (date != null) {
+                        try {
+                            dateAdded = convertTimeForVideo(date)
+                            dateModified = dateAdded
+                        } catch (e: ParseException) {
+                            Log.d("showCurrentMediaDetails", "unparseable video date: $date", e)
+                        }
+                    }
+
+                    durationMillis = retriever
+                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        ?.toLongOrNull()?.takeIf { millis -> millis > 0 }
+
+                    val width = retriever
+                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                        ?.toIntOrNull()
+
+                    val height = retriever
+                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                        ?.toIntOrNull()
+
+                    if (width != null && height != null && width > 0 && height > 0) {
+                        // A track holds its frames as encoded plus the rotation a player has to
+                        // apply, so a recording taken in portrait is stored landscape
+                        val rotation = retriever
+                            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+                            ?.toIntOrNull() ?: 0
+                        resolution = if (rotation == 90 || rotation == 270) {
+                            Size(height, width)
+                        } else {
+                            Size(width, height)
+                        }
+                    }
                 }
             } else {
+                var orientation = ExifInterface.ORIENTATION_NORMAL
+
                 contentResolver.openInputStream(curItem.uri)?.use { stream ->
                     val eInterface = ExifInterface(stream)
+
+                    orientation = eInterface.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
+                    )
 
                     val offset = eInterface.getAttribute(ExifInterface.TAG_OFFSET_TIME)
 
@@ -295,6 +428,29 @@ class InAppGallery : AppCompatActivity() {
                         )
                     }
                 }
+
+                resolution = readImageResolution(curItem.uri, orientation)
+            }
+
+            // Photos carry no Exif dates when "Remove Exif data after capture" is on, which is
+            // the default, so fall back to the timestamps the storage layer keeps.
+            if (dateAdded == null || dateModified == null) {
+                val (created, modified) = queryStoredTimestamps(curItem.uri)
+                if (dateAdded == null && created != null) {
+                    dateAdded = convertTime(created)
+                }
+                if (dateModified == null && modified != null) {
+                    dateModified = convertTime(modified)
+                }
+            }
+
+            // Neither source has a creation time to give for a stripped photo kept through the
+            // Storage Access Framework, but the app named the file after the moment it captured it.
+            // A name records wall-clock time and not the zone it was read in, so this one is shown
+            // without a zone: after the device travels, the digits are still the time the camera
+            // showed at capture, but naming a zone for them would assert the wrong one.
+            if (dateAdded == null) {
+                curItem.captureTime()?.let { dateAdded = convertTime(it, showTimeZone = false) }
             }
         } catch (e: Exception) {
             Log.d("showCurrentMediaDetails", "unable to obtain file details", e)
@@ -313,20 +469,32 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append(getString(R.string.file_path), "\n")
-        detailsBuilder.append(getRelativePath(this, curItem.uri, relativePath, fileName!!))
+        detailsBuilder.append(getRelativePath(this, curItem.uri, relativePath, fileName))
         detailsBuilder.append("\n\n")
 
         detailsBuilder.append(getString(R.string.file_size), "\n")
-        if (size == 0L) {
-            detailsBuilder.append(getString(R.string.loading_generic))
-        } else {
+        detailsBuilder.append(
+            size
+                ?.let {
+                    String.format(Locale.getDefault(), "%.2f MB", it / (1000f * 1000f))
+                }
+                ?: getString(R.string.not_found_generic)
+        )
+
+        detailsBuilder.append("\n\n")
+
+        detailsBuilder.append(getString(R.string.resolution), "\n")
+        detailsBuilder.append(resolution?.toString() ?: getString(R.string.not_found_generic))
+
+        if (curItem.type == ITEM_TYPE_VIDEO) {
+            detailsBuilder.append("\n\n")
+
+            detailsBuilder.append(getString(R.string.duration), "\n")
             detailsBuilder.append(
-                String.format(
-                    "%.2f",
-                    (size / (1000f * 1000f))
-                )
+                durationMillis
+                    ?.let { formatVideoDuration(it / 1000) }
+                    ?: getString(R.string.not_found_generic)
             )
-            detailsBuilder.append(" MB")
         }
 
         detailsBuilder.append("\n\n")
@@ -425,14 +593,11 @@ class InAppGallery : AppCompatActivity() {
             return
         }
 
-        val curItem = getCurrentItem()
+        val curItem = getCurrentItem() ?: return
 
-        val share = Intent(Intent.ACTION_SEND)
-        share.putExtra(Intent.EXTRA_STREAM, curItem.uri)
-        share.setDataAndType(curItem.uri, curItem.mimeType())
-        share.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-
-        startActivity(Intent.createChooser(share, getString(R.string.share_image)))
+        shareCapturedItem(this, curItem)?.let {
+            showMessage(getString(it))
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -475,24 +640,29 @@ class InAppGallery : AppCompatActivity() {
             val systemBars =
                 insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
             view.y = -systemBars.bottom.toFloat()
-            snackBar.setAnchorView(view)
+            snackBar.anchorView = view
             insets
         }
 
         if (savedInstanceState != null) {
-            lastViewedMediaItem = BundleCompat.getParcelable(savedInstanceState, LAST_VIEWED_ITEM_KEY, CapturedItem::class.java)
+            lastViewedMediaItem = BundleCompat.getParcelable(
+                savedInstanceState,
+                LAST_VIEWED_ITEM_KEY,
+                CapturedItem::class.java
+            )
         }
 
         val intent = this.intent
 
         val showVideosOnly = intent.getBooleanExtra(INTENT_KEY_VIDEO_ONLY_MODE, false)
         val listOfSecureModeCapturedItems = getParcelableArrayListExtra<CapturedItem>(
-            intent, INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS)
+            intent, INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS
+        )
 
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
                 CapturedItems.get(this)
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 // activity was destroyed and exectutor.shutdownNow() was called, which interrupts
                 // executor threads
                 return@execute
@@ -521,7 +691,8 @@ class InAppGallery : AppCompatActivity() {
         }
 
         if (lastViewedMediaItem == null) {
-            val lastCapturedItem = getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
+            val lastCapturedItem =
+                getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
 
             if (lastCapturedItem != null) {
                 val list = ArrayList<CapturedItem>()
@@ -542,7 +713,8 @@ class InAppGallery : AppCompatActivity() {
         supportActionBar?.setBackgroundDrawable(null)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.shade) { view, insets ->
-            val systemBars = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
+            val systemBars =
+                insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
             val actionBarHeight = resources.getDimensionPixelSize(R.dimen.action_bar_height)
             view.layoutParams =
                 RelativeLayout.LayoutParams(
@@ -590,6 +762,7 @@ class InAppGallery : AppCompatActivity() {
                 gallerySliderAdapter = it
                 gallerySlider.adapter = it
             }
+            invalidateOptionsMenu()
         } else {
             val adapterItems = existingAdapter.items
             adapterItems.ensureCapacity(items.size)
@@ -662,8 +835,8 @@ class InAppGallery : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        gallerySliderAdapter?.let {
-            outState.putParcelable(LAST_VIEWED_ITEM_KEY, it.items[gallerySlider.currentItem])
+        gallerySliderAdapter?.getCurrentItem()?.let {
+            outState.putParcelable(LAST_VIEWED_ITEM_KEY, it)
         }
     }
 }

@@ -28,8 +28,10 @@
                     android:id="@+id/preview"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
-                    app:layout_constraintDimensionRatio="H,9:16"
+                    app:layout_constraintDimensionRatio="9:16"
+                    app:layout_constraintVertical_bias="0"
                     app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -49,7 +51,7 @@
                     android:id="@+id/focusRing"
                     android:src="@drawable/focus_ring"
                     android:visibility="invisible"
-                    android:contentDescription="@string/focus_ring"
+                    android:importantForAccessibility="no"
                     app:layout_constraintTop_toTopOf="@id/preview"
                     app:layout_constraintStart_toStartOf="@id/preview"/>
 
@@ -62,104 +64,115 @@
                     app:layout_constraintTop_toBottomOf="@id/preview"
                     app:layout_constraintBottom_toBottomOf="parent"/>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <FrameLayout
-                android:id="@+id/g_circle_frame"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:id="@+id/g_circle"
+                <FrameLayout
+                    android:id="@+id/g_circle_frame"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:rotation="0"
-                    android:paddingBottom="14sp"
-                    android:layout_marginBottom="9dp"
-                    android:orientation="vertical">
+                    android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/g_circle_text"
+                    <LinearLayout
+                        android:id="@+id/g_circle"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="4dp"
-                        android:shadowColor="#000000"
-                        android:shadowDx="1.5"
-                        android:shadowDy="1.3"
-                        android:shadowRadius="1.6"
-                        android:textColor="@android:color/white"
-                        android:textAlignment="center"/>
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:rotation="0"
+                        android:paddingBottom="14sp"
+                        android:layout_marginBottom="9dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/g_circle_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:layout_marginBottom="4dp"
+                            android:shadowColor="#000000"
+                            android:shadowDx="1.5"
+                            android:shadowDy="1.3"
+                            android:shadowRadius="1.6"
+                            android:textColor="@android:color/white"
+                            android:textAlignment="center"/>
+
+                        <View
+                            android:id="@+id/g_circle_line_x"
+                            android:background="@drawable/white_shadow_rect"
+                            android:layout_width="120dp"
+                            android:layout_gravity="center"
+                            android:layout_height="2dp"/>
+
+                    </LinearLayout>
 
                     <View
-                        android:id="@+id/g_circle_line_x"
-                        android:background="@drawable/white_shadow_rect"
-                        android:layout_width="120dp"
+                        android:id="@+id/g_circle_line_z"
+                        android:background="@drawable/yellow_shadow_rect"
+                        android:layout_width="100dp"
                         android:layout_gravity="center"
-                        android:layout_height="2dp"/>
+                        android:layout_height="1.5dp"/>
 
-                </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:clipToPadding="false"
+                        android:orientation="horizontal">
 
-                <View
-                    android:id="@+id/g_circle_line_z"
-                    android:background="@drawable/yellow_shadow_rect"
-                    android:layout_width="100dp"
-                    android:layout_gravity="center"
-                    android:layout_height="1.5dp"/>
+                        <View
+                            android:id="@+id/g_circle_left_dash"
+                            android:background="@drawable/white_shadow_rect"
+                            android:layout_width="8dp"
+                            android:layout_height="2dp"/>
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:clipToPadding="false"
-                    android:orientation="horizontal">
+                        <View
+                            android:background="@android:color/transparent"
+                            android:layout_width="120dp"
+                            android:layout_height="1dp"/>
 
-                    <View
-                        android:id="@+id/g_circle_left_dash"
-                        android:background="@drawable/white_shadow_rect"
-                        android:layout_width="8dp"
-                        android:layout_height="2dp"/>
+                        <View
+                            android:id="@+id/g_circle_right_dash"
+                            android:layout_width="8dp"
+                            android:layout_height="2dp"
+                            android:background="@drawable/white_shadow_rect"/>
 
-                    <View
-                        android:background="@android:color/transparent"
-                        android:layout_width="120dp"
-                        android:layout_height="1dp"/>
+                    </LinearLayout>
 
-                    <View
-                        android:id="@+id/g_circle_right_dash"
-                        android:layout_width="8dp"
-                        android:layout_height="2dp"
-                        android:background="@drawable/white_shadow_rect"/>
+                </FrameLayout>
 
-                </LinearLayout>
+                <app.grapheneos.camera.ui.CountDownTimerUI
+                    android:id="@+id/c_timer"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone"
+                    android:shadowColor="#000000"
+                    android:shadowDx="1.5"
+                    android:shadowDy="1.3"
+                    android:shadowRadius="1.6"
+                    android:textColor="@android:color/white"
+                    app:layout_constraintTop_toTopOf="@id/preview"
+                    app:layout_constraintStart_toStartOf="@id/preview"
+                    app:layout_constraintEnd_toEndOf="@id/preview"
+                    app:layout_constraintBottom_toBottomOf="@id/preview"/>
 
-            </FrameLayout>
+                <app.grapheneos.camera.ui.CustomGrid
+                    android:id="@+id/preview_grid"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:layout_constraintTop_toTopOf="@id/preview"
+                    app:layout_constraintStart_toStartOf="@id/preview"
+                    app:layout_constraintEnd_toEndOf="@id/preview"
+                    app:layout_constraintBottom_toBottomOf="@id/preview"/>
 
-            <app.grapheneos.camera.ui.CountDownTimerUI
-                android:id="@+id/c_timer"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone"
-                android:shadowColor="#000000"
-                android:shadowDx="1.5"
-                android:shadowDy="1.3"
-                android:shadowRadius="1.6"
-                android:textColor="@android:color/white"/>
+                <ImageView
+                    android:id="@+id/main_overlay"
+                    android:scaleType="fitStart"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:contentDescription="@string/loading_camera"
+                    app:layout_constraintTop_toTopOf="@id/preview"
+                    app:layout_constraintStart_toStartOf="@id/preview"
+                    app:layout_constraintEnd_toEndOf="@id/preview"
+                    app:layout_constraintBottom_toBottomOf="@id/preview"/>
 
-            <app.grapheneos.camera.ui.CustomGrid
-                android:id="@+id/preview_grid"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-
-            <ImageView
-                android:id="@+id/main_overlay"
-                android:scaleType="fitStart"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/loading_camera"/>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
         </FrameLayout>
 
@@ -185,6 +198,7 @@
                     android:layout_gravity="center"
                     app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
                     android:tooltipText="@string/tap_to_mute_audio"
+                    android:contentDescription="@string/mute_audio"
                     android:visibility="gone" />
 
             </FrameLayout>
@@ -227,14 +241,14 @@
                     android:layout_height="64dp"
                     android:src="@drawable/circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:src="@drawable/option_circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:id="@+id/flip_camera_icon_content"
@@ -268,7 +282,7 @@
                     android:layout_gravity="center"
                     android:src="@drawable/camera_shutter"
                     android:background="@drawable/cbutton_bg"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:contentDescription="@string/capture"/>
 
                 <ImageButton
                     android:id="@+id/confirm_button"
@@ -278,7 +292,7 @@
                     android:layout_gravity="center"
                     android:src="@drawable/done"
                     android:background="@drawable/cbutton_bg"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:contentDescription="@string/confirm"/>
 
                 <!-- Sp usage was ignore because -->
                 <TextView
@@ -291,6 +305,7 @@
                     android:textColor="#333"
                     tools:ignore="SpUsage"/>
 
+                <!-- Decoration drawn over the capture button, which announces the cancel itself -->
                 <ImageView
                     android:id="@+id/capture_button_cross"
                     android:layout_height="36dp"
@@ -298,7 +313,7 @@
                     android:src="@drawable/cancel"
                     android:layout_gravity="center"
                     android:visibility="invisible"
-                    android:contentDescription="@string/cancel_timer"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:id="@+id/mic_off"
@@ -319,7 +334,8 @@
                 android:layout_height="96dp"
                 android:clickable="true"
                 android:focusable="true"
-                android:layout_gravity="center">
+                android:layout_gravity="center"
+                android:importantForAccessibility="no">
 
                 <ImageView
                     android:id="@+id/white_option_circle"
@@ -327,7 +343,7 @@
                     android:layout_height="64dp"
                     android:src="@drawable/white_option_circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/image_preview"
@@ -337,7 +353,7 @@
                     android:layout_gravity="center"
                     android:scaleType="centerCrop"
                     app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:importantForAccessibility="no"/>
 
                 <ImageView
                     android:id="@+id/third_circle"
@@ -345,7 +361,7 @@
                     android:layout_height="64dp"
                     android:src="@drawable/option_circle"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/flip_camera"/>
+                    android:contentDescription="@string/open_gallery"/>
 
                 <ProgressBar
                     android:indeterminateDrawable="@drawable/progress_bar_style"
@@ -398,13 +414,14 @@
                 android:layout_gravity="center_horizontal"
                 android:src="@drawable/zoom_in"
                 android:layout_marginBottom="10dp"
-                android:contentDescription="@string/zoom_in"/>
+                android:importantForAccessibility="no"/>
 
             <app.grapheneos.camera.ui.seekbar.ZoomBar
                 android:id="@+id/zoom_bar"
                 android:layout_width="wrap_content"
                 android:progressTint="@android:color/transparent"
-                android:layout_height="250dp"/>
+                android:layout_height="250dp"
+                android:contentDescription="@string/zoom"/>
 
             <ImageView
                 android:id="@+id/zoom_out_icon"
@@ -414,7 +431,7 @@
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="32dp"
                 android:layout_gravity="center_horizontal"
-                android:contentDescription="@string/zoom_out"/>
+                android:importantForAccessibility="no"/>
 
         </LinearLayout>
 
@@ -435,7 +452,7 @@
                 android:layout_gravity="center_horizontal"
                 android:src="@drawable/exposure_plus"
                 android:layout_marginBottom="8dp"
-                android:contentDescription="@string/zoom_in"/>
+                android:importantForAccessibility="no"/>
 
             <FrameLayout
                 android:layout_width="wrap_content"
@@ -452,7 +469,8 @@
                     android:layout_width="wrap_content"
                     android:progressTint="@android:color/transparent"
                     android:thumb="@drawable/exposure_thumb"
-                    android:layout_height="250dp"/>
+                    android:layout_height="250dp"
+                    android:contentDescription="@string/exposure_compensation"/>
 
             </FrameLayout>
 
@@ -464,7 +482,7 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="24dp"
                 android:layout_gravity="center_horizontal"
-                android:contentDescription="@string/zoom_out"/>
+                android:importantForAccessibility="no"/>
 
         </LinearLayout>
 
@@ -500,7 +518,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="?actionBarItemBackground"
-                android:contentDescription="@string/capture_mode"/>
+                android:importantForAccessibility="no"
+                android:contentDescription="@string/cancel"/>
 
         </FrameLayout>
 
@@ -516,7 +535,7 @@
             android:paddingHorizontal="16dp"
             android:background="@null"
             android:src="@drawable/settings_icon"
-            android:contentDescription="@string/capture_mode"/>
+            android:contentDescription="@string/settings"/>
 
         <TextView
             android:id="@+id/timer"
@@ -556,7 +575,8 @@
                         android:layout_height="@dimen/qr_toggle_button_size"
                         android:layout_gravity="center"
                         android:src="@drawable/qr_code"
-                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                        android:contentDescription="@string/qr_scan"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -572,7 +592,8 @@
                         android:textStyle="bold"
                         android:textSize="13sp"
                         android:text="@string/qr_scan"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -589,7 +610,7 @@
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
                         app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
-                        android:contentDescription="@string/qr_scan_toggle"/>
+                        android:contentDescription="@string/data_matrix"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -605,7 +626,8 @@
                         android:textStyle="bold"
                         android:textSize="13sp"
                         android:text="@string/data_matrix"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -621,7 +643,8 @@
                         android:src="@drawable/aztec"
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
-                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+                        app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                        android:contentDescription="@string/aztec_code"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -637,7 +660,8 @@
                         android:textStyle="bold"
                         android:textSize="13sp"
                         android:text="@string/aztec_code"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -653,7 +677,8 @@
                     android:src="@drawable/pdf417"
                     android:layout_width="@dimen/qr_toggle_button_size"
                     android:layout_height="@dimen/qr_toggle_button_size"
-                    app:shapeAppearance="@style/ShapeAppearance.Image.PILL"/>
+                    app:shapeAppearance="@style/ShapeAppearance.Image.PILL"
+                    android:contentDescription="@string/pdf_417"/>
 
                 <TextView
                     android:alpha="0.8"
@@ -669,7 +694,8 @@
                     android:textStyle="bold"
                     android:textSize="13sp"
                     android:text="@string/pdf_417"
-                    android:textColor="@android:color/white"/>
+                    android:textColor="@android:color/white"
+                    android:importantForAccessibility="no"/>
 
             </LinearLayout>
 
@@ -685,7 +711,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
-                        android:contentDescription="@string/grid_toggle"/>
+                        android:contentDescription="@string/more_options"/>
 
                     <TextView
                         android:alpha="0.8"
@@ -701,7 +727,8 @@
                         android:shadowDy="1.3"
                         android:shadowRadius="1.6"
                         android:text="@string/more_options"
-                        android:textColor="@android:color/white"/>
+                        android:textColor="@android:color/white"
+                        android:importantForAccessibility="no"/>
 
             </LinearLayout>
 

@@ -41,8 +41,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var rootView: View
 
     private lateinit var pQField: EditText
-    private lateinit var iFField: EditText
-    private lateinit var vFField: EditText
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -151,12 +149,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
 
-        iFField = binding.imageFormatSettingField
-        iFField.setOnEditorActionListener(this)
-
-        vFField = binding.videoFormatSettingField
-        vFField.setOnEditorActionListener(this)
-
         val exifToggle = binding.removeExifToggle
         val exifToggleSetting = binding.removeExifSetting
 
@@ -217,6 +209,16 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         val sLS = binding.storageLocationSetting
         sLS.setOnClickListener {
             sLField.performClick()
+        }
+
+        // Every other row here acts on the control it holds. This one held a 36dp field and did
+        // nothing, while still announcing itself as activatable.
+        val pQSetting = binding.photoQualitySetting
+        pQSetting.setOnClickListener {
+            pQField.requestFocus()
+            pQField.setSelection(pQField.text.length)
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(pQField, 0)
         }
 
         val zslSetting = binding.zslSetting
@@ -294,28 +296,37 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
     }
 
-    private fun dumpData() {
+    override fun onPause() {
+        // dispatchTouchEvent and onEditorAction only fire when the user taps outside the field
+        // or presses the IME action key. Leaving the screen any other way (Back, gesture back,
+        // the up arrow, Home, task switch) used to drop whatever had been typed, silently.
+        // Commit here so that every exit path persists; a snackbar would be pointless on a
+        // screen that is going away, so the invalid-value complaint is suppressed.
+        // onCreate() can bail out before the views exist (no CamConfig in the intent) and the
+        // lifecycle still runs through onPause, hence the initialization check.
+        if (this::pQField.isInitialized) {
+            dumpData(notifyOnInvalidValue = false)
+        }
+        super.onPause()
+    }
+
+    private fun dumpData(notifyOnInvalidValue: Boolean = true) {
 
         // Dump state of photo quality
-        if (pQField.text.isEmpty()) {
+        val quality = pQField.text.toString().toIntOrNull()
+        // NumInputFilter keeps out-of-range values from being typed, but it cannot stop them being
+        // deleted into place: the empty replacement it returns to reject an edit is the very edit a
+        // deletion asks for, so deleting the leading digit of "10" leaves "0" behind. Committing
+        // that made ImageCapture reject the quality and crash the next bind.
+        if (quality == null || quality !in NumInputFilter.min..NumInputFilter.max) {
             // Revert back to the original value if invalid number was found
             pQField.setText(camConfig.photoQuality.toString())
-            showMessage(getString(R.string.invalid_photo_quality_value))
-        } else {
-            try {
-                camConfig.photoQuality = Integer.parseInt(pQField.text.toString())
-            } catch (exception: Exception) {
-                // Revert back to the original value if invalid number was found
-                pQField.setText(camConfig.photoQuality.toString())
+            if (notifyOnInvalidValue) {
                 showMessage(getString(R.string.invalid_photo_quality_value))
             }
+        } else {
+            camConfig.photoQuality = quality
         }
-
-//        // Dump state of image format
-//        camConfig.imageFormat = iFField.text.toString()
-//
-//        // Dump state of video format
-//        camConfig.videoFormat = vFField.text.toString()
     }
 
     override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {

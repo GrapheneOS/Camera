@@ -18,7 +18,7 @@
         android:layout_height="64dp"
         android:layout_gravity="center"
         android:src="@drawable/play_button_circle"
-        android:contentDescription="@string/preview"/>
+        android:importantForAccessibility="no"/>
 
     <include
         layout="@layout/gallery_placeholder"

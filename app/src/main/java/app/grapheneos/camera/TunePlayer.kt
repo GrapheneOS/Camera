@@ -15,7 +15,7 @@ private fun prepareMediaPlayer(context: Context, resid: Int, listener: MediaPlay
     }
 }
 
-class TunePlayer(val context: MainActivity) {
+open class TunePlayer(val context: MainActivity) {
 
     private lateinit var shutterPlayer: MediaPlayer
 
@@ -49,16 +49,29 @@ class TunePlayer(val context: MainActivity) {
         shutterPlayer.start()
     }
 
-    fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
+    open fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
         if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) {
             onPlayed.run()
             return
         }
+        // An unhandled playback error is also delivered to the completion listener, and a
+        // failed sound must still deliver onPlayed once: the recording start is waiting on it.
+        var delivered = false
+        val deliverOnce = MediaPlayer.OnCompletionListener {
+            if (!delivered) {
+                delivered = true
+                vRecPlayer.setOnCompletionListener(null)
+                vRecPlayer.setOnErrorListener(null)
+                handler.postDelayed(onPlayed, 10)
+            }
+        }
+        vRecPlayer.setOnCompletionListener(deliverOnce)
+        vRecPlayer.setOnErrorListener { player, _, _ ->
+            deliverOnce.onCompletion(player)
+            true
+        }
         vRecPlayer.seekTo(0)
         vRecPlayer.start()
-        vRecPlayer.setOnCompletionListener({
-            handler.postDelayed(onPlayed, 10)
-        })
     }
 
     fun playVRStopSound() {

@@ -9,7 +9,7 @@ if (useKeystoreProperties) {
 }
 
 plugins {
-    id("com.android.application")
+    alias(libs.plugins.android.application)
 }
 
 java {
@@ -38,8 +38,8 @@ android {
         }
     }
 
-    compileSdk = 36
-    buildToolsVersion = "36.1.0"
+    compileSdk = 37
+    buildToolsVersion = "37.0.0"
     ndkVersion = "29.0.14206865"
 
     namespace = "app.grapheneos.camera"
@@ -47,9 +47,11 @@ android {
     defaultConfig {
         applicationId = "app.grapheneos.camera"
         minSdk = 29
-        targetSdk = 35
-        versionCode = 90
+        targetSdk = 37
+        versionCode = 94
         versionName = versionCode.toString()
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -90,18 +92,17 @@ android {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
-    implementation("androidx.core:core-ktx:1.17.0")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core.ktx)
 
-    val cameraVersion = "1.6.0-alpha01"
-    implementation("androidx.camera:camera-core:$cameraVersion")
-    implementation("androidx.camera:camera-camera2:$cameraVersion")
-    implementation("androidx.camera:camera-lifecycle:$cameraVersion")
-    implementation("androidx.camera:camera-video:$cameraVersion")
-    implementation("androidx.camera:camera-view:$cameraVersion")
-    implementation("androidx.camera:camera-extensions:$cameraVersion")
+    implementation(libs.bundles.camerax)
 
-    implementation("com.google.zxing:core:3.5.3")
+    implementation(libs.zxing.core)
+
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.ext.junit.ktx)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
 }

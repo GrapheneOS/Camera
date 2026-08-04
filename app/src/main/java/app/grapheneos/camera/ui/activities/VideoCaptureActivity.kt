@@ -11,10 +11,15 @@ class VideoCaptureActivity : CaptureActivity() {
 
     private var savedUri: Uri? = null
 
+    private var previewPending = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        captureButton.setImageResource(R.drawable.recording)
+        whiteOptionCircle = findViewById(R.id.white_option_circle)
+        playPreview = findViewById(R.id.play_preview)
+
+        setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
 
         captureButton.setOnClickListener OnClickListener@{
             if (videoCapturer.isRecording) {
@@ -47,7 +52,25 @@ class VideoCaptureActivity : CaptureActivity() {
 
         this.savedUri = savedUri
 
-        bitmap = previewView.bitmap!!
+        if (!isStarted) {
+            previewPending = true
+            return
+        }
+
+        showRecordingPreview()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (previewPending) {
+            previewPending = false
+            showRecordingPreview()
+        }
+    }
+
+    private fun showRecordingPreview() {
+        bitmap = previewView.bitmap ?: lastFrame
 
         cancelButtonView.visibility = View.VISIBLE
 

@@ -11,6 +11,8 @@ class QRToggle @JvmOverloads constructor(
 ) : ShapeableImageView(context, attrs) {
 
     lateinit var mActivity: MainActivity
+
+    /** [com.google.zxing.BarcodeFormat] name, used as the preference key. */
     lateinit var key: String
 
     init {
@@ -34,8 +36,10 @@ class QRToggle @JvmOverloads constructor(
         val camConfig = mActivity.camConfig
 
         if (!selected && camConfig.allowedFormats.size == 1) {
+            // Name the format the way the label under the toggle does, not as the raw enum
+            // constant ("PDF 417", not "PDF_417").
             mActivity.showMessage(mActivity.getString(
-                R.string.couldnt_exclude_qr_format, key
+                R.string.couldnt_exclude_qr_format, contentDescription ?: key
             ))
             isSelected = true
         } else {

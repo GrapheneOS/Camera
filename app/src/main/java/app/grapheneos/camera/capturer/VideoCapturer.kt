@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
@@ -16,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -33,6 +35,7 @@ import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.text.SimpleDateFormat
@@ -50,6 +53,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private var recording: Recording? = null
 
+    // Invoking this abandons a start still queued behind the record-start sound.
+    private var cancelDeferredStart: (() -> Unit)? = null
+
     var isMuted = false
         private set
 
@@ -60,10 +66,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
             if (isRecording) {
                 if (value) {
                     recording?.pause()
-                    mActivity.flipCamIcon.setImageResource(R.drawable.play)
+                    mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
                 } else {
                     recording?.resume()
-                    mActivity.flipCamIcon.setImageResource(R.drawable.pause)
+                    mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
                 }
             }
             field = value
@@ -72,18 +78,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val handler = Handler(Looper.getMainLooper())
 
     private fun updateTimerTime(timeInNanos: Long) {
-        val timeInSec = timeInNanos / (1000 * 1000 * 1000)
-        val sec = timeInSec % 60
-        val min = timeInSec / 60 % 60
-        val hour = timeInSec / 3600
-
-        val timerText: String = if (hour == 0L) {
-            String.format(Locale.ROOT, "%02d:%02d", min, sec)
-        } else {
-            String.format(Locale.ROOT, "%02d:%02d:%02d", hour, min, sec)
-        }
-
-        mActivity.timerView.text = timerText
+        mActivity.timerView.text = formatVideoDuration(timeInNanos / 1_000_000_000)
     }
 
     private class RecordingContext(
@@ -192,7 +187,28 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         beforeRecordingStarts()
 
+        // The sound callback may fire more than once; a second PendingRecording.start() throws.
+        var consumed = false
+
+        cancelDeferredStart = {
+            consumed = true
+            cancelDeferredStart = null
+            try {
+                recordingCtx.fileDescriptor.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            discardUnusedOutput(recordingCtx)
+            afterRecordingStops()
+        }
+
         camConfig.mPlayer.playVRStartSound(handler) {
+            if (consumed) {
+                return@playVRStartSound
+            }
+
+            consumed = true
+            cancelDeferredStart = null
 
             recording = pendingRecording.start(ctx.mainExecutor) { event ->
 
@@ -212,17 +228,26 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (event.hasError()) {
                         when (event.error) {
                             VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
+                                discardUnusedOutput(recordingCtx)
                                 ctx.showMessage(R.string.recording_too_short_to_be_saved)
                                 return@start
                             }
                             VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
                             VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
                             VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
+                                discardUnusedOutput(recordingCtx)
                                 ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
                                 return@start
                             }
                             else -> {
                                 ctx.showMessage(ctx.getString(R.string.error_during_recording, event.error))
+                                // The errors left unnamed here (the camera going away, storage
+                                // running out) finalize whatever was written before they hit, which
+                                // is worth keeping — but only if anything was.
+                                if (event.recordingStats.numBytesRecorded == 0L) {
+                                    discardUnusedOutput(recordingCtx)
+                                    return@start
+                                }
                             }
                         }
                     }
@@ -254,6 +279,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 }
             }
 
+            // The Recording didn't exist yet when the mute/pause setters ran.
+            if (isMuted) {
+                recording?.mute(true)
+            }
+            if (isPaused) {
+                recording?.pause()
+            }
+
             try {
                 // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
                 // caller, and that it's safe to do so as soon as pendingRecording.start() returns
@@ -267,7 +300,36 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val dp16 = 16 * mActivity.resources.displayMetrics.density
     private val dp8 = 8 * mActivity.resources.displayMetrics.density
 
+    // Skinned devices wrap the capture button shape in selectors and layer-lists
+    private fun findGradientDrawable(drawable: Drawable?): GradientDrawable? {
+        return when (drawable) {
+            is GradientDrawable -> drawable
+            is StateListDrawable -> findGradientDrawable(drawable.current)
+            is LayerDrawable -> {
+                (0 until drawable.numberOfLayers)
+                    .firstNotNullOfOrNull { findGradientDrawable(drawable.getDrawable(it)) }
+            }
+            else -> null
+        }
+    }
+
+    // If no shape can be dug out, skip the cosmetic animation rather than crash
+    private fun animateCaptureButtonCorners(from: Float, to: Float) {
+        val gd = findGradientDrawable(mActivity.captureButton.drawable) ?: return
+
+        val animator = ValueAnimator.ofFloat(from, to)
+        animator.setDuration(300)
+            .addUpdateListener { animation ->
+                gd.cornerRadius = animation.animatedValue as Float
+            }
+        animator.start()
+    }
+
     private fun beforeRecordingStarts() {
+        // Don't leak paused/muted state from the previous recording into this one.
+        isPaused = false
+        isMuted = false
+
         mActivity.previewView.keepScreenOn = true
     }
 
@@ -275,32 +337,22 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // TODO: Uncomment this once the main indicator UI gets implemented
         // mActivity.micOffIcon.visibility = View.GONE
 
-        val drawable = mActivity.captureButton.drawable
-
-        val gd: GradientDrawable = if (drawable is StateListDrawable) {
-            drawable.current as GradientDrawable
-        } else if (drawable is LayerDrawable) {
-            drawable.current as GradientDrawable
-        } else {
-            drawable as GradientDrawable
-        }
-
-        val animator = ValueAnimator.ofFloat(dp16, dp8)
-
-        animator.setDuration(300)
-            .addUpdateListener { animation ->
-                val value = animation.animatedValue as Float
-                gd.cornerRadius = value
-            }
-
-        animator.start()
+        animateCaptureButtonCorners(dp16, dp8)
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
-        mActivity.flipCamIcon.setImageResource(R.drawable.pause)
-        isPaused = false
+        // The user may have paused before the recording actually started.
+        if (isPaused) {
+            mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
+        } else {
+            mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
+        }
         mActivity.cancelButtonView.visibility = View.GONE
+
+        // Only the description changes: the drawable stays the same one the corner-radius
+        // animation above is holding on to, and replacing it would cut that animation short.
+        mActivity.captureButton.contentDescription = mActivity.getString(R.string.stop_recording)
 
         if (mActivity.requiresVideoModeOnly) {
             mActivity.thirdOption.visibility = View.INVISIBLE
@@ -308,7 +360,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
 
-        mActivity.thirdCircle.setImageResource(R.drawable.camera_shutter)
+        // While recording, the gallery button turns into a shutter for stills
+        mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
@@ -316,38 +369,18 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = false
 
         if (camConfig.includeAudio) {
-            isMuted = false
-            mActivity.muteToggle.setImageResource(R.drawable.mic_on)
-            mActivity.muteToggle.setBackgroundColor(mActivity.getColor(R.color.red))
-            mActivity.muteToggle.tooltipText = mActivity.getString(R.string.tap_to_mute_audio)
+            mActivity.setMuteToggleState(muted = isMuted)
             mActivity.muteToggle.visibility = View.VISIBLE
         }
     }
 
     private fun afterRecordingStops() {
-
-        val drawable = mActivity.captureButton.drawable
-
-        val gd: GradientDrawable = if (drawable is StateListDrawable) {
-            drawable.current as GradientDrawable
-        } else if (drawable is LayerDrawable) {
-            drawable.current as GradientDrawable
-        } else {
-            drawable as GradientDrawable
-        }
-
-        val animator = ValueAnimator.ofFloat(dp8, dp16)
-
-        animator.setDuration(300)
-            .addUpdateListener { animation ->
-                val value = animation.animatedValue as Float
-                gd.cornerRadius = value
-            }
-
-        animator.start()
+        animateCaptureButtonCorners(dp8, dp16)
 
         mActivity.timerView.visibility = View.GONE
-        mActivity.flipCamIcon.setImageResource(R.drawable.flip_camera)
+        mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
+        mActivity.captureButton.contentDescription =
+            mActivity.getString(R.string.start_recording)
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
         mActivity.settingsDialog.enableEISToggle.isEnabled = true
@@ -360,8 +393,15 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = true
         }
 
+        // Always restore the third-circle icon and its accessibility label to the gallery button:
+        // at record start it was repurposed into an in-video shutter ("Capture") unconditionally,
+        // so restoring it only for non-VideoCaptureActivity would strand a stale "Capture" label
+        // there. The non-recording third-circle click opens the gallery in every activity, so
+        // open_gallery is the accurate label. Cancel/tab visibility stays guarded, as those don't
+        // apply to VideoCaptureActivity.
+        mActivity.setThirdCircleIcon(R.drawable.option_circle, R.string.open_gallery)
+
         if (mActivity !is VideoCaptureActivity) {
-            mActivity.thirdCircle.setImageResource(R.drawable.option_circle)
             mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE
         }
@@ -395,9 +435,58 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun stopRecording() {
+        cancelDeferredStart?.let {
+            it()
+            return
+        }
+
         recording?.stop()
         recording?.close()
         recording = null
+    }
+
+    private fun discardUnusedOutput(recordingCtx: RecordingContext) {
+        if (!recordingCtx.shouldAddToGallery) {
+            return
+        }
+
+        try {
+            if (recordingCtx.isPendingMediaStoreUri) {
+                mActivity.contentResolver.delete(recordingCtx.uri, null, null)
+            } else {
+                DocumentsContract.deleteDocument(mActivity.contentResolver, recordingCtx.uri)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+
+private const val STALE_PENDING_RECORDING_AGE = 60 * 60 * 1000L
+
+// A recording that dies with its process (swipe-away from Recents, OOM kill, crash) never reaches
+// the Finalize callback that clears IS_PENDING, so it leaves a half-written file that is invisible
+// to the user until MediaProvider expires it a week later, and unplayable in the meantime since it
+// has no moov atom. Deleting is the honest outcome. Pending rows are only visible to the app that
+// owns them, so this can never reach another app's in-flight write, and the age cutoff keeps it
+// clear of a recording that is still being muxed.
+fun deleteStalePendingRecordings(
+    context: Context,
+    maxAge: Long = STALE_PENDING_RECORDING_AGE,
+) {
+    val selection = "${MediaColumns.IS_PENDING} = 1" +
+            " AND ${MediaColumns.DISPLAY_NAME} LIKE ?" +
+            " AND ${MediaColumns.DATE_ADDED} < ?"
+    val cutoffSeconds = (System.currentTimeMillis() - maxAge) / 1000L
+    val args = arrayOf("$VIDEO_NAME_PREFIX%", cutoffSeconds.toString())
+
+    try {
+        // Pending rows are filtered out of every operation unless they are explicitly asked for.
+        @Suppress("DEPRECATION")
+        val collection = MediaStore.setIncludePending(CamConfig.videoCollectionUri)
+        context.contentResolver.delete(collection, selection, args)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 

@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.Point
@@ -24,7 +25,6 @@ import android.provider.Settings
 import android.text.util.Linkify
 import android.util.Log
 import android.view.GestureDetector
-import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -48,6 +48,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -75,9 +76,11 @@ import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.ktx.SystemSettingsObserver
+import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -130,7 +133,8 @@ open class MainActivity : AppCompatActivity(),
     // is already visible and to dismiss it if the permission gets granted.
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
-    private var lastFrame: Bitmap? = null
+    var lastFrame: Bitmap? = null
+        private set
 
     private lateinit var mainFrame: View
     lateinit var rootView: View
@@ -153,7 +157,6 @@ open class MainActivity : AppCompatActivity(),
     lateinit var captureButton: ImageButton
 
     private lateinit var scaleGestureDetector: ScaleGestureDetector
-    private lateinit var dbTapGestureDetector: GestureDetector
     lateinit var timerView: TextView
     lateinit var thirdOption: View
     lateinit var imagePreview: ShapeableImageView
@@ -474,15 +477,18 @@ open class MainActivity : AppCompatActivity(),
 
     }
 
+    private fun hasCameraPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     private fun checkPermissions() {
         Log.i(TAG, "Checking camera status...")
 
         // Check if the app has access to the user's camera
         when {
-            ContextCompat.checkSelfPermission(
-                this, Manifest.permission.CAMERA
-            ) ==
-                    PackageManager.PERMISSION_GRANTED -> {
+            hasCameraPermission() -> {
 
                 // If the user has manually granted the permission, dismiss the dialog.
                 if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) cameraPermissionDialog!!.cancel()
@@ -608,7 +614,11 @@ open class MainActivity : AppCompatActivity(),
         // If the preview of video capture activity isn't showing
         if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
             if (!isQRDialogShowing) {
-                camConfig.initializeCamera(true)
+                if (hasCameraPermission()) {
+                    camConfig.initializeCamera(true)
+                } else {
+                    Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
+                }
             }
         }
     }
@@ -621,10 +631,16 @@ open class MainActivity : AppCompatActivity(),
     override fun onPause() {
         super.onPause()
         pauseOrientationSensor()
+        // The countdown would otherwise keep ticking while the app is in the background and fire a
+        // capture into a camera that has already been unbound.
+        cdTimer.cancelTimer()
         if (camConfig.isQRMode) {
             cancelFocusTimer()
         } else {
             imageCapturer.cancelPendingCaptureRequest()
+        }
+        if (camConfig.requireLocation) {
+            application.dropLocationUpdates()
         }
         lastFrame = null
     }
@@ -661,27 +677,6 @@ open class MainActivity : AppCompatActivity(),
         previewContainer = binding.previewContainer
         bottomOverlay = binding.bottomOverlay
         scaleGestureDetector = ScaleGestureDetector(this, this)
-        dbTapGestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                Log.i(TAG, "===============Double tap detected.=========")
-//                val zoomState = config.camera!!.cameraInfo.zoomState.value
-//                if (zoomState != null) {
-//                    val start = zoomState.linearZoom
-//                    var end = start * 1.5f
-//                    if (end < 0.25f) end = 0.25f else if (end > zoomState.maxZoomRatio) end =
-//                        zoomState.maxZoomRatio
-//                    val animator = ValueAnimator.ofFloat(start, end)
-//                    animator.duration = 300
-//                    animator.addUpdateListener { valueAnimator: ValueAnimator ->
-//                        config.camera!!.cameraControl.setLinearZoom(
-//                            valueAnimator.animatedValue as Float
-//                        )
-//                    }
-//                    animator.start()
-//                }
-                return super.onDoubleTap(e)
-            }
-        })
 
         tabLayout = binding.cameraModeTabs
 
@@ -816,13 +811,11 @@ open class MainActivity : AppCompatActivity(),
                 }
             } else if (camConfig.isQRMode) {
                 camConfig.toggleTorchState()
-                captureButton.setImageResource(
-                    if (camConfig.isTorchOn) {
-                        R.drawable.torch_on_button
-                    } else {
-                        R.drawable.torch_off_button
-                    }
-                )
+                if (camConfig.isTorchOn) {
+                    setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
+                } else {
+                    setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
+                }
             } else {
                 if (timerDuration == 0) {
                     imageCapturer.takePicture()
@@ -837,38 +830,6 @@ open class MainActivity : AppCompatActivity(),
         }
 
         cancelButtonView = binding.cancelButton
-//        cancelButtonView.setOnClickListener(object : View.OnClickListener {
-//
-//            val SWITCH_ANIM_DURATION = 150
-//            override fun onClick(v: View) {
-//
-//                val imgID = if (config.isVideoMode) R.drawable.video_camera else R.drawable.camera
-//                config.switchCameraMode()
-//                val oa1 = ObjectAnimator.ofFloat(v, "scaleX", 1f, 0f)
-//                val oa2 = ObjectAnimator.ofFloat(v, "scaleX", 0f, 1f)
-//                oa1.interpolator = DecelerateInterpolator()
-//                oa2.interpolator = AccelerateDecelerateInterpolator()
-//                oa1.duration = SWITCH_ANIM_DURATION.toLong()
-//                oa2.duration = SWITCH_ANIM_DURATION.toLong()
-//                oa1.addListener(object : AnimatorListenerAdapter() {
-//                    override fun onAnimationEnd(animation: Animator) {
-//                        super.onAnimationEnd(animation)
-//                        cancelButtonView.setImageResource(imgID)
-//                        oa2.start()
-//                    }
-//                })
-//                oa1.start()
-//                if (config.isVideoMode) {
-//                    captureButton.setImageResource(R.drawable.recording)
-//                    cbText.visibility = View.INVISIBLE
-//                } else {
-//                    captureButton.setImageResource(R.drawable.camera_shutter)
-//                    if (timerDuration != 0) {
-//                        cbText.visibility = View.VISIBLE
-//                    }
-//                }
-//            }
-//        })
 
         zoomBar = binding.zoomBar
         zoomBar.setMainActivity(this)
@@ -1060,15 +1021,11 @@ open class MainActivity : AppCompatActivity(),
         muteToggle.setOnClickListener {
             if (videoCapturer.isMuted) {
                 videoCapturer.unmuteRecording()
-                muteToggle.setImageResource(R.drawable.mic_on)
-                muteToggle.setBackgroundColor(getColor(R.color.red))
-                muteToggle.tooltipText = getString(R.string.tap_to_mute_audio)
+                setMuteToggleState(muted = false)
                 showMessage(R.string.video_audio_recording_unmuted)
             } else {
                 videoCapturer.muteRecording()
-                muteToggle.setImageResource(R.drawable.mic_off)
-                muteToggle.setBackgroundColor(getColor(android.R.color.darker_gray))
-                muteToggle.tooltipText = getString(R.string.tap_to_unmute_audio)
+                setMuteToggleState(muted = true)
                 showMessage(R.string.video_audio_recording_muted)
             }
         }
@@ -1124,14 +1081,35 @@ open class MainActivity : AppCompatActivity(),
 
     fun finalizeMode(tab: TabLayout.Tab? = null) {
 
+        // The strip is untouchable during a recording but not while its start sound still plays, and
+        // rebinding the camera there starts the queued recording on a dead recorder. The touch may
+        // already have dragged the strip, so put it back on the mode the camera is really in.
+        if (videoCapturer.isRecording) {
+            tabLayout.getTabForMode(camConfig.currentMode)?.let {
+                tabLayout.selectTab(it)
+                tabLayout.centerTab(it)
+            }
+            return
+        }
+
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
+            // The strip has to follow the touch even when the mode does not change, so do not
+            // leave this to switchMode(), which returns early for the mode it is already in.
+            tabLayout.selectTab(selectedTab)
             tabLayout.centerTab(selectedTab)
-            tab?.let { tabLayout.centerTab(it) }
             camConfig.switchMode(mode)
             resetAutoSleep()
         }
+    }
+
+    /** Shows the pending self-timer duration on the capture button, where it applies at all. */
+    fun updateSelfTimerBadge() {
+        cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
+        // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
+        val applies = timerDuration != 0 && !camConfig.isQRMode && !camConfig.isVideoMode
+        cbText.visibility = if (applies) View.VISIBLE else View.INVISIBLE
     }
 
     fun restartRecordingWithMicPermission() {
@@ -1139,17 +1117,18 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun shareLatestMedia() {
+        if (this is SecureActivity) {
+            showMessage(R.string.sharing_not_allowed)
+            return
+        }
+
         val item = camConfig.lastCapturedItem
         if (item == null) {
             showMessage(R.string.please_wait_for_image_to_get_captured_before_sharing)
             return
         }
 
-        Intent(Intent.ACTION_SEND).let {
-            it.putExtra(Intent.EXTRA_STREAM, item.uri)
-            it.setDataAndType(item.uri, item.mimeType())
-            startActivity(Intent.createChooser(it, getString(R.string.share_image)))
-        }
+        shareCapturedItem(this, item)?.let { showMessage(it) }
     }
 
     open fun bytesToHex(bytes: ByteArray): String {
@@ -1285,13 +1264,7 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-//    private val fTHandler : Handler = Handler(Looper.getMainLooper())
-//    private val fTRunnable : Runnable = Runnable {
-//        config.mPlayer.playFocusCompleteSound()
-//    }
-
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        dbTapGestureDetector.onTouchEvent(event)
         scaleGestureDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
 
@@ -1326,8 +1299,6 @@ open class MainActivity : AppCompatActivity(),
                 focusBuilder.disableAutoCancel()
             } else {
                 focusBuilder.setAutoCancelDuration(camConfig.focusTimeout, TimeUnit.SECONDS)
-//                fTHandler.removeCallbacks(fTRunnable)
-//                fTHandler.postDelayed(fTRunnable, focusTimeout * 1000)
             }
 
             camConfig.camera!!.cameraControl.startFocusAndMetering(focusBuilder.build())
@@ -1341,7 +1312,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
-        val zoomState = camConfig.camera!!.cameraInfo.zoomState.value
+        val zoomState = camConfig.zoomState
         var scale = 1f
         if (zoomState != null) {
             scale = zoomState.zoomRatio * detector.scaleFactor
@@ -1391,7 +1362,7 @@ open class MainActivity : AppCompatActivity(),
 
         if (videoCapturer.isRecording) return
 
-        var iconRotation = (360f - orientation) % 360
+        var iconRotation = (360f - ((orientation - getRotation() + 360) % 360)) % 360
 
         // Rotate views that should rotate irrespective of the auto-rotate setting
         rotateView(gCircleFrame, iconRotation)
@@ -1536,7 +1507,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeLeft() {
-        if (isZooming || cdTimer.isRunning) return
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording) return
 
         if (this is VideoOnlyActivity) return
 
@@ -1565,6 +1536,55 @@ open class MainActivity : AppCompatActivity(),
         showMessage(getString(msg), action, callback)
     }
 
+    /**
+     * The icon in the left circle stands for whatever [flipCameraCircle] does right now — flip
+     * the camera, pause/resume the recording, or toggle scanning of every barcode format. Swap
+     * its description together with its drawable so that it is never announced as the wrong
+     * button.
+     */
+    fun setFlipCameraIcon(@DrawableRes icon: Int, @StringRes description: Int) {
+        flipCamIcon.setImageResource(icon)
+        flipCamIcon.contentDescription = getString(description)
+    }
+
+    /**
+     * The big middle button is a shutter, a record/stop button and a torch switch depending on
+     * the mode, so its description has to travel with its drawable exactly like the one in
+     * [setFlipCameraIcon] does.
+     */
+    fun setCaptureButtonIcon(@DrawableRes icon: Int, @StringRes description: Int) {
+        captureButton.setImageResource(icon)
+        captureButton.contentDescription = getString(description)
+    }
+
+    /**
+     * [thirdCircle] is the view that carries the click listener, so it is the one that has to be
+     * described: it opens the gallery, except while a video is being recorded, when it takes a
+     * still instead.
+     */
+    fun setThirdCircleIcon(@DrawableRes icon: Int, @StringRes description: Int) {
+        thirdCircle.setImageResource(icon)
+        thirdCircle.contentDescription = getString(description)
+    }
+
+    /**
+     * The mute toggle signals its state through an icon, a background colour and a tooltip, and a
+     * tooltip is supplementary text rather than a view's label, so the state was never described
+     * to accessibility services at all. Set all four together here so they cannot drift apart.
+     */
+    fun setMuteToggleState(muted: Boolean) {
+        muteToggle.setImageResource(if (muted) R.drawable.mic_off else R.drawable.mic_on)
+        muteToggle.setBackgroundColor(
+            if (muted) getColor(android.R.color.darker_gray) else getColor(R.color.red)
+        )
+        muteToggle.tooltipText = getString(
+            if (muted) R.string.tap_to_unmute_audio else R.string.tap_to_mute_audio
+        )
+        muteToggle.contentDescription = getString(
+            if (muted) R.string.unmute_audio else R.string.mute_audio
+        )
+    }
+
     fun showMessage(msg: String, action: String? = null, callback: View.OnClickListener? = null) {
         snackBar.apply {
             setText(msg)
@@ -1580,6 +1600,21 @@ open class MainActivity : AppCompatActivity(),
         ) {
             enableLocationLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        // The activity declares configChanges for orientation, so nothing else refreshes
+        // rotation-dependent state.
+        // The preview follows the window; the capture use cases follow the sensor and are updated
+        // by onOrientationChange.
+        camConfig.preview?.targetRotation = previewView.display?.rotation ?: Surface.ROTATION_0
+        camConfig.camera?.cameraInfo?.let {
+            previewView.applyPreviewRatio(camConfig.aspectRatio, it)
+        }
+
+        rootView.post { sensorNotifier?.notifyListeners() }
     }
 
     private fun pauseOrientationSensor() {
@@ -1630,7 +1665,7 @@ open class MainActivity : AppCompatActivity(),
         val zAngle = zDegrees
 
         // If we are in photo mode and the countdown timer isn't running
-        if (!(camConfig.isVideoMode || camConfig.isVideoMode || cdTimer.isRunning)) {
+        if (!(camConfig.isQRMode || camConfig.isVideoMode || cdTimer.isRunning)) {
 
             if (gCircle.rotation != xAngle) {
                 gCircle.rotation = xAngle
@@ -1740,14 +1775,18 @@ open class MainActivity : AppCompatActivity(),
         if (required) {
             requestLocation()
         } else {
-            application.dropLocationUpdates()
+            application.disableLocationFetching()
         }
     }
 
     private val enableLocationLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        requestLocation(application.isAnyLocationProvideActive())
+        // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
+        // mode this returns to
+        if (camConfig.requireLocation) {
+            requestLocation(application.isAnyLocationProvideActive())
+        }
     }
 
     // Used to request permission from the user
@@ -1824,11 +1863,13 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onStop() {
-        super.onStop()
         isStarted = false
+        // Stop explicitly rather than letting the unbind tear the recording down for us.
         if (this::videoCapturer.isInitialized && videoCapturer.isRecording) {
+            updateLastFrame()
             videoCapturer.stopRecording()
         }
+        super.onStop()
     }
 
     var isThumbnailLoaded = false

@@ -2,8 +2,8 @@ package app.grapheneos.camera.ui
 
 import android.content.Context
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.ViewGroup
-import androidx.core.view.ViewCompat
 import app.grapheneos.camera.CameraMode
 import com.google.android.material.tabs.TabLayout
 
@@ -15,12 +15,35 @@ class BottomTabLayout @JvmOverloads constructor(
 
     private val snapPoints: ArrayList<Int> = arrayListOf()
 
+    private var isDragging = false
+
     private lateinit var tabParent: ViewGroup
 
     val selectedTab: Tab?
         get() {
             return getTabAt(selectedTabPosition)
         }
+
+    fun getTabForMode(mode: CameraMode): Tab? {
+        for (index in 0 until tabCount) {
+            val tab = getTabAt(index)
+            if (tab?.tag == mode) {
+                return tab
+            }
+        }
+
+        return null
+    }
+
+    // Called for every event dispatched to the strip, tabs included, so this sees the whole gesture
+    // even once a tab's own view has taken the touch.
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        when (ev.action) {
+            MotionEvent.ACTION_MOVE -> isDragging = true
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> isDragging = false
+        }
+        return super.onInterceptTouchEvent(ev)
+    }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
@@ -57,27 +80,40 @@ class BottomTabLayout @JvmOverloads constructor(
     override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
         super.onScrollChanged(x, y, oldX, oldY)
 
-        if (snapPoints.last() != 0) {
+        // snapPoints is empty until the first layout pass, and goes stale when the tab set is
+        // rebuilt, so an index taken from it may no longer name a tab.
+        if (snapPoints.isEmpty() || snapPoints.last() == 0) {
+            return
+        }
 
-            for (i in 0 until snapPoints.size step 2) {
+        // Only a finger on the strip picks a mode this way. Centering a tab animates the scroll
+        // position through the snap ranges of every tab in between, and switching mode blocks the
+        // main thread for long enough that those frames arrive after the switch -- the first of them
+        // still at the tab the animation started from, which would drag the highlight back onto the
+        // mode the camera just left.
+        if (!isDragging) {
+            return
+        }
 
-                val start = snapPoints[i]
-                val end = snapPoints[i + 1]
+        for (i in snapPoints.indices step 2) {
 
-                if (x in start..end) {
-                    val index = i / 2
-                    if (selectedTabPosition != index) {
-                        return selectTab(getTabAt(index))
-                    }
+            val start = snapPoints[i]
+            val end = snapPoints[i + 1]
+
+            if (x in start..end) {
+                val index = i / 2
+                val tab = getTabAt(index) ?: return
+                if (selectedTabPosition != index) {
+                    selectTab(tab)
                 }
-
+                return
             }
+
         }
     }
 
     fun getTabAtX(x: Int): Tab? {
-        for (i in 0 until snapPoints.size step 2) {
-
+        for (i in snapPoints.indices step 2) {
             val start = snapPoints[i]
             val end = snapPoints[i + 1]
 
@@ -89,6 +125,7 @@ class BottomTabLayout @JvmOverloads constructor(
             }
 
         }
+
         return null
     }
 

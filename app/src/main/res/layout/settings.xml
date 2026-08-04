@@ -49,7 +49,7 @@
                         android:checked="false"
                         android:layout_gravity="center"
                         android:background="@drawable/location"
-                        android:text="@string/toggle_button"/>
+                        android:contentDescription="@string/geo_tagging"/>
 
                 </FrameLayout>
 
@@ -72,7 +72,7 @@
                         android:checked="false"
                         android:scaleType="centerCrop"
                         android:background="@drawable/aspect_ratio"
-                        android:text="@string/aspect_ratio"
+                        android:contentDescription="@string/aspect_ratio"
                         tools:ignore="SpUsage"/>
 
                 </FrameLayout>
@@ -92,7 +92,7 @@
                         android:checked="false"
                         android:scaleType="centerCrop"
                         android:background="@drawable/torch"
-                        android:text="@string/aspect_ratio"/>
+                        android:contentDescription="@string/torch"/>
 
                 </FrameLayout>
 
@@ -107,7 +107,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/toggle_button_size"
                         android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/toggle_flash"/>
+                        android:contentDescription="@string/flash_off"/>
 
                 </FrameLayout>
 
@@ -122,7 +122,7 @@
                         android:layout_gravity="center"
                         android:layout_width="@dimen/toggle_button_size"
                         android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/grid_toggle"/>
+                        android:contentDescription="@string/grid_off"/>
 
                 </FrameLayout>
 
@@ -174,7 +174,8 @@
                                 android:layout_height="@dimen/settings_dialog_switch_height"
                                 android:scaleX="@integer/settings_dialog_switch_scale"
                                 android:scaleY="@integer/settings_dialog_switch_scale"
-                                android:checked="false"/>
+                                android:checked="false"
+                                android:contentDescription="@string/self_illumination"/>
 
                         </LinearLayout>
 
@@ -194,6 +195,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
+                            android:labelFor="@id/video_quality_spinner"
                             android:text="@string/video_quality"/>
 
                         <FrameLayout
@@ -241,7 +243,8 @@
                                 android:layout_height="@dimen/settings_dialog_switch_height"
                                 android:scaleX="@integer/settings_dialog_switch_scale"
                                 android:scaleY="@integer/settings_dialog_switch_scale"
-                                android:checked="true"/>
+                                android:checked="true"
+                                android:contentDescription="@string/include_audio"/>
 
                         </LinearLayout>
 
@@ -274,7 +277,8 @@
                                 android:layout_height="@dimen/settings_dialog_switch_height"
                                 android:scaleX="@integer/settings_dialog_switch_scale"
                                 android:scaleY="@integer/settings_dialog_switch_scale"
-                                android:checked="true"/>
+                                android:checked="true"
+                                android:contentDescription="@string/enable_eis"/>
 
                         </LinearLayout>
 
@@ -306,7 +310,8 @@
                                 android:layout_height="@dimen/settings_dialog_switch_height"
                                 android:scaleX="@integer/settings_dialog_switch_scale"
                                 android:scaleY="@integer/settings_dialog_switch_scale"
-                                android:checked="true"/>
+                                android:checked="true"
+                                android:contentDescription="@string/wait_for_focus_lock"/>
 
                         </LinearLayout>
 
@@ -326,6 +331,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
+                            android:labelFor="@id/focus_timeout_spinner"
                             android:text="@string/focus_timeout"/>
 
                         <FrameLayout
@@ -361,6 +367,7 @@
                             android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
                             android:layout_gravity="center_vertical"
+                            android:labelFor="@id/timer_spinner"
                             android:text="@string/timer"/>
 
                         <FrameLayout

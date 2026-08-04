@@ -65,7 +65,7 @@
                         android:id="@+id/gyroscope_setting_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/straighten" />
@@ -103,7 +103,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/gyroscope_suggestions" />
 
                 </LinearLayout>
 
@@ -123,7 +124,7 @@
                         android:id="@+id/camera_sounds_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/camera_sounds"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/volume_up" />
@@ -161,7 +162,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/camera_sounds" />
 
                 </LinearLayout>
 
@@ -199,7 +201,7 @@
                         android:id="@+id/zsl_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/zsl_setting_title"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/zsl" />
@@ -237,7 +239,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/zsl_setting_title" />
 
                 </LinearLayout>
 
@@ -257,7 +260,7 @@
                         android:id="@+id/save_image_as_preview_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/selfie_preview" />
@@ -295,7 +298,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/save_image_as_previewed" />
 
                 </LinearLayout>
 
@@ -315,7 +319,7 @@
                         android:id="@+id/photo_quality_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/image_quality"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/image_quality" />
@@ -332,6 +336,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
+                            android:labelFor="@id/photo_quality"
                             android:paddingBottom="2dp"
                             android:text="@string/image_quality"
                             android:textColor="?android:textColorPrimary"
@@ -364,7 +369,6 @@
                             android:imeOptions="actionDone"
                             android:importantForAutofill="no"
                             android:inputType="number"
-                            android:labelFor="@id/photo_quality_setting"
                             android:maxLength="3"
                             android:paddingTop="15dp"
                             android:textAlignment="center"
@@ -400,7 +404,7 @@
                         android:id="@+id/highest_res_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/highest_res_setting"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/megapixel" />
@@ -438,7 +442,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/highest_res_setting" />
 
                 </LinearLayout>
 
@@ -459,7 +464,7 @@
                         android:id="@+id/remove_exif_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/info_adaptable" />
@@ -497,7 +502,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/remove_exif_title" />
 
                 </LinearLayout>
 
@@ -533,7 +539,7 @@
                         android:id="@+id/save_video_as_preview_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_video_as_previewed"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/selfie_preview" />
@@ -571,7 +577,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="0dp" />
+                        android:layout_marginEnd="0dp"
+                        android:contentDescription="@string/save_video_as_previewed" />
 
                 </LinearLayout>
 
@@ -607,7 +614,7 @@
                         android:id="@+id/storage_location_icon"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:contentDescription="@string/save_image_as_previewed"
+                        android:importantForAccessibility="no"
                         android:paddingStart="4dp"
                         android:paddingEnd="8dp"
                         android:src="@drawable/storage" />
@@ -662,119 +669,6 @@
 
                     </LinearLayout>
 
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/image_format_setting"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:orientation="horizontal"
-                    android:paddingStart="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="6dp"
-                    android:paddingBottom="10dp"
-                    android:visibility="gone">
-
-                    <ImageView
-                        android:id="@+id/image_format_setting_icon"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:contentDescription="@string/image_file_name_format"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="8dp"
-                        android:src="@drawable/rename" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/image_format_setting_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:paddingBottom="2dp"
-                            android:text="@string/image_file_name_format"
-                            android:textColor="?android:textColorPrimary"
-                            android:textSize="16sp" />
-
-                        <AutoCompleteTextView
-                            android:id="@+id/image_format_setting_field"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:imeOptions="actionDone"
-                            android:importantForAutofill="no"
-                            android:inputType="text"
-                            android:labelFor="@id/image_format_setting_title"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="0dp"
-                            android:textSize="14sp"
-                            tools:ignore="LabelFor" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/video_format_setting"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:orientation="horizontal"
-                    android:paddingStart="10dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="6dp"
-                    android:paddingBottom="10dp"
-                    android:visibility="gone">
-
-                    <ImageView
-                        android:id="@+id/video_format_setting_icon"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:contentDescription="@string/video_file_name_format"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="8dp"
-                        android:src="@drawable/rename" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="4dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/video_format_setting_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:paddingBottom="2dp"
-                            android:text="@string/video_file_name_format"
-                            android:textColor="?android:textColorPrimary"
-                            android:textSize="16sp" />
-
-                        <AutoCompleteTextView
-                            android:id="@+id/video_format_setting_field"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:imeOptions="actionDone"
-                            android:importantForAutofill="no"
-                            android:inputType="text"
-                            android:labelFor="@id/video_format_setting_title"
-                            android:paddingStart="10dp"
-                            android:paddingEnd="0dp"
-                            android:textSize="14sp"
-                            tools:ignore="LabelFor" />
-
-                    </LinearLayout>
                 </LinearLayout>
 
             </LinearLayout>

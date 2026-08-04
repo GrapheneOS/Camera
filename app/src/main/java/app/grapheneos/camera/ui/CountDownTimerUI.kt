@@ -6,11 +6,10 @@ import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.camera.core.AspectRatio
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 
@@ -31,6 +30,9 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     var isRunning = false
         private set
+
+    /** The mode's own description for the capture button, to put back once the countdown ends. */
+    private var captureButtonDescription: CharSequence? = null
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mActivity = mainActivity
@@ -89,21 +91,16 @@ class CountDownTimerUI @JvmOverloads constructor(
     }
 
     fun cancelTimer() {
-        if (::timer.isInitialized) {
-            timer.cancel()
-            onTimerEnd(true)
-        }
+        // onTimerEnd() force-shows the controls that beforeTimeStarts() hid. Running it when no
+        // countdown is up would resurrect the ones the current mode hid for its own reasons: QR mode
+        // hides thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
+        if (!isRunning) return
+
+        timer.cancel()
+        onTimerEnd(true)
     }
 
     private fun beforeTimeStarts() {
-
-        val params: ViewGroup.LayoutParams = layoutParams
-        params.height = if (camConfig.aspectRatio == AspectRatio.RATIO_4_3) {
-            mActivity.previewView.width * 4 / 3
-        } else {
-            mActivity.previewView.height
-        }
-        layoutParams = params
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
         mActivity.thirdOption.visibility = View.INVISIBLE
@@ -112,6 +109,11 @@ class CountDownTimerUI @JvmOverloads constructor(
         mActivity.cancelButtonView.visibility = View.INVISIBLE
         mActivity.cbText.visibility = View.INVISIBLE
         mActivity.cbCross.visibility = View.VISIBLE
+
+        // The capture button cancels the countdown while one is up, so it must not keep announcing
+        // itself as the shutter. Only the description changes; the cross is drawn over the button.
+        captureButtonDescription = mActivity.captureButton.contentDescription
+        mActivity.captureButton.contentDescription = mActivity.getString(R.string.cancel_timer)
 
         visibility = View.VISIBLE
         isRunning = true
@@ -122,6 +124,11 @@ class CountDownTimerUI @JvmOverloads constructor(
         mActivity.flipCameraCircle.visibility = View.VISIBLE
         mActivity.cancelButtonView.visibility = View.VISIBLE
         mActivity.cbCross.visibility = View.INVISIBLE
+
+        captureButtonDescription?.let {
+            mActivity.captureButton.contentDescription = it
+            captureButtonDescription = null
+        }
 
         if (mActivity !is CaptureActivity) {
             mActivity.cbText.visibility = View.VISIBLE

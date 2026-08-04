@@ -8,17 +8,21 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.CountDownTimer
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
-import app.grapheneos.camera.ktx.isSystemApp
+import app.grapheneos.camera.capturer.deleteStalePendingRecordings
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class App : Application() {
 
     companion object {
-        private const val STALE_LOCATION_THRESHOLD = 11 * 1000L
+        // Must stay above the ~10 min throttle the OS applies to coarse-only apps.
+        private const val MAX_LOCATION_AGE = 15 * 60 * 1000L
     }
 
     private var activity: MainActivity? = null
@@ -33,7 +37,7 @@ class App : Application() {
     private val locationListener: LocationListener by lazy {
         object : LocationListener {
             override fun onLocationChanged(changedLocation: Location) {
-                location = listOf(location, changedLocation).getOptimalLocation()
+                location = getOptimalLocation(listOf(location, changedLocation))
             }
 
             override fun onProviderDisabled(provider: String) {
@@ -43,10 +47,7 @@ class App : Application() {
             }
 
             override fun onLocationChanged(locations: MutableList<Location>) {
-                val location = locations.getOptimalLocation()
-                if (location != null) {
-                    this@App.location = location
-                }
+                location = getOptimalLocation(locations + location)
             }
 
             override fun onProviderEnabled(provider: String) {}
@@ -82,38 +83,14 @@ class App : Application() {
         return false
     }
 
-    fun List<Location?>.getOptimalLocation(): Location? {
-        if (isNullOrEmpty()) return null
-
-        var optimalLocation: Location? = null
-        forEach { location ->
-            if (location != null) {
-                if (optimalLocation == null) {
-                    optimalLocation = location
-                    return@forEach
-                }
-
-                val timeDifference = location.time - optimalLocation.time
-
-                // If the location is older than STALE_LOCATION_THRESHOLD ms
-                if (timeDifference > STALE_LOCATION_THRESHOLD) {
-                    optimalLocation = location
-                } else {
-                    // Compare their accuracy instead of time if the difference is below
-                    // threshold
-                    if (location.accuracy > optimalLocation.accuracy) {
-                        optimalLocation = location
-                    }
-                }
-            }
-        }
-        return optimalLocation
-    }
-
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(activityLifeCycleHelper)
         DynamicColors.applyToActivitiesIfAvailable(this)
+
+        thread {
+            deleteStalePendingRecordings(this)
+        }
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_COARSE_LOCATION])
@@ -126,37 +103,59 @@ class App : Application() {
             dropLocationUpdates()
         }
         isLocationFetchInProgress = true
-        if (location == null) {
-            val providers = if (applicationInfo.isSystemApp() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                listOf<String>(LocationManager.FUSED_PROVIDER)
-            } else {
-                locationManager.allProviders
-            }
-            val locations = providers.map {
-                locationManager.getLastKnownLocation(it)
-            }
-            val fetchedLocation = locations.getOptimalLocation()
-            if (fetchedLocation != null) {
-                location = fetchedLocation
-            }
-        }
 
-        locationManager.allProviders.forEach { provider ->
+        val providers = locationProviders
+
+        val lastKnownLocations = providers.map {
+            locationManager.getLastKnownLocation(it)
+        }
+        location = getOptimalLocation(lastKnownLocations + location)
+
+        providers.forEach { provider ->
             locationManager.requestLocationUpdates(
                 provider,
                 2000,
-                10f,
+                0f,
                 locationListener
             )
         }
     }
+
+    private val locationProviders: List<String>
+        get() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                locationManager.hasProvider(LocationManager.FUSED_PROVIDER)
+            ) {
+                return listOf(LocationManager.FUSED_PROVIDER)
+            }
+            return locationManager.allProviders.filter {
+                it == LocationManager.GPS_PROVIDER ||
+                    it == LocationManager.NETWORK_PROVIDER ||
+                    it == LocationManager.PASSIVE_PROVIDER
+            }
+        }
 
     fun dropLocationUpdates() {
         isLocationFetchInProgress = false
         locationManager.removeUpdates(locationListener)
     }
 
-    fun getLocation(): Location? = location
+    fun disableLocationFetching() {
+        dropLocationUpdates()
+        location = null
+    }
+
+    fun getLocation(): Location? {
+        val location = this.location ?: return null
+        val ageMs = TimeUnit.NANOSECONDS.toMillis(
+            SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos
+        )
+        if (ageMs > MAX_LOCATION_AGE) {
+            this.location = null
+            return null
+        }
+        return location
+    }
 
     private fun isLocationEnabled(): Boolean = locationManager.isLocationEnabled
 
