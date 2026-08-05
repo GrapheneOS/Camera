@@ -65,6 +65,10 @@ import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
+import androidx.camera.camera2.interop.Camera2CameraControl
+import androidx.camera.camera2.interop.CaptureRequestOptions
+import android.hardware.camera2.CaptureRequest
+import android.util.Range
 
 // note that enum constant name is used as a name of a SharedPreferences instance
 enum class CameraMode(val extensionMode: Int, val uiName: Int) {
@@ -76,6 +80,7 @@ enum class CameraMode(val extensionMode: Int, val uiName: Int) {
     HDR(ExtensionMode.HDR, R.string.hdr_mode),
     CAMERA(ExtensionMode.NONE, R.string.camera),
     VIDEO(ExtensionMode.NONE, R.string.video),
+    MANUAL(ExtensionMode.NONE, R.string.manual_mode)
 }
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -274,6 +279,9 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var lastCapturedItem: CapturedItem? = null
 
+    var manualIsoValue: Int? = null
+    var manualExposureTimeValue: Long? = null
+
     init {
         if (mActivity !is SecureActivity) {
             CapturedItems.init(mActivity, this)
@@ -311,6 +319,9 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
     var isQRMode = false
+        private set
+
+    var isManualMode = false
         private set
 
     val isFlashAvailable: Boolean
@@ -1015,6 +1026,46 @@ class CamConfig(private val mActivity: MainActivity) {
             )
         }
     }
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    fun getIsoRange(): Range<Int>? {
+        val cameraInfo = camera?.cameraInfo ?: return null
+        return Camera2CameraInfo.from(cameraInfo)
+            .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE)
+    }
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    fun getShutterRange(): Range<Long>? {
+        val cameraInfo = camera?.cameraInfo ?: return null
+        return Camera2CameraInfo.from(cameraInfo)
+            .getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE)
+    }
+
+    /**
+     * Applies manual ISO and Exposure Time settings to the camera hardware.
+     * If camera is not in manual mode, it restores Auto Exposure (AE) mode.
+     */
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    fun applyManualSettings() {
+        val cameraControl = camera?.cameraControl ?: return
+        val camera2CameraControl = Camera2CameraControl.from(cameraControl)
+        val builder = CaptureRequestOptions.Builder()
+
+        if (!mActivity.camConfig.isManualMode) {
+            builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+        } else {
+            builder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
+            manualIsoValue?.let {
+                builder.setCaptureRequestOption(CaptureRequest.SENSOR_SENSITIVITY, it)
+            }
+            manualExposureTimeValue?.let {
+                builder.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, it)
+            }
+        }
+
+        camera2CameraControl.setCaptureRequestOptions(builder.build())
+    }
+
 
     fun toggleAspectRatio() {
         aspectRatio = if (aspectRatio == AspectRatio.RATIO_16_9) {
@@ -1786,6 +1837,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         camera?.cameraInfo?.exposureState?.let { mActivity.exposureBar.setExposureConfig(it) }
 
+        applyManualSettings()
+
         mActivity.settingsDialog.torchToggle.isChecked = false
 
         // Focus camera on touch/tap
@@ -1860,7 +1913,7 @@ class CamConfig(private val mActivity: MainActivity) {
     private fun availableModes(): Set<CameraMode> {
         return CameraMode.entries.filter {
             when (it) {
-                CameraMode.CAMERA, CameraMode.VIDEO -> true
+                CameraMode.CAMERA, CameraMode.VIDEO, CameraMode.MANUAL -> true
                 CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
                 else -> {
                     check(it.extensionMode != ExtensionMode.NONE)
@@ -2013,6 +2066,8 @@ class CamConfig(private val mActivity: MainActivity) {
 
         isVideoMode = mode == CameraMode.VIDEO
 
+        isManualMode = mode == CameraMode.MANUAL
+
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
             mActivity.thirdOption.visibility = View.INVISIBLE
@@ -2036,6 +2091,13 @@ class CamConfig(private val mActivity: MainActivity) {
             mActivity.setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
 
             mActivity.micOffIcon.visibility = View.GONE
+            mActivity.isoButton.visibility = View.GONE
+            mActivity.isoButton.isSelected = false
+            mActivity.isoSliderContainer.visibility = View.GONE
+            //mActivity.updateIsoButtonUI()
+            manualIsoValue = null
+            manualExposureTimeValue = null
+            applyManualSettings()
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
@@ -2051,6 +2113,21 @@ class CamConfig(private val mActivity: MainActivity) {
             } else {
                 mActivity.setCaptureButtonIcon(R.drawable.camera_shutter, R.string.capture)
                 mActivity.micOffIcon.visibility = View.GONE
+            }
+
+            mActivity.isoButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
+            mActivity.exposureTimeButton.visibility = if (isManualMode) View.VISIBLE else View.GONE
+            if (!isManualMode) {
+                mActivity.deselectAllManualControls()
+                manualIsoValue = null
+                manualExposureTimeValue = null
+                applyManualSettings()
+                mActivity.startFocusTimer()
+            }else{
+                manualIsoValue = mActivity.isoSeekBar.getCurrentIsoValue()
+                manualExposureTimeValue = mActivity.exposureTimeBar.getCurrentExposureTimeValue()
+                applyManualSettings()
+                mActivity.cancelFocusTimer()
             }
         }
 

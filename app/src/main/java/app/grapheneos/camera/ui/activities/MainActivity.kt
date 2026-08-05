@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.Point
 import android.graphics.Rect
@@ -87,6 +88,8 @@ import app.grapheneos.camera.ui.QROverlay
 import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
+import app.grapheneos.camera.ui.seekbar.IsoBar
+import app.grapheneos.camera.ui.seekbar.ExposureTimeBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.util.CameraControl
@@ -229,8 +232,15 @@ open class MainActivity : AppCompatActivity(),
             previewView.height / 2.0f, QROverlay.RATIO
         )
 
+        // In manual mode, we only want to focus (AF), not change exposure (AE)
+        val flags = if (camConfig.isManualMode) {
+            FocusMeteringAction.FLAG_AF
+        } else {
+            FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
+        }
+
         camConfig.camera?.cameraControl?.startFocusAndMetering(
-            FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
+            FocusMeteringAction.Builder(autoFocusPoint, flags).disableAutoCancel().build()
         )
 
         startFocusTimer()
@@ -248,6 +258,41 @@ open class MainActivity : AppCompatActivity(),
     }
 
     lateinit var micOffIcon: ImageView
+    lateinit var isoButton: TextView
+
+    lateinit var isoSeekBar: IsoBar
+    lateinit var isoSliderContainer: View
+    lateinit var isoValueText: TextView
+
+    lateinit var exposureTimeButton: TextView
+    lateinit var exposureTimeBar: ExposureTimeBar
+    lateinit var exposureTimeSliderContainer: View
+    lateinit var exposureTimeValueText: TextView
+
+    private val manualControlPairs by lazy {
+        listOf(
+            isoButton to isoSliderContainer,
+            exposureTimeButton to exposureTimeSliderContainer
+        )
+    }
+
+
+    fun updateManualButtonsUI(){
+        val buttons : List<TextView> = listOf(isoButton, exposureTimeButton)
+        for(b in buttons){
+            updateManualButtonUI(b)
+        }
+    }
+
+   private fun updateManualButtonUI(button: TextView) {
+        if (button.isSelected) {
+            button.setBackgroundResource(R.drawable.manual_button_pressed_bg)
+            button.setTextColor(Color.BLACK)
+        } else {
+            button.setBackgroundResource(R.drawable.manual_button_bg)
+            button.setTextColor(Color.WHITE)
+        }
+    }
 
     private var shouldRestartRecording = false
 
@@ -617,6 +662,23 @@ open class MainActivity : AppCompatActivity(),
         camConfig = CamConfig(this)
         cameraControl = CameraControl(camConfig)
         mainOverlay = binding.mainOverlay
+        isoButton = binding.isoButton
+
+        isoSliderContainer = binding.isoSliderContainer
+        isoValueText = binding.isoValueText
+        exposureTimeButton = binding.exposureTimeButton
+        exposureTimeValueText = binding.exposureTimeValueText
+
+        isoSeekBar = binding.isoSeekbar
+        exposureTimeBar = binding.exposureTimeSeekbar
+
+        isoSeekBar.setMainActivity(this)
+        exposureTimeBar.setMainActivity(this)
+
+        exposureTimeSliderContainer = binding.exposureTimeSliderContainer
+
+
+
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         thirdOption = binding.thirdOption
@@ -645,6 +707,8 @@ open class MainActivity : AppCompatActivity(),
             if (state == StreamState.STREAMING) {
                 mainOverlay.visibility = View.INVISIBLE
                 camConfig.reloadSettings()
+                isoSeekBar.refreshIsoValues()
+                exposureTimeBar.refreshExposureTimeValues()
                 if (!camConfig.isQRMode) {
                     previewGrid.visibility = View.VISIBLE
                     if (!settingsDialog.isShowing) {
@@ -777,6 +841,38 @@ open class MainActivity : AppCompatActivity(),
                     }
                 }
             }
+        }
+
+        isoButton.setOnClickListener {
+            val targetState = !it.isSelected
+            deselectAllManualControls()
+            it.isSelected = targetState
+
+            if (it.isSelected) {
+                isoSliderContainer.visibility = View.VISIBLE
+                if (camConfig.manualIsoValue == null) {
+                    camConfig.manualIsoValue = isoSeekBar.getCurrentIsoValue()
+                }
+            } else {
+                isoSliderContainer.visibility = View.GONE
+            }
+            camConfig.applyManualSettings()
+            updateManualButtonsUI()
+        }
+
+        exposureTimeButton.setOnClickListener {
+            val targetState = !it.isSelected
+            deselectAllManualControls()
+            it.isSelected = targetState
+
+            if (it.isSelected) {
+                exposureTimeSliderContainer.visibility = View.VISIBLE
+                camConfig.manualExposureTimeValue = exposureTimeBar.getCurrentExposureTimeValue()
+            } else {
+                exposureTimeSliderContainer.visibility = View.GONE
+            }
+            camConfig.applyManualSettings()
+            updateManualButtonsUI()
         }
 
         cancelButtonView = binding.cancelButton
@@ -1233,13 +1329,23 @@ open class MainActivity : AppCompatActivity(),
             if (camConfig.isQRMode)
                 return false
 
+            if(camConfig.isManualMode)
+                return false
+
             val x = event.x
             val y = event.y
 
             val autoFocusPoint = previewView.meteringPointFactory.createPoint(x, y)
             animateFocusRing(x, y)
 
-            val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
+            // In manual mode, we only want to focus (AF), not change exposure (AE)
+            val flags = if (camConfig.isManualMode) {
+                FocusMeteringAction.FLAG_AF
+            } else {
+                FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
+            }
+
+            val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint, flags)
 
             if (!camConfig.isVideoMode) {
                 camConfig.mPlayer.playFocusStartSound()
@@ -1804,6 +1910,15 @@ open class MainActivity : AppCompatActivity(),
     private fun resetAutoSleep() {
         application.resetPreventScreenFromSleeping()
     }
+
+    fun deselectAllManualControls() {
+        manualControlPairs.forEach { (button, container) ->
+            button.isSelected = false
+            container.visibility = View.GONE
+        }
+        updateManualButtonsUI()
+    }
+
 
     @Volatile var isStarted = false
 
