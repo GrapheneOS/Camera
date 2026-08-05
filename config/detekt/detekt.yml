@@ -1,0 +1,52 @@
+config:
+  validation: true
+  warningsAsErrors: true
+
+complexity:
+  LongParameterList:
+    active: false
+    ignoreDefaultParameters: true
+    ignoreAnnotated:
+      - Composable
+  TooManyFunctions:
+    allowedFunctionsPerClass: 60
+    allowedFunctionsPerFile: 15
+    allowedFunctionsPerInterface: 50
+    ignoreAnnotatedFunctions:
+      - Preview
+      - PreviewLightDark
+  LongMethod:
+    ignoreAnnotated:
+      - Preview
+      - PreviewLightDark
+
+coroutines:
+  InjectDispatcher:
+    # Stays active — AGENTS.md requires dispatchers to arrive through a qualifier. A Hilt
+    # module is the one place that names a dispatcher, which is what the exemption covers.
+    ignoreAnnotated:
+      - Provides
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated:
+      - Composable
+
+style:
+  AbstractClassCanBeInterface:
+    ignoreAnnotated:
+      - Module
+
+  ForbiddenComment:
+    active: false
+
+  MagicNumber:
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignorePropertyDeclaration: true
+    ignoreAnnotated:
+      - Composable
+
+  UnusedPrivateFunction:
+    ignoreAnnotated:
+      - Preview
+      - PreviewLightDark
