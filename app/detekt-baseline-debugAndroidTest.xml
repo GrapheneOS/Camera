@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>AbstractClassCanBeConcreteClass:EditMediaRegressionTest.kt:EditMediaRegressionTest.HostActivity$HostActivity</ID>
+    <ID>AbstractClassCanBeConcreteClass:ShareMediaRegressionTest.kt:ShareMediaRegressionTest.HostActivity$HostActivity</ID>
+    <ID>EmptyFunctionBlock:InAppGalleryRegressionTest.kt:InAppGalleryRegressionTest.StalledMediaScan${}</ID>
+    <ID>PrintStackTrace:VideoCapturerRegressionTest.kt:VideoCapturerRegressionTest$e</ID>
+    <ID>UseCheckOrError:VideoPlayerRegressionTest.kt:VideoPlayerRegressionTest.DeadMediaServiceVideoView$throw IllegalStateException("prepareAsync called in state 0")</ID>
+  </CurrentIssues>
+</SmellBaseline>
