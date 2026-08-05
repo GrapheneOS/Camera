@@ -3,6 +3,10 @@ agp = "9.3.1"
 kotlin = "2.4.10"
 ksp = "2.3.10"
 
+detekt = "2.0.0-alpha.5"
+ktlint = "1.8.0"
+ktlint-gradle = "14.2.0"
+
 appcompat = "1.7.1"
 camerax = { strictly = "1.6.1" }
 constraintlayout = "2.2.2"
@@ -53,3 +57,5 @@ camerax = [
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
