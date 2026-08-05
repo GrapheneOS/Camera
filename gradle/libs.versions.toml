@@ -4,7 +4,7 @@ kotlin = "2.4.10"
 ksp = "2.3.10"
 
 appcompat = "1.7.1"
-camerax = "1.6.1"
+camerax = { strictly = "1.6.1" }
 constraintlayout = "2.2.2"
 coreKtx = "1.19.0"
 material = "1.14.0"
