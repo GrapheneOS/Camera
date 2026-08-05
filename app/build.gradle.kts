@@ -89,6 +89,14 @@ android {
     androidResources {
         localeFilters += listOf("en")
     }
+
+    testOptions {
+        unitTests {
+            // Robolectric builds its application under test from the merged manifest and
+            // resources; without this it cannot start one.
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -100,6 +108,10 @@ dependencies {
     implementation(libs.bundles.camerax)
 
     implementation(libs.zxing.core)
+
+    testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
 
     androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.test.ext.junit.ktx)
