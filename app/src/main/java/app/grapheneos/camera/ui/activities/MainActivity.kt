@@ -1444,6 +1444,8 @@ open class MainActivity : AppCompatActivity(),
 
         val i = tabLayout.selectedTabPosition - 1
 
+        vibrateDevice()
+
         Log.i(TAG, "onSwipeRight $i")
         tabLayout.getTabAt(i)?.let {
             finalizeMode(it)
@@ -1463,6 +1465,8 @@ open class MainActivity : AppCompatActivity(),
 
         wasSwiping = true
         if (settingsDialog.isShowing) return
+
+        vibrateDevice()
 
         val i = tabLayout.selectedTabPosition + 1
         tabLayout.getTabAt(i)?.let {
