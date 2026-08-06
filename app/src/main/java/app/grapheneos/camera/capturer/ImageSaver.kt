@@ -28,8 +28,10 @@ import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
+import app.grapheneos.camera.util.extractIccFromJpeg
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
+import app.grapheneos.camera.util.stripBytes
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -38,7 +40,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 // see com.android.externalstorage.ExternalStorageProvider and
 // com.android.internal.content.FileSystemProvider
@@ -66,6 +67,7 @@ class ImageSaver(
     val imageFileFormat: String,
     val imageCaptureMetadata: ImageCapture.Metadata,
     val removeExifAfterCapture: Boolean,
+    val removeICCAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
 ) : ImageCapture.OnImageCapturedCallback()
@@ -158,6 +160,17 @@ class ImageSaver(
         }
 
         processedJpegBytes = processExif(uncroppedJpegBytes)
+
+        if (removeICCAfterCapture) {
+            val iccProfile = extractIccFromJpeg(processedJpegBytes)
+            if (iccProfile != null) {
+                try {
+                    processedJpegBytes = stripBytes(processedJpegBytes, iccProfile.app2SectionStart, iccProfile.app2SectionLength)
+                } catch (e: Exception) {
+                    Log.e("ICC_Profile", "Failed to strip ICC APP2 section: ${e.message}")
+                }
+            }
+        }
 
         val startOfWriting = timestamp()
 

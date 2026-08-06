@@ -510,6 +510,74 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/remove_icc_setting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="10dp">
+
+                <!-- todo: icon?
+                <ImageView
+                    android:id="@+id/remove_exif_icon"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/save_image_as_previewed"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="8dp"
+                    android:src="@drawable/info_adaptable"
+
+                    tools:ignore="DuplicateIds"
+                        this tag fixes:
+                            Duplicate id `@+id/remove_exif_icon`, already defined earlier in this layout
+                        but still fails to compile:
+                            [databinding] {"msg":"\u003cImageView id\u003d\u0027@+id/remove_exif_icon\u0027\u003e conflicts with another tag that has the same ID","file":"app/src/main/res/layout/more_settings.xml","pos":[{"line0":517,"col0":16,"line1":525,"col1":49}]}
+                
+                    />
+                -->
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/remove_icc_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:paddingBottom="2dp"
+                        android:text="@string/remove_icc_title"
+                        android:textColor="?android:textColorPrimary"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/remove_icc_subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="10dp"
+                        android:text="@string/remove_icc_subtitle"
+                        android:textSize="14sp"
+                        tools:ignore="RtlSymmetry" />
+
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/remove_icc_toggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="0dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/video_settings"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
