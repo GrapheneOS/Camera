@@ -45,6 +45,7 @@ import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.annotation.DrawableRes
@@ -71,6 +72,7 @@ import app.grapheneos.camera.CameraMode
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
@@ -159,6 +161,9 @@ open class MainActivity : AppCompatActivity(),
     lateinit var thirdOption: View
     lateinit var imagePreview: ShapeableImageView
     lateinit var previewLoader: ProgressBar
+    lateinit var whiteOptionCircle: ImageView
+    lateinit var playPreview: ImageView
+    lateinit var qrImageImport: ImageButton
     private var isZooming = false
 
     lateinit var zoomBar: ZoomBar
@@ -316,6 +321,42 @@ open class MainActivity : AppCompatActivity(),
         }
 
         Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
+    }
+
+    private val qrImagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scanQRFromImage(uri)
+        }
+    }
+
+    private fun scanQRFromImage(uri: Uri) {
+        val bitmap = try {
+            val source = ImageDecoder.createSource(contentResolver, uri)
+            ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Unable to decode picked image for QR scan", e)
+            showMessage(R.string.could_not_read_image)
+            return
+        }
+
+        val possibleFormats = if (camConfig.scanAllCodes) {
+            BarcodeFormat.values().asList()
+        } else {
+            camConfig.allowedFormats
+        }
+
+        val result = QRAnalyzer.scanStillImage(bitmap, possibleFormats)
+        bitmap.recycle()
+
+        if (result != null) {
+            onScanResultSuccess(result)
+        } else {
+            showMessage(R.string.no_code_found_in_image)
+        }
     }
 
     private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {
@@ -622,6 +663,15 @@ open class MainActivity : AppCompatActivity(),
         thirdOption = binding.thirdOption
         previewLoader = binding.previewLoading
         imagePreview = binding.imagePreview
+        whiteOptionCircle = binding.whiteOptionCircle
+        playPreview = binding.playPreview
+        qrImageImport = binding.qrImageImport
+        qrImageImport.setOnClickListener {
+            resetAutoSleep()
+            qrImagePickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        }
         previewView = binding.preview
         previewView.scaleType = PreviewView.ScaleType.FIT_START
         previewContainer = binding.previewContainer
