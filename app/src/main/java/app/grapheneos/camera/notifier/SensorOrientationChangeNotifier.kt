@@ -5,6 +5,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.view.Surface
 import android.view.View
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.lang.ref.WeakReference
@@ -54,7 +55,7 @@ class SensorOrientationChangeNotifier private constructor(
         private const val Z_EXIT_MAX = 45F
     }
 
-    var mOrientation = mainActivity.getRotation()
+    var mOrientation = 0
         private set
 
     private val mListeners = ArrayList<WeakReference<Listener?>>(3)
@@ -70,7 +71,7 @@ class SensorOrientationChangeNotifier private constructor(
             mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
             SensorManager.SENSOR_DELAY_NORMAL
         )
-        notifyListeners(true)
+        notifyListeners()
     }
 
     /**
@@ -160,6 +161,15 @@ class SensorOrientationChangeNotifier private constructor(
         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
     }
 
+    fun getSurfaceRotation() : Int {
+        return when(mOrientation) {
+            90 -> Surface.ROTATION_90
+            180 -> Surface.ROTATION_180
+            270 -> Surface.ROTATION_270
+            else -> Surface.ROTATION_0
+        }
+    }
+
     fun forceUpdateGyro() {
         mSensorEventListener.let {
             it.updateGyro(it.lastX, it.lastZ)
@@ -195,11 +205,7 @@ class SensorOrientationChangeNotifier private constructor(
         return null
     }
 
-    fun notifyListeners(manualUpdate: Boolean = false) {
-
-        if (manualUpdate) {
-            mOrientation = mainActivity.getRotation()
-        }
+    fun notifyListeners() {
 
         val deadLinksArr = ArrayList<WeakReference<Listener?>>()
         for (wr in mListeners) {
