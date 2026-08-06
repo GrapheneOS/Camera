@@ -84,4 +84,19 @@
         android:layout_width="match_parent"
         android:textColor="?android:attr/textColorPrimary"/>
 
+    <TextView
+        android:id="@+id/copy_confirmation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="@string/copied_text_to_clipboard"
+        android:backgroundTint="?attr/colorSecondaryContainer"
+        android:background="@drawable/qr_result_background"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
 </LinearLayout>

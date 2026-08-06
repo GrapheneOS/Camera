@@ -1177,17 +1177,29 @@ open class MainActivity : AppCompatActivity(),
             })
 
             val ctc: ImageButton = dialogBinding.copyQrText
+            val confirmationLabel = dialogBinding.copyConfirmation
+
             ctc.setOnClickListener {
-                val clipboardManager = getSystemService(
-                    Context.CLIPBOARD_SERVICE
-                ) as ClipboardManager
-                val clipData = ClipData.newPlainText(
-                    "text",
-                    textView.text
-                )
+                val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val clipData = ClipData.newPlainText("text", textView.text)
                 clipboardManager.setPrimaryClip(clipData)
 
-                showMessage(getString(R.string.copied_text_to_clipboard))
+                ctc.setImageResource(R.drawable.ic_check)
+                ctc.imageTintList = null
+                ctc.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction {
+                    ctc.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100)
+                }
+                    confirmationLabel.visibility = View.VISIBLE
+                    confirmationLabel.postDelayed({
+                        confirmationLabel.visibility = View.GONE
+                    }, 2000)
+
+                ctc.postDelayed({
+                    ctc.animate().alpha(0f).setDuration(150).withEndAction {
+                        ctc.setImageResource(R.drawable.copy_to_clipboard)
+                        ctc.animate().alpha(1f).setDuration(150).start()
+                    }
+                }, 2000)
             }
 
             val sButton: ImageButton = dialogBinding.shareQrText
