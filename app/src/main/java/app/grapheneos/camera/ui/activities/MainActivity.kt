@@ -139,6 +139,7 @@ open class MainActivity : AppCompatActivity(),
     // is already visible and to dismiss it if the permission gets granted.
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
+
     @Volatile
     var lastFrame: Bitmap? = null
         private set
@@ -151,6 +152,11 @@ open class MainActivity : AppCompatActivity(),
     private var framePrefetchedAt = 0L
 
     private var frameCopyThread: HandlerThread? = null
+
+    private var loggedMissingSurfaceView = false
+
+    // Whether the transition still is standing in for the preview.
+    private var transitionShown = false
 
     private lateinit var mainFrame: View
     lateinit var rootView: View
@@ -363,6 +369,7 @@ open class MainActivity : AppCompatActivity(),
 
     // The blurred still that stands in for the preview whenever the camera is not streaming.
     private fun showPreviewTransition() {
+        transitionShown = true
         previewGrid.visibility = View.INVISIBLE
 
         val lastFrame = lastFrame
@@ -377,6 +384,22 @@ open class MainActivity : AppCompatActivity(),
         settingsIcon.visibility = View.INVISIBLE
         settingsIcon.isEnabled = false
         mainOverlay.visibility = View.VISIBLE
+    }
+
+    private fun hidePreviewTransition() {
+        transitionShown = false
+        mainOverlay.visibility = View.INVISIBLE
+
+        if (camConfig.isQRMode) {
+            return
+        }
+
+        previewGrid.visibility = View.VISIBLE
+        if (!settingsDialog.isShowing) {
+            settingsIcon.visibility = View.VISIBLE
+        }
+
+        settingsIcon.isEnabled = true
     }
 
     fun updateLastFrame() {
@@ -395,7 +418,15 @@ open class MainActivity : AppCompatActivity(),
         if (frameCopyPending || hasFreshPrefetch()) return
         if (previewView.width == 0 || previewView.height == 0) return
 
-        val surfaceView = previewView.getChildAt(0) as? SurfaceView ?: return
+        val surfaceView = previewView.getChildAt(0) as? SurfaceView ?: run {
+            // PreviewView falls back to a TextureView on hardware that cannot take a SurfaceView,
+            // and then there is no surface here to copy the preview out of.
+            if (!loggedMissingSurfaceView) {
+                loggedMissingSurfaceView = true
+                Log.i(TAG, "Preview is not backed by a SurfaceView; no frame to prefetch")
+            }
+            return
+        }
         if (!surfaceView.holder.surface.isValid) return
 
         frameCopyPending = true
@@ -764,15 +795,8 @@ open class MainActivity : AppCompatActivity(),
         timerView = binding.timer
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
-                mainOverlay.visibility = View.INVISIBLE
+                hidePreviewTransition()
                 camConfig.reloadSettings()
-                if (!camConfig.isQRMode) {
-                    previewGrid.visibility = View.VISIBLE
-                    if (!settingsDialog.isShowing) {
-                        settingsIcon.visibility = View.VISIBLE
-                    }
-                    settingsIcon.isEnabled = true
-                }
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
@@ -1175,7 +1199,16 @@ open class MainActivity : AppCompatActivity(),
             // switchMode() puts the strip on the mode the camera actually ended up in, which is a
             // different one when an extension fails to bind.
             tabLayout.goToTab(selectedTab) {
-                camConfig.switchMode(mode)
+                if (mode != camConfig.currentMode) {
+                    camConfig.switchMode(mode)
+                } else if (
+                    transitionShown &&
+                    previewView.previewStreamState.value == StreamState.STREAMING
+                ) {
+                    // A transition raised for a switch this tap has just cancelled, over a camera
+                    // that never stopped streaming: nothing is left to rebind and take it down.
+                    hidePreviewTransition()
+                }
             }
 
             resetAutoSleep()

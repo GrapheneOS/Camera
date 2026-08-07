@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
+import androidx.core.view.children
 import app.grapheneos.camera.CameraMode
 import com.google.android.material.tabs.TabLayout
 import kotlin.math.abs
@@ -74,10 +75,11 @@ class BottomTabLayout @JvmOverloads constructor(
             0
         )
 
-        val centers = (0 until tabParent.childCount).map {
-            val tabView = tabParent.getChildAt(it)
-            tabView.left + tabView.width / 2 - width / 2
-        }
+        val centers = tabParent
+            .children
+            .take(tabCount)
+            .map { it.left + it.width / 2 - width / 2 }
+            .toList()
 
         if (centers == tabCenters) {
             drawSelectionAtScroll(scrollX)
@@ -112,11 +114,14 @@ class BottomTabLayout @JvmOverloads constructor(
 
         cancelSettle()
 
-        val target = tabCenters.getOrNull(tab.position)
-        val duration = if (target == null) 0L else settleDuration(abs(target - scrollX))
+        val target = tabCenters.getOrNull(tab.position) ?: run {
+            onSettled?.run()
+            return
+        }
 
-        if (target == null || duration == 0L || !ValueAnimator.areAnimatorsEnabled()) {
-            target?.let { scrollTo(it, 0) }
+        val duration = settleDuration(abs(target - scrollX))
+        if (duration == 0L || !ValueAnimator.areAnimatorsEnabled()) {
+            scrollTo(target, 0)
             onSettled?.run()
             return
         }
@@ -188,14 +193,14 @@ class BottomTabLayout @JvmOverloads constructor(
     }
 
     private fun fractionalTabPosition(x: Int): Float {
-        for (index in 0 until tabCenters.size - 1) {
+        for (index in 0 until tabCenters.lastIndex) {
             val fraction =
                 (x - tabCenters[index]).toFloat() / (tabCenters[index + 1] - tabCenters[index])
             if (fraction < 1f) {
                 return (index + fraction).coerceAtLeast(0f)
             }
         }
-        return (tabCenters.size - 1).toFloat()
+        return tabCenters.lastIndex.toFloat()
     }
 
     fun getAllModes(): Set<CameraMode> {

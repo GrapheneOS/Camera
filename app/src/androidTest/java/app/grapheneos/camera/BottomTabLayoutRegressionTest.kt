@@ -415,6 +415,54 @@ class BottomTabLayoutRegressionTest {
         }
     }
 
+    @Test
+    fun takingBackASwitchMidGlide_doesNotStrandTheTransition() {
+        assumeTrue("the switch lands before it can be taken back with animations off",
+            animatorsEnabled())
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            awaitStrip(scenario)
+
+            // The transition only goes up over a frame to blur, and nothing has taken one yet.
+            scenario.onActivity { it.prefetchLastFrame() }
+            waitUntil(scenario, "a frame is ready to blur") { it.lastFrame != null }
+
+            var startMode: CameraMode? = null
+            scenario.onActivity { activity ->
+                val tabs = activity.tabLayout
+                startMode = activity.camConfig.currentMode
+
+                activity.finalizeMode(tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount)))
+
+                assertEquals(
+                    "the switch reached the camera before it could be taken back",
+                    startMode,
+                    activity.camConfig.currentMode,
+                )
+                assertEquals(
+                    "the switch put up no transition to strand",
+                    View.VISIBLE,
+                    activity.mainOverlay.visibility,
+                )
+
+                // Back to the tab the camera never left, in the window the first switch is still
+                // gliding through.
+                activity.finalizeMode(tabs.getTabForMode(startMode))
+            }
+
+            waitUntil(scenario, "the transition came back down off the live preview") {
+                it.mainOverlay.visibility != View.VISIBLE
+            }
+            scenario.onActivity {
+                assertEquals(
+                    "the camera left the mode the strip came back to",
+                    startMode,
+                    it.camConfig.currentMode,
+                )
+            }
+        }
+    }
+
     private fun animatorsEnabled() = ValueAnimator.areAnimatorsEnabled()
 
     // A neighbouring tab, whichever side of [position] the strip has one on.
