@@ -6,6 +6,8 @@ import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
@@ -24,6 +26,7 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.MirrorMode
@@ -39,7 +42,6 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.DynamicRange
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -95,6 +97,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GEO_TAGGING = "geo_tagging"
             const val FLASH_MODE = "flash_mode"
             const val GRID = "grid"
+
             // obsolete, split into WAIT_FOR_FOCUS_LOCK and PHOTO_QUALITY
             const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
             const val FOCUS_TIMEOUT = "focus_timeout"
@@ -219,17 +222,44 @@ class CamConfig(private val mActivity: MainActivity) {
         // to re-probe what the session underneath it had already answered.
         private val extensionUsability = HashMap<Pair<Int, Int>, Boolean>()
 
+        // Every setting that reaches one of the three probed SessionConfigs has to appear in the
+        // key. A setting added to the ImageCapture, Recorder or Preview builder without being added
+        // here would be answered from a verdict that predates it, which either takes in-video
+        // snapshots away for no reason or keeps them on a camera that cannot bind them.
+        private val snapshotDropReason = HashMap<SnapshotProbeKey, String?>()
+
+        // A cache hit and a repeated probe reach the same verdict, so this is the only thing that
+        // tells them apart from the outside.
+        @VisibleForTesting
+        var snapshotProbeCount = 0
+            private set
+
+        @VisibleForTesting
+        fun clearSnapshotProbeCache() {
+            snapshotDropReason.clear()
+            snapshotProbeCount = 0
+        }
+
         // The provider the verdicts above were probed through. A different instance means the
         // camera stack was reinitialized and none of them describe it any more.
         private var probedCameraProvider: ProcessCameraProvider? = null
     }
+
+    private data class SnapshotProbeKey(
+        val lensFacing: Int,
+        val videoQuality: Quality,
+        val usesFeatureGroup: Boolean,
+        val captureMode: Int,
+        val selectHighestResolution: Boolean,
+    )
 
     var camera: Camera? = null
 
     // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
     // extension is bound, because CameraX then queries the extension's zoom range through
     // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
-    // of the camera on any path that runs more than once per bind.
+    // of the camera on any path that runs more than once per bind. It is null from the moment a
+    // bind starts until attachZoomState has run, which is where that query was moved to.
     var zoomState: ZoomState? = null
         private set
 
@@ -240,6 +270,18 @@ class CamConfig(private val mActivity: MainActivity) {
         if (it.linearZoom != 0f || it.zoomRatio != 1f) {
             mActivity.zoomBar.updateThumb()
         }
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val attachZoomState = Runnable {
+        if (mActivity.isDestroyed || mActivity.isFinishing) return@Runnable
+
+        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
+            it.observe(mActivity, zoomStateObserver)
+        }
+
+        zoomState = zoomStateSource?.value
     }
 
     var cameraProvider: ProcessCameraProvider? = null
@@ -269,7 +311,8 @@ class CamConfig(private val mActivity: MainActivity) {
     // from the lock screen) are forced to override getSharedPreferences()
     // and return an instance of in-memory EphemeralSharedPrefs, which are based on "real" prefs,
     // but never modify them
-    val commonPref: SharedPreferences = mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
+    val commonPref: SharedPreferences =
+        mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
     private lateinit var modePref: SharedPreferences
 
     var lastCapturedItem: CapturedItem? = null
@@ -305,7 +348,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     mActivity is VideoOnlyActivity
         }
 
-    val canTakePicture : Boolean
+    val canTakePicture: Boolean
         get() {
             return imageCapture != null
         }
@@ -338,9 +381,11 @@ class CamConfig(private val mActivity: MainActivity) {
                 isVideoMode -> {
                     AspectRatio.RATIO_16_9
                 }
+
                 isQRMode -> {
                     AspectRatio.RATIO_4_3
                 }
+
                 else -> {
                     commonPref.getInt(
                         SettingValues.Key.ASPECT_RATIO,
@@ -605,7 +650,7 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
         }
 
-    val isZslSupported : Boolean by lazy {
+    val isZslSupported: Boolean by lazy {
         camera!!.cameraInfo.isZslSupported
     }
 
@@ -614,11 +659,11 @@ class CamConfig(private val mActivity: MainActivity) {
     // feature combinations, so a camera that can stabilize is not on its own enough: where the
     // group cannot be used nothing applies EIS, and offering the toggle there is offering a
     // control that does nothing.
-    fun canApplyVideoStabilization() : Boolean {
+    fun canApplyVideoStabilization(): Boolean {
         return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
     }
 
-    private fun isVideoStabilizationSupported() : Boolean {
+    private fun isVideoStabilizationSupported(): Boolean {
         // The toggle asks for both kinds of stabilization (see the preferred feature group in
         // startCamera), preferring the preview kind and falling back to the recording-only kind,
         // so it is meaningful whenever either one is available. Testing only the recorder
@@ -629,12 +674,12 @@ class CamConfig(private val mActivity: MainActivity) {
         return isPreviewStabilizationSupported() || isRecorderStabilizationSupported()
     }
 
-    private fun isPreviewStabilizationSupported() : Boolean {
+    private fun isPreviewStabilizationSupported(): Boolean {
         return Preview.getPreviewCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
 
-    private fun isRecorderStabilizationSupported() : Boolean {
+    private fun isRecorderStabilizationSupported(): Boolean {
         return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
@@ -666,7 +711,10 @@ class CamConfig(private val mActivity: MainActivity) {
         if (mActivity is SecureMainActivity) {
             // previous call updated ephemeral SharedPreferences that won't be accessible by the
             // "regular" MainActivity
-            mActivity.applicationContext.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE).edit {
+            mActivity.applicationContext.getSharedPreferences(
+                COMMON_SHARED_PREFS_NAME,
+                Context.MODE_PRIVATE
+            ).edit {
                 saveLastCapturedItem(item, this)
             }
         }
@@ -1025,7 +1073,7 @@ class CamConfig(private val mActivity: MainActivity) {
         startCamera(true)
     }
 
-    private fun getCurrentCameraInfo() : CameraInfo {
+    private fun getCurrentCameraInfo(): CameraInfo {
         return cameraProvider!!.getCameraInfo(cameraSelector)
     }
 
@@ -1078,6 +1126,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 // extension verdicts probed through the previous instance (including bind-time
                 // blacklists, see startCamera) describe vendor state that no longer exists.
                 extensionUsability.clear()
+                snapshotDropReason.clear()
                 probedCameraProvider = provider
             }
             cameraProvider = provider
@@ -1100,7 +1149,8 @@ class CamConfig(private val mActivity: MainActivity) {
             // listener has to run on the main thread, for the field write and startCamera().
             thread {
                 try {
-                    val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(mActivity, provider)
+                    val extensionsManagerFuture =
+                        ExtensionsManager.getInstanceAsync(mActivity, provider)
 
                     extensionsManagerFuture.addListener({
                         try {
@@ -1366,7 +1416,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    private fun isLensFacingSupported(lensFacing : Int) : Boolean {
+    private fun isLensFacingSupported(lensFacing: Int): Boolean {
         var tCameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
             .build()
@@ -1377,8 +1427,11 @@ class CamConfig(private val mActivity: MainActivity) {
                     return false
 
                 try {
-                    tCameraSelector = em.getExtensionEnabledCameraSelector(tCameraSelector, currentMode.extensionMode)
-                } catch (e : IllegalArgumentException) {
+                    tCameraSelector = em.getExtensionEnabledCameraSelector(
+                        tCameraSelector,
+                        currentMode.extensionMode
+                    )
+                } catch (e: IllegalArgumentException) {
                     return false
                 }
             }
@@ -1485,6 +1538,12 @@ class CamConfig(private val mActivity: MainActivity) {
             else -> null
         }
 
+        val captureMode = when {
+            waitForFocusLock -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+            enableZsl -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
+            else -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        }
+
         if (isQRMode) {
             val analyzer = QRAnalyzer(mActivity)
             val strategy = ResolutionStrategy(
@@ -1493,7 +1552,8 @@ class CamConfig(private val mActivity: MainActivity) {
             )
             val mIAnalyzer = ImageAnalysis.Builder()
                 .setResolutionSelector(
-                    ResolutionSelector.Builder().setResolutionStrategy(strategy).build())
+                    ResolutionSelector.Builder().setResolutionStrategy(strategy).build()
+                )
                 .setOutputImageRotationEnabled(true)
                 .build()
             qrAnalyzer = analyzer
@@ -1507,7 +1567,8 @@ class CamConfig(private val mActivity: MainActivity) {
                     } else {
                         mActivity.showMessage(R.string.qr_rear_camera_unavailable)
                         CameraSelector.LENS_FACING_FRONT
-                    })
+                    }
+                )
                 .build()
             useCasesList.add(mIAnalyzer)
 
@@ -1556,17 +1617,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             if (!mActivity.requiresVideoModeOnly) {
                 imageCapture = builder.let {
-                    it.setCaptureMode(
-                        if (waitForFocusLock) {
-                            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-                        } else {
-                            if (enableZsl) {
-                                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-                            } else {
-                                ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-                            }
-                        }
-                    )
+                    it.setCaptureMode(captureMode)
 
 
                     it.setTargetRotation(
@@ -1660,46 +1711,62 @@ class CamConfig(private val mActivity: MainActivity) {
         // photo" apart from any other misconfiguration, and would answer both by silently
         // dropping in-video snapshots. A genuine bug then looked like a missing feature. This
         // asks the specific question, and leaves unexpected exceptions to surface as failures.
+        //
+        // Asking costs 80-140 ms, because the camera service resolves the whole feature group to
+        // answer it, so the verdict is cached (snapshotDropReason) and every entry into video mode
+        // after the first is free.
         val snapshotUseCase = imageCapture
         if (isVideoMode && snapshotUseCase != null) {
-            val cameraInfo = try {
-                cameraProvider?.getCameraInfo(cameraSelector)
-            } catch (exception: IllegalArgumentException) {
-                Log.e(TAG, "Failed to query camera info", exception)
-                mActivity.showMessage(mActivity.getString(R.string.bind_failure))
-                return
-            }
+            val probeKey = SnapshotProbeKey(
+                lensFacing, videoQuality, usesFeatureGroup, captureMode, selectHighestResolution
+            )
 
-            fun isSupported(useCases: List<UseCase>, features: Set<GroupableFeature>) =
-                cameraInfo?.isSessionConfigSupported(
-                    SessionConfig(useCases = useCases, requiredFeatureGroup = features)
-                ) == true
+            if (!snapshotDropReason.containsKey(probeKey)) {
+                snapshotProbeCount++
 
-            // When a quality feature is about to be requested, the probe has to require that
-            // quality too: a camera can be able to run the three plain streams yet not at the
-            // chosen quality, and a probe without it would keep the snapshot use case and leave
-            // the conflict to the feature-group resolver -- which resolves it by dropping the
-            // *quality*, with a notice blaming the camera for a quality it does support. The
-            // quality wins the conflict because it is an explicit choice from the settings while
-            // in-video snapshots are an implicit capability (the same reasoning as the preferred
-            // feature ordering above), and giving up the snapshots is already the established
-            // answer when they can't be bound at all. The second isSupported(useCasesList,
-            // emptySet()) arm keeps the snapshots when the quality is unreachable even without
-            // them: dropping them would buy nothing, and the resolver's "unsupported quality"
-            // notice is genuinely true then.
-            val dropReason = when {
-                videoQualityFeature == null -> when {
+                val cameraInfo = try {
+                    cameraProvider?.getCameraInfo(cameraSelector)
+                } catch (exception: IllegalArgumentException) {
+                    Log.e(TAG, "Failed to query camera info", exception)
+                    mActivity.showMessage(mActivity.getString(R.string.bind_failure))
+                    return
+                }
+
+                fun isSupported(useCases: List<UseCase>, features: Set<GroupableFeature>) =
+                    cameraInfo?.isSessionConfigSupported(
+                        SessionConfig(useCases = useCases, requiredFeatureGroup = features)
+                    ) == true
+
+                // When a quality feature is about to be requested, the probe has to require that
+                // quality too: a camera can be able to run the three plain streams yet not at the
+                // chosen quality, and a probe without it would keep the snapshot use case and leave
+                // the conflict to the feature-group resolver -- which resolves it by dropping the
+                // *quality*, with a notice blaming the camera for a quality it does support. The
+                // quality wins the conflict because it is an explicit choice from the settings while
+                // in-video snapshots are an implicit capability (the same reasoning as the preferred
+                // feature ordering above), and giving up the snapshots is already the established
+                // answer when they can't be bound at all. The second isSupported(useCasesList,
+                // emptySet()) arm keeps the snapshots when the quality is unreachable even without
+                // them: dropping them would buy nothing, and the resolver's "unsupported quality"
+                // notice is genuinely true then.
+                snapshotDropReason[probeKey] = when {
+                    videoQualityFeature == null -> when {
+                        isSupported(useCasesList, emptySet()) -> null
+                        else -> "Video, photo and preview can't be bound together on this camera"
+                    }
+
+                    isSupported(useCasesList, setOf(videoQualityFeature)) -> null
+                    isSupported(useCasesList - snapshotUseCase, setOf(videoQualityFeature)) -> {
+                        "This camera can't record at the selected video quality with in-video " +
+                                "snapshots enabled"
+                    }
+
                     isSupported(useCasesList, emptySet()) -> null
                     else -> "Video, photo and preview can't be bound together on this camera"
                 }
-                isSupported(useCasesList, setOf(videoQualityFeature)) -> null
-                isSupported(useCasesList - snapshotUseCase, setOf(videoQualityFeature)) ->
-                    "This camera can't record at the selected video quality with in-video " +
-                            "snapshots enabled"
-                isSupported(useCasesList, emptySet()) -> null
-                else -> "Video, photo and preview can't be bound together on this camera"
             }
 
+            val dropReason = snapshotDropReason[probeKey]
             if (dropReason != null) {
                 Log.i(TAG, "$dropReason; disabling snapshots while recording")
                 useCasesList.remove(snapshotUseCase)
@@ -1775,12 +1842,13 @@ class CamConfig(private val mActivity: MainActivity) {
         // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
         // thumb once per bind that had ever happened.
         zoomStateSource?.removeObserver(zoomStateObserver)
-        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
-            it.observe(mActivity, zoomStateObserver)
-        }
-        // The observer above has already run if the activity is started; this covers the case where
-        // it has not, so the bar does not claim 1.0x while the camera is zoomed.
-        zoomState = zoomStateSource?.value
+        zoomStateSource = null
+        zoomState = null
+        // Reading the new one is what costs ~100 ms behind an extension, and nothing before the
+        // next message needs it: the bar below draws a freshly bound camera's 1.0x either way, and
+        // every other reader is a gesture.
+        handler.removeCallbacks(attachZoomState)
+        handler.post(attachZoomState)
 
         mActivity.zoomBar.updateThumb(false)
 
@@ -1998,15 +2066,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         currentMode = mode
 
-        // The strip highlights whatever the user last touched, but a mode can also change without
-        // a touch: keep the highlight on the mode the camera is actually in.
-        if (mActivity.shouldShowCameraModeTabs()) {
-            mActivity.tabLayout.getTabForMode(mode)?.let { tab ->
-                mActivity.tabLayout.selectTab(tab)
-                mActivity.tabLayout.centerTab(tab)
-            }
-        }
-
         mActivity.cancelFocusTimer()
 
         isQRMode = mode == CameraMode.QR_SCAN
@@ -2057,6 +2116,16 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.updateSelfTimerBadge()
 
         startCamera(true)
+
+        // A mode can change with no touch involved, so the strip follows the camera and not the
+        // other way round - currentMode, because an extension that fails to bind falls back to
+        // another mode from inside startCamera(). Left until after that rebind, which blocks the
+        // main thread for long enough to swallow the animation whole.
+        if (mActivity.shouldShowCameraModeTabs()) {
+            mActivity.tabLayout.getTabForMode(currentMode)?.let { tab ->
+                mActivity.tabLayout.goToTab(tab)
+            }
+        }
     }
 
     fun showMoreOptionsForQR() {

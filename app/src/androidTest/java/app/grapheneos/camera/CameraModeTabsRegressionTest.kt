@@ -111,13 +111,20 @@ class CameraModeTabsRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
+            var nextMode: CameraMode? = null
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
                 val next = tabs.getTabAt(tabs.selectedTabPosition + 1)
                 assertNotNull("no mode to the left of ${activity.camConfig.currentMode}", next)
+                nextMode = next!!.tag as CameraMode
 
                 flingLeft(activity)
-                assertEquals(next!!.tag as CameraMode, activity.camConfig.currentMode)
+            }
+
+            // The strip slides to the new mode before the camera rebinds, so the switch lands a
+            // few frames after the fling rather than inside it.
+            waitUntil(scenario, "the fling switched the mode to $nextMode") {
+                it.camConfig.currentMode == nextMode
             }
         }
 

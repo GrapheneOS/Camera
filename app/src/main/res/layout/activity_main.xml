@@ -483,6 +483,7 @@
             app:tabPaddingEnd="16dp"
             app:tabRippleColor="@android:color/transparent"
             app:tabIndicatorFullWidth="false"
+            app:tabIndicatorAnimationMode="linear"
             app:tabMode="auto"
             app:tabIndicator="@drawable/mode_indicator"
             android:overScrollMode="never"
