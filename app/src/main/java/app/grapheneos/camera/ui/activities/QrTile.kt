@@ -4,7 +4,7 @@ import android.app.KeyguardManager
 import android.content.Intent
 import android.os.Bundle
 import androidx.core.content.getSystemService
-import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.data.core.model.CameraMode
 
 // Requires integration into the OS, see config_defaultQrCodeComponent in frameworks/base.
 //

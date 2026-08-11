@@ -7,7 +7,7 @@ import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import androidx.core.view.children
-import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.data.core.model.CameraMode
 import com.google.android.material.tabs.TabLayout
 import kotlin.math.abs
 import kotlin.math.roundToInt

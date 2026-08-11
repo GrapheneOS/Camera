@@ -52,6 +52,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -67,18 +68,6 @@ import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
-
-// note that enum constant name is used as a name of a SharedPreferences instance
-enum class CameraMode(val extensionMode: Int, val uiName: Int) {
-    QR_SCAN(ExtensionMode.NONE, R.string.qr_scan_mode),
-    AUTO(ExtensionMode.AUTO, R.string.auto_mode),
-    FACE_RETOUCH(ExtensionMode.FACE_RETOUCH, R.string.face_retouch_mode),
-    PORTRAIT(ExtensionMode.BOKEH, R.string.portrait_mode),
-    NIGHT(ExtensionMode.NIGHT, R.string.night_mode),
-    HDR(ExtensionMode.HDR, R.string.hdr_mode),
-    CAMERA(ExtensionMode.NONE, R.string.camera),
-    VIDEO(ExtensionMode.NONE, R.string.video),
-}
 
 @SuppressLint("UnsafeOptInUsageError")
 class CamConfig(private val mActivity: MainActivity) {
@@ -2027,6 +2016,20 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    @StringRes
+    private fun tabLabel(mode: CameraMode): Int {
+        return when (mode) {
+            CameraMode.QR_SCAN -> R.string.qr_scan_mode
+            CameraMode.AUTO -> R.string.auto_mode
+            CameraMode.FACE_RETOUCH -> R.string.face_retouch_mode
+            CameraMode.PORTRAIT -> R.string.portrait_mode
+            CameraMode.NIGHT -> R.string.night_mode
+            CameraMode.HDR -> R.string.hdr_mode
+            CameraMode.CAMERA -> R.string.camera
+            CameraMode.VIDEO -> R.string.video
+        }
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     private fun buildTabs() {
         val tabLayout = mActivity.tabLayout
@@ -2042,7 +2045,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         availableModes.forEach { mode ->
             tabLayout.newTab().let { tab ->
-                tab.setText(mode.uiName)
+                tab.setText(tabLabel(mode))
 
                 tab.view.setOnTouchListener { _, e ->
                     if (e.action == MotionEvent.ACTION_UP) {
