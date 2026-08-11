@@ -75,6 +75,7 @@ import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
@@ -119,6 +120,9 @@ open class MainActivity : AppCompatActivity(),
     GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener,
     SensorOrientationChangeNotifier.Listener {
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     @Inject
     lateinit var capturedItemRepository: CapturedItemRepository
@@ -623,6 +627,7 @@ open class MainActivity : AppCompatActivity(),
 
         camConfig = CamConfig(
             mActivity = this,
+            settingsRepository = settingsRepository,
             capturedItemRepository = capturedItemRepository,
         )
         cameraControl = CameraControl(camConfig)

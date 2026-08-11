@@ -6,11 +6,14 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import app.grapheneos.camera.CamConfig.SettingValues
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.store.CapturedItemStore
 import app.grapheneos.camera.data.media.store.CapturedItemStoreImpl
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.data.settings.repository.SettingsRepositoryImpl
 import app.grapheneos.camera.util.EphemeralSharedPrefs
-import app.grapheneos.camera.util.edit
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,8 +51,8 @@ class SafTreeGrantsRegressionTest {
         session.store.currentSafTree()?.let {
             session.store.trackSafTree(it)
         }
-        session.commons.edit {
-            putString(SettingValues.Key.STORAGE_LOCATION, treeUri.toString())
+        runBlocking {
+            session.settings.setStorageLocation(treeUri.toString()).collect()
         }
     }
 
@@ -103,7 +106,6 @@ class SafTreeGrantsRegressionTest {
         assertEquals(0, CapturedItems.safTreeFlagsToRelease(mediaStore, true, true, tracked))
     }
 
-    /** The release covers exactly the modes the grant holds, and a grant holding none is skipped. */
     @Test
     fun onlyTheModesTheGrantHoldsAreReleased() {
         val untracked = tree("untracked")
@@ -124,18 +126,25 @@ class SafTreeGrantsRegressionTest {
     }
 
     /**
-     * The tracked list lives in the commons the user's storage location is written to; the captures
-     * file stays separate, as it is in the app, so that a confusion between the two cannot pass
-     * unnoticed here.
+     * The store and the settings share one commons, because the storage location the user picks is
+     * written by the settings and read back by the store. The captures file stays separate, as it is
+     * in the app: aliasing the two here would let a confusion between them pass unnoticed.
      */
     private class Session(
         targetSdk: Int,
     ) {
 
-        val commons = EphemeralSharedPrefs(targetSdk)
+        private val commons = EphemeralSharedPrefs(targetSdk)
 
         private val media = EphemeralSharedPrefs(targetSdk)
 
         val store: CapturedItemStore = CapturedItemStoreImpl(commons = commons, media = media)
+
+        val settings: SettingsRepository = SettingsRepositoryImpl(
+            commons = commons,
+            modePreferences = CameraMode.entries.associateWith {
+                lazy { EphemeralSharedPrefs(targetSdk) }
+            },
+        )
     }
 }

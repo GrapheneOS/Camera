@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.activities.MainActivity
 
 class CustomGrid @JvmOverloads constructor(
@@ -34,11 +35,11 @@ class CustomGrid @JvmOverloads constructor(
 
         super.onDraw(canvas)
 
-        if (camConfig.gridType == CamConfig.GridType.NONE) {
+        if (camConfig.gridType == GridType.NONE) {
             return
         }
 
-        if (camConfig.gridType == CamConfig.GridType.GOLDEN_RATIO) {
+        if (camConfig.gridType == GridType.GOLDEN_RATIO) {
 
             val cx = width / 2f
             val cy = height / 2f
@@ -53,7 +54,7 @@ class CustomGrid @JvmOverloads constructor(
 
         } else {
 
-            val seed = if (camConfig.gridType == CamConfig.GridType.THREE_BY_THREE) {
+            val seed = if (camConfig.gridType == GridType.THREE_BY_THREE) {
                 3f
             } else {
                 4f

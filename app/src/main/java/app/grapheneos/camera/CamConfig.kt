@@ -1,8 +1,6 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Build
@@ -24,6 +22,7 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.MirrorMode
@@ -39,7 +38,6 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.core.DynamicRange
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -52,6 +50,12 @@ import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -67,104 +71,15 @@ import com.google.zxing.BarcodeFormat
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
 
 @SuppressLint("UnsafeOptInUsageError")
 class CamConfig(
     private val mActivity: MainActivity,
+    private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
 ) {
-
-    enum class GridType {
-        NONE,
-        THREE_BY_THREE,
-        FOUR_BY_FOUR,
-        GOLDEN_RATIO
-    }
-
-    object SettingValues {
-
-        object Key {
-            const val SELF_ILLUMINATION = "self_illumination"
-            const val GEO_TAGGING = "geo_tagging"
-            const val FLASH_MODE = "flash_mode"
-            const val GRID = "grid"
-            // obsolete, split into WAIT_FOR_FOCUS_LOCK and PHOTO_QUALITY
-            const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
-            const val FOCUS_TIMEOUT = "focus_timeout"
-            const val VIDEO_QUALITY = "video_quality"
-            const val ASPECT_RATIO = "aspect_ratio"
-            const val INCLUDE_AUDIO = "include_audio"
-            const val ENABLE_EIS = "enable_eis"
-            const val SCAN = "scan"
-            const val SCAN_ALL_CODES = "scan_all_codes"
-            const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
-            const val SAVE_VIDEO_AS_PREVIEW = "save_video_as_preview"
-
-            const val STORAGE_LOCATION = "storage_location"
-
-            const val PHOTO_QUALITY = "photo_quality"
-
-            const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
-
-            const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
-
-            const val CAMERA_SOUNDS = "camera_sounds"
-
-            const val ENABLE_ZSL = "enable_zsl"
-
-            const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
-
-            const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
-
-            const val SELF_TIMER_DURATION = "self_timer_duration"
-        }
-
-        object Default {
-
-            val GRID_TYPE = GridType.NONE
-            const val GRID_TYPE_INDEX = 0
-
-            const val ASPECT_RATIO = AspectRatio.RATIO_4_3
-
-            val VIDEO_QUALITY = Quality.HIGHEST
-
-            const val SELF_ILLUMINATION = false
-
-            const val GEO_TAGGING = false
-
-            const val FLASH_MODE = ImageCapture.FLASH_MODE_OFF
-
-            const val FOCUS_TIMEOUT = "5s"
-
-            const val INCLUDE_AUDIO = true
-
-            const val ENABLE_EIS = true
-
-            const val SCAN_ALL_CODES = false
-
-            const val SAVE_IMAGE_AS_PREVIEW = true
-
-            const val SAVE_VIDEO_AS_PREVIEW = true
-
-            const val STORAGE_LOCATION = ""
-
-            const val PHOTO_QUALITY = 95
-
-            const val REMOVE_EXIF_AFTER_CAPTURE = true
-
-            const val GYROSCOPE_SUGGESTIONS = false
-
-            const val CAMERA_SOUNDS = true
-
-            const val ENABLE_ZSL = false
-
-            const val SELECT_HIGHEST_RESOLUTION = false
-
-            const val WAIT_FOR_FOCUS_LOCK = false
-
-            const val SELF_TIMER_DURATION = 0
-        }
-    }
 
     companion object {
         private const val TAG = "CamConfig"
@@ -190,8 +105,6 @@ class CamConfig(
         )!!
 
         val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
-
-        const val COMMON_SHARED_PREFS_NAME = "commons"
 
         val FRONT_CAMERA_SELECTOR = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
@@ -253,12 +166,15 @@ class CamConfig(
     @set:VisibleForTesting
     var mPlayer = TunePlayer(mActivity)
 
-    // note that Activities which implement SecureActivity interface (meaning they are accessible
-    // from the lock screen) are forced to override getSharedPreferences()
-    // and return an instance of in-memory EphemeralSharedPrefs, which are based on "real" prefs,
-    // but never modify them
-    val commonPref: SharedPreferences = mActivity.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)
-    private lateinit var modePref: SharedPreferences
+    private val settings: CameraSettings
+        get() {
+            return settingsRepository.settings.value
+        }
+
+    private val modeSettings: ModeSettings
+        get() {
+            return settingsRepository.modeSettings.value
+        }
 
     var lastCapturedItem: CapturedItem? = null
 
@@ -323,17 +239,14 @@ class CamConfig(
                     AspectRatio.RATIO_4_3
                 }
                 else -> {
-                    commonPref.getInt(
-                        SettingValues.Key.ASPECT_RATIO,
-                        SettingValues.Default.ASPECT_RATIO
-                    )
+                    settings.aspectRatio
                 }
             }
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putInt(SettingValues.Key.ASPECT_RATIO, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setAspectRatio(value).collect()
+            }
         }
 
     var lensFacing = DEFAULT_LENS_FACING
@@ -342,101 +255,75 @@ class CamConfig(
         .requireLensFacing(DEFAULT_LENS_FACING)
         .build()
 
-    var gridType: GridType = SettingValues.Default.GRID_TYPE
-        set(value) {
-            val editor = commonPref.edit()
-            editor.putInt(SettingValues.Key.GRID, GridType.values().indexOf(value))
-            editor.apply()
-
-            field = value
-        }
-
-    var videoQuality: Quality = SettingValues.Default.VIDEO_QUALITY
+    var gridType: GridType
         get() {
-            return if (modePref.contains(videoQualityKey)) {
-                mActivity.settingsDialog.titleToQuality(
-                    modePref.getString(videoQualityKey, "")!!
-                )
-            } else {
-                SettingValues.Default.VIDEO_QUALITY
-            }
+            return settings.gridType
         }
         set(value) {
-            val option = mActivity.settingsDialog.videoQualitySpinner.selectedItem as String
+            runBlocking {
+                settingsRepository.setGridType(value).collect()
+            }
+        }
 
-            modePref.edit {
-                putString(videoQualityKey, option)
+    var videoQuality: Quality
+        get() {
+            return modeSettings.videoQuality
+        }
+        set(value) {
+            runBlocking {
+                settingsRepository.setVideoQuality(value).collect()
+            }
+        }
+
+    var flashMode: Int = SettingsDefaults.FLASH_MODE
+        set(value) {
+            runBlocking {
+                settingsRepository.setFlashMode(value).collect()
             }
 
             field = value
-        }
-
-    private val videoQualityKey: String
-        get() {
-
-            val pf = if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                "FRONT"
-            } else {
-                "BACK"
-            }
-
-            return "${SettingValues.Key.VIDEO_QUALITY}_$pf"
-        }
-
-    var flashMode: Int
-        get() = if (imageCapture != null) imageCapture!!.flashMode else
-            SettingValues.Default.FLASH_MODE
-        set(flashMode) {
-
-            if (::modePref.isInitialized) {
-                modePref.edit {
-                    putInt(SettingValues.Key.FLASH_MODE, flashMode)
-                }
-            }
-
-            imageCapture?.flashMode = flashMode
+            imageCapture?.flashMode = value
             mActivity.settingsDialog.updateFlashMode()
         }
 
-    var focusTimeout = 5L
+    var focusTimeout: Long
+        get() {
+            return settings.focusTimeoutSeconds
+        }
         set(value) {
-            val option = if (value == 0L) {
-                "Off"
-            } else {
-                "${value}s"
+            runBlocking {
+                settingsRepository.setFocusTimeoutSeconds(value).collect()
             }
+        }
 
-            val editor = commonPref.edit()
-            editor.putString(SettingValues.Key.FOCUS_TIMEOUT, option)
-            editor.apply()
-
-            field = value
+    var selfTimerDuration: Int
+        get() {
+            return settings.selfTimerDurationSeconds
+        }
+        set(value) {
+            runBlocking {
+                settingsRepository.setSelfTimerDurationSeconds(value).collect()
+            }
         }
 
     var enableCameraSounds: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.CAMERA_SOUNDS,
-                SettingValues.Default.CAMERA_SOUNDS
-            )
+            return settings.enableCameraSounds
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setEnableCameraSounds(value).collect()
+            }
         }
 
     var scanAllCodes: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.SCAN_ALL_CODES,
-                SettingValues.Default.SCAN_ALL_CODES
-            )
+            return settings.scanAllCodes
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.SCAN_ALL_CODES, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setScanAllCodes(value).collect()
+            }
 
             if (isQRMode) {
                 if (value) {
@@ -457,83 +344,71 @@ class CamConfig(
 
     var includeAudio: Boolean
         get() {
-            return mActivity.settingsDialog.includeAudioToggle.isChecked
+            return settings.includeAudio
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.INCLUDE_AUDIO, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setIncludeAudio(value).collect()
+            }
 
             mActivity.settingsDialog.includeAudioToggle.isChecked = value
         }
 
     var enableEIS: Boolean
         get() {
-            return mActivity.settingsDialog.enableEISToggle.isChecked
+            return settings.enableEis
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.ENABLE_EIS, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setEnableEis(value).collect()
+            }
 
             mActivity.settingsDialog.enableEISToggle.isChecked = value
         }
 
     var enableZsl: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.ENABLE_ZSL,
-                SettingValues.Default.ENABLE_ZSL
-            )
+            return settings.enableZsl
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.ENABLE_ZSL, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setEnableZsl(value).collect()
+            }
         }
 
     var saveImageAsPreviewed: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
-                SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
-            )
+            return settings.saveImageAsPreviewed
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setSaveImageAsPreviewed(value).collect()
+            }
         }
 
     var saveVideoAsPreviewed: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
-                SettingValues.Default.SAVE_VIDEO_AS_PREVIEW
-            )
+            return settings.saveVideoAsPreviewed
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(SettingValues.Key.SAVE_VIDEO_AS_PREVIEW, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setSaveVideoAsPreviewed(value).collect()
+            }
         }
 
     var storageLocation: String
         get() {
-            return commonPref.getString(
-                SettingValues.Key.STORAGE_LOCATION,
-                SettingValues.Default.STORAGE_LOCATION
-            )!!
+            return settings.storageLocation
         }
         set(value) {
             val cur = storageLocation
-            if (cur != SettingValues.Default.STORAGE_LOCATION) {
+            if (cur != SettingsDefaults.STORAGE_LOCATION) {
                 capturedItemRepository.trackPreviousStorageLocation(Uri.parse(cur))
             }
 
-            val editor = commonPref.edit()
-            editor.putString(SettingValues.Key.STORAGE_LOCATION, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setStorageLocation(value).collect()
+            }
 
             // Strictly after the write: the tree being picked only becomes tracked once it is the
             // stored location, and re-picking a tree that the track above just pushed off the
@@ -543,47 +418,32 @@ class CamConfig(
 
     var photoQuality: Int
         get() {
-            return commonPref.getInt(
-                SettingValues.Key.PHOTO_QUALITY,
-                SettingValues.Default.PHOTO_QUALITY
-            )
+            return settings.photoQuality
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putInt(SettingValues.Key.PHOTO_QUALITY, value)
-            editor.apply()
+            runBlocking {
+                settingsRepository.setPhotoQuality(value).collect()
+            }
         }
 
     var removeExifAfterCapture: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
-                SettingValues.Default.REMOVE_EXIF_AFTER_CAPTURE
-            )
+            return settings.removeExifAfterCapture
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(
-                SettingValues.Key.REMOVE_EXIF_AFTER_CAPTURE,
-                value
-            )
-            editor.apply()
+            runBlocking {
+                settingsRepository.setRemoveExifAfterCapture(value).collect()
+            }
         }
 
     var gSuggestions: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.GYROSCOPE_SUGGESTIONS,
-                SettingValues.Default.GYROSCOPE_SUGGESTIONS
-            )
+            return settings.gyroscopeSuggestions
         }
         set(value) {
-            val editor = commonPref.edit()
-            editor.putBoolean(
-                SettingValues.Key.GYROSCOPE_SUGGESTIONS,
-                value
-            )
-            editor.apply()
+            runBlocking {
+                settingsRepository.setGyroscopeSuggestions(value).collect()
+            }
         }
 
     val isZslSupported : Boolean by lazy {
@@ -639,19 +499,17 @@ class CamConfig(
         lastCapturedItem = item
     }
 
+    // Session state rather than the stored value: geo-tagging is only ever on once the permission
+    // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
+    // the preference back here would resurrect the very stale "on" the coercion exists to drop.
     var requireLocation: Boolean = false
-        get() {
-            return mActivity.settingsDialog.locToggle.isChecked
-        }
         set(value) {
             mActivity.locationCamConfigChanged(value)
 
             // A permission result is delivered before the first onResume of an activity the system
-            // recreated, so this can run before startCamera() has picked the prefs for a mode
-            if (::modePref.isInitialized) {
-                modePref.edit {
-                    putBoolean(SettingValues.Key.GEO_TAGGING, value)
-                }
+            // recreated, so this can run before a mode has been slotted — see modeSettings.
+            runBlocking {
+                settingsRepository.setGeoTagging(value).collect()
             }
 
             mActivity.settingsDialog.locToggle.isChecked = value
@@ -661,15 +519,12 @@ class CamConfig(
 
     var selfIlluminate: Boolean
         get() {
-            return modePref.getBoolean(
-                SettingValues.Key.SELF_ILLUMINATION,
-                SettingValues.Default.SELF_ILLUMINATION
-            )
-                    && lensFacing == CameraSelector.LENS_FACING_FRONT
+            return modeSettings.selfIllumination &&
+                lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
-            modePref.edit {
-                putBoolean(SettingValues.Key.SELF_ILLUMINATION, value)
+            runBlocking {
+                settingsRepository.setSelfIllumination(value).collect()
             }
 
             mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
@@ -680,10 +535,8 @@ class CamConfig(
 
     fun setQRScanningFor(format: String, selected: Boolean) {
 
-        val formatSRep = "${SettingValues.Key.SCAN}_$format"
-
-        commonPref.edit {
-            putBoolean(formatSRep, selected)
+        runBlocking {
+            settingsRepository.setBarcodeFormatEnabled(formatName = format, enabled = selected).collect()
         }
 
         if (selected) {
@@ -703,186 +556,49 @@ class CamConfig(
         qrAnalyzer?.refreshHints()
     }
 
+    private fun slotCurrentMode() {
+        settingsRepository.reslotMode(
+            mode = currentMode,
+            isFrontFacing = lensFacing == CameraSelector.LENS_FACING_FRONT,
+        )
+    }
+
     fun reloadSettings() {
-        // pref config needs to be created
-        modePref.edit {
-            if (!modePref.contains(SettingValues.Key.FLASH_MODE)) {
-                putInt(SettingValues.Key.FLASH_MODE, SettingValues.Default.FLASH_MODE)
-            }
+        settingsRepository.refresh()
 
-            if (!modePref.contains(SettingValues.Key.GEO_TAGGING)) {
-                putBoolean(SettingValues.Key.GEO_TAGGING, SettingValues.Default.GEO_TAGGING)
-            }
+        slotCurrentMode()
 
-            if (isVideoMode) {
-                mActivity.settingsDialog.reloadQualities()
-            }
-
-            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                if (!modePref.contains(SettingValues.Key.SELF_ILLUMINATION)) {
-                    putBoolean(
-                        SettingValues.Key.SELF_ILLUMINATION,
-                        SettingValues.Default.SELF_ILLUMINATION
-                    )
-                }
-            }
+        if (isVideoMode) {
+            mActivity.settingsDialog.reloadQualities()
         }
 
-        flashMode = modePref.getInt(
-            SettingValues.Key.FLASH_MODE,
-            SettingValues.Default.FLASH_MODE
-        )
+        flashMode = modeSettings.flashMode
 
         // A stored "on" is written before a permission request resolves, and it outlives a later
         // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
         // startup that the user never asked for. Coercing it here settles the stale value through
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
-        requireLocation = modePref.getBoolean(
-            SettingValues.Key.GEO_TAGGING,
-            SettingValues.Default.GEO_TAGGING
-        ) && !(mActivity.applicationContext as App).shouldAskForLocationPermission()
+        requireLocation = modeSettings.geoTagging &&
+            !(mActivity.applicationContext as App).shouldAskForLocationPermission()
 
-        selfIlluminate = modePref.getBoolean(
-            SettingValues.Key.SELF_ILLUMINATION,
-            SettingValues.Default.SELF_ILLUMINATION
-        )
+        selfIlluminate = modeSettings.selfIllumination
 
         mActivity.settingsDialog.showOnlyRelevantSettings()
     }
 
     fun loadSettings() {
-
-        // Create common config. if it's not created
-        val editor = commonPref.edit()
-
-        if (!commonPref.contains(SettingValues.Key.CAMERA_SOUNDS)) {
-            editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
-        }
-
-        // Note: This is a workaround to keep save image/video as previewed 'on' by 
-        // default starting from v73 and 'off' by default for versions before that
-        //
-        // If its not a fresh install (before v73)
-        if (commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
-            // If save video as previewed was not previously set
-            if (!commonPref.contains(SettingValues.Key.SAVE_VIDEO_AS_PREVIEW)) {
-                // Explicitly set the value for this setting as false for them
-                // to ensure consistent behavior
-                editor.putBoolean(
-                    SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
-                    false
-                )
-            }
-        } else {
-            editor.putBoolean(
-                SettingValues.Key.SAVE_IMAGE_AS_PREVIEW,
-                SettingValues.Default.SAVE_IMAGE_AS_PREVIEW
-            )
-
-            editor.putBoolean(
-                SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
-                SettingValues.Default.SAVE_VIDEO_AS_PREVIEW
-            )
-        }
-
-        if (!commonPref.contains(SettingValues.Key.GRID)) {
-            // Index for Grid.values() Default: NONE
-            editor.putInt(SettingValues.Key.GRID, SettingValues.Default.GRID_TYPE_INDEX)
-        }
-
-        if (!commonPref.contains(SettingValues.Key.FOCUS_TIMEOUT)) {
-            editor.putString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)
-        }
-
-        migrateFromLegacyPhotoQuality()
-
-        if (!commonPref.contains(SettingValues.Key.INCLUDE_AUDIO)) {
-            editor.putBoolean(
-                SettingValues.Key.INCLUDE_AUDIO,
-                SettingValues.Default.INCLUDE_AUDIO
-            )
-        }
-
-        if (!commonPref.contains(SettingValues.Key.ENABLE_EIS)) {
-            editor.putBoolean(
-                SettingValues.Key.ENABLE_EIS,
-                SettingValues.Default.ENABLE_EIS
-            )
-        }
-
-        if (!commonPref.contains(SettingValues.Key.ASPECT_RATIO)) {
-            editor.putInt(
-                SettingValues.Key.ASPECT_RATIO,
-                SettingValues.Default.ASPECT_RATIO
-            )
-        }
-
-        if (!commonPref.contains(SettingValues.Key.SCAN_ALL_CODES)) {
-            editor.putBoolean(
-                SettingValues.Key.SCAN_ALL_CODES,
-                SettingValues.Default.SCAN_ALL_CODES
-            )
-        }
-
-        val qrRep = "${SettingValues.Key.SCAN}_${BarcodeFormat.QR_CODE.name}"
-
-        if (!commonPref.contains(qrRep)) {
-            for (format in BarcodeFormat.values()) {
-                val formatSRep = "${SettingValues.Key.SCAN}_${format.name}"
-
-                editor.putBoolean(
-                    formatSRep,
-                    false
-                )
-            }
-
-            editor.putBoolean(
-                qrRep,
-                true
-            )
-        }
-
-
-        editor.apply()
-
-        gridType = GridType.values()[commonPref.getInt(
-            SettingValues.Key.GRID,
-            SettingValues.Default.GRID_TYPE_INDEX
-        )]
-
         mActivity.settingsDialog.updateGridToggleUI()
 
-        commonPref.getString(SettingValues.Key.FOCUS_TIMEOUT, SettingValues.Default.FOCUS_TIMEOUT)
-            ?.let {
-                mActivity.settingsDialog.updateFocusTimeout(it)
-            }
+        mActivity.settingsDialog.updateFocusTimeout(focusTimeoutLabel(settings.focusTimeoutSeconds))
 
-        aspectRatio = commonPref.getInt(
-            SettingValues.Key.ASPECT_RATIO,
-            SettingValues.Default.ASPECT_RATIO
-        )
+        includeAudio = settings.includeAudio
 
-        includeAudio = commonPref.getBoolean(
-            SettingValues.Key.INCLUDE_AUDIO,
-            SettingValues.Default.INCLUDE_AUDIO
-        )
-
-        enableEIS = commonPref.getBoolean(
-            SettingValues.Key.ENABLE_EIS,
-            SettingValues.Default.ENABLE_EIS
-        )
+        enableEIS = settings.enableEis
 
         allowedFormats.clear()
 
         for (format in BarcodeFormat.values()) {
-            val formatSRep = "${SettingValues.Key.SCAN}_${format.name}"
-
-            val isEnabled = commonPref.getBoolean(
-                formatSRep,
-                false
-            )
-
-            if (isEnabled) {
+            if (settingsRepository.isBarcodeFormatEnabled(format.name)) {
                 if (format !in allowedFormats) {
                     allowedFormats.add(format)
                 }
@@ -910,56 +626,23 @@ class CamConfig(
 
     var waitForFocusLock: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.WAIT_FOR_FOCUS_LOCK,
-                SettingValues.Default.WAIT_FOR_FOCUS_LOCK
-            )
+            return settings.waitForFocusLock
         }
         set(value) {
-            commonPref.edit {
-                putBoolean(SettingValues.Key.WAIT_FOR_FOCUS_LOCK, value)
+            runBlocking {
+                settingsRepository.setWaitForFocusLock(value).collect()
             }
         }
 
     var selectHighestResolution: Boolean
         get() {
-            return commonPref.getBoolean(
-                SettingValues.Key.SELECT_HIGHEST_RESOLUTION,
-                SettingValues.Default.SELECT_HIGHEST_RESOLUTION
-            )
+            return settings.selectHighestResolution
         }
         set(value) {
-            commonPref.edit {
-                putBoolean(SettingValues.Key.SELECT_HIGHEST_RESOLUTION, value)
+            runBlocking {
+                settingsRepository.setSelectHighestResolution(value).collect()
             }
         }
-
-    fun migrateFromLegacyPhotoQuality() {
-        // If emphasis on quality/optimization was previously set by the user
-        if (commonPref.contains(SettingValues.Key.EMPHASIS_ON_QUALITY)) {
-            // If the photo quality key has not previously been set
-            if (!commonPref.contains(SettingValues.Key.PHOTO_QUALITY)) {
-                val optimizeForQuality =
-                    commonPref.getBoolean(SettingValues.Key.EMPHASIS_ON_QUALITY, false)
-
-                photoQuality = if (optimizeForQuality) {
-                    100
-                } else {
-                    95
-                }
-            }
-
-            // Remove the key to avoid re-execution of the above code
-            commonPref.edit {
-                remove(SettingValues.Key.EMPHASIS_ON_QUALITY)
-            }
-        }
-
-        if (photoQuality == 0) {
-            photoQuality = 95;
-        }
-    }
-
 
     fun toggleTorchState() {
         isTorchOn = !isTorchOn
@@ -1265,7 +948,7 @@ class CamConfig(
     }
 
     // The quality labels shown in the settings spinner, so that a message about a quality can
-    // name it exactly the way the user picked it (see SettingsDialog.getTitleFor).
+    // name it exactly the way the user picked it (see videoQualityTitle).
     private fun describeQualityFeature(feature: GroupableFeature): String? = when (feature) {
         GroupableFeatures.UHD_RECORDING -> "2160p (UHD)"
         GroupableFeatures.FHD_RECORDING -> "1080p (FHD)"
@@ -1361,7 +1044,11 @@ class CamConfig(
         mActivity.imageCapturer.cancelPendingCaptureRequest()
 
         mActivity.exposureBar.hidePanel()
-        modePref = mActivity.getSharedPreferences(currentMode.name, Context.MODE_PRIVATE)
+        slotCurrentMode()
+
+        // Before the builder below reads it: the mode just slotted may store a different flash mode
+        // than the one that was bound, and the ImageCapture is configured once, at build time.
+        flashMode = modeSettings.flashMode
 
         val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val display = mActivity.display
@@ -2051,13 +1738,7 @@ class CamConfig(
 
             optionNames.add(format.name)
 
-            val formatSRep = "${SettingValues.Key.SCAN}_$format"
-            optionValues.add(
-                commonPref.getBoolean(
-                    formatSRep,
-                    false
-                )
-            )
+            optionValues.add(settingsRepository.isBarcodeFormatEnabled(format.name))
         }
 
         builder.setMultiChoiceItems(
@@ -2089,24 +1770,25 @@ class CamConfig(
                 }
             }
 
-            commonPref.edit {
-                for ((index, element) in optionNames.withIndex()) {
+            for ((index, optionName) in optionNames.withIndex()) {
 
-                    val optionName = element
-                    val optionValue = optionValues[index]
+                val optionValue = optionValues[index]
 
-                    val formatSRep = "${SettingValues.Key.SCAN}_$optionName"
+                val format = BarcodeFormat.valueOf(optionName)
 
-                    val format = BarcodeFormat.valueOf(optionName)
-
-                    if (optionValue) {
-                        if (format !in allowedFormats)
-                            allowedFormats.add(format)
-                    } else {
-                        allowedFormats.remove(format)
+                if (optionValue) {
+                    if (format !in allowedFormats) {
+                        allowedFormats.add(format)
                     }
+                } else {
+                    allowedFormats.remove(format)
+                }
 
-                    putBoolean(formatSRep, optionValue)
+                runBlocking {
+                    settingsRepository.setBarcodeFormatEnabled(
+                        formatName = optionName,
+                        enabled = optionValue,
+                    ).collect()
                 }
             }
 
@@ -2130,7 +1812,7 @@ class CamConfig(
 
     fun onStorageLocationNotFound() {
         // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
-        storageLocation = SettingValues.Default.STORAGE_LOCATION
+        storageLocation = SettingsDefaults.STORAGE_LOCATION
 
         val builder = MaterialAlertDialogBuilder(mActivity)
             .setTitle(R.string.folder_not_found)

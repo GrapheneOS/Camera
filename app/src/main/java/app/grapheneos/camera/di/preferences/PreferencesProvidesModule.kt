@@ -2,8 +2,10 @@ package app.grapheneos.camera.di.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.store.commonPreferences
 import app.grapheneos.camera.data.core.store.mediaPreferences
+import app.grapheneos.camera.data.core.store.modePreferences
 import app.grapheneos.camera.di.core.DurablePreferences
 import app.grapheneos.camera.di.core.SessionPreferences
 import app.grapheneos.camera.ui.activities.SecureActivity
@@ -38,5 +40,16 @@ internal class PreferencesProvidesModule {
         @ApplicationContext context: Context,
     ): SharedPreferences {
         return mediaPreferences(context)
+    }
+
+    @Provides
+    @ActivityScoped
+    fun provideModePreferences(
+        @ActivityContext context: Context,
+    ): Map<CameraMode, Lazy<SharedPreferences>> {
+        return modePreferences(
+            context = context,
+            ephemeral = context is SecureActivity,
+        )
     }
 }
