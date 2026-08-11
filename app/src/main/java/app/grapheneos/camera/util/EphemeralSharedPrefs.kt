@@ -151,6 +151,23 @@ class EphemeralSharedPrefs(val targetSdk: Int) : SharedPreferences {
             }
         }
     }
+
+    companion object {
+
+        fun copyOf(context: Context, name: String): EphemeralSharedPrefs {
+            val copy = EphemeralSharedPrefs(context.applicationInfo.targetSdkVersion)
+            val stored = context.applicationContext.getSharedPreferences(
+                name,
+                Context.MODE_PRIVATE,
+            )
+
+            stored.all.forEach { (key, value) ->
+                copy.map[key] = value
+            }
+
+            return copy
+        }
+    }
 }
 
 @SuppressLint("ApplySharedPref")

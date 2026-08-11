@@ -29,7 +29,7 @@
     <ID>HasPlatformType:InAppGallery.kt:InAppGallery$val asyncImageLoader = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:InAppGallery.kt:InAppGallery$val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:MainActivity.kt:MainActivity$val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()</ID>
-    <ID>HasPlatformType:SharedPrefs.kt:EphemeralSharedPrefs.Editor$val thread = Thread.currentThread()</ID>
+    <ID>HasPlatformType:EphemeralSharedPrefs.kt:EphemeralSharedPrefs.Editor$val thread = Thread.currentThread()</ID>
     <ID>ImplicitDefaultLocale:QRAnalyzer.kt:QRAnalyzer$"%.02f".format(fps)</ID>
     <ID>ImplicitDefaultLocale:ZoomBar.kt:ZoomBar$String.format("%.1fx", zoomRatio)</ID>
     <ID>InstanceOfCheckForException:CamConfig.kt:CamConfig$exception !is IllegalArgumentException</ID>
@@ -121,8 +121,8 @@
     <ID>MaxLineLength:CapturedItems.kt:CapturedItems$val columns = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME)</ID>
     <ID>MaxLineLength:MainActivity.kt:MainActivity$if (cameraPermissionDialog != null &amp;&amp; cameraPermissionDialog!!.isShowing) cameraPermissionDialog!!.cancel()</ID>
     <ID>MaxLineLength:SettingsDialog.kt:SettingsDialog$mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")</ID>
-    <ID>MaxLineLength:SharedPrefs.kt:EphemeralSharedPrefs$override</ID>
-    <ID>MaxLineLength:SharedPrefs.kt:fun</ID>
+    <ID>MaxLineLength:EphemeralSharedPrefs.kt:EphemeralSharedPrefs$override</ID>
+    <ID>MaxLineLength:EphemeralSharedPrefs.kt:fun</ID>
     <ID>NestedBlockDepth:CapturedItems.kt:CapturedItems$private fun migratePreviousUris</ID>
     <ID>NestedBlockDepth:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
     <ID>NewLineAtEndOfFile:GSlideTransformer.kt:app.grapheneos.camera.GSlideTransformer.kt</ID>
@@ -214,8 +214,8 @@
     <ID>UnsafeCallOnNullableType:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier$wr.get()!!</ID>
     <ID>UnsafeCallOnNullableType:SettingsDialog.kt:SettingsDialog$Looper.myLooper()!!</ID>
     <ID>UnsafeCallOnNullableType:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$ev!!</ID>
-    <ID>UnsafeCallOnNullableType:SharedPrefs.kt:EphemeralSharedPrefs$key!!</ID>
-    <ID>UnsafeCallOnNullableType:SharedPrefs.kt:EphemeralSharedPrefs.Editor$key!!</ID>
+    <ID>UnsafeCallOnNullableType:EphemeralSharedPrefs.kt:EphemeralSharedPrefs$key!!</ID>
+    <ID>UnsafeCallOnNullableType:EphemeralSharedPrefs.kt:EphemeralSharedPrefs.Editor$key!!</ID>
     <ID>UnsafeCallOnNullableType:VideoCapturer.kt:VideoCapturer$createRecordingContext(recorder, fileName)!!</ID>
     <ID>UnsafeCallOnNullableType:VideoPlayer.kt:VideoPlayer$getParcelableExtra&lt;Uri&gt;(intent, VIDEO_URI)!!</ID>
     <ID>UnsafeCallOnNullableType:ZoomableImageView.kt:ZoomableImageView$currentInstance.mScaleDetector!!</ID>

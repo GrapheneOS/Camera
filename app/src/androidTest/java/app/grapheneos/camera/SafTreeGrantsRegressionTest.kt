@@ -2,11 +2,13 @@ package app.grapheneos.camera
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.CamConfig.SettingValues
+import app.grapheneos.camera.data.media.store.CapturedItemStore
+import app.grapheneos.camera.data.media.store.CapturedItemStoreImpl
 import app.grapheneos.camera.util.EphemeralSharedPrefs
 import app.grapheneos.camera.util.edit
 import org.junit.Assert.assertEquals
@@ -31,18 +33,22 @@ class SafTreeGrantsRegressionTest {
         return DocumentsContract.buildTreeDocumentUri(authority, "primary:$name")
     }
 
-    // Only an in-memory SharedPreferences here; what it holds is the real tracked list.
-    private fun prefs() = EphemeralSharedPrefs(Build.VERSION.SDK_INT)
+    private val targetSdk = InstrumentationRegistry
+        .getInstrumentation()
+        .targetContext
+        .applicationInfo
+        .targetSdkVersion
+
+    private fun session(): Session {
+        return Session(targetSdk)
+    }
 
     /** What CamConfig.storageLocation records when the user picks a directory. */
-    private fun pickStorageLocation(prefs: EphemeralSharedPrefs, treeUri: Uri) {
-        val current = prefs.getString(
-            SettingValues.Key.STORAGE_LOCATION, SettingValues.Default.STORAGE_LOCATION
-        )!!
-        if (current != SettingValues.Default.STORAGE_LOCATION) {
-            CapturedItems.savePreviousSafTree(Uri.parse(current), prefs)
+    private fun pickStorageLocation(session: Session, treeUri: Uri) {
+        session.store.currentSafTree()?.let {
+            session.store.trackSafTree(it)
         }
-        prefs.edit {
+        session.commons.edit {
             putString(SettingValues.Key.STORAGE_LOCATION, treeUri.toString())
         }
     }
@@ -50,12 +56,12 @@ class SafTreeGrantsRegressionTest {
     /** The regression itself: the directory pushed off the tracked list is the one to release. */
     @Test
     fun theTreeThatFallsOffTheTrackedListIsReleased() {
-        val prefs = prefs()
+        val session = session()
         val picked = (0..CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1)
             .map { tree("dir$it") }
-        picked.forEach { pickStorageLocation(prefs, it) }
+        picked.forEach { pickStorageLocation(session, it) }
 
-        val tracked = CapturedItems.getSafTrees(prefs)
+        val tracked = session.store.safTrees()
         assertEquals(CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1, tracked.size)
 
         picked.take(picked.size - tracked.size).forEach {
@@ -75,11 +81,11 @@ class SafTreeGrantsRegressionTest {
     /** A directory the app still lists keeps its grant, whether it is the current one or a past one. */
     @Test
     fun trackedTreesKeepTheirGrants() {
-        val prefs = prefs()
-        pickStorageLocation(prefs, tree("previous"))
-        pickStorageLocation(prefs, tree("current"))
+        val session = session()
+        pickStorageLocation(session, tree("previous"))
+        pickStorageLocation(session, tree("current"))
 
-        val tracked = CapturedItems.getSafTrees(prefs)
+        val tracked = session.store.safTrees()
         assertEquals(listOf(tree("current"), tree("previous")), tracked)
         assertEquals(0, CapturedItems.safTreeFlagsToRelease(tree("current"), true, true, tracked))
         assertEquals(0, CapturedItems.safTreeFlagsToRelease(tree("previous"), true, true, tracked))
@@ -115,5 +121,21 @@ class SafTreeGrantsRegressionTest {
             readAndWrite, CapturedItems.safTreeFlagsToRelease(untracked, true, true, tracked)
         )
         assertEquals(0, CapturedItems.safTreeFlagsToRelease(untracked, false, false, tracked))
+    }
+
+    /**
+     * The tracked list lives in the commons the user's storage location is written to; the captures
+     * file stays separate, as it is in the app, so that a confusion between the two cannot pass
+     * unnoticed here.
+     */
+    private class Session(
+        targetSdk: Int,
+    ) {
+
+        val commons = EphemeralSharedPrefs(targetSdk)
+
+        private val media = EphemeralSharedPrefs(targetSdk)
+
+        val store: CapturedItemStore = CapturedItemStoreImpl(commons = commons, media = media)
     }
 }

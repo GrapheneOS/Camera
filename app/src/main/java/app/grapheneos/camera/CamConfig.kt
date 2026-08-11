@@ -51,6 +51,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -68,7 +69,10 @@ import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 
 @SuppressLint("UnsafeOptInUsageError")
-class CamConfig(private val mActivity: MainActivity) {
+class CamConfig(
+    private val mActivity: MainActivity,
+    private val capturedItemRepository: CapturedItemRepository,
+) {
 
     enum class GridType {
         NONE,
@@ -97,11 +101,6 @@ class CamConfig(private val mActivity: MainActivity) {
             const val SAVE_VIDEO_AS_PREVIEW = "save_video_as_preview"
 
             const val STORAGE_LOCATION = "storage_location"
-            const val PREVIOUS_SAF_TREES = "previous_saf_trees"
-
-            const val LAST_CAPTURED_ITEM_TYPE = "last_captured_item_type"
-            const val LAST_CAPTURED_ITEM_DATE_STRING = "last_captured_item_date_string"
-            const val LAST_CAPTURED_ITEM_URI = "last_captured_item_uri"
 
             const val PHOTO_QUALITY = "photo_quality"
 
@@ -265,24 +264,17 @@ class CamConfig(private val mActivity: MainActivity) {
 
     init {
         if (mActivity !is SecureActivity) {
-            CapturedItems.init(mActivity, this)
+            capturedItemRepository.migrateStoredCaptures(::updateLastCapturedItem)
+            capturedItemRepository.releaseUntrackedSafTrees()
             fetchLastCapturedItemFromSharedPrefs()
         }
     }
 
     fun fetchLastCapturedItemFromSharedPrefs() {
-        val type = commonPref.getInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, -1)
-        val dateStr = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, null)
-        val uri = commonPref.getString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, null)
+        val item = capturedItemRepository.lastCapturedItem()
+        val skip = item?.type == ITEM_TYPE_IMAGE && mActivity is VideoOnlyActivity
 
-        var item: CapturedItem? = null
-        if (dateStr != null && uri != null) {
-            val skip = type == ITEM_TYPE_IMAGE && mActivity is VideoOnlyActivity
-            if (!skip) {
-                item = CapturedItem(type, dateStr, Uri.parse(uri))
-            }
-        }
-        lastCapturedItem = item
+        lastCapturedItem = if (skip) null else item
     }
 
 
@@ -536,7 +528,7 @@ class CamConfig(private val mActivity: MainActivity) {
         set(value) {
             val cur = storageLocation
             if (cur != SettingValues.Default.STORAGE_LOCATION) {
-                CapturedItems.savePreviousSafTree(Uri.parse(cur), commonPref)
+                capturedItemRepository.trackPreviousStorageLocation(Uri.parse(cur))
             }
 
             val editor = commonPref.edit()
@@ -544,9 +536,9 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.apply()
 
             // Strictly after the write: the tree being picked only becomes tracked once it is the
-            // stored location, and re-picking a tree that savePreviousSafTree() just pushed off the
+            // stored location, and re-picking a tree that the track above just pushed off the
             // tail of the tracked list would otherwise have its grant revoked out from under it.
-            CapturedItems.releaseUntrackedSafTrees(mActivity, commonPref)
+            capturedItemRepository.releaseUntrackedSafTrees()
         }
 
     var photoQuality: Int
@@ -641,24 +633,8 @@ class CamConfig(private val mActivity: MainActivity) {
             return mActivity is CaptureActivity
         }
 
-    private fun saveLastCapturedItem(item: CapturedItem, editor: SharedPreferences.Editor) {
-        editor.putInt(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE, item.type)
-        editor.putString(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING, item.dateString)
-        editor.putString(SettingValues.Key.LAST_CAPTURED_ITEM_URI, item.uri.toString())
-    }
-
     fun updateLastCapturedItem(item: CapturedItem) {
-        commonPref.edit {
-            saveLastCapturedItem(item, this)
-        }
-
-        if (mActivity is SecureMainActivity) {
-            // previous call updated ephemeral SharedPreferences that won't be accessible by the
-            // "regular" MainActivity
-            mActivity.applicationContext.getSharedPreferences(COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE).edit {
-                saveLastCapturedItem(item, this)
-            }
-        }
+        capturedItemRepository.saveLastCapturedItem(item)
 
         lastCapturedItem = item
     }
