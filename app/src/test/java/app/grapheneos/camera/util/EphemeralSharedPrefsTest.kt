@@ -12,11 +12,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * [EphemeralSharedPrefs] is what stops a lockscreen session from changing the settings the
- * owner sees after unlocking: SecureMainActivity and SecureCaptureActivity override
- * getSharedPreferences() to hand out one of these, cloned from the real preferences but
- * backed by memory, and CamConfig deliberately reads its preferences through the activity so
- * it inherits that.
+ * [EphemeralSharedPrefs] is what stops a lockscreen session from changing the settings the owner
+ * sees after unlocking: a secure entry point is handed one of these instead of the file, cloned from
+ * it but backed by memory.
  *
  * The clone being one-way is the entire security property, and nothing asserted it.
  */
@@ -28,9 +26,8 @@ class EphemeralSharedPrefsTest {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    private fun ephemeralPrefs(cloneOriginal: Boolean = true): SharedPreferences {
-        return EphemeralSharedPrefsNamespace()
-            .getPrefs(context, PREFS_NAME, Context.MODE_PRIVATE, cloneOriginal = cloneOriginal)
+    private fun ephemeralPrefs(): SharedPreferences {
+        return EphemeralSharedPrefs.copyOf(context = context, name = PREFS_NAME)
     }
 
     @Before
@@ -78,45 +75,18 @@ class EphemeralSharedPrefsTest {
         assertTrue(persistentPrefs().contains("includeAudio"))
     }
 
+    /** Each copy starts from the file again, so the session has to be handed one and keep it. */
     @Test
-    fun aRepeatedLookupKeepsTheSessionsChanges() {
-        persistentPrefs().edit().putInt("photoQuality", 85).commit()
-        val namespace = EphemeralSharedPrefsNamespace()
-
-        val first = namespace
-            .getPrefs(context, PREFS_NAME, Context.MODE_PRIVATE, cloneOriginal = true)
-        first.edit().putInt("photoQuality", 42).commit()
-        val second = namespace
-            .getPrefs(context, PREFS_NAME, Context.MODE_PRIVATE, cloneOriginal = true)
-
-        // A second lookup that re-cloned from disk would silently discard everything the
-        // session changed and hand back the persistent value instead.
-        assertEquals(42, second.getInt("photoQuality", -1))
-    }
-
-    @Test
-    fun startsEmptyWhenNotCloning() {
+    fun eachCopyStartsFromWhatIsStored() {
         persistentPrefs().edit().putInt("photoQuality", 85).commit()
 
-        assertFalse(ephemeralPrefs(cloneOriginal = false).contains("photoQuality"))
-    }
+        ephemeralPrefs().edit().putInt("photoQuality", 42).commit()
 
-    @Test
-    fun rejectsAnyModeOtherThanPrivate() {
-        val failure = runCatching {
-            EphemeralSharedPrefsNamespace()
-                .getPrefs(context, PREFS_NAME, Context.MODE_APPEND, cloneOriginal = true)
-        }.exceptionOrNull()
-
-        assertTrue(
-            "Only MODE_PRIVATE is supported, and anything else must fail loudly rather than" +
-                " return preferences with the wrong semantics, but got $failure",
-            failure is IllegalArgumentException,
-        )
+        assertEquals(85, ephemeralPrefs().getInt("photoQuality", -1))
     }
 
     private companion object {
-        // CamConfig.COMMON_SHARED_PREFS_NAME
+        // COMMON_PREFS_NAME
         const val PREFS_NAME = "commons"
     }
 }

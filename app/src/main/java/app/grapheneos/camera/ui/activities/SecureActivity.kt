@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.activities
 
-import android.content.SharedPreferences
-
-interface SecureActivity {
-    fun getSharedPreferences(name: String, mode: Int): SharedPreferences? = null
-}
+/**
+ * Marks an entry point that can be reached from the lockscreen, and so runs for whoever is holding
+ * the phone rather than for its owner.
+ */
+interface SecureActivity

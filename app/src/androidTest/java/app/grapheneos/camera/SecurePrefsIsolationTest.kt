@@ -7,24 +7,27 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.store.commonPreferences
+import app.grapheneos.camera.data.core.store.modePreferences
+import app.grapheneos.camera.data.settings.repository.SettingsKeys
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * A lockscreen session may read the owner's settings but must never write them: whoever picks
- * up a locked phone would otherwise be able to change what the owner sees after unlocking.
- * SecureMainActivity enforces this by overriding getSharedPreferences() to return an ephemeral
- * clone, and CamConfig obtains its preferences through the activity — rather than through the
- * application context — precisely so it inherits that.
- *
- * A settings repository injected with the application context would satisfy every other test
- * in this suite and silently undo it.
+ * Asserts the isolation through the repository the activities actually got. A binding that handed a
+ * secure session the persistent preferences — or handed it a fresh copy on every lookup, so its own
+ * changes were silently dropped — would satisfy every other test in this suite.
  */
 @RunWith(AndroidJUnit4::class)
 class SecurePrefsIsolationTest {
@@ -42,66 +45,105 @@ class SecurePrefsIsolationTest {
         .targetContext
         .applicationContext
 
-    private fun persistentPrefs(): SharedPreferences {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun persistentCommons(): SharedPreferences {
+        return commonPreferences(context, ephemeral = false)
     }
 
+    private fun persistentModePrefs(): SharedPreferences {
+        return modePreferences(context, ephemeral = false).getValue(MODE).value
+    }
+
+    private var ownersPhotoQuality: Int? = null
+    private var ownersGeoTagging: Boolean? = null
+
+    @Before
+    fun rememberOwnersSettings() {
+        ownersPhotoQuality = persistentCommons()
+            .takeIf { it.contains(SettingsKeys.PHOTO_QUALITY) }
+            ?.getInt(SettingsKeys.PHOTO_QUALITY, -1)
+        ownersGeoTagging = persistentModePrefs()
+            .takeIf { it.contains(SettingsKeys.GEO_TAGGING) }
+            ?.getBoolean(SettingsKeys.GEO_TAGGING, false)
+    }
+
+    /** These are real settings, so the device is left configured the way it was found. */
     @After
-    fun removeProbeKey() {
-        persistentPrefs().edit().remove(PROBE_KEY).commit()
-    }
-
-    @Test
-    fun theSecureActivityDoesNotHandOutThePersistentPrefs() {
-        ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                assertNotSame(
-                    "SecureMainActivity handed out the persistent preferences — a locked" +
-                        " session can now overwrite the owner's settings",
-                    persistentPrefs(),
-                    activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
-                )
+    fun restoreOwnersSettings() {
+        persistentCommons().edit().apply {
+            when (val quality = ownersPhotoQuality) {
+                null -> remove(SettingsKeys.PHOTO_QUALITY)
+                else -> putInt(SettingsKeys.PHOTO_QUALITY, quality)
             }
-        }
+        }.commit()
+
+        persistentModePrefs().edit().apply {
+            when (val geoTagging = ownersGeoTagging) {
+                null -> remove(SettingsKeys.GEO_TAGGING)
+                else -> putBoolean(SettingsKeys.GEO_TAGGING, geoTagging)
+            }
+        }.commit()
     }
 
     @Test
     fun writesInASecureSessionDoNotChangeThePersistentPrefs() {
-        persistentPrefs().edit().putInt(PROBE_KEY, 1).commit()
+        persistentCommons().edit().putInt(SettingsKeys.PHOTO_QUALITY, OWNERS_QUALITY).commit()
 
         ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                activity
-                    .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putInt(PROBE_KEY, 2)
-                    .commit()
+                runBlocking {
+                    activity.settingsRepository.setPhotoQuality(SESSIONS_QUALITY).collect()
+                }
             }
         }
 
         assertEquals(
             "A secure session wrote through to the persistent preferences",
-            1,
-            persistentPrefs().getInt(PROBE_KEY, -1),
+            OWNERS_QUALITY,
+            persistentCommons().getInt(SettingsKeys.PHOTO_QUALITY, -1),
         )
     }
 
     @Test
     fun aSecureSessionStillReadsTheOwnersSettings() {
-        persistentPrefs().edit().putInt(PROBE_KEY, 3).commit()
+        persistentCommons().edit().putInt(SettingsKeys.PHOTO_QUALITY, OWNERS_QUALITY).commit()
 
         ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 assertEquals(
                     "The isolation must be one-way: a lockscreen session still honours the" +
                         " settings the owner chose",
-                    3,
-                    activity
-                        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                        .getInt(PROBE_KEY, -1),
+                    OWNERS_QUALITY,
+                    activity.settingsRepository.settings.value.photoQuality,
                 )
             }
         }
+    }
+
+    /** A session handed a fresh copy on every lookup would read the owner's value back. */
+    @Test
+    fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
+        persistentModePrefs().edit().putBoolean(SettingsKeys.GEO_TAGGING, false).commit()
+
+        ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val repository = activity.settingsRepository
+
+                repository.reslotMode(mode = MODE, isFrontFacing = false)
+                runBlocking { repository.setGeoTagging(true).collect() }
+                repository.reslotMode(mode = MODE, isFrontFacing = false)
+
+                assertTrue(
+                    "The session lost its own mode-scoped write, so it was handed a second copy" +
+                        " of the owner's preferences instead of the one it had been changing",
+                    repository.modeSettings.value.geoTagging,
+                )
+            }
+        }
+
+        assertFalse(
+            "A secure session wrote through to the persistent mode preferences",
+            persistentModePrefs().getBoolean(SettingsKeys.GEO_TAGGING, false),
+        )
     }
 
     @Test
@@ -110,22 +152,22 @@ class SecurePrefsIsolationTest {
         // reason — because nothing writes preferences at all.
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
-                activity
-                    .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putInt(PROBE_KEY, 7)
-                    .commit()
+                runBlocking {
+                    activity.settingsRepository.setPhotoQuality(SESSIONS_QUALITY).collect()
+                }
             }
         }
 
-        assertEquals(7, persistentPrefs().getInt(PROBE_KEY, -1))
+        assertEquals(
+            SESSIONS_QUALITY,
+            persistentCommons().getInt(SettingsKeys.PHOTO_QUALITY, -1),
+        )
     }
 
     private companion object {
-        // CamConfig.COMMON_SHARED_PREFS_NAME
-        const val PREFS_NAME = "commons"
+        val MODE = CameraMode.VIDEO
 
-        /** Not a real setting, so a failed run cannot corrupt the app's configuration. */
-        const val PROBE_KEY = "securePrefsIsolationProbe"
+        const val OWNERS_QUALITY = 71
+        const val SESSIONS_QUALITY = 42
     }
 }

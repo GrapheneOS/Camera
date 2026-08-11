@@ -4,32 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
-import android.util.ArrayMap
 import java.util.WeakHashMap
 
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener as ChangeListener
-
-typealias EphemeralSharedPrefsNamespace = ArrayMap<String, EphemeralSharedPrefs>
-
-fun EphemeralSharedPrefsNamespace.getPrefs(ctx: Context, name: String, mode: Int, cloneOriginal: Boolean): SharedPreferences {
-    require(mode == Context.MODE_PRIVATE)
-    synchronized(this) {
-        return getOrElse(name) {
-            val prefs = EphemeralSharedPrefs(ctx.applicationInfo.targetSdkVersion)
-
-            if (cloneOriginal) {
-                val orig = ctx.applicationContext.getSharedPreferences(name, Context.MODE_PRIVATE)
-                orig.all.forEach { k, v ->
-                    prefs.map[k] = v
-                }
-            }
-
-            this[name] = prefs
-
-            prefs
-        }
-    }
-}
 
 class EphemeralSharedPrefs(val targetSdk: Int) : SharedPreferences {
 

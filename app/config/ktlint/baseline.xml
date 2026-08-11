@@ -745,16 +745,20 @@
         <error line="338" column="16" source="standard:multiline-if-else" />
         <error line="358" column="101" source="standard:max-line-length" />
     </file>
+    <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettingsSecure.kt">
+        <error line="6" column="28" source="standard:class-signature" />
+        <error line="6" column="44" source="standard:class-signature" />
+    </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/QrTile.kt">
         <error line="29" column="64" source="standard:no-semi" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/SecureCaptureActivity.kt">
-        <error line="7" column="31" source="standard:class-signature" />
-        <error line="7" column="50" source="standard:class-signature" />
+        <error line="3" column="31" source="standard:class-signature" />
+        <error line="3" column="50" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/SecureMainActivity.kt">
-        <error line="10" column="33" source="standard:class-signature" />
-        <error line="10" column="49" source="standard:class-signature" />
+        <error line="7" column="33" source="standard:class-signature" />
+        <error line="7" column="49" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/VideoCaptureActivity.kt">
         <error line="52" column="1" source="standard:no-blank-line-before-rbrace" />
@@ -811,37 +815,36 @@
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/EphemeralSharedPrefs.kt">
         <error line="3" column="1" source="standard:import-ordering" />
-        <error line="14" column="100" source="standard:max-line-length" />
-        <error line="34" column="28" source="standard:class-signature" />
-        <error line="34" column="46" source="standard:class-signature" />
-        <error line="37" column="5" source="standard:spacing-between-declarations-with-comments" />
-        <error line="41" column="49" source="standard:function-start-of-body-spacing" />
-        <error line="41" column="50" source="standard:no-multi-spaces" />
-        <error line="51" column="31" source="standard:parameter-list-wrapping" />
-        <error line="51" column="45" source="standard:parameter-list-wrapping" />
-        <error line="51" column="75" source="standard:parameter-list-wrapping" />
-        <error line="51" column="101" source="standard:max-line-length" />
-        <error line="51" column="104" source="standard:argument-list-wrapping" />
-        <error line="51" column="109" source="standard:argument-list-wrapping" />
-        <error line="51" column="118" source="standard:argument-list-wrapping" />
-        <error line="55" column="29" source="standard:parameter-list-wrapping" />
-        <error line="55" column="43" source="standard:parameter-list-wrapping" />
-        <error line="55" column="60" source="standard:parameter-list-wrapping" />
-        <error line="55" column="73" source="standard:binary-expression-wrapping" />
-        <error line="55" column="77" source="standard:argument-list-wrapping" />
-        <error line="55" column="82" source="standard:argument-list-wrapping" />
-        <error line="55" column="90" source="standard:argument-list-wrapping" />
-        <error line="55" column="92" source="standard:binary-expression-wrapping" />
-        <error line="55" column="101" source="standard:max-line-length" />
-        <error line="61" column="100" source="standard:max-line-length" />
-        <error line="67" column="100" source="standard:max-line-length" />
-        <error line="73" column="26" source="standard:class-signature" />
-        <error line="73" column="57" source="standard:class-signature" />
-        <error line="174" column="35" source="standard:parameter-list-wrapping" />
-        <error line="174" column="35" source="standard:wrapping" />
-        <error line="175" column="47" source="standard:wrapping" />
-        <error line="175" column="48" source="standard:parameter-list-wrapping" />
-        <error line="175" column="48" source="standard:trailing-comma-on-declaration-site" />
+        <error line="11" column="28" source="standard:class-signature" />
+        <error line="11" column="46" source="standard:class-signature" />
+        <error line="14" column="5" source="standard:spacing-between-declarations-with-comments" />
+        <error line="18" column="49" source="standard:function-start-of-body-spacing" />
+        <error line="18" column="50" source="standard:no-multi-spaces" />
+        <error line="28" column="31" source="standard:parameter-list-wrapping" />
+        <error line="28" column="45" source="standard:parameter-list-wrapping" />
+        <error line="28" column="75" source="standard:parameter-list-wrapping" />
+        <error line="28" column="101" source="standard:max-line-length" />
+        <error line="28" column="104" source="standard:argument-list-wrapping" />
+        <error line="28" column="109" source="standard:argument-list-wrapping" />
+        <error line="28" column="118" source="standard:argument-list-wrapping" />
+        <error line="32" column="29" source="standard:parameter-list-wrapping" />
+        <error line="32" column="43" source="standard:parameter-list-wrapping" />
+        <error line="32" column="60" source="standard:parameter-list-wrapping" />
+        <error line="32" column="73" source="standard:binary-expression-wrapping" />
+        <error line="32" column="77" source="standard:argument-list-wrapping" />
+        <error line="32" column="82" source="standard:argument-list-wrapping" />
+        <error line="32" column="90" source="standard:argument-list-wrapping" />
+        <error line="32" column="92" source="standard:binary-expression-wrapping" />
+        <error line="32" column="101" source="standard:max-line-length" />
+        <error line="38" column="100" source="standard:max-line-length" />
+        <error line="44" column="100" source="standard:max-line-length" />
+        <error line="50" column="26" source="standard:class-signature" />
+        <error line="50" column="57" source="standard:class-signature" />
+        <error line="151" column="35" source="standard:parameter-list-wrapping" />
+        <error line="151" column="35" source="standard:wrapping" />
+        <error line="152" column="47" source="standard:wrapping" />
+        <error line="152" column="48" source="standard:parameter-list-wrapping" />
+        <error line="152" column="48" source="standard:trailing-comma-on-declaration-site" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/ImageDecoderUtils.kt">
         <error line="6" column="20" source="standard:class-signature" />
