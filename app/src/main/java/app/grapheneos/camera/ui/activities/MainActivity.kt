@@ -71,13 +71,13 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
-import app.grapheneos.camera.CameraMode
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
