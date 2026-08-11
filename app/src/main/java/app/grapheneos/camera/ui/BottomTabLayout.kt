@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewGroup
-import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.data.core.model.CameraMode
 import com.google.android.material.tabs.TabLayout
 
 class BottomTabLayout @JvmOverloads constructor(
