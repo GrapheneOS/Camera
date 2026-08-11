@@ -22,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.capturer.deleteStalePendingRecordings
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
