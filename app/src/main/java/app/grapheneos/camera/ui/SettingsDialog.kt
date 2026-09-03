@@ -11,7 +11,6 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -25,7 +24,6 @@ import android.widget.ArrayAdapter
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.ToggleButton
@@ -41,17 +39,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.GridType
-import app.grapheneos.camera.data.settings.model.videoQualityFromTitle
-import app.grapheneos.camera.data.settings.model.videoQualityTitle
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.radiobutton.MaterialRadioButton
 import java.util.Collections
 import kotlin.math.max
 
@@ -68,7 +62,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     var torchToggle: ToggleButton
     private var gridToggle: ImageView
     var videoQualitySpinner: Spinner
-    private lateinit var vQAdapter: ArrayAdapter<String>
+    internal var videoQualities: List<Quality> = emptyList()
+        private set
+
     private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
 
@@ -240,9 +236,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     position: Int,
                     p3: Long
                 ) {
+                    val quality = videoQualities.getOrNull(position) ?: return
 
-                    val choice = vQAdapter.getItem(position) as String
-                    updateVideoQuality(choice)
+                    updateVideoQuality(quality)
                 }
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
@@ -568,10 +564,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         timerSpinner.setSelection(timeOptions.indexOf(option).coerceAtLeast(0), false)
     }
 
-    fun updateVideoQuality(choice: String, resCam: Boolean = true) {
-
-        val quality = videoQualityFromTitle(choice)
-
+    fun updateVideoQuality(quality: Quality, resCam: Boolean = true) {
         if (quality == camConfig.videoQuality) return
 
         camConfig.videoQuality = quality
@@ -579,8 +572,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         if (resCam) {
             camConfig.startCamera(true)
         } else {
-            videoQualitySpinner.setSelection(getAvailableQTitles().indexOf(choice))
-
+            videoQualitySpinner.setSelection(videoQualities.indexOf(quality))
         }
     }
 
@@ -770,16 +762,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         return Recorder.getVideoCapabilities(cameraInfo).getSupportedQualities(DynamicRange.SDR)
     }
 
-    private fun getAvailableQTitles(): List<String> {
-        val titles = arrayListOf<String>()
-
-        getAvailableQualities().forEach {
-            titles.add(videoQualityTitle(it))
-        }
-
-        return titles
-    }
-
     fun updateGridToggleUI() {
         mActivity.previewGrid.postInvalidate()
         // The description has to travel with the drawable: this control cycles through four
@@ -848,25 +830,22 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun reloadQualities() {
+        videoQualities = getAvailableQualities()
 
-        val titles = getAvailableQTitles()
-
-        vQAdapter = ArrayAdapter<String>(
+        val adapter = ArrayAdapter(
             mActivity,
             android.R.layout.simple_spinner_item,
-            titles
+            videoQualities.map { videoQualityTitle(mActivity, it) },
         )
 
-        vQAdapter.setDropDownViewResource(
+        adapter.setDropDownViewResource(
             android.R.layout.simple_spinner_dropdown_item
         )
 
-        videoQualitySpinner.adapter = vQAdapter
+        videoQualitySpinner.adapter = adapter
 
         if (camConfig.videoQuality != Quality.HIGHEST) {
-            videoQualitySpinner.setSelection(
-                titles.indexOf(videoQualityTitle(camConfig.videoQuality)),
-            )
+            videoQualitySpinner.setSelection(videoQualities.indexOf(camConfig.videoQuality))
         }
     }
 }

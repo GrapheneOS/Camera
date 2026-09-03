@@ -57,6 +57,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
+import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
@@ -1018,14 +1019,16 @@ class CamConfig(
         }
     }
 
-    // The quality labels shown in the settings spinner, so that a message about a quality can
-    // name it exactly the way the user picked it (see videoQualityTitle).
-    private fun describeQualityFeature(feature: GroupableFeature): String? = when (feature) {
-        GroupableFeatures.UHD_RECORDING -> "2160p (UHD)"
-        GroupableFeatures.FHD_RECORDING -> "1080p (FHD)"
-        GroupableFeatures.HD_RECORDING -> "720p (HD)"
-        GroupableFeatures.SD_RECORDING -> "480p (SD)"
-        else -> null
+    private fun describeQualityFeature(feature: GroupableFeature): String? {
+        val quality = when (feature) {
+            GroupableFeatures.UHD_RECORDING -> Quality.UHD
+            GroupableFeatures.FHD_RECORDING -> Quality.FHD
+            GroupableFeatures.HD_RECORDING -> Quality.HD
+            GroupableFeatures.SD_RECORDING -> Quality.SD
+            else -> return null
+        }
+
+        return videoQualityTitle(mActivity, quality)
     }
 
     // Avoids repeating an unchanged notice: startCamera() runs again on every tab switch,
