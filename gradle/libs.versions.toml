@@ -1,5 +1,6 @@
 [versions]
 agp = "9.3.1"
+hilt = "2.60.1"
 kotlin = "2.4.10"
 ksp = "2.3.10"
 
@@ -11,6 +12,11 @@ appcompat = "1.7.1"
 camerax = { strictly = "1.6.1" }
 constraintlayout = "2.2.2"
 coreKtx = "1.19.0"
+datastore = "1.2.1"
+# Already reached the compile classpath transitively through CameraX. Declared here because the
+# settings layer imports Flow directly, and a transitive dependency is not one to import from.
+kotlinxCoroutines = "1.11.0"
+kotlinxSerialization = "1.11.0"
 material = "1.14.0"
 zxing = "3.5.4"
 
@@ -25,6 +31,11 @@ robolectric = "4.16.1"
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
@@ -42,6 +53,7 @@ androidx-test-runner = { module = "androidx.test:runner", version.ref = "android
 junit4 = { module = "junit:junit", version.ref = "junit4" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
+hilt-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradle-plugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
 
@@ -58,4 +70,7 @@ camerax = [
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }

@@ -32,6 +32,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -106,7 +107,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         } else {
             val storageLocation = camConfig.storageLocation
 
-            if (storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION) {
+            if (storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION) {
                 val contentValues = ContentValues().apply {
                     put(MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaColumns.MIME_TYPE, mimeType)

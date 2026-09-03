@@ -1,14 +1,17 @@
 package app.grapheneos.camera
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import app.grapheneos.camera.CamConfig.SettingValues
-import app.grapheneos.camera.util.EphemeralSharedPrefs
-import app.grapheneos.camera.util.edit
+import androidx.test.platform.app.InstrumentationRegistry
+import app.grapheneos.camera.data.core.store.InMemoryDataStore
+import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
+import app.grapheneos.camera.data.media.store.MediaPrefs
+import app.grapheneos.camera.data.media.store.StoragePrefs
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,43 +34,47 @@ class SafTreeGrantsRegressionTest {
         return DocumentsContract.buildTreeDocumentUri(authority, "primary:$name")
     }
 
-    // Only an in-memory SharedPreferences here; what it holds is the real tracked list.
-    private fun prefs() = EphemeralSharedPrefs(Build.VERSION.SDK_INT)
+    private val context: Context = InstrumentationRegistry
+        .getInstrumentation()
+        .targetContext
+        .applicationContext
 
-    /** What CamConfig.storageLocation records when the user picks a directory. */
-    private fun pickStorageLocation(prefs: EphemeralSharedPrefs, treeUri: Uri) {
-        val current = prefs.getString(
-            SettingValues.Key.STORAGE_LOCATION, SettingValues.Default.STORAGE_LOCATION
-        )!!
-        if (current != SettingValues.Default.STORAGE_LOCATION) {
-            CapturedItems.savePreviousSafTree(Uri.parse(current), prefs)
-        }
-        prefs.edit {
-            putString(SettingValues.Key.STORAGE_LOCATION, treeUri.toString())
-        }
+    private fun session(): CapturedItemRepositoryImpl {
+        return CapturedItemRepositoryImpl(
+            storagePrefs = InMemoryDataStore(StoragePrefs()),
+            mediaPrefs = InMemoryDataStore(MediaPrefs()),
+            context = context,
+        )
+    }
+
+    /** The write the app makes when the user picks a directory to save captures in. */
+    private fun pickStorageLocation(session: CapturedItemRepositoryImpl, treeUri: Uri) {
+        runBlocking { session.setStorageLocation(treeUri.toString()) }
     }
 
     /** The regression itself: the directory pushed off the tracked list is the one to release. */
     @Test
     fun theTreeThatFallsOffTheTrackedListIsReleased() {
-        val prefs = prefs()
+        val session = session()
         val picked = (0..CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1)
             .map { tree("dir$it") }
-        picked.forEach { pickStorageLocation(prefs, it) }
+        picked.forEach { pickStorageLocation(session, it) }
 
-        val tracked = CapturedItems.getSafTrees(prefs)
+        val tracked = runBlocking { session.trackedSafTrees() }
         assertEquals(CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1, tracked.size)
 
         picked.take(picked.size - tracked.size).forEach {
             assertEquals(
                 it.toString(),
                 readAndWrite,
-                CapturedItems.safTreeFlagsToRelease(it, true, true, tracked),
+                CapturedItems.safTreeFlagsToRelease(it, isRead = true, isWrite = true, tracked),
             )
         }
         tracked.forEach {
             assertEquals(
-                it.toString(), 0, CapturedItems.safTreeFlagsToRelease(it, true, true, tracked)
+                it.toString(),
+                0,
+                CapturedItems.safTreeFlagsToRelease(it, isRead = true, isWrite = true, tracked),
             )
         }
     }
@@ -75,14 +82,30 @@ class SafTreeGrantsRegressionTest {
     /** A directory the app still lists keeps its grant, whether it is the current one or a past one. */
     @Test
     fun trackedTreesKeepTheirGrants() {
-        val prefs = prefs()
-        pickStorageLocation(prefs, tree("previous"))
-        pickStorageLocation(prefs, tree("current"))
+        val session = session()
+        pickStorageLocation(session, tree("previous"))
+        pickStorageLocation(session, tree("current"))
 
-        val tracked = CapturedItems.getSafTrees(prefs)
+        val tracked = runBlocking { session.trackedSafTrees() }
         assertEquals(listOf(tree("current"), tree("previous")), tracked)
-        assertEquals(0, CapturedItems.safTreeFlagsToRelease(tree("current"), true, true, tracked))
-        assertEquals(0, CapturedItems.safTreeFlagsToRelease(tree("previous"), true, true, tracked))
+        assertEquals(
+            0,
+            CapturedItems.safTreeFlagsToRelease(
+                tree("current"),
+                isRead = true,
+                isWrite = true,
+                tracked,
+            ),
+        )
+        assertEquals(
+            0,
+            CapturedItems.safTreeFlagsToRelease(
+                tree("previous"),
+                isRead = true,
+                isWrite = true,
+                tracked,
+            ),
+        )
     }
 
     /** Persisted grants that are not trees belong to some other feature, not to storage locations. */
@@ -91,10 +114,16 @@ class SafTreeGrantsRegressionTest {
         val tracked = emptyList<Uri>()
 
         val document = DocumentsContract.buildDocumentUri(authority, "primary:DCIM/IMG_1.jpg")
-        assertEquals(0, CapturedItems.safTreeFlagsToRelease(document, true, true, tracked))
+        assertEquals(
+            0,
+            CapturedItems.safTreeFlagsToRelease(document, isRead = true, isWrite = true, tracked),
+        )
 
         val mediaStore = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        assertEquals(0, CapturedItems.safTreeFlagsToRelease(mediaStore, true, true, tracked))
+        assertEquals(
+            0,
+            CapturedItems.safTreeFlagsToRelease(mediaStore, isRead = true, isWrite = true, tracked),
+        )
     }
 
     /** The release covers exactly the modes the grant holds, and a grant holding none is skipped. */
@@ -105,15 +134,24 @@ class SafTreeGrantsRegressionTest {
 
         assertEquals(
             Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            CapturedItems.safTreeFlagsToRelease(untracked, true, false, tracked),
+            CapturedItems.safTreeFlagsToRelease(untracked, isRead = true, isWrite = false, tracked),
         )
         assertEquals(
             Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-            CapturedItems.safTreeFlagsToRelease(untracked, false, true, tracked),
+            CapturedItems.safTreeFlagsToRelease(untracked, isRead = false, isWrite = true, tracked),
         )
         assertEquals(
-            readAndWrite, CapturedItems.safTreeFlagsToRelease(untracked, true, true, tracked)
+            readAndWrite,
+            CapturedItems.safTreeFlagsToRelease(untracked, isRead = true, isWrite = true, tracked),
         )
-        assertEquals(0, CapturedItems.safTreeFlagsToRelease(untracked, false, false, tracked))
+        assertEquals(
+            0,
+            CapturedItems.safTreeFlagsToRelease(
+                untracked,
+                isRead = false,
+                isWrite = false,
+                tracked,
+            ),
+        )
     }
 }
