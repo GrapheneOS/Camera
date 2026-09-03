@@ -150,6 +150,12 @@
          does not suggest rebooting. -->
     <string name="extension_mode_unavailable">This mode is unavailable on this device.</string>
 
+    <string name="video_quality_uhd">2160p (UHD)</string>
+    <string name="video_quality_fhd">1080p (FHD)</string>
+    <string name="video_quality_hd">720p (HD)</string>
+    <string name="video_quality_sd">480p (SD)</string>
+    <string name="video_quality_unknown">Unknown</string>
+
     <!-- Shown when the camera can't record at the video quality the settings currently ask for,
          so that the settings screen doesn't keep claiming a quality that isn't actually in effect.
          %1$s is a quality such as "2160p (UHD)". A dropped quality is described as "a different
