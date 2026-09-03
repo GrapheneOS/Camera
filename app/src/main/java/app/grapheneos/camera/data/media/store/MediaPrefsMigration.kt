@@ -25,10 +25,7 @@ internal class MediaPrefsMigration(
             ?: readLastCapturedItem(legacyMediaPreferences())
             ?: readLastCapturedItem(legacyCommonPreferences(context))
 
-        return when {
-            stored == null -> currentData
-            else -> currentData.copy(lastCapturedItem = stored)
-        }
+        return currentData.copy(lastCapturedItem = stored)
     }
 
     override suspend fun cleanUp() {
@@ -40,15 +37,15 @@ internal class MediaPrefsMigration(
         return key in LEGACY_CAPTURE_KEYS
     }
 
-    private fun readLastCapturedItem(commons: SharedPreferences): StoredCapturedItem? {
-        val dateString = commons.getString(LEGACY_LAST_CAPTURED_ITEM_DATE_STRING, null)
-        val uri = commons.getString(LEGACY_LAST_CAPTURED_ITEM_URI, null)
+    private fun readLastCapturedItem(preferences: SharedPreferences): StoredCapturedItem? {
+        val dateString = preferences.getString(LEGACY_LAST_CAPTURED_ITEM_DATE_STRING, null)
+        val uri = preferences.getString(LEGACY_LAST_CAPTURED_ITEM_URI, null)
 
         return when {
             dateString == null || uri == null -> null
             else -> {
                 StoredCapturedItem(
-                    type = commons.getInt(LEGACY_LAST_CAPTURED_ITEM_TYPE, -1),
+                    type = preferences.getInt(LEGACY_LAST_CAPTURED_ITEM_TYPE, -1),
                     dateString = dateString,
                     uri = uri,
                 )
@@ -61,6 +58,6 @@ internal class MediaPrefsMigration(
     }
 
     private companion object {
-        private const val LEGACY_MEDIA_PREFS_NAME = "media"
+        const val LEGACY_MEDIA_PREFS_NAME = "media"
     }
 }

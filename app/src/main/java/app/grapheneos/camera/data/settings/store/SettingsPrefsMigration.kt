@@ -211,44 +211,44 @@ internal class SettingsPrefsMigration(
     }
 
     private companion object {
-        private const val ASPECT_RATIO = "aspect_ratio"
-        private const val CAMERA_SOUNDS = "camera_sounds"
-        private const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
-        private const val ENABLE_EIS = "enable_eis"
-        private const val ENABLE_ZSL = "enable_zsl"
-        private const val FLASH_MODE = "flash_mode"
-        private const val FOCUS_TIMEOUT = "focus_timeout"
-        private const val GEO_TAGGING = "geo_tagging"
-        private const val GRID = "grid"
-        private const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
-        private const val INCLUDE_AUDIO = "include_audio"
-        private const val PHOTO_QUALITY = "photo_quality"
-        private const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
-        private const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
-        private const val SAVE_VIDEO_AS_PREVIEW = "save_video_as_preview"
-        private const val SCAN_ALL_CODES = "scan_all_codes"
-        private const val SCAN_PREFIX = "scan_"
-        private const val DEFAULT_SCAN_KEY = "scan_QR_CODE"
-        private const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
-        private const val SELF_ILLUMINATION = "self_illumination"
-        private const val SELF_TIMER_DURATION = "self_timer_duration"
-        private const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
-        private const val VIDEO_QUALITY_FRONT = "video_quality_FRONT"
-        private const val VIDEO_QUALITY_BACK = "video_quality_BACK"
+        const val ASPECT_RATIO = "aspect_ratio"
+        const val CAMERA_SOUNDS = "camera_sounds"
+        const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
+        const val ENABLE_EIS = "enable_eis"
+        const val ENABLE_ZSL = "enable_zsl"
+        const val FLASH_MODE = "flash_mode"
+        const val FOCUS_TIMEOUT = "focus_timeout"
+        const val GEO_TAGGING = "geo_tagging"
+        const val GRID = "grid"
+        const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
+        const val INCLUDE_AUDIO = "include_audio"
+        const val PHOTO_QUALITY = "photo_quality"
+        const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
+        const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
+        const val SAVE_VIDEO_AS_PREVIEW = "save_video_as_preview"
+        const val SCAN_ALL_CODES = "scan_all_codes"
+        const val SCAN_PREFIX = "scan_"
+        const val DEFAULT_SCAN_KEY = "scan_QR_CODE"
+        const val SELECT_HIGHEST_RESOLUTION = "select_highest_resolution"
+        const val SELF_ILLUMINATION = "self_illumination"
+        const val SELF_TIMER_DURATION = "self_timer_duration"
+        const val WAIT_FOR_FOCUS_LOCK = "wait_for_focus_lock"
+        const val VIDEO_QUALITY_FRONT = "video_quality_FRONT"
+        const val VIDEO_QUALITY_BACK = "video_quality_BACK"
 
-        private const val FOCUS_TIMEOUT_OFF = "Off"
-        private const val MAX_PHOTO_QUALITY = 100
-        private val UNRECOGNISED_VIDEO_QUALITY = StoredVideoQuality.SD
+        const val FOCUS_TIMEOUT_OFF = "Off"
+        const val MAX_PHOTO_QUALITY = 100
+        val UNRECOGNISED_VIDEO_QUALITY = StoredVideoQuality.SD
 
         // This order is the shipped ordinal wire format.
-        private val LEGACY_GRID_TYPES = listOf(
+        val LEGACY_GRID_TYPES = listOf(
             StoredGridType.NONE,
             StoredGridType.THREE_BY_THREE,
             StoredGridType.FOUR_BY_FOUR,
             StoredGridType.GOLDEN_RATIO,
         )
 
-        private val LEGACY_VIDEO_QUALITIES = mapOf(
+        val LEGACY_VIDEO_QUALITIES = mapOf(
             "2160p (UHD)" to StoredVideoQuality.UHD,
             "1080p (FHD)" to StoredVideoQuality.FHD,
             "720p (HD)" to StoredVideoQuality.HD,

@@ -26,8 +26,8 @@ internal class JsonPreferenceSerializer<T>(
     }
 
     private companion object {
-        // Preserve fields written by newer versions across downgrades.
-        private val json = Json {
+        // Unknown keys are dropped, not kept: refusing them would wipe every setting.
+        val json = Json {
             ignoreUnknownKeys = true
         }
     }

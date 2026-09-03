@@ -25,7 +25,8 @@ internal class StoragePrefsMigration(
         return currentData.copy(
             storageLocation = stringOrNull(commons, LEGACY_STORAGE_LOCATION)
                 ?: currentData.storageLocation,
-            previousSafTrees = readPreviousSafTrees(commons) ?: currentData.previousSafTrees,
+            previousSafTrees = readPreviousSafTrees(commons)
+                ?: currentData.previousSafTrees,
             legacyMediaUris = stringOrNull(commons, LEGACY_MEDIA_URIS)
                 ?: currentData.legacyMediaUris,
         )
@@ -42,7 +43,7 @@ internal class StoragePrefsMigration(
     private fun readPreviousSafTrees(commons: SharedPreferences): List<String>? {
         val stored = stringOrNull(commons, LEGACY_PREVIOUS_SAF_TREES) ?: return null
 
-        return stored.split(SAF_TREE_SEPARATOR)
+        return stored.split(SAF_TREE_SEPARATOR).filter { it.isNotEmpty() }
     }
 
     private fun stringOrNull(preferences: SharedPreferences, key: String): String? {
@@ -54,6 +55,6 @@ internal class StoragePrefsMigration(
 
     private companion object {
         // This separator belongs to the shipped legacy format.
-        private const val SAF_TREE_SEPARATOR = "\u0000"
+        const val SAF_TREE_SEPARATOR = "\u0000"
     }
 }
