@@ -65,50 +65,56 @@ internal class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setFlashMode(value: Int): ModeSettings? {
-        return writeMode({ it.copy(flashMode = value) }) { stored, _ ->
-            stored.copy(flashMode = value)
-        }
+        return writeMode(
+            store = { stored, _ -> stored.copy(flashMode = value) },
+            asRequested = { it.copy(flashMode = value) },
+        )
     }
 
     override suspend fun setGeoTagging(value: Boolean): ModeSettings? {
-        return writeMode({ it.copy(geoTagging = value) }) { stored, _ ->
-            stored.copy(geoTagging = value)
-        }
+        return writeMode(
+            store = { stored, _ -> stored.copy(geoTagging = value) },
+            asRequested = { it.copy(geoTagging = value) },
+        )
     }
 
     override suspend fun setSelfIllumination(value: Boolean): ModeSettings? {
-        return writeMode({ it.copy(selfIllumination = value) }) { stored, _ ->
-            stored.copy(selfIllumination = value)
-        }
+        return writeMode(
+            store = { stored, _ -> stored.copy(selfIllumination = value) },
+            asRequested = { it.copy(selfIllumination = value) },
+        )
     }
 
     override suspend fun setVideoQuality(value: Quality): ModeSettings? {
-        return writeMode({ it.copy(videoQuality = value) }) { stored, mode ->
-            val quality = storedVideoQualityMapper.map(value)
+        return writeMode(
+            store = { stored, slot ->
+                val quality = storedVideoQualityMapper.map(value)
 
-            when {
-                mode.isFrontFacing -> stored.copy(videoQualityFront = quality)
-                else -> stored.copy(videoQualityBack = quality)
-            }
-        }
+                when {
+                    slot.isFrontFacing -> stored.copy(videoQualityFront = quality)
+                    else -> stored.copy(videoQualityBack = quality)
+                }
+            },
+            asRequested = { it.copy(videoQuality = value) },
+        )
     }
 
     private suspend fun writeMode(
-        update: (ModeSettings) -> ModeSettings,
         store: (StoredModeSettings, SlottedMode) -> StoredModeSettings,
+        asRequested: (ModeSettings) -> ModeSettings,
     ): ModeSettings? {
-        val mode = slotted ?: return null
+        val slot = slotted ?: return null
 
         val prefs = dataStore.updateData { prefs ->
-            val stored = store(prefs.mode(mode.mode), mode)
+            val stored = store(prefs.mode(slot.mode), slot)
 
-            prefs.withMode(mode = mode.mode, settings = stored)
+            prefs.withMode(mode = slot.mode, settings = stored)
         }
 
-        return update(
+        return asRequested(
             modeSettingsMapper.map(
-                stored = prefs.mode(mode.mode),
-                isFrontFacing = mode.isFrontFacing,
+                stored = prefs.mode(slot.mode),
+                isFrontFacing = slot.isFrontFacing,
             ),
         )
     }

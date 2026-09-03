@@ -348,15 +348,21 @@ class CamConfig(
         }
 
     var flashMode: Int = SettingsDefaults.FLASH_MODE
-        set(value) {
-            runBlocking {
-                settingsRepository.setFlashMode(value)
-            }?.let { modeSettings = it }
+        private set
 
-            field = value
-            imageCapture?.flashMode = value
-            mActivity.settingsDialog.updateFlashMode()
-        }
+    fun setFlashMode(value: Int) {
+        runBlocking {
+            settingsRepository.setFlashMode(value)
+        }?.let { modeSettings = it }
+
+        applyFlashMode(value)
+    }
+
+    private fun applyFlashMode(value: Int) {
+        flashMode = value
+        imageCapture?.flashMode = value
+        mActivity.settingsDialog.updateFlashMode()
+    }
 
     var focusTimeout: Long
         get() {
@@ -474,10 +480,11 @@ class CamConfig(
         }
         set(value) {
             runBlocking {
-                currentStorageLocation = capturedItemRepository.setStorageLocation(value)
-
+                capturedItemRepository.setStorageLocation(value)
                 capturedItemRepository.releaseUntrackedSafTrees()
             }
+
+            currentStorageLocation = value
         }
 
     var photoQuality: Int
@@ -642,7 +649,7 @@ class CamConfig(
             mActivity.settingsDialog.reloadQualities()
         }
 
-        flashMode = modeSettings.flashMode
+        applyFlashMode(modeSettings.flashMode)
 
         // A stored "on" is written before a permission request resolves, and it outlives a later
         // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
@@ -721,11 +728,13 @@ class CamConfig(
     fun toggleFlashMode() {
         if (isFlashAvailable) {
 
-            flashMode = when (flashMode) {
+            val next = when (flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                 ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
                 else -> ImageCapture.FLASH_MODE_OFF
             }
+
+            setFlashMode(next)
 
         } else {
             mActivity.showMessage(
@@ -1125,7 +1134,7 @@ class CamConfig(
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
-        flashMode = modeSettings.flashMode
+        applyFlashMode(modeSettings.flashMode)
 
         val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val display = mActivity.display
