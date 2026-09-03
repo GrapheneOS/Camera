@@ -38,18 +38,20 @@ Each layer splits per feature, and each feature splits by role:
 ```
 app/src/main/java/app/grapheneos/camera/
   data/
+    core/
+      model/            types more than one feature stores, e.g. CameraMode
+      store/            the preferences files themselves, and the keys features share
     settings/
       model/            CameraSettings, per-mode setting values
       repository/       SettingsRepository (entry-mode-scoped, never application-scoped)
-      store/            prefs-backed stores, EphemeralSharedPrefs namespace
     camera/
       model/            CameraCapabilities, lens/extension descriptors
       repository/       CameraProviderSource
       store/            ExtensionAvailabilityStore
     media/
       model/            CapturedItem and friends
-      repository/       CapturedItemStore
-      store/            MediaStoreDataSource, SafDataSource
+      repository/       CapturedItemRepository
+      store/            CapturedItemStore, MediaStoreDataSource, SafDataSource
     location/
       repository/       LocationRepository
   domain/
@@ -180,6 +182,14 @@ Roles:
 - **Repository** (`data/<feature>/repository/`): the feature's public data API. Exposes `Flow`s
   and `suspend` functions; applies `flowOn(dispatcher)` itself so callers never think about
   threads.
+- **Store** (`data/<feature>/store/`): the only thing that knows a storage mechanism —
+  `SharedPreferences`, MediaStore, SAF, a file. It opens that storage itself, and takes and returns
+  the feature's own types: keys, encodings and file names never leave it. Nothing above the
+  repository may touch storage directly, and a repository never hands a store out.
+  **A store is warranted only when it separates something**: a second storage mechanism, or a
+  repository that already does non-storage work. Where a feature has one mechanism and the
+  repository does nothing but forward to it, the repository *is* that boundary — a store there is a
+  second name for the same object and every method on it is a proxy.
 - **Use case** (`domain/<feature>/usecase/`): one verb per class, named as the verb
   (`ShareCapturedItem`), interface exposing `suspend operator fun invoke(...)`. Returns a
   sealed result type from `domain/<feature>/model/`, not exceptions.
@@ -188,6 +198,17 @@ Roles:
   `di/core/`, never referenced as `Dispatchers.IO` inline.
 - **DI** (`di/<feature>/`): one `@Module @InstallIn(SingletonComponent::class)` abstract class per
   feature with `@Binds @Reusable` for each interface→Impl pair. Everything is `internal`.
+  **Preferences are the exception, and they are opened and chosen in two different places.** The
+  owner's storage is opened once, in a `SingletonComponent` module under its own qualifier — a
+  process may hold one handle per file, so a second one is not an option to have. Which of them a
+  session is given is a `@Provides` in an `ActivityComponent` module, built on `@ActivityContext`
+  and `@ActivityScoped` rather than `@Reusable`: it selects between the owner's storage and a
+  throwaway copy of it, from the entry point it was given, and nowhere else — a session that has to
+  ask twice can be handed a second copy, and everything it changed in the first is lost. Nothing
+  below reads the entry point to find out which it got. Storage that stays durable whatever the
+  session — what the app has captured, as opposed to what the owner configured — is separate,
+  provided under its own qualifier, so that "this outlives the lockscreen session" is a binding a
+  reviewer can see rather than a branch inside a store.
 
 **Unidirectional data flow per screen** (`ui/<feature>/screen/`):
 
@@ -425,6 +446,5 @@ migrating the UI is exactly when they stop being reachable, and left behind they
 - **Never add a commit co-author unless the user explicitly asks.**
 - Commit messages: imperative mood, describing the behavior change rather than the mechanism —
   match the existing log ("Don't initialize the camera while its permission is not granted").
-- Test-facing seams in `CamConfig` (`mPlayer`, `photoQuality`, `camera`, `switchMode`,
-  `SettingValues`) are written to by the instrumented suite. They stay writable until the screen
-  that owns them is migrated.
+- Test-facing seams in `CamConfig` (`mPlayer`, `photoQuality`, `camera`, `switchMode`) are written
+  to by the instrumented suite. They stay writable until the screen that owns them is migrated.
