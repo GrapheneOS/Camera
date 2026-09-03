@@ -25,6 +25,7 @@ import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.clearExif
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -284,7 +285,7 @@ class ImageSaver(
         mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
     }
 
-    fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION
+    fun saveToMediaStore() = storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION
 
     private fun dateString() =
         // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous one
