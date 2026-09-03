@@ -8,6 +8,8 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
+import app.grapheneos.camera.data.settings.store.StoredCameraSettings
+import app.grapheneos.camera.data.settings.store.StoredGridType
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import app.grapheneos.camera.data.settings.store.settingsPrefsSerializer
@@ -91,6 +93,32 @@ class SettingsWireFormatTest {
         }
     }
 
+    private fun encodeCommon(common: StoredCameraSettings): String {
+        val output = ByteArrayOutputStream()
+
+        runBlocking {
+            settingsPrefsSerializer.writeTo(SettingsPrefs(common = common), output)
+        }
+
+        return output.toByteArray().decodeToString()
+    }
+
+    @Test
+    fun gridTypeNames_areStableWireKeys() {
+        assertEquals(
+            mapOf(
+                StoredGridType.UNKNOWN to """{"common":{"grid_type":"UNKNOWN"}}""",
+                StoredGridType.NONE to """{"common":{"grid_type":"NONE"}}""",
+                StoredGridType.THREE_BY_THREE to """{"common":{"grid_type":"THREE_BY_THREE"}}""",
+                StoredGridType.FOUR_BY_FOUR to """{"common":{"grid_type":"FOUR_BY_FOUR"}}""",
+                StoredGridType.GOLDEN_RATIO to """{"common":{"grid_type":"GOLDEN_RATIO"}}""",
+            ),
+            StoredGridType.entries.associateWith {
+                encodeCommon(StoredCameraSettings(gridType = it))
+            },
+        )
+    }
+
     @Test
     fun gridType_aNameThisVersionNoLongerHas_readsAsTheDefault() {
         val stored = """{"common":{"grid_type":"SPIRAL_OF_THEODORUS","photo_quality":71}}"""
@@ -137,6 +165,22 @@ class SettingsWireFormatTest {
 
             assertEquals(quality, decodeMode(stored).videoQualityBack)
         }
+    }
+
+    @Test
+    fun videoQualityNames_areStableWireKeys() {
+        assertEquals(
+            mapOf(
+                StoredVideoQuality.DEVICE_CHOICE to """{"modes":{"VIDEO":{}}}""",
+                StoredVideoQuality.UHD to """{"modes":{"VIDEO":{"video_quality_back":"UHD"}}}""",
+                StoredVideoQuality.FHD to """{"modes":{"VIDEO":{"video_quality_back":"FHD"}}}""",
+                StoredVideoQuality.HD to """{"modes":{"VIDEO":{"video_quality_back":"HD"}}}""",
+                StoredVideoQuality.SD to """{"modes":{"VIDEO":{"video_quality_back":"SD"}}}""",
+            ),
+            StoredVideoQuality.entries.associateWith {
+                encodeMode(StoredModeSettings(videoQualityBack = it))
+            },
+        )
     }
 
     @Test
