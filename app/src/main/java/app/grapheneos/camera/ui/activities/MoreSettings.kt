@@ -23,6 +23,7 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -127,7 +128,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dialog.setMessage(R.string.revert_to_default_directory)
 
             dialog.setPositiveButton(R.string.yes) { _, _ ->
-                val defaultLocation = CamConfig.SettingValues.Default.STORAGE_LOCATION
+                val defaultLocation = CapturedItemRepository.MEDIA_STORE_LOCATION
 
                 if (camConfig.storageLocation != defaultLocation) {
                     showMessage(getString(R.string.reverted_to_default_directory))

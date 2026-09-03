@@ -11,6 +11,7 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.PrintStream
@@ -51,7 +52,7 @@ fun ExecutorService.executeIfAlive(r: Runnable) {
 }
 
 fun storageLocationToUiString(ctx: Context, sl: String): String {
-    if (sl == CamConfig.SettingValues.Default.STORAGE_LOCATION) {
+    if (sl == CapturedItemRepository.MEDIA_STORE_LOCATION) {
         return "${ctx.getString(R.string.main_storage)}/$DEFAULT_MEDIA_STORE_CAPTURE_PATH"
     }
 

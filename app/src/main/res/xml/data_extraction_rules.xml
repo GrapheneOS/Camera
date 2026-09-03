@@ -1,8 +1,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref"/>
+        <exclude domain="file" path="datastore"/>
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref"/>
+        <exclude domain="file" path="datastore"/>
     </device-transfer>
 </data-extraction-rules>

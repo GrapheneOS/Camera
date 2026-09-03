@@ -15,9 +15,11 @@ import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.capturer.deleteStalePendingRecordings
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
+import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
+@HiltAndroidApp
 class App : Application() {
 
     companion object {

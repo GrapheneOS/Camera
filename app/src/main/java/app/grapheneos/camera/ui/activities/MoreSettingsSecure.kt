@@ -3,7 +3,7 @@ package app.grapheneos.camera.ui.activities
 import android.os.Bundle
 import app.grapheneos.camera.AutoFinishOnSleep
 
-class MoreSettingsSecure : MoreSettings() {
+class MoreSettingsSecure : MoreSettings(), SecureActivity {
 
     private val autoFinisher = AutoFinishOnSleep(this)
 

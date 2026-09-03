@@ -3,26 +3,16 @@ package app.grapheneos.camera
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
-import android.content.ContentResolver
 import android.content.Intent
-import android.content.ContentUris
-import android.content.Context
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
-import android.provider.BaseColumns
 import android.provider.DocumentsContract
-import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.StringRes
-import app.grapheneos.camera.CamConfig.SettingValues
-import app.grapheneos.camera.util.EphemeralSharedPrefs
-import app.grapheneos.camera.util.edit
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Locale
-import kotlin.jvm.Throws
 
 typealias ItemType = Int
 const val ITEM_TYPE_IMAGE: ItemType = 0
@@ -164,58 +154,12 @@ object CapturedItems {
 
     const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
 
-    fun init(ctx: Context, camConfig: CamConfig) {
-        val prefs = camConfig.commonPref
+    // save few last SAF trees to include their contents in the gallery
+    // format: '\0' separated concatenated uri strings, most recent come first
+    const val SAF_TREE_SEPARATOR = "\u0000"
 
-        val legacyPrefKey = "media_uri_s"
-        val urisToMigrate = prefs.getString(legacyPrefKey, null)
-
-        if (urisToMigrate != null) {
-            prefs.edit {
-                migratePreviousUris(ctx, camConfig, urisToMigrate, this, maybeGetCurentSafTree(prefs))
-                remove(legacyPrefKey)
-            }
-        }
-
-        releaseUntrackedSafTrees(ctx, prefs)
-    }
-
-    // A directory the user picks as the storage location is granted to us persistably, which lasts
-    // until we release it or the app is uninstalled. Trees drop off the tracked list once the user
-    // has picked enough different directories to push one past
-    // MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES, and the grant used to stay behind, leaving the app
-    // with indefinite read/write access to a folder it no longer has any use for. Reconcile the two.
-    fun releaseUntrackedSafTrees(ctx: Context, prefs: SharedPreferences) {
-        // A secure session reads a throwaway copy of the preferences, so the tracked list it sees is
-        // not the durable one and must never drive a durable revoke.
-        if (prefs is EphemeralSharedPrefs) {
-            return
-        }
-
-        val tracked = getSafTrees(prefs)
-        val resolver = ctx.contentResolver
-
-        resolver.persistedUriPermissions.forEach { permission ->
-            val uri = permission.uri
-            val flags = safTreeFlagsToRelease(
-                uri, permission.isReadPermission, permission.isWritePermission, tracked
-            )
-            if (flags == 0) {
-                return@forEach
-            }
-
-            try {
-                resolver.releasePersistableUriPermission(uri, flags)
-            } catch (e: Exception) {
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "unable to release the grant for $uri", e)
-                }
-            }
-        }
-    }
-
-    // Split out of the loop above so that the decision can be tested: an app cannot construct the
-    // UriPermission the loop reads it from.
+    // Split out of CapturedItemRepository's release loop so that the decision can be tested: an app
+    // cannot construct the UriPermission that loop reads it from.
     internal fun safTreeFlagsToRelease(
         uri: Uri, isRead: Boolean, isWrite: Boolean, tracked: Collection<Uri>
     ): Int {
@@ -237,202 +181,6 @@ object CapturedItems {
         return flags
     }
 
-    @Throws(InterruptedException::class)
-    fun get(ctx: Context): List<CapturedItem> {
-        val resolver = ctx.contentResolver
-        val list = ArrayList<CapturedItem>()
-
-        collectMediaStoreItems(resolver, MediaStore.VOLUME_EXTERNAL_PRIMARY, list)
-
-        getSafTrees(ctx.getSharedPreferences(CamConfig.COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)).forEach {
-            if (Thread.interrupted()) {
-                // executor is shutting down
-                throw InterruptedException()
-            }
-            collectSafItems(resolver, it, list)
-        }
-
-        return list.distinct()
-    }
-
-    private fun collectMediaStoreItems(resolver: ContentResolver, volumeName: String, dest: ArrayList<CapturedItem>) {
-        val volumeUri = MediaStore.Files.getContentUri(volumeName)
-
-        val columns = arrayOf(BaseColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
-        val idColumn = 0
-        val nameColumn = 1
-
-        try {
-            resolver.query(volumeUri, columns, null, null)?.use {
-                dest.ensureCapacity(it.count)
-
-                while (it.moveToNext()) {
-                    val name = it.getString(nameColumn)
-                    val uri = ContentUris.withAppendedId(volumeUri, it.getLong(idColumn))
-
-                    parseCapturedItem(name, uri)?.let {
-                        dest.add(it)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "unable to collect MediaStore items, volume $volumeName", e)
-        }
-    }
-
-    private fun collectSafItems(resolver: ContentResolver, treeUri: Uri, dest: ArrayList<CapturedItem>) {
-        val treeId = DocumentsContract.getTreeDocumentId(treeUri)
-        val childDocumentsUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeId)
-
-        val columns = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-        val idColumn = 0
-        val nameColumn = 1
-
-        try {
-            resolver.query(childDocumentsUri, columns, null, null)?.use {
-                dest.ensureCapacity(it.count)
-
-                while (it.moveToNext()) {
-                    val name = it.getString(nameColumn)
-                    val id = it.getString(idColumn)
-                    val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
-
-                    parseCapturedItem(name, uri)?.let {
-                        dest.add(it)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "unable to collect SAF items, treeUri $treeUri", e)
-            }
-        }
-    }
-
-    fun maybeGetCurentSafTree(prefs: SharedPreferences): Uri? {
-        return prefs.getString(SettingValues.Key.STORAGE_LOCATION, null)?.let {
-            if (it != SettingValues.Default.STORAGE_LOCATION) {
-                Uri.parse(it)
-            } else {
-                null
-            }
-        }
-    }
-
-    fun getSafTrees(prefs: SharedPreferences): List<Uri> {
-        val list = ArrayList<Uri>()
-
-        maybeGetCurentSafTree(prefs)?.let {
-            list.add(it)
-        }
-
-        list.addAll(getPreviousSafTrees(prefs))
-
-        return list.distinct()
-    }
-
-    // save few last SAF trees to include their contents in the gallery
-    // format: '\0' separated concatenated uri strings, most recent come first
-
-    const val SAF_TREE_SEPARATOR = "\u0000"
-
-    fun getPreviousSafTrees(prefs: SharedPreferences): MutableList<Uri> {
-        prefs.getString(SettingValues.Key.PREVIOUS_SAF_TREES, null)?.let {
-            return it.split(SAF_TREE_SEPARATOR).map { Uri.parse(it) }.toMutableList()
-        }
-        return ArrayList()
-    }
-
-    fun savePreviousSafTree(treeUri: Uri, prefs: SharedPreferences) {
-        val list = getPreviousSafTrees(prefs)
-
-        list.remove(treeUri)
-        list.add(0, treeUri)
-
-        while (list.size > MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES) {
-            // list.removeLast() requires API level 35 now due to Java adding it
-            list.removeAt(list.lastIndex)
-        }
-
-        prefs.edit {
-            savePreviousSafTrees(list, this)
-        }
-    }
-
-    fun savePreviousSafTrees(trees: List<Uri>, editor: SharedPreferences.Editor) {
-        if (trees.isEmpty()) {
-            return
-        }
-        val str = trees.map { it.toString() }.toTypedArray().joinToString(separator = SAF_TREE_SEPARATOR)
-        editor.putString(SettingValues.Key.PREVIOUS_SAF_TREES, str)
-    }
-
-    private fun migratePreviousUris(ctx: Context, camConfig: CamConfig, joinedUris: String, editor: SharedPreferences.Editor, currentTreeUri: Uri?) {
-        val list = ArrayList<Uri>()
-
-        if (joinedUris.isEmpty()) {
-            return
-        }
-
-        var checkedLastCapturedItem = false
-
-        joinedUris.split(";").forEach { uriString ->
-            val uri = Uri.parse(uriString)
-
-            val authority = uri.authority!!
-
-            if (!checkedLastCapturedItem) {
-                val columnName = if (authority == MediaStore.AUTHORITY) {
-                    MediaStore.MediaColumns.DISPLAY_NAME
-                } else {
-                    // SAF
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
-                }
-
-                var fileName: String? = null
-
-                try {
-                    val projection = arrayOf(columnName)
-                    ctx.contentResolver.query(uri, projection, null, null)?.use {
-                        if (it.moveToFirst()) {
-                            fileName = it.getString(0)
-                        }
-                    }
-                } catch (ignored: Exception) {}
-
-                fileName?.let {
-                    val item = parseCapturedItem(it, uri)
-                    if (item != null) {
-                        camConfig.updateLastCapturedItem(item)
-                    }
-                }
-
-                checkedLastCapturedItem = true
-            }
-
-            if (authority == MediaStore.AUTHORITY) {
-                return@forEach
-            }
-
-            val treeId = DocumentsContract.getTreeDocumentId(uri)
-            val treeUri = DocumentsContract.buildTreeDocumentUri(authority, treeId)
-
-            if (treeUri == currentTreeUri || list.contains(treeUri)
-                // list is small, not worth it to switch to a Set and lose item order
-                || treeUri.toString().contains(SAF_TREE_SEPARATOR))
-            {
-                return@forEach
-            }
-
-            list.add(treeUri)
-            if (list.size == MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES) {
-                return@forEach
-            }
-        }
-
-        savePreviousSafTrees(list, editor)
-    }
-
     fun parseCapturedItem(fileName: String, uri: Uri): CapturedItem? {
         val type = if (fileName.startsWith(IMAGE_NAME_PREFIX)) {
             ITEM_TYPE_IMAGE
@@ -452,7 +200,7 @@ object CapturedItems {
 
         for (i in prefixLen until end) {
             val ch = fileName[i]
-            if ((ch >= '0' && ch <= '9') || ch == '_') {
+            if ((ch in '0'..'9') || ch == '_') {
                 continue
             }
             return null

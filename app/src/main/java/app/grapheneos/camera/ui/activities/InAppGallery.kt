@@ -39,11 +39,11 @@ import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.AutoFinishOnSleep
 import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.GSlideTransformer
 import app.grapheneos.camera.GallerySliderAdapter
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.editCapturedItem
 import app.grapheneos.camera.shareCapturedItem
@@ -53,15 +53,22 @@ import app.grapheneos.camera.util.getParcelableExtra
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.Executors
+import javax.inject.Inject
 import kotlin.properties.Delegates
+import kotlinx.coroutines.runBlocking
 
+@AndroidEntryPoint
 class InAppGallery : AppCompatActivity() {
+
+    @Inject
+    lateinit var capturedItemRepository: CapturedItemRepository
 
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
@@ -661,7 +668,7 @@ class InAppGallery : AppCompatActivity() {
 
         asyncLoaderOfCapturedItems.execute {
             val unprocessedItems: List<CapturedItem> = try {
-                CapturedItems.get(this)
+                runBlocking { capturedItemRepository.capturedItems() }
             } catch (_: InterruptedException) {
                 // activity was destroyed and exectutor.shutdownNow() was called, which interrupts
                 // executor threads
