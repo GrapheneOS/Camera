@@ -152,10 +152,10 @@ internal fun editCapturedItem(activity: Activity, item: CapturedItem, useDefault
 object CapturedItems {
     const val TAG = "CapturedItems"
 
+    // Recent storage locations stay tracked so the gallery can still show their contents.
     const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
 
-    // save few last SAF trees to include their contents in the gallery
-    // format: '\0' separated concatenated uri strings, most recent come first
+    // A tree URI containing this is rejected: the legacy list it was joined into split on it.
     const val SAF_TREE_SEPARATOR = "\u0000"
 
     // Split out of CapturedItemRepository's release loop so that the decision can be tested: an app
