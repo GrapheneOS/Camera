@@ -157,11 +157,11 @@ class ModeSwitchLatencyRegressionTest {
         }
     }
 
-    // Both halves are needed: the setter behind updateVideoQuality() persists whichever quality
-    // the spinner is showing, not the one it is passed.
+    // Both halves are needed: setSelection() only posts its callback, so the quality is applied
+    // here rather than a looper pass later.
     private fun selectVideoQuality(activity: MainActivity, position: Int) {
         val dialog = activity.settingsDialog
         dialog.videoQualitySpinner.setSelection(position)
-        dialog.updateVideoQuality(dialog.videoQualitySpinner.getItemAtPosition(position) as String)
+        dialog.updateVideoQuality(dialog.videoQualities[position])
     }
 }
