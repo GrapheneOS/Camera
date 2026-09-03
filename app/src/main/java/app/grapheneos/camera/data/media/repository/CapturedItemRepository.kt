@@ -30,7 +30,7 @@ interface CapturedItemRepository {
 
     val storageLocation: Flow<String>
 
-    suspend fun setStorageLocation(value: String): String
+    suspend fun setStorageLocation(value: String)
 
     suspend fun releaseUntrackedSafTrees()
 
@@ -76,8 +76,8 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         it.storageLocation ?: CapturedItemRepository.MEDIA_STORE_LOCATION
     }
 
-    override suspend fun setStorageLocation(value: String): String {
-        val stored = storagePrefs.updateData { prefs ->
+    override suspend fun setStorageLocation(value: String) {
+        storagePrefs.updateData { prefs ->
             val previous = prefs.storageLocation?.takeIf { it.isNotEmpty() }
 
             when {
@@ -101,8 +101,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                 }
             }
         }
-
-        return stored.storageLocation ?: CapturedItemRepository.MEDIA_STORE_LOCATION
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -134,10 +132,22 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
     override suspend fun migrateStoredCaptures(onLastCapturedItem: (CapturedItem) -> Unit) {
         val joinedUris = storagePrefs.data.first().legacyMediaUris ?: return
-        val trees = legacyTrees(joinedUris = joinedUris, onLastCapturedItem = onLastCapturedItem)
+        val uris = joinedUris.split(LEGACY_MEDIA_URI_SEPARATOR).map { it.toUri() }
 
-        storagePrefs.updateData {
-            it.withPreviousSafTrees(trees).copy(legacyMediaUris = null)
+        uris.firstOrNull { it.authority != null }?.let {
+            reportLastCapturedItem(it, onLastCapturedItem)
+        }
+
+        val trees = legacyTrees(uris)
+
+        storagePrefs.updateData { prefs ->
+            when {
+                trees.isEmpty() -> prefs.copy(legacyMediaUris = null)
+                else -> prefs.copy(
+                    previousSafTrees = trees.map { it.toString() },
+                    legacyMediaUris = null,
+                )
+            }
         }
     }
 
@@ -168,13 +178,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         prefs.previousSafTrees.mapTo(trees) { it.toUri() }
 
         return trees.distinct()
-    }
-
-    private fun StoragePrefs.withPreviousSafTrees(trees: List<Uri>): StoragePrefs {
-        return when {
-            trees.isEmpty() -> this
-            else -> copy(previousSafTrees = trees.map { it.toString() })
-        }
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -243,26 +246,16 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     /** Unbounded, unlike the tracked list: a tree left out here loses its grant for good. */
-    private suspend fun legacyTrees(
-        joinedUris: String,
-        onLastCapturedItem: (CapturedItem) -> Unit,
-    ): List<Uri> {
+    private suspend fun legacyTrees(uris: List<Uri>): List<Uri> {
         val currentTreeUri = storageLocation
             .first()
             .takeIf { it != CapturedItemRepository.MEDIA_STORE_LOCATION }
             ?.toUri()
 
         val trees = ArrayList<Uri>()
-        var checkedLastCapturedItem = false
 
-        joinedUris.split(LEGACY_MEDIA_URI_SEPARATOR).forEach { uriString ->
-            val uri = uriString.toUri()
+        uris.forEach { uri ->
             val authority = uri.authority ?: return@forEach
-
-            if (!checkedLastCapturedItem) {
-                reportLastCapturedItem(uri, authority, onLastCapturedItem)
-                checkedLastCapturedItem = true
-            }
 
             if (authority == MediaStore.AUTHORITY) {
                 return@forEach
@@ -287,12 +280,9 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return trees
     }
 
-    private fun reportLastCapturedItem(
-        uri: Uri,
-        authority: String,
-        onLastCapturedItem: (CapturedItem) -> Unit,
-    ) {
-        val columnName = when (authority) {
+    @Suppress("TooGenericExceptionCaught")
+    private fun reportLastCapturedItem(uri: Uri, onLastCapturedItem: (CapturedItem) -> Unit) {
+        val columnName = when (uri.authority) {
             MediaStore.AUTHORITY -> MediaStore.MediaColumns.DISPLAY_NAME
             else -> DocumentsContract.Document.COLUMN_DISPLAY_NAME
         }
@@ -305,7 +295,10 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     fileName = it.getString(0)
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            if (BuildConfig.DEBUG) {
+                Log.d(CapturedItems.TAG, "unable to read the name of $uri", e)
+            }
         }
 
         fileName?.let { name ->
