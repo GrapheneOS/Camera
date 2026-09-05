@@ -38,6 +38,7 @@ import android.view.View
 import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
@@ -806,6 +807,98 @@ open class MainActivity : AppCompatActivity(),
         framePrefetchedAt = 0
     }
 
+
+    fun applyModeChrome(
+        mode: CameraMode,
+        isVideoMode: Boolean,
+        scanAllCodes: Boolean,
+    ) {
+        when (mode) {
+            CameraMode.QR_SCAN -> {
+                qrOverlay.visibility = View.VISIBLE
+                thirdOption.visibility = View.INVISIBLE
+
+                applyScanAllCodesChrome(scanAllCodes)
+
+                cancelButtonView.visibility = View.INVISIBLE
+
+                captureButton.setBackgroundResource(android.R.color.transparent)
+                // Entering QR mode always leaves the torch off
+                setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
+
+                micOffIcon.visibility = View.GONE
+            }
+
+            else -> {
+                qrOverlay.visibility = View.INVISIBLE
+                thirdOption.visibility = View.VISIBLE
+                setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
+                cancelButtonView.visibility = View.VISIBLE
+
+                qrScanToggles.visibility = View.GONE
+
+                captureButton.setBackgroundResource(R.drawable.cbutton_bg)
+
+                if (isVideoMode) {
+                    setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
+                } else {
+                    setCaptureButtonIcon(R.drawable.camera_shutter, R.string.capture)
+                    micOffIcon.visibility = View.GONE
+                }
+            }
+        }
+
+        updateSelfTimerBadge()
+    }
+
+    fun applyScanAllCodesChrome(scanAllCodes: Boolean) {
+        if (scanAllCodes) {
+            setFlipCameraIcon(R.drawable.cancel, R.string.stop_scanning_all_formats)
+            qrScanToggles.visibility = View.GONE
+        } else {
+            setFlipCameraIcon(R.drawable.auto, R.string.scan_all_formats)
+            qrScanToggles.visibility = View.VISIBLE
+        }
+    }
+
+    fun flashPreview(selfIlluminate: Boolean) {
+        val animation: Animation = when {
+            selfIlluminate -> AlphaAnimation(0f, 0.8f)
+            else -> AlphaAnimation(1f, 0f)
+        }
+
+        animation.interpolator = LinearInterpolator()
+
+        if (selfIlluminate) {
+            animation.duration = PREVIEW_SL_OVERLAY_DUR
+            animation.fillAfter = true
+            mainOverlay.setImageResource(android.R.color.white)
+        } else {
+            animation.duration = PREVIEW_SNAP_DURATION
+            animation.repeatMode = Animation.REVERSE
+            mainOverlay.setImageResource(android.R.color.black)
+        }
+
+        animation.setAnimationListener(
+            object : Animation.AnimationListener {
+                override fun onAnimationStart(p0: Animation?) {
+                    mainOverlay.visibility = View.VISIBLE
+                }
+
+                override fun onAnimationEnd(p0: Animation?) {
+                    if (!selfIlluminate) {
+                        mainOverlay.visibility = View.INVISIBLE
+                        mainOverlay.setImageResource(android.R.color.transparent)
+                    }
+                }
+
+                override fun onAnimationRepeat(p0: Animation?) {}
+            }
+        )
+
+        mainOverlay.startAnimation(animation)
+    }
+
     lateinit var gestureDetector: GestureDetector
 
     @SuppressLint("ClickableViewAccessibility")
@@ -1570,6 +1663,9 @@ open class MainActivity : AppCompatActivity(),
     private lateinit var cameraControl: CameraControl
 
     companion object {
+        private const val PREVIEW_SNAP_DURATION = 200L
+        private const val PREVIEW_SL_OVERLAY_DUR = 200L
+
         private const val TAG = "GOCam"
         private const val autoCenterFocusDuration = 2000L
         private val hexArray = "0123456789ABCDEF".toCharArray()
