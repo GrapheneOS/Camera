@@ -109,7 +109,6 @@
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$300</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$90f</ID>
     <ID>MatchingDeclarationName:ImageDecoderUtils.kt:ImageResizer : OnHeaderDecodedListener</ID>
-    <ID>MaxLineLength:CamConfig.kt:CamConfig$resolutionSelectorBuilder.setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)</ID>
     <ID>MaxLineLength:MainActivity.kt:MainActivity$if (cameraPermissionDialog != null &amp;&amp; cameraPermissionDialog!!.isShowing) cameraPermissionDialog!!.cancel()</ID>
     <ID>MaxLineLength:SettingsDialog.kt:SettingsDialog$mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")</ID>
     <ID>NestedBlockDepth:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>

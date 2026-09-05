@@ -8,6 +8,8 @@ import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
 import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStoreImpl
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapperImpl
+import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
+import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlanImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupportImpl
 import dagger.Binds
@@ -44,6 +46,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindVideoQualityFeatureMapper(
         impl: VideoQualityFeatureMapperImpl,
     ): VideoQualityFeatureMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindBuildCameraSessionPlan(
+        impl: BuildCameraSessionPlanImpl,
+    ): BuildCameraSessionPlan
 
     @Binds
     @Reusable
