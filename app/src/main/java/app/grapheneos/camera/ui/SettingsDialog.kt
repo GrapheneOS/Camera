@@ -41,6 +41,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -760,6 +761,12 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private fun getAvailableQualities(): List<Quality> {
         val cameraInfo = camConfig.camera?.cameraInfo ?: return Collections.emptyList()
         return Recorder.getVideoCapabilities(cameraInfo).getSupportedQualities(DynamicRange.SDR)
+    }
+
+    fun loadInitialState() {
+        updateGridToggleUI()
+        updateFocusTimeout(focusTimeoutLabel(camConfig.focusTimeout))
+        enableEISToggle.isChecked = camConfig.enableEIS
     }
 
     fun updateGridToggleUI() {

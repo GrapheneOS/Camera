@@ -42,7 +42,6 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
-import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
@@ -415,17 +414,10 @@ class CamConfig @AssistedInject constructor(
             effects.onIncludeAudioChanged(value)
         }
 
-    var enableEIS: Boolean
-        get() {
-            return settings.enableEis
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(enableEis = value) }
-            }
-
-            effects.onEnableEisChanged(value)
-        }
+    var enableEIS: Boolean by setting(
+        read = { it.enableEis },
+        write = { current, value -> current.copy(enableEis = value) },
+    )
 
     var enableZsl: Boolean by setting(
         read = { it.enableZsl },
@@ -612,13 +604,7 @@ class CamConfig @AssistedInject constructor(
     }
 
     fun loadSettings() {
-        effects.onGridTypeChanged()
-
-        effects.onFocusTimeoutChanged(focusTimeoutLabel(settings.focusTimeoutSeconds))
-
         includeAudio = settings.includeAudio
-
-        enableEIS = settings.enableEis
 
         allowedFormats.clear()
         allowedFormats.addAll(
