@@ -2,13 +2,11 @@ package app.grapheneos.camera
 
 import android.annotation.SuppressLint
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
-import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
@@ -59,7 +57,6 @@ import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
-import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureActivity
@@ -67,6 +64,9 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import java.io.IOException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
@@ -80,8 +80,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @SuppressLint("UnsafeOptInUsageError")
-class CamConfig(
-    private val mActivity: MainActivity,
+class CamConfig @AssistedInject constructor(
+    @Assisted private val mActivity: MainActivity,
     private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
     private val cameraProviderSource: CameraProviderSource,
@@ -93,6 +93,11 @@ class CamConfig(
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
 ) {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(activity: MainActivity): CamConfig
+    }
 
     companion object {
         private const val TAG = "CamConfig"
@@ -170,14 +175,14 @@ class CamConfig(
     private val zoomStateObserver = Observer<ZoomState> {
         zoomState = it
         if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-            mActivity.zoomBar.updateThumb()
+            mActivity.updateZoomThumb()
         }
     }
 
     private val handler = Handler(Looper.getMainLooper())
 
     private val attachZoomState = Runnable {
-        if (mActivity.isDestroyed || mActivity.isFinishing) return@Runnable
+        if (!mActivity.isSessionActive) return@Runnable
 
         zoomStateSource = camera?.cameraInfo?.zoomState?.also {
             it.observe(mActivity, zoomStateObserver)
@@ -368,7 +373,7 @@ class CamConfig(
     private fun applyFlashMode(value: Int) {
         flashMode = value
         imageCapture?.flashMode = value
-        mActivity.settingsDialog.updateFlashMode()
+        mActivity.onFlashModeChanged()
     }
 
     var focusTimeout: Long by setting(
@@ -411,7 +416,7 @@ class CamConfig(
                 settingsRepository.update { it.copy(includeAudio = value) }
             }
 
-            mActivity.settingsDialog.includeAudioToggle.isChecked = value
+            mActivity.onIncludeAudioChanged(value)
         }
 
     var enableEIS: Boolean
@@ -423,7 +428,7 @@ class CamConfig(
                 settingsRepository.update { it.copy(enableEis = value) }
             }
 
-            mActivity.settingsDialog.enableEISToggle.isChecked = value
+            mActivity.onEnableEisChanged(value)
         }
 
     var enableZsl: Boolean by setting(
@@ -539,7 +544,7 @@ class CamConfig(
                 settingsRepository.setGeoTagging(value)
             }?.let { modeSettings = it }
 
-            mActivity.settingsDialog.locToggle.isChecked = value
+            mActivity.onGeoTaggingChanged(value)
 
             field = value
         }
@@ -554,8 +559,7 @@ class CamConfig(
                 settingsRepository.setSelfIllumination(value)
             }?.let { modeSettings = it }
 
-            mActivity.settingsDialog.selfIlluminationToggle.isChecked = value
-            mActivity.settingsDialog.selfIllumination()
+            mActivity.onSelfIlluminationChanged(value)
         }
 
     fun setQRScanningFor(format: String, selected: Boolean) {
@@ -594,7 +598,7 @@ class CamConfig(
         slotCurrentMode()
 
         if (isVideoMode) {
-            mActivity.settingsDialog.reloadQualities()
+            mActivity.reloadVideoQualities()
         }
 
         applyFlashMode(modeSettings.flashMode)
@@ -608,13 +612,13 @@ class CamConfig(
 
         selfIlluminate = modeSettings.selfIllumination
 
-        mActivity.settingsDialog.showOnlyRelevantSettings()
+        mActivity.showOnlyRelevantSettings()
     }
 
     fun loadSettings() {
-        mActivity.settingsDialog.updateGridToggleUI()
+        mActivity.onGridTypeChanged()
 
-        mActivity.settingsDialog.updateFocusTimeout(focusTimeoutLabel(settings.focusTimeoutSeconds))
+        mActivity.onFocusTimeoutChanged(focusTimeoutLabel(settings.focusTimeoutSeconds))
 
         includeAudio = settings.includeAudio
 
@@ -956,28 +960,18 @@ class CamConfig(
         if ((!forced && camera != null) || cameraProvider == null) return
 
         // Cancel any pending capture requests
-        mActivity.imageCapturer.cancelPendingCaptureRequest()
+        mActivity.cancelPendingCapture()
 
-        mActivity.exposureBar.hidePanel()
+        mActivity.hideExposurePanel()
         slotCurrentMode()
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
         applyFlashMode(modeSettings.flashMode)
 
-        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val display = mActivity.display
-            display?.rotation ?: @Suppress("DEPRECATION")
-            mActivity.windowManager.defaultDisplay.rotation
-        } else {
-            // We don't really have any option here, but this initialization
-            // ensures that the app doesn't break later when the below
-            // deprecated option gets removed post Android R
-            @Suppress("DEPRECATION")
-            mActivity.windowManager.defaultDisplay.rotation
-        }
+        val rotation = mActivity.displayRotation
 
-        if (mActivity.isDestroyed || mActivity.isFinishing) return
+        if (!mActivity.isSessionActive) return
 
         // Test whether the current lens facing is supported by the current device
         // If not then silently switch to the other lens facing
@@ -1105,10 +1099,7 @@ class CamConfig(
 
         } else {
             if (isVideoMode) {
-                mActivity.micOffIcon.visibility = when {
-                    includeAudio -> View.GONE
-                    else -> View.VISIBLE
-                }
+                mActivity.setMicMutedIconVisible(!includeAudio)
             }
 
             plan.videoCapture?.let {
@@ -1124,7 +1115,7 @@ class CamConfig(
 
         preview = plan.preview.also {
             useCasesList.add(it)
-            it.surfaceProvider = mActivity.previewView.surfaceProvider
+            it.surfaceProvider = mActivity.previewSurfaceProvider
         }
 
         mActivity.forceUpdateOrientationSensor()
@@ -1263,21 +1254,15 @@ class CamConfig(
         handler.removeCallbacks(attachZoomState)
         handler.post(attachZoomState)
 
-        mActivity.zoomBar.updateThumb(false)
+        mActivity.updateZoomThumb(false)
 
-        camera?.cameraInfo?.exposureState?.let { mActivity.exposureBar.setExposureConfig(it) }
+        camera?.cameraInfo?.exposureState?.let { mActivity.applyExposureState(it) }
 
-        mActivity.settingsDialog.torchToggle.isChecked = false
+        mActivity.resetTorchToggle()
 
-        // Focus camera on touch/tap
-        mActivity.previewView.setOnTouchListener(mActivity)
-        camera?.cameraInfo?.let { mActivity.previewView.applyPreviewRatio(aspectRatio, it) }
+        camera?.cameraInfo?.let { mActivity.onPreviewBound(aspectRatio, it) }
 
-        if (isInPhotoMode) {
-            mActivity.sensorNotifier?.forceUpdateGyro()
-        } else {
-            mActivity.gCircleFrame.visibility = View.GONE
-        }
+        mActivity.updateGyroscopeIndicator(isInPhotoMode)
     }
 
     fun snapPreview() {
@@ -1344,7 +1329,7 @@ class CamConfig(
 
             ContextCompat.getMainExecutor(mActivity).execute {
                 extensionProbesInFlight = false
-                if (mActivity.isDestroyed || mActivity.isFinishing) return@execute
+                if (!mActivity.isSessionActive) return@execute
 
                 if (probedCameraProvider !== provider) {
                     // The camera stack was reinitialized while probing: these verdicts describe
@@ -1362,10 +1347,9 @@ class CamConfig(
     }
 
     private fun buildTabs() {
-        mActivity.tabLayout.setModes(
+        mActivity.setCameraModeTabs(
             modes = availableModes(),
             currentMode = currentMode,
-            onTabTouched = mActivity::finalizeMode,
         )
     }
 
@@ -1395,9 +1379,7 @@ class CamConfig(
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (mActivity.shouldShowCameraModeTabs()) {
-            mActivity.tabLayout.getTabForMode(currentMode)?.let { tab ->
-                mActivity.tabLayout.goToTab(tab)
-            }
+            mActivity.goToModeTab(currentMode)
         }
     }
 

@@ -56,8 +56,11 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraInfo
+import androidx.camera.core.ExposureState
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
+import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
@@ -78,17 +81,8 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
-import app.grapheneos.camera.data.camera.repository.CameraProviderSource
-import app.grapheneos.camera.data.camera.repository.FeatureCombinationSupport
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
-import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
-import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
-import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
-import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
@@ -139,34 +133,12 @@ open class MainActivity : AppCompatActivity(),
     SensorOrientationChangeNotifier.Listener {
 
     @Inject
+    lateinit var camConfigFactory: CamConfig.Factory
+
+    @Inject
     lateinit var settingsRepository: SettingsRepository
 
-    @Inject
-    lateinit var capturedItemRepository: CapturedItemRepository
-
-    @Inject
-    lateinit var cameraProviderSource: CameraProviderSource
-
-    @Inject
-    lateinit var extensionAvailabilityStore: ExtensionAvailabilityStore
-
-    @Inject
-    lateinit var featureCombinationSupport: FeatureCombinationSupport
-
-    @Inject
-    lateinit var buildCameraSessionPlan: BuildCameraSessionPlan
-
-    @Inject
-    lateinit var videoQualityFeatureMapper: VideoQualityFeatureMapper
-
-    @Inject
-    lateinit var resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport
-
-    @Inject
-    lateinit var resolveAvailableModes: ResolveAvailableModes
-
-    @Inject
-    lateinit var resolveDroppedVideoQuality: ResolveDroppedVideoQuality
+    lateinit var camConfig: CamConfig
 
     private val application: App
         get() = applicationContext as App
@@ -808,6 +780,123 @@ open class MainActivity : AppCompatActivity(),
     }
 
 
+    val isSessionActive: Boolean
+        get() {
+            return !isDestroyed && !isFinishing
+        }
+
+    val previewSurfaceProvider: Preview.SurfaceProvider
+        get() {
+            return previewView.surfaceProvider
+        }
+
+    val displayRotation: Int
+        get() {
+            return when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                    display?.rotation ?: @Suppress("DEPRECATION")
+                    windowManager.defaultDisplay.rotation
+                }
+
+                // We don't really have any option here, but this initialization ensures that the
+                // app doesn't break later when the below deprecated option gets removed post
+                // Android R
+                else -> @Suppress("DEPRECATION") windowManager.defaultDisplay.rotation
+            }
+        }
+
+    fun cancelPendingCapture() {
+        imageCapturer.cancelPendingCaptureRequest()
+    }
+
+    fun hideExposurePanel() {
+        exposureBar.hidePanel()
+    }
+
+    fun applyExposureState(exposureState: ExposureState) {
+        exposureBar.setExposureConfig(exposureState)
+    }
+
+    fun updateZoomThumb(shouldShowPanel: Boolean = true) {
+        zoomBar.updateThumb(shouldShowPanel)
+    }
+
+    fun setMicMutedIconVisible(visible: Boolean) {
+        micOffIcon.visibility = when {
+            visible -> View.VISIBLE
+            else -> View.GONE
+        }
+    }
+
+    fun onPreviewBound(aspectRatio: Int, cameraInfo: CameraInfo) {
+        // Focus camera on touch/tap
+        previewView.setOnTouchListener(this)
+        previewView.applyPreviewRatio(aspectRatio, cameraInfo)
+    }
+
+    fun updateGyroscopeIndicator(inPhotoMode: Boolean) {
+        if (inPhotoMode) {
+            sensorNotifier?.forceUpdateGyro()
+        } else {
+            gCircleFrame.visibility = View.GONE
+        }
+    }
+
+    fun setCameraModeTabs(modes: Set<CameraMode>, currentMode: CameraMode) {
+        tabLayout.setModes(
+            modes = modes,
+            currentMode = currentMode,
+            onTabTouched = ::finalizeMode,
+        )
+    }
+
+    fun goToModeTab(mode: CameraMode) {
+        tabLayout.getTabForMode(mode)?.let { tab ->
+            tabLayout.goToTab(tab)
+        }
+    }
+
+    fun onFlashModeChanged() {
+        settingsDialog.updateFlashMode()
+    }
+
+    fun onGridTypeChanged() {
+        settingsDialog.updateGridToggleUI()
+    }
+
+    fun onFocusTimeoutChanged(label: String) {
+        settingsDialog.updateFocusTimeout(label)
+    }
+
+    fun onIncludeAudioChanged(enabled: Boolean) {
+        settingsDialog.includeAudioToggle.isChecked = enabled
+    }
+
+    fun onEnableEisChanged(enabled: Boolean) {
+        settingsDialog.enableEISToggle.isChecked = enabled
+    }
+
+    fun onGeoTaggingChanged(enabled: Boolean) {
+        settingsDialog.locToggle.isChecked = enabled
+    }
+
+    fun onSelfIlluminationChanged(enabled: Boolean) {
+        settingsDialog.selfIlluminationToggle.isChecked = enabled
+        settingsDialog.selfIllumination()
+    }
+
+    fun reloadVideoQualities() {
+        settingsDialog.reloadQualities()
+    }
+
+    fun showOnlyRelevantSettings() {
+        settingsDialog.showOnlyRelevantSettings()
+    }
+
+    fun resetTorchToggle() {
+        settingsDialog.torchToggle.isChecked = false
+    }
+
     fun selectBarcodeFormatToggles(formats: List<BarcodeFormat>) {
         val toggles = mapOf(
             BarcodeFormat.QR_CODE to qrToggle,
@@ -922,19 +1011,7 @@ open class MainActivity : AppCompatActivity(),
 
         gestureDetector = GestureDetector(this, this)
 
-        camConfig = CamConfig(
-            mActivity = this,
-            settingsRepository = settingsRepository,
-            capturedItemRepository = capturedItemRepository,
-            cameraProviderSource = cameraProviderSource,
-            extensionAvailabilityStore = extensionAvailabilityStore,
-            featureCombinationSupport = featureCombinationSupport,
-            buildCameraSessionPlan = buildCameraSessionPlan,
-            videoQualityFeatureMapper = videoQualityFeatureMapper,
-            resolveInVideoSnapshotSupport = resolveInVideoSnapshotSupport,
-            resolveAvailableModes = resolveAvailableModes,
-            resolveDroppedVideoQuality = resolveDroppedVideoQuality,
-        )
+        camConfig = camConfigFactory.create(this)
         cameraControl = CameraControl(camConfig)
         mainOverlay = binding.mainOverlay
         imageCapturer = ImageCapturer(this)
@@ -1672,7 +1749,6 @@ open class MainActivity : AppCompatActivity(),
         rotateView(muteToggle, iconRotation)
     }
 
-    lateinit var camConfig: CamConfig
     private lateinit var cameraControl: CameraControl
 
     companion object {
