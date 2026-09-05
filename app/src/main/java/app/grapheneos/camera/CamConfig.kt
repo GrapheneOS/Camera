@@ -50,6 +50,7 @@ import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.domain.camera.model.CameraBindRequest
+import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.domain.camera.model.ImageCaptureMode
 import app.grapheneos.camera.domain.camera.model.InVideoSnapshotSupport
@@ -57,12 +58,7 @@ import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
-import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.SecureActivity
-import app.grapheneos.camera.ui.activities.SecureMainActivity
-import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import com.google.zxing.BarcodeFormat
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -82,6 +78,7 @@ import kotlinx.coroutines.runBlocking
 @SuppressLint("UnsafeOptInUsageError")
 class CamConfig @AssistedInject constructor(
     @Assisted private val mActivity: MainActivity,
+    private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
     private val cameraProviderSource: CameraProviderSource,
@@ -250,7 +247,7 @@ class CamConfig @AssistedInject constructor(
             capturedItemRepository.storageLocation.collect { currentStorageLocation = it }
         }
 
-        if (mActivity !is SecureActivity) {
+        if (!entryPoint.isSecureSession) {
             try {
                 runBlocking {
                     capturedItemRepository.migrateStoredCaptures(::updateLastCapturedItem)
@@ -275,7 +272,7 @@ class CamConfig @AssistedInject constructor(
             Log.e(TAG, "unable to read the last captured item", e)
             null
         }
-        val skip = item?.type == ITEM_TYPE_IMAGE && mActivity is VideoOnlyActivity
+        val skip = item?.type == ITEM_TYPE_IMAGE && entryPoint.isVideoOnlySession
 
         lastCapturedItem = if (skip) null else item
     }
@@ -284,9 +281,7 @@ class CamConfig @AssistedInject constructor(
     var isVideoMode = false
         private set
         get() {
-            return field ||
-                    mActivity is VideoCaptureActivity ||
-                    mActivity is VideoOnlyActivity
+            return field || entryPoint.requiresVideoModeOnly
         }
 
     val canTakePicture: Boolean
@@ -518,7 +513,7 @@ class CamConfig @AssistedInject constructor(
 
     val isInCaptureMode: Boolean
         get() {
-            return mActivity is CaptureActivity
+            return entryPoint.isCaptureSession
         }
 
     fun updateLastCapturedItem(item: CapturedItem) {
@@ -1053,7 +1048,7 @@ class CamConfig @AssistedInject constructor(
 
         val bindRequest = CameraBindRequest(
             includesVideoCapture = !isQRMode && isVideoMode,
-            includesImageCapture = !isQRMode && !mActivity.requiresVideoModeOnly,
+            includesImageCapture = !isQRMode && !entryPoint.requiresVideoModeOnly,
             aspectRatio = aspectRatio,
             imageCaptureTargetRotation = imageCapture?.targetRotation ?: rotation,
             previewTargetRotation = preview?.targetRotation ?: rotation,
@@ -1274,7 +1269,7 @@ class CamConfig @AssistedInject constructor(
     // transiently-failed probe always was, and comes back on the refresh that follows its probe.
     private fun availableModes(): Set<CameraMode> {
         return resolveAvailableModes(
-            allowsQrScanning = mActivity !is SecureMainActivity,
+            allowsQrScanning = entryPoint.allowsQrScanning,
             extensionsAvailable = extensionsManager != null && cameraProvider != null,
         )
     }
@@ -1295,7 +1290,7 @@ class CamConfig @AssistedInject constructor(
     private var extensionProbesInFlight = false
 
     private fun loadTabs() {
-        if (!mActivity.shouldShowCameraModeTabs()) {
+        if (!entryPoint.showsCameraModeTabs) {
             return
         }
 
@@ -1378,7 +1373,7 @@ class CamConfig @AssistedInject constructor(
         // other way round - currentMode, because an extension that fails to bind falls back to
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
-        if (mActivity.shouldShowCameraModeTabs()) {
+        if (entryPoint.showsCameraModeTabs) {
             mActivity.goToModeTab(currentMode)
         }
     }
