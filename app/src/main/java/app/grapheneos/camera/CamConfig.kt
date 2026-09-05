@@ -24,25 +24,20 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.MirrorMode
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
-import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
-import androidx.camera.video.internal.muxer.MediaMuxerImpl
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
@@ -61,7 +56,11 @@ import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
+import app.grapheneos.camera.domain.camera.model.CameraBindRequest
+import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.domain.camera.model.ImageCaptureMode
 import app.grapheneos.camera.domain.camera.model.InVideoSnapshotSupport
+import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import app.grapheneos.camera.ktx.applyPreviewRatio
@@ -93,6 +92,7 @@ class CamConfig(
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityStore: ExtensionAvailabilityStore,
     private val featureCombinationSupport: FeatureCombinationSupport,
+    private val buildCameraSessionPlan: BuildCameraSessionPlan,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
@@ -158,7 +158,7 @@ class CamConfig(
         val lensFacing: Int,
         val videoQuality: Quality,
         val usesFeatureGroup: Boolean,
-        val captureMode: Int,
+        val captureMode: ImageCaptureMode,
         val selectHighestResolution: Boolean,
     )
 
@@ -1088,8 +1088,6 @@ class CamConfig(
             .requireLensFacing(lensFacing)
             .build()
 
-        val builder = ImageCapture.Builder()
-
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
         mActivity.updateLastFrame()
@@ -1114,10 +1112,6 @@ class CamConfig(
 
         val useCasesList = arrayListOf<UseCase>()
 
-        val aspectRatioStrategy = AspectRatioStrategy(
-            aspectRatio, AspectRatioStrategy.FALLBACK_RULE_AUTO
-        )
-
         // CameraX 1.6.0's SessionConfig throws an IllegalArgumentException at construction time
         // if any use case configures a groupable feature through a non-groupable API while a
         // feature group is in use. Recorder.Builder.setQualitySelector() is such an API since
@@ -1134,23 +1128,43 @@ class CamConfig(
         // Both halves of canApplyVideoStabilization() gate the group. The platform has to be able
         // to verify feature combinations: where it cannot, the resolver would conflate "could not
         // check" with "unsupported", quietly discard the stored video quality and produce
-        // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters
-        // below instead, which are legal exactly because no feature group is in use then. And the
+        // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters in
+        // the session plan instead, which are legal exactly because no feature group is in use
+        // then. And the
         // group exists solely to negotiate stabilization against the quality, so a camera that
         // supports no stabilization at all has nothing to negotiate: it takes the plain fallback
         // path directly, which produces the identical output without a needless feature-group
         // round.
-        val usesFeatureGroup = isVideoMode && enableEIS && canApplyVideoStabilization()
-        val videoQualityFeature: GroupableFeature? = when {
-            usesFeatureGroup -> videoQualityAsGroupableFeature()
-            else -> null
+        val featureGroup: FeatureGroupRequest = when {
+            isVideoMode && enableEIS && canApplyVideoStabilization() -> {
+                FeatureGroupRequest.Requested(videoQualityAsGroupableFeature())
+            }
+
+            else -> FeatureGroupRequest.Unused
         }
 
-        val captureMode = when {
-            waitForFocusLock -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-            enableZsl -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-            else -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+        val requiredQualityFeature = when (featureGroup) {
+            is FeatureGroupRequest.Requested -> featureGroup.videoQualityFeature
+            FeatureGroupRequest.Unused -> null
         }
+
+        val bindRequest = CameraBindRequest(
+            includesVideoCapture = !isQRMode && isVideoMode,
+            includesImageCapture = !isQRMode && !mActivity.requiresVideoModeOnly,
+            aspectRatio = aspectRatio,
+            imageCaptureTargetRotation = imageCapture?.targetRotation ?: rotation,
+            previewTargetRotation = preview?.targetRotation ?: rotation,
+            flashMode = flashMode,
+            photoQuality = photoQuality,
+            waitForFocusLock = waitForFocusLock,
+            enableZsl = enableZsl,
+            selectHighestResolution = selectHighestResolution,
+            videoQuality = videoQuality,
+            mirrorVideoOnFrontCamera = saveVideoAsPreviewed,
+            featureGroup = featureGroup,
+        )
+
+        val plan = buildCameraSessionPlan(bindRequest)
 
         if (isQRMode) {
             val analyzer = QRAnalyzer(mActivity)
@@ -1182,135 +1196,29 @@ class CamConfig(
 
         } else {
             if (isVideoMode) {
-
                 mActivity.micOffIcon.visibility = when {
                     includeAudio -> View.GONE
                     else -> View.VISIBLE
                 }
-
-                val recorderBuilder = Recorder.Builder()
-
-                // camera-video 1.6 writes mp4 through the media3 muxer, which cannot keep up with
-                // 2160p on a Tensor device: the audio queue overflows a few seconds in and stop
-                // then has to drain everything the muxer is behind by. The platform muxer, which
-                // is what every release up to 1.5 used, keeps up. Both live in an internal
-                // package, so this has to be re-checked on every camera-video upgrade.
-                recorderBuilder.setMuxerFactory { MediaMuxerImpl() }
-
-                if (!usesFeatureGroup) {
-                    recorderBuilder.setQualitySelector(QualitySelector.from(videoQuality))
-                }
-
-                val videoCaptureBuilder = VideoCapture.Builder(recorderBuilder.build())
-
-                // On cameras where the feature group is not used (see canApplyVideoStabilization)
-                // EIS is deliberately left off. The pre-1.6 stabilization setters cannot be applied
-                // on top of the recorder's higher qualities -- UHD in particular is in none of the
-                // stabilization-guaranteed configurations -- so requesting them would either kill
-                // the preview or force the quality down. We keep the selected quality (4K by
-                // default) and simply do not stabilize. This is the app's long-standing behavior
-                // (EIS regressed here when it moved off the Camera2 API); the toggle is hidden
-                // rather than left inert on these cameras, and implementing EIS for them -- the
-                // pre-1.6 setters, restricted to the qualities that permit them -- is a separate
-                // change that needs a device the feature group cannot serve to test on.
-
-                if (mActivity.camConfig.saveVideoAsPreviewed) {
-                    videoCaptureBuilder.setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
-                }
-
-                videoCapture = videoCaptureBuilder.build()
-
-                useCasesList.add(videoCapture!!)
             }
 
-            if (!mActivity.requiresVideoModeOnly) {
-                imageCapture = builder.let {
-                    it.setCaptureMode(captureMode)
+            plan.videoCapture?.let {
+                videoCapture = it
+                useCasesList.add(it)
+            }
 
-
-                    it.setTargetRotation(
-                        imageCapture?.targetRotation
-                            ?: rotation
-                    )
-
-                    val resolutionSelectorBuilder = ResolutionSelector.Builder()
-                        .setAspectRatioStrategy(aspectRatioStrategy)
-
-                    if (selectHighestResolution) {
-                        resolutionSelectorBuilder.setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
-                    }
-
-                    it.setResolutionSelector(resolutionSelectorBuilder.build())
-
-                    it.setFlashMode(flashMode)
-
-                    it.setJpegQuality(photoQuality)
-
-                    it.build()
-                }
-
-                useCasesList.add(imageCapture!!)
+            plan.imageCapture?.let {
+                imageCapture = it
+                useCasesList.add(it)
             }
         }
 
-        val previewBuilder = Preview.Builder()
-            .setTargetRotation(
-                preview?.targetRotation
-                    ?: rotation
-            )
-            .setResolutionSelector(
-                ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
-            )
-
-        // Pixels and potentially other devices enable EIS by default, which reduces the field of
-        // view and image quality for image capture if it's not explicitly disabled.
-        //
-        // setPreviewStabilizationEnabled() is one of the non-groupable setters that SessionConfig
-        // rejects outright once a feature group is in use, so it must not be called at all --
-        // with either value -- when stabilization is being requested through the feature group
-        // below. On every other path it is explicitly disabled: EIS is not applied off the feature
-        // group (see the VideoCapture builder above), and leaving it unset would let a device
-        // default preview stabilization cost photo capture its field of view.
-        when {
-            usesFeatureGroup -> {}
-
-            else -> previewBuilder.setPreviewStabilizationEnabled(false)
-        }
-
-        preview = previewBuilder.build().also {
+        preview = plan.preview.also {
             useCasesList.add(it)
             it.surfaceProvider = mActivity.previewView.surfaceProvider
         }
 
         mActivity.forceUpdateOrientationSensor()
-
-        // The list ordering encodes priority (highest priority first): CameraX walks the subsets
-        // of this list in order and binds the first one the camera supports, so trailing features
-        // are the ones given up first.
-        //
-        // The video quality leads because it is an explicit, deliberate choice from a spinner,
-        // whereas stabilization is a toggle that defaults to on and that most users never touch;
-        // an explicit choice should not lose to a default. This inverts the CameraX 1.5.x
-        // behaviour, where asking for 2160p on a Pixel silently recorded at 1080p because
-        // stabilization won. Whatever is given up is now reported by onFeaturesSelected().
-        //
-        // Both stabilization features are listed because the EIS toggle is offered whenever
-        // either kind is supported (see canApplyVideoStabilization). They share one feature
-        // type, so CameraX never selects both and skips the subsets containing the pair; the
-        // effective order is quality+preview-stabilization, quality+video-stabilization, quality
-        // alone, then the same three without the quality. Preview stabilization is preferred
-        // because it stabilizes the preview and the recording alike, making the framing that is
-        // shown the framing that is recorded, while video stabilization only stabilizes the file.
-        //
-        // If the quality feature is dropped the quality follows Recorder's default quality
-        // selector (FHD, HD, SD in that order).
-        val preferredFeatures = arrayListOf<GroupableFeature>()
-
-        if (usesFeatureGroup) {
-            videoQualityFeature?.let { preferredFeatures.add(it) }
-            preferredFeatures.add(GroupableFeature.PREVIEW_STABILIZATION)
-            preferredFeatures.add(GroupableFeatures.VIDEO_STABILIZATION)
-        }
 
         // Not every camera can run video, photo and preview at once. Ask before binding rather
         // than binding and retrying without the photo use case when it throws: an
@@ -1326,7 +1234,11 @@ class CamConfig(
         val snapshotUseCase = imageCapture
         if (isVideoMode && snapshotUseCase != null) {
             val probeKey = SnapshotProbeKey(
-                lensFacing, videoQuality, usesFeatureGroup, captureMode, selectHighestResolution
+                lensFacing = lensFacing,
+                videoQuality = videoQuality,
+                usesFeatureGroup = featureGroup is FeatureGroupRequest.Requested,
+                captureMode = plan.captureMode,
+                selectHighestResolution = selectHighestResolution,
             )
 
             if (!snapshotSupport.containsKey(probeKey)) {
@@ -1341,7 +1253,7 @@ class CamConfig(
                 }
 
                 snapshotSupport[probeKey] = resolveInVideoSnapshotSupport(
-                    videoQualityFeature = videoQualityFeature,
+                    videoQualityFeature = requiredQualityFeature,
                     probe = { withSnapshots, features ->
                         val probedUseCases = when {
                             withSnapshots -> useCasesList
@@ -1369,16 +1281,16 @@ class CamConfig(
         try {
             val sessionConfig = SessionConfig(
                 useCases = useCasesList,
-                preferredFeatureGroup = preferredFeatures
+                preferredFeatureGroup = plan.preferredFeatures
             )
 
-            if (preferredFeatures.isNotEmpty()) {
-                val requested = preferredFeatures.toList()
+            if (plan.preferredFeatures.isNotEmpty()) {
+                val requested = plan.preferredFeatures.toList()
                 val boundLensFacing = lensFacing
                 sessionConfig.setFeatureSelectionListener(
                     ContextCompat.getMainExecutor(mActivity)
                 ) { selected ->
-                    onFeaturesSelected(boundLensFacing, requested, videoQualityFeature, selected)
+                    onFeaturesSelected(boundLensFacing, requested, requiredQualityFeature, selected)
                 }
             }
 
