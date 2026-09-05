@@ -77,6 +77,8 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.data.camera.repository.CameraProviderSource
+import app.grapheneos.camera.data.camera.repository.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -140,7 +142,13 @@ open class MainActivity : AppCompatActivity(),
     lateinit var capturedItemRepository: CapturedItemRepository
 
     @Inject
+    lateinit var cameraProviderSource: CameraProviderSource
+
+    @Inject
     lateinit var extensionAvailabilityStore: ExtensionAvailabilityStore
+
+    @Inject
+    lateinit var featureCombinationSupport: FeatureCombinationSupport
 
     @Inject
     lateinit var videoQualityFeatureMapper: VideoQualityFeatureMapper
@@ -804,7 +812,9 @@ open class MainActivity : AppCompatActivity(),
             mActivity = this,
             settingsRepository = settingsRepository,
             capturedItemRepository = capturedItemRepository,
+            cameraProviderSource = cameraProviderSource,
             extensionAvailabilityStore = extensionAvailabilityStore,
+            featureCombinationSupport = featureCombinationSupport,
             videoQualityFeatureMapper = videoQualityFeatureMapper,
             resolveInVideoSnapshotSupport = resolveInVideoSnapshotSupport,
             resolveDroppedVideoQuality = resolveDroppedVideoQuality,
