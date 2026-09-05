@@ -1,7 +1,6 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
-import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -18,8 +17,6 @@ import android.widget.Button
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
-import androidx.camera.camera2.interop.Camera2CameraInfo
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -51,6 +48,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.camera.model.ExtensionKey
+import app.grapheneos.camera.data.camera.repository.CameraProviderSource
+import app.grapheneos.camera.data.camera.repository.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -77,7 +76,6 @@ import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import java.io.IOException
-import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 import kotlinx.coroutines.CoroutineScope
@@ -92,7 +90,9 @@ class CamConfig(
     private val mActivity: MainActivity,
     private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
+    private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityStore: ExtensionAvailabilityStore,
+    private val featureCombinationSupport: FeatureCombinationSupport,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
@@ -793,72 +793,50 @@ class CamConfig(
             startCamera(forced = forced)
             return
         }
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(mActivity)
 
-        cameraProviderFuture.addListener(fun() {
-            val provider: ProcessCameraProvider
-            try {
-                provider = cameraProviderFuture.get()
-            } catch (e: ExecutionException) {
-                mActivity.showMessage(mActivity.getString(R.string.camera_provider_init_failure))
-                return
+        cameraProviderSource.acquireProvider(mActivity) { provider ->
+            when (provider) {
+                null -> mActivity.showMessage(
+                    mActivity.getString(R.string.camera_provider_init_failure)
+                )
+
+                else -> onCameraProviderReady(provider, forced)
+            }
+        }
+    }
+
+    private fun onCameraProviderReady(provider: ProcessCameraProvider, forced: Boolean) {
+        if (provider !== probedCameraProvider) {
+            // A different provider instance means the camera stack was reinitialized:
+            // extension verdicts probed through the previous instance (including bind-time
+            // blacklists, see startCamera) describe vendor state that no longer exists.
+            extensionAvailabilityStore.clear()
+            snapshotSupport.clear()
+            probedCameraProvider = provider
+        }
+        cameraProvider = provider
+
+        // Manually switch to the other lens facing (if the default lens facing isn't
+        // supported for the current device)
+        if (!isLensFacingSupported(lensFacing)) {
+            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                CameraSelector.LENS_FACING_FRONT
+            } else {
+                CameraSelector.LENS_FACING_BACK
+            }
+        }
+
+        cameraProviderSource.acquireExtensionsManager(mActivity, provider) { manager ->
+            if (manager == null) {
+                mActivity.showMessage(
+                    mActivity.getString(R.string.extensions_manager_init_failure)
+                )
+            } else {
+                extensionsManager = manager
             }
 
-            if (provider !== probedCameraProvider) {
-                // A different provider instance means the camera stack was reinitialized:
-                // extension verdicts probed through the previous instance (including bind-time
-                // blacklists, see startCamera) describe vendor state that no longer exists.
-                extensionAvailabilityStore.clear()
-                snapshotSupport.clear()
-                probedCameraProvider = provider
-            }
-            cameraProvider = provider
-
-            // Manually switch to the other lens facing (if the default lens facing isn't
-            // supported for the current device)
-            if (!isLensFacingSupported(lensFacing)) {
-                lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                    CameraSelector.LENS_FACING_FRONT
-                } else {
-                    CameraSelector.LENS_FACING_BACK
-                }
-            }
-
-            // Despite the name, getInstanceAsync() runs its one-time initialization body
-            // synchronously on the calling thread, and that body asks the vendor's extensions
-            // proxy service for each camera's advertised extensions until it finds one that has
-            // any -- measured at a handful of binder round trips on the main thread during
-            // startup on a Pixel 7 Pro. Call it from a short-lived thread instead; only the
-            // listener has to run on the main thread, for the field write and startCamera().
-            thread {
-                try {
-                    val extensionsManagerFuture =
-                        ExtensionsManager.getInstanceAsync(mActivity, provider)
-
-                    extensionsManagerFuture.addListener({
-                        try {
-                            extensionsManager = extensionsManagerFuture.get()
-                        } catch (e: ExecutionException) {
-                            mActivity.showMessage(mActivity.getString(R.string.extensions_manager_init_failure))
-                        }
-                        startCamera(forced = forced)
-                    }, ContextCompat.getMainExecutor(mActivity))
-                } catch (e: Exception) {
-                    // getInstanceAsync() runs its initialization synchronously (see above), so it
-                    // -- or addListener -- can throw right here on this background thread, where an
-                    // escaping exception would crash the process and, worse, leave the camera never
-                    // started because the listener never runs. Recover exactly as the future-failure
-                    // path does: report it and start the camera without extensions, on the main
-                    // thread.
-                    Log.e(TAG, "Extensions manager initialization failed", e)
-                    ContextCompat.getMainExecutor(mActivity).execute {
-                        mActivity.showMessage(mActivity.getString(R.string.extensions_manager_init_failure))
-                        startCamera(forced = forced)
-                    }
-                }
-            }
-
-        }, ContextCompat.getMainExecutor(mActivity))
+            startCamera(forced = forced)
+        }
     }
 
     // ExtensionsManager.isExtensionAvailable() answers from CameraExtensionCharacteristics'
@@ -959,46 +937,18 @@ class CamConfig(
         return verdict
     }
 
-    // Whether CameraX's feature-group resolution can actually *verify* feature combinations on
-    // the current camera. The resolver (DefaultFeatureGroupResolver) keeps a candidate
-    // combination only when the platform confirms it, and it treats "could not check" exactly
-    // like "verified unsupported": below API 35 CameraX substitutes a no-op feature-combination
-    // query whose isSupported() is unconditionally false (CameraSurfaceAdapter), and on API 35+
-    // a HAL that does not implement the session-configuration query answers UNKNOWN, which is
-    // folded into false as well (camera-pipe ConfigQueryResult). On such a camera, combinations
-    // the device records fine every day resolve down to little or nothing: the stored video
-    // quality is silently ignored (setQualitySelector must not be called while a feature group
-    // is in use, see startCamera) and the divergence notice asserts unsupportedness that was
-    // never actually verified. So the feature-group path is only taken when the platform can
-    // genuinely answer, and startCamera otherwise falls back to the pre-1.6 configuration APIs,
-    // which never drop the chosen quality.
-    //
-    // The per-camera INFO_SESSION_CONFIGURATION_QUERY_VERSION characteristic is what the
-    // platform's answers ultimately hinge on (CameraDeviceSetup exists only for cameras
-    // reporting >= 35 there), so it is checked in addition to the API level. This deliberately
-    // mirrors CameraX's own SDK_INT >= 35 gate — which upstream may still move, see b/417839748
-    // — plus the HAL capability that gate cannot see; re-check both on CameraX updates.
-    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun canVerifyFeatureCombinations(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return false
-
         val cameraInfo = try {
-            cameraProvider?.getCameraInfo(cameraSelector) ?: return false
+            cameraProvider?.getCameraInfo(cameraSelector)
         } catch (exception: IllegalArgumentException) {
             Log.w(TAG, "Unable to resolve camera info for feature combination gate", exception)
-            return false
-        }
-
-        val queryVersion = try {
-            Camera2CameraInfo.from(cameraInfo).getCameraCharacteristic(
-                CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION
-            )
-        } catch (exception: IllegalArgumentException) {
-            Log.w(TAG, "Camera info carries no camera2 characteristics", exception)
             null
         }
 
-        return (queryVersion ?: 0) >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+        return when (cameraInfo) {
+            null -> false
+            else -> featureCombinationSupport.canVerify(cameraInfo)
+        }
     }
 
     // Maps the user-chosen video quality to the equivalent groupable feature, for use when a
