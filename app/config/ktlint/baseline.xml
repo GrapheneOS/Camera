@@ -114,27 +114,25 @@
     </file>
     <file name="src/main/java/app/grapheneos/camera/CamConfig.kt">
         <error line="3" column="1" source="standard:import-ordering" />
-        <error line="283" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="288" column="1" source="standard:indent" />
-        <error line="289" column="1" source="standard:indent" />
-        <error line="505" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="566" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="653" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="661" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="681" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="685" column="17" source="standard:multiline-if-else" />
-        <error line="687" column="17" source="standard:multiline-if-else" />
-        <error line="689" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="705" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="941" column="21" source="standard:multiline-if-else" />
-        <error line="989" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="1099" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="1198" column="28" source="standard:argument-list-wrapping" />
-        <error line="1226" column="63" source="standard:binary-expression-wrapping" />
-        <error line="1226" column="101" source="standard:max-line-length" />
-        <error line="1326" column="31" source="standard:argument-list-wrapping" />
-        <error line="1326" column="35" source="standard:argument-list-wrapping" />
-        <error line="1326" column="64" source="standard:argument-list-wrapping" />
+        <error line="280" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="500" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="561" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="648" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="656" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="676" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="680" column="17" source="standard:multiline-if-else" />
+        <error line="682" column="17" source="standard:multiline-if-else" />
+        <error line="684" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="700" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="936" column="21" source="standard:multiline-if-else" />
+        <error line="984" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="1094" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="1193" column="28" source="standard:argument-list-wrapping" />
+        <error line="1221" column="63" source="standard:binary-expression-wrapping" />
+        <error line="1221" column="101" source="standard:max-line-length" />
+        <error line="1321" column="31" source="standard:argument-list-wrapping" />
+        <error line="1321" column="35" source="standard:argument-list-wrapping" />
+        <error line="1321" column="64" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/CapturedItems.kt">
         <error line="26" column="17" source="standard:trailing-comma-on-declaration-site" />
