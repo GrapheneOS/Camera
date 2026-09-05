@@ -129,7 +129,6 @@
     <ID>ReturnCount:App.kt:App$fun isAnyLocationProvideActive: Boolean</ID>
     <ID>ReturnCount:BottomTabLayout.kt:BottomTabLayout$private fun settleDuration: Long</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$@SuppressLint("RestrictedApi") fun startCamera</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$@androidx.annotation.OptIn(ExperimentalCamera2Interop::class) private fun canVerifyFeatureCombinations: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isExtensionUsable: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isLensFacingSupported: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun loadTabs</ID>
@@ -146,7 +145,6 @@
     <ID>ReturnCount:Utils.kt:fun storageLocationToUiString: String</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$private fun createRecordingContext: RecordingContext?</ID>
-    <ID>SwallowedException:CamConfig.kt:CamConfig$e: ExecutionException</ID>
     <ID>SwallowedException:CamConfig.kt:CamConfig$e: IllegalArgumentException</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItems.kt:e: ActivityNotFoundException</ID>
