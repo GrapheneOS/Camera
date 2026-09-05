@@ -1,8 +1,10 @@
 package app.grapheneos.camera.ui
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
@@ -203,6 +205,39 @@ class BottomTabLayout @JvmOverloads constructor(
         return tabCenters.lastIndex.toFloat()
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    fun setModes(
+        modes: Set<CameraMode>,
+        currentMode: CameraMode,
+        onTabTouched: (Tab) -> Unit,
+    ) {
+        if (modes == getAllModes()) {
+            return
+        }
+
+        Log.i(TAG, "Refreshing tabs...")
+
+        removeAllTabs()
+
+        modes.forEach { mode ->
+            newTab().let { tab ->
+                tab.setText(cameraModeLabel(mode))
+
+                tab.view.setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_UP) {
+                        onTabTouched(tab)
+                    }
+                    false
+                }
+                tab.tag = mode
+
+                // Highlight the mode the camera is really in, not the default one: the tabs are
+                // also rebuilt long after startup, once the extension probes report back.
+                addTab(tab, mode == currentMode)
+            }
+        }
+    }
+
     fun getAllModes(): Set<CameraMode> {
         return IntRange(0, tabCount - 1).map {
             getTabAt(it)!!.tag as CameraMode
@@ -210,6 +245,8 @@ class BottomTabLayout @JvmOverloads constructor(
     }
 
     private companion object {
+        private const val TAG = "BottomTabLayout"
+
         private const val SETTLE_DURATION_MS = 300L
     }
 }

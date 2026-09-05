@@ -14,7 +14,6 @@
     <ID>EmptyCatchBlock:QRAnalyzer.kt:QRAnalyzer${ }</ID>
     <ID>EmptyFunctionBlock:ActivityLifeCycleHelper.kt:ActivityLifeCycleHelper${}</ID>
     <ID>EmptyFunctionBlock:App.kt:App.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:CamConfig.kt:CamConfig.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ImageCapturer.kt:ImageCapturer.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity${}</ID>
     <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity.&lt;no name provided&gt;${}</ID>
@@ -131,7 +130,6 @@
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isExtensionUsable: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isLensFacingSupported: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun loadTabs</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$private fun videoQualityAsGroupableFeature: GroupableFeature?</ID>
     <ID>ReturnCount:CapturedItems.kt:CapturedItems$fun parseCapturedItem: CapturedItem?</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
@@ -175,8 +173,6 @@
     <ID>UnsafeCallOnNullableType:BottomTabLayout.kt:BottomTabLayout$getTabAt(it)!!</ID>
     <ID>UnsafeCallOnNullableType:CamConfig.kt:CamConfig$camera!!</ID>
     <ID>UnsafeCallOnNullableType:CamConfig.kt:CamConfig$cameraProvider!!</ID>
-    <ID>UnsafeCallOnNullableType:CamConfig.kt:CamConfig$imageCapture!!</ID>
-    <ID>UnsafeCallOnNullableType:CamConfig.kt:CamConfig$videoCapture!!</ID>
     <ID>UnsafeCallOnNullableType:CapturedItems.kt:CapturedItem.Companion.&lt;no name provided&gt;$source.readString()!!</ID>
     <ID>UnsafeCallOnNullableType:ImageCapturer.kt:ImageCapturer$camConfig.imageCapture!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType(), fileName())!!</ID>
