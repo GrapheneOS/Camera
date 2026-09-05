@@ -72,6 +72,7 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.ui.viewfinder.ViewfinderEffectHandler
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -787,7 +788,7 @@ open class MainActivity : AppCompatActivity(),
 
         gestureDetector = GestureDetector(this, this)
 
-        val sessionHandler = CameraSessionHandler(this)
+        val sessionHandler = ViewfinderEffectHandler(this)
         camConfig = camConfigFactory.create(
             environment = sessionHandler,
             effects = sessionHandler,

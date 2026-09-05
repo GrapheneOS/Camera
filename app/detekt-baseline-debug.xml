@@ -4,7 +4,7 @@
   <CurrentIssues>
     <ID>ComplexCondition:InAppGallery.kt:InAppGallery$width != null &amp;&amp; height != null &amp;&amp; width &gt; 0 &amp;&amp; height &gt; 0</ID>
     <ID>ComplexCondition:ZoomableImageView.kt:ZoomableImageView$oldMeasuredHeight == viewWidth &amp;&amp; oldMeasuredHeight == viewHeight || viewWidth == 0 || viewHeight == 0</ID>
-    <ID>CyclomaticComplexMethod:CamConfig.kt:CamConfig$@SuppressLint("RestrictedApi") fun startCamera</ID>
+    <ID>CyclomaticComplexMethod:CameraSession.kt:CameraSession$@SuppressLint("RestrictedApi") fun bind: BindOutcome</ID>
     <ID>CyclomaticComplexMethod:InAppGallery.kt:InAppGallery$override fun onCreate</ID>
     <ID>CyclomaticComplexMethod:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
     <ID>CyclomaticComplexMethod:MainActivity.kt:MainActivity$@SuppressLint("ClickableViewAccessibility") override fun onCreate</ID>
@@ -14,12 +14,12 @@
     <ID>EmptyCatchBlock:QRAnalyzer.kt:QRAnalyzer${ }</ID>
     <ID>EmptyFunctionBlock:ActivityLifeCycleHelper.kt:ActivityLifeCycleHelper${}</ID>
     <ID>EmptyFunctionBlock:App.kt:App.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:CameraSessionHandler.kt:CameraSessionHandler.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ImageCapturer.kt:ImageCapturer.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity${}</ID>
     <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener${}</ID>
     <ID>EmptyFunctionBlock:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ViewfinderEffectHandler.kt:ViewfinderEffectHandler.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ZoomableImageView.kt:ZoomableImageView.&lt;no name provided&gt;${}</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val contentResolver = appContext.contentResolver</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val mainThreadExecutor = appContext.mainExecutor</ID>
@@ -29,13 +29,12 @@
     <ID>HasPlatformType:MainActivity.kt:MainActivity$val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()</ID>
     <ID>ImplicitDefaultLocale:QRAnalyzer.kt:QRAnalyzer$"%.02f".format(fps)</ID>
     <ID>ImplicitDefaultLocale:ZoomBar.kt:ZoomBar$String.format("%.1fx", zoomRatio)</ID>
-    <ID>InstanceOfCheckForException:CamConfig.kt:CamConfig$exception !is IllegalArgumentException</ID>
-    <ID>InstanceOfCheckForException:CamConfig.kt:CamConfig$exception !is UnsupportedOperationException</ID>
-    <ID>InstanceOfCheckForException:CamConfig.kt:CamConfig$exception is IllegalArgumentException</ID>
-    <ID>LargeClass:CamConfig.kt:CamConfig</ID>
+    <ID>InstanceOfCheckForException:CameraSession.kt:CameraSession$exception !is IllegalArgumentException</ID>
+    <ID>InstanceOfCheckForException:CameraSession.kt:CameraSession$exception !is UnsupportedOperationException</ID>
+    <ID>InstanceOfCheckForException:CameraSession.kt:CameraSession$exception is IllegalArgumentException</ID>
     <ID>LargeClass:MainActivity.kt:MainActivity : AppCompatActivityOnTouchListenerOnScaleGestureListenerOnGestureListenerOnDoubleTapListenerListener</ID>
     <ID>LongMethod:BlurBitmap.kt:BlurBitmap$operator fun get: Bitmap</ID>
-    <ID>LongMethod:CamConfig.kt:CamConfig$@SuppressLint("RestrictedApi") fun startCamera</ID>
+    <ID>LongMethod:CameraSession.kt:CameraSession$@SuppressLint("RestrictedApi") fun bind: BindOutcome</ID>
     <ID>LongMethod:GallerySliderAdapter.kt:GallerySliderAdapter$override fun onBindViewHolder</ID>
     <ID>LongMethod:InAppGallery.kt:InAppGallery$override fun onCreate</ID>
     <ID>LongMethod:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
@@ -127,10 +126,11 @@
     <ID>ReturnCount:App.kt:App$fun getLocation: Location?</ID>
     <ID>ReturnCount:App.kt:App$fun isAnyLocationProvideActive: Boolean</ID>
     <ID>ReturnCount:BottomTabLayout.kt:BottomTabLayout$private fun settleDuration: Long</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$@SuppressLint("RestrictedApi") fun startCamera</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isExtensionUsable: Boolean</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isLensFacingSupported: Boolean</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$private fun loadTabs</ID>
+    <ID>ReturnCount:CamConfig.kt:CamConfig$fun startCamera</ID>
+    <ID>ReturnCount:CameraSession.kt:CameraSession$@SuppressLint("RestrictedApi") fun bind: BindOutcome</ID>
+    <ID>ReturnCount:CameraSession.kt:CameraSession$fun isLensFacingSupported: Boolean</ID>
+    <ID>ReturnCount:CameraSession.kt:CameraSession$fun probeUnknownExtensions</ID>
+    <ID>ReturnCount:CameraSession.kt:CameraSession$private fun isExtensionUsable: Boolean</ID>
     <ID>ReturnCount:CapturedItems.kt:CapturedItems$fun parseCapturedItem: CapturedItem?</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
@@ -143,7 +143,7 @@
     <ID>ReturnCount:Utils.kt:fun storageLocationToUiString: String</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$private fun createRecordingContext: RecordingContext?</ID>
-    <ID>SwallowedException:CamConfig.kt:CamConfig$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:CameraSession.kt:CameraSession$e: IllegalArgumentException</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItems.kt:e: ActivityNotFoundException</ID>
     <ID>SwallowedException:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
@@ -153,8 +153,8 @@
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$e: Exception</ID>
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$exception: Exception</ID>
     <ID>ThrowsCount:ImageSaver.kt:ImageSaver$@Throws(ImageSaverException::class) private fun saveImageInner</ID>
-    <ID>TooGenericExceptionCaught:CamConfig.kt:CamConfig$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:CamConfig.kt:CamConfig$exception: RuntimeException</ID>
+    <ID>TooGenericExceptionCaught:CameraSession.kt:CameraSession$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CameraSession.kt:CameraSession$exception: RuntimeException</ID>
     <ID>TooGenericExceptionCaught:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageSaver.kt:ImageSaver$deleteException: Exception</ID>
@@ -172,8 +172,8 @@
     <ID>TopLevelPropertyNaming:ImageCapturer.kt:private const val imageFileFormat = ".jpg"</ID>
     <ID>UnsafeCallOnNullableType:BlurBitmap.kt:BlurBitmap$sentBitmap.config!!</ID>
     <ID>UnsafeCallOnNullableType:BottomTabLayout.kt:BottomTabLayout$getTabAt(it)!!</ID>
-    <ID>UnsafeCallOnNullableType:CamConfig.kt:CamConfig$camera!!</ID>
-    <ID>UnsafeCallOnNullableType:CamConfig.kt:CamConfig$cameraProvider!!</ID>
+    <ID>UnsafeCallOnNullableType:CameraSession.kt:CameraSession$camera!!</ID>
+    <ID>UnsafeCallOnNullableType:CameraSession.kt:CameraSession$cameraProvider!!</ID>
     <ID>UnsafeCallOnNullableType:CapturedItems.kt:CapturedItem.Companion.&lt;no name provided&gt;$source.readString()!!</ID>
     <ID>UnsafeCallOnNullableType:ImageCapturer.kt:ImageCapturer$camConfig.imageCapture!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType(), fileName())!!</ID>

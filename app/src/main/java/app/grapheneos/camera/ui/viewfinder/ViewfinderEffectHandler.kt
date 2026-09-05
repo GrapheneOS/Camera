@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.activities
+package app.grapheneos.camera.ui.viewfinder
 
 import android.content.Context
 import android.os.Build
@@ -13,8 +13,8 @@ import androidx.camera.core.Preview
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import app.grapheneos.camera.App
-import app.grapheneos.camera.CameraSessionEffects
-import app.grapheneos.camera.CameraSessionEnvironment
+import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
+import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
@@ -25,9 +25,49 @@ import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executor
 
-internal class CameraSessionHandler(
+internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
-) : CameraSessionEnvironment, CameraSessionEffects {
+) : CameraSessionEnvironment, ViewfinderEffects {
+
+    override val sessionContext: Context
+        get() {
+            return activity
+        }
+
+    override val sessionLifecycleOwner: LifecycleOwner
+        get() {
+            return activity
+        }
+
+    override val sessionMainExecutor: Executor
+        get() {
+            return ContextCompat.getMainExecutor(activity)
+        }
+
+    override val isSessionActive: Boolean
+        get() {
+            return !activity.isDestroyed && !activity.isFinishing
+        }
+
+    override val previewSurfaceProvider: Preview.SurfaceProvider
+        get() {
+            return activity.previewView.surfaceProvider
+        }
+
+    override val displayRotation: Int
+        get() {
+            return when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                    activity.display?.rotation ?: @Suppress("DEPRECATION")
+                    activity.windowManager.defaultDisplay.rotation
+                }
+
+                // We don't really have any option here, but this initialization ensures that the
+                // app doesn't break later when the below deprecated option gets removed post
+                // Android R
+                else -> @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.rotation
+            }
+        }
 
     override fun showMessage(@StringRes message: Int) {
         activity.showMessage(message)
@@ -57,21 +97,6 @@ internal class CameraSessionHandler(
         activity.locationCamConfigChanged(required)
     }
 
-    override val sessionContext: Context
-        get() {
-            return activity
-        }
-
-    override val sessionLifecycleOwner: LifecycleOwner
-        get() {
-            return activity
-        }
-
-    override val sessionMainExecutor: Executor
-        get() {
-            return ContextCompat.getMainExecutor(activity)
-        }
-
     override fun shouldAskForLocationPermission(): Boolean {
         return (activity.applicationContext as App).shouldAskForLocationPermission()
     }
@@ -100,31 +125,6 @@ internal class CameraSessionHandler(
     override fun showStorageLocationNotFound() {
         showStorageLocationNotFoundDialog(activity)
     }
-
-    override val isSessionActive: Boolean
-        get() {
-            return !activity.isDestroyed && !activity.isFinishing
-        }
-
-    override val previewSurfaceProvider: Preview.SurfaceProvider
-        get() {
-            return activity.previewView.surfaceProvider
-        }
-
-    override val displayRotation: Int
-        get() {
-            return when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
-                    activity.display?.rotation ?: @Suppress("DEPRECATION")
-                    activity.windowManager.defaultDisplay.rotation
-                }
-
-                // We don't really have any option here, but this initialization ensures that the
-                // app doesn't break later when the below deprecated option gets removed post
-                // Android R
-                else -> @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.rotation
-            }
-        }
 
     override fun cancelPendingCapture() {
         activity.imageCapturer.cancelPendingCaptureRequest()
