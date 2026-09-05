@@ -9,7 +9,6 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.View
-import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
@@ -71,6 +70,8 @@ import com.google.zxing.BarcodeFormat
 import java.io.IOException
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -216,6 +217,21 @@ class CamConfig(
 
     private var modeSettings: ModeSettings = ModeSettings()
 
+    private fun <T> setting(
+        read: (CameraSettings) -> T,
+        write: (CameraSettings, T) -> CameraSettings,
+    ): ReadWriteProperty<Any?, T> {
+        return object : ReadWriteProperty<Any?, T> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+                return read(settings)
+            }
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+                settings = runBlocking { settingsRepository.update { write(it, value) } }
+            }
+        }
+    }
+
     private val preferencesScope = CoroutineScope(Dispatchers.Main.immediate)
 
     var lastCapturedItem: CapturedItem? = null
@@ -323,15 +339,10 @@ class CamConfig(
         .requireLensFacing(DEFAULT_LENS_FACING)
         .build()
 
-    var gridType: GridType
-        get() {
-            return settings.gridType
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(gridType = value) }
-            }
-        }
+    var gridType: GridType by setting(
+        read = { it.gridType },
+        write = { current, value -> current.copy(gridType = value) },
+    )
 
     var videoQuality: Quality
         get() {
@@ -360,35 +371,20 @@ class CamConfig(
         mActivity.settingsDialog.updateFlashMode()
     }
 
-    var focusTimeout: Long
-        get() {
-            return settings.focusTimeoutSeconds
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(focusTimeoutSeconds = value) }
-            }
-        }
+    var focusTimeout: Long by setting(
+        read = { it.focusTimeoutSeconds },
+        write = { current, value -> current.copy(focusTimeoutSeconds = value) },
+    )
 
-    var selfTimerDuration: Int
-        get() {
-            return settings.selfTimerDurationSeconds
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(selfTimerDurationSeconds = value) }
-            }
-        }
+    var selfTimerDuration: Int by setting(
+        read = { it.selfTimerDurationSeconds },
+        write = { current, value -> current.copy(selfTimerDurationSeconds = value) },
+    )
 
-    var enableCameraSounds: Boolean
-        get() {
-            return settings.enableCameraSounds
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(enableCameraSounds = value) }
-            }
-        }
+    var enableCameraSounds: Boolean by setting(
+        read = { it.enableCameraSounds },
+        write = { current, value -> current.copy(enableCameraSounds = value) },
+    )
 
     var scanAllCodes: Boolean
         get() {
@@ -430,35 +426,20 @@ class CamConfig(
             mActivity.settingsDialog.enableEISToggle.isChecked = value
         }
 
-    var enableZsl: Boolean
-        get() {
-            return settings.enableZsl
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(enableZsl = value) }
-            }
-        }
+    var enableZsl: Boolean by setting(
+        read = { it.enableZsl },
+        write = { current, value -> current.copy(enableZsl = value) },
+    )
 
-    var saveImageAsPreviewed: Boolean
-        get() {
-            return settings.saveImageAsPreviewed
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(saveImageAsPreviewed = value) }
-            }
-        }
+    var saveImageAsPreviewed: Boolean by setting(
+        read = { it.saveImageAsPreviewed },
+        write = { current, value -> current.copy(saveImageAsPreviewed = value) },
+    )
 
-    var saveVideoAsPreviewed: Boolean
-        get() {
-            return settings.saveVideoAsPreviewed
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(saveVideoAsPreviewed = value) }
-            }
-        }
+    var saveVideoAsPreviewed: Boolean by setting(
+        read = { it.saveVideoAsPreviewed },
+        write = { current, value -> current.copy(saveVideoAsPreviewed = value) },
+    )
 
     var storageLocation: String
         get() {
@@ -473,35 +454,20 @@ class CamConfig(
             currentStorageLocation = value
         }
 
-    var photoQuality: Int
-        get() {
-            return settings.photoQuality
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(photoQuality = value) }
-            }
-        }
+    var photoQuality: Int by setting(
+        read = { it.photoQuality },
+        write = { current, value -> current.copy(photoQuality = value) },
+    )
 
-    var removeExifAfterCapture: Boolean
-        get() {
-            return settings.removeExifAfterCapture
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(removeExifAfterCapture = value) }
-            }
-        }
+    var removeExifAfterCapture: Boolean by setting(
+        read = { it.removeExifAfterCapture },
+        write = { current, value -> current.copy(removeExifAfterCapture = value) },
+    )
 
-    var gSuggestions: Boolean
-        get() {
-            return settings.gyroscopeSuggestions
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(gyroscopeSuggestions = value) }
-            }
-        }
+    var gSuggestions: Boolean by setting(
+        read = { it.gyroscopeSuggestions },
+        write = { current, value -> current.copy(gyroscopeSuggestions = value) },
+    )
 
     val isZslSupported: Boolean by lazy {
         camera!!.cameraInfo.isZslSupported
@@ -592,8 +558,6 @@ class CamConfig(
             mActivity.settingsDialog.selfIllumination()
         }
 
-    private fun getString(@StringRes id: Int) = mActivity.getString(id)
-
     fun setQRScanningFor(format: String, selected: Boolean) {
 
         settings = runBlocking {
@@ -608,9 +572,7 @@ class CamConfig(
             }
         } else {
             if (allowedFormats.size == 1) {
-                mActivity.showMessage(
-                    getString(R.string.no_barcode_selected)
-                )
+                mActivity.showMessage(R.string.no_barcode_selected)
             } else {
                 allowedFormats.remove(BarcodeFormat.valueOf(format))
             }
@@ -659,53 +621,24 @@ class CamConfig(
         enableEIS = settings.enableEis
 
         allowedFormats.clear()
+        allowedFormats.addAll(
+            BarcodeFormat.entries.filter { it.name in settings.enabledBarcodeFormats },
+        )
 
-        for (format in BarcodeFormat.values()) {
-            if (format.name in settings.enabledBarcodeFormats) {
-                if (format !in allowedFormats) {
-                    allowedFormats.add(format)
-                }
-
-                if (format == BarcodeFormat.QR_CODE) {
-                    mActivity.qrToggle.isSelected = true
-                }
-
-                if (format == BarcodeFormat.AZTEC) {
-                    mActivity.azToggle.isSelected = true
-                }
-
-                if (format == BarcodeFormat.PDF_417) {
-                    mActivity.cBToggle.isSelected = true
-                }
-
-                if (format == BarcodeFormat.DATA_MATRIX) {
-                    mActivity.dmToggle.isSelected = true
-                }
-            }
-        }
+        mActivity.selectBarcodeFormatToggles(allowedFormats)
 
         qrAnalyzer?.refreshHints()
     }
 
-    var waitForFocusLock: Boolean
-        get() {
-            return settings.waitForFocusLock
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(waitForFocusLock = value) }
-            }
-        }
+    var waitForFocusLock: Boolean by setting(
+        read = { it.waitForFocusLock },
+        write = { current, value -> current.copy(waitForFocusLock = value) },
+    )
 
-    var selectHighestResolution: Boolean
-        get() {
-            return settings.selectHighestResolution
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(selectHighestResolution = value) }
-            }
-        }
+    var selectHighestResolution: Boolean by setting(
+        read = { it.selectHighestResolution },
+        write = { current, value -> current.copy(selectHighestResolution = value) },
+    )
 
     fun toggleTorchState() {
         isTorchOn = !isTorchOn
@@ -723,9 +656,7 @@ class CamConfig(
             setFlashMode(next)
 
         } else {
-            mActivity.showMessage(
-                getString(R.string.flash_unavailable_in_selected_mode)
-            )
+            mActivity.showMessage(R.string.flash_unavailable_in_selected_mode)
         }
     }
 
@@ -760,10 +691,10 @@ class CamConfig(
             // Else revert back to the old facing (while displaying an error message
             // to the user)
             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                mActivity.showMessage(getString(R.string.rear_camera_unavailable))
+                mActivity.showMessage(R.string.rear_camera_unavailable)
                 CameraSelector.LENS_FACING_FRONT
             } else {
-                mActivity.showMessage(getString(R.string.front_camera_unavailable))
+                mActivity.showMessage(R.string.front_camera_unavailable)
                 CameraSelector.LENS_FACING_BACK
             }
         }
@@ -778,9 +709,7 @@ class CamConfig(
 
         cameraProviderSource.acquireProvider(mActivity) { provider ->
             when (provider) {
-                null -> mActivity.showMessage(
-                    mActivity.getString(R.string.camera_provider_init_failure)
-                )
+                null -> mActivity.showMessage(R.string.camera_provider_init_failure)
 
                 else -> onCameraProviderReady(provider, forced)
             }
@@ -810,9 +739,7 @@ class CamConfig(
 
         cameraProviderSource.acquireExtensionsManager(mActivity, provider) { manager ->
             if (manager == null) {
-                mActivity.showMessage(
-                    mActivity.getString(R.string.extensions_manager_init_failure)
-                )
+                mActivity.showMessage(R.string.extensions_manager_init_failure)
             } else {
                 extensionsManager = manager
             }
@@ -1230,7 +1157,7 @@ class CamConfig(
                     cameraProvider?.getCameraInfo(cameraSelector)
                 } catch (exception: IllegalArgumentException) {
                     Log.e(TAG, "Failed to query camera info", exception)
-                    mActivity.showMessage(mActivity.getString(R.string.bind_failure))
+                    mActivity.showMessage(R.string.bind_failure)
                     return
                 }
 
@@ -1292,7 +1219,7 @@ class CamConfig(
                 // stay visible.
                 if (exception is IllegalArgumentException) {
                     Log.e(TAG, "Failed to bind use cases", exception)
-                    mActivity.showMessage(mActivity.getString(R.string.bind_failure))
+                    mActivity.showMessage(R.string.bind_failure)
                     return
                 }
                 throw exception
@@ -1311,7 +1238,7 @@ class CamConfig(
 
             Log.e(TAG, "Extension mode $extMode failed to bind; disabling it", exception)
             extensionAvailabilityStore.record(key, usable = false)
-            mActivity.showMessage(mActivity.getString(R.string.extension_mode_unavailable))
+            mActivity.showMessage(R.string.extension_mode_unavailable)
 
             // The bind never completed: currentMode still names the mode that was just disabled
             // and nothing is rendering into the preview. Refreshing the tabs alone would only
@@ -1494,7 +1421,7 @@ class CamConfig(
         val allCommonFormatsDisabled = commonFormats.none { allowedFormats.contains(it) }
 
         if (allCommonFormatsDisabled && values.none { it }) {
-            mActivity.showMessage(getString(R.string.no_barcode_selected))
+            mActivity.showMessage(R.string.no_barcode_selected)
             return
         }
 

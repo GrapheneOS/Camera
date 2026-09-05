@@ -808,6 +808,19 @@ open class MainActivity : AppCompatActivity(),
     }
 
 
+    fun selectBarcodeFormatToggles(formats: List<BarcodeFormat>) {
+        val toggles = mapOf(
+            BarcodeFormat.QR_CODE to qrToggle,
+            BarcodeFormat.AZTEC to azToggle,
+            BarcodeFormat.PDF_417 to cBToggle,
+            BarcodeFormat.DATA_MATRIX to dmToggle,
+        )
+
+        formats.forEach { format ->
+            toggles[format]?.isSelected = true
+        }
+    }
+
     fun applyModeChrome(
         mode: CameraMode,
         isVideoMode: Boolean,
