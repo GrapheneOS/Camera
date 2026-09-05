@@ -53,6 +53,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
+import app.grapheneos.camera.ui.cameraModeLabel
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
@@ -61,6 +62,7 @@ import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.domain.camera.model.ImageCaptureMode
 import app.grapheneos.camera.domain.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
+import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import app.grapheneos.camera.ktx.applyPreviewRatio
@@ -95,6 +97,7 @@ class CamConfig(
     private val buildCameraSessionPlan: BuildCameraSessionPlan,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
+    private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
 ) {
 
@@ -1430,22 +1433,10 @@ class CamConfig(
     // thread (see loadTabs); an unprobed mode is left out of the tabs for now, exactly like a
     // transiently-failed probe always was, and comes back on the refresh that follows its probe.
     private fun availableModes(): Set<CameraMode> {
-        return CameraMode.entries.filter {
-            when (it) {
-                CameraMode.CAMERA, CameraMode.VIDEO -> true
-                CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
-                else -> {
-                    check(it.extensionMode != ExtensionMode.NONE)
-                    isExtensionUsable(
-                        FRONT_CAMERA_SELECTOR, CameraSelector.LENS_FACING_FRONT,
-                        it.extensionMode, probeOnMiss = false
-                    ) || isExtensionUsable(
-                        REAR_CAMERA_SELECTOR, CameraSelector.LENS_FACING_BACK,
-                        it.extensionMode, probeOnMiss = false
-                    )
-                }
-            }
-        }.toSet()
+        return resolveAvailableModes(
+            allowsQrScanning = mActivity !is SecureMainActivity,
+            extensionsAvailable = extensionsManager != null && cameraProvider != null,
+        )
     }
 
     private fun unprobedExtensions(): List<ExtensionKey> {
@@ -1515,20 +1506,6 @@ class CamConfig(
         }
     }
 
-    @StringRes
-    private fun tabLabel(mode: CameraMode): Int {
-        return when (mode) {
-            CameraMode.QR_SCAN -> R.string.qr_scan_mode
-            CameraMode.AUTO -> R.string.auto_mode
-            CameraMode.FACE_RETOUCH -> R.string.face_retouch_mode
-            CameraMode.PORTRAIT -> R.string.portrait_mode
-            CameraMode.NIGHT -> R.string.night_mode
-            CameraMode.HDR -> R.string.hdr_mode
-            CameraMode.CAMERA -> R.string.camera
-            CameraMode.VIDEO -> R.string.video
-        }
-    }
-
     @SuppressLint("ClickableViewAccessibility")
     private fun buildTabs() {
         val tabLayout = mActivity.tabLayout
@@ -1544,7 +1521,7 @@ class CamConfig(
 
         availableModes.forEach { mode ->
             tabLayout.newTab().let { tab ->
-                tab.setText(tabLabel(mode))
+                tab.setText(cameraModeLabel(mode))
 
                 tab.view.setOnTouchListener { _, e ->
                     if (e.action == MotionEvent.ACTION_UP) {
