@@ -29,7 +29,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
@@ -44,8 +43,6 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
-import app.grapheneos.camera.ui.showQrFormatsDialog
-import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
@@ -58,7 +55,6 @@ import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
-import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.zxing.BarcodeFormat
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -77,7 +73,8 @@ import kotlinx.coroutines.runBlocking
 
 @SuppressLint("UnsafeOptInUsageError")
 class CamConfig @AssistedInject constructor(
-    @Assisted private val mActivity: MainActivity,
+    @Assisted private val environment: CameraSessionEnvironment,
+    @Assisted private val effects: CameraSessionEffects,
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
@@ -93,7 +90,11 @@ class CamConfig @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(activity: MainActivity): CamConfig
+
+        fun create(
+            environment: CameraSessionEnvironment,
+            effects: CameraSessionEffects,
+        ): CamConfig
     }
 
     companion object {
@@ -172,17 +173,17 @@ class CamConfig @AssistedInject constructor(
     private val zoomStateObserver = Observer<ZoomState> {
         zoomState = it
         if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-            mActivity.updateZoomThumb()
+            effects.updateZoomThumb()
         }
     }
 
     private val handler = Handler(Looper.getMainLooper())
 
     private val attachZoomState = Runnable {
-        if (!mActivity.isSessionActive) return@Runnable
+        if (!environment.isSessionActive) return@Runnable
 
         zoomStateSource = camera?.cameraInfo?.zoomState?.also {
-            it.observe(mActivity, zoomStateObserver)
+            it.observe(environment.sessionLifecycleOwner, zoomStateObserver)
         }
 
         zoomState = zoomStateSource?.value
@@ -209,7 +210,7 @@ class CamConfig @AssistedInject constructor(
     var iAnalyzer: ImageAnalysis? = null
 
     @set:VisibleForTesting
-    var mPlayer = TunePlayer(mActivity)
+    var mPlayer = environment.createTunePlayer()
 
     private var settings: CameraSettings = runBlocking { settingsRepository.settings.first() }
 
@@ -368,7 +369,7 @@ class CamConfig @AssistedInject constructor(
     private fun applyFlashMode(value: Int) {
         flashMode = value
         imageCapture?.flashMode = value
-        mActivity.onFlashModeChanged()
+        effects.onFlashModeChanged()
     }
 
     var focusTimeout: Long by setting(
@@ -396,7 +397,7 @@ class CamConfig @AssistedInject constructor(
             }
 
             if (isQRMode) {
-                mActivity.applyScanAllCodesChrome(value)
+                effects.applyScanAllCodesChrome(value)
             }
 
             qrAnalyzer?.refreshHints()
@@ -411,7 +412,7 @@ class CamConfig @AssistedInject constructor(
                 settingsRepository.update { it.copy(includeAudio = value) }
             }
 
-            mActivity.onIncludeAudioChanged(value)
+            effects.onIncludeAudioChanged(value)
         }
 
     var enableEIS: Boolean
@@ -423,7 +424,7 @@ class CamConfig @AssistedInject constructor(
                 settingsRepository.update { it.copy(enableEis = value) }
             }
 
-            mActivity.onEnableEisChanged(value)
+            effects.onEnableEisChanged(value)
         }
 
     var enableZsl: Boolean by setting(
@@ -531,7 +532,7 @@ class CamConfig @AssistedInject constructor(
     // the preference back here would resurrect the very stale "on" the coercion exists to drop.
     var requireLocation: Boolean = false
         set(value) {
-            mActivity.locationCamConfigChanged(value)
+            effects.locationCamConfigChanged(value)
 
             // A permission result is delivered before the first onResume of an activity the system
             // recreated, so this can run before a mode has been slotted — see modeSettings.
@@ -539,7 +540,7 @@ class CamConfig @AssistedInject constructor(
                 settingsRepository.setGeoTagging(value)
             }?.let { modeSettings = it }
 
-            mActivity.onGeoTaggingChanged(value)
+            effects.onGeoTaggingChanged(value)
 
             field = value
         }
@@ -554,7 +555,7 @@ class CamConfig @AssistedInject constructor(
                 settingsRepository.setSelfIllumination(value)
             }?.let { modeSettings = it }
 
-            mActivity.onSelfIlluminationChanged(value)
+            effects.onSelfIlluminationChanged(value)
         }
 
     fun setQRScanningFor(format: String, selected: Boolean) {
@@ -571,7 +572,7 @@ class CamConfig @AssistedInject constructor(
             }
         } else {
             if (allowedFormats.size == 1) {
-                mActivity.showMessage(R.string.no_barcode_selected)
+                effects.showMessage(R.string.no_barcode_selected)
             } else {
                 allowedFormats.remove(BarcodeFormat.valueOf(format))
             }
@@ -593,7 +594,7 @@ class CamConfig @AssistedInject constructor(
         slotCurrentMode()
 
         if (isVideoMode) {
-            mActivity.reloadVideoQualities()
+            effects.reloadVideoQualities()
         }
 
         applyFlashMode(modeSettings.flashMode)
@@ -603,17 +604,17 @@ class CamConfig @AssistedInject constructor(
         // startup that the user never asked for. Coercing it here settles the stale value through
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
         requireLocation = modeSettings.geoTagging &&
-            !(mActivity.applicationContext as App).shouldAskForLocationPermission()
+            !environment.shouldAskForLocationPermission()
 
         selfIlluminate = modeSettings.selfIllumination
 
-        mActivity.showOnlyRelevantSettings()
+        effects.showOnlyRelevantSettings()
     }
 
     fun loadSettings() {
-        mActivity.onGridTypeChanged()
+        effects.onGridTypeChanged()
 
-        mActivity.onFocusTimeoutChanged(focusTimeoutLabel(settings.focusTimeoutSeconds))
+        effects.onFocusTimeoutChanged(focusTimeoutLabel(settings.focusTimeoutSeconds))
 
         includeAudio = settings.includeAudio
 
@@ -624,7 +625,7 @@ class CamConfig @AssistedInject constructor(
             BarcodeFormat.entries.filter { it.name in settings.enabledBarcodeFormats },
         )
 
-        mActivity.selectBarcodeFormatToggles(allowedFormats)
+        effects.selectBarcodeFormatToggles(allowedFormats)
 
         qrAnalyzer?.refreshHints()
     }
@@ -655,7 +656,7 @@ class CamConfig @AssistedInject constructor(
             setFlashMode(next)
 
         } else {
-            mActivity.showMessage(R.string.flash_unavailable_in_selected_mode)
+            effects.showMessage(R.string.flash_unavailable_in_selected_mode)
         }
     }
 
@@ -690,10 +691,10 @@ class CamConfig @AssistedInject constructor(
             // Else revert back to the old facing (while displaying an error message
             // to the user)
             lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                mActivity.showMessage(R.string.rear_camera_unavailable)
+                effects.showMessage(R.string.rear_camera_unavailable)
                 CameraSelector.LENS_FACING_FRONT
             } else {
-                mActivity.showMessage(R.string.front_camera_unavailable)
+                effects.showMessage(R.string.front_camera_unavailable)
                 CameraSelector.LENS_FACING_BACK
             }
         }
@@ -706,9 +707,9 @@ class CamConfig @AssistedInject constructor(
             return
         }
 
-        cameraProviderSource.acquireProvider(mActivity) { provider ->
+        cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
             when (provider) {
-                null -> mActivity.showMessage(R.string.camera_provider_init_failure)
+                null -> effects.showMessage(R.string.camera_provider_init_failure)
 
                 else -> onCameraProviderReady(provider, forced)
             }
@@ -736,9 +737,12 @@ class CamConfig @AssistedInject constructor(
             }
         }
 
-        cameraProviderSource.acquireExtensionsManager(mActivity, provider) { manager ->
+        cameraProviderSource.acquireExtensionsManager(
+            environment.sessionContext,
+            provider,
+        ) { manager ->
             if (manager == null) {
-                mActivity.showMessage(R.string.extensions_manager_init_failure)
+                effects.showMessage(R.string.extensions_manager_init_failure)
             } else {
                 extensionsManager = manager
             }
@@ -917,10 +921,10 @@ class CamConfig @AssistedInject constructor(
             selected = selected,
         ) ?: return
 
-        mActivity.showMessage(
-            mActivity.getString(
+        effects.showMessage(
+            environment.sessionContext.getString(
                 R.string.quality_unsupported,
-                videoQualityTitle(mActivity, droppedQuality),
+                videoQualityTitle(environment.sessionContext, droppedQuality),
             )
         )
     }
@@ -955,18 +959,18 @@ class CamConfig @AssistedInject constructor(
         if ((!forced && camera != null) || cameraProvider == null) return
 
         // Cancel any pending capture requests
-        mActivity.cancelPendingCapture()
+        effects.cancelPendingCapture()
 
-        mActivity.hideExposurePanel()
+        effects.hideExposurePanel()
         slotCurrentMode()
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
         applyFlashMode(modeSettings.flashMode)
 
-        val rotation = mActivity.displayRotation
+        val rotation = environment.displayRotation
 
-        if (!mActivity.isSessionActive) return
+        if (!environment.isSessionActive) return
 
         // Test whether the current lens facing is supported by the current device
         // If not then silently switch to the other lens facing
@@ -988,7 +992,7 @@ class CamConfig @AssistedInject constructor(
 
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
-        mActivity.updateLastFrame()
+        effects.updateLastFrame()
 
         // Unbind/close all other camera(s) [if any]
         cameraProvider?.unbindAll()
@@ -1065,7 +1069,7 @@ class CamConfig @AssistedInject constructor(
         val plan = buildCameraSessionPlan(bindRequest)
 
         if (isQRMode) {
-            val analyzer = QRAnalyzer(mActivity)
+            val analyzer = environment.createQrAnalyzer()
             val strategy = ResolutionStrategy(
                 Size(960, 960),
                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
@@ -1077,7 +1081,7 @@ class CamConfig @AssistedInject constructor(
                 .setOutputImageRotationEnabled(true)
                 .build()
             qrAnalyzer = analyzer
-            mActivity.startFocusTimer()
+            effects.startFocusTimer()
             iAnalyzer = mIAnalyzer
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
             cameraSelector = CameraSelector.Builder()
@@ -1085,7 +1089,7 @@ class CamConfig @AssistedInject constructor(
                     if (isLensFacingSupported(CameraSelector.LENS_FACING_BACK)) {
                         CameraSelector.LENS_FACING_BACK
                     } else {
-                        mActivity.showMessage(R.string.qr_rear_camera_unavailable)
+                        effects.showMessage(R.string.qr_rear_camera_unavailable)
                         CameraSelector.LENS_FACING_FRONT
                     }
                 )
@@ -1094,7 +1098,7 @@ class CamConfig @AssistedInject constructor(
 
         } else {
             if (isVideoMode) {
-                mActivity.setMicMutedIconVisible(!includeAudio)
+                effects.setMicMutedIconVisible(!includeAudio)
             }
 
             plan.videoCapture?.let {
@@ -1110,10 +1114,10 @@ class CamConfig @AssistedInject constructor(
 
         preview = plan.preview.also {
             useCasesList.add(it)
-            it.surfaceProvider = mActivity.previewSurfaceProvider
+            it.surfaceProvider = environment.previewSurfaceProvider
         }
 
-        mActivity.forceUpdateOrientationSensor()
+        effects.forceUpdateOrientationSensor()
 
         // Not every camera can run video, photo and preview at once. Ask before binding rather
         // than binding and retrying without the photo use case when it throws: an
@@ -1143,7 +1147,7 @@ class CamConfig @AssistedInject constructor(
                     cameraProvider?.getCameraInfo(cameraSelector)
                 } catch (exception: IllegalArgumentException) {
                     Log.e(TAG, "Failed to query camera info", exception)
-                    mActivity.showMessage(R.string.bind_failure)
+                    effects.showMessage(R.string.bind_failure)
                     return
                 }
 
@@ -1183,14 +1187,14 @@ class CamConfig @AssistedInject constructor(
                 val requested = plan.preferredFeatures.toList()
                 val boundLensFacing = lensFacing
                 sessionConfig.setFeatureSelectionListener(
-                    ContextCompat.getMainExecutor(mActivity)
+                    environment.sessionMainExecutor
                 ) { selected ->
                     onFeaturesSelected(boundLensFacing, requested, requiredQualityFeature, selected)
                 }
             }
 
             camera = cameraProvider!!.bindToLifecycle(
-                mActivity, cameraSelector,
+                environment.sessionLifecycleOwner, cameraSelector,
                 sessionConfig
             )
         } catch (exception: RuntimeException) {
@@ -1205,7 +1209,7 @@ class CamConfig @AssistedInject constructor(
                 // stay visible.
                 if (exception is IllegalArgumentException) {
                     Log.e(TAG, "Failed to bind use cases", exception)
-                    mActivity.showMessage(R.string.bind_failure)
+                    effects.showMessage(R.string.bind_failure)
                     return
                 }
                 throw exception
@@ -1224,7 +1228,7 @@ class CamConfig @AssistedInject constructor(
 
             Log.e(TAG, "Extension mode $extMode failed to bind; disabling it", exception)
             extensionAvailabilityStore.record(key, usable = false)
-            mActivity.showMessage(R.string.extension_mode_unavailable)
+            effects.showMessage(R.string.extension_mode_unavailable)
 
             // The bind never completed: currentMode still names the mode that was just disabled
             // and nothing is rendering into the preview. Refreshing the tabs alone would only
@@ -1249,19 +1253,19 @@ class CamConfig @AssistedInject constructor(
         handler.removeCallbacks(attachZoomState)
         handler.post(attachZoomState)
 
-        mActivity.updateZoomThumb(false)
+        effects.updateZoomThumb(false)
 
-        camera?.cameraInfo?.exposureState?.let { mActivity.applyExposureState(it) }
+        camera?.cameraInfo?.exposureState?.let { effects.applyExposureState(it) }
 
-        mActivity.resetTorchToggle()
+        effects.resetTorchToggle()
 
-        camera?.cameraInfo?.let { mActivity.onPreviewBound(aspectRatio, it) }
+        camera?.cameraInfo?.let { effects.onPreviewBound(aspectRatio, it) }
 
-        mActivity.updateGyroscopeIndicator(isInPhotoMode)
+        effects.updateGyroscopeIndicator(isInPhotoMode)
     }
 
     fun snapPreview() {
-        mActivity.flashPreview(selfIlluminate)
+        effects.flashPreview(selfIlluminate)
     }
 
     // probeOnMiss is false because tab refreshes must never pay for a vendor probe on the main
@@ -1322,9 +1326,9 @@ class CamConfig @AssistedInject constructor(
                 )
             }
 
-            ContextCompat.getMainExecutor(mActivity).execute {
+            environment.sessionMainExecutor.execute {
                 extensionProbesInFlight = false
-                if (!mActivity.isSessionActive) return@execute
+                if (!environment.isSessionActive) return@execute
 
                 if (probedCameraProvider !== provider) {
                     // The camera stack was reinitialized while probing: these verdicts describe
@@ -1342,7 +1346,7 @@ class CamConfig @AssistedInject constructor(
     }
 
     private fun buildTabs() {
-        mActivity.setCameraModeTabs(
+        effects.setCameraModeTabs(
             modes = availableModes(),
             currentMode = currentMode,
         )
@@ -1355,13 +1359,13 @@ class CamConfig @AssistedInject constructor(
 
         currentMode = mode
 
-        mActivity.cancelFocusTimer()
+        effects.cancelFocusTimer()
 
         isQRMode = mode == CameraMode.QR_SCAN
 
         isVideoMode = mode == CameraMode.VIDEO
 
-        mActivity.applyModeChrome(
+        effects.applyModeChrome(
             mode = mode,
             isVideoMode = isVideoMode,
             scanAllCodes = scanAllCodes,
@@ -1374,7 +1378,7 @@ class CamConfig @AssistedInject constructor(
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (entryPoint.showsCameraModeTabs) {
-            mActivity.goToModeTab(currentMode)
+            effects.goToModeTab(currentMode)
         }
     }
 
@@ -1383,8 +1387,7 @@ class CamConfig @AssistedInject constructor(
             .filterNot { it in commonFormats }
             .map { it.name }
 
-        showQrFormatsDialog(
-            activity = mActivity,
+        effects.showBarcodeFormatPicker(
             optionNames = optionNames,
             initialValues = optionNames.map { it in settings.enabledBarcodeFormats },
             onConfirm = { values -> applyBarcodeFormats(optionNames, values) },
@@ -1398,7 +1401,7 @@ class CamConfig @AssistedInject constructor(
         val allCommonFormatsDisabled = commonFormats.none { allowedFormats.contains(it) }
 
         if (allCommonFormatsDisabled && values.none { it }) {
-            mActivity.showMessage(R.string.no_barcode_selected)
+            effects.showMessage(R.string.no_barcode_selected)
             return
         }
 
@@ -1432,6 +1435,6 @@ class CamConfig @AssistedInject constructor(
         // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
         storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION
 
-        showStorageLocationNotFoundDialog(mActivity)
+        effects.showStorageLocationNotFound()
     }
 }
