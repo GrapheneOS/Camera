@@ -10,6 +10,8 @@ import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapperImpl
 import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
 import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlanImpl
+import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
+import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModesImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupportImpl
 import dagger.Binds
@@ -52,6 +54,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindBuildCameraSessionPlan(
         impl: BuildCameraSessionPlanImpl,
     ): BuildCameraSessionPlan
+
+    @Binds
+    @Reusable
+    abstract fun bindResolveAvailableModes(
+        impl: ResolveAvailableModesImpl,
+    ): ResolveAvailableModes
 
     @Binds
     @Reusable
