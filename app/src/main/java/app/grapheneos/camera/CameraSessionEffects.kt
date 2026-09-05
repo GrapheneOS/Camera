@@ -48,13 +48,7 @@ interface CameraSessionEffects {
 
     fun onFlashModeChanged()
 
-    fun onGridTypeChanged()
-
-    fun onFocusTimeoutChanged(label: String)
-
     fun onIncludeAudioChanged(enabled: Boolean)
-
-    fun onEnableEisChanged(enabled: Boolean)
 
     fun onGeoTaggingChanged(enabled: Boolean)
 

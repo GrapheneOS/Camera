@@ -180,20 +180,8 @@ internal class CameraSessionHandler(
         activity.settingsDialog.updateFlashMode()
     }
 
-    override fun onGridTypeChanged() {
-        activity.settingsDialog.updateGridToggleUI()
-    }
-
-    override fun onFocusTimeoutChanged(label: String) {
-        activity.settingsDialog.updateFocusTimeout(label)
-    }
-
     override fun onIncludeAudioChanged(enabled: Boolean) {
         activity.settingsDialog.includeAudioToggle.isChecked = enabled
-    }
-
-    override fun onEnableEisChanged(enabled: Boolean) {
-        activity.settingsDialog.enableEISToggle.isChecked = enabled
     }
 
     override fun onGeoTaggingChanged(enabled: Boolean) {

@@ -1123,6 +1123,7 @@ open class MainActivity : AppCompatActivity(),
         azToggle.key = BarcodeFormat.AZTEC.name
 
         camConfig.loadSettings()
+        settingsDialog.loadInitialState()
 
         gCircle = binding.gCircle
         gAngleTextView = binding.gCircleText
