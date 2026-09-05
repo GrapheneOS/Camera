@@ -8,15 +8,9 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
-import android.view.MotionEvent
 import android.view.View
-import android.view.animation.AlphaAnimation
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
-import android.widget.Button
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -53,7 +47,8 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
-import app.grapheneos.camera.ui.cameraModeLabel
+import app.grapheneos.camera.ui.showQrFormatsDialog
+import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
@@ -68,13 +63,10 @@ import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
-import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import java.io.IOException
 import java.util.concurrent.Executors
@@ -103,9 +95,6 @@ class CamConfig(
 
     companion object {
         private const val TAG = "CamConfig"
-
-        private const val PREVIEW_SNAP_DURATION = 200L
-        private const val PREVIEW_SL_OVERLAY_DUR = 200L
 
         const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
 
@@ -411,17 +400,7 @@ class CamConfig(
             }
 
             if (isQRMode) {
-                if (value) {
-                    mActivity.setFlipCameraIcon(
-                        R.drawable.cancel, R.string.stop_scanning_all_formats
-                    )
-                    mActivity.qrScanToggles.visibility = View.GONE
-                } else {
-                    mActivity.setFlipCameraIcon(
-                        R.drawable.auto, R.string.scan_all_formats
-                    )
-                    mActivity.qrScanToggles.visibility = View.VISIBLE
-                }
+                mActivity.applyScanAllCodesChrome(value)
             }
 
             qrAnalyzer?.refreshHints()
@@ -1375,58 +1354,7 @@ class CamConfig(
     }
 
     fun snapPreview() {
-
-        if (selfIlluminate) {
-
-            val animation: Animation = AlphaAnimation(0f, 0.8f)
-            animation.duration = PREVIEW_SL_OVERLAY_DUR
-            animation.interpolator = LinearInterpolator()
-            animation.fillAfter = true
-
-            mActivity.mainOverlay.setImageResource(android.R.color.white)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {}
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
-                }
-            )
-
-            mActivity.mainOverlay.startAnimation(animation)
-
-        } else {
-
-            val animation: Animation = AlphaAnimation(1f, 0f)
-            animation.duration = PREVIEW_SNAP_DURATION
-            animation.interpolator = LinearInterpolator()
-            animation.repeatMode = Animation.REVERSE
-
-            mActivity.mainOverlay.setImageResource(android.R.color.black)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.INVISIBLE
-                        mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                    }
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
-                }
-            )
-
-            mActivity.mainOverlay.startAnimation(animation)
-        }
+        mActivity.flashPreview(selfIlluminate)
     }
 
     // probeOnMiss is false because tab refreshes must never pay for a vendor probe on the main
@@ -1506,36 +1434,12 @@ class CamConfig(
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     private fun buildTabs() {
-        val tabLayout = mActivity.tabLayout
-        val availableModes = availableModes()
-
-        if (availableModes == tabLayout.getAllModes()) {
-            return
-        }
-
-        Log.i(TAG, "Refreshing tabs...")
-
-        tabLayout.removeAllTabs()
-
-        availableModes.forEach { mode ->
-            tabLayout.newTab().let { tab ->
-                tab.setText(cameraModeLabel(mode))
-
-                tab.view.setOnTouchListener { _, e ->
-                    if (e.action == MotionEvent.ACTION_UP) {
-                        mActivity.finalizeMode(tab)
-                    }
-                    false
-                }
-                tab.tag = mode
-
-                // Highlight the mode the camera is really in, not the default one: the tabs are
-                // also rebuilt long after startup, once the extension probes report back.
-                tabLayout.addTab(tab, mode == currentMode)
-            }
-        }
+        mActivity.tabLayout.setModes(
+            modes = availableModes(),
+            currentMode = currentMode,
+            onTabTouched = mActivity::finalizeMode,
+        )
     }
 
     fun switchMode(mode: CameraMode) {
@@ -1551,48 +1455,11 @@ class CamConfig(
 
         isVideoMode = mode == CameraMode.VIDEO
 
-        if (isQRMode) {
-            mActivity.qrOverlay.visibility = View.VISIBLE
-            mActivity.thirdOption.visibility = View.INVISIBLE
-
-            if (scanAllCodes) {
-                mActivity.setFlipCameraIcon(
-                    R.drawable.cancel, R.string.stop_scanning_all_formats
-                )
-                mActivity.qrScanToggles.visibility = View.GONE
-            } else {
-                mActivity.setFlipCameraIcon(
-                    R.drawable.auto, R.string.scan_all_formats
-                )
-                mActivity.qrScanToggles.visibility = View.VISIBLE
-            }
-
-            mActivity.cancelButtonView.visibility = View.INVISIBLE
-
-            mActivity.captureButton.setBackgroundResource(android.R.color.transparent)
-            // Entering QR mode always leaves the torch off
-            mActivity.setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
-
-            mActivity.micOffIcon.visibility = View.GONE
-        } else {
-            mActivity.qrOverlay.visibility = View.INVISIBLE
-            mActivity.thirdOption.visibility = View.VISIBLE
-            mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
-            mActivity.cancelButtonView.visibility = View.VISIBLE
-
-            mActivity.qrScanToggles.visibility = View.GONE
-
-            mActivity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
-
-            if (isVideoMode) {
-                mActivity.setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
-            } else {
-                mActivity.setCaptureButtonIcon(R.drawable.camera_shutter, R.string.capture)
-                mActivity.micOffIcon.visibility = View.GONE
-            }
-        }
-
-        mActivity.updateSelfTimerBadge()
+        mActivity.applyModeChrome(
+            mode = mode,
+            isVideoMode = isVideoMode,
+            scanAllCodes = scanAllCodes,
+        )
 
         startCamera(true)
 
@@ -1608,105 +1475,59 @@ class CamConfig(
     }
 
     fun showMoreOptionsForQR() {
-        val builder = MaterialAlertDialogBuilder(mActivity)
-        builder.setTitle(mActivity.resources.getString(R.string.more_options))
+        val optionNames = BarcodeFormat.entries
+            .filterNot { it in commonFormats }
+            .map { it.name }
 
-        val optionNames = arrayListOf<String>()
-        val optionValues = arrayListOf<Boolean>()
+        showQrFormatsDialog(
+            activity = mActivity,
+            optionNames = optionNames,
+            initialValues = optionNames.map { it in settings.enabledBarcodeFormats },
+            onConfirm = { values -> applyBarcodeFormats(optionNames, values) },
+        )
+    }
 
-        for (format in BarcodeFormat.entries) {
+    private fun applyBarcodeFormats(optionNames: List<String>, values: List<Boolean>) {
+        // If all formats displayed outside the dialog are disabled (main QR scanner UI) and no
+        // option is selected within the check box either - implying no barcode format is selected
+        // at all - don't apply the selection made by the user
+        val allCommonFormatsDisabled = commonFormats.none { allowedFormats.contains(it) }
 
-            if (format in commonFormats) continue
-
-            optionNames.add(format.name)
-
-            optionValues.add(format.name in settings.enabledBarcodeFormats)
+        if (allCommonFormatsDisabled && values.none { it }) {
+            mActivity.showMessage(getString(R.string.no_barcode_selected))
+            return
         }
 
-        builder.setMultiChoiceItems(
-            optionNames.toArray(arrayOf<String>()),
-            optionValues.toBooleanArray()
-        ) { _, index, isChecked ->
-            optionValues[index] = isChecked
-        }
+        for ((index, optionName) in optionNames.withIndex()) {
+            val format = BarcodeFormat.valueOf(optionName)
 
-        // Add OK and Cancel buttons
-        builder.setPositiveButton(getString(R.string.ok)) { _, _ ->
-
-            val allCommonFormatsDisabled = commonFormats.none {
-                allowedFormats.contains(it)
+            if (values[index]) {
+                if (format !in allowedFormats) {
+                    allowedFormats.add(format)
+                }
+            } else {
+                allowedFormats.remove(format)
             }
+        }
 
-            // If all formats displayed outside the dialog are disabled (main QR scanner
-            // UI)
-            if (allCommonFormatsDisabled) {
-                val noOptionWasChecked = optionValues.none { it }
-
-                // If no option is selected within the check box too (implying no barcode format
-                // is selected at all) - don't make apply the selction made by the user
-                if (noOptionWasChecked) {
-                    mActivity.showMessage(
-                        getString(R.string.no_barcode_selected)
+        settings = runBlocking {
+            settingsRepository.update { current ->
+                optionNames.foldIndexed(current) { index, updated, optionName ->
+                    updated.withBarcodeFormat(
+                        formatName = optionName,
+                        enabled = values[index],
                     )
-                    return@setPositiveButton
                 }
-            }
-
-            for ((index, optionName) in optionNames.withIndex()) {
-
-                val format = BarcodeFormat.valueOf(optionName)
-
-                if (optionValues[index]) {
-                    if (format !in allowedFormats) {
-                        allowedFormats.add(format)
-                    }
-                } else {
-                    allowedFormats.remove(format)
-                }
-            }
-
-            settings = runBlocking {
-                settingsRepository.update { current ->
-                    optionNames.foldIndexed(current) { index, updated, optionName ->
-                        updated.withBarcodeFormat(
-                            formatName = optionName,
-                            enabled = optionValues[index],
-                        )
-                    }
-                }
-            }
-
-            qrAnalyzer?.refreshHints()
-        }
-
-        builder.setNegativeButton(R.string.cancel, null)
-
-        // Create and show the alert dialog
-        val dialog = builder.create()
-
-        dialog.setOnShowListener {
-            val button: Button = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-            button.setOnClickListener {
-
             }
         }
 
-        dialog.showIgnoringShortEdgeMode()
+        qrAnalyzer?.refreshHints()
     }
 
     fun onStorageLocationNotFound() {
         // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
         storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION
 
-        val builder = MaterialAlertDialogBuilder(mActivity)
-            .setTitle(R.string.folder_not_found)
-            .setMessage(R.string.reverting_to_default_folder)
-            .setPositiveButton(R.string.ok, null)
-            .setNeutralButton(R.string.more_settings) { _, _ ->
-                MoreSettings.start(mActivity)
-            }
-        val alertDialog = builder.create()
-        alertDialog.setCancelable(false)
-        alertDialog.showIgnoringShortEdgeMode()
+        showStorageLocationNotFoundDialog(mActivity)
     }
 }
