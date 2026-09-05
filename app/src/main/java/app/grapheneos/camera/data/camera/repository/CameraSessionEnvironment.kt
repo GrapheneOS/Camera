@@ -1,8 +1,9 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.data.camera.repository
 
 import android.content.Context
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
+import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import java.util.concurrent.Executor
 

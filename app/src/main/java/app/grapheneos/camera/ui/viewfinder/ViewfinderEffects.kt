@@ -1,4 +1,4 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.ui.viewfinder
 
 import androidx.annotation.StringRes
 import androidx.camera.core.CameraInfo
@@ -6,7 +6,7 @@ import androidx.camera.core.ExposureState
 import app.grapheneos.camera.data.core.model.CameraMode
 import com.google.zxing.BarcodeFormat
 
-interface CameraSessionEffects {
+interface ViewfinderEffects {
 
     fun showMessage(@StringRes message: Int)
 
