@@ -50,6 +50,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.data.camera.model.ExtensionKey
+import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -90,6 +92,7 @@ class CamConfig(
     private val mActivity: MainActivity,
     private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
+    private val extensionAvailabilityStore: ExtensionAvailabilityStore,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
@@ -127,12 +130,6 @@ class CamConfig(
         val REAR_CAMERA_SELECTOR = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
-
-        // Whether a vendor extension is usable, keyed by lens facing and extension mode (see
-        // probeExtension). A verdict describes the device rather than any one activity and costs
-        // binder round trips to reach, so it is kept for the process: every lock screen launch used
-        // to re-probe what the session underneath it had already answered.
-        private val extensionUsability = HashMap<Pair<Int, Int>, Boolean>()
 
         // Every setting that reaches one of the three probed SessionConfigs has to appear in the
         // key. A setting added to the ImageCapture, Recorder or Preview builder without being added
@@ -811,7 +808,7 @@ class CamConfig(
                 // A different provider instance means the camera stack was reinitialized:
                 // extension verdicts probed through the previous instance (including bind-time
                 // blacklists, see startCamera) describe vendor state that no longer exists.
-                extensionUsability.clear()
+                extensionAvailabilityStore.clear()
                 snapshotSupport.clear()
                 probedCameraProvider = provider
             }
@@ -874,10 +871,10 @@ class CamConfig(
     // only safe option is to stop offering the mode.
     //
     // getCameraInfo() performs exactly the same vendor init that bindToLifecycle() does, so it is
-    // a faithful probe. Verdicts are cached (extensionUsability) because every step of the probe
-    // -- including the availability query, see probeExtension -- costs a binder round trip. A
-    // negative verdict is only cached when the failure is known to be persistent: caching a
-    // transient probe failure would make the mode's tab vanish for the rest of the process
+    // a faithful probe. Verdicts are cached (ExtensionAvailabilityStore) because every step of
+    // the probe -- including the availability query, see probeExtension -- costs a binder round
+    // trip. A negative verdict is only cached when the failure is known to be persistent: caching
+    // a transient probe failure would make the mode's tab vanish for the rest of the process
     // lifetime over a condition that clears seconds later.
     //
     // The cache is read and written on the main thread only, which is also what keeps the two
@@ -886,7 +883,7 @@ class CamConfig(
     // results come back through the main executor.
     //
     // true/false is a verdict that is safe to cache; null is a failure that may be transient
-    // and must not be (see extensionUsability above). The provider and manager are parameters
+    // and must not be (see ExtensionAvailabilityStore). The provider and manager are parameters
     // rather than the fields because this also runs off the main thread, where the fields could
     // be swapped out mid-probe.
     private fun probeExtension(
@@ -941,8 +938,11 @@ class CamConfig(
         val em = extensionsManager ?: return false
         val provider = cameraProvider ?: return false
 
-        val key = lensFacing to extensionMode
-        extensionUsability[key]?.let { return it }
+        val key = ExtensionKey(
+            lensFacing = lensFacing,
+            extensionMode = extensionMode,
+        )
+        extensionAvailabilityStore.verdict(key)?.let { return it }
 
         if (!probeOnMiss) return false
 
@@ -955,7 +955,7 @@ class CamConfig(
         if (extensionProbesInFlight) return false
 
         val verdict = probeExtension(provider, em, selector, extensionMode) ?: return false
-        extensionUsability[key] = verdict
+        extensionAvailabilityStore.record(key, usable = verdict)
         return verdict
     }
 
@@ -1148,11 +1148,14 @@ class CamConfig(
         cameraProvider?.unbindAll()
 
         val extMode = currentMode.extensionMode
-        var appliedExtension: Pair<Int, Int>? = null
+        var appliedExtension: ExtensionKey? = null
         if (extMode != ExtensionMode.NONE) {
             val em = extensionsManager
             if (em != null && isExtensionUsable(cameraSelector, lensFacing, extMode)) {
-                appliedExtension = lensFacing to extMode
+                appliedExtension = ExtensionKey(
+                    lensFacing = lensFacing,
+                    extensionMode = extMode,
+                )
                 cameraSelector = em.getExtensionEnabledCameraSelector(cameraSelector, extMode)
             } else {
                 Log.e(TAG, "Mode $currentMode isn't available for this device")
@@ -1463,7 +1466,7 @@ class CamConfig(
             }
 
             Log.e(TAG, "Extension mode $extMode failed to bind; disabling it", exception)
-            extensionUsability[key] = false
+            extensionAvailabilityStore.record(key, usable = false)
             mActivity.showMessage(mActivity.getString(R.string.extension_mode_unavailable))
 
             // The bind never completed: currentMode still names the mode that was just disabled
@@ -1583,27 +1586,17 @@ class CamConfig(
         }.toSet()
     }
 
-    // The (selector, cache key) pairs availableModes() needs a verdict for that only a vendor
-    // probe can answer. Deliberately a pure cache check: even asking whether a mode is
-    // advertised costs a vendor proxy round trip (see probeExtension), so the probe round has
-    // to answer that too.
-    private fun unprobedExtensions(): List<Pair<CameraSelector, Pair<Int, Int>>> {
+    private fun unprobedExtensions(): List<ExtensionKey> {
         if (extensionsManager == null || cameraProvider == null) return emptyList()
 
-        val result = arrayListOf<Pair<CameraSelector, Pair<Int, Int>>>()
-        for (mode in CameraMode.entries) {
-            if (mode.extensionMode == ExtensionMode.NONE) continue
-            for ((selector, lensFacing) in arrayOf(
-                FRONT_CAMERA_SELECTOR to CameraSelector.LENS_FACING_FRONT,
-                REAR_CAMERA_SELECTOR to CameraSelector.LENS_FACING_BACK,
-            )) {
-                val key = lensFacing to mode.extensionMode
-                if (extensionUsability[key] == null) {
-                    result.add(selector to key)
-                }
-            }
+        return extensionAvailabilityStore.unprobed()
+    }
+
+    private fun selectorFor(lensFacing: Int): CameraSelector {
+        return when (lensFacing) {
+            CameraSelector.LENS_FACING_FRONT -> FRONT_CAMERA_SELECTOR
+            else -> REAR_CAMERA_SELECTOR
         }
-        return result
     }
 
     private var extensionProbesInFlight = false
@@ -1634,9 +1627,11 @@ class CamConfig(
         extensionProbesInFlight = true
 
         thread {
-            val verdicts = HashMap<Pair<Int, Int>, Boolean?>()
-            for ((selector, key) in pending) {
-                verdicts[key] = probeExtension(provider, em, selector, key.second)
+            val verdicts = HashMap<ExtensionKey, Boolean?>()
+            for (key in pending) {
+                verdicts[key] = probeExtension(
+                    provider, em, selectorFor(key.lensFacing), key.extensionMode
+                )
             }
 
             ContextCompat.getMainExecutor(mActivity).execute {
@@ -1652,15 +1647,7 @@ class CamConfig(
                     return@execute
                 }
 
-                for ((key, verdict) in verdicts) {
-                    // Only fill in keys that are still unprobed. A bind failure that ran while this
-                    // round was in flight may have blacklisted the mode (extensionUsability[key] =
-                    // false); that verdict is fresher than this probe's and must not be overwritten
-                    // -- otherwise a mode that just failed to bind would be offered again.
-                    if (verdict != null && extensionUsability[key] == null) {
-                        extensionUsability[key] = verdict
-                    }
-                }
+                extensionAvailabilityStore.recordProbeRound(verdicts)
                 buildTabs()
             }
         }
