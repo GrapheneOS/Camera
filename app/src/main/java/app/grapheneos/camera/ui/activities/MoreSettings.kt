@@ -16,23 +16,44 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.MoreSettingsBinding
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
-open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
-    private lateinit var camConfig: CamConfig
+@AndroidEntryPoint
+open class MoreSettings :
+    AppCompatActivity(),
+    TextView.OnEditorActionListener {
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var capturedItemRepository: CapturedItemRepository
+
+    private var isInCaptureMode = false
+
+    private var isZslSupported = false
+
+    private var settings: CameraSettings = CameraSettings()
+
+    private var storageLocation: String = CapturedItemRepository.MEDIA_STORE_LOCATION
 
     private lateinit var binding: MoreSettingsBinding
+
     private lateinit var snackBar: Snackbar
 
     private lateinit var sLField: EditText
@@ -55,33 +76,44 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             }
         }
         if (uri != null) {
-            contentResolver.takePersistableUriPermission(uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
 
             val uriString = uri.toString()
-            camConfig.storageLocation = uriString
+            setStorageLocation(uriString)
 
             val uiString = storageLocationToUiString(this, uriString)
             sLField.setText(uiString)
 
             showMessage(getString(R.string.storage_location_updated, uiString))
-
         } else {
             showMessage(getString(R.string.no_directory_selected))
         }
     }
 
+    private fun updateSettings(transform: (CameraSettings) -> CameraSettings) {
+        settings = runBlocking { settingsRepository.update(transform) }
+    }
+
+    private fun setStorageLocation(location: String) {
+        runBlocking {
+            capturedItemRepository.setStorageLocation(location)
+            capturedItemRepository.releaseUntrackedSafTrees()
+        }
+
+        storageLocation = location
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val camConfig = obtainCamConfig(intent)
-        if (camConfig == null) {
-            finish()
-            return
-        }
-        this.camConfig = camConfig
+        isInCaptureMode = intent.getBooleanExtra(INTENT_EXTRA_IN_CAPTURE_MODE, false)
+        isZslSupported = intent.getBooleanExtra(INTENT_EXTRA_ZSL_SUPPORTED, false)
+        settings = runBlocking { settingsRepository.settings.first() }
+        storageLocation = runBlocking { capturedItemRepository.storageLocation.first() }
 
         binding = MoreSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -90,37 +122,37 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         val sIAPToggle = binding.saveImageAsPreviewToggle
 
-        sIAPToggle.isChecked = camConfig.saveImageAsPreviewed
+        sIAPToggle.isChecked = settings.saveImageAsPreviewed
 
         sIAPToggle.setOnClickListener {
-            camConfig.saveImageAsPreviewed =
-                sIAPToggle.isChecked
+            updateSettings { it.copy(saveImageAsPreviewed = sIAPToggle.isChecked) }
         }
 
         val sVAPToggle = binding.saveVideoAsPreviewToggle
 
-        sVAPToggle.isChecked = camConfig.saveVideoAsPreviewed
+        sVAPToggle.isChecked = settings.saveVideoAsPreviewed
 
         sVAPToggle.setOnClickListener {
-            camConfig.saveVideoAsPreviewed = sVAPToggle.isChecked
+            updateSettings { it.copy(saveVideoAsPreviewed = sVAPToggle.isChecked) }
         }
 
         rootView = binding.rootView
 
         sLField = binding.storageLocationField
 
-        sLField.setText(storageLocationToUiString(this, camConfig.storageLocation))
+        sLField.setText(storageLocationToUiString(this, storageLocation))
 
         sLField.setOnClickListener {
             val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-            dirPickerHandler.launch(Intent.createChooser(i, getString(R.string.choose_storage_location)))
+            dirPickerHandler.launch(
+                Intent.createChooser(i, getString(R.string.choose_storage_location))
+            )
         }
 
         snackBar = Snackbar.make(rootView, "", Snackbar.LENGTH_LONG)
 
         rSLocation = binding.refreshStorageLocation
         rSLocation.setOnClickListener {
-
             val dialog = MaterialAlertDialogBuilder(this)
 
             dialog.setTitle(R.string.are_you_sure)
@@ -130,9 +162,9 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             dialog.setPositiveButton(R.string.yes) { _, _ ->
                 val defaultLocation = CapturedItemRepository.MEDIA_STORE_LOCATION
 
-                if (camConfig.storageLocation != defaultLocation) {
+                if (storageLocation != defaultLocation) {
                     showMessage(getString(R.string.reverted_to_default_directory))
-                    camConfig.storageLocation = defaultLocation
+                    setStorageLocation(defaultLocation)
                     sLField.setText(storageLocationToUiString(this, defaultLocation))
                 } else {
                     showMessage(getString(R.string.already_using_default_directory))
@@ -145,7 +177,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         pQField = binding.photoQuality
 
-        pQField.setText(camConfig.photoQuality.toString())
+        pQField.setText(settings.photoQuality.toString())
 
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
@@ -154,7 +186,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         val exifToggleSetting = binding.removeExifSetting
 
         exifToggleSetting.setOnClickListener {
-            if (camConfig.isInCaptureMode) {
+            if (isInCaptureMode) {
                 showMessage(
                     getString(R.string.image_taken_in_this_mode_does_not_contain_extra_data)
                 )
@@ -164,21 +196,21 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
 
         // Lock toggle in checked state in capture mode
-        if (camConfig.isInCaptureMode) {
+        if (isInCaptureMode) {
             exifToggle.isChecked = true
             exifToggle.isEnabled = false
         } else {
-            exifToggle.isChecked = camConfig.removeExifAfterCapture
+            exifToggle.isChecked = settings.removeExifAfterCapture
         }
 
         exifToggle.setOnClickListener {
-            camConfig.removeExifAfterCapture = exifToggle.isChecked
+            updateSettings { it.copy(removeExifAfterCapture = exifToggle.isChecked) }
         }
 
         val gSwitch = binding.gyroscopeSettingSwitch
-        gSwitch.isChecked = camConfig.gSuggestions
+        gSwitch.isChecked = settings.gyroscopeSuggestions
         gSwitch.setOnClickListener {
-            camConfig.gSuggestions = gSwitch.isChecked
+            updateSettings { it.copy(gyroscopeSuggestions = gSwitch.isChecked) }
         }
 
         val gSetting = binding.gyroscopeSetting
@@ -187,9 +219,9 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
 
         val csSwitch = binding.cameraSoundsSwitch
-        csSwitch.isChecked = camConfig.enableCameraSounds
+        csSwitch.isChecked = settings.enableCameraSounds
         csSwitch.setOnClickListener {
-            camConfig.enableCameraSounds = csSwitch.isChecked
+            updateSettings { it.copy(enableCameraSounds = csSwitch.isChecked) }
         }
 
         val csSetting = binding.cameraSoundsSetting
@@ -223,13 +255,13 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         }
 
         val zslSetting = binding.zslSetting
-        if (camConfig.isZslSupported) {
+        if (isZslSupported) {
             zslSetting.visibility = View.VISIBLE
 
             val zslToggle = binding.zslSettingToggle
-            zslToggle.isChecked = camConfig.enableZsl
+            zslToggle.isChecked = settings.enableZsl
             zslToggle.setOnClickListener {
-                camConfig.enableZsl = !camConfig.enableZsl
+                updateSettings { it.copy(enableZsl = !settings.enableZsl) }
             }
 
             zslSetting.setOnClickListener {
@@ -239,10 +271,10 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         val highResSetting = binding.highestResSetting
         val highResToggle = binding.highestResSettingToggle
-        highResToggle.isChecked = camConfig.selectHighestResolution
+        highResToggle.isChecked = settings.selectHighestResolution
 
         highResToggle.setOnClickListener {
-            camConfig.selectHighestResolution = !camConfig.selectHighestResolution
+            updateSettings { it.copy(selectHighestResolution = !settings.selectHighestResolution) }
         }
 
         highResSetting.setOnClickListener {
@@ -272,7 +304,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-
         if (event.action == MotionEvent.ACTION_UP) {
             val v: View? = currentFocus
             if (v is EditText) {
@@ -312,7 +343,6 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     private fun dumpData(notifyOnInvalidValue: Boolean = true) {
-
         // Dump state of photo quality
         val quality = pQField.text.toString().toIntOrNull()
         // NumInputFilter keeps out-of-range values from being typed, but it cannot stop them being
@@ -321,12 +351,12 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         // that made ImageCapture reject the quality and crash the next bind.
         if (quality == null || quality !in NumInputFilter.min..NumInputFilter.max) {
             // Revert back to the original value if invalid number was found
-            pQField.setText(camConfig.photoQuality.toString())
+            pQField.setText(settings.photoQuality.toString())
             if (notifyOnInvalidValue) {
                 showMessage(getString(R.string.invalid_photo_quality_value))
             }
         } else {
-            camConfig.photoQuality = quality
+            updateSettings { it.copy(photoQuality = quality) }
         }
     }
 
@@ -335,7 +365,9 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             clearFocus()
             dumpData()
             true
-        } else false
+        } else {
+            false
+        }
     }
 
     fun showMessage(msg: String) {
@@ -349,36 +381,18 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     companion object {
-        private var camConfigId = 0L
-        private var staticCamConfig: CamConfig? = null
 
-        private const val INTENT_EXTRA_CAM_CONFIG_ID = "camConfig_id"
+        private const val INTENT_EXTRA_IN_CAPTURE_MODE = "in_capture_mode"
+        private const val INTENT_EXTRA_ZSL_SUPPORTED = "zsl_supported"
 
         fun start(caller: MainActivity) {
             val flavor = if (caller is SecureActivity) MoreSettingsSecure::class else MoreSettings::class
             Intent(caller, flavor.java).let {
-                camConfigId += 1
-                it.putExtra(INTENT_EXTRA_CAM_CONFIG_ID, camConfigId)
-                staticCamConfig = caller.camConfig
+                it.putExtra(INTENT_EXTRA_IN_CAPTURE_MODE, caller.camConfig.isInCaptureMode)
+                it.putExtra(INTENT_EXTRA_ZSL_SUPPORTED, caller.camConfig.isZslSupported)
 
                 caller.startActivity(it)
             }
-        }
-
-        private fun obtainCamConfig(intent: Intent): CamConfig? {
-            val camConfig = staticCamConfig
-            if (camConfigId != intent.getLongExtra(INTENT_EXTRA_CAM_CONFIG_ID, -1)) {
-                return null
-            }
-            return camConfig
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        if (isFinishing) {
-            staticCamConfig = null
         }
     }
 }

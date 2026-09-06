@@ -22,6 +22,8 @@ class PreferencesProvidesModuleTest {
 
     private val module = PreferencesProvidesModule()
 
+    private val secureSession = SecureSessionPreferences()
+
     private val durableSettings: DataStore<SettingsPrefs> = InMemoryDataStore(
         SettingsPrefs(common = StoredCameraSettings(photoQuality = OWNERS_PHOTO_QUALITY)),
     )
@@ -32,6 +34,7 @@ class PreferencesProvidesModuleTest {
         return module.provideSettingsPrefs(
             context = Robolectric.buildActivity(type).get(),
             durable = durableSettings,
+            secureSession = secureSession,
         )
     }
 
@@ -39,6 +42,7 @@ class PreferencesProvidesModuleTest {
         return module.provideStoragePrefs(
             context = Robolectric.buildActivity(type).get(),
             durable = durableStorage,
+            secureSession = secureSession,
         )
     }
 

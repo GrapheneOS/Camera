@@ -13,13 +13,13 @@ import androidx.camera.core.Preview
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import app.grapheneos.camera.App
-import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
-import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ktx.applyPreviewRatio
+import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.showQrFormatsDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import com.google.zxing.BarcodeFormat
@@ -27,7 +27,8 @@ import java.util.concurrent.Executor
 
 internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
-) : CameraSessionEnvironment, ViewfinderEffects {
+) : CameraSessionEnvironment,
+    ViewfinderEffects {
 
     override val sessionContext: Context
         get() {
@@ -58,14 +59,13 @@ internal class ViewfinderEffectHandler(
         get() {
             return when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
-                    activity.display?.rotation ?: @Suppress("DEPRECATION")
-                    activity.windowManager.defaultDisplay.rotation
+                    activity.display?.rotation ?: deprecatedDisplayRotation()
                 }
 
                 // We don't really have any option here, but this initialization ensures that the
                 // app doesn't break later when the below deprecated option gets removed post
                 // Android R
-                else -> @Suppress("DEPRECATION") activity.windowManager.defaultDisplay.rotation
+                else -> deprecatedDisplayRotation()
             }
         }
 
@@ -151,7 +151,7 @@ internal class ViewfinderEffectHandler(
 
     override fun onPreviewBound(aspectRatio: Int, cameraInfo: CameraInfo) {
         // Focus camera on touch/tap
-        activity.previewView.setOnTouchListener(activity)
+        activity.previewView.setOnTouchListener(activity.gestureHandler)
         activity.previewView.applyPreviewRatio(aspectRatio, cameraInfo)
     }
 
@@ -326,6 +326,11 @@ internal class ViewfinderEffectHandler(
         )
 
         activity.mainOverlay.startAnimation(animation)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun deprecatedDisplayRotation(): Int {
+        return activity.windowManager.defaultDisplay.rotation
     }
 
     private companion object {

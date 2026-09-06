@@ -4,24 +4,30 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.SecureActivity
 
 class ActivityLifeCycleHelper(
-    private val callback: (activity: MainActivity?) -> Unit
+    private val onResumedActivityChanged: (activity: MainActivity?) -> Unit,
+    private val onSecureActivityCountChanged: (opened: Boolean) -> Unit,
 ) : Application.ActivityLifecycleCallbacks {
 
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        if (activity is SecureActivity) {
+            onSecureActivityCountChanged(true)
+        }
+    }
 
     override fun onActivityStarted(activity: Activity) {}
 
     override fun onActivityResumed(activity: Activity) {
         if (activity is MainActivity) {
-            callback.invoke(activity)
+            onResumedActivityChanged(activity)
         }
     }
 
     override fun onActivityPaused(activity: Activity) {
         if (activity is MainActivity) {
-            callback.invoke(null)
+            onResumedActivityChanged(null)
         }
     }
 
@@ -29,5 +35,9 @@ class ActivityLifeCycleHelper(
 
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
-    override fun onActivityDestroyed(activity: Activity) {}
+    override fun onActivityDestroyed(activity: Activity) {
+        if (activity is SecureActivity) {
+            onSecureActivityCountChanged(false)
+        }
+    }
 }

@@ -2,7 +2,6 @@ package app.grapheneos.camera.di.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.di.core.DurablePreferences
@@ -13,8 +12,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityComponent
 import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.scopes.ActivityScoped
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 
 @Module
 @InstallIn(ActivityComponent::class)
@@ -25,10 +22,11 @@ internal class PreferencesProvidesModule {
     fun provideSettingsPrefs(
         @ActivityContext context: Context,
         @DurablePreferences durable: DataStore<SettingsPrefs>,
+        secureSession: SecureSessionPreferences,
     ): DataStore<SettingsPrefs> {
         return when (context) {
             // Secure sessions get a snapshot so later owner changes cannot leak through the lockscreen.
-            is SecureActivity -> InMemoryDataStore(runBlocking { durable.data.first() })
+            is SecureActivity -> secureSession.settingsSnapshotOf(durable)
             else -> durable
         }
     }
@@ -38,9 +36,10 @@ internal class PreferencesProvidesModule {
     fun provideStoragePrefs(
         @ActivityContext context: Context,
         @DurablePreferences durable: DataStore<StoragePrefs>,
+        secureSession: SecureSessionPreferences,
     ): DataStore<StoragePrefs> {
         return when (context) {
-            is SecureActivity -> InMemoryDataStore(runBlocking { durable.data.first() })
+            is SecureActivity -> secureSession.storageSnapshotOf(durable)
             else -> durable
         }
     }
