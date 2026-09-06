@@ -17,7 +17,6 @@ class ResolveAvailableModesImplTest {
 
     private val store = ExtensionAvailabilityStoreImpl()
 
-
     @Test
     fun invoke_aColdCache_offersOnlyTheModesThatNeedNoExtension() {
         assertEquals(
@@ -39,7 +38,9 @@ class ResolveAvailableModesImplTest {
     fun invoke_anExtensionUsableOnOneLens_offersThatMode() {
         store.record(NIGHT_BACK, usable = true)
 
-        assertTrue(CameraMode.NIGHT in availableModes(allowsQrScanning = true, extensionsAvailable = true))
+        assertTrue(
+            CameraMode.NIGHT in availableModes(allowsQrScanning = true, extensionsAvailable = true)
+        )
     }
 
     @Test
@@ -47,7 +48,9 @@ class ResolveAvailableModesImplTest {
         store.record(NIGHT_FRONT, usable = false)
         store.record(NIGHT_BACK, usable = false)
 
-        assertFalse(CameraMode.NIGHT in availableModes(allowsQrScanning = true, extensionsAvailable = true))
+        assertFalse(
+            CameraMode.NIGHT in availableModes(allowsQrScanning = true, extensionsAvailable = true)
+        )
     }
 
     @Test

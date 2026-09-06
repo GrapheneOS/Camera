@@ -175,7 +175,9 @@ class CameraSession @AssistedInject constructor(
         .build()
 
     val isZslSupported: Boolean by lazy {
-        camera!!.cameraInfo.isZslSupported
+        requireNotNull(camera) {
+            "Queried before the first bind"
+        }.cameraInfo.isZslSupported
     }
 
     private var extensionProbesInFlight = false
@@ -237,7 +239,11 @@ class CameraSession @AssistedInject constructor(
     }
 
     private fun getCurrentCameraInfo(): CameraInfo {
-        return cameraProvider!!.getCameraInfo(cameraSelector)
+        val provider = requireNotNull(cameraProvider) {
+            "Camera provider is not ready yet"
+        }
+
+        return provider.getCameraInfo(cameraSelector)
     }
 
     fun initialize(forced: Boolean, extensionMode: Int) {
@@ -345,7 +351,10 @@ class CameraSession @AssistedInject constructor(
             val verdicts = HashMap<ExtensionKey, Boolean?>()
             for (key in pending) {
                 verdicts[key] = probeExtension(
-                    provider, em, selectorFor(key.lensFacing), key.extensionMode
+                    provider = provider,
+                    em = em,
+                    selector = selectorFor(key.lensFacing),
+                    extensionMode = key.extensionMode
                 )
             }
 
@@ -504,8 +513,9 @@ class CameraSession @AssistedInject constructor(
 
         if (extensionMode != ExtensionMode.NONE) {
             extensionsManager?.let { em ->
-                if (!isExtensionUsable(tCameraSelector, lensFacing, extensionMode))
+                if (!isExtensionUsable(tCameraSelector, lensFacing, extensionMode)) {
                     return false
+                }
 
                 try {
                     tCameraSelector = em.getExtensionEnabledCameraSelector(
@@ -523,8 +533,12 @@ class CameraSession @AssistedInject constructor(
 
     @SuppressLint("RestrictedApi")
     fun bind(settings: CameraBindSettings): BindOutcome {
+        val provider = requireNotNull(cameraProvider) {
+            "Camera provider is not ready yet"
+        }
+
         // Unbind/close all other camera(s) [if any]
-        cameraProvider?.unbindAll()
+        provider.unbindAll()
 
         val extMode = settings.mode.extensionMode
         var appliedExtension: ExtensionKey? = null
@@ -552,7 +566,7 @@ class CameraSession @AssistedInject constructor(
         //
         // The validation triggers on setQualitySelector() having been called at all, not on the
         // quality it was given, so this flag -- not the resolved feature below -- is what decides
-        // whether that setter may be used. videoQualityAsGroupableFeature(settings.videoQuality) can legitimately fail
+        // whether that setter may be used. videoQualityAsGroupableFeature() can legitimately fail
         // to map the current quality, and falling back to setQualitySelector() in that case would
         // reintroduce the very exception this works around.
         //
@@ -561,11 +575,10 @@ class CameraSession @AssistedInject constructor(
         // check" with "unsupported", quietly discard the stored video quality and produce
         // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters in
         // the session plan instead, which are legal exactly because no feature group is in use
-        // then. And the
-        // group exists solely to negotiate stabilization against the quality, so a camera that
-        // supports no stabilization at all has nothing to negotiate: it takes the plain fallback
-        // path directly, which produces the identical output without a needless feature-group
-        // round.
+        // then. And the group exists solely to negotiate stabilization against the quality, so a
+        // camera that supports no stabilization at all has nothing to negotiate: it takes the
+        // plain fallback path directly, which produces the identical output without a needless
+        // feature-group round.
         val featureGroup: FeatureGroupRequest = when {
             settings.isVideoMode && settings.enableEis && canApplyVideoStabilization() -> {
                 FeatureGroupRequest.Requested(videoQualityAsGroupableFeature(settings.videoQuality))
@@ -613,10 +626,14 @@ class CameraSession @AssistedInject constructor(
             iAnalyzer = mIAnalyzer
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
             cameraSelector = CameraSelector.Builder()
-                .requireLensFacing(requireNotNull(settings.qrLensFacing) { "QR mode needs a lens facing" })
+                .requireLensFacing(
+                    requireNotNull(settings.qrLensFacing) {
+                        "QR mode needs a lens facing"
+                    }
+                )
                 .build()
-            useCasesList.add(mIAnalyzer)
 
+            useCasesList.add(mIAnalyzer)
         } else {
             plan.videoCapture?.let {
                 videoCapture = it
@@ -659,7 +676,7 @@ class CameraSession @AssistedInject constructor(
                 snapshotProbeCount++
 
                 val cameraInfo = try {
-                    cameraProvider?.getCameraInfo(cameraSelector)
+                    provider.getCameraInfo(cameraSelector)
                 } catch (exception: IllegalArgumentException) {
                     Log.e(TAG, "Failed to query camera info", exception)
                     return BindOutcome.FAILED
@@ -673,12 +690,12 @@ class CameraSession @AssistedInject constructor(
                             else -> useCasesList - snapshotUseCase
                         }
 
-                        cameraInfo?.isSessionConfigSupported(
+                        cameraInfo.isSessionConfigSupported(
                             SessionConfig(
                                 useCases = probedUseCases,
                                 requiredFeatureGroup = features,
                             )
-                        ) == true
+                        )
                     },
                 )
             }
@@ -703,7 +720,7 @@ class CameraSession @AssistedInject constructor(
                 sessionConfig.setFeatureSelectionListener(
                     environment.sessionMainExecutor
                 ) { selected ->
-                            listener.onFeaturesSelected(
+                    listener.onFeaturesSelected(
                         boundLensFacing = boundLensFacing,
                         requested = requested,
                         qualityFeature = requiredQualityFeature,
@@ -712,8 +729,9 @@ class CameraSession @AssistedInject constructor(
                 }
             }
 
-            camera = cameraProvider!!.bindToLifecycle(
-                environment.sessionLifecycleOwner, cameraSelector,
+            camera = provider.bindToLifecycle(
+                environment.sessionLifecycleOwner,
+                cameraSelector,
                 sessionConfig
             )
         } catch (exception: RuntimeException) {
@@ -740,7 +758,9 @@ class CameraSession @AssistedInject constructor(
             // always uses the same fixed pair of use cases, so an invalid configuration is as
             // permanent as any other vendor failure). Anything else is a real bug and is rethrown
             // rather than hidden behind a silent mode switch.
-            if (exception !is UnsupportedOperationException && exception !is IllegalArgumentException) {
+            if (exception !is UnsupportedOperationException &&
+                exception !is IllegalArgumentException
+            ) {
                 throw exception
             }
 
