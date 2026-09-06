@@ -18,20 +18,21 @@ import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
-import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
 import app.grapheneos.camera.data.camera.repository.CameraSession
+import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
-import app.grapheneos.camera.ui.videoQualityTitle
-import app.grapheneos.camera.ui.viewfinder.ViewfinderEffects
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
+import app.grapheneos.camera.domain.qr.BarcodeFormats
+import app.grapheneos.camera.ui.videoQualityTitle
+import app.grapheneos.camera.ui.viewfinder.ViewfinderEffects
 import com.google.zxing.BarcodeFormat
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -55,51 +56,9 @@ class CamConfig @AssistedInject constructor(
     private val capturedItemRepository: CapturedItemRepository,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
+    private val barcodeFormats: BarcodeFormats,
     cameraSessionFactory: CameraSession.Factory,
 ) {
-
-    @AssistedFactory
-    interface Factory {
-
-        fun create(
-            environment: CameraSessionEnvironment,
-            effects: ViewfinderEffects,
-        ): CamConfig
-    }
-
-    companion object {
-        private const val TAG = "CamConfig"
-
-        const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
-
-        val commonFormats = arrayOf(
-            BarcodeFormat.AZTEC,
-            BarcodeFormat.QR_CODE,
-            BarcodeFormat.DATA_MATRIX,
-            BarcodeFormat.PDF_417,
-        )
-
-        val imageCollectionUri: Uri = MediaStore.Images.Media.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY
-        )!!
-
-        val videoCollectionUri: Uri = MediaStore.Video.Media.getContentUri(
-            MediaStore.VOLUME_EXTERNAL_PRIMARY
-        )!!
-
-        val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
-
-        @VisibleForTesting
-        val snapshotProbeCount: Int
-            get() {
-                return CameraSession.snapshotProbeCount
-            }
-
-        @VisibleForTesting
-        fun clearSnapshotProbeCache() {
-            CameraSession.clearSnapshotProbeCache()
-        }
-    }
 
     private val session = cameraSessionFactory.create(
         environment = environment,
@@ -127,7 +86,10 @@ class CamConfig @AssistedInject constructor(
                 selected: Set<GroupableFeature>,
             ) {
                 this@CamConfig.onFeaturesSelected(
-                    boundLensFacing, requested, qualityFeature, selected,
+                    boundLensFacing,
+                    requested,
+                    qualityFeature,
+                    selected,
                 )
             }
         },
@@ -175,15 +137,8 @@ class CamConfig @AssistedInject constructor(
     val isZslSupported: Boolean
         get() = session.isZslSupported
 
-    fun canApplyVideoStabilization(): Boolean {
-        return session.canApplyVideoStabilization()
-    }
-
-    fun toggleTorchState() {
-        session.toggleTorchState()
-    }
-
-    val allowedFormats: ArrayList<BarcodeFormat> = arrayListOf()
+    val allowedFormats: List<BarcodeFormat>
+        get() = barcodeFormats.enabled
 
     @set:VisibleForTesting
     var mPlayer = environment.createTunePlayer()
@@ -195,21 +150,6 @@ class CamConfig @AssistedInject constructor(
     }
 
     private var modeSettings: ModeSettings = ModeSettings()
-
-    private fun <T> setting(
-        read: (CameraSettings) -> T,
-        write: (CameraSettings, T) -> CameraSettings,
-    ): ReadWriteProperty<Any?, T> {
-        return object : ReadWriteProperty<Any?, T> {
-            override fun getValue(thisRef: Any?, property: KProperty<*>): T {
-                return read(settings)
-            }
-
-            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-                settings = runBlocking { settingsRepository.update { write(it, value) } }
-            }
-        }
-    }
 
     private val preferencesScope = CoroutineScope(Dispatchers.Main.immediate)
 
@@ -238,23 +178,6 @@ class CamConfig @AssistedInject constructor(
         }
     }
 
-    fun onDestroy() {
-        preferencesScope.cancel()
-    }
-
-    fun fetchLastCapturedItem() {
-        val item = try {
-            runBlocking { capturedItemRepository.lastCapturedItem() }
-        } catch (e: IOException) {
-            Log.e(TAG, "unable to read the last captured item", e)
-            null
-        }
-        val skip = item?.type == ITEM_TYPE_IMAGE && entryPoint.isVideoOnlySession
-
-        lastCapturedItem = if (skip) null else item
-    }
-
-
     var isVideoMode = false
         private set
         get() {
@@ -275,17 +198,9 @@ class CamConfig @AssistedInject constructor(
     var aspectRatio: Int
         get() {
             return when {
-                isVideoMode -> {
-                    AspectRatio.RATIO_16_9
-                }
-
-                isQRMode -> {
-                    AspectRatio.RATIO_4_3
-                }
-
-                else -> {
-                    settings.aspectRatio
-                }
+                isVideoMode -> AspectRatio.RATIO_16_9
+                isQRMode -> AspectRatio.RATIO_4_3
+                else -> settings.aspectRatio
             }
         }
         set(value) {
@@ -311,20 +226,6 @@ class CamConfig @AssistedInject constructor(
 
     var flashMode: Int = SettingsDefaults.FLASH_MODE
         private set
-
-    fun setFlashMode(value: Int) {
-        runBlocking {
-            settingsRepository.setFlashMode(value)
-        }?.let { modeSettings = it }
-
-        applyFlashMode(value)
-    }
-
-    private fun applyFlashMode(value: Int) {
-        flashMode = value
-        imageCapture?.flashMode = value
-        effects.onFlashModeChanged()
-    }
 
     var focusTimeout: Long by setting(
         read = { it.focusTimeoutSeconds },
@@ -374,19 +275,9 @@ class CamConfig @AssistedInject constructor(
         write = { current, value -> current.copy(enableEis = value) },
     )
 
-    var enableZsl: Boolean by setting(
-        read = { it.enableZsl },
-        write = { current, value -> current.copy(enableZsl = value) },
-    )
-
     var saveImageAsPreviewed: Boolean by setting(
         read = { it.saveImageAsPreviewed },
         write = { current, value -> current.copy(saveImageAsPreviewed = value) },
-    )
-
-    var saveVideoAsPreviewed: Boolean by setting(
-        read = { it.saveVideoAsPreviewed },
-        write = { current, value -> current.copy(saveVideoAsPreviewed = value) },
     )
 
     var storageLocation: String
@@ -412,15 +303,6 @@ class CamConfig @AssistedInject constructor(
         write = { current, value -> current.copy(removeExifAfterCapture = value) },
     )
 
-    var gSuggestions: Boolean by setting(
-        read = { it.gyroscopeSuggestions },
-        write = { current, value -> current.copy(gyroscopeSuggestions = value) },
-    )
-
-    fun shouldShowGyroscope(): Boolean {
-        return isInPhotoMode && gSuggestions
-    }
-
     private val isInPhotoMode: Boolean
         get() {
             return !(isQRMode || isVideoMode)
@@ -430,16 +312,6 @@ class CamConfig @AssistedInject constructor(
         get() {
             return entryPoint.isCaptureSession
         }
-
-    fun updateLastCapturedItem(item: CapturedItem) {
-        lastCapturedItem = item
-
-        try {
-            runBlocking { capturedItemRepository.saveLastCapturedItem(item) }
-        } catch (e: IOException) {
-            Log.e(TAG, "unable to store the last captured item", e)
-        }
-    }
 
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
     // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
@@ -472,24 +344,81 @@ class CamConfig @AssistedInject constructor(
             effects.onSelfIlluminationChanged(value)
         }
 
-    fun setQRScanningFor(format: String, selected: Boolean) {
+    var waitForFocusLock: Boolean by setting(
+        read = { it.waitForFocusLock },
+        write = { current, value -> current.copy(waitForFocusLock = value) },
+    )
 
-        settings = runBlocking {
-            settingsRepository.update {
-                it.withBarcodeFormat(formatName = format, enabled = selected)
+    fun canApplyVideoStabilization(): Boolean {
+        return session.canApplyVideoStabilization()
+    }
+
+    fun toggleTorchState() {
+        session.toggleTorchState()
+    }
+
+    private fun <T> setting(
+        read: (CameraSettings) -> T,
+        write: (CameraSettings, T) -> CameraSettings,
+    ): ReadWriteProperty<Any?, T> {
+        return object : ReadWriteProperty<Any?, T> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+                return read(settings)
+            }
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+                settings = runBlocking { settingsRepository.update { write(it, value) } }
             }
         }
+    }
 
-        if (selected) {
-            if (BarcodeFormat.valueOf(format) !in allowedFormats) {
-                allowedFormats.add(BarcodeFormat.valueOf(format))
-            }
-        } else {
-            if (allowedFormats.size == 1) {
-                effects.showMessage(R.string.no_barcode_selected)
-            } else {
-                allowedFormats.remove(BarcodeFormat.valueOf(format))
-            }
+    fun onDestroy() {
+        preferencesScope.cancel()
+    }
+
+    fun fetchLastCapturedItem() {
+        val item = try {
+            runBlocking { capturedItemRepository.lastCapturedItem() }
+        } catch (e: IOException) {
+            Log.e(TAG, "unable to read the last captured item", e)
+            null
+        }
+        val skip = item?.type == ITEM_TYPE_IMAGE && entryPoint.isVideoOnlySession
+
+        lastCapturedItem = if (skip) null else item
+    }
+
+    fun setFlashMode(value: Int) {
+        runBlocking {
+            settingsRepository.setFlashMode(value)
+        }?.let { modeSettings = it }
+
+        applyFlashMode(value)
+    }
+
+    private fun applyFlashMode(value: Int) {
+        flashMode = value
+        imageCapture?.flashMode = value
+        effects.onFlashModeChanged()
+    }
+
+    fun shouldShowGyroscope(): Boolean {
+        return isInPhotoMode && settings.gyroscopeSuggestions
+    }
+
+    fun updateLastCapturedItem(item: CapturedItem) {
+        lastCapturedItem = item
+
+        try {
+            runBlocking { capturedItemRepository.saveLastCapturedItem(item) }
+        } catch (e: IOException) {
+            Log.e(TAG, "unable to store the last captured item", e)
+        }
+    }
+
+    fun setQRScanningFor(format: String, selected: Boolean) {
+        if (!barcodeFormats.setEnabled(formatName = format, enabled = selected)) {
+            effects.showMessage(R.string.no_barcode_selected)
         }
 
         session.refreshQrHints()
@@ -528,29 +457,15 @@ class CamConfig @AssistedInject constructor(
     fun loadSettings() {
         includeAudio = settings.includeAudio
 
-        allowedFormats.clear()
-        allowedFormats.addAll(
-            BarcodeFormat.entries.filter { it.name in settings.enabledBarcodeFormats },
-        )
+        barcodeFormats.load(settings.enabledBarcodeFormats)
 
         effects.selectBarcodeFormatToggles(allowedFormats)
 
         session.refreshQrHints()
     }
 
-    var waitForFocusLock: Boolean by setting(
-        read = { it.waitForFocusLock },
-        write = { current, value -> current.copy(waitForFocusLock = value) },
-    )
-
-    var selectHighestResolution: Boolean by setting(
-        read = { it.selectHighestResolution },
-        write = { current, value -> current.copy(selectHighestResolution = value) },
-    )
-
     fun toggleFlashMode() {
         if (isFlashAvailable) {
-
             val next = when (flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                 ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
@@ -558,7 +473,6 @@ class CamConfig @AssistedInject constructor(
             }
 
             setFlashMode(next)
-
         } else {
             effects.showMessage(R.string.flash_unavailable_in_selected_mode)
         }
@@ -574,14 +488,13 @@ class CamConfig @AssistedInject constructor(
     }
 
     fun toggleCameraSelector() {
-
         // Manually switch to the opposite lens facing
         lensFacing =
-            if (lensFacing == CameraSelector.LENS_FACING_BACK)
+            if (lensFacing == CameraSelector.LENS_FACING_BACK) {
                 CameraSelector.LENS_FACING_FRONT
-            else
+            } else {
                 CameraSelector.LENS_FACING_BACK
-
+            }
 
         // Test whether the new lens facing is supported by the current device
         // If it is supported then restart the camera with the new configuration
@@ -598,7 +511,6 @@ class CamConfig @AssistedInject constructor(
                 CameraSelector.LENS_FACING_BACK
             }
         }
-
     }
 
     private fun onFeaturesSelected(
@@ -661,7 +573,6 @@ class CamConfig @AssistedInject constructor(
             }
         }
 
-
         session.selectLensFacing(lensFacing)
 
         // To use the last frame instead of showing a blank screen when
@@ -695,10 +606,10 @@ class CamConfig @AssistedInject constructor(
             photoQuality = photoQuality,
             videoQuality = videoQuality,
             waitForFocusLock = waitForFocusLock,
-            enableZsl = enableZsl,
+            enableZsl = settings.enableZsl,
             enableEis = enableEIS,
-            selectHighestResolution = selectHighestResolution,
-            mirrorVideoOnFrontCamera = saveVideoAsPreviewed,
+            selectHighestResolution = settings.selectHighestResolution,
+            mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
         )
 
         return when (session.bind(bindSettings)) {
@@ -819,49 +730,21 @@ class CamConfig @AssistedInject constructor(
     }
 
     fun showMoreOptionsForQR() {
-        val optionNames = BarcodeFormat.entries
-            .filterNot { it in commonFormats }
-            .map { it.name }
+        val optionNames = barcodeFormats.uncommonNames()
 
         effects.showBarcodeFormatPicker(
             optionNames = optionNames,
-            initialValues = optionNames.map { it in settings.enabledBarcodeFormats },
+            initialValues = optionNames.map { barcodeFormats.isEnabled(it) },
             onConfirm = { values -> applyBarcodeFormats(optionNames, values) },
         )
     }
 
     private fun applyBarcodeFormats(optionNames: List<String>, values: List<Boolean>) {
-        // If all formats displayed outside the dialog are disabled (main QR scanner UI) and no
-        // option is selected within the check box either - implying no barcode format is selected
-        // at all - don't apply the selection made by the user
-        val allCommonFormatsDisabled = commonFormats.none { allowedFormats.contains(it) }
+        val selection = optionNames.withIndex().associate { (index, name) -> name to values[index] }
 
-        if (allCommonFormatsDisabled && values.none { it }) {
+        if (!barcodeFormats.apply(selection)) {
             effects.showMessage(R.string.no_barcode_selected)
             return
-        }
-
-        for ((index, optionName) in optionNames.withIndex()) {
-            val format = BarcodeFormat.valueOf(optionName)
-
-            if (values[index]) {
-                if (format !in allowedFormats) {
-                    allowedFormats.add(format)
-                }
-            } else {
-                allowedFormats.remove(format)
-            }
-        }
-
-        settings = runBlocking {
-            settingsRepository.update { current ->
-                optionNames.foldIndexed(current) { index, updated, optionName ->
-                    updated.withBarcodeFormat(
-                        formatName = optionName,
-                        enabled = values[index],
-                    )
-                }
-            }
         }
 
         session.refreshQrHints()
@@ -872,5 +755,36 @@ class CamConfig @AssistedInject constructor(
         storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION
 
         effects.showStorageLocationNotFound()
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            environment: CameraSessionEnvironment,
+            effects: ViewfinderEffects,
+        ): CamConfig
+    }
+
+    companion object {
+        private const val TAG = "CamConfig"
+
+        val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
+
+        val imageCollectionUri: Uri = requireNotNull(
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        ) { "the primary external volume has no image collection" }
+
+        val videoCollectionUri: Uri = requireNotNull(
+            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        ) { "the primary external volume has no video collection" }
+
+        @VisibleForTesting
+        val snapshotProbeCount: Int
+            get() = CameraSession.snapshotProbeCount
+
+        @VisibleForTesting
+        fun clearSnapshotProbeCache() {
+            CameraSession.clearSnapshotProbeCache()
+        }
     }
 }

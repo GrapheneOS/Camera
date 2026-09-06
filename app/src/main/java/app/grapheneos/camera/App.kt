@@ -13,10 +13,12 @@ import android.view.WindowManager
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.capturer.deleteStalePendingRecordings
+import app.grapheneos.camera.di.preferences.SecureSessionPreferences
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.concurrent.thread
 
 @HiltAndroidApp
@@ -68,11 +70,25 @@ class App : Application() {
         }
     }
 
+    @Inject
+    internal lateinit var secureSessionPreferences: SecureSessionPreferences
+
     private val activityLifeCycleHelper by lazy {
-        ActivityLifeCycleHelper { activity ->
-            if (activity != null) activity.disableAutoSleep() else this.activity?.enableAutoSleep()
-            this.activity = activity
-        }
+        ActivityLifeCycleHelper(
+            onResumedActivityChanged = { activity ->
+                when {
+                    activity != null -> activity.disableAutoSleep()
+                    else -> this.activity?.enableAutoSleep()
+                }
+                this.activity = activity
+            },
+            onSecureActivityCountChanged = { opened ->
+                when {
+                    opened -> secureSessionPreferences.onSecureActivityCreated()
+                    else -> secureSessionPreferences.onSecureActivityDestroyed()
+                }
+            },
+        )
     }
 
     fun isAnyLocationProvideActive(): Boolean {
@@ -161,9 +177,12 @@ class App : Application() {
 
     private fun isLocationEnabled(): Boolean = locationManager.isLocationEnabled
 
-    fun shouldAskForLocationPermission() =
-        checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+    fun shouldAskForLocationPermission(): Boolean {
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) !=
+            PackageManager.PERMISSION_GRANTED &&
+            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) !=
+            PackageManager.PERMISSION_GRANTED
+    }
 
     override fun onTerminate() {
         super.onTerminate()
