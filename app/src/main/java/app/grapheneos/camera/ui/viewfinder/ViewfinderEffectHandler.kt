@@ -16,7 +16,7 @@ import app.grapheneos.camera.App
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
-import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
+import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity

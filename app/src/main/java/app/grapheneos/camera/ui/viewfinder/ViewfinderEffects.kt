@@ -26,7 +26,7 @@ interface ViewfinderEffects {
 
     fun flashPreview(selfIlluminate: Boolean)
 
-    fun updateZoomThumb(shouldShowPanel: Boolean = true)
+    fun updateZoomThumb(shouldShowPanel: Boolean)
 
     fun applyExposureState(exposureState: ExposureState)
 

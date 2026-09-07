@@ -8,7 +8,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import java.io.File
 
 internal const val LEGACY_COMMON_PREFS_NAME = "commons"
-internal const val LEGACY_MEDIA_PREFS_NAME = "media"
 
 internal val LEGACY_CAPTURE_KEY_NAMES = setOf(
     "last_captured_item_type",
@@ -70,10 +69,6 @@ internal fun legacyModeFile(context: Context, mode: CameraMode): SharedPreferenc
     return context.getSharedPreferences(mode.name, Context.MODE_PRIVATE)
 }
 
-internal fun legacyMediaFile(context: Context): SharedPreferences {
-    return context.getSharedPreferences(LEGACY_MEDIA_PREFS_NAME, Context.MODE_PRIVATE)
-}
-
 internal fun writeLegacyPreferences(context: Context) {
     legacyCommonsFile(context).edit(commit = true) {
         LEGACY_COMMON_ENTRIES.forEach { (key, value) -> put(key, value) }
@@ -94,10 +89,6 @@ internal fun legacyModeFileExists(context: Context, mode: CameraMode): Boolean {
     return legacyFile(context, mode.name).exists()
 }
 
-internal fun legacyMediaFileExists(context: Context): Boolean {
-    return legacyFile(context, LEGACY_MEDIA_PREFS_NAME).exists()
-}
-
 private fun legacyFile(context: Context, name: String): File {
     return File(context.dataDir, "shared_prefs/$name.xml")
 }
@@ -105,9 +96,6 @@ private fun legacyFile(context: Context, name: String): File {
 internal fun clearLegacyPreferences(context: Context) {
     legacyCommonsFile(context).edit(commit = true) { clear() }
     context.deleteSharedPreferences(LEGACY_COMMON_PREFS_NAME)
-
-    legacyMediaFile(context).edit(commit = true) { clear() }
-    context.deleteSharedPreferences(LEGACY_MEDIA_PREFS_NAME)
 
     CameraMode.entries.forEach { mode ->
         legacyModeFile(context, mode).edit(commit = true) { clear() }

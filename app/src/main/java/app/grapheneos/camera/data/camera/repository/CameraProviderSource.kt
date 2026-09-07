@@ -11,7 +11,10 @@ import kotlin.concurrent.thread
 
 interface CameraProviderSource {
 
-    fun acquireProvider(context: Context, onResult: (ProcessCameraProvider?) -> Unit)
+    fun acquireProvider(
+        context: Context,
+        onResult: (ProcessCameraProvider?) -> Unit,
+    )
 
     fun acquireExtensionsManager(
         context: Context,
@@ -27,18 +30,19 @@ internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSo
         onResult: (ProcessCameraProvider?) -> Unit,
     ) {
         val providerFuture = ProcessCameraProvider.getInstance(context)
+        val deliverProvider = {
+            val provider = try {
+                providerFuture.get()
+            } catch (exception: ExecutionException) {
+                Log.e(TAG, "Camera provider initialization failed", exception)
+                null
+            }
+
+            onResult(provider)
+        }
 
         providerFuture.addListener(
-            {
-                val provider = try {
-                    providerFuture.get()
-                } catch (exception: ExecutionException) {
-                    Log.e(TAG, "Camera provider initialization failed", exception)
-                    null
-                }
-
-                onResult(provider)
-            },
+            deliverProvider,
             ContextCompat.getMainExecutor(context),
         )
     }
@@ -58,18 +62,19 @@ internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSo
         thread {
             try {
                 val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(context, provider)
+                val deliverExtensionsManager = {
+                    val extensionsManager = try {
+                        extensionsManagerFuture.get()
+                    } catch (exception: ExecutionException) {
+                        Log.e(TAG, "Extensions manager future failed", exception)
+                        null
+                    }
+
+                    onResult(extensionsManager)
+                }
 
                 extensionsManagerFuture.addListener(
-                    {
-                        val extensionsManager = try {
-                            extensionsManagerFuture.get()
-                        } catch (exception: ExecutionException) {
-                            Log.e(TAG, "Extensions manager future failed", exception)
-                            null
-                        }
-
-                        onResult(extensionsManager)
-                    },
+                    deliverExtensionsManager,
                     ContextCompat.getMainExecutor(context),
                 )
             } catch (exception: Exception) {

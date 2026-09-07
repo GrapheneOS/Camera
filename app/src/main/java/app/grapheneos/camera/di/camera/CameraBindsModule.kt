@@ -2,10 +2,10 @@ package app.grapheneos.camera.di.camera
 
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.CameraProviderSourceImpl
-import app.grapheneos.camera.data.camera.repository.FeatureCombinationSupport
-import app.grapheneos.camera.data.camera.repository.FeatureCombinationSupportImpl
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStoreImpl
+import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
+import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
+import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
+import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapperImpl
 import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
@@ -27,9 +27,9 @@ internal abstract class CameraBindsModule {
 
     @Binds
     @Singleton
-    abstract fun bindExtensionAvailabilityStore(
-        impl: ExtensionAvailabilityStoreImpl,
-    ): ExtensionAvailabilityStore
+    abstract fun bindExtensionAvailabilityRepository(
+        impl: ExtensionAvailabilityRepositoryImpl,
+    ): ExtensionAvailabilityRepository
 
     @Binds
     @Reusable

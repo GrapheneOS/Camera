@@ -136,47 +136,23 @@ open class MainActivity : AppCompatActivity() {
     internal val gestureHandler by lazy { ViewfinderGestureHandler(this) }
     internal val orientationHandler by lazy { ViewfinderOrientationHandler(this) }
 
-    fun onDeviceAngleChange(xDegrees: Float, zDegrees: Float) {
-        orientationHandler.onDeviceAngleChange(xDegrees, zDegrees)
-    }
-
     val gestureDetector: GestureDetector
         get() = gestureHandler.gestureDetector
 
+    lateinit var imageCapturer: ImageCapturer
+
+    lateinit var videoCapturer: VideoCapturer
+
+    lateinit var settingsDialog: SettingsDialog
+
     val threeButtons: View
         get() = binding.threeButtons
-
-    private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
     val previewView: PreviewView
         get() = binding.preview
 
     val bottomOverlay: View
         get() = binding.bottomOverlay
-
-    // Hold a reference to the manual permission dialog to avoid re-creating it if it
-    // is already visible and to dismiss it if the permission gets granted.
-    private var cameraPermissionDialog: AlertDialog? = null
-
-    private var audioPermissionDialog: AlertDialog? = null
-
-    @Volatile
-    var lastFrame: Bitmap? = null
-        private set
-
-    @Volatile
-    private var frameCopyPending = false
-
-    // When the copy waiting in [lastFrame] was taken, or 0 when there is none waiting.
-    @Volatile
-    private var framePrefetchedAt = 0L
-
-    private var frameCopyThread: HandlerThread? = null
-
-    private var loggedMissingSurfaceView = false
-
-    // Whether the transition still is standing in for the preview.
-    private var transitionShown = false
 
     val rootView: View
         get() = binding.root
@@ -195,10 +171,6 @@ open class MainActivity : AppCompatActivity() {
 
     val azToggle: QRToggle
         get() = binding.aztecToggle
-
-    lateinit var imageCapturer: ImageCapturer
-
-    lateinit var videoCapturer: VideoCapturer
 
     val flipCameraCircle: View
         get() = binding.flipCameraCircle
@@ -245,15 +217,11 @@ open class MainActivity : AppCompatActivity() {
     val mainOverlay: ImageView
         get() = binding.mainOverlay
 
-    lateinit var settingsDialog: SettingsDialog
-
     val previewGrid: CustomGrid
         get() = binding.previewGrid
 
     val cdTimer: CountDownTimerUI
         get() = binding.cTimer
-
-    var timerDuration = 0
 
     val cbText: TextView
         get() = binding.captureButtonText
@@ -267,7 +235,40 @@ open class MainActivity : AppCompatActivity() {
     val muteToggle: ShapeableImageView
         get() = binding.muteToggle
 
+    val micOffIcon: ImageView
+        get() = binding.micOff
+
+    private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
+
+    // Hold a reference to the manual permission dialog to avoid re-creating it if it
+    // is already visible and to dismiss it if the permission gets granted.
+    private var cameraPermissionDialog: AlertDialog? = null
+
+    private var audioPermissionDialog: AlertDialog? = null
+
+    @Volatile
+    var lastFrame: Bitmap? = null
+        private set
+
+    @Volatile
+    private var frameCopyPending = false
+
+    // When the copy waiting in [lastFrame] was taken, or 0 when there is none waiting.
+    @Volatile
+    private var framePrefetchedAt = 0L
+
+    private var frameCopyThread: HandlerThread? = null
+
+    private var loggedMissingSurfaceView = false
+
+    // Whether the transition still is standing in for the preview.
+    private var transitionShown = false
+
+    var timerDuration = 0
+
     private var bottomNavigationBarPadding: Int = 0
+
+    private var shouldRestartRecording = false
 
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
 
@@ -298,19 +299,6 @@ open class MainActivity : AppCompatActivity() {
 
     private val focusRingCallback: Runnable = Runnable {
         binding.focusRing.visibility = View.INVISIBLE
-    }
-
-    val micOffIcon: ImageView
-        get() = binding.micOff
-
-    private var shouldRestartRecording = false
-
-    fun startFocusTimer() {
-        handler.postDelayed(runnable, autoCenterFocusDuration)
-    }
-
-    fun cancelFocusTimer() {
-        handler.removeCallbacks(runnable)
     }
 
     private val restartRecordingWithAudioPermissionLauncher = registerForActivityResult(
@@ -345,6 +333,18 @@ open class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Permission denied for camera.")
             }
         }
+    }
+
+    fun onDeviceAngleChange(xDegrees: Float, zDegrees: Float) {
+        orientationHandler.onDeviceAngleChange(xDegrees, zDegrees)
+    }
+
+    fun startFocusTimer() {
+        handler.postDelayed(runnable, autoCenterFocusDuration)
+    }
+
+    fun cancelFocusTimer() {
+        handler.removeCallbacks(runnable)
     }
 
     private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {

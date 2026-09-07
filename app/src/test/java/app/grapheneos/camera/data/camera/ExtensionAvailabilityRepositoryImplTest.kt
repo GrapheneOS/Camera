@@ -3,7 +3,7 @@ package app.grapheneos.camera.data.camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStoreImpl
+import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,22 +14,22 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ExtensionAvailabilityStoreImplTest {
+class ExtensionAvailabilityRepositoryImplTest {
 
-    private val store = ExtensionAvailabilityStoreImpl()
+    private val repository = ExtensionAvailabilityRepositoryImpl()
 
     @Test
     fun verdict_anUnprobedKey_isUnknown() {
-        assertNull(store.verdict(NIGHT_FRONT))
+        assertNull(repository.verdict(NIGHT_FRONT))
     }
 
     @Test
     fun record_aVerdict_readsBack() {
-        store.record(NIGHT_FRONT, usable = true)
-        store.record(NIGHT_BACK, usable = false)
+        repository.record(NIGHT_FRONT, usable = true)
+        repository.record(NIGHT_BACK, usable = false)
 
-        assertTrue(store.verdict(NIGHT_FRONT) == true)
-        assertFalse(store.verdict(NIGHT_BACK) == true)
+        assertTrue(repository.verdict(NIGHT_FRONT) == true)
+        assertFalse(repository.verdict(NIGHT_BACK) == true)
     }
 
     @Test
@@ -39,7 +39,7 @@ class ExtensionAvailabilityStoreImplTest {
             .filter { it != ExtensionMode.NONE }
             .toSet()
 
-        val unprobed = store.unprobed()
+        val unprobed = repository.unprobed()
 
         assertEquals(extensionModes.size * 2, unprobed.size)
         assertEquals(extensionModes, unprobed.map { it.extensionMode }.toSet())
@@ -51,48 +51,48 @@ class ExtensionAvailabilityStoreImplTest {
 
     @Test
     fun unprobed_aModeWithoutAnExtension_isNeverListed() {
-        assertTrue(store.unprobed().none { it.extensionMode == ExtensionMode.NONE })
+        assertTrue(repository.unprobed().none { it.extensionMode == ExtensionMode.NONE })
     }
 
     @Test
     fun unprobed_anAnsweredKey_dropsOutOfTheList() {
-        store.record(NIGHT_FRONT, usable = false)
+        repository.record(NIGHT_FRONT, usable = false)
 
-        assertFalse(NIGHT_FRONT in store.unprobed())
-        assertTrue(NIGHT_BACK in store.unprobed())
+        assertFalse(NIGHT_FRONT in repository.unprobed())
+        assertTrue(NIGHT_BACK in repository.unprobed())
     }
 
     @Test
     fun recordProbeRound_aVerdictForAnUnprobedKey_isRemembered() {
-        store.recordProbeRound(mapOf(NIGHT_FRONT to true))
+        repository.recordProbeRound(mapOf(NIGHT_FRONT to true))
 
-        assertTrue(store.verdict(NIGHT_FRONT) == true)
+        assertTrue(repository.verdict(NIGHT_FRONT) == true)
     }
 
     @Test
     fun recordProbeRound_aTransientFailure_isNotRemembered() {
-        store.recordProbeRound(mapOf(NIGHT_FRONT to null))
+        repository.recordProbeRound(mapOf(NIGHT_FRONT to null))
 
-        assertNull(store.verdict(NIGHT_FRONT))
+        assertNull(repository.verdict(NIGHT_FRONT))
     }
 
     @Test
     fun recordProbeRound_aKeyBlacklistedWhileTheRoundWasInFlight_staysBlacklisted() {
-        store.record(NIGHT_FRONT, usable = false)
-        store.recordProbeRound(mapOf(NIGHT_FRONT to true))
+        repository.record(NIGHT_FRONT, usable = false)
+        repository.recordProbeRound(mapOf(NIGHT_FRONT to true))
 
-        assertFalse(store.verdict(NIGHT_FRONT) == true)
+        assertFalse(repository.verdict(NIGHT_FRONT) == true)
     }
 
     @Test
     fun clear_aWarmCache_forgetsEveryVerdict() {
-        store.record(NIGHT_FRONT, usable = true)
-        store.record(NIGHT_BACK, usable = false)
+        repository.record(NIGHT_FRONT, usable = true)
+        repository.record(NIGHT_BACK, usable = false)
 
-        store.clear()
+        repository.clear()
 
-        assertNull(store.verdict(NIGHT_FRONT))
-        assertNull(store.verdict(NIGHT_BACK))
+        assertNull(repository.verdict(NIGHT_FRONT))
+        assertNull(repository.verdict(NIGHT_BACK))
     }
 
     private companion object {

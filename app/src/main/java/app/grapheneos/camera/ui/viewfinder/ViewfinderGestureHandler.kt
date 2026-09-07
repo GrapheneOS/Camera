@@ -200,6 +200,7 @@ internal class ViewfinderGestureHandler(
         val i = activity.tabLayout.selectedTabPosition - 1
 
         Log.i(TAG, "onSwipeRight $i")
+
         activity.tabLayout.getTabAt(i)?.let {
             activity.finalizeMode(it)
         }

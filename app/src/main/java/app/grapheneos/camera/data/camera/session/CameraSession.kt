@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.camera.repository
+package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
 import android.os.Handler
@@ -29,9 +29,11 @@ import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.ExtensionKey
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
+import app.grapheneos.camera.data.camera.repository.CameraProviderSource
+import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.domain.camera.model.CameraBindRequest
 import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
@@ -50,55 +52,28 @@ class CameraSession @AssistedInject constructor(
     @Assisted private val environment: CameraSessionEnvironment,
     @Assisted private val listener: Listener,
     private val cameraProviderSource: CameraProviderSource,
-    private val extensionAvailabilityStore: ExtensionAvailabilityStore,
+    private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
     private val buildCameraSessionPlan: BuildCameraSessionPlan,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
 ) {
 
-    interface Listener {
-
-        fun onZoomStateChanged()
-
-        fun onCameraProviderUnavailable()
-
-        fun onExtensionsUnavailable()
-
-        fun onProviderReady(forced: Boolean)
-
-        fun onFeaturesSelected(
-            boundLensFacing: Int,
-            requested: List<GroupableFeature>,
-            qualityFeature: GroupableFeature?,
-            selected: Set<GroupableFeature>,
-        )
-    }
-
-    @AssistedFactory
-    interface Factory {
-
-        fun create(
-            environment: CameraSessionEnvironment,
-            listener: Listener,
-        ): CameraSession
-    }
-
-    private data class SnapshotProbeKey(
-        val lensFacing: Int,
-        val videoQuality: Quality,
-        val usesFeatureGroup: Boolean,
-        val captureMode: ImageCaptureMode,
-        val selectHighestResolution: Boolean,
-    )
-
-    enum class BindOutcome {
-        BOUND,
-        FAILED,
-        EXTENSION_UNUSABLE,
-    }
-
     var camera: Camera? = null
+
+    var imageCapture: ImageCapture? = null
+
+    var preview: Preview? = null
+
+    var videoCapture: VideoCapture<Recorder>? = null
+
+    var iAnalyzer: ImageAnalysis? = null
+
+    var lensFacing = DEFAULT_LENS_FACING
+
+    private var cameraSelector: CameraSelector = CameraSelector.Builder()
+        .requireLensFacing(DEFAULT_LENS_FACING)
+        .build()
 
     // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
     // extension is bound, because CameraX then queries the extension's zoom range through
@@ -133,54 +108,43 @@ class CameraSession @AssistedInject constructor(
 
     private var extensionsManager: ExtensionsManager? = null
 
-    var imageCapture: ImageCapture? = null
+    private var extensionProbesInFlight = false
 
-    var preview: Preview? = null
+    private var qrAnalyzer: QRAnalyzer? = null
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
-
-    var videoCapture: VideoCapture<Recorder>? = null
-
-    private var qrAnalyzer: QRAnalyzer? = null
 
     val extensionsAvailable: Boolean
         get() {
             return extensionsManager != null && cameraProvider != null
         }
 
-    var iAnalyzer: ImageAnalysis? = null
-
     val isFlashAvailable: Boolean
-        get() = camera?.cameraInfo?.hasFlashUnit() ?: false
+        get() {
+            return camera?.cameraInfo?.hasFlashUnit() ?: false
+        }
+
+    val isZslSupported: Boolean
+        get() {
+            return camera?.cameraInfo?.isZslSupported ?: false
+        }
 
     var isTorchOn: Boolean = false
         get() {
             return camera?.cameraInfo?.torchState?.value == TorchState.ON
         }
         set(value) {
-            field = if (isFlashAvailable) {
-                camera?.cameraControl?.enableTorch(value)
-                value
-            } else {
-                false
+            field = when {
+                isFlashAvailable -> {
+                    camera?.cameraControl?.enableTorch(value)
+                    value
+                }
+
+                else -> false
             }
         }
-
-    var lensFacing = DEFAULT_LENS_FACING
-
-    private var cameraSelector: CameraSelector = CameraSelector.Builder()
-        .requireLensFacing(DEFAULT_LENS_FACING)
-        .build()
-
-    val isZslSupported: Boolean by lazy {
-        requireNotNull(camera) {
-            "Queried before the first bind"
-        }.cameraInfo.isZslSupported
-    }
-
-    private var extensionProbesInFlight = false
 
     fun refreshQrHints() {
         qrAnalyzer?.refreshHints()
@@ -255,7 +219,6 @@ class CameraSession @AssistedInject constructor(
         cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
             when (provider) {
                 null -> listener.onCameraProviderUnavailable()
-
                 else -> onCameraProviderReady(provider, forced, extensionMode)
             }
         }
@@ -270,7 +233,7 @@ class CameraSession @AssistedInject constructor(
             // A different provider instance means the camera stack was reinitialized:
             // extension verdicts probed through the previous instance (including bind-time
             // blacklists, see startCamera) describe vendor state that no longer exists.
-            extensionAvailabilityStore.clear()
+            extensionAvailabilityRepository.clear()
             snapshotSupport.clear()
             probedCameraProvider = provider
         }
@@ -279,10 +242,9 @@ class CameraSession @AssistedInject constructor(
         // Manually switch to the other lens facing (if the default lens facing isn't
         // supported for the current device)
         if (!isLensFacingSupported(lensFacing, extensionMode)) {
-            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-                CameraSelector.LENS_FACING_FRONT
-            } else {
-                CameraSelector.LENS_FACING_BACK
+            lensFacing = when (lensFacing) {
+                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
+                else -> CameraSelector.LENS_FACING_BACK
             }
         }
 
@@ -290,10 +252,9 @@ class CameraSession @AssistedInject constructor(
             environment.sessionContext,
             provider,
         ) { manager ->
-            if (manager == null) {
-                listener.onExtensionsUnavailable()
-            } else {
-                extensionsManager = manager
+            when (manager) {
+                null -> listener.onExtensionsUnavailable()
+                else -> extensionsManager = manager
             }
 
             listener.onProviderReady(forced)
@@ -310,7 +271,7 @@ class CameraSession @AssistedInject constructor(
     // only safe option is to stop offering the mode.
     //
     // getCameraInfo() performs exactly the same vendor init that bindToLifecycle() does, so it is
-    // a faithful probe. Verdicts are cached (ExtensionAvailabilityStore) because every step of
+    // a faithful probe. Verdicts are cached (ExtensionAvailabilityRepository) because every step of
     // the probe -- including the availability query, see probeExtension -- costs a binder round
     // trip. A negative verdict is only cached when the failure is known to be persistent: caching
     // a transient probe failure would make the mode's tab vanish for the rest of the process
@@ -321,8 +282,8 @@ class CameraSession @AssistedInject constructor(
     // probeExtension() itself also runs on the probe thread that loadTabs() spawns, but its
     // results come back through the main executor.
     //
-    // true/false is a verdict that is safe to cache; null is a failure that may be transient
-    // and must not be (see ExtensionAvailabilityStore). The provider and manager are parameters
+    // true/false is a verdict that is safe to cache; null is a failure that may be transient and
+    // must not be (see ExtensionAvailabilityRepository). The provider and manager are parameters
     // rather than the fields because this also runs off the main thread, where the fields could
     // be swapped out mid-probe.
 
@@ -371,12 +332,13 @@ class CameraSession @AssistedInject constructor(
                     return@execute
                 }
 
-                extensionAvailabilityStore.recordProbeRound(verdicts)
+                extensionAvailabilityRepository.recordProbeRound(verdicts)
                 onSettled()
             }
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun probeExtension(
         provider: ProcessCameraProvider,
         em: ExtensionsManager,
@@ -402,18 +364,18 @@ class CameraSession @AssistedInject constructor(
                     true
                 }
             }
-        } catch (e: UnsupportedOperationException) {
+        } catch (exception: UnsupportedOperationException) {
             // The signature of a vendor extender that advertises the mode and then throws from
             // its own init (Pixels: "Framework size list map not supported in pixel path").
             // Nothing about it changes within a process lifetime, so this verdict is safe to
             // remember.
-            Log.w(TAG, "Extension mode $extensionMode is advertised but unusable here", e)
+            Log.w(TAG, "Extension mode $extensionMode is advertised but unusable here", exception)
             false
-        } catch (e: Exception) {
+        } catch (exception: Exception) {
             // Anything else may be transient — the camera service restarting, the camera briefly
             // held by another process. Fail this probe but leave the cache alone so the mode is
             // offered again once the underlying condition clears.
-            Log.w(TAG, "Probing extension mode $extensionMode failed, will retry later", e)
+            Log.w(TAG, "Probing extension mode $extensionMode failed, will retry later", exception)
             null
         }
     }
@@ -433,7 +395,7 @@ class CameraSession @AssistedInject constructor(
             lensFacing = lensFacing,
             extensionMode = extensionMode,
         )
-        extensionAvailabilityStore.verdict(key)?.let { return it }
+        extensionAvailabilityRepository.verdict(key)?.let { return it }
 
         if (!probeOnMiss) return false
 
@@ -446,7 +408,7 @@ class CameraSession @AssistedInject constructor(
         if (extensionProbesInFlight) return false
 
         val verdict = probeExtension(provider, em, selector, extensionMode) ?: return false
-        extensionAvailabilityStore.record(key, usable = verdict)
+        extensionAvailabilityRepository.record(key, usable = verdict)
         return verdict
     }
 
@@ -522,7 +484,7 @@ class CameraSession @AssistedInject constructor(
                         tCameraSelector,
                         extensionMode,
                     )
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     return false
                 }
             }
@@ -765,7 +727,7 @@ class CameraSession @AssistedInject constructor(
             }
 
             Log.e(TAG, "Extension mode $extMode failed to bind; disabling it", exception)
-            extensionAvailabilityStore.record(key, usable = false)
+            extensionAvailabilityRepository.record(key, usable = false)
 
             return BindOutcome.EXTENSION_UNUSABLE
         }
@@ -776,7 +738,7 @@ class CameraSession @AssistedInject constructor(
     private fun unprobedExtensions(): List<ExtensionKey> {
         if (extensionsManager == null || cameraProvider == null) return emptyList()
 
-        return extensionAvailabilityStore.unprobed()
+        return extensionAvailabilityRepository.unprobed()
     }
 
     private fun selectorFor(lensFacing: Int): CameraSelector {
@@ -786,16 +748,50 @@ class CameraSession @AssistedInject constructor(
         }
     }
 
+    interface Listener {
+
+        fun onZoomStateChanged()
+
+        fun onCameraProviderUnavailable()
+
+        fun onExtensionsUnavailable()
+
+        fun onProviderReady(forced: Boolean)
+
+        fun onFeaturesSelected(
+            boundLensFacing: Int,
+            requested: List<GroupableFeature>,
+            qualityFeature: GroupableFeature?,
+            selected: Set<GroupableFeature>,
+        )
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            environment: CameraSessionEnvironment,
+            listener: Listener,
+        ): CameraSession
+    }
+
+    private data class SnapshotProbeKey(
+        val lensFacing: Int,
+        val videoQuality: Quality,
+        val usesFeatureGroup: Boolean,
+        val captureMode: ImageCaptureMode,
+        val selectHighestResolution: Boolean,
+    )
+
     companion object {
         private const val TAG = "CameraSession"
 
         const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
 
-        val FRONT_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
+        private val FRONT_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
             .build()
 
-        val REAR_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
+        private val REAR_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
 
@@ -804,6 +800,10 @@ class CameraSession @AssistedInject constructor(
         // here would be answered from a verdict that predates it, which either takes in-video
         // snapshots away for no reason or keeps them on a camera that cannot bind them.
         private val snapshotSupport = HashMap<SnapshotProbeKey, InVideoSnapshotSupport>()
+
+        // The provider the verdicts above were probed through. A different instance means the
+        // camera stack was reinitialized and none of them describe it any more.
+        private var probedCameraProvider: ProcessCameraProvider? = null
 
         // A cache hit and a repeated probe reach the same verdict, so this is the only thing that
         // tells them apart from the outside.
@@ -816,9 +816,5 @@ class CameraSession @AssistedInject constructor(
             snapshotSupport.clear()
             snapshotProbeCount = 0
         }
-
-        // The provider the verdicts above were probed through. A different instance means the
-        // camera stack was reinitialized and none of them describe it any more.
-        private var probedCameraProvider: ProcessCameraProvider? = null
     }
 }

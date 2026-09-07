@@ -54,16 +54,16 @@ internal class ViewfinderOrientationHandler(
 
     @SuppressLint("RestrictedApi")
     override fun onOrientationChange(orientation: Int) {
-        val tr = when (orientation) {
+        val targetRotation = when (orientation) {
             in 45..134 -> Surface.ROTATION_270
             in 135..224 -> Surface.ROTATION_180
             in 225..314 -> Surface.ROTATION_90
             else -> Surface.ROTATION_0
         }
 
-        activity.camConfig.imageCapture?.targetRotation = tr
-        activity.camConfig.videoCapture?.targetRotation = tr
-        activity.camConfig.iAnalyzer?.targetRotation = tr
+        activity.camConfig.imageCapture?.targetRotation = targetRotation
+        activity.camConfig.videoCapture?.targetRotation = targetRotation
+        activity.camConfig.iAnalyzer?.targetRotation = targetRotation
 
         if (activity.videoCapturer.isRecording) return
 

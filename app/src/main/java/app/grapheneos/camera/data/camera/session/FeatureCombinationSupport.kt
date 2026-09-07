@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.camera.repository
+package app.grapheneos.camera.data.camera.session
 
 import android.hardware.camera2.CameraCharacteristics
 import android.os.Build

@@ -3,7 +3,7 @@ package app.grapheneos.camera.domain.camera.usecase
 import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStoreImpl
+import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,7 +15,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ResolveAvailableModesImplTest {
 
-    private val store = ExtensionAvailabilityStoreImpl()
+    private val repository = ExtensionAvailabilityRepositoryImpl()
 
     @Test
     fun invoke_aColdCache_offersOnlyTheModesThatNeedNoExtension() {
@@ -36,7 +36,7 @@ class ResolveAvailableModesImplTest {
 
     @Test
     fun invoke_anExtensionUsableOnOneLens_offersThatMode() {
-        store.record(NIGHT_BACK, usable = true)
+        repository.record(NIGHT_BACK, usable = true)
 
         assertTrue(
             CameraMode.NIGHT in availableModes(allowsQrScanning = true, extensionsAvailable = true)
@@ -45,8 +45,8 @@ class ResolveAvailableModesImplTest {
 
     @Test
     fun invoke_anExtensionUnusableOnBothLenses_withholdsThatMode() {
-        store.record(NIGHT_FRONT, usable = false)
-        store.record(NIGHT_BACK, usable = false)
+        repository.record(NIGHT_FRONT, usable = false)
+        repository.record(NIGHT_BACK, usable = false)
 
         assertFalse(
             CameraMode.NIGHT in availableModes(allowsQrScanning = true, extensionsAvailable = true)
@@ -55,8 +55,8 @@ class ResolveAvailableModesImplTest {
 
     @Test
     fun invoke_noExtensionsManagerYet_withholdsEveryExtensionModeDespiteAWarmCache() {
-        store.record(NIGHT_FRONT, usable = true)
-        store.record(NIGHT_BACK, usable = true)
+        repository.record(NIGHT_FRONT, usable = true)
+        repository.record(NIGHT_BACK, usable = true)
 
         assertEquals(
             setOf(CameraMode.QR_SCAN, CameraMode.CAMERA, CameraMode.VIDEO),
@@ -68,7 +68,7 @@ class ResolveAvailableModesImplTest {
         allowsQrScanning: Boolean,
         extensionsAvailable: Boolean,
     ): Set<CameraMode> {
-        return ResolveAvailableModesImpl(store).invoke(
+        return ResolveAvailableModesImpl(repository).invoke(
             allowsQrScanning = allowsQrScanning,
             extensionsAvailable = extensionsAvailable,
         )
