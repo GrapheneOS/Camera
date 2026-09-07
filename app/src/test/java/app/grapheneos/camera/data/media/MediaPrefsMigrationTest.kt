@@ -10,8 +10,6 @@ import app.grapheneos.camera.data.core.LEGACY_ITEM_DATE_STRING
 import app.grapheneos.camera.data.core.LEGACY_ITEM_URI
 import app.grapheneos.camera.data.core.clearLegacyPreferences
 import app.grapheneos.camera.data.core.legacyCommonsFile
-import app.grapheneos.camera.data.core.legacyMediaFile
-import app.grapheneos.camera.data.core.legacyMediaFileExists
 import app.grapheneos.camera.data.core.writeLegacyPreferences
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.MediaPrefsMigration
@@ -63,26 +61,7 @@ class MediaPrefsMigrationTest {
     }
 
     @Test
-    fun migrate_lastCapturedItemFromTheMediaFile_isCarriedOverBeforeTheOlderFile() {
-        writeCapturedItem(
-            preferences = legacyCommonsFile(context),
-            dateString = COMMONS_DATE_STRING,
-            uri = COMMONS_URI,
-        )
-        writeCapturedItem(
-            preferences = legacyMediaFile(context),
-            dateString = MEDIA_DATE_STRING,
-            uri = MEDIA_URI,
-        )
-
-        val migrated = runBlocking { migration.migrate(MediaPrefs()) }
-
-        assertEquals(MEDIA_DATE_STRING, migrated.lastCapturedItem?.dateString)
-        assertEquals(MEDIA_URI, migrated.lastCapturedItem?.uri)
-    }
-
-    @Test
-    fun migrate_populatedDataStore_isKeptBeforeEitherLegacyFile() {
+    fun migrate_populatedDataStore_isKeptBeforeTheLegacyFile() {
         val current = StoredCapturedItem(
             type = ITEM_TYPE_IMAGE,
             dateString = CURRENT_DATE_STRING,
@@ -92,11 +71,6 @@ class MediaPrefsMigrationTest {
             preferences = legacyCommonsFile(context),
             dateString = COMMONS_DATE_STRING,
             uri = COMMONS_URI,
-        )
-        writeCapturedItem(
-            preferences = legacyMediaFile(context),
-            dateString = MEDIA_DATE_STRING,
-            uri = MEDIA_URI,
         )
 
         assertEquals(
@@ -142,11 +116,6 @@ class MediaPrefsMigrationTest {
     @Test
     fun cleanUp_removesOnlyItsOwnKeys() {
         writeLegacyPreferences(context)
-        writeCapturedItem(
-            preferences = legacyMediaFile(context),
-            dateString = MEDIA_DATE_STRING,
-            uri = MEDIA_URI,
-        )
 
         runBlocking {
             migration.migrate(MediaPrefs())
@@ -157,7 +126,6 @@ class MediaPrefsMigrationTest {
 
         assertTrue(remaining.none { it in LEGACY_CAPTURE_KEY_NAMES })
         assertTrue(remaining.contains("photo_quality"))
-        assertFalse(legacyMediaFileExists(context))
     }
 
     private fun writeCapturedItem(
@@ -176,8 +144,6 @@ class MediaPrefsMigrationTest {
         const val SOME_PHOTO_QUALITY = 71
         const val COMMONS_DATE_STRING = "20260724_100000_000"
         const val COMMONS_URI = "content://media/external/images/media/2"
-        const val MEDIA_DATE_STRING = "20260724_110000_000"
-        const val MEDIA_URI = "content://media/external/images/media/3"
         const val CURRENT_DATE_STRING = "20260724_120000_000"
         const val CURRENT_URI = "content://media/external/images/media/4"
     }

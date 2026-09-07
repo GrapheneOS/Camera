@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.KeyEvent
@@ -250,7 +249,7 @@ open class MoreSettings :
         pQSetting.setOnClickListener {
             pQField.requestFocus()
             pQField.setSelection(pQField.text.length)
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.showSoftInput(pQField, 0)
         }
 

@@ -1,12 +1,11 @@
-package app.grapheneos.camera.data.camera.store
+package app.grapheneos.camera.data.camera.repository
 
-import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.core.model.CameraMode
 import javax.inject.Inject
 
-interface ExtensionAvailabilityStore {
+interface ExtensionAvailabilityRepository {
 
     fun verdict(key: ExtensionKey): Boolean?
 
@@ -22,7 +21,8 @@ interface ExtensionAvailabilityStore {
     fun clear()
 }
 
-internal class ExtensionAvailabilityStoreImpl @Inject constructor() : ExtensionAvailabilityStore {
+internal class ExtensionAvailabilityRepositoryImpl @Inject constructor() :
+    ExtensionAvailabilityRepository {
 
     // Whether a vendor extension is usable, keyed by lens facing and extension mode (see
     // probeExtension). A verdict describes the device rather than any one activity and costs
@@ -56,12 +56,7 @@ internal class ExtensionAvailabilityStoreImpl @Inject constructor() : ExtensionA
         for (mode in CameraMode.entries) {
             if (mode.extensionMode == ExtensionMode.NONE) continue
 
-            for (lensFacing in LENS_FACINGS) {
-                val key = ExtensionKey(
-                    lensFacing = lensFacing,
-                    extensionMode = mode.extensionMode,
-                )
-
+            for (key in ExtensionKey.onBothLenses(mode.extensionMode)) {
                 if (usability[key] == null) {
                     result.add(key)
                 }
@@ -73,12 +68,5 @@ internal class ExtensionAvailabilityStoreImpl @Inject constructor() : ExtensionA
 
     override fun clear() {
         usability.clear()
-    }
-
-    private companion object {
-        val LENS_FACINGS = listOf(
-            CameraSelector.LENS_FACING_FRONT,
-            CameraSelector.LENS_FACING_BACK,
-        )
     }
 }

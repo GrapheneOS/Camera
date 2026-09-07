@@ -17,9 +17,10 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
+import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
-import app.grapheneos.camera.data.camera.repository.CameraSession
-import app.grapheneos.camera.data.camera.repository.CameraSessionEnvironment
+import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -64,7 +65,7 @@ class CamConfig @AssistedInject constructor(
         environment = environment,
         listener = object : CameraSession.Listener {
             override fun onZoomStateChanged() {
-                effects.updateZoomThumb()
+                effects.updateZoomThumb(shouldShowPanel = true)
             }
 
             override fun onCameraProviderUnavailable() {
@@ -479,10 +480,9 @@ class CamConfig @AssistedInject constructor(
     }
 
     fun toggleAspectRatio() {
-        aspectRatio = if (aspectRatio == AspectRatio.RATIO_16_9) {
-            AspectRatio.RATIO_4_3
-        } else {
-            AspectRatio.RATIO_16_9
+        aspectRatio = when (aspectRatio) {
+            AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
+            else -> AspectRatio.RATIO_16_9
         }
         startCamera(true)
     }
@@ -613,9 +613,9 @@ class CamConfig @AssistedInject constructor(
         )
 
         return when (session.bind(bindSettings)) {
-            CameraSession.BindOutcome.FAILED -> effects.showMessage(R.string.bind_failure)
+            BindOutcome.FAILED -> effects.showMessage(R.string.bind_failure)
 
-            CameraSession.BindOutcome.EXTENSION_UNUSABLE -> {
+            BindOutcome.EXTENSION_UNUSABLE -> {
                 effects.showMessage(R.string.extension_mode_unavailable)
 
                 // The bind never completed: currentMode still names the mode that was just
@@ -627,7 +627,7 @@ class CamConfig @AssistedInject constructor(
                 switchMode(DEFAULT_CAMERA_MODE)
             }
 
-            CameraSession.BindOutcome.BOUND -> announceBind()
+            BindOutcome.BOUND -> announceBind()
         }
     }
 
@@ -650,7 +650,7 @@ class CamConfig @AssistedInject constructor(
 
         session.reattachZoomState()
 
-        effects.updateZoomThumb(false)
+        effects.updateZoomThumb(shouldShowPanel = false)
 
         camera?.cameraInfo?.exposureState?.let { effects.applyExposureState(it) }
 

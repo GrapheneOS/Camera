@@ -150,7 +150,6 @@
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$override fun onTouch: Boolean</ID>
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$private fun onSwipeLeft</ID>
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$private fun onSwipeRight</ID>
-    <ID>SwallowedException:CameraSession.kt:CameraSession$e: IllegalArgumentException</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItems.kt:e: ActivityNotFoundException</ID>
     <ID>SwallowedException:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
@@ -160,7 +159,6 @@
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$e: Exception</ID>
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$exception: Exception</ID>
     <ID>ThrowsCount:ImageSaver.kt:ImageSaver$@Throws(ImageSaverException::class) private fun saveImageInner</ID>
-    <ID>TooGenericExceptionCaught:CameraSession.kt:CameraSession$e: Exception</ID>
     <ID>TooGenericExceptionCaught:CameraSession.kt:CameraSession$exception: RuntimeException</ID>
     <ID>TooGenericExceptionCaught:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
