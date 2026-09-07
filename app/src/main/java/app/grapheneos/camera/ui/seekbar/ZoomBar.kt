@@ -85,7 +85,7 @@ class ZoomBar : AppCompatSeekBar {
     }
 
     fun updateThumb(shouldShowPanel: Boolean = true) {
-        val zoomState: ZoomState? = camConfig.zoomState
+        val zoomState: ZoomState? = camConfig.session.zoomState
 
         if (shouldShowPanel) {
             showPanel()
@@ -147,7 +147,7 @@ class ZoomBar : AppCompatSeekBar {
                 if (progress < 1) progress = 1
                 if (progress > 100) progress = 100
 
-                camConfig.camera?.cameraControl?.setLinearZoom(progress / 100f)
+                camConfig.session.camera?.cameraControl?.setLinearZoom(progress / 100f)
 
             }
             MotionEvent.ACTION_CANCEL -> {

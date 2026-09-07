@@ -1,8 +1,6 @@
 package app.grapheneos.camera
 
 import android.annotation.SuppressLint
-import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.AspectRatio
@@ -28,6 +26,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
@@ -41,8 +40,8 @@ import dagger.assisted.AssistedInject
 import java.io.IOException
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -58,10 +57,11 @@ class CamConfig @AssistedInject constructor(
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val barcodeFormats: BarcodeFormats,
+    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
     cameraSessionFactory: CameraSession.Factory,
 ) {
 
-    private val session = cameraSessionFactory.create(
+    val session = cameraSessionFactory.create(
         environment = environment,
         listener = object : CameraSession.Listener {
             override fun onZoomStateChanged() {
@@ -96,55 +96,12 @@ class CamConfig @AssistedInject constructor(
         },
     )
 
-    var camera: Camera?
-        get() = session.camera
-        set(value) {
-            session.camera = value
-        }
-
-    val zoomState: ZoomState?
-        get() = session.zoomState
-
-    val cameraProvider: ProcessCameraProvider?
-        get() = session.cameraProvider
-
-    val imageCapture: ImageCapture?
-        get() = session.imageCapture
-
-    val preview: Preview?
-        get() = session.preview
-
-    val videoCapture: VideoCapture<Recorder>?
-        get() = session.videoCapture
-
-    val iAnalyzer: ImageAnalysis?
-        get() = session.iAnalyzer
-
-    var lensFacing: Int
-        get() = session.lensFacing
-        set(value) {
-            session.lensFacing = value
-        }
-
-    val isFlashAvailable: Boolean
-        get() = session.isFlashAvailable
-
-    var isTorchOn: Boolean
-        get() = session.isTorchOn
-        set(value) {
-            session.isTorchOn = value
-        }
-
-    val isZslSupported: Boolean
-        get() = session.isZslSupported
-
-    val allowedFormats: List<BarcodeFormat>
-        get() = barcodeFormats.enabled
-
     @set:VisibleForTesting
     var mPlayer = environment.createTunePlayer()
 
-    private var settings: CameraSettings = runBlocking { settingsRepository.settings.first() }
+    private var settings: CameraSettings = runBlocking {
+        settingsRepository.settings.first()
+    }
 
     private var currentStorageLocation: String = runBlocking {
         capturedItemRepository.storageLocation.first()
@@ -152,7 +109,7 @@ class CamConfig @AssistedInject constructor(
 
     private var modeSettings: ModeSettings = ModeSettings()
 
-    private val preferencesScope = CoroutineScope(Dispatchers.Main.immediate)
+    private val preferencesScope = CoroutineScope(mainDispatcher)
 
     var lastCapturedItem: CapturedItem? = null
 
@@ -179,6 +136,12 @@ class CamConfig @AssistedInject constructor(
         }
     }
 
+    var currentMode: CameraMode = DEFAULT_CAMERA_MODE
+        private set
+
+    var isQRMode = false
+        private set
+
     var isVideoMode = false
         private set
         get() {
@@ -187,46 +150,21 @@ class CamConfig @AssistedInject constructor(
 
     val canTakePicture: Boolean
         get() {
-            return imageCapture != null
+            return session.imageCapture != null
         }
 
-    var isQRMode = false
-        private set
-
-    var currentMode: CameraMode = DEFAULT_CAMERA_MODE
-        private set
-
-    var aspectRatio: Int
+    private val isInPhotoMode: Boolean
         get() {
-            return when {
-                isVideoMode -> AspectRatio.RATIO_16_9
-                isQRMode -> AspectRatio.RATIO_4_3
-                else -> settings.aspectRatio
-            }
+            return !(isQRMode || isVideoMode)
         }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(aspectRatio = value) }
-            }
-        }
+
+    val isInCaptureMode: Boolean
+        get() = entryPoint.isCaptureSession
 
     var gridType: GridType by setting(
         read = { it.gridType },
         write = { current, value -> current.copy(gridType = value) },
     )
-
-    var videoQuality: Quality
-        get() {
-            return modeSettings.videoQuality
-        }
-        set(value) {
-            runBlocking {
-                settingsRepository.setVideoQuality(value)
-            }?.let { modeSettings = it }
-        }
-
-    var flashMode: Int = SettingsDefaults.FLASH_MODE
-        private set
 
     var focusTimeout: Long by setting(
         read = { it.focusTimeoutSeconds },
@@ -243,34 +181,6 @@ class CamConfig @AssistedInject constructor(
         write = { current, value -> current.copy(enableCameraSounds = value) },
     )
 
-    var scanAllCodes: Boolean
-        get() {
-            return settings.scanAllCodes
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(scanAllCodes = value) }
-            }
-
-            if (isQRMode) {
-                effects.applyScanAllCodesChrome(value)
-            }
-
-            session.refreshQrHints()
-        }
-
-    var includeAudio: Boolean
-        get() {
-            return settings.includeAudio
-        }
-        set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(includeAudio = value) }
-            }
-
-            effects.onIncludeAudioChanged(value)
-        }
-
     var enableEIS: Boolean by setting(
         read = { it.enableEis },
         write = { current, value -> current.copy(enableEis = value) },
@@ -280,19 +190,6 @@ class CamConfig @AssistedInject constructor(
         read = { it.saveImageAsPreviewed },
         write = { current, value -> current.copy(saveImageAsPreviewed = value) },
     )
-
-    var storageLocation: String
-        get() {
-            return currentStorageLocation
-        }
-        set(value) {
-            runBlocking {
-                capturedItemRepository.setStorageLocation(value)
-                capturedItemRepository.releaseUntrackedSafTrees()
-            }
-
-            currentStorageLocation = value
-        }
 
     var photoQuality: Int by setting(
         read = { it.photoQuality },
@@ -304,14 +201,52 @@ class CamConfig @AssistedInject constructor(
         write = { current, value -> current.copy(removeExifAfterCapture = value) },
     )
 
-    private val isInPhotoMode: Boolean
+    var waitForFocusLock: Boolean by setting(
+        read = { it.waitForFocusLock },
+        write = { current, value -> current.copy(waitForFocusLock = value) },
+    )
+
+    var aspectRatio: Int
         get() {
-            return !(isQRMode || isVideoMode)
+            return when {
+                isVideoMode -> AspectRatio.RATIO_16_9
+                isQRMode -> AspectRatio.RATIO_4_3
+                else -> settings.aspectRatio
+            }
+        }
+        set(value) {
+            settings = runBlocking {
+                settingsRepository.update { it.copy(aspectRatio = value) }
+            }
         }
 
-    val isInCaptureMode: Boolean
-        get() {
-            return entryPoint.isCaptureSession
+    var scanAllCodes: Boolean by setting(
+        read = { it.scanAllCodes },
+        write = { current, value -> current.copy(scanAllCodes = value) },
+        onChanged = { value ->
+            if (isQRMode) {
+                effects.applyScanAllCodesChrome(value)
+            }
+
+            session.refreshQrHints()
+        },
+    )
+
+    var includeAudio: Boolean by setting(
+        read = { it.includeAudio },
+        write = { current, value -> current.copy(includeAudio = value) },
+        onChanged = { value -> effects.onIncludeAudioChanged(value) },
+    )
+
+    var flashMode: Int = SettingsDefaults.FLASH_MODE
+        private set
+
+    var videoQuality: Quality
+        get() = modeSettings.videoQuality
+        set(value) {
+            runBlocking {
+                settingsRepository.setVideoQuality(value)
+            }?.let { modeSettings = it }
         }
 
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
@@ -335,7 +270,7 @@ class CamConfig @AssistedInject constructor(
     var selfIlluminate: Boolean
         get() {
             return modeSettings.selfIllumination &&
-                lensFacing == CameraSelector.LENS_FACING_FRONT
+                session.lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
             runBlocking {
@@ -345,33 +280,19 @@ class CamConfig @AssistedInject constructor(
             effects.onSelfIlluminationChanged(value)
         }
 
-    var waitForFocusLock: Boolean by setting(
-        read = { it.waitForFocusLock },
-        write = { current, value -> current.copy(waitForFocusLock = value) },
-    )
-
-    fun canApplyVideoStabilization(): Boolean {
-        return session.canApplyVideoStabilization()
-    }
-
-    fun toggleTorchState() {
-        session.toggleTorchState()
-    }
-
-    private fun <T> setting(
-        read: (CameraSettings) -> T,
-        write: (CameraSettings, T) -> CameraSettings,
-    ): ReadWriteProperty<Any?, T> {
-        return object : ReadWriteProperty<Any?, T> {
-            override fun getValue(thisRef: Any?, property: KProperty<*>): T {
-                return read(settings)
+    var storageLocation: String
+        get() = currentStorageLocation
+        set(value) {
+            runBlocking {
+                capturedItemRepository.setStorageLocation(value)
+                capturedItemRepository.releaseUntrackedSafTrees()
             }
 
-            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-                settings = runBlocking { settingsRepository.update { write(it, value) } }
-            }
+            currentStorageLocation = value
         }
-    }
+
+    val allowedFormats: List<BarcodeFormat>
+        get() = barcodeFormats.enabled
 
     fun onDestroy() {
         preferencesScope.cancel()
@@ -399,7 +320,7 @@ class CamConfig @AssistedInject constructor(
 
     private fun applyFlashMode(value: Int) {
         flashMode = value
-        imageCapture?.flashMode = value
+        session.imageCapture?.flashMode = value
         effects.onFlashModeChanged()
     }
 
@@ -429,7 +350,7 @@ class CamConfig @AssistedInject constructor(
         modeSettings = runBlocking {
             settingsRepository.selectMode(
                 mode = currentMode,
-                isFrontFacing = lensFacing == CameraSelector.LENS_FACING_FRONT,
+                isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
             )
         }
     }
@@ -466,7 +387,7 @@ class CamConfig @AssistedInject constructor(
     }
 
     fun toggleFlashMode() {
-        if (isFlashAvailable) {
+        if (session.isFlashAvailable) {
             val next = when (flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                 ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
@@ -489,8 +410,8 @@ class CamConfig @AssistedInject constructor(
 
     fun toggleCameraSelector() {
         // Manually switch to the opposite lens facing
-        lensFacing =
-            if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+        session.lensFacing =
+            if (session.lensFacing == CameraSelector.LENS_FACING_BACK) {
                 CameraSelector.LENS_FACING_FRONT
             } else {
                 CameraSelector.LENS_FACING_BACK
@@ -498,12 +419,12 @@ class CamConfig @AssistedInject constructor(
 
         // Test whether the new lens facing is supported by the current device
         // If it is supported then restart the camera with the new configuration
-        if (session.isLensFacingSupported(lensFacing, currentMode.extensionMode)) {
+        if (session.isLensFacingSupported(session.lensFacing, currentMode.extensionMode)) {
             startCamera(true)
         } else {
             // Else revert back to the old facing (while displaying an error message
             // to the user)
-            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+            session.lensFacing = if (session.lensFacing == CameraSelector.LENS_FACING_BACK) {
                 effects.showMessage(R.string.rear_camera_unavailable)
                 CameraSelector.LENS_FACING_FRONT
             } else {
@@ -544,7 +465,7 @@ class CamConfig @AssistedInject constructor(
 
     // Start the camera with latest hard configuration
     fun startCamera(forced: Boolean = false) {
-        if ((!forced && camera != null) || cameraProvider == null) return
+        if ((!forced && session.camera != null) || session.cameraProvider == null) return
 
         // Cancel any pending capture requests
         effects.cancelPendingCapture()
@@ -565,15 +486,15 @@ class CamConfig @AssistedInject constructor(
         // (Snackbar/popup message can be shown before startCamera is called
         // in specific cases of explicitly switching to another side or if
         // the camera is expected)
-        if (!session.isLensFacingSupported(lensFacing, currentMode.extensionMode)) {
-            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+        if (!session.isLensFacingSupported(session.lensFacing, currentMode.extensionMode)) {
+            session.lensFacing = if (session.lensFacing == CameraSelector.LENS_FACING_BACK) {
                 CameraSelector.LENS_FACING_FRONT
             } else {
                 CameraSelector.LENS_FACING_BACK
             }
         }
 
-        session.selectLensFacing(lensFacing)
+        session.selectLensFacing(session.lensFacing)
 
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
@@ -652,11 +573,11 @@ class CamConfig @AssistedInject constructor(
 
         effects.updateZoomThumb(shouldShowPanel = false)
 
-        camera?.cameraInfo?.exposureState?.let { effects.applyExposureState(it) }
+        session.camera?.cameraInfo?.exposureState?.let { effects.applyExposureState(it) }
 
         effects.resetTorchToggle()
 
-        camera?.cameraInfo?.let { effects.onPreviewBound(aspectRatio, it) }
+        session.camera?.cameraInfo?.let { effects.onPreviewBound(aspectRatio, it) }
 
         effects.updateGyroscopeIndicator(isInPhotoMode)
     }
@@ -757,6 +678,24 @@ class CamConfig @AssistedInject constructor(
         effects.showStorageLocationNotFound()
     }
 
+    private fun <T> setting(
+        read: (CameraSettings) -> T,
+        write: (CameraSettings, T) -> CameraSettings,
+        onChanged: (T) -> Unit = {},
+    ): ReadWriteProperty<Any?, T> {
+        return object : ReadWriteProperty<Any?, T> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T {
+                return read(settings)
+            }
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+                settings = runBlocking { settingsRepository.update { write(it, value) } }
+
+                onChanged(value)
+            }
+        }
+    }
+
     @AssistedFactory
     interface Factory {
         fun create(
@@ -769,22 +708,5 @@ class CamConfig @AssistedInject constructor(
         private const val TAG = "CamConfig"
 
         val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
-
-        val imageCollectionUri: Uri = requireNotNull(
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        ) { "the primary external volume has no image collection" }
-
-        val videoCollectionUri: Uri = requireNotNull(
-            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        ) { "the primary external volume has no video collection" }
-
-        @VisibleForTesting
-        val snapshotProbeCount: Int
-            get() = CameraSession.snapshotProbeCount
-
-        @VisibleForTesting
-        fun clearSnapshotProbeCache() {
-            CameraSession.clearSnapshotProbeCache()
-        }
     }
 }

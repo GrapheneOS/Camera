@@ -8,6 +8,10 @@ annotation class IoDispatcher
 
 @Retention(AnnotationRetention.BINARY)
 @Qualifier
+annotation class MainImmediateDispatcher
+
+@Retention(AnnotationRetention.BINARY)
+@Qualifier
 annotation class ApplicationScope
 
 @Retention(AnnotationRetention.BINARY)
