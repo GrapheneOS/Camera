@@ -16,20 +16,17 @@ internal class MediaPrefsMigration(
 ) : DataMigration<MediaPrefs> {
 
     override suspend fun shouldMigrate(currentData: MediaPrefs): Boolean {
-        return legacyMediaPreferences().all.keys.any(::owns) ||
-            legacyCommonPreferences(context).all.keys.any(::owns)
+        return legacyCommonPreferences(context).all.keys.any(::owns)
     }
 
     override suspend fun migrate(currentData: MediaPrefs): MediaPrefs {
         val stored = currentData.lastCapturedItem
-            ?: readLastCapturedItem(legacyMediaPreferences())
             ?: readLastCapturedItem(legacyCommonPreferences(context))
 
         return currentData.copy(lastCapturedItem = stored)
     }
 
     override suspend fun cleanUp() {
-        context.deleteSharedPreferences(LEGACY_MEDIA_PREFS_NAME)
         removeLegacyCommonKeys(context, ::owns)
     }
 
@@ -51,13 +48,5 @@ internal class MediaPrefsMigration(
                 )
             }
         }
-    }
-
-    private fun legacyMediaPreferences(): SharedPreferences {
-        return context.getSharedPreferences(LEGACY_MEDIA_PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    private companion object {
-        const val LEGACY_MEDIA_PREFS_NAME = "media"
     }
 }

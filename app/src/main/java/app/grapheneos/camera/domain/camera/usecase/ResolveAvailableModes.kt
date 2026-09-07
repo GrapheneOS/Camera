@@ -1,9 +1,8 @@
 package app.grapheneos.camera.domain.camera.usecase
 
-import androidx.camera.core.CameraSelector
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
-import app.grapheneos.camera.data.camera.store.ExtensionAvailabilityStore
+import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.data.core.model.CameraMode
 import javax.inject.Inject
 
@@ -20,7 +19,7 @@ interface ResolveAvailableModes {
 }
 
 internal class ResolveAvailableModesImpl @Inject constructor(
-    private val extensionAvailabilityStore: ExtensionAvailabilityStore,
+    private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
 ) : ResolveAvailableModes {
 
     override fun invoke(
@@ -40,20 +39,8 @@ internal class ResolveAvailableModesImpl @Inject constructor(
     }
 
     private fun isUsableOnEitherLens(extensionMode: Int): Boolean {
-        return LENS_FACINGS.any { lensFacing ->
-            val key = ExtensionKey(
-                lensFacing = lensFacing,
-                extensionMode = extensionMode,
-            )
-
-            extensionAvailabilityStore.verdict(key) == true
+        return ExtensionKey.onBothLenses(extensionMode).any { key ->
+            extensionAvailabilityRepository.verdict(key) == true
         }
-    }
-
-    private companion object {
-        private val LENS_FACINGS = listOf(
-            CameraSelector.LENS_FACING_FRONT,
-            CameraSelector.LENS_FACING_BACK,
-        )
     }
 }

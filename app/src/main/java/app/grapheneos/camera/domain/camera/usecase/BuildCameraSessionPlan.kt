@@ -136,7 +136,9 @@ internal class BuildCameraSessionPlanImpl @Inject constructor() : BuildCameraSes
         val previewBuilder = Preview.Builder()
             .setTargetRotation(request.previewTargetRotation)
             .setResolutionSelector(
-                ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
+                ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(aspectRatioStrategy)
+                    .build()
             )
 
         // Pixels and potentially other devices enable EIS by default, which reduces the field of

@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.camera.repository
+package app.grapheneos.camera.data.camera.session
 
 import android.content.Context
 import androidx.camera.core.Preview
