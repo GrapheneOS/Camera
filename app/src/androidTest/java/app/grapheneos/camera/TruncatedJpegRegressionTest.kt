@@ -67,7 +67,7 @@ class TruncatedJpegRegressionTest {
         val jpeg = whole.copyOf(cutAt(whole))
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.camera != null }
+            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
 
             // Stands in for the thumbnail of the capture before this one
             val previousThumbnail = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)

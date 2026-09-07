@@ -284,7 +284,7 @@ open class MainActivity : AppCompatActivity() {
             QROverlay.RATIO
         )
 
-        camConfig.camera?.cameraControl?.startFocusAndMetering(
+        camConfig.session.camera?.cameraControl?.startFocusAndMetering(
             FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
         )
 
@@ -904,8 +904,8 @@ open class MainActivity : AppCompatActivity() {
                     videoCapturer.startRecording()
                 }
             } else if (camConfig.isQRMode) {
-                camConfig.toggleTorchState()
-                if (camConfig.isTorchOn) {
+                camConfig.session.toggleTorchState()
+                if (camConfig.session.isTorchOn) {
                     setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
                 } else {
                     setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
@@ -1323,7 +1323,7 @@ open class MainActivity : AppCompatActivity() {
                 camConfig.startCamera(true)
             }
 
-            camConfig.cameraProvider?.unbindAll()
+            camConfig.session.cameraProvider?.unbindAll()
 
             builder.showIgnoringShortEdgeMode()
         }
@@ -1418,8 +1418,9 @@ open class MainActivity : AppCompatActivity() {
         // rotation-dependent state.
         // The preview follows the window; the capture use cases follow the sensor and are updated
         // by onOrientationChange.
-        camConfig.preview?.targetRotation = previewView.display?.rotation ?: Surface.ROTATION_0
-        camConfig.camera?.cameraInfo?.let {
+        camConfig.session.preview?.targetRotation =
+            previewView.display?.rotation ?: Surface.ROTATION_0
+        camConfig.session.camera?.cameraInfo?.let {
             previewView.applyPreviewRatio(camConfig.aspectRatio, it)
         }
 
@@ -1500,6 +1501,7 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun requestLocation(reAttach: Boolean = false) {
         when {
             ActivityCompat.shouldShowRequestPermissionRationale(

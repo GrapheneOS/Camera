@@ -371,7 +371,7 @@ class BottomTabLayoutRegressionTest {
             Thread.sleep(RETRY_WINDOW_MS)
 
             scenario.moveToState(Lifecycle.State.RESUMED)
-            waitUntil(scenario, "the camera came back") { it.camConfig.camera != null }
+            waitUntil(scenario, "the camera came back") { it.camConfig.session.camera != null }
         }
     }
 

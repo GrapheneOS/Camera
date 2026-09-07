@@ -10,6 +10,7 @@ import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.capturer.VideoCapturer
+import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 
 /** Starts the recording as soon as it is asked to, skipping the sound. */
@@ -30,7 +31,7 @@ fun pendingVideoCount(): Int {
                     " AND ${MediaColumns.DISPLAY_NAME} LIKE '$VIDEO_NAME_PREFIX%'",
         )
     }
-    return resolver.query(CamConfig.videoCollectionUri, arrayOf(MediaColumns._ID), args, null)
+    return resolver.query(videoCollectionUri, arrayOf(MediaColumns._ID), args, null)
         ?.use { it.count } ?: 0
 }
 

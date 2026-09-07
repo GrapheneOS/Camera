@@ -21,6 +21,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.capturer.deleteStalePendingRecordings
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
@@ -277,7 +278,9 @@ class VideoCapturerRegressionTest {
             awaitModeTabs(scenario)
 
             scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
-            waitUntil(scenario, "video use case is bound") { it.camConfig.videoCapture != null }
+            waitUntil(scenario, "video use case is bound") {
+                it.camConfig.session.videoCapture != null
+            }
 
             val capturedBefore = lastCapturedUri(scenario)
 
@@ -352,11 +355,13 @@ class VideoCapturerRegressionTest {
     @Test
     fun tappingAModeTabDuringTheDeferredStart_leavesTheModeAlone() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.camera != null }
+            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
             waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
 
             scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
-            waitUntil(scenario, "video use case is bound") { it.camConfig.videoCapture != null }
+            waitUntil(scenario, "video use case is bound") {
+                it.camConfig.session.videoCapture != null
+            }
 
             lateinit var player: ManualTunePlayer
             var mode: CameraMode? = null
@@ -422,7 +427,7 @@ class VideoCapturerRegressionTest {
     ) {
         launch().use { scenario ->
             waitUntil(scenario, "video use case is bound") {
-                it.camConfig.camera != null && it.camConfig.videoCapture != null
+                it.camConfig.session.camera != null && it.camConfig.session.videoCapture != null
             }
             val capturedBefore = lastCapturedUri(scenario)
             try {
@@ -442,7 +447,7 @@ class VideoCapturerRegressionTest {
             put(MediaColumns.MIME_TYPE, "video/mp4")
             put(MediaColumns.IS_PENDING, 1)
         }
-        return targetContext.contentResolver.insert(CamConfig.videoCollectionUri, values)!!
+        return targetContext.contentResolver.insert(videoCollectionUri, values)!!
     }
 
     /** Deleting an entry the reaper already took throws, so only clean up what is still there. */

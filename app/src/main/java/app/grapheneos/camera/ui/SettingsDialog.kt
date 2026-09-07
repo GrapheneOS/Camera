@@ -206,8 +206,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
-            if (camConfig.isFlashAvailable) {
-                camConfig.toggleTorchState()
+            if (camConfig.session.isFlashAvailable) {
+                camConfig.session.toggleTorchState()
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(
@@ -253,7 +253,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         waitForFocusLockSwitch.isChecked = camConfig.waitForFocusLock
         waitForFocusLockSwitch.setOnClickListener {
             camConfig.waitForFocusLock = waitForFocusLockSwitch.isChecked
-            if (camConfig.cameraProvider != null) {
+            if (camConfig.session.cameraProvider != null) {
                 camConfig.startCamera(true)
             }
         }
@@ -497,7 +497,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         if (camConfig.isVideoMode) {
             includeAudioSetting.visibility = View.VISIBLE
             videoQualitySetting.visibility = View.VISIBLE
-            enableEISSetting.visibility = if (camConfig.canApplyVideoStabilization()) {
+            enableEISSetting.visibility = if (camConfig.session.canApplyVideoStabilization()) {
                 View.VISIBLE
             } else {
                 View.GONE
@@ -509,7 +509,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         selfIlluminationSetting.visibility =
-            if (camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            if (camConfig.session.lensFacing == CameraSelector.LENS_FACING_FRONT) {
                 View.VISIBLE
             } else {
                 View.GONE
@@ -759,7 +759,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     private fun getAvailableQualities(): List<Quality> {
-        val cameraInfo = camConfig.camera?.cameraInfo ?: return Collections.emptyList()
+        val cameraInfo = camConfig.session.camera?.cameraInfo ?: return Collections.emptyList()
         return Recorder.getVideoCapabilities(cameraInfo).getSupportedQualities(DynamicRange.SDR)
     }
 
@@ -785,7 +785,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun updateFlashMode() {
-        val (icon, description) = if (camConfig.isFlashAvailable) {
+        val (icon, description) = if (camConfig.session.isFlashAvailable) {
             when (camConfig.flashMode) {
                 ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
                 ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
@@ -820,7 +820,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             updateAspectRatioToggle(camConfig.aspectRatio == AspectRatio.RATIO_16_9)
         }
 
-        torchToggle.isChecked = camConfig.isTorchOn
+        torchToggle.isChecked = camConfig.session.isTorchOn
 
         updateGridToggleUI()
 

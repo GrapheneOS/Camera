@@ -21,6 +21,12 @@ internal class CoroutinesProvidesModule {
     }
 
     @Provides
+    @MainImmediateDispatcher
+    fun provideMainImmediateDispatcher(): CoroutineDispatcher {
+        return Dispatchers.Main.immediate
+    }
+
+    @Provides
     @Singleton
     @ApplicationScope
     fun provideApplicationScope(
