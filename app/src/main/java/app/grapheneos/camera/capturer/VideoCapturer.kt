@@ -27,12 +27,12 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
 import app.grapheneos.camera.App
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -114,7 +114,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     put(MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
                     put(MediaColumns.IS_PENDING, 1)
                 }
-                uri = contentResolver.insert(CamConfig.videoCollectionUri, contentValues)
+                uri = contentResolver.insert(videoCollectionUri, contentValues)
                 isPendingMediaStoreUri = true
             } else {
                 val treeUri = Uri.parse(storageLocation)
@@ -146,8 +146,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun startRecording() {
-        if (camConfig.camera == null) return
-        val recorder = camConfig.videoCapture?.output ?: return
+        if (camConfig.session.camera == null) return
+        val recorder = camConfig.session.videoCapture?.output ?: return
         if (isRecording) return
         isRecording = true
 
@@ -484,7 +484,7 @@ fun deleteStalePendingRecordings(
     try {
         // Pending rows are filtered out of every operation unless they are explicitly asked for.
         @Suppress("DEPRECATION")
-        val collection = MediaStore.setIncludePending(CamConfig.videoCollectionUri)
+        val collection = MediaStore.setIncludePending(videoCollectionUri)
         context.contentResolver.delete(collection, selection, args)
     } catch (e: Exception) {
         e.printStackTrace()

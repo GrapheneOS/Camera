@@ -19,13 +19,13 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.utils.ImageUtil
 import androidxc.camera.core.impl.utils.Exif
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.media.store.imageCollectionUri
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -307,7 +307,7 @@ class ImageSaver(
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
 
-            return contentResolver.insert(CamConfig.imageCollectionUri, cv)
+            return contentResolver.insert(imageCollectionUri, cv)
         } else {
             try {
                 val treeUri = Uri.parse(storageLocation)
