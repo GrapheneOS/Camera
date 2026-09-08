@@ -141,12 +141,14 @@ extension bind `UnsupportedOperationException`s, gallery NPEs.
 
 ### Legacy
 
-The pre-migration code has no DI, no ViewModels, no coroutines in the camera path (raw
-`thread {}`, `Executors`, `Handler`).
-`CamConfig` holds `private val mActivity: MainActivity` and some of its properties read the View
-tree directly (e.g. `requireLocation`'s getter returns
-`mActivity.settingsDialog.locToggle.isChecked`). This coupling is the thing the migration exists to
-undo — do not add to it.
+The pre-migration code has no ViewModels and no coroutines in the camera path (raw `thread {}`,
+`Executors`, `Handler`). `MainActivity` still owns the viewfinder's View tree, and the classes
+around it — `SettingsDialog`, `ImageCapturer`, `VideoCapturer`, `QRAnalyzer`, the custom Views —
+hold a `MainActivity` and reach into it. Reading state back out of that tree is the coupling the
+migration exists to undo (`CamConfig` used to answer `requireLocation` with
+`settingsDialog.locToggle.isChecked`); `ViewfinderController` now holds the state and pushes it out
+through `ViewfinderChrome`/`ViewfinderEffects`. Do not add a new read of the View tree from below
+the UI.
 
 ### Target
 
@@ -252,11 +254,11 @@ not otherwise changing — whitespace churn buries the diff and makes the migrat
 - **No expression-body functions.** Always a block body with an explicit return type:
   ```kotlin
   // WRONG
-  fun currentMode() = camConfig.currentMode
+  fun currentMode() = viewfinder.currentMode
 
   // CORRECT
   fun currentMode(): CameraMode {
-      return camConfig.currentMode
+      return viewfinder.currentMode
   }
   ```
   Return type is omitted for functions returning `Unit`; write `fun bind() {`, not
@@ -446,5 +448,6 @@ migrating the UI is exactly when they stop being reachable, and left behind they
 - **Never add a commit co-author unless the user explicitly asks.**
 - Commit messages: imperative mood, describing the behavior change rather than the mechanism —
   match the existing log ("Don't initialize the camera while its permission is not granted").
-- Test-facing seams in `CamConfig` (`mPlayer`, `photoQuality`, `camera`, `switchMode`) are written
-  to by the instrumented suite. They stay writable until the screen that owns them is migrated.
+- Test-facing seams in `ViewfinderController` (`mPlayer`, `photoQuality`, `switchMode`) and
+  `CameraSession` (`camera`) are written to by the instrumented suite. They stay writable until the
+  screen that owns them is migrated.
