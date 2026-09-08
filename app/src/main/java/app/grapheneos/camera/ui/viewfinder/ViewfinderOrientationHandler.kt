@@ -61,9 +61,9 @@ internal class ViewfinderOrientationHandler(
             else -> Surface.ROTATION_0
         }
 
-        activity.camConfig.session.imageCapture?.targetRotation = targetRotation
-        activity.camConfig.session.videoCapture?.targetRotation = targetRotation
-        activity.camConfig.session.iAnalyzer?.targetRotation = targetRotation
+        activity.session.imageCapture?.targetRotation = targetRotation
+        activity.session.videoCapture?.targetRotation = targetRotation
+        activity.session.iAnalyzer?.targetRotation = targetRotation
 
         if (activity.videoCapturer.isRecording) return
 

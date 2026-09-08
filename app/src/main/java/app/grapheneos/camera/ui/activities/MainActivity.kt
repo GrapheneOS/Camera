@@ -78,6 +78,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -121,10 +122,15 @@ import kotlin.math.roundToInt
 open class MainActivity : AppCompatActivity() {
 
     @Inject
+    lateinit var cameraSessionFactory: CameraSession.Factory
+
+    @Inject
     lateinit var camConfigFactory: CamConfig.Factory
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
+
+    lateinit var session: CameraSession
 
     lateinit var camConfig: CamConfig
 
@@ -284,7 +290,7 @@ open class MainActivity : AppCompatActivity() {
             QROverlay.RATIO
         )
 
-        camConfig.session.camera?.cameraControl?.startFocusAndMetering(
+        session.camera?.cameraControl?.startFocusAndMetering(
             FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
         )
 
@@ -780,11 +786,13 @@ open class MainActivity : AppCompatActivity() {
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
         val sessionHandler = ViewfinderEffectHandler(this)
+        session = cameraSessionFactory.create(environment = sessionHandler)
         camConfig = camConfigFactory.create(
             environment = sessionHandler,
             effects = sessionHandler,
+            session = session,
         )
-        cameraControl = CameraControl(camConfig)
+        cameraControl = CameraControl(session)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
         previewView.scaleType = PreviewView.ScaleType.FIT_START
@@ -904,8 +912,8 @@ open class MainActivity : AppCompatActivity() {
                     videoCapturer.startRecording()
                 }
             } else if (camConfig.isQRMode) {
-                camConfig.session.toggleTorchState()
-                if (camConfig.session.isTorchOn) {
+                session.toggleTorchState()
+                if (session.isTorchOn) {
                     setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
                 } else {
                     setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
@@ -1323,7 +1331,7 @@ open class MainActivity : AppCompatActivity() {
                 camConfig.startCamera(true)
             }
 
-            camConfig.session.cameraProvider?.unbindAll()
+            session.cameraProvider?.unbindAll()
 
             builder.showIgnoringShortEdgeMode()
         }
@@ -1418,9 +1426,9 @@ open class MainActivity : AppCompatActivity() {
         // rotation-dependent state.
         // The preview follows the window; the capture use cases follow the sensor and are updated
         // by onOrientationChange.
-        camConfig.session.preview?.targetRotation =
+        session.preview?.targetRotation =
             previewView.display?.rotation ?: Surface.ROTATION_0
-        camConfig.session.camera?.cameraInfo?.let {
+        session.camera?.cameraInfo?.let {
             previewView.applyPreviewRatio(camConfig.aspectRatio, it)
         }
 

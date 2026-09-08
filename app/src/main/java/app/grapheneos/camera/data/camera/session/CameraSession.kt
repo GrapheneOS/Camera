@@ -50,7 +50,6 @@ import kotlin.concurrent.thread
 @SuppressLint("UnsafeOptInUsageError")
 class CameraSession @AssistedInject constructor(
     @Assisted private val environment: CameraSessionEnvironment,
-    @Assisted private val listener: Listener,
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
@@ -58,6 +57,8 @@ class CameraSession @AssistedInject constructor(
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
 ) {
+
+    var listener: Listener? = null
 
     var camera: Camera? = null
 
@@ -88,7 +89,7 @@ class CameraSession @AssistedInject constructor(
     private val zoomStateObserver = Observer<ZoomState> {
         zoomState = it
         if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-            listener.onZoomStateChanged()
+            listener?.onZoomStateChanged()
         }
     }
 
@@ -212,13 +213,13 @@ class CameraSession @AssistedInject constructor(
 
     fun initialize(forced: Boolean, extensionMode: Int) {
         if (cameraProvider != null) {
-            listener.onProviderReady(forced)
+            listener?.onProviderReady(forced)
             return
         }
 
         cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
             when (provider) {
-                null -> listener.onCameraProviderUnavailable()
+                null -> listener?.onCameraProviderUnavailable()
                 else -> onCameraProviderReady(provider, forced, extensionMode)
             }
         }
@@ -253,11 +254,11 @@ class CameraSession @AssistedInject constructor(
             provider,
         ) { manager ->
             when (manager) {
-                null -> listener.onExtensionsUnavailable()
+                null -> listener?.onExtensionsUnavailable()
                 else -> extensionsManager = manager
             }
 
-            listener.onProviderReady(forced)
+            listener?.onProviderReady(forced)
         }
     }
 
@@ -682,7 +683,7 @@ class CameraSession @AssistedInject constructor(
                 sessionConfig.setFeatureSelectionListener(
                     environment.sessionMainExecutor
                 ) { selected ->
-                    listener.onFeaturesSelected(
+                    listener?.onFeaturesSelected(
                         boundLensFacing = boundLensFacing,
                         requested = requested,
                         qualityFeature = requiredQualityFeature,
@@ -768,10 +769,7 @@ class CameraSession @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(
-            environment: CameraSessionEnvironment,
-            listener: Listener,
-        ): CameraSession
+        fun create(environment: CameraSessionEnvironment): CameraSession
     }
 
     private data class SnapshotProbeKey(

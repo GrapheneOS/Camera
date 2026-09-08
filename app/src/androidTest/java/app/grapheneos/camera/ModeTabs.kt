@@ -9,6 +9,6 @@ import app.grapheneos.camera.ui.activities.MainActivity
  * fling handlers that read the tab model -- has to wait for both.
  */
 fun <A : MainActivity> awaitModeTabs(scenario: ActivityScenario<A>) {
-    waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+    waitUntil(scenario, "camera is bound") { it.session.camera != null }
     waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
 }

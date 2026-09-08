@@ -358,7 +358,7 @@ class StalledMediaProviderRegressionTest {
         val mediaProvider = StallingMediaProvider(targetContext.contentResolver)
         launch().use { scenario ->
             waitUntil(scenario, "video use case is bound") {
-                it.camConfig.session.camera != null && it.camConfig.session.videoCapture != null
+                it.session.camera != null && it.session.videoCapture != null
             }
             lateinit var camera: A
             scenario.onActivity {

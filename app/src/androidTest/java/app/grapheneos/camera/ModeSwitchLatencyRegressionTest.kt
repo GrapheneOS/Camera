@@ -47,7 +47,7 @@ class ModeSwitchLatencyRegressionTest {
                     1,
                     CameraSession.snapshotProbeCount,
                 )
-                snapshotsFirstTime = it.camConfig.session.imageCapture != null
+                snapshotsFirstTime = it.session.imageCapture != null
             }
 
             scenario.onActivity {
@@ -58,7 +58,7 @@ class ModeSwitchLatencyRegressionTest {
                 assertEquals(
                     "the cached verdict answered for a different snapshot decision",
                     snapshotsFirstTime,
-                    it.camConfig.session.imageCapture != null
+                    it.session.imageCapture != null
                 )
             }
         }
@@ -126,17 +126,17 @@ class ModeSwitchLatencyRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
             waitUntil(scenario, "the zoom state is attached") {
-                it.camConfig.session.zoomState != null
+                it.session.zoomState != null
             }
 
             scenario.onActivity {
                 it.camConfig.switchMode(CameraMode.VIDEO)
 
-                assertNull("the bind read the zoom state", it.camConfig.session.zoomState)
+                assertNull("the bind read the zoom state", it.session.zoomState)
             }
 
             waitUntil(scenario, "the zoom state is attached again") {
-                it.camConfig.session.zoomState != null
+                it.session.zoomState != null
             }
         }
     }
@@ -152,16 +152,16 @@ class ModeSwitchLatencyRegressionTest {
 
             scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
             waitUntil(scenario, "the zoom state is attached") {
-                it.camConfig.session.zoomState != null
+                it.session.zoomState != null
             }
 
-            scenario.onActivity { it.camConfig.session.camera!!.cameraControl.setLinearZoom(0.5f) }
+            scenario.onActivity { it.session.camera!!.cameraControl.setLinearZoom(0.5f) }
 
             waitUntil(scenario, "the zoom bar caught up with the camera") {
                 it.zoomBar.progress == 50
             }
             scenario.onActivity {
-                assertEquals(0.5f, it.camConfig.session.zoomState!!.linearZoom, 0.01f)
+                assertEquals(0.5f, it.session.zoomState!!.linearZoom, 0.01f)
             }
         }
     }

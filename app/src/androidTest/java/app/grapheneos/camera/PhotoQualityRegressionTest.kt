@@ -37,7 +37,7 @@ class PhotoQualityRegressionTest {
     @Test
     fun photoQualityOutOfRange_isNotCommitted() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+            waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             // The same instance More Settings edits, so it can be read while that screen is up
             val camConfig = camConfigOf(scenario)
@@ -63,7 +63,7 @@ class PhotoQualityRegressionTest {
     @Test
     fun photoQualityInRange_isCommitted() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+            waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             val camConfig = camConfigOf(scenario)
             val stored = camConfig.photoQuality

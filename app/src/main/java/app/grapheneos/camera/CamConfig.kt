@@ -51,6 +51,7 @@ import kotlinx.coroutines.runBlocking
 class CamConfig @AssistedInject constructor(
     @Assisted private val environment: CameraSessionEnvironment,
     @Assisted private val effects: ViewfinderEffects,
+    @Assisted private val session: CameraSession,
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val capturedItemRepository: CapturedItemRepository,
@@ -58,43 +59,23 @@ class CamConfig @AssistedInject constructor(
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val barcodeFormats: BarcodeFormats,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
-    cameraSessionFactory: CameraSession.Factory,
-) {
+) : CameraSession.Listener {
 
-    val session = cameraSessionFactory.create(
-        environment = environment,
-        listener = object : CameraSession.Listener {
-            override fun onZoomStateChanged() {
-                effects.updateZoomThumb(shouldShowPanel = true)
-            }
+    override fun onZoomStateChanged() {
+        effects.updateZoomThumb(shouldShowPanel = true)
+    }
 
-            override fun onCameraProviderUnavailable() {
-                effects.showMessage(R.string.camera_provider_init_failure)
-            }
+    override fun onCameraProviderUnavailable() {
+        effects.showMessage(R.string.camera_provider_init_failure)
+    }
 
-            override fun onExtensionsUnavailable() {
-                effects.showMessage(R.string.extensions_manager_init_failure)
-            }
+    override fun onExtensionsUnavailable() {
+        effects.showMessage(R.string.extensions_manager_init_failure)
+    }
 
-            override fun onProviderReady(forced: Boolean) {
-                startCamera(forced = forced)
-            }
-
-            override fun onFeaturesSelected(
-                boundLensFacing: Int,
-                requested: List<GroupableFeature>,
-                qualityFeature: GroupableFeature?,
-                selected: Set<GroupableFeature>,
-            ) {
-                this@CamConfig.onFeaturesSelected(
-                    boundLensFacing,
-                    requested,
-                    qualityFeature,
-                    selected,
-                )
-            }
-        },
-    )
+    override fun onProviderReady(forced: Boolean) {
+        startCamera(forced = forced)
+    }
 
     @set:VisibleForTesting
     var mPlayer = environment.createTunePlayer()
@@ -114,6 +95,8 @@ class CamConfig @AssistedInject constructor(
     var lastCapturedItem: CapturedItem? = null
 
     init {
+        session.listener = this
+
         preferencesScope.launch {
             settingsRepository.settings.collect { settings = it }
         }
@@ -434,7 +417,7 @@ class CamConfig @AssistedInject constructor(
         }
     }
 
-    private fun onFeaturesSelected(
+    override fun onFeaturesSelected(
         boundLensFacing: Int,
         requested: List<GroupableFeature>,
         qualityFeature: GroupableFeature?,
@@ -701,6 +684,7 @@ class CamConfig @AssistedInject constructor(
         fun create(
             environment: CameraSessionEnvironment,
             effects: ViewfinderEffects,
+            session: CameraSession,
         ): CamConfig
     }
 

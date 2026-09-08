@@ -30,6 +30,8 @@ private const val imageFileFormat = ".jpg"
 class ImageCapturer(val mActivity: MainActivity) {
     val camConfig = mActivity.camConfig
 
+    private val session = mActivity.session
+
     val isTakingPicture: Boolean
         get() = currentImageSaver != null
 
@@ -59,7 +61,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     @SuppressLint("RestrictedApi")
     fun takePicture() {
-        if (camConfig.session.camera == null) {
+        if (session.camera == null) {
             return
         }
 
@@ -74,7 +76,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         val imageMetadata = ImageCapture.Metadata()
         imageMetadata.isReversedHorizontal =
-            camConfig.session.lensFacing == CameraSelector.LENS_FACING_FRONT
+            session.lensFacing == CameraSelector.LENS_FACING_FRONT
                 && camConfig.saveImageAsPreviewed
 
         if (camConfig.requireLocation) {
@@ -88,7 +90,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         val preview = mActivity.imagePreview
 
-        val imageCapture = camConfig.session.imageCapture!!
+        val imageCapture = session.imageCapture!!
 
         val imageSaver = ImageSaver(
             this,

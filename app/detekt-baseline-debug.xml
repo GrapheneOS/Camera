@@ -177,7 +177,7 @@
     <ID>UnsafeCallOnNullableType:BlurBitmap.kt:BlurBitmap$sentBitmap.config!!</ID>
     <ID>UnsafeCallOnNullableType:BottomTabLayout.kt:BottomTabLayout$getTabAt(it)!!</ID>
     <ID>UnsafeCallOnNullableType:CapturedItems.kt:CapturedItem.Companion.&lt;no name provided&gt;$source.readString()!!</ID>
-    <ID>UnsafeCallOnNullableType:ImageCapturer.kt:ImageCapturer$camConfig.session.imageCapture!!</ID>
+    <ID>UnsafeCallOnNullableType:ImageCapturer.kt:ImageCapturer$session.imageCapture!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType(), fileName())!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$contentResolver.openAssetFileDescriptor(uri, "w")!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$obtainOutputUri()!!</ID>
