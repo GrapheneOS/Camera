@@ -388,7 +388,7 @@ open class MoreSettings :
             val flavor = if (caller is SecureActivity) MoreSettingsSecure::class else MoreSettings::class
             Intent(caller, flavor.java).let {
                 it.putExtra(INTENT_EXTRA_IN_CAPTURE_MODE, caller.camConfig.isInCaptureMode)
-                it.putExtra(INTENT_EXTRA_ZSL_SUPPORTED, caller.camConfig.session.isZslSupported)
+                it.putExtra(INTENT_EXTRA_ZSL_SUPPORTED, caller.session.isZslSupported)
 
                 caller.startActivity(it)
             }

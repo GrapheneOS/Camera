@@ -32,7 +32,7 @@ class SettingsDialogRegressionTest {
     @Test
     fun back_dismissesTheSettingsPanel() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+            waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
                 activity.settingsDialog.show()
@@ -57,7 +57,7 @@ class SettingsDialogRegressionTest {
     @Test
     fun backIsIntercepted_onlyWhileTheSettingsPanelIsUp() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+            waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
                 assertFalse(activity.onBackPressedDispatcher.hasEnabledCallbacks())

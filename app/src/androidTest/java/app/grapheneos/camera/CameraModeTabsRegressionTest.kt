@@ -131,7 +131,7 @@ class CameraModeTabsRegressionTest {
 
         launchCaptureSession(CaptureActivity::class.java, MediaStore.ACTION_IMAGE_CAPTURE)
             .use { scenario ->
-                waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+                waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
                 // Flinging before the tabs were built would pass whether or not any get built
                 Thread.sleep(TAB_BUILD_DWELL_MS)
@@ -144,7 +144,7 @@ class CameraModeTabsRegressionTest {
     }
 
     private fun <A : MainActivity> assertNoModeTabs(scenario: ActivityScenario<A>) {
-        waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+        waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
         // Asserting straight after the bind would also hold while a build was merely still
         // pending, so outlast the extension probe round that used to precede one.

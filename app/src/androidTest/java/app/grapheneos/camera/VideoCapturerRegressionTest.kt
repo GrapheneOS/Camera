@@ -278,7 +278,7 @@ class VideoCapturerRegressionTest {
 
             scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
             waitUntil(scenario, "video use case is bound") {
-                it.camConfig.session.videoCapture != null
+                it.session.videoCapture != null
             }
 
             val capturedBefore = lastCapturedUri(scenario)
@@ -353,12 +353,12 @@ class VideoCapturerRegressionTest {
     @Test
     fun tappingAModeTabDuringTheDeferredStart_leavesTheModeAlone() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.camConfig.session.camera != null }
+            waitUntil(scenario, "camera is bound") { it.session.camera != null }
             waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
 
             scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
             waitUntil(scenario, "video use case is bound") {
-                it.camConfig.session.videoCapture != null
+                it.session.videoCapture != null
             }
 
             lateinit var player: ManualTunePlayer
@@ -413,7 +413,7 @@ class VideoCapturerRegressionTest {
     ) {
         launch().use { scenario ->
             waitUntil(scenario, "video use case is bound") {
-                it.camConfig.session.camera != null && it.camConfig.session.videoCapture != null
+                it.session.camera != null && it.session.videoCapture != null
             }
             val capturedBefore = lastCapturedUri(scenario)
             try {
