@@ -15,7 +15,7 @@ class QrTile : SecureMainActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        camConfig.switchMode(CameraMode.QR_SCAN)
+        viewfinder.switchMode(CameraMode.QR_SCAN)
     }
 
     override fun shouldShowCameraModeTabs() = false

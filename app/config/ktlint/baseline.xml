@@ -188,18 +188,15 @@
     <file name="src/main/java/app/grapheneos/camera/analyzer/QRAnalyzer.kt">
         <error line="17" column="18" source="standard:class-signature" />
         <error line="17" column="53" source="standard:class-signature" />
-        <error line="85" column="30" source="standard:argument-list-wrapping" />
-        <error line="86" column="32" source="standard:argument-list-wrapping" />
-        <error line="87" column="32" source="standard:argument-list-wrapping" />
+        <error line="83" column="30" source="standard:argument-list-wrapping" />
+        <error line="84" column="32" source="standard:argument-list-wrapping" />
+        <error line="85" column="32" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
         <error line="28" column="19" source="standard:property-naming" />
         <error line="30" column="21" source="standard:class-signature" />
         <error line="30" column="48" source="standard:class-signature" />
         <error line="38" column="35" source="standard:colon-spacing" />
-        <error line="78" column="45" source="standard:binary-expression-wrapping" />
-        <error line="78" column="69" source="standard:binary-expression-wrapping" />
-        <error line="78" column="101" source="standard:max-line-length" />
         <error line="80" column="1" source="standard:indent" />
         <error line="80" column="17" source="standard:chain-wrapping" />
         <error line="131" column="1" source="standard:no-empty-first-line-in-method-block" />
@@ -378,8 +375,8 @@
         <error line="41" column="35" source="standard:wrapping" />
         <error line="42" column="53" source="standard:argument-list-wrapping" />
         <error line="43" column="13" source="standard:wrapping" />
-        <error line="53" column="27" source="standard:property-naming" />
-        <error line="54" column="27" source="standard:property-naming" />
+        <error line="57" column="27" source="standard:property-naming" />
+        <error line="58" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/SettingsDialog.kt">
         <error line="54" column="22" source="standard:class-signature" />
@@ -529,10 +526,10 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="943" column="100" source="standard:max-line-length" />
-        <error line="1094" column="100" source="standard:max-line-length" />
-        <error line="1450" column="17" source="standard:chain-wrapping" />
-        <error line="1639" column="27" source="standard:property-naming" />
+        <error line="979" column="100" source="standard:max-line-length" />
+        <error line="1139" column="100" source="standard:max-line-length" />
+        <error line="1495" column="17" source="standard:chain-wrapping" />
+        <error line="1685" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="388" column="101" source="standard:max-line-length" />

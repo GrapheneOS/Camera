@@ -109,7 +109,7 @@ class SensorOrientationChangeNotifier private constructor(
                 notifyListeners()
             }
 
-            if (!mainActivity.camConfig.shouldShowGyroscope()) {
+            if (!mainActivity.viewfinder.shouldShowGyroscope()) {
                 mainActivity.gCircleFrame.visibility = View.GONE
                 return
             }

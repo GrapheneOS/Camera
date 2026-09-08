@@ -11,6 +11,7 @@ import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -44,6 +45,7 @@ class SafTreeGrantsRegressionTest {
             storagePrefs = InMemoryDataStore(StoragePrefs()),
             mediaPrefs = InMemoryDataStore(MediaPrefs()),
             context = context,
+            ioDispatcher = Dispatchers.Unconfined,
         )
     }
 

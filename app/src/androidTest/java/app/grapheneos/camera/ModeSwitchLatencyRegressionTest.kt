@@ -40,7 +40,7 @@ class ModeSwitchLatencyRegressionTest {
             scenario.onActivity {
                 CameraSession.clearSnapshotProbeCache()
 
-                it.camConfig.switchMode(CameraMode.VIDEO)
+                it.viewfinder.switchMode(CameraMode.VIDEO)
 
                 assertEquals(
                     "entering video mode did not probe",
@@ -51,8 +51,8 @@ class ModeSwitchLatencyRegressionTest {
             }
 
             scenario.onActivity {
-                it.camConfig.switchMode(CameraMode.CAMERA)
-                it.camConfig.switchMode(CameraMode.VIDEO)
+                it.viewfinder.switchMode(CameraMode.CAMERA)
+                it.viewfinder.switchMode(CameraMode.VIDEO)
 
                 assertEquals("the second entry probed again", 1, CameraSession.snapshotProbeCount)
                 assertEquals(
@@ -78,7 +78,7 @@ class ModeSwitchLatencyRegressionTest {
 
             scenario.onActivity {
                 CameraSession.clearSnapshotProbeCache()
-                it.camConfig.switchMode(CameraMode.VIDEO)
+                it.viewfinder.switchMode(CameraMode.VIDEO)
             }
 
             // The qualities a camera records at are listed once its preview starts streaming,
@@ -93,7 +93,7 @@ class ModeSwitchLatencyRegressionTest {
                     "this camera records at a single quality", spinner.count > 1
                 )
 
-                val quality = activity.camConfig.videoQuality
+                val quality = activity.viewfinder.videoQuality
                 val original = spinner.selectedItemPosition
 
                 try {
@@ -102,7 +102,7 @@ class ModeSwitchLatencyRegressionTest {
                     assertNotEquals(
                         "the video quality did not change",
                         quality,
-                        activity.camConfig.videoQuality
+                        activity.viewfinder.videoQuality
                     )
                     assertEquals(
                         "the new quality was answered from the old verdict",
@@ -130,7 +130,7 @@ class ModeSwitchLatencyRegressionTest {
             }
 
             scenario.onActivity {
-                it.camConfig.switchMode(CameraMode.VIDEO)
+                it.viewfinder.switchMode(CameraMode.VIDEO)
 
                 assertNull("the bind read the zoom state", it.session.zoomState)
             }
@@ -150,7 +150,7 @@ class ModeSwitchLatencyRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
-            scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
             waitUntil(scenario, "the zoom state is attached") {
                 it.session.zoomState != null
             }

@@ -8,10 +8,10 @@ import android.view.Gravity
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatTextView
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -19,7 +19,7 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     private lateinit var timer: CountDownTimer
     lateinit var mActivity: MainActivity
-    lateinit var camConfig: CamConfig
+    lateinit var viewfinder: ViewfinderController
 
     companion object {
         private const val textAnimDuration = 700L
@@ -36,7 +36,7 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mActivity = mainActivity
-        camConfig = mainActivity.camConfig
+        viewfinder = mainActivity.viewfinder
     }
 
     fun startTimer() {
@@ -68,9 +68,9 @@ class CountDownTimerUI @JvmOverloads constructor(
                 text = pendingS.toString()
 
                 if (text == "1") {
-                    camConfig.mPlayer.playTimerFinalSSound()
+                    viewfinder.mPlayer.playTimerFinalSSound()
                 } else {
-                    camConfig.mPlayer.playTimerIncrementSound()
+                    viewfinder.mPlayer.playTimerIncrementSound()
                 }
             }
 
