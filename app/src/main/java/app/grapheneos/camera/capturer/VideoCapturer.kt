@@ -47,6 +47,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     val camConfig = mActivity.camConfig
 
+    private val session = mActivity.session
+
     var isRecording = false
         private set
 
@@ -146,8 +148,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun startRecording() {
-        if (camConfig.session.camera == null) return
-        val recorder = camConfig.session.videoCapture?.output ?: return
+        if (session.camera == null) return
+        val recorder = session.videoCapture?.output ?: return
         if (isRecording) return
         isRecording = true
 

@@ -1,11 +1,11 @@
 package app.grapheneos.camera.util
 
 import androidx.camera.core.ZoomState
-import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.data.camera.session.CameraSession
 
-class CameraControl(private val camConfig: CamConfig) {
+class CameraControl(private val session: CameraSession) {
 
-    private fun zoomState(): ZoomState? = camConfig.session.zoomState
+    private fun zoomState(): ZoomState? = session.zoomState
 
     fun zoomIn() = zoomByRatio(1f)
 
@@ -23,7 +23,7 @@ class CameraControl(private val camConfig: CamConfig) {
             else if (currentZoomRatio < 1 && newZoomRatio > 1) 1f
             else newZoomRatio
 
-        camConfig.session.camera?.cameraControl?.setZoomRatio(zoomTo)
+        session.camera?.cameraControl?.setZoomRatio(zoomTo)
     }
 
 }

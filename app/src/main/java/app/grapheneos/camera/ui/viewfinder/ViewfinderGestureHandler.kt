@@ -49,7 +49,7 @@ internal class ViewfinderGestureHandler(
         val x = event.x
         val y = event.y
 
-        val camera = activity.camConfig.session.camera ?: return true
+        val camera = activity.session.camera ?: return true
 
         val autoFocusPoint = activity.previewView.meteringPointFactory.createPoint(x, y)
         activity.animateFocusRing(x, y)
@@ -80,14 +80,14 @@ internal class ViewfinderGestureHandler(
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
 
-        val zoomState = activity.camConfig.session.zoomState
+        val zoomState = activity.session.zoomState
         var scale = 1f
 
         if (zoomState != null) {
             scale = zoomState.zoomRatio * detector.scaleFactor
         }
 
-        val camera = activity.camConfig.session.camera ?: return true
+        val camera = activity.session.camera ?: return true
         camera.cameraControl.setZoomRatio(scale)
 
         return true
