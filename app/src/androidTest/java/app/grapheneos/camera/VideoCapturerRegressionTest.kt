@@ -71,7 +71,7 @@ class VideoCapturerRegressionTest {
     fun startRecording_toleratesDuplicateStartSoundCallback() {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
-                activity.camConfig.mPlayer = DoubleFiringTunePlayer(activity)
+                activity.viewfinder.mPlayer = DoubleFiringTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
 
@@ -94,7 +94,7 @@ class VideoCapturerRegressionTest {
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
-                activity.camConfig.mPlayer = player
+                activity.viewfinder.mPlayer = player
                 activity.videoCapturer.startRecording()
                 assertTrue(activity.videoCapturer.isRecording)
             }
@@ -112,7 +112,7 @@ class VideoCapturerRegressionTest {
 
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
-                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
             awaitRecordingStarted(scenario)
@@ -128,7 +128,7 @@ class VideoCapturerRegressionTest {
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
-                activity.camConfig.mPlayer = player
+                activity.viewfinder.mPlayer = player
                 activity.videoCapturer.startRecording()
             }
             awaitStartSound(scenario, player)
@@ -167,7 +167,7 @@ class VideoCapturerRegressionTest {
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
-                activity.camConfig.mPlayer = player
+                activity.viewfinder.mPlayer = player
                 activity.videoCapturer.startRecording()
             }
             awaitStartSound(scenario, player)
@@ -202,7 +202,7 @@ class VideoCapturerRegressionTest {
                 dp16 = 16 * activity.resources.displayMetrics.density
                 val selector = StateListDrawable().apply { addState(StateSet.WILD_CARD, shape) }
                 activity.captureButton.setImageDrawable(LayerDrawable(arrayOf(selector)))
-                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
 
@@ -225,7 +225,7 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
-                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
             waitUntil(scenario, "recording UI is shown") {
@@ -277,7 +277,7 @@ class VideoCapturerRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
-            scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
             waitUntil(scenario, "video use case is bound") {
                 it.session.videoCapture != null
             }
@@ -286,7 +286,7 @@ class VideoCapturerRegressionTest {
 
             try {
                 scenario.onActivity { activity ->
-                    activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                    activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
                     activity.videoCapturer.startRecording()
                 }
                 awaitRecordingStarted(scenario)
@@ -298,12 +298,12 @@ class VideoCapturerRegressionTest {
                     // cannot pass merely because there was nowhere to go.
                     val tabs = activity.tabLayout
                     assertNotNull(
-                        "no mode to the right of ${activity.camConfig.currentMode}",
+                        "no mode to the right of ${activity.viewfinder.currentMode}",
                         tabs.getTabAt(tabs.selectedTabPosition - 1)
                     )
 
                     flingRight(activity)
-                    mode = activity.camConfig.currentMode
+                    mode = activity.viewfinder.currentMode
                     stillRecording = activity.videoCapturer.isRecording
                 }
 
@@ -326,7 +326,7 @@ class VideoCapturerRegressionTest {
 
         recordingTest({ ActivityScenario.launch<VideoCaptureActivity>(intent) }) { scenario ->
             scenario.onActivity { activity ->
-                activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
+                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
             awaitRecordingStarted(scenario)
@@ -358,7 +358,7 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
             waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
 
-            scenario.onActivity { it.camConfig.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
             waitUntil(scenario, "video use case is bound") {
                 it.session.videoCapture != null
             }
@@ -371,7 +371,7 @@ class VideoCapturerRegressionTest {
             try {
                 scenario.onActivity { activity ->
                     player = ManualTunePlayer(activity)
-                    activity.camConfig.mPlayer = player
+                    activity.viewfinder.mPlayer = player
                     activity.videoCapturer.startRecording()
                 }
                 awaitStartSound(scenario, player)
@@ -385,7 +385,7 @@ class VideoCapturerRegressionTest {
                     // What both of the strip's touch listeners do with a tap
                     activity.finalizeMode(cameraTab)
 
-                    mode = activity.camConfig.currentMode
+                    mode = activity.viewfinder.currentMode
                     highlighted = activity.tabLayout.selectedTab?.tag as CameraMode?
                 }
 

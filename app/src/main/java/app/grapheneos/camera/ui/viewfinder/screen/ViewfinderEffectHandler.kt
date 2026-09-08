@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder
+package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.content.Context
 import android.os.Build
@@ -10,6 +10,7 @@ import androidx.annotation.StringRes
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExposureState
 import androidx.camera.core.Preview
+import androidx.camera.video.Quality
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import app.grapheneos.camera.App
@@ -20,15 +21,15 @@ import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.showQrFormatsDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
-import com.google.zxing.BarcodeFormat
+import app.grapheneos.camera.ui.videoQualityTitle
 import java.util.concurrent.Executor
 
 internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
 ) : CameraSessionEnvironment,
-    ViewfinderEffects {
+    ViewfinderEffects,
+    ViewfinderChrome {
 
     override val sessionContext: Context
         get() {
@@ -73,8 +74,13 @@ internal class ViewfinderEffectHandler(
         activity.showMessage(message)
     }
 
-    override fun showMessage(message: String) {
-        activity.showMessage(message)
+    override fun showVideoQualityUnsupported(quality: Quality) {
+        activity.showMessage(
+            activity.getString(
+                R.string.quality_unsupported,
+                videoQualityTitle(activity, quality),
+            )
+        )
     }
 
     override fun updateLastFrame() {
@@ -93,8 +99,8 @@ internal class ViewfinderEffectHandler(
         activity.cancelFocusTimer()
     }
 
-    override fun locationCamConfigChanged(required: Boolean) {
-        activity.locationCamConfigChanged(required)
+    override fun onRequireLocationChanged(required: Boolean) {
+        activity.onRequireLocationChanged(required)
     }
 
     override fun shouldAskForLocationPermission(): Boolean {
@@ -107,19 +113,6 @@ internal class ViewfinderEffectHandler(
 
     override fun createQrAnalyzer(): QRAnalyzer {
         return QRAnalyzer(activity)
-    }
-
-    override fun showBarcodeFormatPicker(
-        optionNames: List<String>,
-        initialValues: List<Boolean>,
-        onConfirm: (List<Boolean>) -> Unit,
-    ) {
-        showQrFormatsDialog(
-            activity = activity,
-            optionNames = optionNames,
-            initialValues = initialValues,
-            onConfirm = onConfirm,
-        )
     }
 
     override fun showStorageLocationNotFound() {
@@ -203,19 +196,6 @@ internal class ViewfinderEffectHandler(
 
     override fun resetTorchToggle() {
         activity.settingsDialog.torchToggle.isChecked = false
-    }
-
-    override fun selectBarcodeFormatToggles(formats: List<BarcodeFormat>) {
-        val toggles = mapOf(
-            BarcodeFormat.QR_CODE to activity.qrToggle,
-            BarcodeFormat.AZTEC to activity.azToggle,
-            BarcodeFormat.PDF_417 to activity.cBToggle,
-            BarcodeFormat.DATA_MATRIX to activity.dmToggle,
-        )
-
-        formats.forEach { format ->
-            toggles[format]?.isSelected = true
-        }
     }
 
     override fun applyModeChrome(

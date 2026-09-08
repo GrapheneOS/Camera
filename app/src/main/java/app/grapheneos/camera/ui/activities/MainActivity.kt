@@ -70,8 +70,8 @@ import androidx.core.view.isVisible
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
+import androidx.lifecycle.lifecycleScope
 import app.grapheneos.camera.App
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -83,6 +83,9 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
+import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.gallery.CapturedItemSession
+import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ktx.SystemSettingsObserver
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
@@ -96,9 +99,11 @@ import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
-import app.grapheneos.camera.ui.viewfinder.ViewfinderEffectHandler
+import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -117,6 +122,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 open class MainActivity : AppCompatActivity() {
@@ -125,14 +132,23 @@ open class MainActivity : AppCompatActivity() {
     lateinit var cameraSessionFactory: CameraSession.Factory
 
     @Inject
-    lateinit var camConfigFactory: CamConfig.Factory
+    lateinit var viewfinderFactory: ViewfinderController.Factory
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
+    @Inject
+    lateinit var cameraEntryPoint: CameraEntryPoint
+
+    @Inject
+    lateinit var barcodeFormats: BarcodeFormats
+
+    @Inject
+    lateinit var capturedItemSession: CapturedItemSession
+
     lateinit var session: CameraSession
 
-    lateinit var camConfig: CamConfig
+    lateinit var viewfinder: ViewfinderController
 
     private val application: App
         get() = applicationContext as App
@@ -312,7 +328,7 @@ open class MainActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) {
             shouldRestartRecording = true
-            camConfig.startCamera(true)
+            viewfinder.startCamera(true)
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
@@ -372,7 +388,7 @@ open class MainActivity : AppCompatActivity() {
         builder.setNegativeButton(R.string.cancel, null)
 
         builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-            camConfig.includeAudio = false
+            viewfinder.includeAudio = false
             onDisableAudio()
         }
 
@@ -402,7 +418,7 @@ open class MainActivity : AppCompatActivity() {
         transitionShown = false
         mainOverlay.visibility = View.INVISIBLE
 
-        if (camConfig.isQRMode) {
+        if (viewfinder.isQRMode) {
             return
         }
 
@@ -598,7 +614,10 @@ open class MainActivity : AppCompatActivity() {
             }
 
             if (isThumbnailLoaded) { // indicates that last captured item is accessible
-                it.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, camConfig.lastCapturedItem)
+                it.putExtra(
+                    InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM,
+                    capturedItemSession.lastCapturedItem,
+                )
             }
 
             startActivity(it)
@@ -629,7 +648,7 @@ open class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Permission granted.")
 
                 // Setup the camera since the permission is available
-                camConfig.initializeCamera()
+                viewfinder.initializeCamera()
             }
             shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
                 Log.i(TAG, "The user has default denied camera permission.")
@@ -683,7 +702,7 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         // there are no camera controls in qr mode
-        if (camConfig.isQRMode) {
+        if (viewfinder.isQRMode) {
             return super.onKeyUp(keyCode, event)
         }
 
@@ -725,17 +744,13 @@ open class MainActivity : AppCompatActivity() {
         // Will also be called by Android Lifecycle when the app starts up
         checkPermissions()
 
-        if (camConfig.isQRMode) {
+        if (viewfinder.isQRMode) {
             startFocusTimer()
-        }
-
-        if (this !is SecureActivity) {
-            camConfig.fetchLastCapturedItem()
         }
 
         updateThumbnail()
 
-        if (camConfig.requireLocation) {
+        if (viewfinder.requireLocation) {
             requestLocation()
         }
 
@@ -743,7 +758,7 @@ open class MainActivity : AppCompatActivity() {
         if (!(this is VideoCaptureActivity && thirdOption.isVisible)) {
             if (!isQRDialogShowing) {
                 if (hasCameraPermission()) {
-                    camConfig.initializeCamera(true)
+                    viewfinder.initializeCamera(true)
                 } else {
                     Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
                 }
@@ -753,8 +768,21 @@ open class MainActivity : AppCompatActivity() {
 
     val requiresVideoModeOnly: Boolean
         get() {
-            return this is VideoOnlyActivity || this is VideoCaptureActivity
+            return cameraEntryPoint.requiresVideoModeOnly
         }
+
+    private fun selectBarcodeFormatToggles() {
+        val toggles = mapOf(
+            BarcodeFormat.QR_CODE to qrToggle,
+            BarcodeFormat.AZTEC to azToggle,
+            BarcodeFormat.PDF_417 to cBToggle,
+            BarcodeFormat.DATA_MATRIX to dmToggle,
+        )
+
+        barcodeFormats.enabled.forEach { format ->
+            toggles[format]?.isSelected = true
+        }
+    }
 
     override fun onPause() {
         super.onPause()
@@ -767,12 +795,12 @@ open class MainActivity : AppCompatActivity() {
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
-        if (camConfig.isQRMode) {
+        if (viewfinder.isQRMode) {
             cancelFocusTimer()
         } else {
             imageCapturer.cancelPendingCaptureRequest()
         }
-        if (camConfig.requireLocation) {
+        if (viewfinder.requireLocation) {
             application.dropLocationUpdates()
         }
         lastFrame = null
@@ -787,14 +815,22 @@ open class MainActivity : AppCompatActivity() {
 
         val sessionHandler = ViewfinderEffectHandler(this)
         session = cameraSessionFactory.create(environment = sessionHandler)
-        camConfig = camConfigFactory.create(
+        viewfinder = viewfinderFactory.create(
             environment = sessionHandler,
             effects = sessionHandler,
+            chrome = sessionHandler,
             session = session,
         )
         cameraControl = CameraControl(session)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            capturedItemSession.prepare()
+
+            updateThumbnail()
+        }
+
         previewView.scaleType = PreviewView.ScaleType.FIT_START
 
         tabLayout.setOnTouchListener { _, motionEvent ->
@@ -810,7 +846,7 @@ open class MainActivity : AppCompatActivity() {
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 hidePreviewTransition()
-                camConfig.reloadSettings()
+                viewfinder.reloadSettings()
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
@@ -846,8 +882,8 @@ open class MainActivity : AppCompatActivity() {
         }
         flipCameraCircle.setOnClickListener {
             resetAutoSleep()
-            if (camConfig.isQRMode) {
-                camConfig.scanAllCodes = !camConfig.scanAllCodes
+            if (viewfinder.isQRMode) {
+                viewfinder.scanAllCodes = !viewfinder.scanAllCodes
                 return@setOnClickListener
             }
 
@@ -875,7 +911,7 @@ open class MainActivity : AppCompatActivity() {
             rotate.interpolator = LinearInterpolator()
 
             it.startAnimation(rotate)
-            camConfig.toggleCameraSelector()
+            viewfinder.toggleCameraSelector()
         }
 
         binding.thirdCircle.setOnClickListener {
@@ -905,13 +941,13 @@ open class MainActivity : AppCompatActivity() {
             // would otherwise capture in the mode being left behind.
             tabLayout.settleNow()
 
-            if (camConfig.isVideoMode) {
+            if (viewfinder.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
                     videoCapturer.startRecording()
                 }
-            } else if (camConfig.isQRMode) {
+            } else if (viewfinder.isQRMode) {
                 session.toggleTorchState()
                 if (session.isTorchOn) {
                     setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
@@ -935,7 +971,7 @@ open class MainActivity : AppCompatActivity() {
         exposureBar.setMainActivity(this)
 
         settingsIcon.setOnClickListener {
-            if (!camConfig.isQRMode) {
+            if (!viewfinder.isQRMode) {
                 settingsDialog.show()
             }
         }
@@ -1057,7 +1093,11 @@ open class MainActivity : AppCompatActivity() {
         )
 
         binding.moreOptions.setOnClickListener {
-            camConfig.showMoreOptionsForQR()
+            showMoreQrFormatOptions(
+                activity = this,
+                barcodeFormats = barcodeFormats,
+                onApplied = { session.refreshQrHints() },
+            )
         }
 
         qrToggle.mActivity = this
@@ -1072,7 +1112,12 @@ open class MainActivity : AppCompatActivity() {
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
-        camConfig.loadSettings()
+        viewfinder.loadSettings()
+
+        barcodeFormats.load()
+        selectBarcodeFormatToggles()
+        session.refreshQrHints()
+
         settingsDialog.loadInitialState()
 
         muteToggle.setOnClickListener {
@@ -1137,7 +1182,7 @@ open class MainActivity : AppCompatActivity() {
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
         // already have dragged the strip, so put it back on the mode the camera is really in.
         if (videoCapturer.isRecording) {
-            tabLayout.getTabForMode(camConfig.currentMode)?.let {
+            tabLayout.getTabForMode(viewfinder.currentMode)?.let {
                 tabLayout.goToTab(it)
             }
             return
@@ -1151,15 +1196,15 @@ open class MainActivity : AppCompatActivity() {
             // holds the main thread for half a second, so a transition left to the stream state
             // would only reach the screen after the wait it is there to explain. Guarded on the
             // mode really changing, since nothing would rebind to take it back down again.
-            if (mode != camConfig.currentMode) {
+            if (mode != viewfinder.currentMode) {
                 showPreviewTransition()
             }
 
             // switchMode() puts the strip on the mode the camera actually ended up in, which is a
             // different one when an extension fails to bind.
             tabLayout.goToTab(selectedTab) {
-                if (mode != camConfig.currentMode) {
-                    camConfig.switchMode(mode)
+                if (mode != viewfinder.currentMode) {
+                    viewfinder.switchMode(mode)
                 } else if (
                     transitionShown &&
                     previewView.previewStreamState.value == StreamState.STREAMING
@@ -1178,7 +1223,7 @@ open class MainActivity : AppCompatActivity() {
     fun updateSelfTimerBadge() {
         cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
         // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
-        val applies = timerDuration != 0 && !camConfig.isQRMode && !camConfig.isVideoMode
+        val applies = timerDuration != 0 && !viewfinder.isQRMode && !viewfinder.isVideoMode
         cbText.visibility = if (applies) View.VISIBLE else View.INVISIBLE
     }
 
@@ -1192,7 +1237,7 @@ open class MainActivity : AppCompatActivity() {
             return
         }
 
-        val item = camConfig.lastCapturedItem
+        val item = capturedItemSession.lastCapturedItem
         if (item == null) {
             showMessage(R.string.please_wait_for_image_to_get_captured_before_sharing)
             return
@@ -1328,7 +1373,7 @@ open class MainActivity : AppCompatActivity() {
 
             builder.setOnDismissListener {
                 isQRDialogShowing = false
-                camConfig.startCamera(true)
+                viewfinder.startCamera(true)
             }
 
             session.cameraProvider?.unbindAll()
@@ -1429,7 +1474,7 @@ open class MainActivity : AppCompatActivity() {
         session.preview?.targetRotation =
             previewView.display?.rotation ?: Surface.ROTATION_0
         session.camera?.cameraInfo?.let {
-            previewView.applyPreviewRatio(camConfig.aspectRatio, it)
+            previewView.applyPreviewRatio(viewfinder.aspectRatio, it)
         }
 
         rootView.post { sensorNotifier?.notifyListeners() }
@@ -1477,10 +1522,11 @@ open class MainActivity : AppCompatActivity() {
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         frameCopyThread?.quitSafely()
-        camConfig.onDestroy()
+        viewfinder.onDestroy()
+        capturedItemSession.close()
     }
 
-    fun locationCamConfigChanged(required: Boolean) {
+    fun onRequireLocationChanged(required: Boolean) {
         if (required) {
             requestLocation()
         } else {
@@ -1493,7 +1539,7 @@ open class MainActivity : AppCompatActivity() {
     ) {
         // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
         // mode this returns to
-        if (camConfig.requireLocation) {
+        if (viewfinder.requireLocation) {
             requestLocation(application.isAnyLocationProvideActive())
         }
     }
@@ -1505,7 +1551,7 @@ open class MainActivity : AppCompatActivity() {
         if (!application.shouldAskForLocationPermission()) {
             requestLocation()
         } else {
-            camConfig.requireLocation = false
+            viewfinder.requireLocation = false
         }
     }
 
@@ -1533,7 +1579,7 @@ open class MainActivity : AppCompatActivity() {
 
                     it.setOnDismissListener {
                         if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            camConfig.requireLocation = false
+                            viewfinder.requireLocation = false
                         }
                     }
                 }.showIgnoringShortEdgeMode()
@@ -1578,7 +1624,7 @@ open class MainActivity : AppCompatActivity() {
     var isThumbnailLoaded = false
 
     fun updateThumbnail() {
-        val item = camConfig.lastCapturedItem
+        val item = capturedItemSession.lastCapturedItem
         val preview = imagePreview
         preview.setImageBitmap(null)
         isThumbnailLoaded = false
@@ -1614,7 +1660,7 @@ open class MainActivity : AppCompatActivity() {
 
             if (bitmap != null) {
                 mainExecutor.execute {
-                    if (isStarted && camConfig.lastCapturedItem == item) {
+                    if (isStarted && capturedItemSession.lastCapturedItem == item) {
                         preview.setImageBitmap(bitmap)
                         isThumbnailLoaded = true
                     }

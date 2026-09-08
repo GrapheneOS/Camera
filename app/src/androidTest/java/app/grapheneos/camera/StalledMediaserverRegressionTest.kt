@@ -169,7 +169,7 @@ class StalledMediaserverRegressionTest {
         assertTrue("The camera did not resume", resumed.await(TIMEOUT_S, TimeUnit.SECONDS))
         assertTrue("The sounds did not load", mediaserver.prepared.await(TIMEOUT_S, TimeUnit.SECONDS))
 
-        val player = camera!!.camConfig.mPlayer
+        val player = camera!!.viewfinder.mPlayer
         Handler(Looper.getMainLooper()).post { player.playShutterSound() }
         assertTrue("The shutter sound was not played", mediaserver.awaitStalledCall())
 

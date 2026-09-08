@@ -37,7 +37,7 @@ fun pendingVideoCount(): Int {
 
 fun <A : MainActivity> lastCapturedUri(scenario: ActivityScenario<A>): Uri? {
     var uri: Uri? = null
-    scenario.onActivity { uri = it.camConfig.lastCapturedItem?.uri }
+    scenario.onActivity { uri = it.capturedItemSession.lastCapturedItem?.uri }
     return uri
 }
 
@@ -78,7 +78,7 @@ fun <A : MainActivity> stopAndDeleteRecording(
 /** Keeps test runs from accumulating videos on the device. */
 private fun <A : MainActivity> deleteNewCapture(scenario: ActivityScenario<A>, previous: Uri?) {
     scenario.onActivity { activity ->
-        val item = activity.camConfig.lastCapturedItem ?: return@onActivity
+        val item = activity.capturedItemSession.lastCapturedItem ?: return@onActivity
         if (item.uri != previous) {
             try {
                 activity.contentResolver.delete(item.uri, null, null)

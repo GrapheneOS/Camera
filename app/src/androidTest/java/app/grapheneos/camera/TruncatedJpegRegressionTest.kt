@@ -19,6 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.capturer.ImageSaver
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
@@ -74,7 +75,7 @@ class TruncatedJpegRegressionTest {
             var capturedBefore: Uri? = null
             lateinit var saver: ImageSaver
             scenario.onActivity { activity ->
-                capturedBefore = activity.camConfig.lastCapturedItem?.uri
+                capturedBefore = activity.capturedItemSession.lastCapturedItem?.uri
                 activity.imagePreview.setImageBitmap(previousThumbnail)
 
                 // What ImageCapturer.takePicture() sets up, saving to MediaStore so that the
@@ -83,7 +84,7 @@ class TruncatedJpegRegressionTest {
                     activity.imageCapturer,
                     activity.applicationContext,
                     jpegQuality = 95,
-                    CamConfig.SettingValues.Default.STORAGE_LOCATION,
+                    CapturedItemRepository.MEDIA_STORE_LOCATION,
                     ".jpg",
                     ImageCapture.Metadata(),
                     removeExifAfterCapture = false,
@@ -105,7 +106,7 @@ class TruncatedJpegRegressionTest {
                 // The loader is shown before the capture is saved, so once the capture is saved a
                 // hidden loader means the thumbnail stage is over
                 waitUntil(scenario, "the thumbnail stage is over") { activity ->
-                    val isSaved = activity.camConfig.lastCapturedItem?.uri != capturedBefore
+                    val isSaved = activity.capturedItemSession.lastCapturedItem?.uri != capturedBefore
                     crash.get() != null
                             || (isSaved && activity.previewLoader.visibility == View.GONE)
                 }
@@ -116,7 +117,7 @@ class TruncatedJpegRegressionTest {
                 var saved: Uri? = null
                 var shownThumbnail: Bitmap? = null
                 scenario.onActivity { activity ->
-                    saved = activity.camConfig.lastCapturedItem?.uri
+                    saved = activity.capturedItemSession.lastCapturedItem?.uri
                     shownThumbnail = (activity.imagePreview.drawable as? BitmapDrawable)?.bitmap
                 }
                 assertNull("a thumbnail is shown for a capture that has none", shownThumbnail)
@@ -160,7 +161,7 @@ class TruncatedJpegRegressionTest {
     /** Keeps test runs from accumulating images on the device. */
     private fun deleteNewCapture(scenario: ActivityScenario<MainActivity>, previous: Uri?) {
         scenario.onActivity { activity ->
-            val item = activity.camConfig.lastCapturedItem ?: return@onActivity
+            val item = activity.capturedItemSession.lastCapturedItem ?: return@onActivity
             if (item.uri != previous) {
                 activity.contentResolver.delete(item.uri, null, null)
             }

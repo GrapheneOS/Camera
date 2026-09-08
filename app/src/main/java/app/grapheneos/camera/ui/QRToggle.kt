@@ -33,9 +33,9 @@ class QRToggle @JvmOverloads constructor(
 
     override fun setSelected(selected: Boolean) {
         super.setSelected(selected)
-        val camConfig = mActivity.camConfig
+        val barcodeFormats = mActivity.barcodeFormats
 
-        if (!selected && camConfig.allowedFormats.size == 1) {
+        if (!selected && barcodeFormats.enabled.size == 1) {
             // Name the format the way the label under the toggle does, not as the raw enum
             // constant ("PDF 417", not "PDF_417").
             mActivity.showMessage(mActivity.getString(
@@ -43,7 +43,11 @@ class QRToggle @JvmOverloads constructor(
             ))
             isSelected = true
         } else {
-            camConfig.setQRScanningFor(key, selected)
+            if (!barcodeFormats.setEnabled(formatName = key, enabled = selected)) {
+                mActivity.showMessage(R.string.no_barcode_selected)
+            }
+
+            mActivity.session.refreshQrHints()
         }
 
         refreshToggleUI()

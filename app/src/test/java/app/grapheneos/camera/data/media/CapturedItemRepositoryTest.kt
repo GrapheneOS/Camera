@@ -26,6 +26,7 @@ import app.grapheneos.camera.data.media.store.mediaPrefsSerializer
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
@@ -72,6 +73,7 @@ class CapturedItemRepositoryTest {
             storagePrefs = session,
             mediaPrefs = media,
             context = context,
+            ioDispatcher = Dispatchers.Unconfined,
         )
     }
 
@@ -108,7 +110,7 @@ class CapturedItemRepositoryTest {
     fun lastCapturedItem_afterRestart_returnsTheStoredItem() {
         runBlocking { repository().saveLastCapturedItem(item(DATE_STRING)) }
 
-        val reloaded = runBlocking { repository().lastCapturedItem() }
+        val reloaded = runBlocking { repository().lastCapturedItem.first() }
 
         assertEquals(item(DATE_STRING), reloaded)
         assertEquals(ITEM_TYPE_IMAGE, reloaded?.type)
@@ -116,7 +118,7 @@ class CapturedItemRepositoryTest {
 
     @Test
     fun lastCapturedItem_freshInstall_returnsNull() {
-        assertNull(runBlocking { repository().lastCapturedItem() })
+        assertNull(runBlocking { repository().lastCapturedItem.first() })
     }
 
     @Test
@@ -137,7 +139,7 @@ class CapturedItemRepositoryTest {
 
         val onDisk = runBlocking { mediaPrefsSerializer.readFrom(file.inputStream()) }
 
-        assertEquals(item(DATE_STRING), runBlocking { session.lastCapturedItem() })
+        assertEquals(item(DATE_STRING), runBlocking { session.lastCapturedItem.first() })
         assertEquals(
             StoredCapturedItem(
                 type = ITEM_TYPE_IMAGE,
@@ -207,7 +209,7 @@ class CapturedItemRepositoryTest {
     fun migrateStoredCaptures_legacyUris_becomeTrackedTreesOnce() {
         writeLegacyMediaUris(listOf("treeA", "treeB"))
 
-        runBlocking { repository().migrateStoredCaptures { } }
+        runBlocking { repository().migrateStoredCaptures() }
 
         assertNull(stored().legacyMediaUris)
         assertEquals(
@@ -218,7 +220,7 @@ class CapturedItemRepositoryTest {
         runBlocking {
             repository().setStorageLocation(treeUri("treeC").toString())
             repository().setStorageLocation(treeUri("treeD").toString())
-            repository().migrateStoredCaptures { }
+            repository().migrateStoredCaptures()
         }
 
         assertEquals(
@@ -233,7 +235,7 @@ class CapturedItemRepositoryTest {
         runBlocking { storagePrefs.updateData { it.copy(storageLocation = location) } }
         writeLegacyMediaUris(listOf("treeA"))
 
-        runBlocking { repository().migrateStoredCaptures { } }
+        runBlocking { repository().migrateStoredCaptures() }
 
         assertEquals(emptyList<Uri>(), previousSafTrees())
     }
@@ -244,7 +246,7 @@ class CapturedItemRepositoryTest {
         val trees = (0..cap).map { "tree$it" }
         writeLegacyMediaUris(trees)
 
-        runBlocking { repository().migrateStoredCaptures { } }
+        runBlocking { repository().migrateStoredCaptures() }
 
         assertEquals(trees.map { treeUri(it) }, previousSafTrees())
 
@@ -264,8 +266,7 @@ class CapturedItemRepositoryTest {
         Robolectric.buildContentProvider(FakeDocumentsProvider::class.java).create(AUTHORITY)
         writeLegacyMediaUris(listOf("treeA"))
 
-        var reported: CapturedItem? = null
-        runBlocking { repository().migrateStoredCaptures { reported = it } }
+        val reported = runBlocking { repository().migrateStoredCaptures() }
 
         assertEquals(
             CapturedItem(

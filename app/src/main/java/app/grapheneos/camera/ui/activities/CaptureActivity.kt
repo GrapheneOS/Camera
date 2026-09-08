@@ -184,7 +184,7 @@ open class CaptureActivity : MainActivity() {
     }
 
     open fun hidePreview() {
-        camConfig.startCamera(true)
+        viewfinder.startCamera(true)
 
         settingsIcon.visibility = View.VISIBLE
 

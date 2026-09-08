@@ -1,16 +1,10 @@
-package app.grapheneos.camera.ui.viewfinder
+package app.grapheneos.camera.ui.viewfinder.screen
 
-import androidx.annotation.StringRes
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExposureState
 import app.grapheneos.camera.data.core.model.CameraMode
-import com.google.zxing.BarcodeFormat
 
-interface ViewfinderEffects {
-
-    fun showMessage(@StringRes message: Int)
-
-    fun showMessage(message: String)
+interface ViewfinderChrome {
 
     fun applyModeChrome(mode: CameraMode, isVideoMode: Boolean, scanAllCodes: Boolean)
 
@@ -22,10 +16,6 @@ interface ViewfinderEffects {
 
     fun onPreviewBound(aspectRatio: Int, cameraInfo: CameraInfo)
 
-    fun updateLastFrame()
-
-    fun flashPreview(selfIlluminate: Boolean)
-
     fun updateZoomThumb(shouldShowPanel: Boolean)
 
     fun applyExposureState(exposureState: ExposureState)
@@ -36,16 +26,6 @@ interface ViewfinderEffects {
 
     fun updateGyroscopeIndicator(inPhotoMode: Boolean)
 
-    fun forceUpdateOrientationSensor()
-
-    fun startFocusTimer()
-
-    fun cancelFocusTimer()
-
-    fun cancelPendingCapture()
-
-    fun selectBarcodeFormatToggles(formats: List<BarcodeFormat>)
-
     fun onFlashModeChanged()
 
     fun onIncludeAudioChanged(enabled: Boolean)
@@ -54,19 +34,11 @@ interface ViewfinderEffects {
 
     fun onSelfIlluminationChanged(enabled: Boolean)
 
-    fun locationCamConfigChanged(required: Boolean)
+    fun onRequireLocationChanged(required: Boolean)
 
     fun reloadVideoQualities()
 
     fun showOnlyRelevantSettings()
 
     fun resetTorchToggle()
-
-    fun showBarcodeFormatPicker(
-        optionNames: List<String>,
-        initialValues: List<Boolean>,
-        onConfirm: (List<Boolean>) -> Unit,
-    )
-
-    fun showStorageLocationNotFound()
 }

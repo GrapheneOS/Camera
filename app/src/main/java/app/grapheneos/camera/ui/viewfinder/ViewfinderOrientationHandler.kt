@@ -113,7 +113,7 @@ internal class ViewfinderOrientationHandler(
         zDegrees: Float,
     ) {
         // If we are in photo mode and the countdown timer isn't running
-        if (activity.camConfig.isQRMode || activity.camConfig.isVideoMode ||
+        if (activity.viewfinder.isQRMode || activity.viewfinder.isVideoMode ||
             activity.cdTimer.isRunning
         ) {
             return

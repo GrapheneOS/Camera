@@ -42,7 +42,7 @@ class SelfTimerRegressionTest {
             assertEquals(Lifecycle.State.RESUMED, scenario.state)
 
             scenario.onActivity { activity ->
-                activity.camConfig.switchMode(CameraMode.CAMERA)
+                activity.viewfinder.switchMode(CameraMode.CAMERA)
                 activity.timerDuration = 10
                 activity.cdTimer.startTimer()
                 assertTrue(activity.cdTimer.isRunning)
@@ -81,8 +81,8 @@ class SelfTimerRegressionTest {
                 assertFalse(activity.cdTimer.isRunning)
             }
 
-            scenario.onActivity { it.camConfig.switchMode(CameraMode.QR_SCAN) }
-            waitUntil(scenario, "QR mode is active") { it.camConfig.isQRMode }
+            scenario.onActivity { it.viewfinder.switchMode(CameraMode.QR_SCAN) }
+            waitUntil(scenario, "QR mode is active") { it.viewfinder.isQRMode }
 
             scenario.onActivity { activity ->
                 activity.cdTimer.cancelTimer()
@@ -101,7 +101,7 @@ class SelfTimerRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.camConfig.switchMode(CameraMode.CAMERA)
+                activity.viewfinder.switchMode(CameraMode.CAMERA)
 
                 activity.timerDuration = 5
                 activity.updateSelfTimerBadge()
@@ -127,7 +127,7 @@ class SelfTimerRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.camConfig.switchMode(CameraMode.CAMERA)
+                activity.viewfinder.switchMode(CameraMode.CAMERA)
                 activity.timerDuration = 10
                 activity.updateSelfTimerBadge()
 
@@ -155,7 +155,7 @@ class SelfTimerRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.camConfig.switchMode(CameraMode.CAMERA)
+                activity.viewfinder.switchMode(CameraMode.CAMERA)
                 activity.timerDuration = 10
                 activity.updateSelfTimerBadge()
                 val shutterDescription = activity.captureButton.contentDescription
@@ -189,7 +189,7 @@ class SelfTimerRegressionTest {
                 activity.timerDuration = 5
                 activity.updateSelfTimerBadge()
 
-                assertTrue(activity.camConfig.isVideoMode)
+                assertTrue(activity.viewfinder.isVideoMode)
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
             }
         }

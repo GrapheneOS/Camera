@@ -333,7 +333,7 @@ open class MoreSettings :
         // the up arrow, Home, task switch) used to drop whatever had been typed, silently.
         // Commit here so that every exit path persists; a snackbar would be pointless on a
         // screen that is going away, so the invalid-value complaint is suppressed.
-        // onCreate() can bail out before the views exist (no CamConfig in the intent) and the
+        // onCreate() can bail out before the views exist (no ViewfinderController in the intent) and the
         // lifecycle still runs through onPause, hence the initialization check.
         if (this::pQField.isInitialized) {
             dumpData(notifyOnInvalidValue = false)
@@ -387,7 +387,7 @@ open class MoreSettings :
         fun start(caller: MainActivity) {
             val flavor = if (caller is SecureActivity) MoreSettingsSecure::class else MoreSettings::class
             Intent(caller, flavor.java).let {
-                it.putExtra(INTENT_EXTRA_IN_CAPTURE_MODE, caller.camConfig.isInCaptureMode)
+                it.putExtra(INTENT_EXTRA_IN_CAPTURE_MODE, caller.cameraEntryPoint.isCaptureSession)
                 it.putExtra(INTENT_EXTRA_ZSL_SUPPORTED, caller.session.isZslSupported)
 
                 caller.startActivity(it)

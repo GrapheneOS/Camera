@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -40,8 +41,8 @@ class PhotoQualityRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             // The same instance More Settings edits, so it can be read while that screen is up
-            val camConfig = camConfigOf(scenario)
-            val stored = camConfig.photoQuality
+            val viewfinder = viewfinderOf(scenario)
+            val stored = viewfinder.photoQuality
 
             val settings = openMoreSettings(scenario)
             val field = settings.findViewById<EditText>(R.id.photo_quality)
@@ -53,7 +54,7 @@ class PhotoQualityRegressionTest {
 
                 instrumentation.callActivityOnPause(settings)
 
-                assertEquals(stored, camConfig.photoQuality)
+                assertEquals(stored, viewfinder.photoQuality)
                 assertEquals(stored.toString(), field.text.toString())
             }
         }
@@ -65,8 +66,8 @@ class PhotoQualityRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
-            val camConfig = camConfigOf(scenario)
-            val stored = camConfig.photoQuality
+            val viewfinder = viewfinderOf(scenario)
+            val stored = viewfinder.photoQuality
 
             val settings = openMoreSettings(scenario)
             val field = settings.findViewById<EditText>(R.id.photo_quality)
@@ -76,18 +77,18 @@ class PhotoQualityRegressionTest {
                     field.setText("77")
                     instrumentation.callActivityOnPause(settings)
 
-                    assertEquals(77, camConfig.photoQuality)
+                    assertEquals(77, viewfinder.photoQuality)
                 }
             } finally {
-                camConfig.photoQuality = stored
+                viewfinder.photoQuality = stored
             }
         }
     }
 
-    private fun camConfigOf(scenario: ActivityScenario<MainActivity>): CamConfig {
-        lateinit var camConfig: CamConfig
-        scenario.onActivity { camConfig = it.camConfig }
-        return camConfig
+    private fun viewfinderOf(scenario: ActivityScenario<MainActivity>): ViewfinderController {
+        lateinit var viewfinder: ViewfinderController
+        scenario.onActivity { viewfinder = it.viewfinder }
+        return viewfinder
     }
 
     private fun openMoreSettings(scenario: ActivityScenario<MainActivity>): MoreSettings {

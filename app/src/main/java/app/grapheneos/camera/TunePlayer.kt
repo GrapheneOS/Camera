@@ -67,7 +67,7 @@ open class TunePlayer(val context: MainActivity) {
     }
 
     private fun shouldNotPlayTune(): Boolean {
-        return !context.camConfig.enableCameraSounds
+        return !context.viewfinder.enableCameraSounds
     }
 
     private fun play(player: MediaPlayer?) {

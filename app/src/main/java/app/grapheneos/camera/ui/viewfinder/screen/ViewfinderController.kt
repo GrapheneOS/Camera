@@ -1,26 +1,18 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.ui.viewfinder.screen
 
-import android.annotation.SuppressLint
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.AspectRatio
-import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.Preview
-import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Quality
-import androidx.camera.video.Recorder
-import androidx.camera.video.VideoCapture
+import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -30,10 +22,7 @@ import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
-import app.grapheneos.camera.domain.qr.BarcodeFormats
-import app.grapheneos.camera.ui.videoQualityTitle
-import app.grapheneos.camera.ui.viewfinder.ViewfinderEffects
-import com.google.zxing.BarcodeFormat
+import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -47,35 +36,18 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-@SuppressLint("UnsafeOptInUsageError")
-class CamConfig @AssistedInject constructor(
+class ViewfinderController @AssistedInject constructor(
     @Assisted private val environment: CameraSessionEnvironment,
     @Assisted private val effects: ViewfinderEffects,
+    @Assisted private val chrome: ViewfinderChrome,
     @Assisted private val session: CameraSession,
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
-    private val capturedItemRepository: CapturedItemRepository,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
-    private val barcodeFormats: BarcodeFormats,
+    private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : CameraSession.Listener {
-
-    override fun onZoomStateChanged() {
-        effects.updateZoomThumb(shouldShowPanel = true)
-    }
-
-    override fun onCameraProviderUnavailable() {
-        effects.showMessage(R.string.camera_provider_init_failure)
-    }
-
-    override fun onExtensionsUnavailable() {
-        effects.showMessage(R.string.extensions_manager_init_failure)
-    }
-
-    override fun onProviderReady(forced: Boolean) {
-        startCamera(forced = forced)
-    }
 
     @set:VisibleForTesting
     var mPlayer = environment.createTunePlayer()
@@ -84,51 +56,21 @@ class CamConfig @AssistedInject constructor(
         settingsRepository.settings.first()
     }
 
-    private var currentStorageLocation: String = runBlocking {
-        capturedItemRepository.storageLocation.first()
-    }
-
     private var modeSettings: ModeSettings = ModeSettings()
 
     private val preferencesScope = CoroutineScope(mainDispatcher)
 
-    var lastCapturedItem: CapturedItem? = null
-
-    init {
-        session.listener = this
-
-        preferencesScope.launch {
-            settingsRepository.settings.collect { settings = it }
-        }
-
-        preferencesScope.launch {
-            capturedItemRepository.storageLocation.collect { currentStorageLocation = it }
-        }
-
-        if (!entryPoint.isSecureSession) {
-            try {
-                runBlocking {
-                    capturedItemRepository.migrateStoredCaptures(::updateLastCapturedItem)
-                    capturedItemRepository.releaseUntrackedSafTrees()
-                }
-            } catch (e: IOException) {
-                Log.e(TAG, "unable to migrate the stored captures", e)
-            }
-
-            fetchLastCapturedItem()
-        }
-    }
-
     var currentMode: CameraMode = DEFAULT_CAMERA_MODE
         private set
 
-    var isQRMode = false
-        private set
-
-    var isVideoMode = false
-        private set
+    val isQRMode: Boolean
         get() {
-            return field || entryPoint.requiresVideoModeOnly
+            return currentMode.isQr
+        }
+
+    val isVideoMode: Boolean
+        get() {
+            return currentMode.isVideo || entryPoint.requiresVideoModeOnly
         }
 
     val canTakePicture: Boolean
@@ -140,9 +82,6 @@ class CamConfig @AssistedInject constructor(
         get() {
             return !(isQRMode || isVideoMode)
         }
-
-    val isInCaptureMode: Boolean
-        get() = entryPoint.isCaptureSession
 
     var gridType: GridType by setting(
         read = { it.gridType },
@@ -208,7 +147,7 @@ class CamConfig @AssistedInject constructor(
         write = { current, value -> current.copy(scanAllCodes = value) },
         onChanged = { value ->
             if (isQRMode) {
-                effects.applyScanAllCodesChrome(value)
+                chrome.applyScanAllCodesChrome(value)
             }
 
             session.refreshQrHints()
@@ -218,7 +157,7 @@ class CamConfig @AssistedInject constructor(
     var includeAudio: Boolean by setting(
         read = { it.includeAudio },
         write = { current, value -> current.copy(includeAudio = value) },
-        onChanged = { value -> effects.onIncludeAudioChanged(value) },
+        onChanged = { value -> chrome.onIncludeAudioChanged(value) },
     )
 
     var flashMode: Int = SettingsDefaults.FLASH_MODE
@@ -237,7 +176,7 @@ class CamConfig @AssistedInject constructor(
     // the preference back here would resurrect the very stale "on" the coercion exists to drop.
     var requireLocation: Boolean = false
         set(value) {
-            effects.locationCamConfigChanged(value)
+            chrome.onRequireLocationChanged(value)
 
             // A permission result is delivered before the first onResume of an activity the system
             // recreated, so this can run before a mode has been slotted — see modeSettings.
@@ -245,7 +184,7 @@ class CamConfig @AssistedInject constructor(
                 settingsRepository.setGeoTagging(value)
             }?.let { modeSettings = it }
 
-            effects.onGeoTaggingChanged(value)
+            chrome.onGeoTaggingChanged(value)
 
             field = value
         }
@@ -260,37 +199,35 @@ class CamConfig @AssistedInject constructor(
                 settingsRepository.setSelfIllumination(value)
             }?.let { modeSettings = it }
 
-            effects.onSelfIlluminationChanged(value)
+            chrome.onSelfIlluminationChanged(value)
         }
 
-    var storageLocation: String
-        get() = currentStorageLocation
-        set(value) {
-            runBlocking {
-                capturedItemRepository.setStorageLocation(value)
-                capturedItemRepository.releaseUntrackedSafTrees()
-            }
+    init {
+        session.listener = this
 
-            currentStorageLocation = value
+        preferencesScope.launch {
+            settingsRepository.settings.collect { settings = it }
         }
+    }
 
-    val allowedFormats: List<BarcodeFormat>
-        get() = barcodeFormats.enabled
+    override fun onZoomStateChanged() {
+        chrome.updateZoomThumb(shouldShowPanel = true)
+    }
+
+    override fun onCameraProviderUnavailable() {
+        effects.showMessage(R.string.camera_provider_init_failure)
+    }
+
+    override fun onExtensionsUnavailable() {
+        effects.showMessage(R.string.extensions_manager_init_failure)
+    }
+
+    override fun onProviderReady(forced: Boolean) {
+        startCamera(forced = forced)
+    }
 
     fun onDestroy() {
         preferencesScope.cancel()
-    }
-
-    fun fetchLastCapturedItem() {
-        val item = try {
-            runBlocking { capturedItemRepository.lastCapturedItem() }
-        } catch (e: IOException) {
-            Log.e(TAG, "unable to read the last captured item", e)
-            null
-        }
-        val skip = item?.type == ITEM_TYPE_IMAGE && entryPoint.isVideoOnlySession
-
-        lastCapturedItem = if (skip) null else item
     }
 
     fun setFlashMode(value: Int) {
@@ -301,48 +238,15 @@ class CamConfig @AssistedInject constructor(
         applyFlashMode(value)
     }
 
-    private fun applyFlashMode(value: Int) {
-        flashMode = value
-        session.imageCapture?.flashMode = value
-        effects.onFlashModeChanged()
-    }
-
     fun shouldShowGyroscope(): Boolean {
         return isInPhotoMode && settings.gyroscopeSuggestions
-    }
-
-    fun updateLastCapturedItem(item: CapturedItem) {
-        lastCapturedItem = item
-
-        try {
-            runBlocking { capturedItemRepository.saveLastCapturedItem(item) }
-        } catch (e: IOException) {
-            Log.e(TAG, "unable to store the last captured item", e)
-        }
-    }
-
-    fun setQRScanningFor(format: String, selected: Boolean) {
-        if (!barcodeFormats.setEnabled(formatName = format, enabled = selected)) {
-            effects.showMessage(R.string.no_barcode_selected)
-        }
-
-        session.refreshQrHints()
-    }
-
-    private fun slotCurrentMode() {
-        modeSettings = runBlocking {
-            settingsRepository.selectMode(
-                mode = currentMode,
-                isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
-            )
-        }
     }
 
     fun reloadSettings() {
         slotCurrentMode()
 
         if (isVideoMode) {
-            effects.reloadVideoQualities()
+            chrome.reloadVideoQualities()
         }
 
         applyFlashMode(modeSettings.flashMode)
@@ -356,30 +260,26 @@ class CamConfig @AssistedInject constructor(
 
         selfIlluminate = modeSettings.selfIllumination
 
-        effects.showOnlyRelevantSettings()
+        chrome.showOnlyRelevantSettings()
     }
 
     fun loadSettings() {
         includeAudio = settings.includeAudio
-
-        barcodeFormats.load(settings.enabledBarcodeFormats)
-
-        effects.selectBarcodeFormatToggles(allowedFormats)
-
-        session.refreshQrHints()
     }
 
     fun toggleFlashMode() {
-        if (session.isFlashAvailable) {
-            val next = when (flashMode) {
-                ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
-                ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
-                else -> ImageCapture.FLASH_MODE_OFF
+        when {
+            session.isFlashAvailable -> {
+                val next = when (flashMode) {
+                    ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
+                    ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
+                    else -> ImageCapture.FLASH_MODE_OFF
+                }
+
+                setFlashMode(next)
             }
 
-            setFlashMode(next)
-        } else {
-            effects.showMessage(R.string.flash_unavailable_in_selected_mode)
+            else -> effects.showMessage(R.string.flash_unavailable_in_selected_mode)
         }
     }
 
@@ -388,31 +288,39 @@ class CamConfig @AssistedInject constructor(
             AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
             else -> AspectRatio.RATIO_16_9
         }
+
         startCamera(true)
     }
 
     fun toggleCameraSelector() {
         // Manually switch to the opposite lens facing
-        session.lensFacing =
-            if (session.lensFacing == CameraSelector.LENS_FACING_BACK) {
-                CameraSelector.LENS_FACING_FRONT
-            } else {
-                CameraSelector.LENS_FACING_BACK
-            }
+        session.lensFacing = when (session.lensFacing) {
+            CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
+            else -> CameraSelector.LENS_FACING_BACK
+        }
 
-        // Test whether the new lens facing is supported by the current device
-        // If it is supported then restart the camera with the new configuration
-        if (session.isLensFacingSupported(session.lensFacing, currentMode.extensionMode)) {
-            startCamera(true)
-        } else {
+        val isNewLensSupported = session.isLensFacingSupported(
+            lensFacing = session.lensFacing,
+            extensionMode = currentMode.extensionMode,
+        )
+
+        when {
+            isNewLensSupported -> startCamera(true)
+
             // Else revert back to the old facing (while displaying an error message
             // to the user)
-            session.lensFacing = if (session.lensFacing == CameraSelector.LENS_FACING_BACK) {
-                effects.showMessage(R.string.rear_camera_unavailable)
-                CameraSelector.LENS_FACING_FRONT
-            } else {
-                effects.showMessage(R.string.front_camera_unavailable)
-                CameraSelector.LENS_FACING_BACK
+            else -> {
+                session.lensFacing = when (session.lensFacing) {
+                    CameraSelector.LENS_FACING_BACK -> {
+                        effects.showMessage(R.string.rear_camera_unavailable)
+                        CameraSelector.LENS_FACING_FRONT
+                    }
+
+                    else -> {
+                        effects.showMessage(R.string.front_camera_unavailable)
+                        CameraSelector.LENS_FACING_BACK
+                    }
+                }
             }
         }
     }
@@ -434,12 +342,7 @@ class CamConfig @AssistedInject constructor(
             selected = selected,
         ) ?: return
 
-        effects.showMessage(
-            environment.sessionContext.getString(
-                R.string.quality_unsupported,
-                videoQualityTitle(environment.sessionContext, droppedQuality),
-            )
-        )
+        effects.showVideoQualityUnsupported(droppedQuality)
     }
 
     fun initializeCamera(forced: Boolean = false) {
@@ -453,7 +356,7 @@ class CamConfig @AssistedInject constructor(
         // Cancel any pending capture requests
         effects.cancelPendingCapture()
 
-        effects.hideExposurePanel()
+        chrome.hideExposurePanel()
         slotCurrentMode()
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
@@ -469,11 +372,15 @@ class CamConfig @AssistedInject constructor(
         // (Snackbar/popup message can be shown before startCamera is called
         // in specific cases of explicitly switching to another side or if
         // the camera is expected)
-        if (!session.isLensFacingSupported(session.lensFacing, currentMode.extensionMode)) {
-            session.lensFacing = if (session.lensFacing == CameraSelector.LENS_FACING_BACK) {
-                CameraSelector.LENS_FACING_FRONT
-            } else {
-                CameraSelector.LENS_FACING_BACK
+        val isCurrentLensSupported = session.isLensFacingSupported(
+            lensFacing = session.lensFacing,
+            extensionMode = currentMode.extensionMode,
+        )
+
+        if (!isCurrentLensSupported) {
+            session.lensFacing = when (session.lensFacing) {
+                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
+                else -> CameraSelector.LENS_FACING_BACK
             }
         }
 
@@ -493,7 +400,7 @@ class CamConfig @AssistedInject constructor(
         }
 
         if (isVideoMode) {
-            effects.setMicMutedIconVisible(!includeAudio)
+            chrome.setMicMutedIconVisible(!includeAudio)
         }
 
         effects.forceUpdateOrientationSensor()
@@ -534,13 +441,64 @@ class CamConfig @AssistedInject constructor(
             BindOutcome.BOUND -> announceBind()
         }
     }
+    fun onStorageLocationNotFound() {
+        runBlocking { revertToMediaStoreLocation() }
+
+        effects.showStorageLocationNotFound()
+    }
+
+    fun snapPreview() {
+        effects.flashPreview(selfIlluminate)
+    }
+
+    fun switchMode(mode: CameraMode) {
+        if (currentMode == mode) {
+            return
+        }
+
+        currentMode = mode
+
+        effects.cancelFocusTimer()
+
+        chrome.applyModeChrome(
+            mode = mode,
+            isVideoMode = isVideoMode,
+            scanAllCodes = scanAllCodes,
+        )
+
+        startCamera(true)
+
+        // A mode can change with no touch involved, so the strip follows the camera and not the
+        // other way round - currentMode, because an extension that fails to bind falls back to
+        // another mode from inside startCamera(). Left until after that rebind, which blocks the
+        // main thread for long enough to swallow the animation whole.
+        if (entryPoint.showsCameraModeTabs) {
+            chrome.goToModeTab(currentMode)
+        }
+    }
+
+    private fun applyFlashMode(value: Int) {
+        flashMode = value
+        session.imageCapture?.flashMode = value
+        chrome.onFlashModeChanged()
+    }
+
+    private fun slotCurrentMode() {
+        modeSettings = runBlocking {
+            settingsRepository.selectMode(
+                mode = currentMode,
+                isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
+            )
+        }
+    }
 
     private fun qrLensFacing(): Int {
-        if (session.isLensFacingSupported(
-                lensFacing = CameraSelector.LENS_FACING_BACK,
-                extensionMode = currentMode.extensionMode,
-            )
-        ) {
+        val isRearLensSupported = session.isLensFacingSupported(
+            lensFacing = CameraSelector.LENS_FACING_BACK,
+            extensionMode = currentMode.extensionMode,
+        )
+
+        if (isRearLensSupported) {
             return CameraSelector.LENS_FACING_BACK
         }
 
@@ -554,29 +512,15 @@ class CamConfig @AssistedInject constructor(
 
         session.reattachZoomState()
 
-        effects.updateZoomThumb(shouldShowPanel = false)
+        chrome.updateZoomThumb(shouldShowPanel = false)
 
-        session.camera?.cameraInfo?.exposureState?.let { effects.applyExposureState(it) }
+        session.camera?.cameraInfo?.exposureState?.let { chrome.applyExposureState(it) }
 
-        effects.resetTorchToggle()
+        chrome.resetTorchToggle()
 
-        session.camera?.cameraInfo?.let { effects.onPreviewBound(aspectRatio, it) }
+        session.camera?.cameraInfo?.let { chrome.onPreviewBound(aspectRatio, it) }
 
-        effects.updateGyroscopeIndicator(isInPhotoMode)
-    }
-
-    fun snapPreview() {
-        effects.flashPreview(selfIlluminate)
-    }
-
-    // probeOnMiss is false because tab refreshes must never pay for a vendor probe on the main
-    // thread (see loadTabs); an unprobed mode is left out of the tabs for now, exactly like a
-    // transiently-failed probe always was, and comes back on the refresh that follows its probe.
-    private fun availableModes(): Set<CameraMode> {
-        return resolveAvailableModes(
-            allowsQrScanning = entryPoint.allowsQrScanning,
-            extensionsAvailable = session.extensionsAvailable,
-        )
+        chrome.updateGyroscopeIndicator(isInPhotoMode)
     }
 
     private fun loadTabs() {
@@ -584,81 +528,20 @@ class CamConfig @AssistedInject constructor(
             return
         }
 
-        // Refreshing the tabs must not run extension probes on the calling (main) thread: the
-        // first refresh after process start needs one vendor-extender init round trip over
-        // binder per advertised mode per lens, which measures at over half a second of blocked
-        // main thread -- more than a hundred dropped frames -- during startup on a Pixel 7 Pro.
-        // The probes run on their own short-lived thread instead (not cameraExecutor, which the
-        // QR analyzer may be draining) and the tabs are built once every verdict is in, so the
-        // tab bar still appears exactly once, fully formed, at the same time it used to; until
-        // then swipes and taps resolve to no tab and the app simply stays in the current mode.
-        // Later refreshes find the cache warm and rebuild synchronously, exactly as before.
-        session.probeUnknownExtensions(onRestart = ::loadTabs, onSettled = ::buildTabs)
+        session.probeUnknownExtensions(
+            onRestart = ::loadTabs,
+            onSettled = ::buildTabs,
+        )
     }
 
     private fun buildTabs() {
-        effects.setCameraModeTabs(
-            modes = availableModes(),
+        chrome.setCameraModeTabs(
+            modes = resolveAvailableModes(
+                allowsQrScanning = entryPoint.allowsQrScanning,
+                extensionsAvailable = session.extensionsAvailable,
+            ),
             currentMode = currentMode,
         )
-    }
-
-    fun switchMode(mode: CameraMode) {
-        if (currentMode == mode) {
-            return
-        }
-
-        currentMode = mode
-
-        effects.cancelFocusTimer()
-
-        isQRMode = mode == CameraMode.QR_SCAN
-
-        isVideoMode = mode == CameraMode.VIDEO
-
-        effects.applyModeChrome(
-            mode = mode,
-            isVideoMode = isVideoMode,
-            scanAllCodes = scanAllCodes,
-        )
-
-        startCamera(true)
-
-        // A mode can change with no touch involved, so the strip follows the camera and not the
-        // other way round - currentMode, because an extension that fails to bind falls back to
-        // another mode from inside startCamera(). Left until after that rebind, which blocks the
-        // main thread for long enough to swallow the animation whole.
-        if (entryPoint.showsCameraModeTabs) {
-            effects.goToModeTab(currentMode)
-        }
-    }
-
-    fun showMoreOptionsForQR() {
-        val optionNames = barcodeFormats.uncommonNames()
-
-        effects.showBarcodeFormatPicker(
-            optionNames = optionNames,
-            initialValues = optionNames.map { barcodeFormats.isEnabled(it) },
-            onConfirm = { values -> applyBarcodeFormats(optionNames, values) },
-        )
-    }
-
-    private fun applyBarcodeFormats(optionNames: List<String>, values: List<Boolean>) {
-        val selection = optionNames.withIndex().associate { (index, name) -> name to values[index] }
-
-        if (!barcodeFormats.apply(selection)) {
-            effects.showMessage(R.string.no_barcode_selected)
-            return
-        }
-
-        session.refreshQrHints()
-    }
-
-    fun onStorageLocationNotFound() {
-        // Reverting back to DEFAULT_MEDIA_STORE_CAPTURE_PATH
-        storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION
-
-        effects.showStorageLocationNotFound()
     }
 
     private fun <T> setting(
@@ -684,12 +567,13 @@ class CamConfig @AssistedInject constructor(
         fun create(
             environment: CameraSessionEnvironment,
             effects: ViewfinderEffects,
+            chrome: ViewfinderChrome,
             session: CameraSession,
-        ): CamConfig
+        ): ViewfinderController
     }
 
     companion object {
-        private const val TAG = "CamConfig"
+        private const val TAG = "ViewfinderController"
 
         val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
     }

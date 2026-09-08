@@ -6,9 +6,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
-import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 
 class CustomGrid @JvmOverloads constructor(
     context: Context,
@@ -31,15 +31,15 @@ class CustomGrid @JvmOverloads constructor(
     }
 
     override fun onDraw(canvas: Canvas) {
-        val camConfig = mActivity.camConfig
+        val viewfinder = mActivity.viewfinder
 
         super.onDraw(canvas)
 
-        if (camConfig.gridType == GridType.NONE) {
+        if (viewfinder.gridType == GridType.NONE) {
             return
         }
 
-        if (camConfig.gridType == GridType.GOLDEN_RATIO) {
+        if (viewfinder.gridType == GridType.GOLDEN_RATIO) {
 
             val cx = width / 2f
             val cy = height / 2f
@@ -54,7 +54,7 @@ class CustomGrid @JvmOverloads constructor(
 
         } else {
 
-            val seed = if (camConfig.gridType == GridType.THREE_BY_THREE) {
+            val seed = if (viewfinder.gridType == GridType.THREE_BY_THREE) {
                 3f
             } else {
                 4f
