@@ -141,16 +141,17 @@
     <ID>PrintStackTrace:VideoCapturer.kt:e</ID>
     <ID>ReturnCount:App.kt:App$fun getLocation: Location?</ID>
     <ID>ReturnCount:App.kt:App$fun isAnyLocationProvideActive: Boolean</ID>
-    <ID>ReturnCount:BottomTabLayout.kt:BottomTabLayout$override fun onScrollChanged</ID>
+    <ID>ReturnCount:BottomTabLayout.kt:BottomTabLayout$private fun settleDuration: Long</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$@SuppressLint("RestrictedApi") fun startCamera</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$@androidx.annotation.OptIn(ExperimentalCamera2Interop::class) private fun canVerifyFeatureCombinations: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isExtensionUsable: Boolean</ID>
-    <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isLensFacingSupported : Boolean</ID>
+    <ID>ReturnCount:CamConfig.kt:CamConfig$private fun isLensFacingSupported: Boolean</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun loadTabs</ID>
     <ID>ReturnCount:CamConfig.kt:CamConfig$private fun videoQualityAsGroupableFeature: GroupableFeature?</ID>
     <ID>ReturnCount:CapturedItems.kt:CapturedItems$fun parseCapturedItem: CapturedItem?</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
+    <ID>ReturnCount:MainActivity.kt:MainActivity$fun prefetchLastFrame</ID>
     <ID>ReturnCount:MainActivity.kt:MainActivity$override fun onTouch: Boolean</ID>
     <ID>ReturnCount:MainActivity.kt:MainActivity$private fun onSwipeLeft</ID>
     <ID>ReturnCount:MainActivity.kt:MainActivity$private fun onSwipeRight</ID>
@@ -159,8 +160,8 @@
     <ID>ReturnCount:Utils.kt:fun storageLocationToUiString: String</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
     <ID>ReturnCount:VideoCapturer.kt:VideoCapturer$private fun createRecordingContext: RecordingContext?</ID>
-    <ID>SwallowedException:CamConfig.kt:CamConfig$e : IllegalArgumentException</ID>
     <ID>SwallowedException:CamConfig.kt:CamConfig$e: ExecutionException</ID>
+    <ID>SwallowedException:CamConfig.kt:CamConfig$e: IllegalArgumentException</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItems.kt:e: ActivityNotFoundException</ID>
     <ID>SwallowedException:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
