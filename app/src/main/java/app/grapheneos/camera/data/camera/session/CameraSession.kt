@@ -242,7 +242,12 @@ class CameraSession @AssistedInject constructor(
 
         // Manually switch to the other lens facing (if the default lens facing isn't
         // supported for the current device)
-        if (!isLensFacingSupported(lensFacing, extensionMode)) {
+        val isDefaultLensSupported = isLensFacingSupported(
+            lensFacing = lensFacing,
+            extensionMode = extensionMode,
+        )
+
+        if (!isDefaultLensSupported) {
             lensFacing = when (lensFacing) {
                 CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
                 else -> CameraSelector.LENS_FACING_BACK

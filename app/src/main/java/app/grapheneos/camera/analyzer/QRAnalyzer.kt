@@ -30,20 +30,18 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
     }
 
     fun refreshHints() {
-        val camConfig = mActivity.camConfig
+        val allowedFormats = mActivity.barcodeFormats.enabled
 
         val supportedHints: MutableMap<DecodeHintType, Any> = EnumMap(
             DecodeHintType::class.java
         )
 
-        Log.i(TAG, "allowedFormats: ${camConfig.allowedFormats}")
+        Log.i(TAG, "allowedFormats: $allowedFormats")
 
-        supportedHints[DecodeHintType.POSSIBLE_FORMATS] =
-            if (camConfig.scanAllCodes) {
-                BarcodeFormat.values().asList()
-            } else {
-                camConfig.allowedFormats
-            }
+        supportedHints[DecodeHintType.POSSIBLE_FORMATS] = when {
+            mActivity.viewfinder.scanAllCodes -> BarcodeFormat.entries
+            else -> allowedFormats
+        }
 
         reader.setHints(supportedHints)
     }

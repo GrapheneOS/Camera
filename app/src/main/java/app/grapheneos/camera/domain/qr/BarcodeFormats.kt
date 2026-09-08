@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.scopes.ActivityScoped
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 @ActivityScoped
@@ -18,7 +19,15 @@ class BarcodeFormats @Inject constructor(
             return enabledFormats
         }
 
-    fun load(enabledNames: Set<String>) {
+    fun load() {
+        val enabledNames = runBlocking {
+            settingsRepository.settings.first()
+        }.enabledBarcodeFormats
+
+        load(enabledNames)
+    }
+
+    internal fun load(enabledNames: Set<String>) {
         enabledFormats.clear()
         enabledFormats.addAll(BarcodeFormat.entries.filter { it.name in enabledNames })
     }

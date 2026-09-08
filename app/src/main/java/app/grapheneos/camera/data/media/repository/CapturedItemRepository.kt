@@ -16,15 +16,18 @@ import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
+import app.grapheneos.camera.di.core.IoDispatcher
 import dagger.hilt.android.qualifiers.ActivityContext
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 interface CapturedItemRepository {
 
-    suspend fun lastCapturedItem(): CapturedItem?
+    val lastCapturedItem: Flow<CapturedItem?>
 
     suspend fun saveLastCapturedItem(item: CapturedItem)
 
@@ -34,7 +37,7 @@ interface CapturedItemRepository {
 
     suspend fun releaseUntrackedSafTrees()
 
-    suspend fun migrateStoredCaptures(onLastCapturedItem: (CapturedItem) -> Unit)
+    suspend fun migrateStoredCaptures(): CapturedItem?
 
     suspend fun capturedItems(): List<CapturedItem>
 
@@ -43,21 +46,21 @@ interface CapturedItemRepository {
     }
 }
 
-@Suppress("TooManyFunctions")
 internal class CapturedItemRepositoryImpl @Inject constructor(
     private val storagePrefs: DataStore<StoragePrefs>,
     private val mediaPrefs: DataStore<MediaPrefs>,
     @ActivityContext private val context: Context,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
 
-    override suspend fun lastCapturedItem(): CapturedItem? {
-        val stored = mediaPrefs.data.first().lastCapturedItem ?: return null
-
-        return CapturedItem(
-            type = stored.type,
-            dateString = stored.dateString,
-            uri = stored.uri.toUri(),
-        )
+    override val lastCapturedItem: Flow<CapturedItem?> = mediaPrefs.data.map { prefs ->
+        prefs.lastCapturedItem?.let { stored ->
+            CapturedItem(
+                type = stored.type,
+                dateString = stored.dateString,
+                uri = stored.uri.toUri(),
+            )
+        }
     }
 
     override suspend fun saveLastCapturedItem(item: CapturedItem) {
@@ -105,49 +108,56 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun releaseUntrackedSafTrees() {
-        val tracked = trackedSafTrees()
-        val resolver = context.contentResolver
+        withContext(ioDispatcher) {
+            val tracked = trackedSafTrees()
+            val resolver = context.contentResolver
 
-        resolver.persistedUriPermissions.forEach { permission ->
-            val uri = permission.uri
-            val flags = CapturedItems.safTreeFlagsToRelease(
-                uri,
-                permission.isReadPermission,
-                permission.isWritePermission,
-                tracked,
-            )
-            if (flags == 0) {
-                return@forEach
-            }
+            resolver.persistedUriPermissions.forEach { permission ->
+                val uri = permission.uri
+                val flags = CapturedItems.safTreeFlagsToRelease(
+                    uri,
+                    permission.isReadPermission,
+                    permission.isWritePermission,
+                    tracked,
+                )
+                if (flags == 0) {
+                    return@forEach
+                }
 
-            try {
-                resolver.releasePersistableUriPermission(uri, flags)
-            } catch (e: Exception) {
-                if (BuildConfig.DEBUG) {
-                    Log.d(CapturedItems.TAG, "unable to release the grant for $uri", e)
+                try {
+                    resolver.releasePersistableUriPermission(uri, flags)
+                } catch (e: Exception) {
+                    if (BuildConfig.DEBUG) {
+                        Log.d(CapturedItems.TAG, "unable to release the grant for $uri", e)
+                    }
                 }
             }
         }
     }
 
-    override suspend fun migrateStoredCaptures(onLastCapturedItem: (CapturedItem) -> Unit) {
-        val joinedUris = storagePrefs.data.first().legacyMediaUris ?: return
-        val uris = joinedUris.split(LEGACY_MEDIA_URI_SEPARATOR).map { it.toUri() }
+    override suspend fun migrateStoredCaptures(): CapturedItem? {
+        return withContext(ioDispatcher) {
+            val joinedUris = storagePrefs.data.first().legacyMediaUris
+                ?: return@withContext null
+            val uris = joinedUris.split(LEGACY_MEDIA_URI_SEPARATOR).map { it.toUri() }
 
-        uris.firstOrNull { it.authority != null }?.let {
-            reportLastCapturedItem(it, onLastCapturedItem)
-        }
-
-        val trees = legacyTrees(uris)
-
-        storagePrefs.updateData { prefs ->
-            when {
-                trees.isEmpty() -> prefs.copy(legacyMediaUris = null)
-                else -> prefs.copy(
-                    previousSafTrees = trees.map { it.toString() },
-                    legacyMediaUris = null,
-                )
+            val migrated = uris.firstOrNull { it.authority != null }?.let {
+                legacyCapturedItem(it)
             }
+
+            val trees = legacyTrees(uris)
+
+            storagePrefs.updateData { prefs ->
+                when {
+                    trees.isEmpty() -> prefs.copy(legacyMediaUris = null)
+                    else -> prefs.copy(
+                        previousSafTrees = trees.map { it.toString() },
+                        legacyMediaUris = null,
+                    )
+                }
+            }
+
+            migrated
         }
     }
 
@@ -281,7 +291,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun reportLastCapturedItem(uri: Uri, onLastCapturedItem: (CapturedItem) -> Unit) {
+    private fun legacyCapturedItem(uri: Uri): CapturedItem? {
         val columnName = when (uri.authority) {
             MediaStore.AUTHORITY -> MediaStore.MediaColumns.DISPLAY_NAME
             else -> DocumentsContract.Document.COLUMN_DISPLAY_NAME
@@ -301,8 +311,8 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
             }
         }
 
-        fileName?.let { name ->
-            CapturedItems.parseCapturedItem(name, uri)?.let(onLastCapturedItem)
+        return fileName?.let { name ->
+            CapturedItems.parseCapturedItem(name, uri)
         }
     }
 

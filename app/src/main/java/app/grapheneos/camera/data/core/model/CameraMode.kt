@@ -13,4 +13,15 @@ enum class CameraMode(
     HDR(ExtensionMode.HDR),
     CAMERA(ExtensionMode.NONE),
     VIDEO(ExtensionMode.NONE),
+    ;
+
+    val isQr: Boolean
+        get() {
+            return this == QR_SCAN
+        }
+
+    val isVideo: Boolean
+        get() {
+            return this == VIDEO
+        }
 }

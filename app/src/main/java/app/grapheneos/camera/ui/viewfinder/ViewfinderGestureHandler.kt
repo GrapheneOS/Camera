@@ -8,6 +8,7 @@ import android.view.View
 import androidx.camera.core.FocusMeteringAction
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
@@ -42,7 +43,7 @@ internal class ViewfinderGestureHandler(
             return true
         }
 
-        if (activity.camConfig.isQRMode) {
+        if (activity.viewfinder.isQRMode) {
             return false
         }
 
@@ -56,15 +57,15 @@ internal class ViewfinderGestureHandler(
 
         val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
-        if (!activity.camConfig.isVideoMode) {
-            activity.camConfig.mPlayer.playFocusStartSound()
+        if (!activity.viewfinder.isVideoMode) {
+            activity.viewfinder.mPlayer.playFocusStartSound()
         }
 
-        if (activity.camConfig.focusTimeout == 0L) {
+        if (activity.viewfinder.focusTimeout == 0L) {
             focusBuilder.disableAutoCancel()
         } else {
             focusBuilder.setAutoCancelDuration(
-                activity.camConfig.focusTimeout,
+                activity.viewfinder.focusTimeout,
                 TimeUnit.SECONDS,
             )
         }
@@ -176,14 +177,18 @@ internal class ViewfinderGestureHandler(
         if (activity.settingsDialog.isShowing) return
 
         when {
-            !activity.camConfig.isQRMode -> {
+            !activity.viewfinder.isQRMode -> {
                 if (activity.settingsIcon.isEnabled) {
                     activity.settingsIcon.performClick()
                 }
             }
 
-            !activity.camConfig.scanAllCodes -> {
-                activity.camConfig.showMoreOptionsForQR()
+            !activity.viewfinder.scanAllCodes -> {
+                showMoreQrFormatOptions(
+                    activity = activity,
+                    barcodeFormats = activity.barcodeFormats,
+                    onApplied = { activity.session.refreshQrHints() },
+                )
             }
         }
     }
