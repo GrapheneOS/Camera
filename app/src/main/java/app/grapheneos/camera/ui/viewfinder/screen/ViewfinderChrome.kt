@@ -18,10 +18,4 @@ interface ViewfinderChrome {
     fun applyExposureState(exposureState: ExposureState)
 
     fun updateGyroscopeIndicator(inPhotoMode: Boolean)
-
-    fun onIncludeAudioChanged(enabled: Boolean)
-
-    fun onGeoTaggingChanged(enabled: Boolean)
-
-    fun onSelfIlluminationChanged(enabled: Boolean)
 }

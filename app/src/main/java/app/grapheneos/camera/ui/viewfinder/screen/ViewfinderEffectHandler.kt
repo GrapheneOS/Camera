@@ -213,21 +213,12 @@ internal class ViewfinderEffectHandler(
         }
     }
 
-    override fun onIncludeAudioChanged(enabled: Boolean) {
-        activity.settingsDialog.includeAudioToggle.isChecked = enabled
-    }
-
-    override fun onGeoTaggingChanged(enabled: Boolean) {
-        activity.settingsDialog.locToggle.isChecked = enabled
-    }
-
-    override fun onSelfIlluminationChanged(enabled: Boolean) {
-        activity.settingsDialog.selfIlluminationToggle.isChecked = enabled
-        activity.settingsDialog.selfIllumination()
-    }
-
     override fun reloadVideoQualities() {
         activity.settingsDialog.reloadQualities()
+    }
+
+    override fun applySelfIllumination() {
+        activity.settingsDialog.selfIllumination()
     }
 
     override fun resetTorchToggle() {

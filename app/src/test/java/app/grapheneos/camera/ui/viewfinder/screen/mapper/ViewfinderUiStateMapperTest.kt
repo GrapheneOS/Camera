@@ -4,6 +4,7 @@ import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import org.junit.Assert.assertEquals
@@ -29,7 +30,9 @@ class ViewfinderUiStateMapperTest {
             mode = mode,
             isVideoMode = isVideoMode,
             flashMode = ImageCapture.FLASH_MODE_OFF,
+            requireLocation = false,
             settings = settings,
+            modeSettings = ModeSettings(),
             session = ViewfinderSessionState(),
         )
     }

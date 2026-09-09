@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import javax.inject.Inject
@@ -12,6 +14,9 @@ interface SettingsSheetUiStateMapper {
     fun map(
         isVideoMode: Boolean,
         flashMode: Int,
+        requireLocation: Boolean,
+        settings: CameraSettings,
+        modeSettings: ModeSettings,
         session: ViewfinderSessionState,
     ): SettingsSheetUiState
 }
@@ -21,6 +26,9 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
     override fun map(
         isVideoMode: Boolean,
         flashMode: Int,
+        requireLocation: Boolean,
+        settings: CameraSettings,
+        modeSettings: ModeSettings,
         session: ViewfinderSessionState,
     ): SettingsSheetUiState {
         val flash = flashOf(
@@ -31,6 +39,9 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
         return SettingsSheetUiState(
             flashIcon = flash.first,
             flashDescription = flash.second,
+            includeAudio = settings.includeAudio,
+            geoTagging = requireLocation,
+            selfIllumination = modeSettings.selfIllumination,
             includeAudioSettingVisible = isVideoMode,
             videoQualitySettingVisible = isVideoMode,
             stabilizationSettingVisible = isVideoMode && session.canApplyVideoStabilization,

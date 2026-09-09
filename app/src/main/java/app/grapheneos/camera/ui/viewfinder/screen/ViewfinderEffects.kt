@@ -28,6 +28,8 @@ interface ViewfinderEffects {
 
     fun hideExposurePanel()
 
+    fun applySelfIllumination()
+
     fun resetTorchToggle()
 
     fun reloadVideoQualities()
