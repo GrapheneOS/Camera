@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.camera.mapper
+package app.grapheneos.camera.data.camera.mapper
 
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures

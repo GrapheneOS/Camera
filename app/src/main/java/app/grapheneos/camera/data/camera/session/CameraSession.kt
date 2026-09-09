@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Size
-import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -29,48 +28,89 @@ import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
+import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.ExtensionKey
+import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
+import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
-import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
-import app.grapheneos.camera.domain.camera.model.CameraBindRequest
-import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
-import app.grapheneos.camera.domain.camera.model.ImageCaptureMode
-import app.grapheneos.camera.domain.camera.model.InVideoSnapshotSupport
-import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
-import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 
+interface CameraSession {
+
+    var listener: Listener?
+    var lensFacing: Int
+
+    val cameraProvider: ProcessCameraProvider?
+    val camera: Camera?
+    val preview: Preview?
+    val imageCapture: ImageCapture?
+    val videoCapture: VideoCapture<Recorder>?
+    val iAnalyzer: ImageAnalysis?
+    val zoomState: ZoomState?
+
+    val extensionsAvailable: Boolean
+    val isFlashAvailable: Boolean
+    val isZslSupported: Boolean
+    val isTorchOn: Boolean
+
+    fun initialize(forced: Boolean, extensionMode: Int)
+    fun bind(settings: CameraBindSettings): BindOutcome
+    fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean
+    fun selectLensFacing(lensFacing: Int)
+    fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit)
+    fun canApplyVideoStabilization(): Boolean
+    fun toggleTorchState()
+    fun reattachZoomState()
+    fun refreshQrHints()
+
+    interface Listener {
+        fun onZoomStateChanged()
+        fun onCameraProviderUnavailable()
+        fun onExtensionsUnavailable()
+        fun onProviderReady(forced: Boolean)
+        fun onFeaturesSelected(
+            boundLensFacing: Int,
+            requested: List<GroupableFeature>,
+            qualityFeature: GroupableFeature?,
+            selected: Set<GroupableFeature>,
+        )
+    }
+}
+
 @SuppressLint("UnsafeOptInUsageError")
-class CameraSession @AssistedInject constructor(
+internal class CameraSessionImpl @AssistedInject constructor(
     @Assisted private val environment: CameraSessionEnvironment,
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
-    private val buildCameraSessionPlan: BuildCameraSessionPlan,
+    private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
-    private val resolveInVideoSnapshotSupport: ResolveInVideoSnapshotSupport,
-) {
+    private val inVideoSnapshotSupportResolver: InVideoSnapshotSupportResolver,
+    private val snapshotProbeCache: SnapshotProbeCache,
+) : CameraSession {
 
-    var listener: Listener? = null
+    override var listener: CameraSession.Listener? = null
 
-    var camera: Camera? = null
+    override var camera: Camera? = null
 
-    var imageCapture: ImageCapture? = null
+    override var imageCapture: ImageCapture? = null
 
-    var preview: Preview? = null
+    override var preview: Preview? = null
 
-    var videoCapture: VideoCapture<Recorder>? = null
+    override var videoCapture: VideoCapture<Recorder>? = null
 
-    var iAnalyzer: ImageAnalysis? = null
+    override var iAnalyzer: ImageAnalysis? = null
 
-    var lensFacing = DEFAULT_LENS_FACING
+    override var lensFacing = DEFAULT_LENS_FACING
 
     private var cameraSelector: CameraSelector = CameraSelector.Builder()
         .requireLensFacing(DEFAULT_LENS_FACING)
@@ -81,7 +121,7 @@ class CameraSession @AssistedInject constructor(
     // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
     // of the camera on any path that runs more than once per bind. It is null from the moment a
     // bind starts until attachZoomState has run, which is where that query was moved to.
-    var zoomState: ZoomState? = null
+    override var zoomState: ZoomState? = null
         private set
 
     private var zoomStateSource: LiveData<ZoomState>? = null
@@ -105,7 +145,7 @@ class CameraSession @AssistedInject constructor(
         zoomState = zoomStateSource?.value
     }
 
-    var cameraProvider: ProcessCameraProvider? = null
+    override var cameraProvider: ProcessCameraProvider? = null
 
     private var extensionsManager: ExtensionsManager? = null
 
@@ -117,22 +157,22 @@ class CameraSession @AssistedInject constructor(
         Executors.newSingleThreadExecutor()
     }
 
-    val extensionsAvailable: Boolean
+    override val extensionsAvailable: Boolean
         get() {
             return extensionsManager != null && cameraProvider != null
         }
 
-    val isFlashAvailable: Boolean
+    override val isFlashAvailable: Boolean
         get() {
             return camera?.cameraInfo?.hasFlashUnit() ?: false
         }
 
-    val isZslSupported: Boolean
+    override val isZslSupported: Boolean
         get() {
             return camera?.cameraInfo?.isZslSupported ?: false
         }
 
-    var isTorchOn: Boolean = false
+    override var isTorchOn: Boolean = false
         get() {
             return camera?.cameraInfo?.torchState?.value == TorchState.ON
         }
@@ -147,11 +187,11 @@ class CameraSession @AssistedInject constructor(
             }
         }
 
-    fun refreshQrHints() {
+    override fun refreshQrHints() {
         qrAnalyzer?.refreshHints()
     }
 
-    fun selectLensFacing(lensFacing: Int) {
+    override fun selectLensFacing(lensFacing: Int) {
         cameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
             .build()
@@ -160,7 +200,7 @@ class CameraSession @AssistedInject constructor(
     // Every bind hands out a fresh LiveData in extension modes, and the old observer would
     // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
     // thumb once per bind that had ever happened.
-    fun reattachZoomState() {
+    override fun reattachZoomState() {
         zoomStateSource?.removeObserver(zoomStateObserver)
         zoomStateSource = null
         zoomState = null
@@ -176,7 +216,7 @@ class CameraSession @AssistedInject constructor(
     // feature combinations, so a camera that can stabilize is not on its own enough: where the
     // group cannot be used nothing applies EIS, and offering the toggle there is offering a
     // control that does nothing.
-    fun canApplyVideoStabilization(): Boolean {
+    override fun canApplyVideoStabilization(): Boolean {
         return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
     }
 
@@ -199,7 +239,7 @@ class CameraSession @AssistedInject constructor(
         return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
-    fun toggleTorchState() {
+    override fun toggleTorchState() {
         isTorchOn = !isTorchOn
     }
 
@@ -211,7 +251,7 @@ class CameraSession @AssistedInject constructor(
         return provider.getCameraInfo(cameraSelector)
     }
 
-    fun initialize(forced: Boolean, extensionMode: Int) {
+    override fun initialize(forced: Boolean, extensionMode: Int) {
         if (cameraProvider != null) {
             listener?.onProviderReady(forced)
             return
@@ -230,13 +270,12 @@ class CameraSession @AssistedInject constructor(
         forced: Boolean,
         extensionMode: Int,
     ) {
-        if (provider !== probedCameraProvider) {
+        if (!snapshotProbeCache.isProbedThrough(provider)) {
             // A different provider instance means the camera stack was reinitialized:
             // extension verdicts probed through the previous instance (including bind-time
             // blacklists, see startCamera) describe vendor state that no longer exists.
             extensionAvailabilityRepository.clear()
-            snapshotSupport.clear()
-            probedCameraProvider = provider
+            snapshotProbeCache.adopt(provider)
         }
         cameraProvider = provider
 
@@ -302,7 +341,7 @@ class CameraSession @AssistedInject constructor(
     // tab bar still appears exactly once, fully formed, at the same time it used to; until
     // then swipes and taps resolve to no tab and the app simply stays in the current mode.
     // Later refreshes find the cache warm and rebuild synchronously, exactly as before.
-    fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit) {
+    override fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit) {
         val pending = unprobedExtensions()
         if (pending.isEmpty()) {
             onSettled()
@@ -329,7 +368,7 @@ class CameraSession @AssistedInject constructor(
                 extensionProbesInFlight = false
                 if (!environment.isSessionActive) return@execute
 
-                if (probedCameraProvider !== provider) {
+                if (!snapshotProbeCache.isProbedThrough(provider)) {
                     // The camera stack was reinitialized while probing: these verdicts describe
                     // vendor state that no longer exists (the same reasoning as the cache clear
                     // in initialize). Any refresh that ran for the new provider found this round
@@ -474,7 +513,7 @@ class CameraSession @AssistedInject constructor(
     // describe a later bind by the time this runs, and the message would then name settings (or
     // dedup against a camera) that this result never involved.
 
-    fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean {
+    override fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean {
         var tCameraSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
             .build()
@@ -500,7 +539,7 @@ class CameraSession @AssistedInject constructor(
     }
 
     @SuppressLint("RestrictedApi")
-    fun bind(settings: CameraBindSettings): BindOutcome {
+    override fun bind(settings: CameraBindSettings): BindOutcome {
         val provider = requireNotNull(cameraProvider) {
             "Camera provider is not ready yet"
         }
@@ -576,7 +615,7 @@ class CameraSession @AssistedInject constructor(
             featureGroup = featureGroup,
         )
 
-        val plan = buildCameraSessionPlan(bindRequest)
+        val plan = cameraSessionPlanFactory.create(bindRequest)
 
         if (settings.isQrMode) {
             val analyzer = environment.createQrAnalyzer()
@@ -628,7 +667,7 @@ class CameraSession @AssistedInject constructor(
         // asks the specific question, and leaves unexpected exceptions to surface as failures.
         //
         // Asking costs 80-140 ms, because the camera service resolves the whole feature group to
-        // answer it, so the verdict is cached (snapshotSupport) and every entry into video mode
+        // answer it, so the verdict is cached (SnapshotProbeCache) and every entry into video mode
         // after the first is free.
         val snapshotUseCase = imageCapture
         if (settings.isVideoMode && snapshotUseCase != null) {
@@ -640,8 +679,8 @@ class CameraSession @AssistedInject constructor(
                 selectHighestResolution = settings.selectHighestResolution,
             )
 
-            if (!snapshotSupport.containsKey(probeKey)) {
-                snapshotProbeCount++
+            if (snapshotProbeCache[probeKey] == null) {
+                snapshotProbeCache.recordProbe()
 
                 val cameraInfo = try {
                     provider.getCameraInfo(cameraSelector)
@@ -650,7 +689,7 @@ class CameraSession @AssistedInject constructor(
                     return BindOutcome.FAILED
                 }
 
-                snapshotSupport[probeKey] = resolveInVideoSnapshotSupport(
+                snapshotProbeCache[probeKey] = inVideoSnapshotSupportResolver.resolve(
                     videoQualityFeature = requiredQualityFeature,
                     probe = { withSnapshots, features ->
                         val probedUseCases = when {
@@ -668,7 +707,7 @@ class CameraSession @AssistedInject constructor(
                 )
             }
 
-            val support = snapshotSupport[probeKey]
+            val support = snapshotProbeCache[probeKey]
             if (support is InVideoSnapshotSupport.Unsupported) {
                 Log.i(TAG, "${support.reason}; disabling snapshots while recording")
                 useCasesList.remove(snapshotUseCase)
@@ -754,41 +793,15 @@ class CameraSession @AssistedInject constructor(
         }
     }
 
-    interface Listener {
-
-        fun onZoomStateChanged()
-
-        fun onCameraProviderUnavailable()
-
-        fun onExtensionsUnavailable()
-
-        fun onProviderReady(forced: Boolean)
-
-        fun onFeaturesSelected(
-            boundLensFacing: Int,
-            requested: List<GroupableFeature>,
-            qualityFeature: GroupableFeature?,
-            selected: Set<GroupableFeature>,
-        )
-    }
-
     @AssistedFactory
     interface Factory {
-        fun create(environment: CameraSessionEnvironment): CameraSession
+        fun create(environment: CameraSessionEnvironment): CameraSessionImpl
     }
-
-    private data class SnapshotProbeKey(
-        val lensFacing: Int,
-        val videoQuality: Quality,
-        val usesFeatureGroup: Boolean,
-        val captureMode: ImageCaptureMode,
-        val selectHighestResolution: Boolean,
-    )
 
     companion object {
         private const val TAG = "CameraSession"
 
-        const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
+        private const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
 
         private val FRONT_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
@@ -797,27 +810,5 @@ class CameraSession @AssistedInject constructor(
         private val REAR_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
-
-        // Every setting that reaches one of the three probed SessionConfigs has to appear in the
-        // key. A setting added to the ImageCapture, Recorder or Preview builder without being added
-        // here would be answered from a verdict that predates it, which either takes in-video
-        // snapshots away for no reason or keeps them on a camera that cannot bind them.
-        private val snapshotSupport = HashMap<SnapshotProbeKey, InVideoSnapshotSupport>()
-
-        // The provider the verdicts above were probed through. A different instance means the
-        // camera stack was reinitialized and none of them describe it any more.
-        private var probedCameraProvider: ProcessCameraProvider? = null
-
-        // A cache hit and a repeated probe reach the same verdict, so this is the only thing that
-        // tells them apart from the outside.
-        @VisibleForTesting
-        var snapshotProbeCount = 0
-            private set
-
-        @VisibleForTesting
-        fun clearSnapshotProbeCache() {
-            snapshotSupport.clear()
-            snapshotProbeCount = 0
-        }
     }
 }

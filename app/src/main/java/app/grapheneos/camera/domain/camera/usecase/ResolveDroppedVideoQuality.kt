@@ -2,7 +2,7 @@ package app.grapheneos.camera.domain.camera.usecase
 
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.Quality
-import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
+import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import javax.inject.Inject
 
 // CameraX resolves a preferred feature group by dropping features until what is left is a

@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.camera.usecase
+package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
 import androidx.camera.core.ImageCapture
@@ -12,21 +12,20 @@ import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.internal.muxer.MediaMuxerImpl
-import app.grapheneos.camera.domain.camera.model.CameraBindRequest
-import app.grapheneos.camera.domain.camera.model.CameraSessionPlan
-import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
-import app.grapheneos.camera.domain.camera.model.ImageCaptureMode
+import app.grapheneos.camera.data.camera.model.CameraBindRequest
+import app.grapheneos.camera.data.camera.model.CameraSessionPlan
+import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.data.camera.model.ImageCaptureMode
 import javax.inject.Inject
 
-interface BuildCameraSessionPlan {
-
-    operator fun invoke(request: CameraBindRequest): CameraSessionPlan
+interface CameraSessionPlanFactory {
+    fun create(request: CameraBindRequest): CameraSessionPlan
 }
 
 @SuppressLint("UnsafeOptInUsageError", "RestrictedApi")
-internal class BuildCameraSessionPlanImpl @Inject constructor() : BuildCameraSessionPlan {
+internal class CameraSessionPlanFactoryImpl @Inject constructor() : CameraSessionPlanFactory {
 
-    override fun invoke(request: CameraBindRequest): CameraSessionPlan {
+    override fun create(request: CameraBindRequest): CameraSessionPlan {
         val aspectRatioStrategy = AspectRatioStrategy(
             request.aspectRatio,
             AspectRatioStrategy.FALLBACK_RULE_AUTO,
