@@ -25,7 +25,9 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.ReadWriteProperty
@@ -39,6 +41,7 @@ class ViewfinderViewModel @Inject constructor(
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
+    private val uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
     CameraSession.Listener {
 
@@ -84,6 +87,15 @@ class ViewfinderViewModel @Inject constructor(
     private var slot: ModeSlot? = null
 
     private val sessionState = MutableStateFlow(ViewfinderSessionState())
+
+    private val uiState: ViewfinderUiState
+        get() {
+            return uiStateMapper.map(
+                mode = currentMode,
+                isVideoMode = isVideoMode,
+                settings = settings,
+            )
+        }
 
     var currentMode: CameraMode = DEFAULT_CAMERA_MODE
         private set
@@ -169,9 +181,7 @@ class ViewfinderViewModel @Inject constructor(
         read = { it.scanAllCodes },
         write = { current, value -> current.copy(scanAllCodes = value) },
         onChanged = { value ->
-            if (isQRMode) {
-                chrome.applyScanAllCodesChrome(value)
-            }
+            chrome.render(uiState)
 
             session.refreshQrHints()
         },
@@ -180,7 +190,10 @@ class ViewfinderViewModel @Inject constructor(
     var includeAudio: Boolean by setting(
         read = { it.includeAudio },
         write = { current, value -> current.copy(includeAudio = value) },
-        onChanged = { value -> chrome.onIncludeAudioChanged(value) },
+        onChanged = { value ->
+            chrome.onIncludeAudioChanged(value)
+            chrome.render(uiState)
+        },
     )
 
     var flashMode: Int = SettingsDefaults.FLASH_MODE
@@ -435,9 +448,7 @@ class ViewfinderViewModel @Inject constructor(
             else -> null
         }
 
-        if (isVideoMode) {
-            chrome.setMicMutedIconVisible(!includeAudio)
-        }
+        chrome.render(uiState)
 
         effects.forceUpdateOrientationSensor()
 
@@ -500,11 +511,7 @@ class ViewfinderViewModel @Inject constructor(
 
         effects.cancelFocusTimer()
 
-        chrome.applyModeChrome(
-            mode = mode,
-            isVideoMode = isVideoMode,
-            scanAllCodes = scanAllCodes,
-        )
+        chrome.render(uiState)
 
         startCamera(true)
 

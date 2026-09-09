@@ -23,6 +23,7 @@ import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import java.util.concurrent.Executor
 
 internal class ViewfinderEffectHandler(
@@ -147,8 +148,37 @@ internal class ViewfinderEffectHandler(
         activity.zoomBar.hidePanel()
     }
 
-    override fun setMicMutedIconVisible(visible: Boolean) {
-        activity.micOffIcon.visibility = when {
+    override fun render(state: ViewfinderUiState) {
+        activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
+        activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
+        activity.cancelButtonView.visibility = visibleOrInvisible(state.cancelButtonVisible)
+
+        activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
+        activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
+
+        activity.captureButton.setBackgroundResource(state.captureButtonBackground)
+        activity.setCaptureButtonIcon(
+            icon = state.captureButtonIcon,
+            description = state.captureButtonDescription,
+        )
+        activity.setFlipCameraIcon(
+            icon = state.flipCameraIcon,
+            description = state.flipCameraDescription,
+        )
+
+        activity.cbText.text = state.selfTimerBadge
+        activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
+    }
+
+    private fun visibleOrInvisible(visible: Boolean): Int {
+        return when {
+            visible -> View.VISIBLE
+            else -> View.INVISIBLE
+        }
+    }
+
+    private fun visibleOrGone(visible: Boolean): Int {
+        return when {
             visible -> View.VISIBLE
             else -> View.GONE
         }
@@ -208,74 +238,6 @@ internal class ViewfinderEffectHandler(
 
     override fun resetTorchToggle() {
         activity.settingsDialog.torchToggle.isChecked = false
-    }
-
-    override fun applyModeChrome(
-        mode: CameraMode,
-        isVideoMode: Boolean,
-        scanAllCodes: Boolean,
-    ) {
-        when (mode) {
-            CameraMode.QR_SCAN -> {
-                activity.qrOverlay.visibility = View.VISIBLE
-                activity.thirdOption.visibility = View.INVISIBLE
-
-                applyScanAllCodesChrome(scanAllCodes)
-
-                activity.cancelButtonView.visibility = View.INVISIBLE
-
-                activity.captureButton.setBackgroundResource(android.R.color.transparent)
-                // Entering QR mode always leaves the torch off
-                activity.setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
-
-                activity.micOffIcon.visibility = View.GONE
-            }
-
-            else -> {
-                activity.qrOverlay.visibility = View.INVISIBLE
-                activity.thirdOption.visibility = View.VISIBLE
-                activity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
-                activity.cancelButtonView.visibility = View.VISIBLE
-
-                activity.qrScanToggles.visibility = View.GONE
-
-                activity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
-
-                when {
-                    isVideoMode -> {
-                        activity.setCaptureButtonIcon(
-                            icon = R.drawable.recording,
-                            description = R.string.start_recording,
-                        )
-                    }
-
-                    else -> {
-                        activity.setCaptureButtonIcon(
-                            icon = R.drawable.camera_shutter,
-                            description = R.string.capture,
-                        )
-
-                        activity.micOffIcon.visibility = View.GONE
-                    }
-                }
-            }
-        }
-
-        activity.updateSelfTimerBadge()
-    }
-
-    override fun applyScanAllCodesChrome(scanAllCodes: Boolean) {
-        when {
-            scanAllCodes -> {
-                activity.setFlipCameraIcon(R.drawable.cancel, R.string.stop_scanning_all_formats)
-                activity.qrScanToggles.visibility = View.GONE
-            }
-
-            else -> {
-                activity.setFlipCameraIcon(R.drawable.auto, R.string.scan_all_formats)
-                activity.qrScanToggles.visibility = View.VISIBLE
-            }
-        }
     }
 
     override fun flashPreview(selfIlluminate: Boolean) {
