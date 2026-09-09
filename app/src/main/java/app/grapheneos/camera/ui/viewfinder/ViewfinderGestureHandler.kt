@@ -58,7 +58,7 @@ internal class ViewfinderGestureHandler(
         val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
         if (!activity.viewfinder.isVideoMode) {
-            activity.viewfinder.mPlayer.playFocusStartSound()
+            activity.viewfinder.mPlayer?.playFocusStartSound()
         }
 
         if (activity.viewfinder.focusTimeout == 0L) {

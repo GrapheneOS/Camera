@@ -132,7 +132,7 @@ open class MainActivity : AppCompatActivity() {
     lateinit var cameraSessionFactory: CameraSession.Factory
 
     @Inject
-    lateinit var viewfinderFactory: ViewfinderController.Factory
+    lateinit var viewfinder: ViewfinderController
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -147,8 +147,6 @@ open class MainActivity : AppCompatActivity() {
     lateinit var capturedItemSession: CapturedItemSession
 
     lateinit var session: CameraSession
-
-    lateinit var viewfinder: ViewfinderController
 
     private val application: App
         get() = applicationContext as App
@@ -815,7 +813,7 @@ open class MainActivity : AppCompatActivity() {
 
         val sessionHandler = ViewfinderEffectHandler(this)
         session = cameraSessionFactory.create(environment = sessionHandler)
-        viewfinder = viewfinderFactory.create(
+        viewfinder.attach(
             environment = sessionHandler,
             effects = sessionHandler,
             chrome = sessionHandler,
@@ -1522,7 +1520,7 @@ open class MainActivity : AppCompatActivity() {
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         frameCopyThread?.quitSafely()
-        viewfinder.onDestroy()
+        viewfinder.detach()
         capturedItemSession.close()
     }
 
