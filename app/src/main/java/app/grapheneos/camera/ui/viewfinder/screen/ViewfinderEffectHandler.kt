@@ -23,6 +23,7 @@ import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import java.util.concurrent.Executor
 
@@ -71,11 +72,65 @@ internal class ViewfinderEffectHandler(
             }
         }
 
-    override fun showMessage(@StringRes message: Int) {
+    fun handle(effect: Effect) {
+        when (effect) {
+            is Effect.ShowMessage -> showMessage(effect.message)
+
+            is Effect.ShowVideoQualityUnsupported -> {
+                showVideoQualityUnsupported(effect.quality)
+            }
+
+            Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
+
+            is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
+
+            is Effect.GoToModeTab -> goToModeTab(effect.mode)
+
+            Effect.ShowZoomPanel -> showZoomPanel()
+
+            Effect.HideZoomPanel -> hideZoomPanel()
+
+            Effect.ApplySelfIllumination -> applySelfIllumination()
+
+            Effect.ResetTorchToggle -> resetTorchToggle()
+
+            Effect.ReloadVideoQualities -> reloadVideoQualities()
+
+            Effect.StartLocationUpdates -> startLocationUpdates()
+
+            Effect.StopLocationUpdates -> stopLocationUpdates()
+        }
+    }
+
+    fun render(state: ViewfinderUiState) {
+        activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
+        activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
+        activity.cancelButtonView.visibility = visibleOrInvisible(state.cancelButtonVisible)
+
+        activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
+        activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
+
+        activity.captureButton.setBackgroundResource(state.captureButtonBackground)
+        activity.setCaptureButtonIcon(
+            icon = state.captureButtonIcon,
+            description = state.captureButtonDescription,
+        )
+        activity.setFlipCameraIcon(
+            icon = state.flipCameraIcon,
+            description = state.flipCameraDescription,
+        )
+
+        activity.cbText.text = state.selfTimerBadge
+        activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
+
+        activity.settingsDialog.render(state.settingsSheet)
+    }
+
+    private fun showMessage(@StringRes message: Int) {
         activity.showMessage(message)
     }
 
-    override fun showVideoQualityUnsupported(quality: Quality) {
+    private fun showVideoQualityUnsupported(quality: Quality) {
         activity.showMessage(
             activity.getString(
                 R.string.quality_unsupported,
@@ -100,11 +155,11 @@ internal class ViewfinderEffectHandler(
         activity.cancelFocusTimer()
     }
 
-    override fun startLocationUpdates() {
+    private fun startLocationUpdates() {
         activity.onRequireLocationChanged(required = true)
     }
 
-    override fun stopLocationUpdates() {
+    private fun stopLocationUpdates() {
         activity.onRequireLocationChanged(required = false)
     }
 
@@ -120,7 +175,7 @@ internal class ViewfinderEffectHandler(
         return QRAnalyzer(activity)
     }
 
-    override fun showStorageLocationNotFound() {
+    private fun showStorageLocationNotFound() {
         showStorageLocationNotFoundDialog(activity)
     }
 
@@ -140,36 +195,12 @@ internal class ViewfinderEffectHandler(
         activity.zoomBar.updateThumb()
     }
 
-    override fun showZoomPanel() {
+    private fun showZoomPanel() {
         activity.zoomBar.showPanel()
     }
 
-    override fun hideZoomPanel() {
+    private fun hideZoomPanel() {
         activity.zoomBar.hidePanel()
-    }
-
-    override fun render(state: ViewfinderUiState) {
-        activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
-        activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
-        activity.cancelButtonView.visibility = visibleOrInvisible(state.cancelButtonVisible)
-
-        activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
-        activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
-
-        activity.captureButton.setBackgroundResource(state.captureButtonBackground)
-        activity.setCaptureButtonIcon(
-            icon = state.captureButtonIcon,
-            description = state.captureButtonDescription,
-        )
-        activity.setFlipCameraIcon(
-            icon = state.flipCameraIcon,
-            description = state.flipCameraDescription,
-        )
-
-        activity.cbText.text = state.selfTimerBadge
-        activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
-
-        activity.settingsDialog.render(state.settingsSheet)
     }
 
     private fun visibleOrInvisible(visible: Boolean): Int {
@@ -207,25 +238,25 @@ internal class ViewfinderEffectHandler(
         )
     }
 
-    override fun goToModeTab(mode: CameraMode) {
+    private fun goToModeTab(mode: CameraMode) {
         activity.tabLayout.getTabForMode(mode)?.let { tab ->
             activity.tabLayout.goToTab(tab)
         }
     }
 
-    override fun reloadVideoQualities() {
+    private fun reloadVideoQualities() {
         activity.settingsDialog.reloadQualities()
     }
 
-    override fun applySelfIllumination() {
+    private fun applySelfIllumination() {
         activity.settingsDialog.selfIllumination()
     }
 
-    override fun resetTorchToggle() {
+    private fun resetTorchToggle() {
         activity.settingsDialog.torchToggle.isChecked = false
     }
 
-    override fun flashPreview(selfIlluminate: Boolean) {
+    private fun flashPreview(selfIlluminate: Boolean) {
         val animation: Animation = when {
             selfIlluminate -> AlphaAnimation(0f, 0.8f)
             else -> AlphaAnimation(1f, 0f)
