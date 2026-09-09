@@ -19,12 +19,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ViewfinderControllerTest {
+class ViewfinderViewModelTest {
 
     private val settingsRepository = RecordingSettingsRepository()
 
-    private fun controller(): ViewfinderController {
-        return ViewfinderController(
+    private fun viewModel(): ViewfinderViewModel {
+        return ViewfinderViewModel(
             entryPoint = ENTRY_POINT,
             settingsRepository = settingsRepository,
             resolveAvailableModes = NoModes(),
@@ -35,20 +35,20 @@ class ViewfinderControllerTest {
 
     @Test
     fun perModeWrite_beforeAModeIsSlotted_isDropped() {
-        val controller = controller()
+        val viewModel = viewModel()
 
-        controller.videoQuality = Quality.UHD
+        viewModel.videoQuality = Quality.UHD
 
         assertTrue(settingsRepository.videoQualityWrites.isEmpty())
     }
 
     @Test
     fun commonSettings_areReadThroughTheRepository() {
-        val controller = controller()
+        val viewModel = viewModel()
 
         settingsRepository.settings.value = CameraSettings(photoQuality = SOME_PHOTO_QUALITY)
 
-        assertEquals(SOME_PHOTO_QUALITY, controller.photoQuality)
+        assertEquals(SOME_PHOTO_QUALITY, viewModel.photoQuality)
     }
 
     private class RecordingSettingsRepository : SettingsRepository {

@@ -8,7 +8,7 @@ import android.util.AttributeSet
 import android.view.View
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 
 class CustomGrid @JvmOverloads constructor(
     context: Context,
