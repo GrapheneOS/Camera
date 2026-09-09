@@ -11,6 +11,7 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
@@ -31,7 +32,9 @@ class ViewfinderViewModelTest {
             resolveAvailableModes = NoModes(),
             resolveDroppedVideoQuality = NoDroppedQuality(),
             revertToMediaStoreLocation = NoRevert(),
-            uiStateMapper = ViewfinderUiStateMapperImpl(),
+            uiStateMapper = ViewfinderUiStateMapperImpl(
+                settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
+            ),
         )
     }
 

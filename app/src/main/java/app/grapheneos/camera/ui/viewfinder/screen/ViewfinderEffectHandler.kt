@@ -168,6 +168,8 @@ internal class ViewfinderEffectHandler(
 
         activity.cbText.text = state.selfTimerBadge
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
+
+        activity.settingsDialog.render(state.settingsSheet)
     }
 
     private fun visibleOrInvisible(visible: Boolean): Int {
@@ -211,10 +213,6 @@ internal class ViewfinderEffectHandler(
         }
     }
 
-    override fun onFlashModeChanged() {
-        activity.settingsDialog.updateFlashMode()
-    }
-
     override fun onIncludeAudioChanged(enabled: Boolean) {
         activity.settingsDialog.includeAudioToggle.isChecked = enabled
     }
@@ -230,10 +228,6 @@ internal class ViewfinderEffectHandler(
 
     override fun reloadVideoQualities() {
         activity.settingsDialog.reloadQualities()
-    }
-
-    override fun showOnlyRelevantSettings() {
-        activity.settingsDialog.showOnlyRelevantSettings()
     }
 
     override fun resetTorchToggle() {

@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.viewfinder
 
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import dagger.Binds
@@ -17,4 +19,10 @@ internal abstract class ViewfinderBindsModule {
     abstract fun bindViewfinderUiStateMapper(
         impl: ViewfinderUiStateMapperImpl,
     ): ViewfinderUiStateMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindSettingsSheetUiStateMapper(
+        impl: SettingsSheetUiStateMapperImpl,
+    ): SettingsSheetUiStateMapper
 }

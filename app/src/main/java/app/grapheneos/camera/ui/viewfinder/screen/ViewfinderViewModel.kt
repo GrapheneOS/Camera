@@ -93,7 +93,9 @@ class ViewfinderViewModel @Inject constructor(
             return uiStateMapper.map(
                 mode = currentMode,
                 isVideoMode = isVideoMode,
+                flashMode = flashMode,
                 settings = settings,
+                session = sessionState.value,
             )
         }
 
@@ -309,7 +311,7 @@ class ViewfinderViewModel @Inject constructor(
 
         selfIlluminate = modeSettings.selfIllumination
 
-        chrome.showOnlyRelevantSettings()
+        chrome.render(uiState)
     }
 
     fun loadSettings() {
@@ -527,7 +529,7 @@ class ViewfinderViewModel @Inject constructor(
     private fun applyFlashMode(value: Int) {
         flashMode = value
         session.imageCapture?.flashMode = value
-        chrome.onFlashModeChanged()
+        chrome.render(uiState)
     }
 
     private fun refreshSessionState() {
@@ -535,6 +537,7 @@ class ViewfinderViewModel @Inject constructor(
             lensFacing = session.lensFacing,
             canTakePicture = session.imageCapture != null,
             isFlashAvailable = session.isFlashAvailable,
+            canApplyVideoStabilization = session.canApplyVideoStabilization(),
         )
     }
 

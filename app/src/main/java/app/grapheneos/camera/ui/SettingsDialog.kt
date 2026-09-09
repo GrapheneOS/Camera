@@ -45,6 +45,7 @@ import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.Collections
@@ -495,35 +496,23 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         })
     }
 
-    fun showOnlyRelevantSettings() {
-        if (viewfinder.isVideoMode) {
-            includeAudioSetting.visibility = View.VISIBLE
-            videoQualitySetting.visibility = View.VISIBLE
-            enableEISSetting.visibility = if (session.canApplyVideoStabilization()) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-        } else {
-            includeAudioSetting.visibility = View.GONE
-            enableEISSetting.visibility = View.GONE
-            videoQualitySetting.visibility = View.GONE
-        }
+    fun render(state: SettingsSheetUiState) {
+        flashToggle.setImageResource(state.flashIcon)
+        flashToggle.contentDescription = mActivity.getString(state.flashDescription)
 
-        selfIlluminationSetting.visibility =
-            if (session.lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-
-        timerSetting.visibility = if (viewfinder.isVideoMode) {
-            View.GONE
-        } else {
-            View.VISIBLE
-        }
+        includeAudioSetting.visibility = visibleOrGone(state.includeAudioSettingVisible)
+        videoQualitySetting.visibility = visibleOrGone(state.videoQualitySettingVisible)
+        enableEISSetting.visibility = visibleOrGone(state.stabilizationSettingVisible)
+        selfIlluminationSetting.visibility = visibleOrGone(state.selfIlluminationSettingVisible)
+        timerSetting.visibility = visibleOrGone(state.timerSettingVisible)
     }
 
+    private fun visibleOrGone(visible: Boolean): Int {
+        return when {
+            visible -> View.VISIBLE
+            else -> View.GONE
+        }
+    }
 
     fun updateFocusTimeout(selectedOption: String) {
 
@@ -786,19 +775,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         gridToggle.contentDescription = mActivity.getString(description)
     }
 
-    fun updateFlashMode() {
-        val (icon, description) = if (session.isFlashAvailable) {
-            when (viewfinder.flashMode) {
-                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
-                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
-                else -> R.drawable.flash_off_circle to R.string.flash_off
-            }
-        } else {
-            R.drawable.flash_off_circle to R.string.flash_off
-        }
-        flashToggle.setImageResource(icon)
-        flashToggle.contentDescription = mActivity.getString(description)
-    }
 
     /**
      * The ratio itself is the toggle's on/off text, which its content description hides from
@@ -813,8 +789,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     override fun show() {
 
         this.resize()
-
-        updateFlashMode()
 
         if (viewfinder.isVideoMode) {
             updateAspectRatioToggle(is16by9 = true)

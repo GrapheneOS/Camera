@@ -19,13 +19,9 @@ interface ViewfinderChrome {
 
     fun updateGyroscopeIndicator(inPhotoMode: Boolean)
 
-    fun onFlashModeChanged()
-
     fun onIncludeAudioChanged(enabled: Boolean)
 
     fun onGeoTaggingChanged(enabled: Boolean)
 
     fun onSelfIlluminationChanged(enabled: Boolean)
-
-    fun showOnlyRelevantSettings()
 }

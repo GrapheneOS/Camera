@@ -1,8 +1,10 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,7 +16,9 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderUiStateMapperTest {
 
-    private val mapper: ViewfinderUiStateMapper = ViewfinderUiStateMapperImpl()
+    private val mapper: ViewfinderUiStateMapper = ViewfinderUiStateMapperImpl(
+        settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
+    )
 
     private fun map(
         mode: CameraMode = CameraMode.CAMERA,
@@ -24,7 +28,9 @@ class ViewfinderUiStateMapperTest {
         return mapper.map(
             mode = mode,
             isVideoMode = isVideoMode,
+            flashMode = ImageCapture.FLASH_MODE_OFF,
             settings = settings,
+            session = ViewfinderSessionState(),
         )
     }
 
