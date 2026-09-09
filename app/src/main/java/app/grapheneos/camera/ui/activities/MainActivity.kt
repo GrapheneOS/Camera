@@ -108,6 +108,8 @@ import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -395,7 +397,7 @@ open class MainActivity : AppCompatActivity() {
         builder.setNegativeButton(R.string.cancel, null)
 
         builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-            viewfinder.includeAudio = false
+            viewfinder.onAction(SettingsAction.AudioToggled(enabled = false))
             onDisableAudio()
         }
 
@@ -890,7 +892,7 @@ open class MainActivity : AppCompatActivity() {
         flipCameraCircle.setOnClickListener {
             resetAutoSleep()
             if (viewfinder.isQRMode) {
-                viewfinder.scanAllCodes = !viewfinder.scanAllCodes
+                viewfinder.onAction(SettingsAction.ScanAllCodesToggleClicked)
                 return@setOnClickListener
             }
 
@@ -918,7 +920,7 @@ open class MainActivity : AppCompatActivity() {
             rotate.interpolator = LinearInterpolator()
 
             it.startAnimation(rotate)
-            viewfinder.toggleCameraSelector()
+            viewfinder.onAction(CameraAction.LensSwitchClicked)
         }
 
         binding.thirdCircle.setOnClickListener {
@@ -1211,7 +1213,7 @@ open class MainActivity : AppCompatActivity() {
             // different one when an extension fails to bind.
             tabLayout.goToTab(selectedTab) {
                 if (mode != viewfinder.currentMode) {
-                    viewfinder.switchMode(mode)
+                    viewfinder.onAction(CameraAction.ModeSelected(mode))
                 } else if (
                     transitionShown &&
                     previewView.previewStreamState.value == StreamState.STREAMING
@@ -1558,7 +1560,7 @@ open class MainActivity : AppCompatActivity() {
         if (!application.shouldAskForLocationPermission()) {
             requestLocation()
         } else {
-            viewfinder.requireLocation = false
+            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
         }
     }
 
@@ -1586,7 +1588,7 @@ open class MainActivity : AppCompatActivity() {
 
                     it.setOnDismissListener {
                         if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            viewfinder.requireLocation = false
+                            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
                         }
                     }
                 }.showIgnoringShortEdgeMode()
