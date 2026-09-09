@@ -11,7 +11,7 @@ import androidx.appcompat.widget.AppCompatTextView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -19,7 +19,7 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     private lateinit var timer: CountDownTimer
     lateinit var mActivity: MainActivity
-    lateinit var viewfinder: ViewfinderController
+    lateinit var viewfinder: ViewfinderViewModel
 
     companion object {
         private const val textAnimDuration = 700L

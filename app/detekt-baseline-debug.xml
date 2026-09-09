@@ -133,7 +133,7 @@
     <ID>ReturnCount:App.kt:App$fun isAnyLocationProvideActive: Boolean</ID>
     <ID>ReturnCount:BarcodeFormats.kt:BarcodeFormats$fun setEnabled: Boolean</ID>
     <ID>ReturnCount:BottomTabLayout.kt:BottomTabLayout$private fun settleDuration: Long</ID>
-    <ID>ReturnCount:ViewfinderController.kt:ViewfinderController$fun startCamera</ID>
+    <ID>ReturnCount:ViewfinderViewModel.kt:ViewfinderViewModel$fun startCamera</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$@SuppressLint("RestrictedApi") override fun bind: BindOutcome</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$override fun isLensFacingSupported: Boolean</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$override fun probeUnknownExtensions</ID>

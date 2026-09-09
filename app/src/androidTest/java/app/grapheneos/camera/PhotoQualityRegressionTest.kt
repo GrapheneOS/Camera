@@ -8,7 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -85,8 +85,8 @@ class PhotoQualityRegressionTest {
         }
     }
 
-    private fun viewfinderOf(scenario: ActivityScenario<MainActivity>): ViewfinderController {
-        lateinit var viewfinder: ViewfinderController
+    private fun viewfinderOf(scenario: ActivityScenario<MainActivity>): ViewfinderViewModel {
+        lateinit var viewfinder: ViewfinderViewModel
         scenario.onActivity { viewfinder = it.viewfinder }
         return viewfinder
     }

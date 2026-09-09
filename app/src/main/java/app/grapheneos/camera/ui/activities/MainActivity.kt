@@ -48,6 +48,7 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
@@ -71,6 +72,8 @@ import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.grapheneos.camera.App
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
@@ -103,8 +106,8 @@ import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -121,6 +124,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
@@ -133,9 +137,6 @@ open class MainActivity : AppCompatActivity() {
     lateinit var cameraSessionFactory: CameraSessionFactory
 
     @Inject
-    lateinit var viewfinder: ViewfinderController
-
-    @Inject
     lateinit var settingsRepository: SettingsRepository
 
     @Inject
@@ -146,6 +147,13 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var capturedItemSession: CapturedItemSession
+
+    @Inject
+    lateinit var viewfinderProvider: Provider<ViewfinderViewModel>
+
+    val viewfinder: ViewfinderViewModel by viewModels {
+        viewModelFactory { initializer { viewfinderProvider.get() } }
+    }
 
     lateinit var session: CameraSession
 
