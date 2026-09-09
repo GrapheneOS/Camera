@@ -262,8 +262,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
-        selfIlluminationToggle.setOnCheckedChangeListener { _, isChecked ->
-            viewfinder.selfIlluminate = isChecked
+        selfIlluminationToggle.setOnClickListener {
+            viewfinder.selfIlluminate = selfIlluminationToggle.isChecked
         }
         binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -333,42 +333,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         timerSetting = binding.timerSetting
 
         includeAudioToggle = binding.includeAudioSwitch
-        includeAudioToggle.setOnCheckedChangeListener { _, _ ->
-            if (mActivity.videoCapturer.isRecording) {
-                if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO)
-                    != PackageManager.PERMISSION_GRANTED) {
-
-                    // Inform the user why enabling this option isn't possible
-                    mActivity.showMessage(context.getString(R.string.audio_permission_failed_in_recording))
-
-                    // Ensure the option is visually off
-                    includeAudioToggle.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-
-                if (!mActivity.videoCapturer.includeAudio) {
-                    mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")
-                    includeAudioToggle.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-
-                if  (includeAudioToggle.isChecked) {
-                    mActivity.videoCapturer.unmuteRecording()
-                } else {
-                    mActivity.videoCapturer.muteRecording()
-                }
-            }
-        }
-
         includeAudioToggle.setOnClickListener {
-            mActivity.micOffIcon.visibility = if (includeAudioToggle.isChecked) {
-                View.GONE
-            } else {
-                View.VISIBLE
+            if (mActivity.videoCapturer.isRecording) {
+                applyIncludeAudioToTheRecording()
             }
 
             viewfinder.includeAudio = includeAudioToggle.isChecked
         }
+
         binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
             includeAudioToggle.dispatchTouchEvent(event)
@@ -496,9 +468,37 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         })
     }
 
+    private fun applyIncludeAudioToTheRecording() {
+        if (
+            ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            mActivity.showMessage(context.getString(R.string.audio_permission_failed_in_recording))
+            includeAudioToggle.isChecked = false
+            return
+        }
+
+        if (!mActivity.videoCapturer.includeAudio) {
+            mActivity.showMessage(
+                context.getString(R.string.enabling_audio_mid_recording_unsupported)
+            )
+            includeAudioToggle.isChecked = false
+            return
+        }
+
+        when {
+            includeAudioToggle.isChecked -> mActivity.videoCapturer.unmuteRecording()
+            else -> mActivity.videoCapturer.muteRecording()
+        }
+    }
+
     fun render(state: SettingsSheetUiState) {
         flashToggle.setImageResource(state.flashIcon)
         flashToggle.contentDescription = mActivity.getString(state.flashDescription)
+
+        includeAudioToggle.isChecked = state.includeAudio
+        locToggle.isChecked = state.geoTagging
+        selfIlluminationToggle.isChecked = state.selfIllumination
 
         includeAudioSetting.visibility = visibleOrGone(state.includeAudioSettingVisible)
         videoQualitySetting.visibility = visibleOrGone(state.videoQualitySettingVisible)

@@ -394,22 +394,12 @@
         <error line="301" column="29" source="standard:trailing-comma-on-declaration-site" />
         <error line="303" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="318" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="339" column="56" source="standard:wrapping" />
-        <error line="342" column="43" source="standard:argument-list-wrapping" />
-        <error line="342" column="61" source="standard:argument-list-wrapping" />
-        <error line="342" column="101" source="standard:max-line-length" />
-        <error line="342" column="106" source="standard:argument-list-wrapping" />
-        <error line="342" column="107" source="standard:argument-list-wrapping" />
-        <error line="350" column="43" source="standard:argument-list-wrapping" />
-        <error line="350" column="101" source="standard:max-line-length" />
-        <error line="350" column="136" source="standard:argument-list-wrapping" />
-        <error line="355" column="20" source="standard:no-multi-spaces" />
-        <error line="467" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="471" column="63" source="standard:argument-list-wrapping" />
-        <error line="471" column="101" source="standard:max-line-length" />
-        <error line="471" column="104" source="standard:argument-list-wrapping" />
-        <error line="475" column="1" source="standard:indent" />
-        <error line="479" column="1" source="standard:indent" />
+        <error line="439" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="443" column="63" source="standard:argument-list-wrapping" />
+        <error line="443" column="101" source="standard:max-line-length" />
+        <error line="443" column="104" source="standard:argument-list-wrapping" />
+        <error line="447" column="1" source="standard:indent" />
+        <error line="451" column="1" source="standard:indent" />
         <error line="518" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="522" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="528" column="1" source="standard:no-blank-line-before-rbrace" />

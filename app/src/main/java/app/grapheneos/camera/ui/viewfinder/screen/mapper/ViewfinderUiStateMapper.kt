@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
@@ -13,7 +14,9 @@ interface ViewfinderUiStateMapper {
         mode: CameraMode,
         isVideoMode: Boolean,
         flashMode: Int,
+        requireLocation: Boolean,
         settings: CameraSettings,
+        modeSettings: ModeSettings,
         session: ViewfinderSessionState,
     ): ViewfinderUiState
 }
@@ -26,7 +29,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         mode: CameraMode,
         isVideoMode: Boolean,
         flashMode: Int,
+        requireLocation: Boolean,
         settings: CameraSettings,
+        modeSettings: ModeSettings,
         session: ViewfinderSessionState,
     ): ViewfinderUiState {
         val chrome = when {
@@ -42,6 +47,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             settingsSheet = settingsSheetUiStateMapper.map(
                 isVideoMode = isVideoMode,
                 flashMode = flashMode,
+                requireLocation = requireLocation,
+                settings = settings,
+                modeSettings = modeSettings,
                 session = session,
             ),
         )
