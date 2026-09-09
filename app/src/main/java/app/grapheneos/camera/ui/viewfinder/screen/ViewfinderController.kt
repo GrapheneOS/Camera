@@ -8,6 +8,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.Quality
 import app.grapheneos.camera.R
+import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.session.CameraSession
@@ -23,10 +24,9 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
+import dagger.hilt.android.scopes.ActivityScoped
 import java.io.IOException
+import javax.inject.Inject
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,11 +36,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class ViewfinderController @AssistedInject constructor(
-    @Assisted private val environment: CameraSessionEnvironment,
-    @Assisted private val effects: ViewfinderEffects,
-    @Assisted private val chrome: ViewfinderChrome,
-    @Assisted private val session: CameraSession,
+@ActivityScoped
+class ViewfinderController @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val resolveAvailableModes: ResolveAvailableModes,
@@ -49,8 +46,37 @@ class ViewfinderController @AssistedInject constructor(
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : CameraSession.Listener {
 
+    private var attachment: Attachment? = null
+
     @set:VisibleForTesting
-    var mPlayer = environment.createTunePlayer()
+    var mPlayer: TunePlayer? = null
+
+    private val attached: Attachment
+        get() {
+            return requireNotNull(attachment) {
+                "No Activity is attached to the viewfinder"
+            }
+        }
+
+    private val environment: CameraSessionEnvironment
+        get() {
+            return attached.environment
+        }
+
+    private val effects: ViewfinderEffects
+        get() {
+            return attached.effects
+        }
+
+    private val chrome: ViewfinderChrome
+        get() {
+            return attached.chrome
+        }
+
+    private val session: CameraSession
+        get() {
+            return attached.session
+        }
 
     private var settings: CameraSettings = runBlocking {
         settingsRepository.settings.first()
@@ -203,11 +229,36 @@ class ViewfinderController @AssistedInject constructor(
         }
 
     init {
-        session.listener = this
-
         preferencesScope.launch {
             settingsRepository.settings.collect { settings = it }
         }
+    }
+
+    fun attach(
+        environment: CameraSessionEnvironment,
+        effects: ViewfinderEffects,
+        chrome: ViewfinderChrome,
+        session: CameraSession,
+    ) {
+        attachment = Attachment(
+            environment = environment,
+            effects = effects,
+            chrome = chrome,
+            session = session,
+        )
+
+        mPlayer = environment.createTunePlayer()
+
+        session.listener = this
+    }
+
+    fun detach() {
+        attachment?.session?.listener = null
+
+        attachment = null
+        mPlayer = null
+
+        preferencesScope.cancel()
     }
 
     override fun onZoomStateChanged() {
@@ -224,10 +275,6 @@ class ViewfinderController @AssistedInject constructor(
 
     override fun onProviderReady(forced: Boolean) {
         startCamera(forced = forced)
-    }
-
-    fun onDestroy() {
-        preferencesScope.cancel()
     }
 
     fun setFlashMode(value: Int) {
@@ -562,15 +609,12 @@ class ViewfinderController @AssistedInject constructor(
         }
     }
 
-    @AssistedFactory
-    interface Factory {
-        fun create(
-            environment: CameraSessionEnvironment,
-            effects: ViewfinderEffects,
-            chrome: ViewfinderChrome,
-            session: CameraSession,
-        ): ViewfinderController
-    }
+    private class Attachment(
+        val environment: CameraSessionEnvironment,
+        val effects: ViewfinderEffects,
+        val chrome: ViewfinderChrome,
+        val session: CameraSession,
+    )
 
     companion object {
         private const val TAG = "ViewfinderController"
