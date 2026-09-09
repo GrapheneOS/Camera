@@ -17,4 +17,5 @@ data class ViewfinderUiState(
     @StringRes val flipCameraDescription: Int = R.string.flip_camera,
     val selfTimerBadge: String = "",
     val selfTimerBadgeVisible: Boolean = false,
+    val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
 )
