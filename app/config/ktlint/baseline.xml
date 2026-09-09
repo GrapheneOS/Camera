@@ -301,8 +301,8 @@
         <error line="246" column="101" source="standard:max-line-length" />
         <error line="246" column="107" source="standard:argument-list-wrapping" />
         <error line="246" column="108" source="standard:argument-list-wrapping" />
-        <error line="481" column="1" source="standard:indent" />
-        <error line="482" column="1" source="standard:indent" />
+        <error line="486" column="1" source="standard:indent" />
+        <error line="487" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ktx/SystemSettingsObserver.kt">
         <error line="16" column="37" source="standard:trailing-comma-on-declaration-site" />
@@ -526,10 +526,10 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="979" column="100" source="standard:max-line-length" />
-        <error line="1139" column="100" source="standard:max-line-length" />
-        <error line="1495" column="17" source="standard:chain-wrapping" />
-        <error line="1685" column="27" source="standard:property-naming" />
+        <error line="977" column="100" source="standard:max-line-length" />
+        <error line="1137" column="100" source="standard:max-line-length" />
+        <error line="1493" column="17" source="standard:chain-wrapping" />
+        <error line="1683" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="388" column="101" source="standard:max-line-length" />

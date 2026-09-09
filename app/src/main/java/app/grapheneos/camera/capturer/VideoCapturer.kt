@@ -243,9 +243,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     pendingRecording.withAudioEnabled()
                 }
 
-                viewfinder.mPlayer.playVRStartSound(handler) {
+                val onStartSoundPlayed = onStartSoundPlayed@{
                     if (consumed) {
-                        return@playVRStartSound
+                        return@onStartSoundPlayed
                     }
 
                     consumed = true
@@ -272,6 +272,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         e.printStackTrace()
                     }
                 }
+
+                when (val player = viewfinder.mPlayer) {
+                    null -> onStartSoundPlayed()
+                    else -> player.playVRStartSound(handler, onStartSoundPlayed)
+                }
             }
         }
     }
@@ -290,7 +295,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         if (event is VideoRecordEvent.Finalize) {
             afterRecordingStops()
 
-            viewfinder.mPlayer.playVRStopSound()
+            viewfinder.mPlayer?.playVRStopSound()
 
             if (event.hasError()) {
                 when (event.error) {

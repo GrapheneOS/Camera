@@ -123,7 +123,7 @@ class ImageCapturer(val mActivity: MainActivity) {
         unfadeCaptureButton()
         currentImageSaver = null
 
-        viewfinder.mPlayer.playShutterSound()
+        viewfinder.mPlayer?.playShutterSound()
         viewfinder.snapPreview()
 
         mActivity.previewLoader.visibility = View.VISIBLE
