@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.di.preferences.DurableSettingsPrefsEntryPoint
@@ -117,8 +118,8 @@ class SecurePrefsIsolationTest {
     fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
         asTheOwner { repository ->
             runBlocking {
-                repository.selectMode(mode = MODE, isFrontFacing = false)
-                repository.setGeoTagging(false)
+                repository.modeSettings(SLOT)
+                repository.setGeoTagging(SLOT, false)
             }
         }
 
@@ -127,9 +128,9 @@ class SecurePrefsIsolationTest {
                 val repository = activity.settingsRepository
 
                 val slotted = runBlocking {
-                    repository.selectMode(mode = MODE, isFrontFacing = false)
-                    repository.setGeoTagging(true)
-                    repository.selectMode(mode = MODE, isFrontFacing = false)
+                    repository.modeSettings(SLOT)
+                    repository.setGeoTagging(SLOT, true)
+                    repository.modeSettings(SLOT)
                 }
 
                 assertTrue(
@@ -160,6 +161,7 @@ class SecurePrefsIsolationTest {
 
     private companion object {
         val MODE = CameraMode.VIDEO
+        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
 
         const val OWNERS_QUALITY = 71
         const val SESSIONS_QUALITY = 42

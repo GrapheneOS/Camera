@@ -47,8 +47,6 @@ open class MoreSettings :
 
     private var isZslSupported = false
 
-    private var settings: CameraSettings = CameraSettings()
-
     private var storageLocation: String = CapturedItemRepository.MEDIA_STORE_LOCATION
 
     private lateinit var binding: MoreSettingsBinding
@@ -62,6 +60,11 @@ open class MoreSettings :
     private lateinit var rootView: View
 
     private lateinit var pQField: EditText
+
+    private val settings: CameraSettings
+        get() {
+            return settingsRepository.settings.value
+        }
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -93,7 +96,7 @@ open class MoreSettings :
     }
 
     private fun updateSettings(transform: (CameraSettings) -> CameraSettings) {
-        settings = runBlocking { settingsRepository.update(transform) }
+        runBlocking { settingsRepository.update(transform) }
     }
 
     private fun setStorageLocation(location: String) {
@@ -111,7 +114,6 @@ open class MoreSettings :
 
         isInCaptureMode = intent.getBooleanExtra(INTENT_EXTRA_IN_CAPTURE_MODE, false)
         isZslSupported = intent.getBooleanExtra(INTENT_EXTRA_ZSL_SUPPORTED, false)
-        settings = runBlocking { settingsRepository.settings.first() }
         storageLocation = runBlocking { capturedItemRepository.storageLocation.first() }
 
         binding = MoreSettingsBinding.inflate(layoutInflater)

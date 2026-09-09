@@ -14,6 +14,7 @@ import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapperImpl
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepositoryImpl
@@ -152,8 +153,8 @@ class SettingsRepositoryTest {
 
         runBlocking {
             repository.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
-            repository.selectMode(mode = MODE, isFrontFacing = false)
-            repository.setGeoTagging(true)
+            repository.modeSettings(SLOT)
+            repository.setGeoTagging(SLOT, true)
         }
 
         assertEquals(OTHER_PHOTO_QUALITY, settingsOf(repository).photoQuality)
@@ -181,15 +182,21 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun settings_afterAnotherRepositoryWroteTheSameStore_picksUpTheChange() {
-        val viewfinder = repository()
-        val settingsScreen = repository()
+    fun settings_afterAWrite_isSettledWithoutWaitingForADispatch() {
+        val repository = repository()
 
-        assertEquals(SettingsDefaults.PHOTO_QUALITY, settingsOf(viewfinder).photoQuality)
+        assertEquals(SettingsDefaults.PHOTO_QUALITY, repository.settings.value.photoQuality)
 
-        runBlocking { settingsScreen.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
+        runBlocking { repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
 
-        assertEquals(SOME_PHOTO_QUALITY, settingsOf(viewfinder).photoQuality)
+        assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
+    }
+
+    @Test
+    fun settings_ofARepositoryOpenedOnAWrittenStore_readsWhatIsThere() {
+        runBlocking { repository().update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
+
+        assertEquals(SOME_PHOTO_QUALITY, repository().settings.value.photoQuality)
     }
 
     @Test
@@ -197,9 +204,9 @@ class SettingsRepositoryTest {
         val repository = repository()
 
         runBlocking {
-            repository.selectMode(mode = MODE, isFrontFacing = false)
-            repository.setGeoTagging(true)
-            repository.selectMode(mode = MODE, isFrontFacing = false)
+            repository.modeSettings(SLOT)
+            repository.setGeoTagging(SLOT, true)
+            repository.modeSettings(SLOT)
         }
 
         assertEquals(
@@ -209,31 +216,12 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun writeMode_noModeSlotted_dropsTheWrite() {
+    fun modeSettings_exposesWhatTheMapperMadeOfTheStoredMode() {
         val repository = repository()
 
         modeSettingsMapper.result = MAPPER_RESULT
 
-        assertNull(runBlocking { repository.setGeoTagging(true) })
-        assertNull(runBlocking { repository.setVideoQuality(Quality.UHD) })
-        assertEquals(emptyList<Quality>(), storedVideoQualityMapper.calls)
-        assertEquals(emptyMap<String, StoredModeSettings>(), stored().modes)
-
-        runBlocking {
-            repository.selectMode(mode = MODE, isFrontFacing = false)
-            repository.setGeoTagging(true)
-        }
-
-        assertEquals(true, stored().modes[MODE.name]?.geoTagging)
-    }
-
-    @Test
-    fun selectMode_exposesWhatTheMapperMadeOfTheStoredMode() {
-        val repository = repository()
-
-        modeSettingsMapper.result = MAPPER_RESULT
-
-        val selected = runBlocking { repository.selectMode(mode = MODE, isFrontFacing = true) }
+        val selected = runBlocking { repository.modeSettings(FRONT_SLOT) }
 
         assertEquals(
             FakeModeSettingsMapper.Call(stored = StoredModeSettings(), isFrontFacing = true),
@@ -246,9 +234,9 @@ class SettingsRepositoryTest {
     fun setVideoQuality_storesTheNameTheMapperGaveIt() {
         val repository = repository()
 
-        runBlocking { repository.selectMode(mode = MODE, isFrontFacing = false) }
+        runBlocking { repository.modeSettings(SLOT) }
         storedVideoQualityMapper.result = StoredVideoQuality.DEVICE_CHOICE
-        runBlocking { repository.setVideoQuality(Quality.HIGHEST) }
+        runBlocking { repository.setVideoQuality(SLOT, Quality.HIGHEST) }
 
         assertEquals(listOf(Quality.HIGHEST), storedVideoQualityMapper.calls)
         assertEquals(
@@ -266,11 +254,11 @@ class SettingsRepositoryTest {
             storedVideoQualityMapper = StoredVideoQualityMapperImpl(),
         )
 
-        runBlocking { repository.selectMode(mode = MODE, isFrontFacing = false) }
+        runBlocking { repository.modeSettings(SLOT) }
 
-        val written = runBlocking { repository.setVideoQuality(Quality.LOWEST) }
+        val written = runBlocking { repository.setVideoQuality(SLOT, Quality.LOWEST) }
 
-        assertEquals(Quality.LOWEST, written?.videoQuality)
+        assertEquals(Quality.LOWEST, written.videoQuality)
         assertEquals(
             StoredVideoQuality.DEVICE_CHOICE,
             stored().modes[MODE.name]?.videoQualityBack,
@@ -281,13 +269,13 @@ class SettingsRepositoryTest {
     fun setVideoQuality_eachLensFacing_isStoredSeparately() {
         val repository = repository()
 
-        runBlocking { repository.selectMode(mode = MODE, isFrontFacing = false) }
+        runBlocking { repository.modeSettings(SLOT) }
         storedVideoQualityMapper.result = StoredVideoQuality.UHD
-        runBlocking { repository.setVideoQuality(Quality.UHD) }
+        runBlocking { repository.setVideoQuality(SLOT, Quality.UHD) }
 
-        runBlocking { repository.selectMode(mode = MODE, isFrontFacing = true) }
+        runBlocking { repository.modeSettings(FRONT_SLOT) }
         storedVideoQualityMapper.result = StoredVideoQuality.HD
-        runBlocking { repository.setVideoQuality(Quality.HD) }
+        runBlocking { repository.setVideoQuality(FRONT_SLOT, Quality.HD) }
 
         val storedMode = stored().modes.getValue(MODE.name)
 
@@ -296,16 +284,16 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun selectMode_afterARelaunch_mapsWhatTheStoreHeld() {
+    fun modeSettings_afterARelaunch_mapsWhatTheStoreHeld() {
         val repository = repository()
 
-        runBlocking { repository.selectMode(mode = MODE, isFrontFacing = false) }
+        runBlocking { repository.modeSettings(SLOT) }
         storedVideoQualityMapper.result = StoredVideoQuality.FHD
-        runBlocking { repository.setVideoQuality(Quality.FHD) }
+        runBlocking { repository.setVideoQuality(SLOT, Quality.FHD) }
 
         val relaunched = repository()
 
-        runBlocking { relaunched.selectMode(mode = MODE, isFrontFacing = false) }
+        runBlocking { relaunched.modeSettings(SLOT) }
 
         assertEquals(
             StoredModeSettings(videoQualityBack = StoredVideoQuality.FHD),
@@ -318,14 +306,14 @@ class SettingsRepositoryTest {
         val repository = repository()
 
         runBlocking {
-            repository.selectMode(mode = MODE, isFrontFacing = false)
-            repository.setGeoTagging(true)
-            repository.selectMode(mode = OTHER_MODE, isFrontFacing = false)
+            repository.modeSettings(SLOT)
+            repository.setGeoTagging(SLOT, true)
+            repository.modeSettings(OTHER_SLOT)
         }
 
         assertEquals(StoredModeSettings(), modeSettingsMapper.calls.last().stored)
 
-        runBlocking { repository.selectMode(mode = MODE, isFrontFacing = false) }
+        runBlocking { repository.modeSettings(SLOT) }
 
         assertEquals(StoredModeSettings(geoTagging = true), modeSettingsMapper.calls.last().stored)
     }
@@ -399,6 +387,10 @@ class SettingsRepositoryTest {
     private companion object {
         val MODE = CameraMode.VIDEO
         val OTHER_MODE = CameraMode.CAMERA
+
+        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
+        val FRONT_SLOT = ModeSlot(mode = MODE, isFrontFacing = true)
+        val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, isFrontFacing = false)
 
         val MAPPER_RESULT = ModeSettings(geoTagging = true, videoQuality = Quality.FHD)
 
