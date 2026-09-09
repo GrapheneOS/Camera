@@ -71,7 +71,9 @@ import androidx.core.view.isVisible
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.grapheneos.camera.App
@@ -833,6 +835,22 @@ open class MainActivity : AppCompatActivity() {
         cameraControl = CameraControl(session)
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.uiState.collect { state ->
+                    sessionHandler.render(state)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.effects.collect { effect ->
+                    sessionHandler.handle(effect)
+                }
+            }
+        }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             capturedItemSession.prepare()

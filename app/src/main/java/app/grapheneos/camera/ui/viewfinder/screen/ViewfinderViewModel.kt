@@ -29,13 +29,18 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
 
 class ViewfinderViewModel @Inject constructor(
@@ -65,7 +70,7 @@ class ViewfinderViewModel @Inject constructor(
             return attached.environment
         }
 
-    private val effects: ViewfinderEffects
+    private val bindEffects: ViewfinderEffects
         get() {
             return attached.effects
         }
@@ -91,7 +96,14 @@ class ViewfinderViewModel @Inject constructor(
 
     private val sessionState = MutableStateFlow(ViewfinderSessionState())
 
-    private val uiState: ViewfinderUiState
+    private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
+
+    val effects: Flow<Effect> = screenEffects.receiveAsFlow()
+
+    private val _uiState = MutableStateFlow(ViewfinderUiState())
+    val uiState: StateFlow<ViewfinderUiState> = _uiState.asStateFlow()
+
+    private val renderedState: ViewfinderUiState
         get() {
             return uiStateMapper.map(
                 mode = currentMode,
@@ -188,7 +200,7 @@ class ViewfinderViewModel @Inject constructor(
         read = { it.scanAllCodes },
         write = { current, value -> current.copy(scanAllCodes = value) },
         onChanged = { value ->
-            chrome.render(uiState)
+            publishUiState()
 
             session.refreshQrHints()
         },
@@ -197,7 +209,7 @@ class ViewfinderViewModel @Inject constructor(
     var includeAudio: Boolean by setting(
         read = { it.includeAudio },
         write = { current, value -> current.copy(includeAudio = value) },
-        onChanged = { chrome.render(uiState) },
+        onChanged = { publishUiState() },
     )
 
     var flashMode: Int = SettingsDefaults.FLASH_MODE
@@ -215,8 +227,8 @@ class ViewfinderViewModel @Inject constructor(
     var requireLocation: Boolean = false
         private set(value) {
             when {
-                value -> effects.startLocationUpdates()
-                else -> effects.stopLocationUpdates()
+                value -> emitEffect(Effect.StartLocationUpdates)
+                else -> emitEffect(Effect.StopLocationUpdates)
             }
 
             // A permission result is delivered before the first onResume of an activity the system
@@ -225,7 +237,7 @@ class ViewfinderViewModel @Inject constructor(
 
             field = value
 
-            chrome.render(uiState)
+            publishUiState()
         }
 
     var selfIlluminate: Boolean
@@ -236,8 +248,8 @@ class ViewfinderViewModel @Inject constructor(
         private set(value) {
             writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
 
-            chrome.render(uiState)
-            effects.applySelfIllumination()
+            publishUiState()
+            emitEffect(Effect.ApplySelfIllumination)
         }
 
     fun attach(
@@ -271,15 +283,17 @@ class ViewfinderViewModel @Inject constructor(
 
     override fun onZoomStateChanged() {
         chrome.updateZoomThumb()
-        effects.showZoomPanel()
+        emitEffect(Effect.ShowZoomPanel)
     }
 
     override fun onCameraProviderUnavailable() {
-        effects.showMessage(R.string.camera_provider_init_failure)
+        emitEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
     }
 
     override fun onExtensionsUnavailable() {
-        effects.showMessage(R.string.extensions_manager_init_failure)
+        emitEffect(
+            Effect.ShowMessage(R.string.extensions_manager_init_failure),
+        )
     }
 
     override fun onProviderReady(forced: Boolean) {
@@ -300,7 +314,7 @@ class ViewfinderViewModel @Inject constructor(
         slotCurrentMode()
 
         if (isVideoMode) {
-            effects.reloadVideoQualities()
+            emitEffect(Effect.ReloadVideoQualities)
         }
 
         applyFlashMode(modeSettings.flashMode)
@@ -314,7 +328,7 @@ class ViewfinderViewModel @Inject constructor(
 
         selfIlluminate = modeSettings.selfIllumination
 
-        chrome.render(uiState)
+        publishUiState()
     }
 
     fun loadSettings() {
@@ -412,7 +426,9 @@ class ViewfinderViewModel @Inject constructor(
                 setFlashMode(next)
             }
 
-            else -> effects.showMessage(R.string.flash_unavailable_in_selected_mode)
+            else -> emitEffect(
+                Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode),
+            )
         }
     }
 
@@ -445,12 +461,16 @@ class ViewfinderViewModel @Inject constructor(
             else -> {
                 session.lensFacing = when (session.lensFacing) {
                     CameraSelector.LENS_FACING_BACK -> {
-                        effects.showMessage(R.string.rear_camera_unavailable)
+                        emitEffect(
+                            Effect.ShowMessage(R.string.rear_camera_unavailable),
+                        )
                         CameraSelector.LENS_FACING_FRONT
                     }
 
                     else -> {
-                        effects.showMessage(R.string.front_camera_unavailable)
+                        emitEffect(
+                            Effect.ShowMessage(R.string.front_camera_unavailable),
+                        )
                         CameraSelector.LENS_FACING_BACK
                     }
                 }
@@ -475,7 +495,7 @@ class ViewfinderViewModel @Inject constructor(
             selected = selected,
         ) ?: return
 
-        effects.showVideoQualityUnsupported(droppedQuality)
+        emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
     }
 
     fun initializeCamera(forced: Boolean = false) {
@@ -487,9 +507,9 @@ class ViewfinderViewModel @Inject constructor(
         if ((!forced && session.camera != null) || session.cameraProvider == null) return
 
         // Cancel any pending capture requests
-        effects.cancelPendingCapture()
+        bindEffects.cancelPendingCapture()
 
-        effects.hideExposurePanel()
+        bindEffects.hideExposurePanel()
         slotCurrentMode()
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
@@ -521,20 +541,20 @@ class ViewfinderViewModel @Inject constructor(
 
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
-        effects.updateLastFrame()
+        bindEffects.updateLastFrame()
 
         val qrLensFacing = when {
             isQRMode -> {
-                effects.startFocusTimer()
+                bindEffects.startFocusTimer()
                 qrLensFacing()
             }
 
             else -> null
         }
 
-        chrome.render(uiState)
+        publishUiState()
 
-        effects.forceUpdateOrientationSensor()
+        bindEffects.forceUpdateOrientationSensor()
 
         val bindSettings = CameraBindSettings(
             mode = currentMode,
@@ -558,11 +578,19 @@ class ViewfinderViewModel @Inject constructor(
 
         refreshSessionState()
 
-        return when (outcome) {
-            BindOutcome.FAILED -> effects.showMessage(R.string.bind_failure)
+        onBindOutcome(outcome)
+    }
+
+    private fun onBindOutcome(outcome: BindOutcome) {
+        when (outcome) {
+            BindOutcome.FAILED -> emitEffect(
+                Effect.ShowMessage(R.string.bind_failure),
+            )
 
             BindOutcome.EXTENSION_UNUSABLE -> {
-                effects.showMessage(R.string.extension_mode_unavailable)
+                emitEffect(
+                    Effect.ShowMessage(R.string.extension_mode_unavailable),
+                )
 
                 // The bind never completed: currentMode still names the mode that was just
                 // disabled and nothing is rendering into the preview. Refreshing the tabs
@@ -576,14 +604,15 @@ class ViewfinderViewModel @Inject constructor(
             BindOutcome.BOUND -> announceBind()
         }
     }
+
     fun onStorageLocationNotFound() {
         runBlocking { revertToMediaStoreLocation() }
 
-        effects.showStorageLocationNotFound()
+        emitEffect(Effect.ShowStorageLocationNotFound)
     }
 
     fun snapPreview() {
-        effects.flashPreview(selfIlluminate)
+        emitEffect(Effect.FlashPreview(selfIlluminate))
     }
 
     fun switchMode(mode: CameraMode) {
@@ -593,9 +622,9 @@ class ViewfinderViewModel @Inject constructor(
 
         currentMode = mode
 
-        effects.cancelFocusTimer()
+        bindEffects.cancelFocusTimer()
 
-        chrome.render(uiState)
+        publishUiState()
 
         startCamera(true)
 
@@ -604,14 +633,22 @@ class ViewfinderViewModel @Inject constructor(
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (entryPoint.showsCameraModeTabs) {
-            effects.goToModeTab(currentMode)
+            emitEffect(Effect.GoToModeTab(currentMode))
         }
     }
 
     private fun applyFlashMode(value: Int) {
         flashMode = value
         session.imageCapture?.flashMode = value
-        chrome.render(uiState)
+        publishUiState()
+    }
+
+    private fun emitEffect(effect: Effect) {
+        screenEffects.trySend(effect)
+    }
+
+    private fun publishUiState() {
+        _uiState.value = renderedState
     }
 
     private fun refreshSessionState() {
@@ -650,7 +687,7 @@ class ViewfinderViewModel @Inject constructor(
             return CameraSelector.LENS_FACING_BACK
         }
 
-        effects.showMessage(R.string.qr_rear_camera_unavailable)
+        emitEffect(Effect.ShowMessage(R.string.qr_rear_camera_unavailable))
 
         return CameraSelector.LENS_FACING_FRONT
     }
@@ -661,11 +698,11 @@ class ViewfinderViewModel @Inject constructor(
         session.reattachZoomState()
 
         chrome.updateZoomThumb()
-        effects.hideZoomPanel()
+        emitEffect(Effect.HideZoomPanel)
 
         session.camera?.cameraInfo?.exposureState?.let { chrome.applyExposureState(it) }
 
-        effects.resetTorchToggle()
+        emitEffect(Effect.ResetTorchToggle)
 
         session.camera?.cameraInfo?.let { chrome.onPreviewBound(aspectRatio, it) }
 
