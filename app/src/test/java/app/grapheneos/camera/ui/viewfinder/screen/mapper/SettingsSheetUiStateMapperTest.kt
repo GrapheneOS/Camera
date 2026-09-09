@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import org.junit.Assert.assertEquals
@@ -20,11 +22,17 @@ class SettingsSheetUiStateMapperTest {
     private fun map(
         isVideoMode: Boolean = false,
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
+        requireLocation: Boolean = false,
+        settings: CameraSettings = CameraSettings(),
+        modeSettings: ModeSettings = ModeSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
     ): SettingsSheetUiState {
         return mapper.map(
             isVideoMode = isVideoMode,
             flashMode = flashMode,
+            requireLocation = requireLocation,
+            settings = settings,
+            modeSettings = modeSettings,
             session = session,
         )
     }
@@ -90,5 +98,29 @@ class SettingsSheetUiStateMapperTest {
 
         assertTrue(map(session = front).selfIlluminationSettingVisible)
         assertFalse(map(session = back).selfIlluminationSettingVisible)
+    }
+
+    @Test
+    fun toggles_readTheValuesTheyStandFor() {
+        val state = map(
+            requireLocation = true,
+            settings = CameraSettings(includeAudio = true),
+            modeSettings = ModeSettings(selfIllumination = true),
+        )
+
+        assertTrue(state.includeAudio)
+        assertTrue(state.geoTagging)
+        assertTrue(state.selfIllumination)
+    }
+
+    @Test
+    fun selfIlluminationToggle_isTheStoredValueNotTheEffectiveOne() {
+        val state = map(
+            modeSettings = ModeSettings(selfIllumination = true),
+            session = ViewfinderSessionState(lensFacing = CameraSelector.LENS_FACING_BACK),
+        )
+
+        assertTrue(state.selfIllumination)
+        assertFalse(state.selfIlluminationSettingVisible)
     }
 }

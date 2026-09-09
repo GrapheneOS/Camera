@@ -1,12 +1,10 @@
 package app.grapheneos.camera.ui
 
-import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
@@ -35,7 +33,6 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
@@ -262,8 +259,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
-        selfIlluminationToggle.setOnCheckedChangeListener { _, isChecked ->
-            viewfinder.selfIlluminate = isChecked
+        selfIlluminationToggle.setOnClickListener {
+            viewfinder.selfIlluminate = selfIlluminationToggle.isChecked
         }
         binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -333,42 +330,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         timerSetting = binding.timerSetting
 
         includeAudioToggle = binding.includeAudioSwitch
-        includeAudioToggle.setOnCheckedChangeListener { _, _ ->
-            if (mActivity.videoCapturer.isRecording) {
-                if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO)
-                    != PackageManager.PERMISSION_GRANTED) {
-
-                    // Inform the user why enabling this option isn't possible
-                    mActivity.showMessage(context.getString(R.string.audio_permission_failed_in_recording))
-
-                    // Ensure the option is visually off
-                    includeAudioToggle.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-
-                if (!mActivity.videoCapturer.includeAudio) {
-                    mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")
-                    includeAudioToggle.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-
-                if  (includeAudioToggle.isChecked) {
-                    mActivity.videoCapturer.unmuteRecording()
-                } else {
-                    mActivity.videoCapturer.muteRecording()
-                }
-            }
-        }
-
         includeAudioToggle.setOnClickListener {
-            mActivity.micOffIcon.visibility = if (includeAudioToggle.isChecked) {
-                View.GONE
-            } else {
-                View.VISIBLE
-            }
-
             viewfinder.includeAudio = includeAudioToggle.isChecked
         }
+
         binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
             includeAudioToggle.dispatchTouchEvent(event)
@@ -499,6 +464,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     fun render(state: SettingsSheetUiState) {
         flashToggle.setImageResource(state.flashIcon)
         flashToggle.contentDescription = mActivity.getString(state.flashDescription)
+
+        includeAudioToggle.isChecked = state.includeAudio
+        locToggle.isChecked = state.geoTagging
+        selfIlluminationToggle.isChecked = state.selfIllumination
 
         includeAudioSetting.visibility = visibleOrGone(state.includeAudioSettingVisible)
         videoQualitySetting.visibility = visibleOrGone(state.videoQualitySettingVisible)

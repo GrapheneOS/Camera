@@ -94,7 +94,9 @@ class ViewfinderViewModel @Inject constructor(
                 mode = currentMode,
                 isVideoMode = isVideoMode,
                 flashMode = flashMode,
+                requireLocation = requireLocation,
                 settings = settings,
+                modeSettings = modeSettings,
                 session = sessionState.value,
             )
         }
@@ -192,10 +194,7 @@ class ViewfinderViewModel @Inject constructor(
     var includeAudio: Boolean by setting(
         read = { it.includeAudio },
         write = { current, value -> current.copy(includeAudio = value) },
-        onChanged = { value ->
-            chrome.onIncludeAudioChanged(value)
-            chrome.render(uiState)
-        },
+        onChanged = { chrome.render(uiState) },
     )
 
     var flashMode: Int = SettingsDefaults.FLASH_MODE
@@ -221,9 +220,9 @@ class ViewfinderViewModel @Inject constructor(
             // recreated, so this can run before a mode has been slotted — see modeSettings.
             writeMode { slot -> settingsRepository.setGeoTagging(slot, value) }
 
-            chrome.onGeoTaggingChanged(value)
-
             field = value
+
+            chrome.render(uiState)
         }
 
     var selfIlluminate: Boolean
@@ -234,7 +233,8 @@ class ViewfinderViewModel @Inject constructor(
         set(value) {
             writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
 
-            chrome.onSelfIlluminationChanged(value)
+            chrome.render(uiState)
+            effects.applySelfIllumination()
         }
 
     fun attach(
