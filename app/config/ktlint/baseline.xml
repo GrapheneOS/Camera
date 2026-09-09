@@ -523,10 +523,10 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="978" column="100" source="standard:max-line-length" />
-        <error line="1138" column="100" source="standard:max-line-length" />
-        <error line="1494" column="17" source="standard:chain-wrapping" />
-        <error line="1684" column="27" source="standard:property-naming" />
+        <error line="986" column="100" source="standard:max-line-length" />
+        <error line="1146" column="100" source="standard:max-line-length" />
+        <error line="1502" column="17" source="standard:chain-wrapping" />
+        <error line="1692" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

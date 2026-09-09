@@ -7,6 +7,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.Quality
+import androidx.lifecycle.ViewModel
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.data.camera.model.BindOutcome
@@ -24,21 +25,20 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
-import dagger.hilt.android.scopes.ActivityScoped
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.runBlocking
 
-@ActivityScoped
-class ViewfinderController @Inject constructor(
+class ViewfinderViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
-) : CameraSession.Listener {
+) : ViewModel(),
+    CameraSession.Listener {
 
     private var attachment: Attachment? = null
 
@@ -602,7 +602,7 @@ class ViewfinderController @Inject constructor(
     )
 
     companion object {
-        private const val TAG = "ViewfinderController"
+        private const val TAG = "ViewfinderViewModel"
 
         val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
     }
