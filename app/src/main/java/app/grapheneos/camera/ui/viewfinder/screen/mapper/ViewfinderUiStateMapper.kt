@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
 
@@ -11,18 +12,24 @@ interface ViewfinderUiStateMapper {
     fun map(
         mode: CameraMode,
         isVideoMode: Boolean,
+        flashMode: Int,
         settings: CameraSettings,
+        session: ViewfinderSessionState,
     ): ViewfinderUiState
 }
 
-internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiStateMapper {
+internal class ViewfinderUiStateMapperImpl @Inject constructor(
+    private val settingsSheetUiStateMapper: SettingsSheetUiStateMapper,
+) : ViewfinderUiStateMapper {
 
     override fun map(
         mode: CameraMode,
         isVideoMode: Boolean,
+        flashMode: Int,
         settings: CameraSettings,
+        session: ViewfinderSessionState,
     ): ViewfinderUiState {
-        return when {
+        val chrome = when {
             mode.isQr -> qrState(settings)
 
             else -> captureState(
@@ -30,6 +37,14 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
                 settings = settings,
             )
         }
+
+        return chrome.copy(
+            settingsSheet = settingsSheetUiStateMapper.map(
+                isVideoMode = isVideoMode,
+                flashMode = flashMode,
+                session = session,
+            ),
+        )
     }
 
     private fun qrState(settings: CameraSettings): ViewfinderUiState {
