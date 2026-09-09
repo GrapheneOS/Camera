@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import androidx.annotation.StringRes
 import androidx.camera.video.Quality
+import app.grapheneos.camera.data.core.model.CameraMode
 
 interface ViewfinderEffects {
 
@@ -18,6 +19,22 @@ interface ViewfinderEffects {
     fun cancelPendingCapture()
 
     fun forceUpdateOrientationSensor()
+
+    fun goToModeTab(mode: CameraMode)
+
+    fun showZoomPanel()
+
+    fun hideZoomPanel()
+
+    fun hideExposurePanel()
+
+    fun resetTorchToggle()
+
+    fun reloadVideoQualities()
+
+    fun startLocationUpdates()
+
+    fun stopLocationUpdates()
 
     fun startFocusTimer()
 
