@@ -197,7 +197,10 @@ class ViewfinderViewModel @Inject constructor(
     // the preference back here would resurrect the very stale "on" the coercion exists to drop.
     var requireLocation: Boolean = false
         set(value) {
-            chrome.onRequireLocationChanged(value)
+            when {
+                value -> effects.startLocationUpdates()
+                else -> effects.stopLocationUpdates()
+            }
 
             // A permission result is delivered before the first onResume of an activity the system
             // recreated, so this can run before a mode has been slotted — see modeSettings.
@@ -249,7 +252,8 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     override fun onZoomStateChanged() {
-        chrome.updateZoomThumb(shouldShowPanel = true)
+        chrome.updateZoomThumb()
+        effects.showZoomPanel()
     }
 
     override fun onCameraProviderUnavailable() {
@@ -278,7 +282,7 @@ class ViewfinderViewModel @Inject constructor(
         slotCurrentMode()
 
         if (isVideoMode) {
-            chrome.reloadVideoQualities()
+            effects.reloadVideoQualities()
         }
 
         applyFlashMode(modeSettings.flashMode)
@@ -388,7 +392,7 @@ class ViewfinderViewModel @Inject constructor(
         // Cancel any pending capture requests
         effects.cancelPendingCapture()
 
-        chrome.hideExposurePanel()
+        effects.hideExposurePanel()
         slotCurrentMode()
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
@@ -509,7 +513,7 @@ class ViewfinderViewModel @Inject constructor(
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (entryPoint.showsCameraModeTabs) {
-            chrome.goToModeTab(currentMode)
+            effects.goToModeTab(currentMode)
         }
     }
 
@@ -564,11 +568,12 @@ class ViewfinderViewModel @Inject constructor(
 
         session.reattachZoomState()
 
-        chrome.updateZoomThumb(shouldShowPanel = false)
+        chrome.updateZoomThumb()
+        effects.hideZoomPanel()
 
         session.camera?.cameraInfo?.exposureState?.let { chrome.applyExposureState(it) }
 
-        chrome.resetTorchToggle()
+        effects.resetTorchToggle()
 
         session.camera?.cameraInfo?.let { chrome.onPreviewBound(aspectRatio, it) }
 

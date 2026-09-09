@@ -99,8 +99,12 @@ internal class ViewfinderEffectHandler(
         activity.cancelFocusTimer()
     }
 
-    override fun onRequireLocationChanged(required: Boolean) {
-        activity.onRequireLocationChanged(required)
+    override fun startLocationUpdates() {
+        activity.onRequireLocationChanged(required = true)
+    }
+
+    override fun stopLocationUpdates() {
+        activity.onRequireLocationChanged(required = false)
     }
 
     override fun shouldAskForLocationPermission(): Boolean {
@@ -131,8 +135,16 @@ internal class ViewfinderEffectHandler(
         activity.exposureBar.setExposureConfig(exposureState)
     }
 
-    override fun updateZoomThumb(shouldShowPanel: Boolean) {
-        activity.zoomBar.updateThumb(shouldShowPanel)
+    override fun updateZoomThumb() {
+        activity.zoomBar.updateThumb()
+    }
+
+    override fun showZoomPanel() {
+        activity.zoomBar.showPanel()
+    }
+
+    override fun hideZoomPanel() {
+        activity.zoomBar.hidePanel()
     }
 
     override fun setMicMutedIconVisible(visible: Boolean) {
