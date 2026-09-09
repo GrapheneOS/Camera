@@ -3,11 +3,8 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExposureState
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 
 interface ViewfinderChrome {
-
-    fun render(state: ViewfinderUiState)
 
     fun setCameraModeTabs(modes: Set<CameraMode>, currentMode: CameraMode)
 
