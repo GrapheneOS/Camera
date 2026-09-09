@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.camera.model
+package app.grapheneos.camera.data.camera.model
 
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview

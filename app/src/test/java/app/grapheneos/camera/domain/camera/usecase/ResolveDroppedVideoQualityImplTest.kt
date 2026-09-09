@@ -4,7 +4,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
-import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapperImpl
+import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

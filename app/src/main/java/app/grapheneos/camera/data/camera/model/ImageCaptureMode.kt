@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.camera.model
+package app.grapheneos.camera.data.camera.model
 
 enum class ImageCaptureMode {
     MAXIMIZE_QUALITY,

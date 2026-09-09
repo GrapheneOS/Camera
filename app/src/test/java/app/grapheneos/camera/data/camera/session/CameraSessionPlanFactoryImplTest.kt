@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.camera.usecase
+package app.grapheneos.camera.data.camera.session
 
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
@@ -7,10 +7,10 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
-import app.grapheneos.camera.domain.camera.model.CameraBindRequest
-import app.grapheneos.camera.domain.camera.model.CameraSessionPlan
-import app.grapheneos.camera.domain.camera.model.FeatureGroupRequest
-import app.grapheneos.camera.domain.camera.model.ImageCaptureMode
+import app.grapheneos.camera.data.camera.model.CameraBindRequest
+import app.grapheneos.camera.data.camera.model.CameraSessionPlan
+import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.data.camera.model.ImageCaptureMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class BuildCameraSessionPlanImplTest {
+class CameraSessionPlanFactoryImplTest {
 
     @Test
     fun invoke_photoMode_buildsAPhotoAndPreviewSession() {
@@ -129,7 +129,7 @@ class BuildCameraSessionPlanImplTest {
     }
 
     private fun buildPlan(request: CameraBindRequest): CameraSessionPlan {
-        return BuildCameraSessionPlanImpl().invoke(request)
+        return CameraSessionPlanFactoryImpl().create(request)
     }
 
     private fun CameraSessionPlan.useCases(): List<UseCase> {

@@ -1,25 +1,25 @@
-package app.grapheneos.camera.domain.camera.usecase
+package app.grapheneos.camera.data.camera.session
 
 import androidx.camera.core.featuregroup.GroupableFeature
-import app.grapheneos.camera.domain.camera.model.InVideoSnapshotSupport
+import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import javax.inject.Inject
 
 fun interface SessionProbe {
     fun isSupported(withSnapshots: Boolean, features: Set<GroupableFeature>): Boolean
 }
 
-interface ResolveInVideoSnapshotSupport {
+interface InVideoSnapshotSupportResolver {
 
-    operator fun invoke(
+    fun resolve(
         videoQualityFeature: GroupableFeature?,
         probe: SessionProbe,
     ): InVideoSnapshotSupport
 }
 
-internal class ResolveInVideoSnapshotSupportImpl @Inject constructor() :
-    ResolveInVideoSnapshotSupport {
+internal class InVideoSnapshotSupportResolverImpl @Inject constructor() :
+    InVideoSnapshotSupportResolver {
 
-    override fun invoke(
+    override fun resolve(
         videoQualityFeature: GroupableFeature?,
         probe: SessionProbe,
     ): InVideoSnapshotSupport {
