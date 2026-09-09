@@ -26,12 +26,13 @@ import app.grapheneos.camera.data.media.store.mediaPrefsSerializer
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -42,6 +43,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class CapturedItemRepositoryTest {
 
@@ -73,7 +75,7 @@ class CapturedItemRepositoryTest {
             storagePrefs = session,
             mediaPrefs = media,
             context = context,
-            ioDispatcher = Dispatchers.Unconfined,
+            ioDispatcher = UnconfinedTestDispatcher(),
         )
     }
 
