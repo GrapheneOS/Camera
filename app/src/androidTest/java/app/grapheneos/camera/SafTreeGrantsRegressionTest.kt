@@ -11,8 +11,9 @@ import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,6 +24,7 @@ import org.junit.runner.RunWith
  * one off the tracked list, nothing released it and the app kept indefinite read/write access to a
  * folder it no longer had any use for.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SafTreeGrantsRegressionTest {
 
@@ -45,7 +47,7 @@ class SafTreeGrantsRegressionTest {
             storagePrefs = InMemoryDataStore(StoragePrefs()),
             mediaPrefs = InMemoryDataStore(MediaPrefs()),
             context = context,
-            ioDispatcher = Dispatchers.Unconfined,
+            ioDispatcher = UnconfinedTestDispatcher(),
         )
     }
 
