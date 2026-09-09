@@ -69,9 +69,6 @@
     <file name="src/androidTest/java/app/grapheneos/camera/LocationSelectionTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
     </file>
-    <file name="src/androidTest/java/app/grapheneos/camera/ModeSwitchLatencyRegressionTest.kt">
-        <error line="93" column="64" source="standard:argument-list-wrapping" />
-    </file>
     <file name="src/androidTest/java/app/grapheneos/camera/ScreenAwakeRule.kt">
         <error line="37" column="1" source="standard:indent" />
     </file>
@@ -526,10 +523,10 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="977" column="100" source="standard:max-line-length" />
-        <error line="1137" column="100" source="standard:max-line-length" />
-        <error line="1493" column="17" source="standard:chain-wrapping" />
-        <error line="1683" column="27" source="standard:property-naming" />
+        <error line="978" column="100" source="standard:max-line-length" />
+        <error line="1138" column="100" source="standard:max-line-length" />
+        <error line="1494" column="17" source="standard:chain-wrapping" />
+        <error line="1684" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

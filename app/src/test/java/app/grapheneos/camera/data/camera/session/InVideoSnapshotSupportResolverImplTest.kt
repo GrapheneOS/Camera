@@ -1,23 +1,23 @@
-package app.grapheneos.camera.domain.camera.usecase
+package app.grapheneos.camera.data.camera.session
 
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
-import app.grapheneos.camera.domain.camera.model.InVideoSnapshotSupport
+import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ResolveInVideoSnapshotSupportImplTest {
+class InVideoSnapshotSupportResolverImplTest {
 
-    private val resolve = ResolveInVideoSnapshotSupportImpl()
+    private val resolver = InVideoSnapshotSupportResolverImpl()
 
     @Test
     fun invoke_noQualityAskedForAndTheStreamsBind_keepsSnapshots() {
         val probe = FakeSessionProbe(supported = setOf(PLAIN_STREAMS_WITH_SNAPSHOTS))
 
-        val support = resolve(videoQualityFeature = null, probe = probe)
+        val support = resolver.resolve(videoQualityFeature = null, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
     }
@@ -26,7 +26,7 @@ class ResolveInVideoSnapshotSupportImplTest {
     fun invoke_noQualityAskedForAndTheStreamsDoNotBind_dropsSnapshots() {
         val probe = FakeSessionProbe(supported = emptySet())
 
-        val support = resolve(videoQualityFeature = null, probe = probe)
+        val support = resolver.resolve(videoQualityFeature = null, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }
@@ -35,7 +35,7 @@ class ResolveInVideoSnapshotSupportImplTest {
     fun invoke_theQualityBindsWithSnapshots_keepsSnapshotsWithoutAskingAgain() {
         val probe = FakeSessionProbe(supported = setOf(QUALITY_WITH_SNAPSHOTS))
 
-        val support = resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
         assertEquals(listOf(QUALITY_WITH_SNAPSHOTS), probe.asked)
@@ -45,7 +45,7 @@ class ResolveInVideoSnapshotSupportImplTest {
     fun invoke_theQualityBindsOnlyWithoutSnapshots_givesUpTheSnapshots() {
         val probe = FakeSessionProbe(supported = setOf(QUALITY_WITHOUT_SNAPSHOTS))
 
-        val support = resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_QUALITY, support)
     }
@@ -54,7 +54,7 @@ class ResolveInVideoSnapshotSupportImplTest {
     fun invoke_theQualityBindsNeitherWay_keepsSnapshotsAndLeavesTheQualityToTheResolver() {
         val probe = FakeSessionProbe(supported = setOf(PLAIN_STREAMS_WITH_SNAPSHOTS))
 
-        val support = resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
     }
@@ -63,7 +63,7 @@ class ResolveInVideoSnapshotSupportImplTest {
     fun invoke_nothingBinds_dropsSnapshots() {
         val probe = FakeSessionProbe(supported = emptySet())
 
-        val support = resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }

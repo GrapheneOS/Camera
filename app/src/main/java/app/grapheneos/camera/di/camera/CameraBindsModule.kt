@@ -1,19 +1,23 @@
 package app.grapheneos.camera.di.camera
 
+import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
+import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.CameraProviderSourceImpl
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
+import app.grapheneos.camera.data.camera.session.CameraSessionFactory
+import app.grapheneos.camera.data.camera.session.CameraSessionFactoryImpl
+import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactory
+import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactoryImpl
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
-import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapper
-import app.grapheneos.camera.domain.camera.mapper.VideoQualityFeatureMapperImpl
-import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlan
-import app.grapheneos.camera.domain.camera.usecase.BuildCameraSessionPlanImpl
+import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolver
+import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolverImpl
+import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
+import app.grapheneos.camera.data.camera.session.SnapshotProbeCacheImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModesImpl
-import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupport
-import app.grapheneos.camera.domain.camera.usecase.ResolveInVideoSnapshotSupportImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -51,9 +55,9 @@ internal abstract class CameraBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindBuildCameraSessionPlan(
-        impl: BuildCameraSessionPlanImpl,
-    ): BuildCameraSessionPlan
+    abstract fun bindCameraSessionPlanFactory(
+        impl: CameraSessionPlanFactoryImpl,
+    ): CameraSessionPlanFactory
 
     @Binds
     @Reusable
@@ -63,7 +67,19 @@ internal abstract class CameraBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindResolveInVideoSnapshotSupport(
-        impl: ResolveInVideoSnapshotSupportImpl,
-    ): ResolveInVideoSnapshotSupport
+    abstract fun bindInVideoSnapshotSupportResolver(
+        impl: InVideoSnapshotSupportResolverImpl,
+    ): InVideoSnapshotSupportResolver
+
+    @Binds
+    @Singleton
+    abstract fun bindSnapshotProbeCache(
+        impl: SnapshotProbeCacheImpl,
+    ): SnapshotProbeCache
+
+    @Binds
+    @Reusable
+    abstract fun bindCameraSessionFactory(
+        impl: CameraSessionFactoryImpl,
+    ): CameraSessionFactory
 }

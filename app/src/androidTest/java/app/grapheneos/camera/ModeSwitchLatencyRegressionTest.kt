@@ -3,10 +3,13 @@ package app.grapheneos.camera
 import android.Manifest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.di.camera.SnapshotProbeCacheEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
+import dagger.hilt.android.EntryPointAccessors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -26,6 +29,15 @@ class ModeSwitchLatencyRegressionTest {
     @get:Rule
     val screenAwake = ScreenAwakeRule()
 
+    private val snapshotProbeCache: SnapshotProbeCache by lazy {
+        EntryPointAccessors
+            .fromApplication(
+                InstrumentationRegistry.getInstrumentation().targetContext.applicationContext,
+                SnapshotProbeCacheEntryPoint::class.java,
+            )
+            .snapshotProbeCache()
+    }
+
     /**
      * Asking whether video, photo and preview can be bound together costs the camera service most
      * of a tenth of a second, and the answer is the same every time the user goes back to video
@@ -38,14 +50,14 @@ class ModeSwitchLatencyRegressionTest {
 
             var snapshotsFirstTime = false
             scenario.onActivity {
-                CameraSession.clearSnapshotProbeCache()
+                snapshotProbeCache.clear()
 
                 it.viewfinder.switchMode(CameraMode.VIDEO)
 
                 assertEquals(
                     "entering video mode did not probe",
                     1,
-                    CameraSession.snapshotProbeCount,
+                    snapshotProbeCache.probeCount,
                 )
                 snapshotsFirstTime = it.session.imageCapture != null
             }
@@ -54,7 +66,7 @@ class ModeSwitchLatencyRegressionTest {
                 it.viewfinder.switchMode(CameraMode.CAMERA)
                 it.viewfinder.switchMode(CameraMode.VIDEO)
 
-                assertEquals("the second entry probed again", 1, CameraSession.snapshotProbeCount)
+                assertEquals("the second entry probed again", 1, snapshotProbeCache.probeCount)
                 assertEquals(
                     "the cached verdict answered for a different snapshot decision",
                     snapshotsFirstTime,
@@ -77,7 +89,7 @@ class ModeSwitchLatencyRegressionTest {
             awaitModeTabs(scenario)
 
             scenario.onActivity {
-                CameraSession.clearSnapshotProbeCache()
+                snapshotProbeCache.clear()
                 it.viewfinder.switchMode(CameraMode.VIDEO)
             }
 
@@ -90,7 +102,8 @@ class ModeSwitchLatencyRegressionTest {
             scenario.onActivity { activity ->
                 val spinner = activity.settingsDialog.videoQualitySpinner
                 assumeTrue(
-                    "this camera records at a single quality", spinner.count > 1
+                    "this camera records at a single quality",
+                    spinner.count > 1,
                 )
 
                 val quality = activity.viewfinder.videoQuality
@@ -107,7 +120,7 @@ class ModeSwitchLatencyRegressionTest {
                     assertEquals(
                         "the new quality was answered from the old verdict",
                         2,
-                        CameraSession.snapshotProbeCount
+                        snapshotProbeCache.probeCount
                     )
                 } finally {
                     selectVideoQuality(activity, original)

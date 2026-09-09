@@ -79,6 +79,7 @@ import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.CameraSessionFactory
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -129,7 +130,7 @@ import kotlinx.coroutines.launch
 open class MainActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var cameraSessionFactory: CameraSession.Factory
+    lateinit var cameraSessionFactory: CameraSessionFactory
 
     @Inject
     lateinit var viewfinder: ViewfinderController
