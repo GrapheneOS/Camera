@@ -17,9 +17,9 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
@@ -29,11 +29,6 @@ import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @ActivityScoped
@@ -43,7 +38,6 @@ class ViewfinderController @Inject constructor(
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : CameraSession.Listener {
 
     private var attachment: Attachment? = null
@@ -78,13 +72,14 @@ class ViewfinderController @Inject constructor(
             return attached.session
         }
 
-    private var settings: CameraSettings = runBlocking {
-        settingsRepository.settings.first()
-    }
+    private val settings: CameraSettings
+        get() {
+            return settingsRepository.settings.value
+        }
 
     private var modeSettings: ModeSettings = ModeSettings()
 
-    private val preferencesScope = CoroutineScope(mainDispatcher)
+    private var slot: ModeSlot? = null
 
     var currentMode: CameraMode = DEFAULT_CAMERA_MODE
         private set
@@ -163,9 +158,7 @@ class ViewfinderController @Inject constructor(
             }
         }
         set(value) {
-            settings = runBlocking {
-                settingsRepository.update { it.copy(aspectRatio = value) }
-            }
+            runBlocking { settingsRepository.update { it.copy(aspectRatio = value) } }
         }
 
     var scanAllCodes: Boolean by setting(
@@ -192,9 +185,7 @@ class ViewfinderController @Inject constructor(
     var videoQuality: Quality
         get() = modeSettings.videoQuality
         set(value) {
-            runBlocking {
-                settingsRepository.setVideoQuality(value)
-            }?.let { modeSettings = it }
+            writeMode { slot -> settingsRepository.setVideoQuality(slot, value) }
         }
 
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
@@ -206,9 +197,7 @@ class ViewfinderController @Inject constructor(
 
             // A permission result is delivered before the first onResume of an activity the system
             // recreated, so this can run before a mode has been slotted — see modeSettings.
-            runBlocking {
-                settingsRepository.setGeoTagging(value)
-            }?.let { modeSettings = it }
+            writeMode { slot -> settingsRepository.setGeoTagging(slot, value) }
 
             chrome.onGeoTaggingChanged(value)
 
@@ -221,18 +210,10 @@ class ViewfinderController @Inject constructor(
                 session.lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
-            runBlocking {
-                settingsRepository.setSelfIllumination(value)
-            }?.let { modeSettings = it }
+            writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
 
             chrome.onSelfIlluminationChanged(value)
         }
-
-    init {
-        preferencesScope.launch {
-            settingsRepository.settings.collect { settings = it }
-        }
-    }
 
     fun attach(
         environment: CameraSessionEnvironment,
@@ -257,8 +238,6 @@ class ViewfinderController @Inject constructor(
 
         attachment = null
         mPlayer = null
-
-        preferencesScope.cancel()
     }
 
     override fun onZoomStateChanged() {
@@ -278,9 +257,7 @@ class ViewfinderController @Inject constructor(
     }
 
     fun setFlashMode(value: Int) {
-        runBlocking {
-            settingsRepository.setFlashMode(value)
-        }?.let { modeSettings = it }
+        writeMode { slot -> settingsRepository.setFlashMode(slot, value) }
 
         applyFlashMode(value)
     }
@@ -531,12 +508,20 @@ class ViewfinderController @Inject constructor(
     }
 
     private fun slotCurrentMode() {
-        modeSettings = runBlocking {
-            settingsRepository.selectMode(
-                mode = currentMode,
-                isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
-            )
-        }
+        val current = ModeSlot(
+            mode = currentMode,
+            isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
+        )
+
+        slot = current
+
+        modeSettings = runBlocking { settingsRepository.modeSettings(current) }
+    }
+
+    private fun writeMode(write: suspend (ModeSlot) -> ModeSettings) {
+        val current = slot ?: return
+
+        modeSettings = runBlocking { write(current) }
     }
 
     private fun qrLensFacing(): Int {
@@ -602,7 +587,7 @@ class ViewfinderController @Inject constructor(
             }
 
             override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-                settings = runBlocking { settingsRepository.update { write(it, value) } }
+                runBlocking { settingsRepository.update { write(it, value) } }
 
                 onChanged(value)
             }
