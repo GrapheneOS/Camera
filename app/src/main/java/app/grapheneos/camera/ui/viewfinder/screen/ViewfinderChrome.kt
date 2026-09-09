@@ -12,15 +12,11 @@ interface ViewfinderChrome {
 
     fun setCameraModeTabs(modes: Set<CameraMode>, currentMode: CameraMode)
 
-    fun goToModeTab(mode: CameraMode)
-
     fun onPreviewBound(aspectRatio: Int, cameraInfo: CameraInfo)
 
-    fun updateZoomThumb(shouldShowPanel: Boolean)
+    fun updateZoomThumb()
 
     fun applyExposureState(exposureState: ExposureState)
-
-    fun hideExposurePanel()
 
     fun setMicMutedIconVisible(visible: Boolean)
 
@@ -34,11 +30,5 @@ interface ViewfinderChrome {
 
     fun onSelfIlluminationChanged(enabled: Boolean)
 
-    fun onRequireLocationChanged(required: Boolean)
-
-    fun reloadVideoQualities()
-
     fun showOnlyRelevantSettings()
-
-    fun resetTorchToggle()
 }
