@@ -25,10 +25,12 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 
 class ViewfinderViewModel @Inject constructor(
@@ -81,6 +83,8 @@ class ViewfinderViewModel @Inject constructor(
 
     private var slot: ModeSlot? = null
 
+    private val sessionState = MutableStateFlow(ViewfinderSessionState())
+
     var currentMode: CameraMode = DEFAULT_CAMERA_MODE
         private set
 
@@ -96,7 +100,7 @@ class ViewfinderViewModel @Inject constructor(
 
     val canTakePicture: Boolean
         get() {
-            return session.imageCapture != null
+            return sessionState.value.canTakePicture
         }
 
     private val isInPhotoMode: Boolean
@@ -207,7 +211,7 @@ class ViewfinderViewModel @Inject constructor(
     var selfIlluminate: Boolean
         get() {
             return modeSettings.selfIllumination &&
-                session.lensFacing == CameraSelector.LENS_FACING_FRONT
+                sessionState.value.lensFacing == CameraSelector.LENS_FACING_FRONT
         }
         set(value) {
             writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
@@ -231,6 +235,8 @@ class ViewfinderViewModel @Inject constructor(
         mPlayer = environment.createTunePlayer()
 
         session.listener = this
+
+        refreshSessionState()
     }
 
     fun detach() {
@@ -238,6 +244,8 @@ class ViewfinderViewModel @Inject constructor(
 
         attachment = null
         mPlayer = null
+
+        sessionState.value = ViewfinderSessionState()
     }
 
     override fun onZoomStateChanged() {
@@ -293,7 +301,7 @@ class ViewfinderViewModel @Inject constructor(
 
     fun toggleFlashMode() {
         when {
-            session.isFlashAvailable -> {
+            sessionState.value.isFlashAvailable -> {
                 val next = when (flashMode) {
                     ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                     ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
@@ -447,7 +455,11 @@ class ViewfinderViewModel @Inject constructor(
             mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
         )
 
-        return when (session.bind(bindSettings)) {
+        val outcome = session.bind(bindSettings)
+
+        refreshSessionState()
+
+        return when (outcome) {
             BindOutcome.FAILED -> effects.showMessage(R.string.bind_failure)
 
             BindOutcome.EXTENSION_UNUSABLE -> {
@@ -505,6 +517,14 @@ class ViewfinderViewModel @Inject constructor(
         flashMode = value
         session.imageCapture?.flashMode = value
         chrome.onFlashModeChanged()
+    }
+
+    private fun refreshSessionState() {
+        sessionState.value = ViewfinderSessionState(
+            lensFacing = session.lensFacing,
+            canTakePicture = session.imageCapture != null,
+            isFlashAvailable = session.isFlashAvailable,
+        )
     }
 
     private fun slotCurrentMode() {
