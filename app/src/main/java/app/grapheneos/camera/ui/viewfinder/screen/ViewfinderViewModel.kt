@@ -26,6 +26,9 @@ import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import java.io.IOException
@@ -177,7 +180,7 @@ class ViewfinderViewModel @Inject constructor(
                 else -> settings.aspectRatio
             }
         }
-        set(value) {
+        private set(value) {
             runBlocking { settingsRepository.update { it.copy(aspectRatio = value) } }
         }
 
@@ -210,7 +213,7 @@ class ViewfinderViewModel @Inject constructor(
     // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
     // the preference back here would resurrect the very stale "on" the coercion exists to drop.
     var requireLocation: Boolean = false
-        set(value) {
+        private set(value) {
             when {
                 value -> effects.startLocationUpdates()
                 else -> effects.stopLocationUpdates()
@@ -230,7 +233,7 @@ class ViewfinderViewModel @Inject constructor(
             return modeSettings.selfIllumination &&
                 sessionState.value.lensFacing == CameraSelector.LENS_FACING_FRONT
         }
-        set(value) {
+        private set(value) {
             writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
 
             chrome.render(uiState)
@@ -318,7 +321,86 @@ class ViewfinderViewModel @Inject constructor(
         includeAudio = settings.includeAudio
     }
 
-    fun toggleFlashMode() {
+    fun onAction(action: ViewfinderAction) {
+        when (action) {
+            is CameraAction -> onCameraAction(action)
+            is SettingsAction -> onSettingsAction(action)
+        }
+    }
+
+    private fun onCameraAction(action: CameraAction) {
+        when (action) {
+            is CameraAction.ModeSelected -> switchMode(action.mode)
+            is CameraAction.LensSwitchClicked -> toggleCameraSelector()
+            is CameraAction.FlashToggleClicked -> toggleFlashMode()
+            is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
+        }
+    }
+
+    private fun onSettingsAction(action: SettingsAction) {
+        when (action) {
+            is SettingsAction.ScanAllCodesToggleClicked -> {
+                scanAllCodes = !scanAllCodes
+            }
+
+            is SettingsAction.GridToggleClicked -> {
+                gridType = nextGridType()
+            }
+
+            is SettingsAction.AudioToggled -> {
+                includeAudio = action.enabled
+            }
+
+            is SettingsAction.GeoTaggingToggled -> {
+                requireLocation = action.enabled
+            }
+
+            is SettingsAction.SelfIlluminationToggled -> {
+                selfIlluminate = action.enabled
+            }
+
+            is SettingsAction.StabilizationToggled -> {
+                enableEIS = action.enabled
+                startCamera(forced = true)
+            }
+
+            is SettingsAction.FocusLockToggled -> {
+                waitForFocusLock = action.enabled
+                startCamera(forced = true)
+            }
+
+            is SettingsAction.FocusTimeoutSelected -> {
+                focusTimeout = action.seconds
+            }
+
+            is SettingsAction.SelfTimerSelected -> {
+                selfTimerDuration = action.seconds
+            }
+
+            is SettingsAction.VideoQualitySelected -> {
+                onVideoQualitySelected(action.quality)
+            }
+        }
+    }
+
+    private fun nextGridType(): GridType {
+        return when (gridType) {
+            GridType.NONE -> GridType.THREE_BY_THREE
+            GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
+            GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
+            GridType.GOLDEN_RATIO -> GridType.NONE
+        }
+    }
+
+    private fun onVideoQualitySelected(quality: Quality) {
+        if (quality == videoQuality) return
+
+        videoQuality = quality
+
+        startCamera(forced = true)
+    }
+
+    private fun toggleFlashMode() {
         when {
             sessionState.value.isFlashAvailable -> {
                 val next = when (flashMode) {
@@ -334,7 +416,7 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    fun toggleAspectRatio() {
+    private fun toggleAspectRatio() {
         aspectRatio = when (aspectRatio) {
             AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
             else -> AspectRatio.RATIO_16_9
@@ -343,7 +425,7 @@ class ViewfinderViewModel @Inject constructor(
         startCamera(true)
     }
 
-    fun toggleCameraSelector() {
+    private fun toggleCameraSelector() {
         // Manually switch to the opposite lens facing
         session.lensFacing = when (session.lensFacing) {
             CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
