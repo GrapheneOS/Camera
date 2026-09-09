@@ -46,6 +46,8 @@ import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.Collections
@@ -179,7 +181,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     getString(R.string.toggle_geo_tagging_unsupported_while_recording)
                 )
             } else {
-                viewfinder.requireLocation = locToggle.isChecked
+                viewfinder.onAction(SettingsAction.GeoTaggingToggled(locToggle.isChecked))
             }
         }
 
@@ -190,7 +192,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     getString(R.string.flash_switch_unsupported)
                 )
             } else {
-                viewfinder.toggleFlashMode()
+                viewfinder.onAction(CameraAction.FlashToggleClicked)
             }
         }
 
@@ -202,7 +204,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     getString(R.string.four_by_three_unsupported_in_video)
                 )
             } else {
-                viewfinder.toggleAspectRatio()
+                viewfinder.onAction(CameraAction.AspectRatioToggleClicked)
                 updateAspectRatioToggle(viewfinder.aspectRatio == AspectRatio.RATIO_16_9)
             }
         }
@@ -221,12 +223,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         gridToggle = binding.gridToggleOption
         gridToggle.setOnClickListener {
-            viewfinder.gridType = when (viewfinder.gridType) {
-                GridType.NONE -> GridType.THREE_BY_THREE
-                GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
-                GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
-                GridType.GOLDEN_RATIO -> GridType.NONE
-            }
+            viewfinder.onAction(SettingsAction.GridToggleClicked)
             updateGridToggleUI()
         }
 
@@ -255,15 +252,16 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         waitForFocusLockSwitch = binding.waitForFocusLockSwitch
         waitForFocusLockSwitch.isChecked = viewfinder.waitForFocusLock
         waitForFocusLockSwitch.setOnClickListener {
-            viewfinder.waitForFocusLock = waitForFocusLockSwitch.isChecked
-            if (session.cameraProvider != null) {
-                viewfinder.startCamera(true)
-            }
+            viewfinder.onAction(
+                SettingsAction.FocusLockToggled(waitForFocusLockSwitch.isChecked),
+            )
         }
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
         selfIlluminationToggle.setOnClickListener {
-            viewfinder.selfIlluminate = selfIlluminationToggle.isChecked
+            viewfinder.onAction(
+                SettingsAction.SelfIlluminationToggled(selfIlluminationToggle.isChecked),
+            )
         }
         binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -338,7 +336,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 applyIncludeAudioToTheRecording()
             }
 
-            viewfinder.includeAudio = includeAudioToggle.isChecked
+            viewfinder.onAction(SettingsAction.AudioToggled(includeAudioToggle.isChecked))
         }
 
         binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
@@ -348,9 +346,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         enableEISToggle = binding.enableEisSwitch
-        enableEISToggle.setOnCheckedChangeListener { _, isChecked ->
-            viewfinder.enableEIS = isChecked
-            viewfinder.startCamera(true)
+        enableEISToggle.setOnClickListener {
+            viewfinder.onAction(SettingsAction.StabilizationToggled(enableEISToggle.isChecked))
         }
         binding.enableEisSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -517,14 +514,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     fun updateFocusTimeout(selectedOption: String) {
 
         if (selectedOption == timeOptions[0]) {
-            viewfinder.focusTimeout = 0
+            viewfinder.onAction(SettingsAction.FocusTimeoutSelected(seconds = 0))
         } else {
 
             try {
                 val durS = selectedOption.substring(0, selectedOption.length - 1)
                 val dur = durS.toLong()
 
-                viewfinder.focusTimeout = dur
+                viewfinder.onAction(SettingsAction.FocusTimeoutSelected(seconds = dur))
 
             } catch (exception: Exception) {
 
@@ -543,7 +540,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         mActivity.updateSelfTimerBadge()
         // Common rather than per-mode: a mode's preferences are not slotted until the camera
         // starts, which happens after this dialog is built.
-        viewfinder.selfTimerDuration = duration
+        viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = duration))
     }
 
     private fun restoreTimerDuration() {
@@ -556,16 +553,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         timerSpinner.setSelection(timeOptions.indexOf(option).coerceAtLeast(0), false)
     }
 
-    fun updateVideoQuality(quality: Quality, resCam: Boolean = true) {
-        if (quality == viewfinder.videoQuality) return
-
-        viewfinder.videoQuality = quality
-
-        if (resCam) {
-            viewfinder.startCamera(true)
-        } else {
-            videoQualitySpinner.setSelection(videoQualities.indexOf(quality))
-        }
+    fun updateVideoQuality(quality: Quality) {
+        viewfinder.onAction(SettingsAction.VideoQualitySelected(quality))
     }
 
     private var wasSelfIlluminationOn = false
