@@ -1,10 +1,8 @@
 package app.grapheneos.camera.data.media
 
 import android.content.ContentProvider
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
-import android.content.ContextWrapper
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
@@ -23,6 +21,9 @@ import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.data.media.store.mediaPrefsSerializer
+import io.mockk.Called
+import io.mockk.mockk
+import io.mockk.verify
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
@@ -155,14 +156,17 @@ class CapturedItemRepositoryTest {
 
     @Test
     fun releaseUntrackedSafTrees_lockscreenSession_touchesNoPersistedGrant() {
+        val lockscreenContext = mockk<Context>()
         val repository = LockscreenCapturedItemRepository(
             repository(
                 session = lockscreenPrefs(),
-                context = NoContentResolverContext(context),
+                context = lockscreenContext,
             ),
         )
 
         runBlocking { repository.releaseUntrackedSafTrees() }
+
+        verify { lockscreenContext wasNot Called }
     }
 
     @Test
@@ -286,15 +290,6 @@ class CapturedItemRepositoryTest {
         }
 
         runBlocking { storagePrefs.updateData { it.copy(legacyMediaUris = joined) } }
-    }
-
-    private class NoContentResolverContext(
-        base: Context,
-    ) : ContextWrapper(base) {
-
-        override fun getContentResolver(): ContentResolver {
-            throw AssertionError("a lockscreen session must not touch persisted grants")
-        }
     }
 
     private class FakeDocumentsProvider : ContentProvider() {

@@ -3,7 +3,6 @@ package app.grapheneos.camera
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.view.View
@@ -12,16 +11,15 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
+import io.mockk.every
+import io.mockk.mockk
 
 /** Starts the recording as soon as it is asked to, skipping the sound. */
-class ImmediateTunePlayer(
-    activity: MainActivity,
-) : TunePlayer(
-    context = activity,
-    soundsEnabled = { false },
-) {
-    override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-        onPlayed.run()
+fun immediateTunePlayer(): TunePlayer {
+    return mockk(relaxed = true) {
+        every { playVRStartSound(handler = any(), onPlayed = any()) } answers {
+            secondArg<Runnable>().run()
+        }
     }
 }
 

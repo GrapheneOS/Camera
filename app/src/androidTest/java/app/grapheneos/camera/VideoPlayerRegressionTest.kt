@@ -1,6 +1,5 @@
 package app.grapheneos.camera
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.VideoView
@@ -8,6 +7,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.VideoPlayer
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -36,7 +37,7 @@ class VideoPlayerRegressionTest {
             scenario.onActivity { activity ->
                 assertFalse(activity.isFinishing)
 
-                activity.playVideo(DeadMediaServiceVideoView(activity), uri)
+                activity.playVideo(deadMediaServiceVideoView(), uri)
 
                 assertTrue(activity.isFinishing)
             }
@@ -48,9 +49,11 @@ class VideoPlayerRegressionTest {
      * catches IOException and IllegalArgumentException but lets prepareAsync()'s
      * IllegalStateException escape to the caller.
      */
-    private class DeadMediaServiceVideoView(context: Context) : VideoView(context) {
-        override fun setVideoURI(uri: Uri?) {
-            throw IllegalStateException("prepareAsync called in state 0")
+    private fun deadMediaServiceVideoView(): VideoView {
+        return mockk {
+            every {
+                setVideoURI(any<Uri>())
+            } throws IllegalStateException("prepareAsync called in state 0")
         }
     }
 }

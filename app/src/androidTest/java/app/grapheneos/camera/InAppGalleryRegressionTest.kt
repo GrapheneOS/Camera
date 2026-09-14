@@ -7,6 +7,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.InAppGallery
+import java.util.concurrent.CountDownLatch
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -24,11 +25,12 @@ class InAppGalleryRegressionTest {
 
     private val app = InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as Application
-    private val stall = StalledMediaScan()
+    private val scanGate = CountDownLatch(1)
+    private val stall = stalledMediaScan(scanGate)
 
     @After
     fun releaseScan() {
-        stall.gate.countDown()
+        scanGate.countDown()
         app.unregisterActivityLifecycleCallbacks(stall)
     }
 

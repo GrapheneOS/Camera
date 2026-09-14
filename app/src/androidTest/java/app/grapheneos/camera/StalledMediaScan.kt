@@ -1,20 +1,19 @@
 package app.grapheneos.camera
 
-import android.app.Activity
 import android.app.Application
-import android.os.Bundle
 import app.grapheneos.camera.ui.activities.InAppGallery
+import io.mockk.every
+import io.mockk.mockk
 import java.util.concurrent.CountDownLatch
 
 /**
- * Holds the gallery's media scan so gallerySliderAdapter stays null, like on a slow device.
+ * Holds the gallery's media scan until [gate] opens, so gallerySliderAdapter stays null, like on a
+ * slow device.
  */
-class StalledMediaScan : Application.ActivityLifecycleCallbacks {
-    val gate = CountDownLatch(1)
-
-    override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
-        if (activity is InAppGallery) {
-            activity.asyncLoaderOfCapturedItems.execute {
+fun stalledMediaScan(gate: CountDownLatch): Application.ActivityLifecycleCallbacks {
+    return mockk(relaxed = true) {
+        every { onActivityPreCreated(ofType<InAppGallery>(), any()) } answers {
+            firstArg<InAppGallery>().asyncLoaderOfCapturedItems.execute {
                 // Interrupted by shutdownNow() when the activity is destroyed
                 try {
                     gate.await()
@@ -23,12 +22,4 @@ class StalledMediaScan : Application.ActivityLifecycleCallbacks {
             }
         }
     }
-
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
-    override fun onActivityStarted(activity: Activity) {}
-    override fun onActivityResumed(activity: Activity) {}
-    override fun onActivityPaused(activity: Activity) {}
-    override fun onActivityStopped(activity: Activity) {}
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-    override fun onActivityDestroyed(activity: Activity) {}
 }

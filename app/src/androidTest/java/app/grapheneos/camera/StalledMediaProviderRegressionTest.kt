@@ -363,7 +363,7 @@ class StalledMediaProviderRegressionTest {
             lateinit var camera: A
             scenario.onActivity {
                 camera = it
-                it.tunePlayer = ImmediateTunePlayer(it)
+                it.tunePlayer = immediateTunePlayer()
                 it.videoCapturer.contentResolver = ContentResolver.wrap(mediaProvider)
             }
             val capturedBefore = lastCapturedUri(scenario)

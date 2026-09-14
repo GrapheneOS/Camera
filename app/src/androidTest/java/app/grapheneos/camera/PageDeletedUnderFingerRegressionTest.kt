@@ -13,6 +13,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.InAppGallery
+import java.util.concurrent.CountDownLatch
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -34,12 +35,13 @@ class PageDeletedUnderFingerRegressionTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val app = instrumentation.targetContext.applicationContext as Application
     private val resolver = instrumentation.targetContext.contentResolver
-    private val stall = StalledMediaScan()
+    private val scanGate = CountDownLatch(1)
+    private val stall = stalledMediaScan(scanGate)
     private var image: Uri? = null
 
     @After
     fun cleanUp() {
-        stall.gate.countDown()
+        scanGate.countDown()
         app.unregisterActivityLifecycleCallbacks(stall)
         image?.let { resolver.delete(it, null, null) }
     }

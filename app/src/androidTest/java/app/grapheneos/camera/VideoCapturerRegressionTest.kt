@@ -9,7 +9,6 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.net.Uri
-import android.os.Handler
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.util.StateSet
@@ -26,6 +25,12 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import io.mockk.CapturingSlot
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.slot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -49,28 +54,20 @@ class VideoCapturerRegressionTest {
     val screenAwake = ScreenAwakeRule()
 
     /** Fires the callback twice, like a MediaPlayer error followed by normal completion. */
-    private class DoubleFiringTunePlayer(
-        activity: MainActivity,
-    ) : TunePlayer(
-        context = activity,
-        soundsEnabled = { false },
-    ) {
-        override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-            onPlayed.run()
-            onPlayed.run()
+    private fun doubleFiringTunePlayer(): TunePlayer {
+        return mockk(relaxed = true) {
+            every { playVRStartSound(handler = any(), onPlayed = any()) } answers {
+                val onPlayed = secondArg<Runnable>()
+                onPlayed.run()
+                onPlayed.run()
+            }
         }
     }
 
     /** Holds the callback until the test releases it. */
-    private class ManualTunePlayer(
-        activity: MainActivity,
-    ) : TunePlayer(
-        context = activity,
-        soundsEnabled = { false },
-    ) {
-        var deferred: Runnable? = null
-        override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-            deferred = onPlayed
+    private fun manualTunePlayer(deferred: CapturingSlot<Runnable>): TunePlayer {
+        return mockk(relaxed = true) {
+            every { playVRStartSound(handler = any(), onPlayed = capture(deferred)) } just Runs
         }
     }
 
@@ -82,7 +79,7 @@ class VideoCapturerRegressionTest {
     fun startRecording_toleratesDuplicateStartSoundCallback() {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
-                activity.tunePlayer = DoubleFiringTunePlayer(activity)
+                activity.tunePlayer = doubleFiringTunePlayer()
                 activity.videoCapturer.startRecording()
             }
 
@@ -102,18 +99,17 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             val pendingBefore = pendingVideoCount()
 
-            lateinit var player: ManualTunePlayer
+            val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
-                player = ManualTunePlayer(activity)
-                activity.tunePlayer = player
+                activity.tunePlayer = manualTunePlayer(deferred)
                 activity.videoCapturer.startRecording()
                 assertTrue(activity.videoCapturer.isRecording)
             }
-            awaitStartSound(scenario, player)
+            awaitStartSound(scenario, deferred)
 
             scenario.onActivity { activity ->
                 activity.videoCapturer.stopRecording()
-                player.deferred!!.run()
+                deferred.captured.run()
                 assertFalse(activity.videoCapturer.isRecording)
             }
 
@@ -123,7 +119,7 @@ class VideoCapturerRegressionTest {
 
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
-                activity.tunePlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = immediateTunePlayer()
                 activity.videoCapturer.startRecording()
             }
             awaitRecordingStarted(scenario)
@@ -136,16 +132,15 @@ class VideoCapturerRegressionTest {
     @Test
     fun pauseDuringDeferredStart_appliesWhenRecordingStarts() {
         recordingTest { scenario ->
-            lateinit var player: ManualTunePlayer
+            val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
-                player = ManualTunePlayer(activity)
-                activity.tunePlayer = player
+                activity.tunePlayer = manualTunePlayer(deferred)
                 activity.videoCapturer.startRecording()
             }
-            awaitStartSound(scenario, player)
+            awaitStartSound(scenario, deferred)
             scenario.onActivity { activity ->
                 activity.videoCapturer.isPaused = true
-                player.deferred!!.run()
+                deferred.captured.run()
             }
 
             // A fixed dwell, not a waitUntil: the assertion below is that the timer does *not*
@@ -175,16 +170,15 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             val pendingBefore = pendingVideoCount()
 
-            lateinit var player: ManualTunePlayer
+            val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
-                player = ManualTunePlayer(activity)
-                activity.tunePlayer = player
+                activity.tunePlayer = manualTunePlayer(deferred)
                 activity.videoCapturer.startRecording()
             }
-            awaitStartSound(scenario, player)
+            awaitStartSound(scenario, deferred)
             scenario.onActivity { activity ->
                 activity.videoCapturer.isPaused = true
-                player.deferred!!.run()
+                deferred.captured.run()
             }
             // Let the recorder reach paused-recording, so that stopping it finalizes with
             // ERROR_NO_VALID_DATA rather than racing the start
@@ -213,7 +207,7 @@ class VideoCapturerRegressionTest {
                 dp16 = 16 * activity.resources.displayMetrics.density
                 val selector = StateListDrawable().apply { addState(StateSet.WILD_CARD, shape) }
                 activity.captureButton.setImageDrawable(LayerDrawable(arrayOf(selector)))
-                activity.tunePlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = immediateTunePlayer()
                 activity.videoCapturer.startRecording()
             }
 
@@ -236,7 +230,7 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
-                activity.tunePlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = immediateTunePlayer()
                 activity.videoCapturer.startRecording()
             }
             waitUntil(scenario, "recording UI is shown") {
@@ -299,7 +293,7 @@ class VideoCapturerRegressionTest {
 
             try {
                 scenario.onActivity { activity ->
-                    activity.tunePlayer = ImmediateTunePlayer(activity)
+                    activity.tunePlayer = immediateTunePlayer()
                     activity.videoCapturer.startRecording()
                 }
                 awaitRecordingStarted(scenario)
@@ -339,7 +333,7 @@ class VideoCapturerRegressionTest {
 
         recordingTest({ ActivityScenario.launch<VideoCaptureActivity>(intent) }) { scenario ->
             scenario.onActivity { activity ->
-                activity.tunePlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = immediateTunePlayer()
                 activity.videoCapturer.startRecording()
             }
             awaitRecordingStarted(scenario)
@@ -378,18 +372,17 @@ class VideoCapturerRegressionTest {
                 it.session.videoCapture != null
             }
 
-            lateinit var player: ManualTunePlayer
+            val deferred = slot<Runnable>()
             var mode: CameraMode? = null
             var highlighted: CameraMode? = null
             val capturedBefore = lastCapturedUri(scenario)
 
             try {
                 scenario.onActivity { activity ->
-                    player = ManualTunePlayer(activity)
-                    activity.tunePlayer = player
+                    activity.tunePlayer = manualTunePlayer(deferred)
                     activity.videoCapturer.startRecording()
                 }
-                awaitStartSound(scenario, player)
+                awaitStartSound(scenario, deferred)
 
                 scenario.onActivity { activity ->
                     assertTrue(activity.videoCapturer.isRecording)
@@ -408,7 +401,7 @@ class VideoCapturerRegressionTest {
                 // by now, and a cancelled start leaves nothing behind to clean up.
                 scenario.onActivity { activity ->
                     activity.videoCapturer.stopRecording()
-                    player.deferred!!.run()
+                    deferred.captured.run()
                     assertFalse(activity.videoCapturer.isRecording)
                 }
 
@@ -423,9 +416,9 @@ class VideoCapturerRegressionTest {
     /** The start sound only plays once the recording's output has been created. */
     private fun <A : MainActivity> awaitStartSound(
         scenario: ActivityScenario<A>,
-        player: ManualTunePlayer,
+        deferred: CapturingSlot<Runnable>,
     ) {
-        waitUntil(scenario, "the start sound is playing") { player.deferred != null }
+        waitUntil(scenario, "the start sound is playing") { deferred.isCaptured }
     }
 
     private fun recordingTest(body: (ActivityScenario<VideoOnlyActivity>) -> Unit) {
