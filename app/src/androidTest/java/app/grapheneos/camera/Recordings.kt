@@ -14,7 +14,12 @@ import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 
 /** Starts the recording as soon as it is asked to, skipping the sound. */
-class ImmediateTunePlayer(activity: MainActivity) : TunePlayer(activity) {
+class ImmediateTunePlayer(
+    activity: MainActivity,
+) : TunePlayer(
+    context = activity,
+    soundsEnabled = { false },
+) {
     override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
         onPlayed.run()
     }

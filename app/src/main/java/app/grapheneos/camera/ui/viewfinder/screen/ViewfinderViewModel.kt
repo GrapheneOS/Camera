@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.util.Log
-import androidx.annotation.VisibleForTesting
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -9,7 +8,6 @@ import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.Quality
 import androidx.lifecycle.ViewModel
 import app.grapheneos.camera.R
-import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.session.CameraSession
@@ -28,6 +26,7 @@ import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -54,9 +53,6 @@ class ViewfinderViewModel @Inject constructor(
     CameraSession.Listener {
 
     private var attachment: Attachment? = null
-
-    @set:VisibleForTesting
-    var mPlayer: TunePlayer? = null
 
     private val attached: Attachment
         get() {
@@ -130,11 +126,6 @@ class ViewfinderViewModel @Inject constructor(
             return currentMode.isVideo || entryPoint.requiresVideoModeOnly
         }
 
-    val canTakePicture: Boolean
-        get() {
-            return sessionState.value.canTakePicture
-        }
-
     private val isInPhotoMode: Boolean
         get() {
             return !(isQRMode || isVideoMode)
@@ -155,29 +146,14 @@ class ViewfinderViewModel @Inject constructor(
         write = { current, value -> current.copy(selfTimerDurationSeconds = value) },
     )
 
-    var enableCameraSounds: Boolean by setting(
-        read = { it.enableCameraSounds },
-        write = { current, value -> current.copy(enableCameraSounds = value) },
-    )
-
     private var enableEIS: Boolean by setting(
         read = { it.enableEis },
         write = { current, value -> current.copy(enableEis = value) },
     )
 
-    var saveImageAsPreviewed: Boolean by setting(
-        read = { it.saveImageAsPreviewed },
-        write = { current, value -> current.copy(saveImageAsPreviewed = value) },
-    )
-
     var photoQuality: Int by setting(
         read = { it.photoQuality },
         write = { current, value -> current.copy(photoQuality = value) },
-    )
-
-    var removeExifAfterCapture: Boolean by setting(
-        read = { it.removeExifAfterCapture },
-        write = { current, value -> current.copy(removeExifAfterCapture = value) },
     )
 
     private var waitForFocusLock: Boolean by setting(
@@ -199,13 +175,13 @@ class ViewfinderViewModel @Inject constructor(
             publishUiState()
         }
 
-    var scanAllCodes: Boolean by setting(
+    private var scanAllCodes: Boolean by setting(
         read = { it.scanAllCodes },
         write = { current, value -> current.copy(scanAllCodes = value) },
         onChanged = { session.refreshQrHints() },
     )
 
-    var includeAudio: Boolean by setting(
+    private var includeAudio: Boolean by setting(
         read = { it.includeAudio },
         write = { current, value -> current.copy(includeAudio = value) },
     )
@@ -221,8 +197,8 @@ class ViewfinderViewModel @Inject constructor(
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
     // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
     // the preference back here would resurrect the very stale "on" the coercion exists to drop.
-    var requireLocation: Boolean = false
-        private set(value) {
+    private var requireLocation: Boolean = false
+        set(value) {
             when {
                 value -> emitEffect(Effect.StartLocationUpdates)
                 else -> emitEffect(Effect.StopLocationUpdates)
@@ -237,12 +213,12 @@ class ViewfinderViewModel @Inject constructor(
             publishUiState()
         }
 
-    var selfIlluminate: Boolean
+    private var selfIlluminate: Boolean
         get() {
             return modeSettings.selfIllumination &&
                 sessionState.value.lensFacing == CameraSelector.LENS_FACING_FRONT
         }
-        private set(value) {
+        set(value) {
             writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
 
             publishUiState()
@@ -262,19 +238,15 @@ class ViewfinderViewModel @Inject constructor(
             session = session,
         )
 
-        mPlayer = environment.createTunePlayer()
-
         session.listener = this
 
         refreshSessionState()
-        publishUiState()
     }
 
     fun detach() {
         attachment?.session?.listener = null
 
         attachment = null
-        mPlayer = null
 
         sessionState.value = ViewfinderSessionState()
     }
@@ -328,6 +300,7 @@ class ViewfinderViewModel @Inject constructor(
     fun onAction(action: ViewfinderAction) {
         when (action) {
             is CameraAction -> onCameraAction(action)
+            is CaptureAction -> onCaptureAction(action)
             is SettingsAction -> onSettingsAction(action)
         }
     }
@@ -338,6 +311,13 @@ class ViewfinderViewModel @Inject constructor(
             is CameraAction.LensSwitchClicked -> toggleCameraSelector()
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
+        }
+    }
+
+    private fun onCaptureAction(action: CaptureAction) {
+        when (action) {
+            is CaptureAction.PictureCaptured -> flashPreview()
+            is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
         }
     }
 
@@ -595,13 +575,13 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    fun onStorageLocationNotFound() {
+    private fun onStorageLocationNotFound() {
         runBlocking { revertToMediaStoreLocation() }
 
         emitEffect(Effect.ShowStorageLocationNotFound)
     }
 
-    fun snapPreview() {
+    private fun flashPreview() {
         emitEffect(Effect.FlashPreview(selfIlluminate))
     }
 
@@ -648,6 +628,8 @@ class ViewfinderViewModel @Inject constructor(
             isFlashAvailable = session.isFlashAvailable,
             canApplyVideoStabilization = session.canApplyVideoStabilization(),
         )
+
+        publishUiState()
     }
 
     private fun slotCurrentMode() {

@@ -38,6 +38,7 @@ import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
@@ -49,7 +50,7 @@ import java.util.concurrent.TimeUnit
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
-    val viewfinder = mActivity.viewfinder
+    private val viewfinder = mActivity.viewfinder
 
     private val session = mActivity.session
 
@@ -148,7 +149,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private fun prepareRecording(recorder: Recorder, recordingCtx: RecordingContext): PendingRecording {
         var location: Location? = null
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.capture.geoTagging) {
             location = (mActivity.applicationContext as App).getLocation()
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
@@ -229,7 +230,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 if (recordingCtx == null || pendingRecording == null) {
                     recordingCtx?.let { abandonOutput(it) }
                     if (foreignUri == null) {
-                        viewfinder.onStorageLocationNotFound()
+                        viewfinder.onAction(CaptureAction.StorageLocationNotFound)
                     }
                     ctx.showMessage(R.string.unable_to_access_output_file)
                     cancelDeferredStart = null
@@ -273,10 +274,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     }
                 }
 
-                when (val player = viewfinder.mPlayer) {
-                    null -> onStartSoundPlayed()
-                    else -> player.playVRStartSound(handler, onStartSoundPlayed)
-                }
+                mActivity.tunePlayer.playVRStartSound(handler, onStartSoundPlayed)
             }
         }
     }
@@ -295,7 +293,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         if (event is VideoRecordEvent.Finalize) {
             afterRecordingStops()
 
-            viewfinder.mPlayer?.playVRStopSound()
+            mActivity.tunePlayer.playVRStopSound()
 
             if (event.hasError()) {
                 when (event.error) {
@@ -447,7 +445,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
 
-        if (viewfinder.includeAudio) {
+        if (viewfinder.uiState.value.capture.includeAudio) {
             mActivity.setMuteToggleState(muted = isMuted)
             mActivity.muteToggle.visibility = View.VISIBLE
         }
@@ -501,14 +499,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     fun muteRecording() {
         if (!isRecording) return
-        check(viewfinder.includeAudio)
+        check(viewfinder.uiState.value.capture.includeAudio)
         isMuted = true
         recording?.mute(true)
     }
 
     fun unmuteRecording() {
         if (!isRecording) return
-        check(viewfinder.includeAudio)
+        check(viewfinder.uiState.value.capture.includeAudio)
         isMuted = false
         recording?.mute(false)
     }

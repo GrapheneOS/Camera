@@ -3,7 +3,6 @@ package app.grapheneos.camera.data.camera.session
 import android.content.Context
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
-import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import java.util.concurrent.Executor
 
@@ -22,8 +21,6 @@ interface CameraSessionEnvironment {
     val previewSurfaceProvider: Preview.SurfaceProvider
 
     fun shouldAskForLocationPermission(): Boolean
-
-    fun createTunePlayer(): TunePlayer
 
     fun createQrAnalyzer(): QRAnalyzer
 }

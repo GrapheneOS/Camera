@@ -48,7 +48,12 @@ class VideoCapturerRegressionTest {
     val screenAwake = ScreenAwakeRule()
 
     /** Fires the callback twice, like a MediaPlayer error followed by normal completion. */
-    private class DoubleFiringTunePlayer(activity: MainActivity) : TunePlayer(activity) {
+    private class DoubleFiringTunePlayer(
+        activity: MainActivity,
+    ) : TunePlayer(
+        context = activity,
+        soundsEnabled = { false },
+    ) {
         override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
             onPlayed.run()
             onPlayed.run()
@@ -56,7 +61,12 @@ class VideoCapturerRegressionTest {
     }
 
     /** Holds the callback until the test releases it. */
-    private class ManualTunePlayer(activity: MainActivity) : TunePlayer(activity) {
+    private class ManualTunePlayer(
+        activity: MainActivity,
+    ) : TunePlayer(
+        context = activity,
+        soundsEnabled = { false },
+    ) {
         var deferred: Runnable? = null
         override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
             deferred = onPlayed
@@ -71,7 +81,7 @@ class VideoCapturerRegressionTest {
     fun startRecording_toleratesDuplicateStartSoundCallback() {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
-                activity.viewfinder.mPlayer = DoubleFiringTunePlayer(activity)
+                activity.tunePlayer = DoubleFiringTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
 
@@ -94,7 +104,7 @@ class VideoCapturerRegressionTest {
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
-                activity.viewfinder.mPlayer = player
+                activity.tunePlayer = player
                 activity.videoCapturer.startRecording()
                 assertTrue(activity.videoCapturer.isRecording)
             }
@@ -112,7 +122,7 @@ class VideoCapturerRegressionTest {
 
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
-                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
             awaitRecordingStarted(scenario)
@@ -128,7 +138,7 @@ class VideoCapturerRegressionTest {
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
-                activity.viewfinder.mPlayer = player
+                activity.tunePlayer = player
                 activity.videoCapturer.startRecording()
             }
             awaitStartSound(scenario, player)
@@ -167,7 +177,7 @@ class VideoCapturerRegressionTest {
             lateinit var player: ManualTunePlayer
             scenario.onActivity { activity ->
                 player = ManualTunePlayer(activity)
-                activity.viewfinder.mPlayer = player
+                activity.tunePlayer = player
                 activity.videoCapturer.startRecording()
             }
             awaitStartSound(scenario, player)
@@ -202,7 +212,7 @@ class VideoCapturerRegressionTest {
                 dp16 = 16 * activity.resources.displayMetrics.density
                 val selector = StateListDrawable().apply { addState(StateSet.WILD_CARD, shape) }
                 activity.captureButton.setImageDrawable(LayerDrawable(arrayOf(selector)))
-                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
 
@@ -225,7 +235,7 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
-                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
             waitUntil(scenario, "recording UI is shown") {
@@ -286,7 +296,7 @@ class VideoCapturerRegressionTest {
 
             try {
                 scenario.onActivity { activity ->
-                    activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
+                    activity.tunePlayer = ImmediateTunePlayer(activity)
                     activity.videoCapturer.startRecording()
                 }
                 awaitRecordingStarted(scenario)
@@ -326,7 +336,7 @@ class VideoCapturerRegressionTest {
 
         recordingTest({ ActivityScenario.launch<VideoCaptureActivity>(intent) }) { scenario ->
             scenario.onActivity { activity ->
-                activity.viewfinder.mPlayer = ImmediateTunePlayer(activity)
+                activity.tunePlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
             awaitRecordingStarted(scenario)
@@ -371,7 +381,7 @@ class VideoCapturerRegressionTest {
             try {
                 scenario.onActivity { activity ->
                     player = ManualTunePlayer(activity)
-                    activity.viewfinder.mPlayer = player
+                    activity.tunePlayer = player
                     activity.videoCapturer.startRecording()
                 }
                 awaitStartSound(scenario, player)

@@ -24,6 +24,7 @@ interface ViewfinderUiStateMapper {
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor(
     private val settingsSheetUiStateMapper: SettingsSheetUiStateMapper,
+    private val captureUiStateMapper: CaptureUiStateMapper,
 ) : ViewfinderUiStateMapper {
 
     override fun map(
@@ -61,6 +62,12 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 isVideoMode = isVideoMode,
                 flashMode = flashMode,
                 aspectRatio = aspectRatio,
+                requireLocation = requireLocation,
+                settings = settings,
+                modeSettings = modeSettings,
+                session = session,
+            ),
+            capture = captureUiStateMapper.map(
                 requireLocation = requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,

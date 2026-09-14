@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import app.grapheneos.camera.App
 import app.grapheneos.camera.R
-import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -156,12 +155,11 @@ internal class ViewfinderEffectHandler(
         return (activity.applicationContext as App).shouldAskForLocationPermission()
     }
 
-    override fun createTunePlayer(): TunePlayer {
-        return TunePlayer(activity)
-    }
-
     override fun createQrAnalyzer(): QRAnalyzer {
-        return QRAnalyzer(activity)
+        return QRAnalyzer(
+            mActivity = activity,
+            scanAllCodes = { activity.viewfinder.uiState.value.scanAllCodes },
+        )
     }
 
     private fun showStorageLocationNotFound() {

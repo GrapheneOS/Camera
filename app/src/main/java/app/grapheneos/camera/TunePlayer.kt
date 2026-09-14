@@ -4,10 +4,8 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.SystemClock
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
-import app.grapheneos.camera.ui.activities.MainActivity
 
 // Every MediaPlayer call is a synchronous binder transaction into mediaserver, which can take
 // seconds to answer. Made from the main thread, that wait was reported as an ANR, so the players
@@ -35,7 +33,10 @@ private fun prepareMediaPlayer(
     }
 }
 
-open class TunePlayer(val context: MainActivity) {
+open class TunePlayer(
+    context: Context,
+    private val soundsEnabled: () -> Boolean,
+) {
 
     // Set on the sound thread once loaded. The main thread only hands them back there to play.
     @Volatile
@@ -67,7 +68,7 @@ open class TunePlayer(val context: MainActivity) {
     }
 
     private fun shouldNotPlayTune(): Boolean {
-        return !context.viewfinder.enableCameraSounds
+        return !soundsEnabled()
     }
 
     private fun play(player: MediaPlayer?) {

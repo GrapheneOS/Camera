@@ -30,4 +30,5 @@ data class ViewfinderUiState(
     val focusTimeoutSeconds: Long = 0,
     val gyroscopeSuggestionsVisible: Boolean = false,
     val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
+    val capture: CaptureUiState = CaptureUiState(),
 )
