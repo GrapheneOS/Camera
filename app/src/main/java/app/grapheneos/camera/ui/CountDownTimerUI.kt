@@ -39,7 +39,7 @@ class CountDownTimerUI @JvmOverloads constructor(
     fun startTimer() {
         cancelTimer()
 
-        timer = object : CountDownTimer(mActivity.timerDuration * 1000L, 1000L) {
+        timer = object : CountDownTimer(mActivity.selfTimerSeconds * 1000L, 1000L) {
             override fun onTick(pendingMs: Long) {
                 val pendingS = (pendingMs / 1000) + 1
 

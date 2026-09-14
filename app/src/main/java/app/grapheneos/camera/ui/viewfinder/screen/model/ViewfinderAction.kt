@@ -25,6 +25,21 @@ sealed interface ViewfinderAction {
         data object StorageLocationNotFound : CaptureAction
     }
 
+    sealed interface LifecycleAction : ViewfinderAction {
+
+        data object CameraPermissionGranted : LifecycleAction
+
+        data object ScreenResumed : LifecycleAction
+
+        data object PreviewStreamingStarted : LifecycleAction
+
+        data object RecordAudioPermissionGranted : LifecycleAction
+
+        data object QrResultDismissed : LifecycleAction
+
+        data object CapturedPreviewDismissed : LifecycleAction
+    }
+
     sealed interface SettingsAction : ViewfinderAction {
 
         data object ScanAllCodesToggleClicked : SettingsAction

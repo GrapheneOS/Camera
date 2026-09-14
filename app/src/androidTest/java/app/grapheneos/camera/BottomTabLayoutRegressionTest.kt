@@ -14,6 +14,7 @@ import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -47,7 +48,8 @@ class BottomTabLayoutRegressionTest {
 
             var travel = 0
             scenario.onActivity { activity ->
-                activity.viewfinder.switchMode(activity.tabLayout.getTabAt(0)!!.tag as CameraMode)
+                val firstMode = activity.tabLayout.getTabAt(0)!!.tag as CameraMode
+                activity.viewfinder.onAction(CameraAction.ModeSelected(firstMode))
             }
             waitUntil(scenario, "the strip is centred on the first tab") {
                 it.tabLayout.scrollX == centreOf(it.tabLayout, 0)
@@ -127,7 +129,7 @@ class BottomTabLayoutRegressionTest {
             dragStrip(scenario, scrollPx = travel)
 
             waitUntil(scenario, "the camera switched to $targetMode") {
-                it.viewfinder.currentMode == targetMode
+                it.viewfinder.uiState.value.mode == targetMode
             }
             waitUntil(scenario, "the strip settled on tab $target") {
                 it.tabLayout.scrollX == centreOf(it.tabLayout, target)
@@ -176,7 +178,7 @@ class BottomTabLayoutRegressionTest {
 
             assertNotEquals(selectedAtStart, target)
             waitUntil(scenario, "the camera switched to the tab the drag ended on") {
-                it.viewfinder.currentMode == it.tabLayout.getTabAt(target)!!.tag
+                it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
             }
         }
     }
@@ -199,7 +201,7 @@ class BottomTabLayoutRegressionTest {
             var travel = 0
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
-                startMode = activity.viewfinder.currentMode
+                startMode = activity.viewfinder.uiState.value.mode
                 target = nextTo(tabs.selectedTabPosition, tabs.tabCount)
                 // Two thirds of the way over: enough to commit the mode, and far enough short of
                 // the centre that the strip has a settle worth measuring left to run.
@@ -215,12 +217,12 @@ class BottomTabLayoutRegressionTest {
                 assertEquals(
                     "the camera rebound while the strip was still moving",
                     startMode,
-                    activity.viewfinder.currentMode,
+                    activity.viewfinder.uiState.value.mode,
                 )
             }
 
             waitUntil(scenario, "the camera switched once the strip had settled") {
-                it.viewfinder.currentMode == it.tabLayout.getTabAt(target)!!.tag
+                it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
             }
         }
     }
@@ -254,7 +256,7 @@ class BottomTabLayoutRegressionTest {
                 assertEquals(
                     "the mode the strip was settling into never reached the camera",
                     tabs.getTabAt(target)!!.tag,
-                    activity.viewfinder.currentMode,
+                    activity.viewfinder.uiState.value.mode,
                 )
             }
         }
@@ -278,7 +280,7 @@ class BottomTabLayoutRegressionTest {
             var travel = 0
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
-                startMode = activity.viewfinder.currentMode
+                startMode = activity.viewfinder.uiState.value.mode
                 target = nextTo(tabs.selectedTabPosition, tabs.tabCount)
                 travel = (centreOf(tabs, target) - tabs.scrollX) * 2 / 3
             }
@@ -288,14 +290,14 @@ class BottomTabLayoutRegressionTest {
                 assertEquals(
                     "the camera switched before there was anything to check",
                     startMode,
-                    activity.viewfinder.currentMode,
+                    activity.viewfinder.uiState.value.mode,
                 )
                 prefetched = activity.lastFrame
                 assertNotNull("the drag started no copy of the preview", prefetched)
             }
 
             waitUntil(scenario, "the camera switched to tab $target") {
-                it.viewfinder.currentMode == it.tabLayout.getTabAt(target)!!.tag
+                it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
             }
             scenario.onActivity {
                 assertSame(
@@ -325,7 +327,7 @@ class BottomTabLayoutRegressionTest {
             var travel = 0
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
-                startMode = activity.viewfinder.currentMode
+                startMode = activity.viewfinder.uiState.value.mode
                 target = nextTo(tabs.selectedTabPosition, tabs.tabCount)
                 travel = (centreOf(tabs, target) - tabs.scrollX) * 2 / 3
             }
@@ -334,7 +336,7 @@ class BottomTabLayoutRegressionTest {
                 assertEquals(
                     "the camera rebound before there was anything to check",
                     startMode,
-                    activity.viewfinder.currentMode,
+                    activity.viewfinder.uiState.value.mode,
                 )
                 assertEquals(
                     "the preview was left live over the freeze the switch is about to cost",
@@ -360,10 +362,9 @@ class BottomTabLayoutRegressionTest {
                 val tabs = activity.tabLayout
                 // Started against a surface the rebind has just emptied, so the copy comes back
                 // with nothing and schedules the retry this is about.
-                activity.viewfinder.switchMode(
-                    tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount))!!.tag
-                        as CameraMode
-                )
+                val nextMode = tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount))!!.tag
+                    as CameraMode
+                activity.viewfinder.onAction(CameraAction.ModeSelected(nextMode))
                 activity.prefetchLastFrame()
             }
             scenario.moveToState(Lifecycle.State.CREATED)
@@ -392,7 +393,7 @@ class BottomTabLayoutRegressionTest {
                 // The rebind that applies the new ratio runs whole inside one message, so a poll
                 // that sees the mode has landed sees a layout the resize has already asked for.
                 waitUntil(scenario, "the preview took $mode's aspect ratio") {
-                    it.viewfinder.currentMode == mode && !it.previewView.isLayoutRequested
+                    it.viewfinder.uiState.value.mode == mode && !it.previewView.isLayoutRequested
                 }
 
                 scenario.onActivity { activity ->
@@ -431,14 +432,14 @@ class BottomTabLayoutRegressionTest {
             var startMode: CameraMode? = null
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
-                startMode = activity.viewfinder.currentMode
+                startMode = activity.viewfinder.uiState.value.mode
 
                 activity.finalizeMode(tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount)))
 
                 assertEquals(
                     "the switch reached the camera before it could be taken back",
                     startMode,
-                    activity.viewfinder.currentMode,
+                    activity.viewfinder.uiState.value.mode,
                 )
                 assertEquals(
                     "the switch put up no transition to strand",
@@ -458,7 +459,7 @@ class BottomTabLayoutRegressionTest {
                 assertEquals(
                     "the camera left the mode the strip came back to",
                     startMode,
-                    it.viewfinder.currentMode,
+                    it.viewfinder.uiState.value.mode,
                 )
             }
         }

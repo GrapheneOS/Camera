@@ -45,6 +45,7 @@ import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
@@ -56,7 +57,7 @@ import kotlin.math.max
 @SuppressLint("ClickableViewAccessibility")
 class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     Dialog(themedContext) {
-    val viewfinder = mActivity.viewfinder
+    val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
     private val session = mActivity.session
 
@@ -550,18 +551,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     private fun updateTimerDuration(duration: Int) {
-        mActivity.timerDuration = duration
-        mActivity.updateSelfTimerBadge()
         // Common rather than per-mode: a mode's preferences are not slotted until the camera
         // starts, which happens after this dialog is built.
         viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = duration))
+        mActivity.updateSelfTimerBadge()
     }
 
     private fun restoreTimerDuration() {
         val duration = storedSheetState().selfTimerSeconds
-        // Apply directly: Spinner.setSelection() only posts its selection callback, so the duration
-        // would otherwise stay unset for a looper pass.
-        updateTimerDuration(duration)
 
         val option = if (duration == 0) timeOptions[0] else "${duration}s"
         timerSpinner.setSelection(timeOptions.indexOf(option).coerceAtLeast(0), false)
