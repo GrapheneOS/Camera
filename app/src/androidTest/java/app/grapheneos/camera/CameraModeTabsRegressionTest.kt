@@ -13,6 +13,7 @@ import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -42,10 +43,10 @@ class CameraModeTabsRegressionTest {
             awaitModeTabs(scenario)
 
             scenario.onActivity { activity ->
-                activity.viewfinder.switchMode(CameraMode.VIDEO)
+                activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
                 assertEquals(CameraMode.VIDEO, activity.tabLayout.selectedTab?.tag)
 
-                activity.viewfinder.switchMode(CameraMode.CAMERA)
+                activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
                 assertEquals(CameraMode.CAMERA, activity.tabLayout.selectedTab?.tag)
             }
         }
@@ -60,7 +61,9 @@ class CameraModeTabsRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
-            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity {
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
+            }
 
             // Counting passes rather than reading isLayoutRequested: a request issued from inside a
             // layout pass is parked for the next traversal and the flag is cleared on the way, so it
@@ -116,7 +119,8 @@ class CameraModeTabsRegressionTest {
             scenario.onActivity { activity ->
                 val tabs = activity.tabLayout
                 val next = tabs.getTabAt(tabs.selectedTabPosition + 1)
-                assertNotNull("no mode to the left of ${activity.viewfinder.currentMode}", next)
+                val mode = activity.viewfinder.uiState.value.mode
+                assertNotNull("no mode to the left of $mode", next)
                 nextMode = next!!.tag as CameraMode
 
                 flingLeft(activity)
@@ -125,7 +129,7 @@ class CameraModeTabsRegressionTest {
             // The strip slides to the new mode before the camera rebinds, so the switch lands a
             // few frames after the fling rather than inside it.
             waitUntil(scenario, "the fling switched the mode to $nextMode") {
-                it.viewfinder.currentMode == nextMode
+                it.viewfinder.uiState.value.mode == nextMode
             }
         }
 
@@ -138,7 +142,7 @@ class CameraModeTabsRegressionTest {
 
                 scenario.onActivity { activity ->
                     flingLeft(activity)
-                    assertEquals(CameraMode.CAMERA, activity.viewfinder.currentMode)
+                    assertEquals(CameraMode.CAMERA, activity.viewfinder.uiState.value.mode)
                 }
             }
     }
