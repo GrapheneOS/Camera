@@ -195,14 +195,13 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         aRToggle = binding.aspectRatioToggle
         aRToggle.setOnClickListener {
-            if (viewfinder.isVideoMode) {
-                updateAspectRatioToggle(is16by9 = true)
+            if (sheetState.aspectRatioFixed) {
+                aRToggle.isChecked = sheetState.is16by9
                 mActivity.showMessage(
                     getString(R.string.four_by_three_unsupported_in_video)
                 )
             } else {
                 viewfinder.onAction(CameraAction.AspectRatioToggleClicked)
-                updateAspectRatioToggle(viewfinder.aspectRatio == AspectRatio.RATIO_16_9)
             }
         }
 
@@ -221,7 +220,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         gridToggle = binding.gridToggleOption
         gridToggle.setOnClickListener {
             viewfinder.onAction(SettingsAction.GridToggleClicked)
-            updateGridToggleUI()
         }
 
         videoQualitySpinner = binding.videoQualitySpinner
@@ -247,7 +245,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         waitForFocusLockSwitch = binding.waitForFocusLockSwitch
-        waitForFocusLockSwitch.isChecked = viewfinder.waitForFocusLock
         waitForFocusLockSwitch.setOnClickListener {
             viewfinder.onAction(
                 SettingsAction.FocusLockToggled(waitForFocusLockSwitch.isChecked),
@@ -458,11 +455,28 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         })
     }
 
+    private var sheetState = SettingsSheetUiState()
+
+    private fun storedSheetState(): SettingsSheetUiState {
+        return viewfinder.uiState.value.settingsSheet
+    }
+
     fun render(state: SettingsSheetUiState) {
+        sheetState = state
+
         flashToggle.setImageResource(state.flashIcon)
         flashToggle.contentDescription = mActivity.getString(state.flashDescription)
 
         includeAudioToggle.isChecked = state.includeAudio
+        enableEISToggle.isChecked = state.stabilizationEnabled
+        waitForFocusLockSwitch.isChecked = state.waitForFocusLock
+
+        aRToggle.isChecked = state.is16by9
+        ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
+
+        gridToggle.setImageResource(state.gridIcon)
+        gridToggle.contentDescription = mActivity.getString(state.gridDescription)
+
         locToggle.isChecked = state.geoTagging
         selfIlluminationToggle.isChecked = state.selfIllumination
 
@@ -513,7 +527,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     private fun restoreTimerDuration() {
-        val duration = viewfinder.selfTimerDuration
+        val duration = storedSheetState().selfTimerSeconds
         // Apply directly: Spinner.setSelection() only posts its selection callback, so the duration
         // would otherwise stay unset for a looper pass.
         updateTimerDuration(duration)
@@ -528,9 +542,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
     private var wasSelfIlluminationOn = false
 
-    fun selfIllumination() {
+    fun selfIllumination(enabled: Boolean) {
 
-        if (viewfinder.selfIlluminate) {
+        if (enabled) {
 
             val colorFrom: Int = Color.BLACK
             val colorTo: Int = mActivity.getColor(R.color.self_illumination_light)
@@ -624,7 +638,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             setBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
         }
 
-        wasSelfIlluminationOn = viewfinder.selfIlluminate
+        wasSelfIlluminationOn = enabled
     }
 
     private val slideDownAnimation: Animation by lazy {
@@ -713,50 +727,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun loadInitialState() {
-        updateGridToggleUI()
-        updateFocusTimeout(focusTimeoutLabel(viewfinder.focusTimeout))
-        enableEISToggle.isChecked = viewfinder.enableEIS
-    }
-
-    fun updateGridToggleUI() {
-        mActivity.previewGrid.postInvalidate()
-        // The description has to travel with the drawable: this control cycles through four
-        // states, so a fixed "Grid Toggle" label left a screen reader unable to report any of them
-        val (icon, description) = when (viewfinder.gridType) {
-            GridType.NONE -> R.drawable.grid_off_circle to R.string.grid_off
-            GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle to R.string.grid_3x3
-            GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle to R.string.grid_4x4
-            GridType.GOLDEN_RATIO ->
-                R.drawable.grid_goldenratio_circle to R.string.grid_golden_ratio
-        }
-        gridToggle.setImageResource(icon)
-        gridToggle.contentDescription = mActivity.getString(description)
-    }
-
-
-    /**
-     * The ratio itself is the toggle's on/off text, which its content description hides from
-     * accessibility services: announce it as the toggle's state instead.
-     */
-    private fun updateAspectRatioToggle(is16by9: Boolean) {
-        aRToggle.isChecked = is16by9
-        val ratio = if (is16by9) R.string.aspect_ratio_16_9 else R.string.aspect_ratio_4_3
-        ViewCompat.setStateDescription(aRToggle, mActivity.getString(ratio))
+        updateFocusTimeout(focusTimeoutLabel(storedSheetState().focusTimeoutSeconds))
     }
 
     override fun show() {
 
         this.resize()
 
-        if (viewfinder.isVideoMode) {
-            updateAspectRatioToggle(is16by9 = true)
-        } else {
-            updateAspectRatioToggle(viewfinder.aspectRatio == AspectRatio.RATIO_16_9)
-        }
-
         torchToggle.isChecked = session.isTorchOn
-
-        updateGridToggleUI()
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
@@ -785,8 +763,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         videoQualitySpinner.adapter = adapter
 
-        if (viewfinder.videoQuality != Quality.HIGHEST) {
-            videoQualitySpinner.setSelection(videoQualities.indexOf(viewfinder.videoQuality))
+        val storedQuality = storedSheetState().videoQuality
+
+        if (storedQuality != Quality.HIGHEST) {
+            videoQualitySpinner.setSelection(videoQualities.indexOf(storedQuality))
         }
     }
 }
