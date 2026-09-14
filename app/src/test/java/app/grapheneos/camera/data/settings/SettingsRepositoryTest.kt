@@ -22,6 +22,10 @@ import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import app.grapheneos.camera.data.settings.store.settingsPrefsSerializer
+import io.mockk.confirmVerified
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
@@ -52,9 +56,13 @@ class SettingsRepositoryTest {
 
     private val dataStore: DataStore<SettingsPrefs> = InMemoryDataStore(SettingsPrefs())
 
-    private val modeSettingsMapper = FakeModeSettingsMapper()
+    private val modeSettingsMapper: ModeSettingsMapper = mockk {
+        every { map(stored = any(), isFrontFacing = any()) } returns ModeSettings()
+    }
 
-    private val storedVideoQualityMapper = FakeStoredVideoQualityMapper()
+    private val storedVideoQualityMapper: StoredVideoQualityMapper = mockk {
+        every { map(quality = any()) } returns StoredVideoQuality.DEVICE_CHOICE
+    }
 
     private val cameraSettingsMapper: CameraSettingsMapper = CameraSettingsMapperImpl()
 
@@ -71,6 +79,16 @@ class SettingsRepositoryTest {
             modeSettingsMapper = modeSettingsMapper,
             storedVideoQualityMapper = storedVideoQualityMapper,
         )
+    }
+
+    private fun lastMappedMode(): StoredModeSettings {
+        val mapped = mutableListOf<StoredModeSettings>()
+        verify { modeSettingsMapper.map(stored = capture(mapped), isFrontFacing = any()) }
+        return mapped.last()
+    }
+
+    private fun storeVideoQualityAs(stored: StoredVideoQuality) {
+        every { storedVideoQualityMapper.map(quality = any()) } returns stored
     }
 
     private fun settingsOf(repository: SettingsRepository): CameraSettings {
@@ -211,7 +229,7 @@ class SettingsRepositoryTest {
 
         assertEquals(
             StoredModeSettings(geoTagging = true),
-            modeSettingsMapper.calls.last().stored,
+            lastMappedMode(),
         )
     }
 
@@ -219,14 +237,16 @@ class SettingsRepositoryTest {
     fun modeSettings_exposesWhatTheMapperMadeOfTheStoredMode() {
         val repository = repository()
 
-        modeSettingsMapper.result = MAPPER_RESULT
+        every {
+            modeSettingsMapper.map(stored = any(), isFrontFacing = any())
+        } returns MAPPER_RESULT
 
         val selected = runBlocking { repository.modeSettings(FRONT_SLOT) }
 
-        assertEquals(
-            FakeModeSettingsMapper.Call(stored = StoredModeSettings(), isFrontFacing = true),
-            modeSettingsMapper.calls.single(),
-        )
+        verify(exactly = 1) {
+            modeSettingsMapper.map(stored = StoredModeSettings(), isFrontFacing = true)
+        }
+        confirmVerified(modeSettingsMapper)
         assertEquals(MAPPER_RESULT, selected)
     }
 
@@ -235,10 +255,11 @@ class SettingsRepositoryTest {
         val repository = repository()
 
         runBlocking { repository.modeSettings(SLOT) }
-        storedVideoQualityMapper.result = StoredVideoQuality.DEVICE_CHOICE
+        storeVideoQualityAs(StoredVideoQuality.DEVICE_CHOICE)
         runBlocking { repository.setVideoQuality(SLOT, Quality.HIGHEST) }
 
-        assertEquals(listOf(Quality.HIGHEST), storedVideoQualityMapper.calls)
+        verify(exactly = 1) { storedVideoQualityMapper.map(quality = Quality.HIGHEST) }
+        confirmVerified(storedVideoQualityMapper)
         assertEquals(
             StoredVideoQuality.DEVICE_CHOICE,
             stored().modes[MODE.name]?.videoQualityBack,
@@ -270,11 +291,11 @@ class SettingsRepositoryTest {
         val repository = repository()
 
         runBlocking { repository.modeSettings(SLOT) }
-        storedVideoQualityMapper.result = StoredVideoQuality.UHD
+        storeVideoQualityAs(StoredVideoQuality.UHD)
         runBlocking { repository.setVideoQuality(SLOT, Quality.UHD) }
 
         runBlocking { repository.modeSettings(FRONT_SLOT) }
-        storedVideoQualityMapper.result = StoredVideoQuality.HD
+        storeVideoQualityAs(StoredVideoQuality.HD)
         runBlocking { repository.setVideoQuality(FRONT_SLOT, Quality.HD) }
 
         val storedMode = stored().modes.getValue(MODE.name)
@@ -288,7 +309,7 @@ class SettingsRepositoryTest {
         val repository = repository()
 
         runBlocking { repository.modeSettings(SLOT) }
-        storedVideoQualityMapper.result = StoredVideoQuality.FHD
+        storeVideoQualityAs(StoredVideoQuality.FHD)
         runBlocking { repository.setVideoQuality(SLOT, Quality.FHD) }
 
         val relaunched = repository()
@@ -297,7 +318,7 @@ class SettingsRepositoryTest {
 
         assertEquals(
             StoredModeSettings(videoQualityBack = StoredVideoQuality.FHD),
-            modeSettingsMapper.calls.last().stored,
+            lastMappedMode(),
         )
     }
 
@@ -311,11 +332,11 @@ class SettingsRepositoryTest {
             repository.modeSettings(OTHER_SLOT)
         }
 
-        assertEquals(StoredModeSettings(), modeSettingsMapper.calls.last().stored)
+        assertEquals(StoredModeSettings(), lastMappedMode())
 
         runBlocking { repository.modeSettings(SLOT) }
 
-        assertEquals(StoredModeSettings(geoTagging = true), modeSettingsMapper.calls.last().stored)
+        assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
     }
 
     @Test
@@ -351,37 +372,6 @@ class SettingsRepositoryTest {
             setOf(QR_CODE_FORMAT, AZTEC_FORMAT),
             settingsOf(repository()).enabledBarcodeFormats,
         )
-    }
-
-    private class FakeModeSettingsMapper : ModeSettingsMapper {
-
-        val calls = mutableListOf<Call>()
-
-        var result = ModeSettings()
-
-        override fun map(stored: StoredModeSettings, isFrontFacing: Boolean): ModeSettings {
-            calls += Call(stored = stored, isFrontFacing = isFrontFacing)
-
-            return result
-        }
-
-        data class Call(
-            val stored: StoredModeSettings,
-            val isFrontFacing: Boolean,
-        )
-    }
-
-    private class FakeStoredVideoQualityMapper : StoredVideoQualityMapper {
-
-        val calls = mutableListOf<Quality>()
-
-        var result = StoredVideoQuality.DEVICE_CHOICE
-
-        override fun map(quality: Quality): StoredVideoQuality {
-            calls += quality
-
-            return result
-        }
     }
 
     private companion object {
