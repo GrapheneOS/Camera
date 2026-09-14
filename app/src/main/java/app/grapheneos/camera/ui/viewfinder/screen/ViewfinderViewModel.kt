@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -42,6 +43,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
 
+interface ViewfinderScreenModel {
+    val uiState: StateFlow<ViewfinderUiState>
+    val effects: Flow<Effect>
+
+    fun onAction(action: ViewfinderAction)
+}
+
 class ViewfinderViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
@@ -50,6 +58,7 @@ class ViewfinderViewModel @Inject constructor(
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
+    ViewfinderScreenModel,
     CameraSession.Listener {
 
     private var attachment: Attachment? = null
@@ -94,10 +103,10 @@ class ViewfinderViewModel @Inject constructor(
 
     private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
 
-    val effects: Flow<Effect> = screenEffects.receiveAsFlow()
+    override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
 
     private val _uiState = MutableStateFlow(ViewfinderUiState())
-    val uiState: StateFlow<ViewfinderUiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<ViewfinderUiState> = _uiState.asStateFlow()
 
     private val renderedState: ViewfinderUiState
         get() {
@@ -113,15 +122,14 @@ class ViewfinderViewModel @Inject constructor(
             )
         }
 
-    var currentMode: CameraMode = DEFAULT_CAMERA_MODE
-        private set
+    private var currentMode: CameraMode = DEFAULT_CAMERA_MODE
 
-    val isQRMode: Boolean
+    private val isQRMode: Boolean
         get() {
             return currentMode.isQr
         }
 
-    val isVideoMode: Boolean
+    private val isVideoMode: Boolean
         get() {
             return currentMode.isVideo || entryPoint.requiresVideoModeOnly
         }
@@ -149,11 +157,6 @@ class ViewfinderViewModel @Inject constructor(
     private var enableEIS: Boolean by setting(
         read = { it.enableEis },
         write = { current, value -> current.copy(enableEis = value) },
-    )
-
-    var photoQuality: Int by setting(
-        read = { it.photoQuality },
-        write = { current, value -> current.copy(photoQuality = value) },
     )
 
     private var waitForFocusLock: Boolean by setting(
@@ -188,10 +191,12 @@ class ViewfinderViewModel @Inject constructor(
 
     private var flashMode: Int = SettingsDefaults.FLASH_MODE
 
-    var videoQuality: Quality
+    private var videoQuality: Quality
         get() = modeSettings.videoQuality
         set(value) {
             writeMode { slot -> settingsRepository.setVideoQuality(slot, value) }
+
+            publishUiState()
         }
 
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
@@ -276,7 +281,7 @@ class ViewfinderViewModel @Inject constructor(
         applyFlashMode(value)
     }
 
-    fun reloadSettings() {
+    private fun reloadSettings() {
         slotCurrentMode()
 
         if (isVideoMode) {
@@ -297,10 +302,11 @@ class ViewfinderViewModel @Inject constructor(
         publishUiState()
     }
 
-    fun onAction(action: ViewfinderAction) {
+    override fun onAction(action: ViewfinderAction) {
         when (action) {
             is CameraAction -> onCameraAction(action)
             is CaptureAction -> onCaptureAction(action)
+            is LifecycleAction -> onLifecycleAction(action)
             is SettingsAction -> onSettingsAction(action)
         }
     }
@@ -318,6 +324,19 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is CaptureAction.PictureCaptured -> flashPreview()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
+        }
+    }
+
+    private fun onLifecycleAction(action: LifecycleAction) {
+        when (action) {
+            is LifecycleAction.CameraPermissionGranted -> initializeCamera()
+            is LifecycleAction.PreviewStreamingStarted -> reloadSettings()
+            is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
+
+            is LifecycleAction.RecordAudioPermissionGranted,
+            is LifecycleAction.QrResultDismissed,
+            is LifecycleAction.CapturedPreviewDismissed,
+            -> startCamera(forced = true)
         }
     }
 
@@ -468,12 +487,12 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
     }
 
-    fun initializeCamera(forced: Boolean = false) {
+    private fun initializeCamera(forced: Boolean = false) {
         session.initialize(forced = forced, extensionMode = currentMode.extensionMode)
     }
 
     // Start the camera with latest hard configuration
-    fun startCamera(forced: Boolean = false) {
+    private fun startCamera(forced: Boolean = false) {
         if ((!forced && session.camera != null) || session.cameraProvider == null) return
 
         // Cancel any pending capture requests
@@ -535,7 +554,7 @@ class ViewfinderViewModel @Inject constructor(
             rotation = rotation,
             aspectRatio = aspectRatio,
             flashMode = flashMode,
-            photoQuality = photoQuality,
+            photoQuality = settings.photoQuality,
             videoQuality = videoQuality,
             waitForFocusLock = waitForFocusLock,
             enableZsl = settings.enableZsl,
@@ -585,7 +604,7 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.FlashPreview(selfIlluminate))
     }
 
-    fun switchMode(mode: CameraMode) {
+    private fun switchMode(mode: CameraMode) {
         if (currentMode == mode) {
             return
         }

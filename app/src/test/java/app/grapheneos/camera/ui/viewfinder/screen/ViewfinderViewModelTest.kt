@@ -14,8 +14,9 @@ import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,25 +45,27 @@ class ViewfinderViewModelTest {
     fun perModeWrite_beforeAModeIsSlotted_isDropped() {
         val viewModel = viewModel()
 
-        viewModel.videoQuality = Quality.UHD
+        viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
 
-        assertTrue(settingsRepository.videoQualityWrites.isEmpty())
+        assertTrue(settingsRepository.geoTaggingWrites.isEmpty())
     }
 
     @Test
     fun commonSettings_areReadThroughTheRepository() {
         val viewModel = viewModel()
 
-        settingsRepository.settings.value = CameraSettings(photoQuality = SOME_PHOTO_QUALITY)
+        settingsRepository.settings.value = CameraSettings(removeExifAfterCapture = false)
 
-        assertEquals(SOME_PHOTO_QUALITY, viewModel.photoQuality)
+        viewModel.onAction(SettingsAction.GridToggleClicked)
+
+        assertFalse(viewModel.uiState.value.capture.removeExifAfterCapture)
     }
 
     private class RecordingSettingsRepository : SettingsRepository {
 
         override val settings = MutableStateFlow(CameraSettings())
 
-        val videoQualityWrites = mutableListOf<Pair<ModeSlot, Quality>>()
+        val geoTaggingWrites = mutableListOf<Pair<ModeSlot, Boolean>>()
 
         override suspend fun update(
             transform: (CameraSettings) -> CameraSettings,
@@ -81,6 +84,8 @@ class ViewfinderViewModelTest {
         }
 
         override suspend fun setGeoTagging(slot: ModeSlot, value: Boolean): ModeSettings {
+            geoTaggingWrites.add(slot to value)
+
             return ModeSettings(geoTagging = value)
         }
 
@@ -89,8 +94,6 @@ class ViewfinderViewModelTest {
         }
 
         override suspend fun setVideoQuality(slot: ModeSlot, value: Quality): ModeSettings {
-            videoQualityWrites.add(slot to value)
-
             return ModeSettings(videoQuality = value)
         }
     }
@@ -127,7 +130,5 @@ class ViewfinderViewModelTest {
             allowsQrScanning = true,
             showsCameraModeTabs = true,
         )
-
-        const val SOME_PHOTO_QUALITY = 71
     }
 }

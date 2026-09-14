@@ -7,8 +7,12 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,7 +38,7 @@ class SelfTimerRegressionTest {
      */
     @Test
     fun selfTimer_isCancelledWhenTheActivityPauses() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        launchRestoringSelfTimer(MainActivity::class.java) { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             // Only a resumed activity can be paused: moveToState below would otherwise be a no-op
@@ -42,8 +46,8 @@ class SelfTimerRegressionTest {
             assertEquals(Lifecycle.State.RESUMED, scenario.state)
 
             scenario.onActivity { activity ->
-                activity.viewfinder.switchMode(CameraMode.CAMERA)
-                activity.timerDuration = 10
+                activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
                 activity.cdTimer.startTimer()
                 assertTrue(activity.cdTimer.isRunning)
             }
@@ -69,20 +73,22 @@ class SelfTimerRegressionTest {
      */
     @Test
     fun cancelTimer_withNoCountdownRunning_leavesQrModeControlsHidden() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        launchRestoringSelfTimer(MainActivity::class.java) { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             // A countdown has to have run at least once for the bug to be reachable: the guard this
             // replaced asked whether a timer had ever been built, not whether one was up.
             scenario.onActivity { activity ->
-                activity.timerDuration = 1
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 1))
                 activity.cdTimer.startTimer()
                 activity.cdTimer.cancelTimer()
                 assertFalse(activity.cdTimer.isRunning)
             }
 
-            scenario.onActivity { it.viewfinder.switchMode(CameraMode.QR_SCAN) }
-            waitUntil(scenario, "QR mode is active") { it.viewfinder.isQRMode }
+            scenario.onActivity {
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.QR_SCAN))
+            }
+            waitUntil(scenario, "QR mode is active") { it.viewfinder.uiState.value.isQrMode }
 
             scenario.onActivity { activity ->
                 activity.cdTimer.cancelTimer()
@@ -97,18 +103,18 @@ class SelfTimerRegressionTest {
     /** The badge announces a pending self-timer, so it may only show where one can fire. */
     @Test
     fun selfTimerBadge_tracksThePendingDurationInPhotoMode() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        launchRestoringSelfTimer(MainActivity::class.java) { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.viewfinder.switchMode(CameraMode.CAMERA)
+                activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
 
-                activity.timerDuration = 5
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
                 activity.updateSelfTimerBadge()
                 assertEquals(View.VISIBLE, activity.cbText.visibility)
                 assertEquals("5s", activity.cbText.text.toString())
 
-                activity.timerDuration = 0
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 0))
                 activity.updateSelfTimerBadge()
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
                 assertEquals("", activity.cbText.text.toString())
@@ -123,12 +129,12 @@ class SelfTimerRegressionTest {
      */
     @Test
     fun captureButton_withATimerSet_startsTheCountdownInsteadOfCapturing() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        launchRestoringSelfTimer(MainActivity::class.java) { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.viewfinder.switchMode(CameraMode.CAMERA)
-                activity.timerDuration = 10
+                activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
                 activity.updateSelfTimerBadge()
 
                 activity.captureButton.performClick()
@@ -151,12 +157,12 @@ class SelfTimerRegressionTest {
     /** The same button cancels the countdown it started, and owes back everything it hid. */
     @Test
     fun captureButton_duringACountdown_cancelsItAndPutsTheControlsBack() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        launchRestoringSelfTimer(MainActivity::class.java) { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.viewfinder.switchMode(CameraMode.CAMERA)
-                activity.timerDuration = 10
+                activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
                 activity.updateSelfTimerBadge()
                 val shutterDescription = activity.captureButton.contentDescription
 
@@ -182,15 +188,34 @@ class SelfTimerRegressionTest {
      */
     @Test
     fun selfTimerBadge_staysHiddenWhereNoPhotoCanBeTaken() {
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
+        launchRestoringSelfTimer(VideoOnlyActivity::class.java) { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             scenario.onActivity { activity ->
-                activity.timerDuration = 5
+                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
                 activity.updateSelfTimerBadge()
 
-                assertTrue(activity.viewfinder.isVideoMode)
+                assertTrue(activity.viewfinder.uiState.value.isVideoMode)
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
+            }
+        }
+    }
+
+    private fun <T : MainActivity> launchRestoringSelfTimer(
+        activityClass: Class<T>,
+        block: (ActivityScenario<T>) -> Unit,
+    ) {
+        ActivityScenario.launch(activityClass).use { scenario ->
+            lateinit var repository: SettingsRepository
+            scenario.onActivity { repository = it.settingsRepository }
+            val stored = repository.settings.value.selfTimerDurationSeconds
+
+            try {
+                block(scenario)
+            } finally {
+                runBlocking {
+                    repository.update { it.copy(selfTimerDurationSeconds = stored) }
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.di.camera.SnapshotProbeCacheEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import dagger.hilt.android.EntryPointAccessors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -52,7 +53,7 @@ class ModeSwitchLatencyRegressionTest {
             scenario.onActivity {
                 snapshotProbeCache.clear()
 
-                it.viewfinder.switchMode(CameraMode.VIDEO)
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
 
                 assertEquals(
                     "entering video mode did not probe",
@@ -63,8 +64,8 @@ class ModeSwitchLatencyRegressionTest {
             }
 
             scenario.onActivity {
-                it.viewfinder.switchMode(CameraMode.CAMERA)
-                it.viewfinder.switchMode(CameraMode.VIDEO)
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
 
                 assertEquals("the second entry probed again", 1, snapshotProbeCache.probeCount)
                 assertEquals(
@@ -90,7 +91,7 @@ class ModeSwitchLatencyRegressionTest {
 
             scenario.onActivity {
                 snapshotProbeCache.clear()
-                it.viewfinder.switchMode(CameraMode.VIDEO)
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
             }
 
             // The qualities a camera records at are listed once its preview starts streaming,
@@ -106,7 +107,7 @@ class ModeSwitchLatencyRegressionTest {
                     spinner.count > 1,
                 )
 
-                val quality = activity.viewfinder.videoQuality
+                val quality = activity.viewfinder.uiState.value.settingsSheet.videoQuality
                 val original = spinner.selectedItemPosition
 
                 try {
@@ -115,7 +116,7 @@ class ModeSwitchLatencyRegressionTest {
                     assertNotEquals(
                         "the video quality did not change",
                         quality,
-                        activity.viewfinder.videoQuality
+                        activity.viewfinder.uiState.value.settingsSheet.videoQuality
                     )
                     assertEquals(
                         "the new quality was answered from the old verdict",
@@ -143,7 +144,7 @@ class ModeSwitchLatencyRegressionTest {
             }
 
             scenario.onActivity {
-                it.viewfinder.switchMode(CameraMode.VIDEO)
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
 
                 assertNull("the bind read the zoom state", it.session.zoomState)
             }
@@ -163,7 +164,9 @@ class ModeSwitchLatencyRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
-            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity {
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
+            }
             waitUntil(scenario, "the zoom state is attached") {
                 it.session.zoomState != null
             }

@@ -113,6 +113,7 @@ import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.util.CameraControl
@@ -306,7 +307,10 @@ open class MainActivity : AppCompatActivity() {
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
 
-    var timerDuration = 0
+    val selfTimerSeconds: Int
+        get() {
+            return viewfinder.uiState.value.settingsSheet.selfTimerSeconds
+        }
 
     private var bottomNavigationBarPadding: Int = 0
 
@@ -348,7 +352,7 @@ open class MainActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) {
             shouldRestartRecording = true
-            viewfinder.startCamera(true)
+            viewfinder.onAction(LifecycleAction.RecordAudioPermissionGranted)
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
@@ -668,7 +672,7 @@ open class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Permission granted.")
 
                 // Setup the camera since the permission is available
-                viewfinder.initializeCamera()
+                viewfinder.onAction(LifecycleAction.CameraPermissionGranted)
             }
             shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
                 Log.i(TAG, "The user has default denied camera permission.")
@@ -778,7 +782,7 @@ open class MainActivity : AppCompatActivity() {
         if (!(this is VideoCaptureActivity && thirdOption.isVisible)) {
             if (!isQRDialogShowing) {
                 if (hasCameraPermission()) {
-                    viewfinder.initializeCamera(true)
+                    viewfinder.onAction(LifecycleAction.ScreenResumed)
                 } else {
                     Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
                 }
@@ -886,7 +890,7 @@ open class MainActivity : AppCompatActivity() {
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 hidePreviewTransition()
-                viewfinder.reloadSettings()
+                viewfinder.onAction(LifecycleAction.PreviewStreamingStarted)
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
@@ -995,7 +999,7 @@ open class MainActivity : AppCompatActivity() {
                     setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
                 }
             } else {
-                if (timerDuration == 0) {
+                if (selfTimerSeconds == 0) {
                     imageCapturer.takePicture()
                 } else {
                     if (cdTimer.isRunning) {
@@ -1257,10 +1261,9 @@ open class MainActivity : AppCompatActivity() {
 
     /** Shows the pending self-timer duration on the capture button, where it applies at all. */
     fun updateSelfTimerBadge() {
-        cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
-        // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
-        val applies = timerDuration != 0 && !viewfinder.isQRMode && !viewfinder.isVideoMode
-        cbText.visibility = if (applies) View.VISIBLE else View.INVISIBLE
+        val state = viewfinder.uiState.value
+        cbText.text = state.selfTimerBadge
+        cbText.visibility = if (state.selfTimerBadgeVisible) View.VISIBLE else View.INVISIBLE
     }
 
     fun restartRecordingWithMicPermission() {
@@ -1409,7 +1412,7 @@ open class MainActivity : AppCompatActivity() {
 
             builder.setOnDismissListener {
                 isQRDialogShowing = false
-                viewfinder.startCamera(true)
+                viewfinder.onAction(LifecycleAction.QrResultDismissed)
             }
 
             session.cameraProvider?.unbindAll()
