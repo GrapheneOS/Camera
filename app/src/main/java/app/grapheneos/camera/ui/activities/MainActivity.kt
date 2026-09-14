@@ -51,6 +51,7 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestMultiple
 import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
@@ -80,6 +81,7 @@ import app.grapheneos.camera.App
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
@@ -179,6 +181,9 @@ open class MainActivity : AppCompatActivity() {
     lateinit var imageCapturer: ImageCapturer
 
     lateinit var videoCapturer: VideoCapturer
+
+    @set:VisibleForTesting
+    lateinit var tunePlayer: TunePlayer
 
     lateinit var settingsDialog: SettingsDialog
 
@@ -837,6 +842,10 @@ open class MainActivity : AppCompatActivity() {
             session = session,
         )
         cameraControl = CameraControl(session)
+        tunePlayer = TunePlayer(
+            context = this,
+            soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
+        )
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
 

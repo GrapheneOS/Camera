@@ -18,6 +18,13 @@ sealed interface ViewfinderAction {
         ) : CameraAction
     }
 
+    sealed interface CaptureAction : ViewfinderAction {
+
+        data object PictureCaptured : CaptureAction
+
+        data object StorageLocationNotFound : CaptureAction
+    }
+
     sealed interface SettingsAction : ViewfinderAction {
 
         data object ScanAllCodesToggleClicked : SettingsAction
