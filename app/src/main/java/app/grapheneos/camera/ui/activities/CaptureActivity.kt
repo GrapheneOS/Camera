@@ -19,6 +19,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
 import java.io.ByteArrayOutputStream
 import java.lang.Exception
@@ -103,7 +104,7 @@ open class CaptureActivity : MainActivity() {
         thirdOption.visibility = View.INVISIBLE
 
         captureButton.setOnClickListener {
-            if (timerDuration == 0) {
+            if (selfTimerSeconds == 0) {
                 takePicture()
             } else {
                 if (cdTimer.isRunning) {
@@ -184,7 +185,7 @@ open class CaptureActivity : MainActivity() {
     }
 
     open fun hidePreview() {
-        viewfinder.startCamera(true)
+        viewfinder.onAction(LifecycleAction.CapturedPreviewDismissed)
 
         settingsIcon.visibility = View.VISIBLE
 
