@@ -14,6 +14,7 @@ interface ViewfinderUiStateMapper {
         mode: CameraMode,
         isVideoMode: Boolean,
         flashMode: Int,
+        aspectRatio: Int,
         requireLocation: Boolean,
         settings: CameraSettings,
         modeSettings: ModeSettings,
@@ -29,6 +30,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         mode: CameraMode,
         isVideoMode: Boolean,
         flashMode: Int,
+        aspectRatio: Int,
         requireLocation: Boolean,
         settings: CameraSettings,
         modeSettings: ModeSettings,
@@ -43,10 +45,22 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             )
         }
 
+        val inPhotoMode = !mode.isQr && !isVideoMode
+
         return chrome.copy(
+            gridType = settings.gridType,
+            mode = mode,
+            aspectRatio = aspectRatio,
+            isQrMode = mode.isQr,
+            isVideoMode = isVideoMode,
+            inPhotoMode = inPhotoMode,
+            scanAllCodes = settings.scanAllCodes,
+            focusTimeoutSeconds = settings.focusTimeoutSeconds,
+            gyroscopeSuggestionsVisible = inPhotoMode && settings.gyroscopeSuggestions,
             settingsSheet = settingsSheetUiStateMapper.map(
                 isVideoMode = isVideoMode,
                 flashMode = flashMode,
+                aspectRatio = aspectRatio,
                 requireLocation = requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,

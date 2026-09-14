@@ -10,8 +10,6 @@ sealed interface ViewfinderScreenEffect {
 
     data object HideZoomPanel : ViewfinderScreenEffect
 
-    data object ApplySelfIllumination : ViewfinderScreenEffect
-
     data object ResetTorchToggle : ViewfinderScreenEffect
 
     data object ReloadVideoQualities : ViewfinderScreenEffect
@@ -24,6 +22,10 @@ sealed interface ViewfinderScreenEffect {
 
     data class ShowMessage(
         @StringRes val message: Int,
+    ) : ViewfinderScreenEffect
+
+    data class ApplySelfIllumination(
+        val enabled: Boolean,
     ) : ViewfinderScreenEffect
 
     data class ShowVideoQualityUnsupported(

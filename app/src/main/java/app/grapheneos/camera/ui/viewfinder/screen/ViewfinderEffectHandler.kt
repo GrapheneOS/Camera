@@ -75,30 +75,17 @@ internal class ViewfinderEffectHandler(
     fun handle(effect: Effect) {
         when (effect) {
             is Effect.ShowMessage -> showMessage(effect.message)
-
-            is Effect.ShowVideoQualityUnsupported -> {
-                showVideoQualityUnsupported(effect.quality)
-            }
-
-            Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
-
+            is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
+            is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
-
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
-
-            Effect.ShowZoomPanel -> showZoomPanel()
-
-            Effect.HideZoomPanel -> hideZoomPanel()
-
-            Effect.ApplySelfIllumination -> applySelfIllumination()
-
-            Effect.ResetTorchToggle -> resetTorchToggle()
-
-            Effect.ReloadVideoQualities -> reloadVideoQualities()
-
-            Effect.StartLocationUpdates -> startLocationUpdates()
-
-            Effect.StopLocationUpdates -> stopLocationUpdates()
+            is Effect.ShowZoomPanel -> showZoomPanel()
+            is Effect.HideZoomPanel -> hideZoomPanel()
+            is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
+            is Effect.ResetTorchToggle -> resetTorchToggle()
+            is Effect.ReloadVideoQualities -> reloadVideoQualities()
+            is Effect.StartLocationUpdates -> startLocationUpdates()
+            is Effect.StopLocationUpdates -> stopLocationUpdates()
         }
     }
 
@@ -120,6 +107,8 @@ internal class ViewfinderEffectHandler(
             description = state.flipCameraDescription,
         )
 
+        activity.previewGrid.gridType = state.gridType
+        activity.renderedState = state
         activity.cbText.text = state.selfTimerBadge
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
 
@@ -248,8 +237,8 @@ internal class ViewfinderEffectHandler(
         activity.settingsDialog.reloadQualities()
     }
 
-    private fun applySelfIllumination() {
-        activity.settingsDialog.selfIllumination()
+    private fun applySelfIllumination(enabled: Boolean) {
+        activity.settingsDialog.selfIllumination(enabled)
     }
 
     private fun resetTorchToggle() {

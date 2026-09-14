@@ -1,9 +1,11 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -14,6 +16,7 @@ interface SettingsSheetUiStateMapper {
     fun map(
         isVideoMode: Boolean,
         flashMode: Int,
+        aspectRatio: Int,
         requireLocation: Boolean,
         settings: CameraSettings,
         modeSettings: ModeSettings,
@@ -26,6 +29,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
     override fun map(
         isVideoMode: Boolean,
         flashMode: Int,
+        aspectRatio: Int,
         requireLocation: Boolean,
         settings: CameraSettings,
         modeSettings: ModeSettings,
@@ -40,8 +44,21 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             flashIcon = flash.first,
             flashDescription = flash.second,
             includeAudio = settings.includeAudio,
+            focusTimeoutSeconds = settings.focusTimeoutSeconds,
+            selfTimerSeconds = settings.selfTimerDurationSeconds,
+            videoQuality = modeSettings.videoQuality,
             geoTagging = requireLocation,
             selfIllumination = modeSettings.selfIllumination,
+            stabilizationEnabled = settings.enableEis,
+            waitForFocusLock = settings.waitForFocusLock,
+            is16by9 = aspectRatio == AspectRatio.RATIO_16_9,
+            aspectRatioFixed = isVideoMode,
+            aspectRatioDescription = when (aspectRatio) {
+                AspectRatio.RATIO_16_9 -> R.string.aspect_ratio_16_9
+                else -> R.string.aspect_ratio_4_3
+            },
+            gridIcon = gridIconOf(settings.gridType),
+            gridDescription = gridDescriptionOf(settings.gridType),
             includeAudioSettingVisible = isVideoMode,
             videoQualitySettingVisible = isVideoMode,
             stabilizationSettingVisible = isVideoMode && session.canApplyVideoStabilization,
@@ -49,6 +66,24 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
                 session.lensFacing == CameraSelector.LENS_FACING_FRONT,
             timerSettingVisible = !isVideoMode,
         )
+    }
+
+    private fun gridIconOf(gridType: GridType): Int {
+        return when (gridType) {
+            GridType.NONE -> R.drawable.grid_off_circle
+            GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle
+            GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
+            GridType.GOLDEN_RATIO -> R.drawable.grid_goldenratio_circle
+        }
+    }
+
+    private fun gridDescriptionOf(gridType: GridType): Int {
+        return when (gridType) {
+            GridType.NONE -> R.string.grid_off
+            GridType.THREE_BY_THREE -> R.string.grid_3x3
+            GridType.FOUR_BY_FOUR -> R.string.grid_4x4
+            GridType.GOLDEN_RATIO -> R.string.grid_golden_ratio
+        }
     }
 
     private fun flashOf(

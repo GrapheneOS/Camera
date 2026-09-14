@@ -109,6 +109,7 @@ class ViewfinderViewModel @Inject constructor(
                 mode = currentMode,
                 isVideoMode = isVideoMode,
                 flashMode = flashMode,
+                aspectRatio = aspectRatio,
                 requireLocation = requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,
@@ -139,17 +140,17 @@ class ViewfinderViewModel @Inject constructor(
             return !(isQRMode || isVideoMode)
         }
 
-    var gridType: GridType by setting(
+    private var gridType: GridType by setting(
         read = { it.gridType },
         write = { current, value -> current.copy(gridType = value) },
     )
 
-    var focusTimeout: Long by setting(
+    private var focusTimeout: Long by setting(
         read = { it.focusTimeoutSeconds },
         write = { current, value -> current.copy(focusTimeoutSeconds = value) },
     )
 
-    var selfTimerDuration: Int by setting(
+    private var selfTimerDuration: Int by setting(
         read = { it.selfTimerDurationSeconds },
         write = { current, value -> current.copy(selfTimerDurationSeconds = value) },
     )
@@ -159,7 +160,7 @@ class ViewfinderViewModel @Inject constructor(
         write = { current, value -> current.copy(enableCameraSounds = value) },
     )
 
-    var enableEIS: Boolean by setting(
+    private var enableEIS: Boolean by setting(
         read = { it.enableEis },
         write = { current, value -> current.copy(enableEis = value) },
     )
@@ -179,12 +180,12 @@ class ViewfinderViewModel @Inject constructor(
         write = { current, value -> current.copy(removeExifAfterCapture = value) },
     )
 
-    var waitForFocusLock: Boolean by setting(
+    private var waitForFocusLock: Boolean by setting(
         read = { it.waitForFocusLock },
         write = { current, value -> current.copy(waitForFocusLock = value) },
     )
 
-    var aspectRatio: Int
+    private var aspectRatio: Int
         get() {
             return when {
                 isVideoMode -> AspectRatio.RATIO_16_9
@@ -192,28 +193,24 @@ class ViewfinderViewModel @Inject constructor(
                 else -> settings.aspectRatio
             }
         }
-        private set(value) {
+        set(value) {
             runBlocking { settingsRepository.update { it.copy(aspectRatio = value) } }
+
+            publishUiState()
         }
 
     var scanAllCodes: Boolean by setting(
         read = { it.scanAllCodes },
         write = { current, value -> current.copy(scanAllCodes = value) },
-        onChanged = { value ->
-            publishUiState()
-
-            session.refreshQrHints()
-        },
+        onChanged = { session.refreshQrHints() },
     )
 
     var includeAudio: Boolean by setting(
         read = { it.includeAudio },
         write = { current, value -> current.copy(includeAudio = value) },
-        onChanged = { publishUiState() },
     )
 
-    var flashMode: Int = SettingsDefaults.FLASH_MODE
-        private set
+    private var flashMode: Int = SettingsDefaults.FLASH_MODE
 
     var videoQuality: Quality
         get() = modeSettings.videoQuality
@@ -249,7 +246,7 @@ class ViewfinderViewModel @Inject constructor(
             writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
 
             publishUiState()
-            emitEffect(Effect.ApplySelfIllumination)
+            emitEffect(Effect.ApplySelfIllumination(selfIlluminate))
         }
 
     fun attach(
@@ -270,6 +267,7 @@ class ViewfinderViewModel @Inject constructor(
         session.listener = this
 
         refreshSessionState()
+        publishUiState()
     }
 
     fun detach() {
@@ -300,14 +298,10 @@ class ViewfinderViewModel @Inject constructor(
         startCamera(forced = forced)
     }
 
-    fun setFlashMode(value: Int) {
+    private fun setFlashMode(value: Int) {
         writeMode { slot -> settingsRepository.setFlashMode(slot, value) }
 
         applyFlashMode(value)
-    }
-
-    fun shouldShowGyroscope(): Boolean {
-        return isInPhotoMode && settings.gyroscopeSuggestions
     }
 
     fun reloadSettings() {
@@ -329,10 +323,6 @@ class ViewfinderViewModel @Inject constructor(
         selfIlluminate = modeSettings.selfIllumination
 
         publishUiState()
-    }
-
-    fun loadSettings() {
-        includeAudio = settings.includeAudio
     }
 
     fun onAction(action: ViewfinderAction) {
@@ -743,6 +733,7 @@ class ViewfinderViewModel @Inject constructor(
             override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
                 runBlocking { settingsRepository.update { write(it, value) } }
 
+                publishUiState()
                 onChanged(value)
             }
         }

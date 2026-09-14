@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -30,6 +31,7 @@ class ViewfinderUiStateMapperTest {
             mode = mode,
             isVideoMode = isVideoMode,
             flashMode = ImageCapture.FLASH_MODE_OFF,
+            aspectRatio = AspectRatio.RATIO_4_3,
             requireLocation = false,
             settings = settings,
             modeSettings = ModeSettings(),
