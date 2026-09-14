@@ -22,6 +22,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.util.printStackTraceToString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -30,7 +31,7 @@ private const val imageFileFormat = ".jpg"
 
 class ImageCapturer(val mActivity: MainActivity) {
 
-    private val viewfinder = mActivity.viewfinder
+    private val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
     private val session = mActivity.session
 

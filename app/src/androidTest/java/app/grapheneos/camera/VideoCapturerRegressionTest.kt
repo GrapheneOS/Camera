@@ -27,6 +27,7 @@ import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -291,7 +292,9 @@ class VideoCapturerRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
 
-            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity {
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
+            }
             waitUntil(scenario, "video use case is bound") {
                 it.session.videoCapture != null
             }
@@ -312,12 +315,12 @@ class VideoCapturerRegressionTest {
                     // cannot pass merely because there was nowhere to go.
                     val tabs = activity.tabLayout
                     assertNotNull(
-                        "no mode to the right of ${activity.viewfinder.currentMode}",
+                        "no mode to the right of ${activity.viewfinder.uiState.value.mode}",
                         tabs.getTabAt(tabs.selectedTabPosition - 1)
                     )
 
                     flingRight(activity)
-                    mode = activity.viewfinder.currentMode
+                    mode = activity.viewfinder.uiState.value.mode
                     stillRecording = activity.videoCapturer.isRecording
                 }
 
@@ -371,7 +374,9 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
             waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
 
-            scenario.onActivity { it.viewfinder.switchMode(CameraMode.VIDEO) }
+            scenario.onActivity {
+                it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
+            }
             waitUntil(scenario, "video use case is bound") {
                 it.session.videoCapture != null
             }
@@ -394,7 +399,7 @@ class VideoCapturerRegressionTest {
                     // What both of the strip's touch listeners do with a tap
                     activity.finalizeMode(cameraTab)
 
-                    mode = activity.viewfinder.currentMode
+                    mode = activity.viewfinder.uiState.value.mode
                     highlighted = activity.tabLayout.selectedTab?.tag as CameraMode?
                 }
 
