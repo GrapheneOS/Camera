@@ -1,9 +1,11 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -22,6 +24,7 @@ class SettingsSheetUiStateMapperTest {
     private fun map(
         isVideoMode: Boolean = false,
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
+        aspectRatio: Int = AspectRatio.RATIO_4_3,
         requireLocation: Boolean = false,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
@@ -30,6 +33,7 @@ class SettingsSheetUiStateMapperTest {
         return mapper.map(
             isVideoMode = isVideoMode,
             flashMode = flashMode,
+            aspectRatio = aspectRatio,
             requireLocation = requireLocation,
             settings = settings,
             modeSettings = modeSettings,
@@ -122,5 +126,29 @@ class SettingsSheetUiStateMapperTest {
 
         assertTrue(state.selfIllumination)
         assertFalse(state.selfIlluminationSettingVisible)
+    }
+
+    @Test
+    fun aspectRatioToggle_announcesTheRatioItIsOn() {
+        val wide = map(aspectRatio = AspectRatio.RATIO_16_9)
+        val narrow = map(aspectRatio = AspectRatio.RATIO_4_3)
+
+        assertTrue(wide.is16by9)
+        assertEquals(R.string.aspect_ratio_16_9, wide.aspectRatioDescription)
+
+        assertFalse(narrow.is16by9)
+        assertEquals(R.string.aspect_ratio_4_3, narrow.aspectRatioDescription)
+    }
+
+    @Test
+    fun gridToggle_carriesADescriptionWithEveryIcon() {
+        val byType = GridType.entries.associateWith { gridType ->
+            map(settings = CameraSettings(gridType = gridType))
+        }
+
+        assertEquals(GridType.entries.size, byType.values.map { it.gridIcon }.toSet().size)
+        assertEquals(GridType.entries.size, byType.values.map { it.gridDescription }.toSet().size)
+        assertEquals(R.drawable.grid_off_circle, byType.getValue(GridType.NONE).gridIcon)
+        assertEquals(R.string.grid_off, byType.getValue(GridType.NONE).gridDescription)
     }
 }
