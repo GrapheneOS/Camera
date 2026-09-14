@@ -3,12 +3,13 @@ package app.grapheneos.camera
 import android.app.Activity
 import android.app.Application
 import android.net.Uri
-import android.os.Bundle
 import androidx.appcompat.widget.PopupMenu
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.InAppGallery
+import io.mockk.every
+import io.mockk.mockk
 import java.util.concurrent.CountDownLatch
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -27,11 +28,12 @@ class InAppGalleryRegressionTest {
 
     private val app = InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as Application
-    private val stall = StalledMediaScan()
+    private val scanGate = CountDownLatch(1)
+    private val stall = stalledMediaScan()
 
     @After
     fun releaseScan() {
-        stall.gate.countDown()
+        scanGate.countDown()
         app.unregisterActivityLifecycleCallbacks(stall)
     }
 
@@ -92,27 +94,17 @@ class InAppGalleryRegressionTest {
     /**
      * Holds the gallery's media scan so gallerySliderAdapter stays null, like on a slow device.
      */
-    private class StalledMediaScan : Application.ActivityLifecycleCallbacks {
-        val gate = CountDownLatch(1)
-
-        override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
-            if (activity is InAppGallery) {
-                activity.asyncLoaderOfCapturedItems.execute {
+    private fun stalledMediaScan(): Application.ActivityLifecycleCallbacks {
+        return mockk(relaxed = true) {
+            every { onActivityPreCreated(ofType<InAppGallery>(), any()) } answers {
+                firstArg<InAppGallery>().asyncLoaderOfCapturedItems.execute {
                     // Interrupted by shutdownNow() when the activity is destroyed
                     try {
-                        gate.await()
+                        scanGate.await()
                     } catch (_: InterruptedException) {
                     }
                 }
             }
         }
-
-        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
-        override fun onActivityStarted(activity: Activity) {}
-        override fun onActivityResumed(activity: Activity) {}
-        override fun onActivityPaused(activity: Activity) {}
-        override fun onActivityStopped(activity: Activity) {}
-        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-        override fun onActivityDestroyed(activity: Activity) {}
     }
 }
