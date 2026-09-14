@@ -20,6 +20,7 @@ class ViewfinderUiStateMapperTest {
 
     private val mapper: ViewfinderUiStateMapper = ViewfinderUiStateMapperImpl(
         settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
+        captureUiStateMapper = CaptureUiStateMapperImpl(),
     )
 
     private fun map(

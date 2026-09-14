@@ -4,8 +4,6 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
-import android.os.SystemClock
-import app.grapheneos.camera.ui.activities.MainActivity
 
 private fun prepareMediaPlayer(context: Context, resid: Int, listener: MediaPlayer.OnPreparedListener) {
     MediaPlayer().apply {
@@ -15,7 +13,10 @@ private fun prepareMediaPlayer(context: Context, resid: Int, listener: MediaPlay
     }
 }
 
-open class TunePlayer(val context: MainActivity) {
+open class TunePlayer(
+    context: Context,
+    private val soundsEnabled: () -> Boolean,
+) {
 
     private lateinit var shutterPlayer: MediaPlayer
 
@@ -40,7 +41,7 @@ open class TunePlayer(val context: MainActivity) {
     }
 
     private fun shouldNotPlayTune(): Boolean {
-        return !context.viewfinder.enableCameraSounds
+        return !soundsEnabled()
     }
 
     fun playShutterSound() {

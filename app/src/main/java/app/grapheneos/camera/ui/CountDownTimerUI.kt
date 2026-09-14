@@ -11,7 +11,6 @@ import androidx.appcompat.widget.AppCompatTextView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -19,7 +18,6 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     private lateinit var timer: CountDownTimer
     lateinit var mActivity: MainActivity
-    lateinit var viewfinder: ViewfinderViewModel
 
     companion object {
         private const val textAnimDuration = 700L
@@ -36,7 +34,6 @@ class CountDownTimerUI @JvmOverloads constructor(
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mActivity = mainActivity
-        viewfinder = mainActivity.viewfinder
     }
 
     fun startTimer() {
@@ -68,9 +65,9 @@ class CountDownTimerUI @JvmOverloads constructor(
                 text = pendingS.toString()
 
                 if (text == "1") {
-                    viewfinder.mPlayer?.playTimerFinalSSound()
+                    mActivity.tunePlayer.playTimerFinalSSound()
                 } else {
-                    viewfinder.mPlayer?.playTimerIncrementSound()
+                    mActivity.tunePlayer.playTimerIncrementSound()
                 }
             }
 
