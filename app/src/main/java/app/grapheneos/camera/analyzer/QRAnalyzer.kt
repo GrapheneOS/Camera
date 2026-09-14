@@ -14,7 +14,10 @@ import com.google.zxing.common.HybridBinarizer
 import java.util.EnumMap
 import kotlin.math.roundToInt
 
-class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
+class QRAnalyzer(
+    private val mActivity: MainActivity,
+    private val scanAllCodes: () -> Boolean,
+) : Analyzer {
     companion object {
         private const val TAG = "QRCodeImageAnalyzer"
     }
@@ -39,7 +42,7 @@ class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
         Log.i(TAG, "allowedFormats: $allowedFormats")
 
         supportedHints[DecodeHintType.POSSIBLE_FORMATS] = when {
-            mActivity.viewfinder.scanAllCodes -> BarcodeFormat.entries
+            scanAllCodes() -> BarcodeFormat.entries
             else -> allowedFormats
         }
 
