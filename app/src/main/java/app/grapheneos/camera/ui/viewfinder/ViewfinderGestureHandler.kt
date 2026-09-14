@@ -43,7 +43,7 @@ internal class ViewfinderGestureHandler(
             return true
         }
 
-        if (activity.viewfinder.isQRMode) {
+        if (activity.renderedState.isQrMode) {
             return false
         }
 
@@ -57,15 +57,15 @@ internal class ViewfinderGestureHandler(
 
         val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
-        if (!activity.viewfinder.isVideoMode) {
+        if (!activity.renderedState.isVideoMode) {
             activity.viewfinder.mPlayer?.playFocusStartSound()
         }
 
-        if (activity.viewfinder.focusTimeout == 0L) {
+        if (activity.renderedState.focusTimeoutSeconds == 0L) {
             focusBuilder.disableAutoCancel()
         } else {
             focusBuilder.setAutoCancelDuration(
-                activity.viewfinder.focusTimeout,
+                activity.renderedState.focusTimeoutSeconds,
                 TimeUnit.SECONDS,
             )
         }
@@ -177,13 +177,13 @@ internal class ViewfinderGestureHandler(
         if (activity.settingsDialog.isShowing) return
 
         when {
-            !activity.viewfinder.isQRMode -> {
+            !activity.renderedState.isQrMode -> {
                 if (activity.settingsIcon.isEnabled) {
                     activity.settingsIcon.performClick()
                 }
             }
 
-            !activity.viewfinder.scanAllCodes -> {
+            !activity.renderedState.scanAllCodes -> {
                 showMoreQrFormatOptions(
                     activity = activity,
                     barcodeFormats = activity.barcodeFormats,
