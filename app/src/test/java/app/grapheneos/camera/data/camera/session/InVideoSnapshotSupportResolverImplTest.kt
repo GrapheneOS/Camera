@@ -3,7 +3,12 @@ package app.grapheneos.camera.data.camera.session
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
+import io.mockk.confirmVerified
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -13,9 +18,16 @@ class InVideoSnapshotSupportResolverImplTest {
 
     private val resolver = InVideoSnapshotSupportResolverImpl()
 
+    private val probe = mockk<SessionProbe>()
+
+    @Before
+    fun setUp() {
+        every { probe.isSupported(withSnapshots = any(), features = any()) } returns false
+    }
+
     @Test
     fun invoke_noQualityAskedForAndTheStreamsBind_keepsSnapshots() {
-        val probe = FakeSessionProbe(supported = setOf(PLAIN_STREAMS_WITH_SNAPSHOTS))
+        supports(withSnapshots = true, features = emptySet())
 
         val support = resolver.resolve(videoQualityFeature = null, probe = probe)
 
@@ -24,8 +36,6 @@ class InVideoSnapshotSupportResolverImplTest {
 
     @Test
     fun invoke_noQualityAskedForAndTheStreamsDoNotBind_dropsSnapshots() {
-        val probe = FakeSessionProbe(supported = emptySet())
-
         val support = resolver.resolve(videoQualityFeature = null, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
@@ -33,17 +43,18 @@ class InVideoSnapshotSupportResolverImplTest {
 
     @Test
     fun invoke_theQualityBindsWithSnapshots_keepsSnapshotsWithoutAskingAgain() {
-        val probe = FakeSessionProbe(supported = setOf(QUALITY_WITH_SNAPSHOTS))
+        supports(withSnapshots = true, features = setOf(QUALITY))
 
         val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
-        assertEquals(listOf(QUALITY_WITH_SNAPSHOTS), probe.asked)
+        verify(exactly = 1) { probe.isSupported(withSnapshots = true, features = setOf(QUALITY)) }
+        confirmVerified(probe)
     }
 
     @Test
     fun invoke_theQualityBindsOnlyWithoutSnapshots_givesUpTheSnapshots() {
-        val probe = FakeSessionProbe(supported = setOf(QUALITY_WITHOUT_SNAPSHOTS))
+        supports(withSnapshots = false, features = setOf(QUALITY))
 
         val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
@@ -52,7 +63,7 @@ class InVideoSnapshotSupportResolverImplTest {
 
     @Test
     fun invoke_theQualityBindsNeitherWay_keepsSnapshotsAndLeavesTheQualityToTheResolver() {
-        val probe = FakeSessionProbe(supported = setOf(PLAIN_STREAMS_WITH_SNAPSHOTS))
+        supports(withSnapshots = true, features = emptySet())
 
         val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
@@ -61,51 +72,16 @@ class InVideoSnapshotSupportResolverImplTest {
 
     @Test
     fun invoke_nothingBinds_dropsSnapshots() {
-        val probe = FakeSessionProbe(supported = emptySet())
-
         val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }
 
-    private class FakeSessionProbe(
-        private val supported: Set<Question>,
-    ) : SessionProbe {
-
-        val asked = mutableListOf<Question>()
-
-        override fun isSupported(
-            withSnapshots: Boolean,
-            features: Set<GroupableFeature>,
-        ): Boolean {
-            val question = Question(withSnapshots = withSnapshots, features = features)
-            asked.add(question)
-
-            return question in supported
-        }
+    private fun supports(withSnapshots: Boolean, features: Set<GroupableFeature>) {
+        every { probe.isSupported(withSnapshots = withSnapshots, features = features) } returns true
     }
-
-    private data class Question(
-        val withSnapshots: Boolean,
-        val features: Set<GroupableFeature>,
-    )
 
     private companion object {
         val QUALITY: GroupableFeature = GroupableFeatures.UHD_RECORDING
-
-        val PLAIN_STREAMS_WITH_SNAPSHOTS = Question(
-            withSnapshots = true,
-            features = emptySet(),
-        )
-
-        val QUALITY_WITH_SNAPSHOTS = Question(
-            withSnapshots = true,
-            features = setOf(QUALITY),
-        )
-
-        val QUALITY_WITHOUT_SNAPSHOTS = Question(
-            withSnapshots = false,
-            features = setOf(QUALITY),
-        )
     }
 }
