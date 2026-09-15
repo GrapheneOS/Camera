@@ -837,7 +837,6 @@ open class MainActivity : AppCompatActivity() {
         session = cameraSessionFactory.create(environment = sessionHandler)
         viewfinder.attach(
             environment = sessionHandler,
-            effects = sessionHandler,
             chrome = sessionHandler,
             session = session,
         )

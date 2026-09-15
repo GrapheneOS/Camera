@@ -13,7 +13,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffects
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
@@ -30,7 +29,6 @@ interface ViewfinderCameraDelegate {
 
     fun attach(
         environment: CameraSessionEnvironment,
-        effects: ViewfinderEffects,
         chrome: ViewfinderChrome,
         session: CameraSession,
         emitEffect: (Effect) -> Unit,
@@ -75,11 +73,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return attached.environment
         }
 
-    private val effects: ViewfinderEffects
-        get() {
-            return attached.effects
-        }
-
     private val chrome: ViewfinderChrome
         get() {
             return attached.chrome
@@ -114,14 +107,12 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     override fun attach(
         environment: CameraSessionEnvironment,
-        effects: ViewfinderEffects,
         chrome: ViewfinderChrome,
         session: CameraSession,
         emitEffect: (Effect) -> Unit,
     ) {
         attachment = Attachment(
             environment = environment,
-            effects = effects,
             chrome = chrome,
             session = session,
             emitEffect = emitEffect,
@@ -149,8 +140,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         if ((!forced && session.camera != null) || session.cameraProvider == null) return false
 
         // Cancel any pending capture requests
-        effects.cancelPendingCapture()
-        effects.hideExposurePanel()
+        chrome.cancelPendingCapture()
+        chrome.hideExposurePanel()
 
         return true
     }
@@ -172,11 +163,11 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
-        effects.updateLastFrame()
+        chrome.updateLastFrame()
 
         val qrLensFacing = when {
             isQrMode -> {
-                effects.startFocusTimer()
+                chrome.startFocusTimer()
                 qrLensFacing(extensionMode)
             }
 
@@ -190,7 +181,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun bindCamera(settings: CameraBindSettings): BindOutcome {
-        effects.forceUpdateOrientationSensor()
+        chrome.forceUpdateOrientationSensor()
 
         val outcome = session.bind(settings)
 
@@ -257,7 +248,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun cancelFocusTimer() {
-        effects.cancelFocusTimer()
+        chrome.cancelFocusTimer()
     }
 
     override fun shouldAskForLocationPermission(): Boolean {
@@ -317,7 +308,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     private class Attachment(
         val environment: CameraSessionEnvironment,
-        val effects: ViewfinderEffects,
         val chrome: ViewfinderChrome,
         val session: CameraSession,
         val emitEffect: (Effect) -> Unit,

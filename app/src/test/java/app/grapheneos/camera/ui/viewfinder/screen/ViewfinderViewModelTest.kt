@@ -273,6 +273,28 @@ class ViewfinderViewModelTest {
     }
 
     @Test
+    fun flashToggleClicked_inAVideoOnlyEntryPoint_saysSoEvenWithAFlash() {
+        runTest {
+            val viewModel = createViewModel(
+                applicationScope = backgroundScope,
+                entryPoint = ENTRY_POINT.copy(requiresVideoModeOnly = true),
+            )
+            val effects = collectEffects(viewModel)
+            stateHolder.update {
+                it.copy(session = ViewfinderSessionState(isFlashAvailable = true))
+            }
+
+            viewModel.onAction(CameraAction.FlashToggleClicked)
+
+            assertEquals(
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.flash_switch_unsupported)),
+                effects,
+            )
+            verify(exactly = 0) { settingsDelegate.setFlashMode(any()) }
+        }
+    }
+
+    @Test
     fun flashToggleClicked_withAFlashThatIsOff_turnsItOn() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
@@ -360,9 +382,12 @@ class ViewfinderViewModelTest {
         }
     }
 
-    private fun createViewModel(applicationScope: CoroutineScope): ViewfinderViewModel {
+    private fun createViewModel(
+        applicationScope: CoroutineScope,
+        entryPoint: CameraEntryPoint = ENTRY_POINT,
+    ): ViewfinderViewModel {
         val viewModel = ViewfinderViewModel(
-            entryPoint = ENTRY_POINT,
+            entryPoint = entryPoint,
             settingsDelegate = settingsDelegate,
             modeDelegate = modeDelegate,
             cameraDelegate = cameraDelegate,
@@ -396,7 +421,6 @@ class ViewfinderViewModelTest {
     private fun attach(viewModel: ViewfinderViewModel) {
         viewModel.attach(
             environment = mockk(relaxed = true),
-            effects = mockk(relaxed = true),
             chrome = mockk(relaxed = true),
             session = mockk(relaxed = true),
         )
