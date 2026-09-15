@@ -51,6 +51,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             selfIlluminationSettingVisible =
                 session.lensFacing == CameraSelector.LENS_FACING_FRONT,
             timerSettingVisible = !isVideoMode,
+            waitForFocusLockSettingVisible = !state.requiresVideoModeOnly,
         )
     }
 

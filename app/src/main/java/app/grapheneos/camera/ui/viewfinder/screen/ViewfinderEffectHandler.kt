@@ -30,7 +30,6 @@ import java.util.concurrent.Executor
 internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
 ) : CameraSessionEnvironment,
-    ViewfinderEffects,
     ViewfinderChrome {
 
     override val sessionContext: Context
