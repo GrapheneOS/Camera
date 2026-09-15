@@ -209,7 +209,7 @@ class ViewfinderCameraDelegateTest {
 
         delegate.bind(
             ViewfinderStateHolder(
-                initial = ViewfinderState(mode = CameraMode.CAMERA),
+                initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
                 render = { ViewfinderUiState() },
             ),
         )

@@ -176,6 +176,7 @@ class ViewfinderViewModelTest {
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             uiStateMapper = mockk(relaxed = true),
+            cameraBindSettingsMapper = mockk(relaxed = true),
             applicationScope = applicationScope,
             mainDispatcher = mainDispatcherRule.testDispatcher,
         )

@@ -22,7 +22,7 @@ class ViewfinderStateHolderTest {
     private val rendered = mutableListOf<ViewfinderState>()
 
     private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA),
+        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
         render = { state ->
             rendered += state
             ViewfinderUiState(mode = state.mode)
@@ -41,7 +41,10 @@ class ViewfinderStateHolderTest {
 
         assertEquals(CameraMode.VIDEO, stateHolder.state.value.mode)
         assertEquals(CameraMode.VIDEO, stateHolder.uiState.value.mode)
-        assertEquals(listOf(ViewfinderState(mode = CameraMode.VIDEO)), rendered)
+        assertEquals(
+            listOf(ViewfinderState(mode = CameraMode.VIDEO, requiresVideoModeOnly = false)),
+            rendered,
+        )
     }
 
     @Test

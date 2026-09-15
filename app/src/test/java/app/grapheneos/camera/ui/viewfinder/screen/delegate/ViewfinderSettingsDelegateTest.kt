@@ -37,7 +37,7 @@ class ViewfinderSettingsDelegateTest {
     private val settingsRepository = mockk<SettingsRepository>()
 
     private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA),
+        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
         render = { ViewfinderUiState() },
     )
 
@@ -67,7 +67,7 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             val delegate = createDelegate()
             val otherStateHolder = ViewfinderStateHolder(
-                initial = ViewfinderState(mode = CameraMode.CAMERA),
+                initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
                 render = { ViewfinderUiState() },
             )
 
