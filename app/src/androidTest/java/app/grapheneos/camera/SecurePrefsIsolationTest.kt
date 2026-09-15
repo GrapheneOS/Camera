@@ -2,12 +2,12 @@ package app.grapheneos.camera
 
 import android.Manifest
 import android.content.Context
-import androidx.datastore.core.DataStore
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
@@ -47,45 +47,64 @@ class SecurePrefsIsolationTest {
         .applicationContext
 
     private fun asTheOwner(block: (SettingsRepository) -> Unit) {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity -> block(activity.settingsRepository) }
+        inSession(MainActivity::class.java, block)
+    }
+
+    private fun asASecureSession(block: (SettingsRepository) -> Unit) {
+        inSession(SecureMainActivity::class.java, block)
+    }
+
+    private fun <T : MainActivity> inSession(
+        activityClass: Class<T>,
+        block: (SettingsRepository) -> Unit,
+    ) {
+        ActivityScenario.launch(activityClass).use { scenario ->
+            lateinit var repository: SettingsRepository
+            scenario.onActivity { activity ->
+                repository = activity.settingsRepository
+                block(repository)
+            }
+            runBlocking { repository.awaitPersisted() }
         }
     }
 
-    private val durableSettings: DataStore<SettingsPrefs> by lazy {
-        EntryPointAccessors
-            .fromApplication(context, DurableSettingsPrefsEntryPoint::class.java)
-            .settingsPrefs()
+    private val durable: DurableSettingsPrefsEntryPoint by lazy {
+        EntryPointAccessors.fromApplication(context, DurableSettingsPrefsEntryPoint::class.java)
     }
 
-    private lateinit var ownersSettings: SettingsPrefs
+    private lateinit var ownersSettings: CameraSettings
+
+    private var ownersGeoTagging = false
 
     private fun stored(): SettingsPrefs {
-        return runBlocking { durableSettings.data.first() }
+        return runBlocking { durable.settingsPrefs().data.first() }
     }
 
     @Before
     fun rememberOwnersSettings() {
-        ownersSettings = stored()
+        val owners = durable.settingsRepository()
+
+        ownersSettings = owners.settings.value
+        ownersGeoTagging = owners.modeSettings(SLOT).geoTagging
     }
 
     @After
     fun restoreOwnersSettings() {
-        runBlocking { durableSettings.updateData { ownersSettings } }
+        val owners = durable.settingsRepository()
+
+        owners.update { ownersSettings }
+        owners.setGeoTagging(SLOT, ownersGeoTagging)
+        runBlocking { owners.awaitPersisted() }
     }
 
     @Test
     fun writesInASecureSessionDoNotChangeThePersistentPrefs() {
         asTheOwner { repository ->
-            runBlocking { repository.update { it.copy(photoQuality = OWNERS_QUALITY) } }
+            repository.update { it.copy(photoQuality = OWNERS_QUALITY) }
         }
 
-        ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                runBlocking {
-                    activity.settingsRepository.update { it.copy(photoQuality = SESSIONS_QUALITY) }
-                }
-            }
+        asASecureSession { repository ->
+            repository.update { it.copy(photoQuality = SESSIONS_QUALITY) }
         }
 
         assertEquals(
@@ -98,18 +117,16 @@ class SecurePrefsIsolationTest {
     @Test
     fun aSecureSessionStillReadsTheOwnersSettings() {
         asTheOwner { repository ->
-            runBlocking { repository.update { it.copy(photoQuality = OWNERS_QUALITY) } }
+            repository.update { it.copy(photoQuality = OWNERS_QUALITY) }
         }
 
-        ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                assertEquals(
-                    "The isolation must be one-way: a lockscreen session still honours the" +
-                        " settings the owner chose",
-                    OWNERS_QUALITY,
-                    runBlocking { activity.settingsRepository.settings.first() }.photoQuality,
-                )
-            }
+        asASecureSession { repository ->
+            assertEquals(
+                "The isolation must be one-way: a lockscreen session still honours the" +
+                    " settings the owner chose",
+                OWNERS_QUALITY,
+                repository.settings.value.photoQuality,
+            )
         }
     }
 
@@ -117,28 +134,17 @@ class SecurePrefsIsolationTest {
     @Test
     fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
         asTheOwner { repository ->
-            runBlocking {
-                repository.modeSettings(SLOT)
-                repository.setGeoTagging(SLOT, false)
-            }
+            repository.setGeoTagging(SLOT, false)
         }
 
-        ActivityScenario.launch(SecureMainActivity::class.java).use { scenario ->
-            scenario.onActivity { activity ->
-                val repository = activity.settingsRepository
+        asASecureSession { repository ->
+            repository.setGeoTagging(SLOT, true)
 
-                val slotted = runBlocking {
-                    repository.modeSettings(SLOT)
-                    repository.setGeoTagging(SLOT, true)
-                    repository.modeSettings(SLOT)
-                }
-
-                assertTrue(
-                    "The session lost its own mode-scoped write, so it was handed a second copy" +
-                        " of the owner's preferences instead of the one it had been changing",
-                    slotted.geoTagging,
-                )
-            }
+            assertTrue(
+                "The session lost its own mode-scoped write, so it was handed a second copy" +
+                    " of the owner's preferences instead of the one it had been changing",
+                repository.modeSettings(SLOT).geoTagging,
+            )
         }
 
         assertEquals(
@@ -153,7 +159,7 @@ class SecurePrefsIsolationTest {
         // The mirror of the tests above: if this ever fails, they would pass for the wrong
         // reason — because nothing writes preferences at all.
         asTheOwner { repository ->
-            runBlocking { repository.update { it.copy(photoQuality = SESSIONS_QUALITY) } }
+            repository.update { it.copy(photoQuality = SESSIONS_QUALITY) }
         }
 
         assertEquals(SESSIONS_QUALITY, stored().common.photoQuality)

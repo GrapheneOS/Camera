@@ -4,9 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.di.core.DurablePreferences
-import app.grapheneos.camera.di.settings.SettingsRepositoryFactory
 import app.grapheneos.camera.ui.activities.SecureActivity
 import dagger.Module
 import dagger.Provides
@@ -21,34 +19,15 @@ internal class PreferencesProvidesModule {
 
     @Provides
     @ActivityScoped
-    fun provideSettingsPrefs(
-        @ActivityContext context: Context,
-        @DurablePreferences durable: DataStore<SettingsPrefs>,
-        secureSession: SecureSessionPreferences,
-    ): DataStore<SettingsPrefs> {
-        return when (context) {
-            // Secure sessions get a snapshot so later owner changes cannot leak through the lockscreen.
-            is SecureActivity -> secureSession.settingsSnapshotOf(durable)
-            else -> durable
-        }
-    }
-
-    @Provides
-    @ActivityScoped
     fun provideSettingsRepository(
         @ActivityContext context: Context,
-        @DurablePreferences durable: SettingsRepository,
-        @DurablePreferences durablePrefs: DataStore<SettingsPrefs>,
+        @DurablePreferences owners: SettingsRepository,
         secureSession: SecureSessionPreferences,
-        factory: SettingsRepositoryFactory,
     ): SettingsRepository {
         return when (context) {
-            is SecureActivity -> secureSession.settingsRepository(
-                durable = durablePrefs,
-                create = factory::create,
-            )
-
-            else -> durable
+            // Secure sessions get a copy so later owner changes cannot leak through the lockscreen.
+            is SecureActivity -> secureSession.settingsRepository(owners)
+            else -> owners
         }
     }
 

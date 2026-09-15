@@ -14,6 +14,8 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.ModeSlot
+import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
@@ -29,13 +31,15 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Setting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 interface ViewfinderScreenModel {
     val uiState: StateFlow<ViewfinderUiState>
@@ -52,6 +56,8 @@ class ViewfinderViewModel @Inject constructor(
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
+    @ApplicationScope private val applicationScope: CoroutineScope,
+    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     ViewfinderScreenModel,
     CameraSession.Listener {
@@ -384,9 +390,10 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun onStorageLocationNotFound() {
-        runBlocking { revertToMediaStoreLocation() }
-
-        emitEffect(Effect.ShowStorageLocationNotFound)
+        applicationScope.launch(mainDispatcher) {
+            revertToMediaStoreLocation()
+            emitEffect(Effect.ShowStorageLocationNotFound)
+        }
     }
 
     private fun flashPreview() {

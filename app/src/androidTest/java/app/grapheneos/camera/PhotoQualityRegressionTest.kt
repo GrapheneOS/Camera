@@ -9,7 +9,6 @@ import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -81,7 +80,7 @@ class PhotoQualityRegressionTest {
                     assertEquals(77, repository.settings.value.photoQuality)
                 }
             } finally {
-                runBlocking { repository.update { it.copy(photoQuality = stored) } }
+                repository.update { it.copy(photoQuality = stored) }
             }
         }
     }

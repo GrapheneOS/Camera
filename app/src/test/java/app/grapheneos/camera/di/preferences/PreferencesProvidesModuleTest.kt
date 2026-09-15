@@ -4,14 +4,18 @@ import android.app.Activity
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.media.store.StoragePrefs
-import app.grapheneos.camera.data.settings.store.SettingsPrefs
-import app.grapheneos.camera.data.settings.store.StoredCameraSettings
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.activities.MoreSettingsSecure
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -24,16 +28,16 @@ class PreferencesProvidesModuleTest {
 
     private val secureSession = SecureSessionPreferences()
 
-    private val durableSettings: DataStore<SettingsPrefs> = InMemoryDataStore(
-        SettingsPrefs(common = StoredCameraSettings(photoQuality = OWNERS_PHOTO_QUALITY)),
-    )
+    private val owners = mockk<SettingsRepository> {
+        every { sessionCopy() } answers { mockk() }
+    }
 
     private val durableStorage: DataStore<StoragePrefs> = InMemoryDataStore(StoragePrefs())
 
-    private fun <T : Activity> settingsPrefsFor(type: Class<T>): DataStore<SettingsPrefs> {
-        return module.provideSettingsPrefs(
+    private fun <T : Activity> settingsRepositoryFor(type: Class<T>): SettingsRepository {
+        return module.provideSettingsRepository(
             context = Robolectric.buildActivity(type).get(),
-            durable = durableSettings,
+            owners = owners,
             secureSession = secureSession,
         )
     }
@@ -51,50 +55,19 @@ class PreferencesProvidesModuleTest {
     }
 
     @Test
-    fun settingsPrefs_secureActivity_keepsWritesOutOfTheOwnersStore() {
-        val session = settingsPrefsFor(MoreSettingsSecure::class.java)
+    fun settingsRepository_secureActivity_isACopyOfTheOwners() {
+        val session = settingsRepositoryFor(MoreSettingsSecure::class.java)
 
-        runBlocking {
-            session.updateData {
-                it.copy(common = it.common.copy(photoQuality = SESSIONS_PHOTO_QUALITY))
-            }
-        }
-
-        assertEquals(SESSIONS_PHOTO_QUALITY, stored(session).common.photoQuality)
-        assertEquals(OWNERS_PHOTO_QUALITY, stored(durableSettings).common.photoQuality)
+        assertNotSame(owners, session)
+        verify(exactly = 1) { owners.sessionCopy() }
     }
 
     @Test
-    fun settingsPrefs_secureActivity_startsFromWhatTheOwnerConfigured() {
-        val session = settingsPrefsFor(MoreSettingsSecure::class.java)
+    fun settingsRepository_regularActivity_isTheOwners() {
+        val session = settingsRepositoryFor(MoreSettings::class.java)
 
-        assertEquals(OWNERS_PHOTO_QUALITY, stored(session).common.photoQuality)
-    }
-
-    @Test
-    fun settingsPrefs_secureActivity_doesNotFollowTheOwnersLaterChanges() {
-        val session = settingsPrefsFor(MoreSettingsSecure::class.java)
-
-        runBlocking {
-            durableSettings.updateData {
-                it.copy(common = it.common.copy(photoQuality = SESSIONS_PHOTO_QUALITY))
-            }
-        }
-
-        assertEquals(OWNERS_PHOTO_QUALITY, stored(session).common.photoQuality)
-    }
-
-    @Test
-    fun settingsPrefs_regularActivity_writesTheOwnersStore() {
-        val session = settingsPrefsFor(MoreSettings::class.java)
-
-        runBlocking {
-            session.updateData {
-                it.copy(common = it.common.copy(photoQuality = SESSIONS_PHOTO_QUALITY))
-            }
-        }
-
-        assertEquals(SESSIONS_PHOTO_QUALITY, stored(durableSettings).common.photoQuality)
+        assertSame(owners, session)
+        verify(exactly = 0) { owners.sessionCopy() }
     }
 
     @Test
@@ -126,8 +99,6 @@ class PreferencesProvidesModuleTest {
     }
 
     private companion object {
-        const val OWNERS_PHOTO_QUALITY = 71
-        const val SESSIONS_PHOTO_QUALITY = 42
         const val OWNERS_LOCATION = "content://tree/owners"
         const val SESSIONS_LOCATION = "content://tree/sessions"
     }

@@ -12,7 +12,6 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -213,9 +212,7 @@ class SelfTimerRegressionTest {
             try {
                 block(scenario)
             } finally {
-                runBlocking {
-                    repository.update { it.copy(selfTimerDurationSeconds = stored) }
-                }
+                repository.update { it.copy(selfTimerDurationSeconds = stored) }
             }
         }
     }

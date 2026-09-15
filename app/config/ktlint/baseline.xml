@@ -499,9 +499,9 @@
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="1023" column="100" source="standard:max-line-length" />
-        <error line="1179" column="100" source="standard:max-line-length" />
-        <error line="1534" column="17" source="standard:chain-wrapping" />
-        <error line="1724" column="27" source="standard:property-naming" />
+        <error line="1178" column="100" source="standard:max-line-length" />
+        <error line="1533" column="17" source="standard:chain-wrapping" />
+        <error line="1723" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

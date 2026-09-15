@@ -1,6 +1,7 @@
 package app.grapheneos.camera.di.preferences
 
 import androidx.datastore.core.DataStore
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.di.core.DurablePreferences
 import dagger.hilt.EntryPoint
@@ -13,4 +14,7 @@ internal interface DurableSettingsPrefsEntryPoint {
 
     @DurablePreferences
     fun settingsPrefs(): DataStore<SettingsPrefs>
+
+    @DurablePreferences
+    fun settingsRepository(): SettingsRepository
 }

@@ -7,7 +7,6 @@ import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import javax.inject.Inject
-import kotlinx.coroutines.runBlocking
 
 interface ViewfinderSettingsDelegate {
     val settings: CameraSettings
@@ -91,8 +90,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     override fun selectModeSlot(slot: ModeSlot) {
         this.slot = slot
-
-        modeSettings = runBlocking { settingsRepository.modeSettings(slot) }
+        modeSettings = settingsRepository.modeSettings(slot)
     }
 
     override fun setFlashMode(value: Int) {
@@ -136,12 +134,11 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     private fun update(transform: (CameraSettings) -> CameraSettings) {
-        runBlocking { settingsRepository.update(transform) }
+        settingsRepository.update(transform)
     }
 
-    private fun writeMode(write: suspend (ModeSlot) -> ModeSettings) {
+    private fun writeMode(write: (ModeSlot) -> ModeSettings) {
         val current = slot ?: return
-
-        modeSettings = runBlocking { write(current) }
+        modeSettings = write(current)
     }
 }
