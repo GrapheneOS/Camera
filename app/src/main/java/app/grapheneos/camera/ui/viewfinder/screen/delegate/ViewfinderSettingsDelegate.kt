@@ -14,9 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 interface ViewfinderSettingsDelegate {
-    val settings: CameraSettings
-    val modeSettings: ModeSettings
-    val requireLocation: Boolean
 
     fun bind(
         scope: CoroutineScope,
@@ -48,25 +45,6 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     private var isBound = false
 
-    override val settings: CameraSettings
-        get() {
-            return stateHolder.state.value.settings
-        }
-
-    override val modeSettings: ModeSettings
-        get() {
-            return stateHolder.state.value.modeSettings
-        }
-
-    // Session state rather than the stored value: geo-tagging is only ever on once the permission
-    // is actually granted, and applyModeSettings() is what settles a stored "on" against that.
-    // Reading the preference back here would resurrect the very stale "on" the coercion exists to
-    // drop.
-    override val requireLocation: Boolean
-        get() {
-            return stateHolder.state.value.requireLocation
-        }
-
     private var slot: ModeSlot? = null
 
     override fun bind(
@@ -88,7 +66,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     override fun cycleGridType() {
-        val next = when (settings.gridType) {
+        val next = when (stateHolder.state.value.settings.gridType) {
             GridType.NONE -> GridType.THREE_BY_THREE
             GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
             GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
@@ -147,7 +125,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     override fun setGeoTagging(enabled: Boolean) {
         // A permission result is delivered before the first onResume of an activity the system
-        // recreated, so this can run before a mode has been slotted — see modeSettings.
+        // recreated, so this can run before a mode has been slotted — see selectModeSlot().
         val modeSettings = writeMode { slot ->
             settingsRepository.setGeoTagging(
                 slot = slot,
@@ -192,7 +170,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     private fun writeMode(write: (ModeSlot) -> ModeSettings): ModeSettings {
-        val current = slot ?: return modeSettings
+        val current = slot ?: return stateHolder.state.value.modeSettings
 
         return write(current)
     }

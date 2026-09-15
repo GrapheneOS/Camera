@@ -12,6 +12,7 @@ data class ViewfinderState(
     val requiresVideoModeOnly: Boolean,
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
+    // Settled against the location permission; never read back from the stored preference.
     val requireLocation: Boolean = false,
     val session: ViewfinderSessionState = ViewfinderSessionState(),
     val flashMode: Int = SettingsDefaults.FLASH_MODE,

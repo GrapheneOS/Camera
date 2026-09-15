@@ -156,28 +156,30 @@ class ViewfinderViewModel @Inject constructor(
     private fun setSelfIllumination(enabled: Boolean) {
         settingsDelegate.setSelfIllumination(enabled)
 
-        emitEffect(Effect.ApplySelfIllumination(stateHolder.state.value.selfIlluminate()))
+        emitEffect(Effect.ApplySelfIllumination(state().selfIlluminate()))
     }
 
     private fun applyModeSettings() {
         slotCurrentMode()
 
-        if (stateHolder.state.value.isVideoMode()) {
+        val slotted = state()
+
+        if (slotted.isVideoMode()) {
             emitEffect(Effect.ReloadVideoQualities)
         }
 
-        cameraDelegate.applyFlashMode(settingsDelegate.modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(slotted.modeSettings.flashMode)
 
         // A stored "on" is written before a permission request resolves, and it outlives a later
         // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
         // startup that the user never asked for. Coercing it here settles the stale value through
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
         setRequireLocation(
-            enabled = settingsDelegate.modeSettings.geoTagging &&
+            enabled = slotted.modeSettings.geoTagging &&
                 !cameraDelegate.shouldAskForLocationPermission(),
         )
 
-        setSelfIllumination(settingsDelegate.modeSettings.selfIllumination)
+        setSelfIllumination(slotted.modeSettings.selfIllumination)
     }
 
     override fun onAction(action: ViewfinderAction) {
@@ -266,7 +268,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun onVideoQualitySelected(quality: Quality) {
-        if (quality == settingsDelegate.modeSettings.videoQuality) return
+        if (quality == state().modeSettings.videoQuality) return
 
         settingsDelegate.setVideoQuality(quality)
 
@@ -274,9 +276,11 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun toggleFlashMode() {
+        val currentState = state()
+
         when {
-            cameraDelegate.sessionState.isFlashAvailable -> {
-                val next = when (cameraDelegate.flashMode) {
+            currentState.session.isFlashAvailable -> {
+                val next = when (currentState.flashMode) {
                     ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                     ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
                     else -> ImageCapture.FLASH_MODE_OFF
@@ -292,7 +296,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun toggleAspectRatio() {
-        val next = when (stateHolder.state.value.aspectRatio()) {
+        val next = when (state().aspectRatio()) {
             AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
             else -> AspectRatio.RATIO_16_9
         }
@@ -303,7 +307,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun switchLens() {
-        if (cameraDelegate.toggleLensFacing(modeDelegate.currentMode.extensionMode)) {
+        if (cameraDelegate.toggleLensFacing(state().mode.extensionMode)) {
             startCamera(forced = true)
         }
     }
@@ -328,7 +332,7 @@ class ViewfinderViewModel @Inject constructor(
             cameraDelegate.isProviderReady -> startCamera(forced = forced)
             else -> cameraDelegate.initialize(
                 forced = forced,
-                extensionMode = modeDelegate.currentMode.extensionMode,
+                extensionMode = state().mode.extensionMode,
             )
         }
     }
@@ -340,16 +344,18 @@ class ViewfinderViewModel @Inject constructor(
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
-        cameraDelegate.applyFlashMode(settingsDelegate.modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(state().modeSettings.flashMode)
+
+        val bindState = state()
 
         val target = cameraDelegate.selectLens(
-            isQrMode = stateHolder.state.value.isQrMode(),
-            extensionMode = modeDelegate.currentMode.extensionMode,
+            isQrMode = bindState.isQrMode(),
+            extensionMode = bindState.mode.extensionMode,
         ) ?: return
 
         val outcome = cameraDelegate.bindCamera(
             cameraBindSettingsMapper.map(
-                state = stateHolder.state.value,
+                state = bindState,
                 target = target,
             ),
         )
@@ -377,11 +383,15 @@ class ViewfinderViewModel @Inject constructor(
                 switchMode(modeDelegate.defaultMode)
             }
 
-            BindOutcome.BOUND -> cameraDelegate.announceBind(
-                aspectRatio = stateHolder.state.value.aspectRatio(),
-                isInPhotoMode = stateHolder.state.value.isInPhotoMode(),
-                currentMode = { modeDelegate.currentMode },
-            )
+            BindOutcome.BOUND -> {
+                val boundState = state()
+
+                cameraDelegate.announceBind(
+                    aspectRatio = boundState.aspectRatio(),
+                    isInPhotoMode = boundState.isInPhotoMode(),
+                    currentMode = { state().mode },
+                )
+            }
         }
     }
 
@@ -393,13 +403,11 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun flashPreview() {
-        emitEffect(Effect.FlashPreview(stateHolder.state.value.selfIlluminate()))
+        emitEffect(Effect.FlashPreview(state().selfIlluminate()))
     }
 
     private fun switchMode(mode: CameraMode) {
-        if (!modeDelegate.select(mode)) {
-            return
-        }
+        if (!modeDelegate.select(mode)) return
 
         cameraDelegate.cancelFocusTimer()
 
@@ -410,7 +418,7 @@ class ViewfinderViewModel @Inject constructor(
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (entryPoint.showsCameraModeTabs) {
-            emitEffect(Effect.GoToModeTab(modeDelegate.currentMode))
+            emitEffect(Effect.GoToModeTab(state().mode))
         }
     }
 
@@ -421,13 +429,17 @@ class ViewfinderViewModel @Inject constructor(
     private fun slotCurrentMode() {
         settingsDelegate.selectModeSlot(
             ModeSlot(
-                mode = modeDelegate.currentMode,
+                mode = state().mode,
                 isFrontFacing = cameraDelegate.lensFacing == CameraSelector.LENS_FACING_FRONT,
             ),
         )
     }
 
-    companion object {
-        private const val TAG = "ViewfinderViewModel"
+    private fun state(): ViewfinderState {
+        return stateHolder.state.value
+    }
+
+    private companion object {
+        const val TAG = "ViewfinderViewModel"
     }
 }
