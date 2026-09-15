@@ -109,7 +109,7 @@ class SensorOrientationChangeNotifier private constructor(
                 notifyListeners()
             }
 
-            if (!mainActivity.renderedState.gyroscopeSuggestionsVisible) {
+            if (!mainActivity.viewfinder.uiState.value.gyroscopeSuggestionsVisible) {
                 mainActivity.gCircleFrame.visibility = View.GONE
                 return
             }
