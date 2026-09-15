@@ -21,6 +21,7 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
@@ -50,6 +51,7 @@ interface ViewfinderScreenModel {
 class ViewfinderViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsDelegate: ViewfinderSettingsDelegate,
+    private val modeDelegate: ViewfinderModeDelegate,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
@@ -120,30 +122,29 @@ class ViewfinderViewModel @Inject constructor(
             )
         }
 
-    private var currentMode: CameraMode = DEFAULT_CAMERA_MODE
+    private val currentMode: CameraMode
+        get() {
+            return modeDelegate.currentMode
+        }
 
     private val isQRMode: Boolean
         get() {
-            return currentMode.isQr
+            return modeDelegate.isQrMode
         }
 
     private val isVideoMode: Boolean
         get() {
-            return currentMode.isVideo || entryPoint.requiresVideoModeOnly
+            return modeDelegate.isVideoMode
         }
 
     private val isInPhotoMode: Boolean
         get() {
-            return !(isQRMode || isVideoMode)
+            return modeDelegate.isInPhotoMode
         }
 
     private val aspectRatio: Int
         get() {
-            return when {
-                isVideoMode -> AspectRatio.RATIO_16_9
-                isQRMode -> AspectRatio.RATIO_4_3
-                else -> settings.aspectRatio
-            }
+            return modeDelegate.aspectRatio(settings.aspectRatio)
         }
 
     private var flashMode: Int = SettingsDefaults.FLASH_MODE
@@ -533,7 +534,7 @@ class ViewfinderViewModel @Inject constructor(
                 // behind a lying tab bar. Switch for real -- switchMode() rebinds, moves the
                 // highlight and refreshes the tabs. Recursion stops because the default mode
                 // uses no extension.
-                switchMode(DEFAULT_CAMERA_MODE)
+                switchMode(modeDelegate.defaultMode)
             }
 
             BindOutcome.BOUND -> announceBind()
@@ -551,11 +552,9 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun switchMode(mode: CameraMode) {
-        if (currentMode == mode) {
+        if (!modeDelegate.select(mode)) {
             return
         }
-
-        currentMode = mode
 
         bindEffects.cancelFocusTimer()
 
@@ -668,7 +667,5 @@ class ViewfinderViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "ViewfinderViewModel"
-
-        val DEFAULT_CAMERA_MODE = CameraMode.CAMERA
     }
 }
