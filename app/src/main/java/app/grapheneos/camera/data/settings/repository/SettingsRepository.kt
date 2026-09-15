@@ -12,8 +12,8 @@ import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.DurablePreferences
-import app.grapheneos.camera.di.core.IoDispatcher
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +49,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
     private val modeSettingsMapper: ModeSettingsMapper,
     private val storedVideoQualityMapper: StoredVideoQualityMapper,
     @ApplicationScope private val writeScope: CoroutineScope,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : SettingsRepository {
 
     private val prefs = MutableStateFlow(runBlocking { dataStore.data.first() })
@@ -119,7 +119,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
             modeSettingsMapper = modeSettingsMapper,
             storedVideoQualityMapper = storedVideoQualityMapper,
             writeScope = writeScope,
-            ioDispatcher = ioDispatcher,
+            defaultDispatcher = defaultDispatcher,
         )
     }
 
@@ -148,7 +148,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
 
         storedSettings.value = cameraSettingsMapper.map(prefs.value.common)
 
-        writeScope.launch(ioDispatcher) {
+        writeScope.launch(defaultDispatcher) {
             dataStore.updateData { prefs.value }
         }
 
