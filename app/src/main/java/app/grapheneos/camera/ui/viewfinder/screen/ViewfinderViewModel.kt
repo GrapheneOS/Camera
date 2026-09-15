@@ -18,9 +18,9 @@ import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
-import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
@@ -30,7 +30,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
@@ -52,42 +51,13 @@ class ViewfinderViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsDelegate: ViewfinderSettingsDelegate,
     private val modeDelegate: ViewfinderModeDelegate,
-    private val resolveAvailableModes: ResolveAvailableModes,
+    private val cameraDelegate: ViewfinderCameraDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
 ) : ViewModel(),
     ViewfinderScreenModel,
     CameraSession.Listener {
-
-    private var attachment: Attachment? = null
-
-    private val attached: Attachment
-        get() {
-            return requireNotNull(attachment) {
-                "No Activity is attached to the viewfinder"
-            }
-        }
-
-    private val environment: CameraSessionEnvironment
-        get() {
-            return attached.environment
-        }
-
-    private val bindEffects: ViewfinderEffects
-        get() {
-            return attached.effects
-        }
-
-    private val chrome: ViewfinderChrome
-        get() {
-            return attached.chrome
-        }
-
-    private val session: CameraSession
-        get() {
-            return attached.session
-        }
 
     private val settings: CameraSettings
         get() {
@@ -99,14 +69,11 @@ class ViewfinderViewModel @Inject constructor(
             return settingsDelegate.modeSettings
         }
 
-    private val sessionState = MutableStateFlow(ViewfinderSessionState())
-
-    private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
-
-    override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
-
     private val _uiState = MutableStateFlow(ViewfinderUiState())
     override val uiState: StateFlow<ViewfinderUiState> = _uiState.asStateFlow()
+
+    private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
+    override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
 
     private val renderedState: ViewfinderUiState
         get() {
@@ -118,7 +85,7 @@ class ViewfinderViewModel @Inject constructor(
                 requireLocation = settingsDelegate.requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,
-                session = sessionState.value,
+                session = cameraDelegate.sessionState,
             )
         }
 
@@ -152,7 +119,7 @@ class ViewfinderViewModel @Inject constructor(
     private val selfIlluminate: Boolean
         get() {
             return modeSettings.selfIllumination &&
-                sessionState.value.lensFacing == CameraSelector.LENS_FACING_FRONT
+                cameraDelegate.sessionState.lensFacing == CameraSelector.LENS_FACING_FRONT
         }
 
     fun attach(
@@ -161,29 +128,24 @@ class ViewfinderViewModel @Inject constructor(
         chrome: ViewfinderChrome,
         session: CameraSession,
     ) {
-        attachment = Attachment(
+        cameraDelegate.attach(
             environment = environment,
             effects = effects,
             chrome = chrome,
             session = session,
+            listener = this,
+            emitEffect = ::emitEffect,
         )
 
-        session.listener = this
-
-        refreshSessionState()
+        publishUiState()
     }
 
     fun detach() {
-        attachment?.session?.listener = null
-
-        attachment = null
-
-        sessionState.value = ViewfinderSessionState()
+        cameraDelegate.detach()
     }
 
     override fun onZoomStateChanged() {
-        chrome.updateZoomThumb()
-        emitEffect(Effect.ShowZoomPanel)
+        cameraDelegate.onZoomStateChanged()
     }
 
     override fun onCameraProviderUnavailable() {
@@ -238,7 +200,7 @@ class ViewfinderViewModel @Inject constructor(
         // startup that the user never asked for. Coercing it here settles the stale value through
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
         setRequireLocation(
-            enabled = modeSettings.geoTagging && !environment.shouldAskForLocationPermission(),
+            enabled = modeSettings.geoTagging && !cameraDelegate.shouldAskForLocationPermission(),
         )
 
         setSelfIllumination(modeSettings.selfIllumination)
@@ -289,7 +251,7 @@ class ViewfinderViewModel @Inject constructor(
             is SettingsAction.ScanAllCodesToggleClicked -> {
                 settingsDelegate.toggleScanAllCodes()
                 publishUiState()
-                session.refreshQrHints()
+                cameraDelegate.refreshQrHints()
             }
 
             is SettingsAction.GridToggleClicked -> {
@@ -349,7 +311,7 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun toggleFlashMode() {
         when {
-            sessionState.value.isFlashAvailable -> {
+            cameraDelegate.sessionState.isFlashAvailable -> {
                 val next = when (flashMode) {
                     ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
                     ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
@@ -378,39 +340,8 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun toggleCameraSelector() {
-        // Manually switch to the opposite lens facing
-        session.lensFacing = when (session.lensFacing) {
-            CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-            else -> CameraSelector.LENS_FACING_BACK
-        }
-
-        val isNewLensSupported = session.isLensFacingSupported(
-            lensFacing = session.lensFacing,
-            extensionMode = currentMode.extensionMode,
-        )
-
-        when {
-            isNewLensSupported -> startCamera(true)
-
-            // Else revert back to the old facing (while displaying an error message
-            // to the user)
-            else -> {
-                session.lensFacing = when (session.lensFacing) {
-                    CameraSelector.LENS_FACING_BACK -> {
-                        emitEffect(
-                            Effect.ShowMessage(R.string.rear_camera_unavailable),
-                        )
-                        CameraSelector.LENS_FACING_FRONT
-                    }
-
-                    else -> {
-                        emitEffect(
-                            Effect.ShowMessage(R.string.front_camera_unavailable),
-                        )
-                        CameraSelector.LENS_FACING_BACK
-                    }
-                }
-            }
+        if (cameraDelegate.toggleLensFacing(currentMode.extensionMode)) {
+            startCamera(true)
         }
     }
 
@@ -435,84 +366,47 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun initializeCamera(forced: Boolean = false) {
-        session.initialize(forced = forced, extensionMode = currentMode.extensionMode)
+        cameraDelegate.initialize(forced = forced, extensionMode = currentMode.extensionMode)
     }
 
     // Start the camera with latest hard configuration
     private fun startCamera(forced: Boolean = false) {
-        if ((!forced && session.camera != null) || session.cameraProvider == null) return
+        if (!cameraDelegate.beginBind(forced)) return
 
-        // Cancel any pending capture requests
-        bindEffects.cancelPendingCapture()
-
-        bindEffects.hideExposurePanel()
         slotCurrentMode()
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
         applyFlashMode(modeSettings.flashMode)
 
-        val rotation = environment.displayRotation
-
-        if (!environment.isSessionActive) return
-
-        // Test whether the current lens facing is supported by the current device
-        // If not then silently switch to the other lens facing
-        // (Snackbar/popup message can be shown before startCamera is called
-        // in specific cases of explicitly switching to another side or if
-        // the camera is expected)
-        val isCurrentLensSupported = session.isLensFacingSupported(
-            lensFacing = session.lensFacing,
+        val target = cameraDelegate.selectLens(
+            isQrMode = isQRMode,
             extensionMode = currentMode.extensionMode,
-        )
-
-        if (!isCurrentLensSupported) {
-            session.lensFacing = when (session.lensFacing) {
-                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-                else -> CameraSelector.LENS_FACING_BACK
-            }
-        }
-
-        session.selectLensFacing(session.lensFacing)
-
-        // To use the last frame instead of showing a blank screen when
-        // the camera that is being currently used gets unbind
-        bindEffects.updateLastFrame()
-
-        val qrLensFacing = when {
-            isQRMode -> {
-                bindEffects.startFocusTimer()
-                qrLensFacing()
-            }
-
-            else -> null
-        }
+        ) ?: return
 
         publishUiState()
 
-        bindEffects.forceUpdateOrientationSensor()
-
-        val bindSettings = CameraBindSettings(
-            mode = currentMode,
-            isQrMode = isQRMode,
-            isVideoMode = isVideoMode,
-            requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
-            qrLensFacing = qrLensFacing,
-            rotation = rotation,
-            aspectRatio = aspectRatio,
-            flashMode = flashMode,
-            photoQuality = settings.photoQuality,
-            videoQuality = modeSettings.videoQuality,
-            waitForFocusLock = settings.waitForFocusLock,
-            enableZsl = settings.enableZsl,
-            enableEis = settings.enableEis,
-            selectHighestResolution = settings.selectHighestResolution,
-            mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
+        val outcome = cameraDelegate.bind(
+            CameraBindSettings(
+                mode = currentMode,
+                isQrMode = isQRMode,
+                isVideoMode = isVideoMode,
+                requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
+                qrLensFacing = target.qrLensFacing,
+                rotation = target.rotation,
+                aspectRatio = aspectRatio,
+                flashMode = flashMode,
+                photoQuality = settings.photoQuality,
+                videoQuality = modeSettings.videoQuality,
+                waitForFocusLock = settings.waitForFocusLock,
+                enableZsl = settings.enableZsl,
+                enableEis = settings.enableEis,
+                selectHighestResolution = settings.selectHighestResolution,
+                mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
+            ),
         )
 
-        val outcome = session.bind(bindSettings)
-
-        refreshSessionState()
+        publishUiState()
 
         onBindOutcome(outcome)
     }
@@ -537,7 +431,11 @@ class ViewfinderViewModel @Inject constructor(
                 switchMode(modeDelegate.defaultMode)
             }
 
-            BindOutcome.BOUND -> announceBind()
+            BindOutcome.BOUND -> cameraDelegate.announceBind(
+                aspectRatio = aspectRatio,
+                isInPhotoMode = isInPhotoMode,
+                currentMode = { currentMode },
+            )
         }
     }
 
@@ -556,7 +454,7 @@ class ViewfinderViewModel @Inject constructor(
             return
         }
 
-        bindEffects.cancelFocusTimer()
+        cameraDelegate.cancelFocusTimer()
 
         publishUiState()
 
@@ -573,7 +471,7 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun applyFlashMode(value: Int) {
         flashMode = value
-        session.imageCapture?.flashMode = value
+        cameraDelegate.applyFlashMode(value)
         publishUiState()
     }
 
@@ -585,85 +483,14 @@ class ViewfinderViewModel @Inject constructor(
         _uiState.value = renderedState
     }
 
-    private fun refreshSessionState() {
-        sessionState.value = ViewfinderSessionState(
-            lensFacing = session.lensFacing,
-            canTakePicture = session.imageCapture != null,
-            isFlashAvailable = session.isFlashAvailable,
-            canApplyVideoStabilization = session.canApplyVideoStabilization(),
-        )
-
-        publishUiState()
-    }
-
     private fun slotCurrentMode() {
         settingsDelegate.selectModeSlot(
             ModeSlot(
                 mode = currentMode,
-                isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
+                isFrontFacing = cameraDelegate.lensFacing == CameraSelector.LENS_FACING_FRONT,
             ),
         )
     }
-
-    private fun qrLensFacing(): Int {
-        val isRearLensSupported = session.isLensFacingSupported(
-            lensFacing = CameraSelector.LENS_FACING_BACK,
-            extensionMode = currentMode.extensionMode,
-        )
-
-        if (isRearLensSupported) {
-            return CameraSelector.LENS_FACING_BACK
-        }
-
-        emitEffect(Effect.ShowMessage(R.string.qr_rear_camera_unavailable))
-
-        return CameraSelector.LENS_FACING_FRONT
-    }
-
-    private fun announceBind() {
-        loadTabs()
-
-        session.reattachZoomState()
-
-        chrome.updateZoomThumb()
-        emitEffect(Effect.HideZoomPanel)
-
-        session.camera?.cameraInfo?.exposureState?.let { chrome.applyExposureState(it) }
-
-        emitEffect(Effect.ResetTorchToggle)
-
-        session.camera?.cameraInfo?.let { chrome.onPreviewBound(aspectRatio, it) }
-
-        chrome.updateGyroscopeIndicator(isInPhotoMode)
-    }
-
-    private fun loadTabs() {
-        if (!entryPoint.showsCameraModeTabs) {
-            return
-        }
-
-        session.probeUnknownExtensions(
-            onRestart = ::loadTabs,
-            onSettled = ::buildTabs,
-        )
-    }
-
-    private fun buildTabs() {
-        chrome.setCameraModeTabs(
-            modes = resolveAvailableModes(
-                allowsQrScanning = entryPoint.allowsQrScanning,
-                extensionsAvailable = session.extensionsAvailable,
-            ),
-            currentMode = currentMode,
-        )
-    }
-
-    private class Attachment(
-        val environment: CameraSessionEnvironment,
-        val effects: ViewfinderEffects,
-        val chrome: ViewfinderChrome,
-        val session: CameraSession,
-    )
 
     companion object {
         private const val TAG = "ViewfinderViewModel"
