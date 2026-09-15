@@ -3,7 +3,6 @@ package app.grapheneos.camera.data.camera.session
 import android.content.Context
 import androidx.camera.core.Preview
 import androidx.lifecycle.LifecycleOwner
-import app.grapheneos.camera.analyzer.QRAnalyzer
 import java.util.concurrent.Executor
 
 interface CameraSessionEnvironment {
@@ -22,5 +21,5 @@ interface CameraSessionEnvironment {
 
     fun shouldAskForLocationPermission(): Boolean
 
-    fun createQrAnalyzer(): QRAnalyzer
+    fun createQrAnalyzer(): QrCodeAnalyzer
 }
