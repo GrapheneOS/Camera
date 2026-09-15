@@ -7,6 +7,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.Quality
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
@@ -29,15 +30,14 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -62,11 +62,23 @@ class ViewfinderViewModel @Inject constructor(
     ViewfinderScreenModel,
     CameraSession.Listener {
 
-    private val _uiState = MutableStateFlow(ViewfinderUiState())
-    override val uiState: StateFlow<ViewfinderUiState> = _uiState.asStateFlow()
+    private val stateHolder = ViewfinderStateHolder(
+        initial = ViewfinderState(mode = modeDelegate.defaultMode),
+        render = ::renderUiState,
+    )
+    override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
 
     private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
     override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
+
+    init {
+        modeDelegate.bind(stateHolder)
+        cameraDelegate.bind(stateHolder)
+        settingsDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
+    }
 
     fun attach(
         environment: CameraSessionEnvironment,
@@ -82,8 +94,6 @@ class ViewfinderViewModel @Inject constructor(
             listener = this,
             emitEffect = ::emitEffect,
         )
-
-        publishUiState()
     }
 
     fun detach() {
@@ -108,7 +118,7 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun setFlashMode(value: Int) {
         settingsDelegate.setFlashMode(value)
-        applyFlashMode(value)
+        cameraDelegate.applyFlashMode(value)
     }
 
     private fun setRequireLocation(enabled: Boolean) {
@@ -118,13 +128,10 @@ class ViewfinderViewModel @Inject constructor(
         }
 
         settingsDelegate.setGeoTagging(enabled)
-
-        publishUiState()
     }
 
     private fun setSelfIllumination(enabled: Boolean) {
         settingsDelegate.setSelfIllumination(enabled)
-        publishUiState()
 
         emitEffect(Effect.ApplySelfIllumination(uiState.value.capture.selfIlluminate))
     }
@@ -136,7 +143,7 @@ class ViewfinderViewModel @Inject constructor(
             emitEffect(Effect.ReloadVideoQualities)
         }
 
-        applyFlashMode(settingsDelegate.modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(settingsDelegate.modeSettings.flashMode)
 
         // A stored "on" is written before a permission request resolves, and it outlives a later
         // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
@@ -148,7 +155,6 @@ class ViewfinderViewModel @Inject constructor(
         )
 
         setSelfIllumination(settingsDelegate.modeSettings.selfIllumination)
-        publishUiState()
     }
 
     override fun onAction(action: ViewfinderAction) {
@@ -193,18 +199,15 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is SettingsAction.ScanAllCodesToggleClicked -> {
                 settingsDelegate.toggleScanAllCodes()
-                publishUiState()
                 cameraDelegate.refreshQrHints()
             }
 
             is SettingsAction.GridToggleClicked -> {
                 settingsDelegate.cycleGridType()
-                publishUiState()
             }
 
             is SettingsAction.AudioToggled -> {
                 settingsDelegate.setIncludeAudio(action.enabled)
-                publishUiState()
             }
 
             is SettingsAction.GeoTaggingToggled -> {
@@ -217,24 +220,20 @@ class ViewfinderViewModel @Inject constructor(
 
             is SettingsAction.StabilizationToggled -> {
                 settingsDelegate.setEnableEis(action.enabled)
-                publishUiState()
                 startCamera(forced = true)
             }
 
             is SettingsAction.FocusLockToggled -> {
                 settingsDelegate.setWaitForFocusLock(action.enabled)
-                publishUiState()
                 startCamera(forced = true)
             }
 
             is SettingsAction.FocusTimeoutSelected -> {
                 settingsDelegate.setFocusTimeout(action.seconds)
-                publishUiState()
             }
 
             is SettingsAction.SelfTimerSelected -> {
                 settingsDelegate.setSelfTimerDuration(action.seconds)
-                publishUiState()
             }
 
             is SettingsAction.VideoQualitySelected -> {
@@ -247,7 +246,6 @@ class ViewfinderViewModel @Inject constructor(
         if (quality == settingsDelegate.modeSettings.videoQuality) return
 
         settingsDelegate.setVideoQuality(quality)
-        publishUiState()
 
         startCamera(forced = true)
     }
@@ -279,7 +277,6 @@ class ViewfinderViewModel @Inject constructor(
         }
 
         settingsDelegate.setAspectRatio(next)
-        publishUiState()
 
         startCamera(true)
     }
@@ -325,14 +322,12 @@ class ViewfinderViewModel @Inject constructor(
 
         // Before the builder below reads it: the mode just slotted may store a different flash mode
         // than the one that was bound, and the ImageCapture is configured once, at build time.
-        applyFlashMode(settingsDelegate.modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(settingsDelegate.modeSettings.flashMode)
 
         val target = cameraDelegate.selectLens(
             isQrMode = modeDelegate.isQrMode,
             extensionMode = modeDelegate.currentMode.extensionMode,
         ) ?: return
-
-        publishUiState()
 
         val settings = settingsDelegate.settings
 
@@ -355,8 +350,6 @@ class ViewfinderViewModel @Inject constructor(
                 mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
             ),
         )
-
-        publishUiState()
 
         onBindOutcome(outcome)
     }
@@ -407,8 +400,6 @@ class ViewfinderViewModel @Inject constructor(
 
         cameraDelegate.cancelFocusTimer()
 
-        publishUiState()
-
         startCamera(true)
 
         // A mode can change with no touch involved, so the strip follows the camera and not the
@@ -420,27 +411,20 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    private fun applyFlashMode(value: Int) {
-        cameraDelegate.applyFlashMode(value)
-        publishUiState()
-    }
-
     private fun emitEffect(effect: Effect) {
         screenEffects.trySend(effect)
     }
 
-    private fun publishUiState() {
-        val settings = settingsDelegate.settings
-
-        _uiState.value = uiStateMapper.map(
-            mode = modeDelegate.currentMode,
+    private fun renderUiState(state: ViewfinderState): ViewfinderUiState {
+        return uiStateMapper.map(
+            mode = state.mode,
             isVideoMode = modeDelegate.isVideoMode,
-            flashMode = cameraDelegate.flashMode,
-            aspectRatio = modeDelegate.aspectRatio(settings.aspectRatio),
-            requireLocation = settingsDelegate.requireLocation,
-            settings = settings,
-            modeSettings = settingsDelegate.modeSettings,
-            session = cameraDelegate.sessionState,
+            flashMode = state.flashMode,
+            aspectRatio = modeDelegate.aspectRatio(state.settings.aspectRatio),
+            requireLocation = state.requireLocation,
+            settings = state.settings,
+            modeSettings = state.modeSettings,
+            session = state.session,
         )
     }
 
