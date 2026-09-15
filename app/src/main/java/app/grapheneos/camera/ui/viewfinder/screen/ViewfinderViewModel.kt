@@ -14,15 +14,14 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
-import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -33,8 +32,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect a
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +49,7 @@ interface ViewfinderScreenModel {
 
 class ViewfinderViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
-    private val settingsRepository: SettingsRepository,
+    private val settingsDelegate: ViewfinderSettingsDelegate,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
@@ -92,12 +89,13 @@ class ViewfinderViewModel @Inject constructor(
 
     private val settings: CameraSettings
         get() {
-            return settingsRepository.settings.value
+            return settingsDelegate.settings
         }
 
-    private var modeSettings: ModeSettings = ModeSettings()
-
-    private var slot: ModeSlot? = null
+    private val modeSettings: ModeSettings
+        get() {
+            return settingsDelegate.modeSettings
+        }
 
     private val sessionState = MutableStateFlow(ViewfinderSessionState())
 
@@ -115,7 +113,7 @@ class ViewfinderViewModel @Inject constructor(
                 isVideoMode = isVideoMode,
                 flashMode = flashMode,
                 aspectRatio = aspectRatio,
-                requireLocation = requireLocation,
+                requireLocation = settingsDelegate.requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,
                 session = sessionState.value,
@@ -139,32 +137,7 @@ class ViewfinderViewModel @Inject constructor(
             return !(isQRMode || isVideoMode)
         }
 
-    private var gridType: GridType by setting(
-        read = { it.gridType },
-        write = { current, value -> current.copy(gridType = value) },
-    )
-
-    private var focusTimeout: Long by setting(
-        read = { it.focusTimeoutSeconds },
-        write = { current, value -> current.copy(focusTimeoutSeconds = value) },
-    )
-
-    private var selfTimerDuration: Int by setting(
-        read = { it.selfTimerDurationSeconds },
-        write = { current, value -> current.copy(selfTimerDurationSeconds = value) },
-    )
-
-    private var enableEIS: Boolean by setting(
-        read = { it.enableEis },
-        write = { current, value -> current.copy(enableEis = value) },
-    )
-
-    private var waitForFocusLock: Boolean by setting(
-        read = { it.waitForFocusLock },
-        write = { current, value -> current.copy(waitForFocusLock = value) },
-    )
-
-    private var aspectRatio: Int
+    private val aspectRatio: Int
         get() {
             return when {
                 isVideoMode -> AspectRatio.RATIO_16_9
@@ -172,62 +145,13 @@ class ViewfinderViewModel @Inject constructor(
                 else -> settings.aspectRatio
             }
         }
-        set(value) {
-            runBlocking { settingsRepository.update { it.copy(aspectRatio = value) } }
-
-            publishUiState()
-        }
-
-    private var scanAllCodes: Boolean by setting(
-        read = { it.scanAllCodes },
-        write = { current, value -> current.copy(scanAllCodes = value) },
-        onChanged = { session.refreshQrHints() },
-    )
-
-    private var includeAudio: Boolean by setting(
-        read = { it.includeAudio },
-        write = { current, value -> current.copy(includeAudio = value) },
-    )
 
     private var flashMode: Int = SettingsDefaults.FLASH_MODE
 
-    private var videoQuality: Quality
-        get() = modeSettings.videoQuality
-        set(value) {
-            writeMode { slot -> settingsRepository.setVideoQuality(slot, value) }
-
-            publishUiState()
-        }
-
-    // Session state rather than the stored value: geo-tagging is only ever on once the permission
-    // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
-    // the preference back here would resurrect the very stale "on" the coercion exists to drop.
-    private var requireLocation: Boolean = false
-        set(value) {
-            when {
-                value -> emitEffect(Effect.StartLocationUpdates)
-                else -> emitEffect(Effect.StopLocationUpdates)
-            }
-
-            // A permission result is delivered before the first onResume of an activity the system
-            // recreated, so this can run before a mode has been slotted — see modeSettings.
-            writeMode { slot -> settingsRepository.setGeoTagging(slot, value) }
-
-            field = value
-
-            publishUiState()
-        }
-
-    private var selfIlluminate: Boolean
+    private val selfIlluminate: Boolean
         get() {
             return modeSettings.selfIllumination &&
                 sessionState.value.lensFacing == CameraSelector.LENS_FACING_FRONT
-        }
-        set(value) {
-            writeMode { slot -> settingsRepository.setSelfIllumination(slot, value) }
-
-            publishUiState()
-            emitEffect(Effect.ApplySelfIllumination(selfIlluminate))
         }
 
     fun attach(
@@ -276,9 +200,27 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun setFlashMode(value: Int) {
-        writeMode { slot -> settingsRepository.setFlashMode(slot, value) }
+        settingsDelegate.setFlashMode(value)
 
         applyFlashMode(value)
+    }
+
+    private fun setRequireLocation(enabled: Boolean) {
+        when {
+            enabled -> emitEffect(Effect.StartLocationUpdates)
+            else -> emitEffect(Effect.StopLocationUpdates)
+        }
+
+        settingsDelegate.setGeoTagging(enabled)
+
+        publishUiState()
+    }
+
+    private fun setSelfIllumination(enabled: Boolean) {
+        settingsDelegate.setSelfIllumination(enabled)
+
+        publishUiState()
+        emitEffect(Effect.ApplySelfIllumination(selfIlluminate))
     }
 
     private fun reloadSettings() {
@@ -294,10 +236,11 @@ class ViewfinderViewModel @Inject constructor(
         // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
         // startup that the user never asked for. Coercing it here settles the stale value through
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
-        requireLocation = modeSettings.geoTagging &&
-            !environment.shouldAskForLocationPermission()
+        setRequireLocation(
+            enabled = modeSettings.geoTagging && !environment.shouldAskForLocationPermission(),
+        )
 
-        selfIlluminate = modeSettings.selfIllumination
+        setSelfIllumination(modeSettings.selfIllumination)
 
         publishUiState()
     }
@@ -343,41 +286,49 @@ class ViewfinderViewModel @Inject constructor(
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.ScanAllCodesToggleClicked -> {
-                scanAllCodes = !scanAllCodes
+                settingsDelegate.toggleScanAllCodes()
+                publishUiState()
+                session.refreshQrHints()
             }
 
             is SettingsAction.GridToggleClicked -> {
-                gridType = nextGridType()
+                settingsDelegate.cycleGridType()
+                publishUiState()
             }
 
             is SettingsAction.AudioToggled -> {
-                includeAudio = action.enabled
+                settingsDelegate.setIncludeAudio(action.enabled)
+                publishUiState()
             }
 
             is SettingsAction.GeoTaggingToggled -> {
-                requireLocation = action.enabled
+                setRequireLocation(action.enabled)
             }
 
             is SettingsAction.SelfIlluminationToggled -> {
-                selfIlluminate = action.enabled
+                setSelfIllumination(action.enabled)
             }
 
             is SettingsAction.StabilizationToggled -> {
-                enableEIS = action.enabled
+                settingsDelegate.setEnableEis(action.enabled)
+                publishUiState()
                 startCamera(forced = true)
             }
 
             is SettingsAction.FocusLockToggled -> {
-                waitForFocusLock = action.enabled
+                settingsDelegate.setWaitForFocusLock(action.enabled)
+                publishUiState()
                 startCamera(forced = true)
             }
 
             is SettingsAction.FocusTimeoutSelected -> {
-                focusTimeout = action.seconds
+                settingsDelegate.setFocusTimeout(action.seconds)
+                publishUiState()
             }
 
             is SettingsAction.SelfTimerSelected -> {
-                selfTimerDuration = action.seconds
+                settingsDelegate.setSelfTimerDuration(action.seconds)
+                publishUiState()
             }
 
             is SettingsAction.VideoQualitySelected -> {
@@ -386,19 +337,11 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    private fun nextGridType(): GridType {
-        return when (gridType) {
-            GridType.NONE -> GridType.THREE_BY_THREE
-            GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
-            GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
-            GridType.GOLDEN_RATIO -> GridType.NONE
-        }
-    }
-
     private fun onVideoQualitySelected(quality: Quality) {
-        if (quality == videoQuality) return
+        if (quality == modeSettings.videoQuality) return
 
-        videoQuality = quality
+        settingsDelegate.setVideoQuality(quality)
+        publishUiState()
 
         startCamera(forced = true)
     }
@@ -422,10 +365,13 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun toggleAspectRatio() {
-        aspectRatio = when (aspectRatio) {
+        val next = when (aspectRatio) {
             AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
             else -> AspectRatio.RATIO_16_9
         }
+
+        settingsDelegate.setAspectRatio(next)
+        publishUiState()
 
         startCamera(true)
     }
@@ -555,10 +501,10 @@ class ViewfinderViewModel @Inject constructor(
             aspectRatio = aspectRatio,
             flashMode = flashMode,
             photoQuality = settings.photoQuality,
-            videoQuality = videoQuality,
-            waitForFocusLock = waitForFocusLock,
+            videoQuality = modeSettings.videoQuality,
+            waitForFocusLock = settings.waitForFocusLock,
             enableZsl = settings.enableZsl,
-            enableEis = enableEIS,
+            enableEis = settings.enableEis,
             selectHighestResolution = settings.selectHighestResolution,
             mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
         )
@@ -652,20 +598,12 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun slotCurrentMode() {
-        val current = ModeSlot(
-            mode = currentMode,
-            isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
+        settingsDelegate.selectModeSlot(
+            ModeSlot(
+                mode = currentMode,
+                isFrontFacing = session.lensFacing == CameraSelector.LENS_FACING_FRONT,
+            ),
         )
-
-        slot = current
-
-        modeSettings = runBlocking { settingsRepository.modeSettings(current) }
-    }
-
-    private fun writeMode(write: suspend (ModeSlot) -> ModeSettings) {
-        val current = slot ?: return
-
-        modeSettings = runBlocking { write(current) }
     }
 
     private fun qrLensFacing(): Int {
@@ -719,25 +657,6 @@ class ViewfinderViewModel @Inject constructor(
             ),
             currentMode = currentMode,
         )
-    }
-
-    private fun <T> setting(
-        read: (CameraSettings) -> T,
-        write: (CameraSettings, T) -> CameraSettings,
-        onChanged: (T) -> Unit = {},
-    ): ReadWriteProperty<Any?, T> {
-        return object : ReadWriteProperty<Any?, T> {
-            override fun getValue(thisRef: Any?, property: KProperty<*>): T {
-                return read(settings)
-            }
-
-            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
-                runBlocking { settingsRepository.update { write(it, value) } }
-
-                publishUiState()
-                onChanged(value)
-            }
-        }
     }
 
     private class Attachment(
