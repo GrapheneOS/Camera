@@ -4,11 +4,17 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class ViewfinderModeDelegateTest {
 
     @Test
@@ -84,7 +90,7 @@ class ViewfinderModeDelegateTest {
     }
 
     private fun createDelegate(requiresVideoModeOnly: Boolean = false): ViewfinderModeDelegate {
-        return ViewfinderModeDelegateImpl(
+        val delegate = ViewfinderModeDelegateImpl(
             entryPoint = CameraEntryPoint(
                 isSecureSession = false,
                 isCaptureSession = false,
@@ -94,5 +100,14 @@ class ViewfinderModeDelegateTest {
                 showsCameraModeTabs = true,
             ),
         )
+
+        delegate.bind(
+            ViewfinderStateHolder(
+                initial = ViewfinderState(mode = delegate.defaultMode),
+                render = { ViewfinderUiState() },
+            ),
+        )
+
+        return delegate
     }
 }
