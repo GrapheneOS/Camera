@@ -7,6 +7,8 @@ import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
+import app.grapheneos.camera.data.camera.session.oppositeLensFacing
+import app.grapheneos.camera.data.camera.session.supportedLensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
@@ -158,21 +160,12 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
         if (!environment.isSessionActive) return null
 
-        // Test whether the current lens facing is supported by the current device
-        // If not then silently switch to the other lens facing
-        // (Snackbar/popup message can be shown before startCamera is called
-        // in specific cases of explicitly switching to another side or if
-        // the camera is expected)
-        val isCurrentLensSupported = session.isLensFacingSupported(
-            lensFacing = session.lensFacing,
-            extensionMode = extensionMode,
-        )
-
-        if (!isCurrentLensSupported) {
-            session.lensFacing = when (session.lensFacing) {
-                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-                else -> CameraSelector.LENS_FACING_BACK
-            }
+        // Silent: a lens the user picks is refused, with a message, in toggleLensFacing().
+        session.lensFacing = supportedLensFacing(preferred = session.lensFacing) {
+            session.isLensFacingSupported(
+                lensFacing = it,
+                extensionMode = extensionMode,
+            )
         }
 
         session.selectLensFacing(session.lensFacing)
@@ -228,36 +221,23 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun toggleLensFacing(extensionMode: Int): Boolean {
-        // Manually switch to the opposite lens facing
-        session.lensFacing = when (session.lensFacing) {
-            CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-            else -> CameraSelector.LENS_FACING_BACK
-        }
-
-        val isNewLensSupported = session.isLensFacingSupported(
-            lensFacing = session.lensFacing,
-            extensionMode = extensionMode,
+        val toggled = oppositeLensFacing(session.lensFacing)
+        val isSupported = session.isLensFacingSupported(
+            lensFacing = toggled,
+            extensionMode = extensionMode
         )
 
-        if (isNewLensSupported) return true
-
-        // Else revert back to the old facing (while displaying an error message
-        // to the user)
-        session.lensFacing = when (session.lensFacing) {
-            CameraSelector.LENS_FACING_BACK -> {
-                emitEffect(
-                    Effect.ShowMessage(R.string.rear_camera_unavailable),
-                )
-                CameraSelector.LENS_FACING_FRONT
-            }
-
-            else -> {
-                emitEffect(
-                    Effect.ShowMessage(R.string.front_camera_unavailable),
-                )
-                CameraSelector.LENS_FACING_BACK
-            }
+        if (isSupported) {
+            session.lensFacing = toggled
+            return true
         }
+
+        val message = when (toggled) {
+            CameraSelector.LENS_FACING_BACK -> R.string.rear_camera_unavailable
+            else -> R.string.front_camera_unavailable
+        }
+
+        emitEffect(Effect.ShowMessage(message))
 
         return false
     }

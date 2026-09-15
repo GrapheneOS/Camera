@@ -27,7 +27,6 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
@@ -145,7 +144,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     private var extensionProbesInFlight = false
 
-    private var qrAnalyzer: QRAnalyzer? = null
+    private var qrAnalyzer: QrCodeAnalyzer? = null
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
@@ -270,18 +269,11 @@ internal class CameraSessionImpl @AssistedInject constructor(
         }
         cameraProvider = provider
 
-        // Manually switch to the other lens facing (if the default lens facing isn't
-        // supported for the current device)
-        val isDefaultLensSupported = isLensFacingSupported(
-            lensFacing = lensFacing,
-            extensionMode = extensionMode,
-        )
-
-        if (!isDefaultLensSupported) {
-            lensFacing = when (lensFacing) {
-                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-                else -> CameraSelector.LENS_FACING_BACK
-            }
+        lensFacing = supportedLensFacing(preferred = lensFacing) {
+            isLensFacingSupported(
+                lensFacing = it,
+                extensionMode = extensionMode,
+            )
         }
 
         cameraProviderSource.acquireExtensionsManager(
