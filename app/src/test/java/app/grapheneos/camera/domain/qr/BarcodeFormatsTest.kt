@@ -1,17 +1,16 @@
 package app.grapheneos.camera.domain.qr
 
-import app.grapheneos.camera.data.core.store.InMemoryDataStore
-import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
-import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapperImpl
-import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapperImpl
-import app.grapheneos.camera.data.settings.repository.SettingsRepositoryImpl
-import app.grapheneos.camera.data.settings.store.SettingsPrefs
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import com.google.zxing.BarcodeFormat
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -19,24 +18,24 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class BarcodeFormatsTest {
 
-    private val prefs = InMemoryDataStore(SettingsPrefs())
+    private val storedSettings = MutableStateFlow(CameraSettings())
 
-    private val repository = SettingsRepositoryImpl(
-        dataStore = prefs,
-        cameraSettingsMapper = CameraSettingsMapperImpl(),
-        modeSettingsMapper = ModeSettingsMapperImpl(),
-        storedVideoQualityMapper = StoredVideoQualityMapperImpl(),
-    )
+    private val settingsRepository = mockk<SettingsRepository>()
+    private val formats = BarcodeFormats(settingsRepository)
 
-    private val formats = BarcodeFormats(repository)
-
-    private fun stored(): Set<String> {
-        return runBlocking { repository.settings.first() }.enabledBarcodeFormats
+    @Before
+    fun setUp() {
+        every { settingsRepository.settings } returns storedSettings
+        every { settingsRepository.update(transform = any()) } answers {
+            val transform = firstArg<(CameraSettings) -> CameraSettings>()
+            storedSettings.value = transform(storedSettings.value)
+            storedSettings.value
+        }
     }
 
     @Test
-    fun load_theStoredNames_becomeTheAllowedFormats() {
-        formats.load(setOf(BarcodeFormat.QR_CODE.name, BarcodeFormat.AZTEC.name))
+    fun enabled_isWhatTheRepositoryHolds() {
+        stored(BarcodeFormat.QR_CODE.name, BarcodeFormat.AZTEC.name)
 
         assertEquals(
             setOf(BarcodeFormat.AZTEC, BarcodeFormat.QR_CODE),
@@ -45,27 +44,35 @@ class BarcodeFormatsTest {
     }
 
     @Test
+    fun enabled_aStoredNameThatIsNoFormat_isLeftOut() {
+        stored(BarcodeFormat.QR_CODE.name, UNKNOWN_FORMAT)
+
+        assertEquals(listOf(BarcodeFormat.QR_CODE), formats.enabled)
+    }
+
+    @Test
     fun setEnabled_aNewFormat_isAllowedAndStored() {
-        formats.load(setOf(BarcodeFormat.QR_CODE.name))
+        stored(BarcodeFormat.QR_CODE.name)
 
         assertTrue(formats.setEnabled(BarcodeFormat.AZTEC.name, enabled = true))
 
         assertTrue(BarcodeFormat.AZTEC in formats.enabled)
-        assertTrue(BarcodeFormat.AZTEC.name in stored())
+        assertTrue(BarcodeFormat.AZTEC.name in storedSettings.value.enabledBarcodeFormats)
     }
 
     @Test
-    fun setEnabled_disablingTheLastFormat_isRefused() {
-        formats.load(setOf(BarcodeFormat.QR_CODE.name))
+    fun setEnabled_disablingTheLastFormat_isRefusedWithoutStoringIt() {
+        stored(BarcodeFormat.QR_CODE.name)
 
         assertFalse(formats.setEnabled(BarcodeFormat.QR_CODE.name, enabled = false))
 
         assertTrue(BarcodeFormat.QR_CODE in formats.enabled)
+        verify(exactly = 0) { settingsRepository.update(transform = any()) }
     }
 
     @Test
     fun setEnabled_disablingOneOfSeveral_isAllowed() {
-        formats.load(setOf(BarcodeFormat.QR_CODE.name, BarcodeFormat.AZTEC.name))
+        stored(BarcodeFormat.QR_CODE.name, BarcodeFormat.AZTEC.name)
 
         assertTrue(formats.setEnabled(BarcodeFormat.AZTEC.name, enabled = false))
 
@@ -74,19 +81,21 @@ class BarcodeFormatsTest {
 
     @Test
     fun apply_aSelectionThatLeavesNothingToScan_isRefused() {
-        formats.load(emptySet())
+        stored()
 
         assertFalse(formats.apply(formats.uncommonNames().associateWith { false }))
+
+        verify(exactly = 0) { settingsRepository.update(transform = any()) }
     }
 
     @Test
     fun apply_aSelectionWhileACommonFormatIsOn_isStored() {
-        formats.load(setOf(BarcodeFormat.QR_CODE.name))
+        stored(BarcodeFormat.QR_CODE.name)
 
         assertTrue(formats.apply(mapOf(BarcodeFormat.CODE_128.name to true)))
 
         assertTrue(BarcodeFormat.CODE_128 in formats.enabled)
-        assertTrue(BarcodeFormat.CODE_128.name in stored())
+        assertTrue(BarcodeFormat.CODE_128.name in storedSettings.value.enabledBarcodeFormats)
     }
 
     @Test
@@ -94,5 +103,13 @@ class BarcodeFormatsTest {
         val uncommon = formats.uncommonNames()
 
         BarcodeFormats.COMMON_FORMATS.forEach { assertFalse(it.name in uncommon) }
+    }
+
+    private fun stored(vararg formatNames: String) {
+        storedSettings.value = CameraSettings(enabledBarcodeFormats = formatNames.toSet())
+    }
+
+    private companion object {
+        const val UNKNOWN_FORMAT = "NOT_A_FORMAT"
     }
 }

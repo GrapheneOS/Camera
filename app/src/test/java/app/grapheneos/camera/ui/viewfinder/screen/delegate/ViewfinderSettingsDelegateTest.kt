@@ -7,10 +7,9 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -30,7 +29,7 @@ class ViewfinderSettingsDelegateTest {
     @Before
     fun setUp() {
         every { settingsRepository.settings } returns storedSettings
-        coEvery { settingsRepository.update(transform = any()) } answers {
+        every { settingsRepository.update(transform = any()) } answers {
             val transform = firstArg<(CameraSettings) -> CameraSettings>()
             storedSettings.value = transform(storedSettings.value)
             storedSettings.value
@@ -72,13 +71,13 @@ class ViewfinderSettingsDelegateTest {
 
         delegate.setGeoTagging(enabled = true)
 
-        coVerify(exactly = 0) { settingsRepository.setGeoTagging(slot = any(), value = any()) }
+        verify(exactly = 0) { settingsRepository.setGeoTagging(slot = any(), value = any()) }
         assertTrue(delegate.requireLocation)
     }
 
     @Test
     fun selectModeSlot_loadsThatSlotsSettings() {
-        coEvery { settingsRepository.modeSettings(SLOT) } returns SLOTTED
+        every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
 
         val delegate = createDelegate()
         delegate.selectModeSlot(SLOT)
@@ -89,8 +88,8 @@ class ViewfinderSettingsDelegateTest {
     @Test
     fun perModeWrite_afterAModeIsSlotted_keepsWhatTheRepositoryStored() {
         val stored = SLOTTED.copy(videoQuality = Quality.UHD)
-        coEvery { settingsRepository.modeSettings(SLOT) } returns SLOTTED
-        coEvery {
+        every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
+        every {
             settingsRepository.setVideoQuality(slot = SLOT, value = Quality.UHD)
         } returns stored
 
