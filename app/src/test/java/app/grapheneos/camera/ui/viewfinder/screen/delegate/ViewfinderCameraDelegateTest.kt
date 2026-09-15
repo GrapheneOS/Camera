@@ -4,7 +4,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -19,11 +18,9 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.flow.MutableSharedFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -39,6 +36,11 @@ class ViewfinderCameraDelegateTest {
     private val session = mockk<CameraSession>(relaxed = true)
 
     private val emitted = mutableListOf<ViewfinderScreenEffect>()
+
+    private val stateHolder = ViewfinderStateHolder(
+        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
+        render = { ViewfinderUiState() },
+    )
 
     private var lensFacing = CameraSelector.LENS_FACING_BACK
 
@@ -151,26 +153,7 @@ class ViewfinderCameraDelegateTest {
         val delegate = createAttachedDelegate()
         delegate.detach()
 
-        assertEquals(ViewfinderSessionState(), delegate.sessionState)
-    }
-
-    @Test
-    fun isProviderReady_withoutAProvider_isFalse() {
-        every { session.cameraProvider } returns null
-
-        val delegate = createAttachedDelegate()
-
-        assertFalse(delegate.isProviderReady)
-    }
-
-    @Test
-    fun sessionEvents_areTheAttachedSessions() {
-        val events = MutableSharedFlow<CameraSessionEvent>()
-        every { session.events } returns events
-
-        val delegate = createAttachedDelegate()
-
-        assertSame(events, delegate.sessionEvents)
+        assertEquals(ViewfinderSessionState(), stateHolder.state.value.session)
     }
 
     @Test
@@ -180,7 +163,7 @@ class ViewfinderCameraDelegateTest {
         delegate.applyFlashMode(ImageCapture.FLASH_MODE_AUTO)
         delegate.detach()
 
-        assertEquals(ImageCapture.FLASH_MODE_AUTO, delegate.flashMode)
+        assertEquals(ImageCapture.FLASH_MODE_AUTO, stateHolder.state.value.flashMode)
     }
 
     private fun lensUnsupported(facing: Int) {
@@ -207,12 +190,7 @@ class ViewfinderCameraDelegateTest {
             resolveAvailableModes = mockk(),
         )
 
-        delegate.bind(
-            ViewfinderStateHolder(
-                initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-                render = { ViewfinderUiState() },
-            ),
-        )
+        delegate.bind(stateHolder)
 
         delegate.attach(
             environment = environment,

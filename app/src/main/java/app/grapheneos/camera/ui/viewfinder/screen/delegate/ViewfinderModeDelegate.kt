@@ -6,7 +6,6 @@ import javax.inject.Inject
 
 interface ViewfinderModeDelegate {
     val defaultMode: CameraMode
-    val currentMode: CameraMode
 
     fun bind(stateHolder: ViewfinderStateHolder)
 
@@ -24,11 +23,6 @@ internal class ViewfinderModeDelegateImpl @Inject constructor() : ViewfinderMode
             return DEFAULT_MODE
         }
 
-    override val currentMode: CameraMode
-        get() {
-            return stateHolder.state.value.mode
-        }
-
     override fun bind(stateHolder: ViewfinderStateHolder) {
         if (isBound) return
         isBound = true
@@ -37,7 +31,7 @@ internal class ViewfinderModeDelegateImpl @Inject constructor() : ViewfinderMode
     }
 
     override fun select(mode: CameraMode): Boolean {
-        if (currentMode == mode) return false
+        if (stateHolder.state.value.mode == mode) return false
 
         stateHolder.update { it.copy(mode = mode) }
 

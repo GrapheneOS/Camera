@@ -15,8 +15,10 @@ import app.grapheneos.camera.di.preferences.DurableSettingsPrefsEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import dagger.hilt.android.EntryPointAccessors
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -59,12 +61,9 @@ class SecurePrefsIsolationTest {
         block: (SettingsRepository) -> Unit,
     ) {
         ActivityScenario.launch(activityClass).use { scenario ->
-            lateinit var repository: SettingsRepository
             scenario.onActivity { activity ->
-                repository = activity.settingsRepository
-                block(repository)
+                block(activity.settingsRepository)
             }
-            runBlocking { repository.awaitPersisted() }
         }
     }
 
@@ -76,8 +75,18 @@ class SecurePrefsIsolationTest {
 
     private var ownersGeoTagging = false
 
-    private fun stored(): SettingsPrefs {
-        return runBlocking { durable.settingsPrefs().data.first() }
+    private fun storedOnceItHolds(condition: (SettingsPrefs) -> Boolean): SettingsPrefs {
+        return runBlocking {
+            withTimeout(STORAGE_TIMEOUT) {
+                durable.settingsPrefs().data.first(condition)
+            }
+        }
+    }
+
+    private fun storedAfterEveryEarlierWrite(): SettingsPrefs {
+        durable.settingsRepository().update { it.copy(focusTimeoutSeconds = MARKER_FOCUS_TIMEOUT) }
+
+        return storedOnceItHolds { it.common.focusTimeoutSeconds == MARKER_FOCUS_TIMEOUT }
     }
 
     @Before
@@ -94,7 +103,6 @@ class SecurePrefsIsolationTest {
 
         owners.update { ownersSettings }
         owners.setGeoTagging(SLOT, ownersGeoTagging)
-        runBlocking { owners.awaitPersisted() }
     }
 
     @Test
@@ -110,7 +118,7 @@ class SecurePrefsIsolationTest {
         assertEquals(
             "A secure session wrote through to the owner's preferences",
             OWNERS_QUALITY,
-            stored().common.photoQuality,
+            storedAfterEveryEarlierWrite().common.photoQuality,
         )
     }
 
@@ -150,7 +158,7 @@ class SecurePrefsIsolationTest {
         assertEquals(
             "A secure session wrote through to the owner's mode preferences",
             false,
-            stored().modes[MODE.name]?.geoTagging,
+            storedAfterEveryEarlierWrite().modes[MODE.name]?.geoTagging,
         )
     }
 
@@ -162,14 +170,16 @@ class SecurePrefsIsolationTest {
             repository.update { it.copy(photoQuality = SESSIONS_QUALITY) }
         }
 
-        assertEquals(SESSIONS_QUALITY, stored().common.photoQuality)
+        storedOnceItHolds { it.common.photoQuality == SESSIONS_QUALITY }
     }
 
     private companion object {
-        val MODE = CameraMode.VIDEO
-        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
-
         const val OWNERS_QUALITY = 71
         const val SESSIONS_QUALITY = 42
+        const val MARKER_FOCUS_TIMEOUT = 97L
+
+        val STORAGE_TIMEOUT = 5.seconds
+        val MODE = CameraMode.VIDEO
+        val SLOT = ModeSlot(mode = MODE, isFrontFacing = false)
     }
 }

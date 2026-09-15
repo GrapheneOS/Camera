@@ -41,7 +41,6 @@ interface SettingsRepository {
     fun setSelfIllumination(slot: ModeSlot, value: Boolean): ModeSettings
     fun setVideoQuality(slot: ModeSlot, value: Quality): ModeSettings
     fun sessionCopy(): SettingsRepository
-    suspend fun awaitPersisted()
 }
 
 internal class SettingsRepositoryImpl @Inject constructor(
@@ -122,10 +121,6 @@ internal class SettingsRepositoryImpl @Inject constructor(
             writeScope = writeScope,
             ioDispatcher = ioDispatcher,
         )
-    }
-
-    override suspend fun awaitPersisted() {
-        dataStore.data.first { it == prefs.value }
     }
 
     private fun writeMode(

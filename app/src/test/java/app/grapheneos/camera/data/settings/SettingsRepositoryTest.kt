@@ -42,7 +42,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -152,25 +151,12 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun write_oncePersisted_isInTheStore() {
-        runTest {
-            val repository = repository()
-
-            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            repository.awaitPersisted()
-
-            assertEquals(SOME_PHOTO_QUALITY, stored().common.photoQuality)
-        }
-    }
-
-    @Test
     fun write_transformReadingTheCurrentValue_buildsOnThePreviousWrite() {
         runTest {
             val repository = repository()
             repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
 
             val written = repository.update { it.copy(photoQuality = it.photoQuality + 1) }
-            repository.awaitPersisted()
 
             assertEquals(SOME_PHOTO_QUALITY + 1, written.photoQuality)
             assertEquals(SOME_PHOTO_QUALITY + 1, stored().common.photoQuality)
@@ -181,19 +167,18 @@ class SettingsRepositoryTest {
     fun manyWrites_leaveTheDiskHoldingTheLastOne() {
         runTest {
             val file = File(temporaryFolder.root, "settings_prefs.json")
-            val repository = repository(
-                from = DataStoreFactory.create(
-                    serializer = settingsPrefsSerializer,
-                    scope = fileScope,
-                ) {
-                    file
-                },
-            )
+            val store = DataStoreFactory.create(
+                serializer = settingsPrefsSerializer,
+                scope = fileScope,
+            ) {
+                file
+            }
+            val repository = repository(from = store)
 
             repeat(WRITES) { quality ->
                 repository.update { it.copy(photoQuality = quality) }
             }
-            repository.awaitPersisted()
+            store.data.first { it.common.photoQuality == WRITES - 1 }
 
             val onDisk = settingsPrefsSerializer.readFrom(file.inputStream())
 
@@ -222,12 +207,10 @@ class SettingsRepositoryTest {
         runTest {
             val owners = repository()
             owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            owners.awaitPersisted()
 
             val session = owners.sessionCopy()
             session.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
             session.setGeoTagging(SLOT, true)
-            session.awaitPersisted()
 
             assertEquals(OTHER_PHOTO_QUALITY, settingsOf(session).photoQuality)
             assertEquals(SOME_PHOTO_QUALITY, settingsOf(owners).photoQuality)
@@ -249,47 +232,11 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun write_oncePersisted_isOnDisk() {
-        runTest {
-            val file = File(temporaryFolder.root, "settings_prefs.json")
-            val repository = repository(
-                from = DataStoreFactory.create(
-                    serializer = settingsPrefsSerializer,
-                    scope = fileScope,
-                ) {
-                    file
-                },
-            )
-
-            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            repository.awaitPersisted()
-
-            val onDisk = settingsPrefsSerializer.readFrom(file.inputStream())
-
-            assertEquals(SOME_PHOTO_QUALITY, onDisk.common.photoQuality)
-        }
-    }
-
-    @Test
-    fun settings_afterAWrite_isSettledWithoutWaitingForADispatch() {
-        runTest {
-            val repository = repository()
-
-            assertEquals(SettingsDefaults.PHOTO_QUALITY, repository.settings.value.photoQuality)
-
-            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-
-            assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
-        }
-    }
-
-    @Test
     fun settings_ofARepositoryOpenedOnAPersistedStore_readsWhatIsThere() {
         runTest {
             val written = repository()
 
             written.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            written.awaitPersisted()
 
             assertEquals(SOME_PHOTO_QUALITY, repository().settings.value.photoQuality)
         }
@@ -338,7 +285,6 @@ class SettingsRepositoryTest {
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.DEVICE_CHOICE)
             repository.setVideoQuality(SLOT, Quality.HIGHEST)
-            repository.awaitPersisted()
 
             verify(exactly = 1) { storedVideoQualityMapper.map(quality = Quality.HIGHEST) }
             confirmVerified(storedVideoQualityMapper)
@@ -360,7 +306,6 @@ class SettingsRepositoryTest {
             repository.modeSettings(SLOT)
 
             val written = repository.setVideoQuality(SLOT, Quality.LOWEST)
-            repository.awaitPersisted()
 
             assertEquals(Quality.LOWEST, written.videoQuality)
             assertEquals(
@@ -382,7 +327,6 @@ class SettingsRepositoryTest {
             repository.modeSettings(FRONT_SLOT)
             storeVideoQualityAs(StoredVideoQuality.HD)
             repository.setVideoQuality(FRONT_SLOT, Quality.HD)
-            repository.awaitPersisted()
 
             val storedMode = stored().modes.getValue(MODE.name)
 
@@ -399,7 +343,6 @@ class SettingsRepositoryTest {
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.FHD)
             repository.setVideoQuality(SLOT, Quality.FHD)
-            repository.awaitPersisted()
 
             val relaunched = repository()
 
@@ -444,7 +387,6 @@ class SettingsRepositoryTest {
             repository.update {
                 it.withBarcodeFormat(formatName = QR_CODE_FORMAT, enabled = false)
             }
-            repository.awaitPersisted()
 
             assertFalse(QR_CODE_FORMAT in settingsOf(repository).enabledBarcodeFormats)
             assertFalse(QR_CODE_FORMAT in settingsOf(repository()).enabledBarcodeFormats)
@@ -459,7 +401,6 @@ class SettingsRepositoryTest {
             repository.update {
                 it.withBarcodeFormat(formatName = AZTEC_FORMAT, enabled = true)
             }
-            repository.awaitPersisted()
 
             assertEquals(
                 setOf(QR_CODE_FORMAT, AZTEC_FORMAT),

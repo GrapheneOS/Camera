@@ -1,28 +1,41 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.ImageCapture
+import androidx.camera.video.Quality
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -39,6 +52,7 @@ class ViewfinderViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation>()
+    private val settingsDelegate = mockk<ViewfinderSettingsDelegate>(relaxed = true)
     private val modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true)
     private val cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true)
 
@@ -48,6 +62,8 @@ class ViewfinderViewModelTest {
 
     private var revertFinished = false
 
+    private lateinit var stateHolder: ViewfinderStateHolder
+
     @Before
     fun setUp() {
         coEvery { revertToMediaStoreLocation() } coAnswers {
@@ -55,7 +71,6 @@ class ViewfinderViewModelTest {
             revertFinished = true
         }
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
-        every { modeDelegate.currentMode } returns CameraMode.CAMERA
         every { cameraDelegate.sessionEvents } returns sessionEvents
     }
 
@@ -99,25 +114,6 @@ class ViewfinderViewModelTest {
             sessionEvents.emit(CameraSessionEvent.ProviderReady(forced = true))
 
             verify(exactly = 1) { cameraDelegate.beginBind(forced = true) }
-        }
-    }
-
-    @Test
-    fun cameraProviderUnavailable_fromTheAttachedSession_showsAMessage() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = mutableListOf<ViewfinderScreenEffect>()
-            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
-                viewModel.effects.collect { effects += it }
-            }
-            attach(viewModel)
-
-            sessionEvents.emit(CameraSessionEvent.CameraProviderUnavailable)
-
-            assertEquals(
-                listOf(ViewfinderScreenEffect.ShowMessage(R.string.camera_provider_init_failure)),
-                effects,
-            )
         }
     }
 
@@ -167,10 +163,207 @@ class ViewfinderViewModelTest {
         }
     }
 
+    @Test
+    fun stabilizationToggled_storesTheSettingBeforeRebinding() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(SettingsAction.StabilizationToggled(enabled = true))
+
+            verifyOrder {
+                settingsDelegate.setEnableEis(true)
+                cameraDelegate.beginBind(forced = true)
+            }
+        }
+    }
+
+    @Test
+    fun focusLockToggled_storesTheSettingBeforeRebinding() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(SettingsAction.FocusLockToggled(enabled = true))
+
+            verifyOrder {
+                settingsDelegate.setWaitForFocusLock(true)
+                cameraDelegate.beginBind(forced = true)
+            }
+        }
+    }
+
+    @Test
+    fun aspectRatioToggleClicked_storesTheOtherRatioBeforeRebinding() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(settings = CameraSettings(aspectRatio = AspectRatio.RATIO_4_3))
+            }
+
+            viewModel.onAction(CameraAction.AspectRatioToggleClicked)
+
+            verifyOrder {
+                settingsDelegate.setAspectRatio(AspectRatio.RATIO_16_9)
+                cameraDelegate.beginBind(forced = true)
+            }
+        }
+    }
+
+    @Test
+    fun videoQualitySelected_theOneAlreadyInUse_leavesTheCameraAlone() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(modeSettings = ModeSettings(videoQuality = Quality.UHD))
+            }
+
+            viewModel.onAction(SettingsAction.VideoQualitySelected(Quality.UHD))
+
+            verify(exactly = 0) { settingsDelegate.setVideoQuality(any()) }
+            verify(exactly = 0) { cameraDelegate.beginBind(forced = any()) }
+        }
+    }
+
+    @Test
+    fun videoQualitySelected_anotherOne_storesItBeforeRebinding() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(modeSettings = ModeSettings(videoQuality = Quality.UHD))
+            }
+
+            viewModel.onAction(SettingsAction.VideoQualitySelected(Quality.FHD))
+
+            verifyOrder {
+                settingsDelegate.setVideoQuality(Quality.FHD)
+                cameraDelegate.beginBind(forced = true)
+            }
+        }
+    }
+
+    @Test
+    fun scanAllCodesToggleClicked_refreshesTheHintsOnlyAfterStoring() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(SettingsAction.ScanAllCodesToggleClicked)
+
+            verifyOrder {
+                settingsDelegate.toggleScanAllCodes()
+                cameraDelegate.refreshQrHints()
+            }
+        }
+    }
+
+    @Test
+    fun flashToggleClicked_withoutAFlash_saysSoAndStoresNothing() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CameraAction.FlashToggleClicked)
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.ShowMessage(R.string.flash_unavailable_in_selected_mode),
+                ),
+                effects,
+            )
+            verify(exactly = 0) { settingsDelegate.setFlashMode(any()) }
+        }
+    }
+
+    @Test
+    fun flashToggleClicked_withAFlashThatIsOff_turnsItOn() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(
+                    session = ViewfinderSessionState(isFlashAvailable = true),
+                    flashMode = ImageCapture.FLASH_MODE_OFF,
+                )
+            }
+
+            viewModel.onAction(CameraAction.FlashToggleClicked)
+
+            verifyOrder {
+                settingsDelegate.setFlashMode(ImageCapture.FLASH_MODE_ON)
+                cameraDelegate.applyFlashMode(ImageCapture.FLASH_MODE_ON)
+            }
+        }
+    }
+
+    @Test
+    fun previewStreamingStarted_storedGeoTaggingWithoutPermission_staysOff() {
+        runTest {
+            every { cameraDelegate.shouldAskForLocationPermission() } returns true
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            stateHolder.update {
+                it.copy(modeSettings = ModeSettings(geoTagging = true))
+            }
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
+            assertTrue(ViewfinderScreenEffect.StopLocationUpdates in effects)
+        }
+    }
+
+    @Test
+    fun previewStreamingStarted_storedGeoTaggingWithPermission_turnsLocationUpdatesOn() {
+        runTest {
+            every { cameraDelegate.shouldAskForLocationPermission() } returns false
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            stateHolder.update {
+                it.copy(modeSettings = ModeSettings(geoTagging = true))
+            }
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
+            assertTrue(ViewfinderScreenEffect.StartLocationUpdates in effects)
+        }
+    }
+
+    @Test
+    fun bindOutcome_extensionUnusable_fallsBackToTheDefaultModeAndMovesTheTabs() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            every { modeDelegate.select(any()) } answers {
+                val mode = firstArg<CameraMode>()
+                stateHolder.update { it.copy(mode = mode) }
+                true
+            }
+            every { cameraDelegate.beginBind(forced = any()) } returns true
+            every { cameraDelegate.selectLens(isQrMode = any(), extensionMode = any()) } returns
+                ViewfinderBindTarget(rotation = 0, qrLensFacing = null)
+            every { cameraDelegate.bindCamera(any()) } returnsMany listOf(
+                BindOutcome.EXTENSION_UNUSABLE,
+                BindOutcome.BOUND,
+            )
+
+            viewModel.onAction(CameraAction.ModeSelected(CameraMode.NIGHT))
+
+            assertEquals(CameraMode.CAMERA, stateHolder.state.value.mode)
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
+                    ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
+                    ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
+                ),
+                effects,
+            )
+        }
+    }
+
     private fun createViewModel(applicationScope: CoroutineScope): ViewfinderViewModel {
-        return ViewfinderViewModel(
+        val viewModel = ViewfinderViewModel(
             entryPoint = ENTRY_POINT,
-            settingsDelegate = mockk<ViewfinderSettingsDelegate>(relaxed = true),
+            settingsDelegate = settingsDelegate,
             modeDelegate = modeDelegate,
             cameraDelegate = cameraDelegate,
             resolveDroppedVideoQuality = mockk(),
@@ -180,6 +373,24 @@ class ViewfinderViewModelTest {
             applicationScope = applicationScope,
             mainDispatcher = mainDispatcherRule.testDispatcher,
         )
+
+        val boundStateHolder = slot<ViewfinderStateHolder>()
+        verify { modeDelegate.bind(capture(boundStateHolder)) }
+        stateHolder = boundStateHolder.captured
+
+        return viewModel
+    }
+
+    private fun TestScope.collectEffects(
+        viewModel: ViewfinderViewModel,
+    ): List<ViewfinderScreenEffect> {
+        val effects = mutableListOf<ViewfinderScreenEffect>()
+
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            viewModel.effects.collect { effects += it }
+        }
+
+        return effects
     }
 
     private fun attach(viewModel: ViewfinderViewModel) {

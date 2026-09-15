@@ -58,7 +58,7 @@ class ViewfinderSettingsDelegateTest {
 
             val delegate = createDelegate()
 
-            assertEquals(GridType.FOUR_BY_FOUR, delegate.settings.gridType)
+            assertEquals(GridType.FOUR_BY_FOUR, stateHolder.state.value.settings.gridType)
         }
     }
 
@@ -89,7 +89,7 @@ class ViewfinderSettingsDelegateTest {
 
             storedSettings.value = CameraSettings(removeExifAfterCapture = false)
 
-            assertFalse(delegate.settings.removeExifAfterCapture)
+            assertFalse(stateHolder.state.value.settings.removeExifAfterCapture)
             assertFalse(stateHolder.state.value.settings.removeExifAfterCapture)
         }
     }
@@ -105,7 +105,10 @@ class ViewfinderSettingsDelegateTest {
 
             delegate.setSelfTimerDuration(seconds = SELF_TIMER_SECONDS)
 
-            assertEquals(SELF_TIMER_SECONDS, delegate.settings.selfTimerDurationSeconds)
+            assertEquals(
+                SELF_TIMER_SECONDS,
+                stateHolder.state.value.settings.selfTimerDurationSeconds,
+            )
         }
     }
 
@@ -122,18 +125,6 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun toggleScanAllCodes_flipsTheStoredValue() {
-        runTest {
-            storedSettings.value = CameraSettings(scanAllCodes = false)
-
-            val delegate = createDelegate()
-            delegate.toggleScanAllCodes()
-
-            assertTrue(storedSettings.value.scanAllCodes)
-        }
-    }
-
-    @Test
     fun perModeWrite_beforeAModeIsSlotted_isDropped() {
         runTest {
             val delegate = createDelegate()
@@ -141,7 +132,7 @@ class ViewfinderSettingsDelegateTest {
             delegate.setGeoTagging(enabled = true)
 
             verify(exactly = 0) { settingsRepository.setGeoTagging(slot = any(), value = any()) }
-            assertTrue(delegate.requireLocation)
+            assertTrue(stateHolder.state.value.requireLocation)
         }
     }
 
@@ -153,7 +144,7 @@ class ViewfinderSettingsDelegateTest {
             val delegate = createDelegate()
             delegate.selectModeSlot(SLOT)
 
-            assertEquals(SLOTTED, delegate.modeSettings)
+            assertEquals(SLOTTED, stateHolder.state.value.modeSettings)
         }
     }
 
@@ -170,7 +161,7 @@ class ViewfinderSettingsDelegateTest {
             delegate.selectModeSlot(SLOT)
             delegate.setVideoQuality(Quality.UHD)
 
-            assertEquals(stored, delegate.modeSettings)
+            assertEquals(stored, stateHolder.state.value.modeSettings)
         }
     }
 

@@ -15,12 +15,10 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderModeDelegateTest {
 
-    @Test
-    fun currentMode_beforeAnySelection_isTheDefault() {
-        val delegate = createDelegate()
-
-        assertEquals(delegate.defaultMode, delegate.currentMode)
-    }
+    private val stateHolder = ViewfinderStateHolder(
+        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
+        render = { ViewfinderUiState() },
+    )
 
     @Test
     fun defaultMode_usesNoExtension() {
@@ -45,21 +43,13 @@ class ViewfinderModeDelegateTest {
         val changed = delegate.select(CameraMode.QR_SCAN)
 
         assertTrue(changed)
-        assertEquals(CameraMode.QR_SCAN, delegate.currentMode)
+        assertEquals(CameraMode.QR_SCAN, stateHolder.state.value.mode)
     }
 
     private fun createDelegate(): ViewfinderModeDelegate {
         val delegate = ViewfinderModeDelegateImpl()
 
-        delegate.bind(
-            ViewfinderStateHolder(
-                initial = ViewfinderState(
-                    mode = delegate.defaultMode,
-                    requiresVideoModeOnly = false,
-                ),
-                render = { ViewfinderUiState() },
-            ),
-        )
+        delegate.bind(stateHolder)
 
         return delegate
     }

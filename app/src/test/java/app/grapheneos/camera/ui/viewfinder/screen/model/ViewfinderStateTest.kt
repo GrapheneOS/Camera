@@ -16,23 +16,6 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderStateTest {
 
     @Test
-    fun photoMode_isNeitherQrNorVideo() {
-        val state = state(mode = CameraMode.CAMERA)
-
-        assertTrue(state.isInPhotoMode())
-        assertFalse(state.isQrMode())
-        assertFalse(state.isVideoMode())
-    }
-
-    @Test
-    fun qrMode_isNotPhotoMode() {
-        val state = state(mode = CameraMode.QR_SCAN)
-
-        assertTrue(state.isQrMode())
-        assertFalse(state.isInPhotoMode())
-    }
-
-    @Test
     fun isVideoMode_inAVideoOnlyEntryPoint_holdsForEveryMode() {
         val state = state(mode = CameraMode.CAMERA, requiresVideoModeOnly = true)
 

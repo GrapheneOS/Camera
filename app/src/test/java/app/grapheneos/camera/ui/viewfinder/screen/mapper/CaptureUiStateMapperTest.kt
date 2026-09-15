@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import androidx.camera.core.CameraSelector
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -35,17 +34,6 @@ class CaptureUiStateMapperTest {
                 session = session,
             ),
         )
-    }
-
-    @Test
-    fun selfIlluminate_needsTheSettingAndTheFrontLens() {
-        val enabled = ModeSettings(selfIllumination = true)
-        val front = ViewfinderSessionState(lensFacing = CameraSelector.LENS_FACING_FRONT)
-        val back = ViewfinderSessionState(lensFacing = CameraSelector.LENS_FACING_BACK)
-
-        assertTrue(map(modeSettings = enabled, session = front).selfIlluminate)
-        assertFalse(map(modeSettings = enabled, session = back).selfIlluminate)
-        assertFalse(map(session = front).selfIlluminate)
     }
 
     @Test

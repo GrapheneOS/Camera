@@ -20,9 +20,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
 interface ViewfinderCameraDelegate {
-    val sessionState: ViewfinderSessionState
     val lensFacing: Int
-    val flashMode: Int
     val isProviderReady: Boolean
     val sessionEvents: Flow<CameraSessionEvent>
 
@@ -90,19 +88,9 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return attached.session
         }
 
-    override val sessionState: ViewfinderSessionState
-        get() {
-            return stateHolder.state.value.session
-        }
-
     override val lensFacing: Int
         get() {
             return session.lensFacing
-        }
-
-    override val flashMode: Int
-        get() {
-            return stateHolder.state.value.flashMode
         }
 
     override val isProviderReady: Boolean
