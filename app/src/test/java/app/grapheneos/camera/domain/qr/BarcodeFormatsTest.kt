@@ -21,7 +21,7 @@ class BarcodeFormatsTest {
     private val storedSettings = MutableStateFlow(CameraSettings())
 
     private val settingsRepository = mockk<SettingsRepository>()
-    private val formats = BarcodeFormats(settingsRepository)
+    private val formats: BarcodeFormats = BarcodeFormatsImpl(settingsRepository)
 
     @Before
     fun setUp() {
@@ -102,7 +102,7 @@ class BarcodeFormatsTest {
     fun uncommonNames_excludeTheFormatsWithTheirOwnToggles() {
         val uncommon = formats.uncommonNames()
 
-        BarcodeFormats.COMMON_FORMATS.forEach { assertFalse(it.name in uncommon) }
+        FORMATS_WITH_THEIR_OWN_TOGGLES.forEach { assertFalse(it.name in uncommon) }
     }
 
     private fun stored(vararg formatNames: String) {
@@ -111,5 +111,12 @@ class BarcodeFormatsTest {
 
     private companion object {
         const val UNKNOWN_FORMAT = "NOT_A_FORMAT"
+
+        val FORMATS_WITH_THEIR_OWN_TOGGLES = listOf(
+            BarcodeFormat.AZTEC,
+            BarcodeFormat.QR_CODE,
+            BarcodeFormat.DATA_MATRIX,
+            BarcodeFormat.PDF_417,
+        )
     }
 }
