@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.session.CameraSession
@@ -142,6 +143,16 @@ class ViewfinderCameraDelegateTest {
 
         assertEquals(ViewfinderSessionState(), delegate.sessionState)
         verify(exactly = 1) { session.listener = null }
+    }
+
+    @Test
+    fun applyFlashMode_isRememberedAcrossDetach() {
+        val delegate = createAttachedDelegate()
+
+        delegate.applyFlashMode(ImageCapture.FLASH_MODE_AUTO)
+        delegate.detach()
+
+        assertEquals(ImageCapture.FLASH_MODE_AUTO, delegate.flashMode)
     }
 
     private fun lensUnsupported(facing: Int) {
