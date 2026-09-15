@@ -27,4 +27,5 @@ data class SettingsSheetUiState(
     val stabilizationSettingVisible: Boolean = false,
     val selfIlluminationSettingVisible: Boolean = false,
     val timerSettingVisible: Boolean = true,
+    val waitForFocusLockSettingVisible: Boolean = true,
 )

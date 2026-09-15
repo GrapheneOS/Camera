@@ -88,13 +88,11 @@ class ViewfinderViewModel @Inject constructor(
 
     fun attach(
         environment: CameraSessionEnvironment,
-        effects: ViewfinderEffects,
         chrome: ViewfinderChrome,
         session: CameraSession,
     ) {
         cameraDelegate.attach(
             environment = environment,
-            effects = effects,
             chrome = chrome,
             session = session,
             emitEffect = ::emitEffect,
@@ -279,6 +277,10 @@ class ViewfinderViewModel @Inject constructor(
         val currentState = state()
 
         when {
+            currentState.requiresVideoModeOnly -> {
+                emitEffect(Effect.ShowMessage(R.string.flash_switch_unsupported))
+            }
+
             currentState.session.isFlashAvailable -> {
                 val next = when (currentState.flashMode) {
                     ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
@@ -289,9 +291,9 @@ class ViewfinderViewModel @Inject constructor(
                 setFlashMode(next)
             }
 
-            else -> emitEffect(
-                Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode),
-            )
+            else -> {
+                emitEffect(Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode))
+            }
         }
     }
 

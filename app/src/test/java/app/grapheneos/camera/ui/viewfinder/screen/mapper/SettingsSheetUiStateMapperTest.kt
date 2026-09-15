@@ -25,6 +25,7 @@ class SettingsSheetUiStateMapperTest {
 
     private fun map(
         mode: CameraMode = CameraMode.CAMERA,
+        requiresVideoModeOnly: Boolean = false,
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
         requireLocation: Boolean = false,
         settings: CameraSettings = CameraSettings(),
@@ -34,7 +35,7 @@ class SettingsSheetUiStateMapperTest {
         return mapper.map(
             ViewfinderState(
                 mode = mode,
-                requiresVideoModeOnly = false,
+                requiresVideoModeOnly = requiresVideoModeOnly,
                 flashMode = flashMode,
                 requireLocation = requireLocation,
                 settings = settings,
@@ -96,6 +97,12 @@ class SettingsSheetUiStateMapperTest {
         assertTrue(map(mode = CameraMode.VIDEO, session = capable).stabilizationSettingVisible)
         assertFalse(map(mode = CameraMode.CAMERA, session = capable).stabilizationSettingVisible)
         assertFalse(map(mode = CameraMode.VIDEO).stabilizationSettingVisible)
+    }
+
+    @Test
+    fun focusLockRow_isHiddenInAVideoOnlyEntryPoint() {
+        assertTrue(map(mode = CameraMode.VIDEO).waitForFocusLockSettingVisible)
+        assertFalse(map(requiresVideoModeOnly = true).waitForFocusLockSettingVisible)
     }
 
     @Test

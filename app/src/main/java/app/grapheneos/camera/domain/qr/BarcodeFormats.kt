@@ -2,32 +2,42 @@ package app.grapheneos.camera.domain.qr
 
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import com.google.zxing.BarcodeFormat
-import dagger.hilt.android.scopes.ActivityScoped
 import javax.inject.Inject
 
-@ActivityScoped
-class BarcodeFormats @Inject constructor(
-    private val settingsRepository: SettingsRepository,
-) {
-
+interface BarcodeFormats {
     val enabled: List<BarcodeFormat>
+
+    fun uncommonNames(): List<String>
+    fun isEnabled(formatName: String): Boolean
+
+    /** Returns false when the change was refused because it would leave nothing to scan. */
+    fun setEnabled(formatName: String, enabled: Boolean): Boolean
+
+    /** Returns false when the selection was refused because it would leave nothing to scan. */
+    fun apply(selection: Map<String, Boolean>): Boolean
+}
+
+internal class BarcodeFormatsImpl @Inject constructor(
+    private val settingsRepository: SettingsRepository,
+) : BarcodeFormats {
+
+    override val enabled: List<BarcodeFormat>
         get() {
             val enabledNames = settingsRepository.settings.value.enabledBarcodeFormats
             return BarcodeFormat.entries.filter { it.name in enabledNames }
         }
 
-    fun uncommonNames(): List<String> {
+    override fun uncommonNames(): List<String> {
         return BarcodeFormat.entries
             .filterNot { it in COMMON_FORMATS }
             .map { it.name }
     }
 
-    fun isEnabled(formatName: String): Boolean {
+    override fun isEnabled(formatName: String): Boolean {
         return enabled.any { it.name == formatName }
     }
 
-    /** Returns false when the change was refused because it would leave nothing to scan. */
-    fun setEnabled(
+    override fun setEnabled(
         formatName: String,
         enabled: Boolean,
     ): Boolean {
@@ -43,8 +53,7 @@ class BarcodeFormats @Inject constructor(
         return true
     }
 
-    /** Returns false when the selection was refused because it would leave nothing to scan. */
-    fun apply(selection: Map<String, Boolean>): Boolean {
+    override fun apply(selection: Map<String, Boolean>): Boolean {
         // If all formats displayed outside the dialog are disabled (main QR scanner UI) and no
         // option is selected within the check box either - implying no barcode format is selected
         // at all - don't apply the selection made by the user
@@ -67,7 +76,7 @@ class BarcodeFormats @Inject constructor(
         return true
     }
 
-    companion object {
+    private companion object {
         val COMMON_FORMATS = listOf(
             BarcodeFormat.AZTEC,
             BarcodeFormat.QR_CODE,
