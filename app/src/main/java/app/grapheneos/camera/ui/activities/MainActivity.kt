@@ -1154,7 +1154,6 @@ open class MainActivity : AppCompatActivity() {
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
-        barcodeFormats.load()
         selectBarcodeFormatToggles()
         session.refreshQrHints()
 

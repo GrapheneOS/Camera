@@ -22,6 +22,8 @@ import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import app.grapheneos.camera.data.settings.store.settingsPrefsSerializer
+import app.grapheneos.camera.testutil.MainDispatcherRule
+import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
@@ -31,9 +33,12 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -49,6 +54,9 @@ class SettingsRepositoryTest {
 
     @get:Rule
     val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
     private val fileExecutor = Executors.newSingleThreadExecutor()
 
@@ -72,12 +80,19 @@ class SettingsRepositoryTest {
         fileExecutor.shutdownNow()
     }
 
-    private fun repository(from: DataStore<SettingsPrefs> = dataStore): SettingsRepository {
+    private fun TestScope.repository(
+        from: DataStore<SettingsPrefs> = dataStore,
+        modeSettingsMapper: ModeSettingsMapper = this@SettingsRepositoryTest.modeSettingsMapper,
+        storedVideoQualityMapper: StoredVideoQualityMapper =
+            this@SettingsRepositoryTest.storedVideoQualityMapper,
+    ): SettingsRepository {
         return SettingsRepositoryImpl(
             dataStore = from,
             cameraSettingsMapper = cameraSettingsMapper,
             modeSettingsMapper = modeSettingsMapper,
             storedVideoQualityMapper = storedVideoQualityMapper,
+            writeScope = backgroundScope,
+            ioDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 
@@ -92,286 +107,365 @@ class SettingsRepositoryTest {
     }
 
     private fun settingsOf(repository: SettingsRepository): CameraSettings {
-        return runBlocking { repository.settings.first() }
+        return repository.settings.value
     }
 
-    private fun stored(from: DataStore<SettingsPrefs> = dataStore): SettingsPrefs {
-        return runBlocking { from.data.first() }
+    private fun stalledStore(): DataStore<SettingsPrefs> {
+        return mockk {
+            every { data } returns flowOf(SettingsPrefs())
+            coEvery { updateData(transform = any()) } coAnswers { awaitCancellation() }
+        }
+    }
+
+    private suspend fun stored(from: DataStore<SettingsPrefs> = dataStore): SettingsPrefs {
+        return from.data.first()
     }
 
     @Test
     fun write_returnsWhatItStored() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking {
             repository.update { it.copy(aspectRatio = SOME_ASPECT_RATIO) }
             repository.update { it.copy(gridType = GridType.GOLDEN_RATIO) }
-        }
 
-        val written = runBlocking {
+            val written = repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+
+            assertEquals(SOME_ASPECT_RATIO, written.aspectRatio)
+            assertEquals(GridType.GOLDEN_RATIO, written.gridType)
+            assertEquals(SOME_PHOTO_QUALITY, written.photoQuality)
+        }
+    }
+
+    @Test
+    fun write_isReadableBeforeTheStoreCatchesUp() {
+        runTest {
+            val repository = repository(from = stalledStore())
+
             repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-        }
-
-        assertEquals(SOME_ASPECT_RATIO, written.aspectRatio)
-        assertEquals(GridType.GOLDEN_RATIO, written.gridType)
-        assertEquals(SOME_PHOTO_QUALITY, written.photoQuality)
-    }
-
-    @Test
-    fun write_reachesTheStoreBeforeReturning() {
-        val repository = repository()
-
-        runBlocking { repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
-
-        assertEquals(SOME_PHOTO_QUALITY, stored().common.photoQuality)
-    }
-
-    @Test
-    fun write_afterAnotherRepositoryWroteADifferentSetting_keepsBoth() {
-        val viewfinder = repository()
-        val settingsScreen = repository()
-
-        runBlocking { settingsScreen.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
-
-        val written = runBlocking { viewfinder.update { it.copy(aspectRatio = SOME_ASPECT_RATIO) } }
-
-        assertEquals(SOME_PHOTO_QUALITY, stored().common.photoQuality)
-        assertEquals(SOME_ASPECT_RATIO, stored().common.aspectRatio)
-        assertEquals(SOME_PHOTO_QUALITY, written.photoQuality)
-    }
-
-    @Test
-    fun write_transformReadingTheCurrentValue_isAppliedOnceAgainstWhatIsStored() {
-        val viewfinder = repository()
-        val settingsScreen = repository()
-
-        runBlocking { settingsScreen.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
-
-        val written = runBlocking {
-            viewfinder.update { it.copy(photoQuality = it.photoQuality + 1) }
-        }
-
-        assertEquals(SOME_PHOTO_QUALITY + 1, stored().common.photoQuality)
-        assertEquals(SOME_PHOTO_QUALITY + 1, written.photoQuality)
-    }
-
-    @Test
-    fun write_onlyEverReachesTheStoreItWasGiven() {
-        val owners = InMemoryDataStore(
-            SettingsPrefs(
-                common = cameraSettingsMapper.map(
-                    CameraSettings(photoQuality = SOME_PHOTO_QUALITY),
-                ),
-            ),
-        )
-        val session = InMemoryDataStore(stored(from = owners))
-        val repository = repository(from = session)
-
-        assertEquals(SOME_PHOTO_QUALITY, settingsOf(repository).photoQuality)
-
-        runBlocking {
-            repository.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
-            repository.modeSettings(SLOT)
             repository.setGeoTagging(SLOT, true)
-        }
+            repository.modeSettings(SLOT)
 
-        assertEquals(OTHER_PHOTO_QUALITY, settingsOf(repository).photoQuality)
-        assertEquals(SOME_PHOTO_QUALITY, stored(from = owners).common.photoQuality)
-        assertEquals(emptyMap<String, StoredModeSettings>(), stored(from = owners).modes)
+            assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
+            assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
+        }
     }
 
     @Test
-    fun write_returns_leavingTheValueOnDisk() {
-        val file = File(temporaryFolder.root, "settings_prefs.json")
-        val repository = repository(
-            from = DataStoreFactory.create(
-                serializer = settingsPrefsSerializer,
-                scope = fileScope,
-            ) {
-                file
-            },
-        )
+    fun write_oncePersisted_isInTheStore() {
+        runTest {
+            val repository = repository()
 
-        runBlocking { repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
+            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+            repository.awaitPersisted()
 
-        val onDisk = runBlocking { settingsPrefsSerializer.readFrom(file.inputStream()) }
+            assertEquals(SOME_PHOTO_QUALITY, stored().common.photoQuality)
+        }
+    }
 
-        assertEquals(SOME_PHOTO_QUALITY, onDisk.common.photoQuality)
+    @Test
+    fun write_transformReadingTheCurrentValue_buildsOnThePreviousWrite() {
+        runTest {
+            val repository = repository()
+            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+
+            val written = repository.update { it.copy(photoQuality = it.photoQuality + 1) }
+            repository.awaitPersisted()
+
+            assertEquals(SOME_PHOTO_QUALITY + 1, written.photoQuality)
+            assertEquals(SOME_PHOTO_QUALITY + 1, stored().common.photoQuality)
+        }
+    }
+
+    @Test
+    fun manyWrites_leaveTheDiskHoldingTheLastOne() {
+        runTest {
+            val file = File(temporaryFolder.root, "settings_prefs.json")
+            val repository = repository(
+                from = DataStoreFactory.create(
+                    serializer = settingsPrefsSerializer,
+                    scope = fileScope,
+                ) {
+                    file
+                },
+            )
+
+            repeat(WRITES) { quality ->
+                repository.update { it.copy(photoQuality = quality) }
+            }
+            repository.awaitPersisted()
+
+            val onDisk = settingsPrefsSerializer.readFrom(file.inputStream())
+
+            assertEquals(WRITES - 1, onDisk.common.photoQuality)
+            assertEquals(WRITES - 1, repository.settings.value.photoQuality)
+        }
+    }
+
+    @Test
+    fun sessionCopy_startsFromWhatTheOwnerHoldsBeforeItIsPersisted() {
+        runTest {
+            val owners = repository(from = stalledStore())
+            owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+            owners.setGeoTagging(SLOT, true)
+
+            val session = owners.sessionCopy()
+            session.modeSettings(SLOT)
+
+            assertEquals(SOME_PHOTO_QUALITY, settingsOf(session).photoQuality)
+            assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
+        }
+    }
+
+    @Test
+    fun sessionCopy_writesStayOutOfTheOwnersStore() {
+        runTest {
+            val owners = repository()
+            owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+            owners.awaitPersisted()
+
+            val session = owners.sessionCopy()
+            session.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
+            session.setGeoTagging(SLOT, true)
+            session.awaitPersisted()
+
+            assertEquals(OTHER_PHOTO_QUALITY, settingsOf(session).photoQuality)
+            assertEquals(SOME_PHOTO_QUALITY, settingsOf(owners).photoQuality)
+            assertEquals(SOME_PHOTO_QUALITY, stored().common.photoQuality)
+            assertEquals(emptyMap<String, StoredModeSettings>(), stored().modes)
+        }
+    }
+
+    @Test
+    fun sessionCopy_doesNotFollowTheOwnersLaterChanges() {
+        runTest {
+            val owners = repository()
+            val session = owners.sessionCopy()
+
+            owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+
+            assertEquals(SettingsDefaults.PHOTO_QUALITY, settingsOf(session).photoQuality)
+        }
+    }
+
+    @Test
+    fun write_oncePersisted_isOnDisk() {
+        runTest {
+            val file = File(temporaryFolder.root, "settings_prefs.json")
+            val repository = repository(
+                from = DataStoreFactory.create(
+                    serializer = settingsPrefsSerializer,
+                    scope = fileScope,
+                ) {
+                    file
+                },
+            )
+
+            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+            repository.awaitPersisted()
+
+            val onDisk = settingsPrefsSerializer.readFrom(file.inputStream())
+
+            assertEquals(SOME_PHOTO_QUALITY, onDisk.common.photoQuality)
+        }
     }
 
     @Test
     fun settings_afterAWrite_isSettledWithoutWaitingForADispatch() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        assertEquals(SettingsDefaults.PHOTO_QUALITY, repository.settings.value.photoQuality)
+            assertEquals(SettingsDefaults.PHOTO_QUALITY, repository.settings.value.photoQuality)
 
-        runBlocking { repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
+            repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
 
-        assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
+            assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
+        }
     }
 
     @Test
-    fun settings_ofARepositoryOpenedOnAWrittenStore_readsWhatIsThere() {
-        runBlocking { repository().update { it.copy(photoQuality = SOME_PHOTO_QUALITY) } }
+    fun settings_ofARepositoryOpenedOnAPersistedStore_readsWhatIsThere() {
+        runTest {
+            val written = repository()
 
-        assertEquals(SOME_PHOTO_QUALITY, repository().settings.value.photoQuality)
+            written.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
+            written.awaitPersisted()
+
+            assertEquals(SOME_PHOTO_QUALITY, repository().settings.value.photoQuality)
+        }
     }
 
     @Test
     fun writeMode_selectingTheSameModeAgain_keepsTheWritesMadeToIt() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking {
             repository.modeSettings(SLOT)
             repository.setGeoTagging(SLOT, true)
             repository.modeSettings(SLOT)
-        }
 
-        assertEquals(
-            StoredModeSettings(geoTagging = true),
-            lastMappedMode(),
-        )
+            assertEquals(
+                StoredModeSettings(geoTagging = true),
+                lastMappedMode(),
+            )
+        }
     }
 
     @Test
     fun modeSettings_exposesWhatTheMapperMadeOfTheStoredMode() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        every {
-            modeSettingsMapper.map(stored = any(), isFrontFacing = any())
-        } returns MAPPER_RESULT
+            every {
+                modeSettingsMapper.map(stored = any(), isFrontFacing = any())
+            } returns MAPPER_RESULT
 
-        val selected = runBlocking { repository.modeSettings(FRONT_SLOT) }
+            val selected = repository.modeSettings(FRONT_SLOT)
 
-        verify(exactly = 1) {
-            modeSettingsMapper.map(stored = StoredModeSettings(), isFrontFacing = true)
+            verify(exactly = 1) {
+                modeSettingsMapper.map(stored = StoredModeSettings(), isFrontFacing = true)
+            }
+            confirmVerified(modeSettingsMapper)
+            assertEquals(MAPPER_RESULT, selected)
         }
-        confirmVerified(modeSettingsMapper)
-        assertEquals(MAPPER_RESULT, selected)
     }
 
     @Test
     fun setVideoQuality_storesTheNameTheMapperGaveIt() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking { repository.modeSettings(SLOT) }
-        storeVideoQualityAs(StoredVideoQuality.DEVICE_CHOICE)
-        runBlocking { repository.setVideoQuality(SLOT, Quality.HIGHEST) }
+            repository.modeSettings(SLOT)
+            storeVideoQualityAs(StoredVideoQuality.DEVICE_CHOICE)
+            repository.setVideoQuality(SLOT, Quality.HIGHEST)
+            repository.awaitPersisted()
 
-        verify(exactly = 1) { storedVideoQualityMapper.map(quality = Quality.HIGHEST) }
-        confirmVerified(storedVideoQualityMapper)
-        assertEquals(
-            StoredVideoQuality.DEVICE_CHOICE,
-            stored().modes[MODE.name]?.videoQualityBack,
-        )
+            verify(exactly = 1) { storedVideoQualityMapper.map(quality = Quality.HIGHEST) }
+            confirmVerified(storedVideoQualityMapper)
+            assertEquals(
+                StoredVideoQuality.DEVICE_CHOICE,
+                stored().modes[MODE.name]?.videoQualityBack,
+            )
+        }
     }
 
     @Test
     fun writeMode_qualityTheStoreCannotName_isStillWhatTheModeReports() {
-        val repository = SettingsRepositoryImpl(
-            dataStore = dataStore,
-            cameraSettingsMapper = cameraSettingsMapper,
-            modeSettingsMapper = ModeSettingsMapperImpl(),
-            storedVideoQualityMapper = StoredVideoQualityMapperImpl(),
-        )
+        runTest {
+            val repository = repository(
+                modeSettingsMapper = ModeSettingsMapperImpl(),
+                storedVideoQualityMapper = StoredVideoQualityMapperImpl(),
+            )
 
-        runBlocking { repository.modeSettings(SLOT) }
+            repository.modeSettings(SLOT)
 
-        val written = runBlocking { repository.setVideoQuality(SLOT, Quality.LOWEST) }
+            val written = repository.setVideoQuality(SLOT, Quality.LOWEST)
+            repository.awaitPersisted()
 
-        assertEquals(Quality.LOWEST, written.videoQuality)
-        assertEquals(
-            StoredVideoQuality.DEVICE_CHOICE,
-            stored().modes[MODE.name]?.videoQualityBack,
-        )
+            assertEquals(Quality.LOWEST, written.videoQuality)
+            assertEquals(
+                StoredVideoQuality.DEVICE_CHOICE,
+                stored().modes[MODE.name]?.videoQualityBack,
+            )
+        }
     }
 
     @Test
     fun setVideoQuality_eachLensFacing_isStoredSeparately() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking { repository.modeSettings(SLOT) }
-        storeVideoQualityAs(StoredVideoQuality.UHD)
-        runBlocking { repository.setVideoQuality(SLOT, Quality.UHD) }
+            repository.modeSettings(SLOT)
+            storeVideoQualityAs(StoredVideoQuality.UHD)
+            repository.setVideoQuality(SLOT, Quality.UHD)
 
-        runBlocking { repository.modeSettings(FRONT_SLOT) }
-        storeVideoQualityAs(StoredVideoQuality.HD)
-        runBlocking { repository.setVideoQuality(FRONT_SLOT, Quality.HD) }
+            repository.modeSettings(FRONT_SLOT)
+            storeVideoQualityAs(StoredVideoQuality.HD)
+            repository.setVideoQuality(FRONT_SLOT, Quality.HD)
+            repository.awaitPersisted()
 
-        val storedMode = stored().modes.getValue(MODE.name)
+            val storedMode = stored().modes.getValue(MODE.name)
 
-        assertEquals(StoredVideoQuality.UHD, storedMode.videoQualityBack)
-        assertEquals(StoredVideoQuality.HD, storedMode.videoQualityFront)
+            assertEquals(StoredVideoQuality.UHD, storedMode.videoQualityBack)
+            assertEquals(StoredVideoQuality.HD, storedMode.videoQualityFront)
+        }
     }
 
     @Test
     fun modeSettings_afterARelaunch_mapsWhatTheStoreHeld() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking { repository.modeSettings(SLOT) }
-        storeVideoQualityAs(StoredVideoQuality.FHD)
-        runBlocking { repository.setVideoQuality(SLOT, Quality.FHD) }
+            repository.modeSettings(SLOT)
+            storeVideoQualityAs(StoredVideoQuality.FHD)
+            repository.setVideoQuality(SLOT, Quality.FHD)
+            repository.awaitPersisted()
 
-        val relaunched = repository()
+            val relaunched = repository()
 
-        runBlocking { relaunched.modeSettings(SLOT) }
+            relaunched.modeSettings(SLOT)
 
-        assertEquals(
-            StoredModeSettings(videoQualityBack = StoredVideoQuality.FHD),
-            lastMappedMode(),
-        )
+            assertEquals(
+                StoredModeSettings(videoQualityBack = StoredVideoQuality.FHD),
+                lastMappedMode(),
+            )
+        }
     }
 
     @Test
     fun writeMode_eachMode_isStoredSeparately() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking {
             repository.modeSettings(SLOT)
             repository.setGeoTagging(SLOT, true)
             repository.modeSettings(OTHER_SLOT)
+
+            assertEquals(StoredModeSettings(), lastMappedMode())
+
+            repository.modeSettings(SLOT)
+
+            assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
         }
-
-        assertEquals(StoredModeSettings(), lastMappedMode())
-
-        runBlocking { repository.modeSettings(SLOT) }
-
-        assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
     }
 
     @Test
     fun barcodeFormats_untouched_defaultToQrCodeOnly() {
-        assertEquals(setOf(QR_CODE_FORMAT), settingsOf(repository()).enabledBarcodeFormats)
+        runTest {
+            assertEquals(setOf(QR_CODE_FORMAT), settingsOf(repository()).enabledBarcodeFormats)
+        }
     }
 
     @Test
     fun barcodeFormats_disabled_staysDisabledAcrossRelaunch() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking {
             repository.update {
                 it.withBarcodeFormat(formatName = QR_CODE_FORMAT, enabled = false)
             }
-        }
+            repository.awaitPersisted()
 
-        assertFalse(QR_CODE_FORMAT in settingsOf(repository).enabledBarcodeFormats)
-        assertFalse(QR_CODE_FORMAT in settingsOf(repository()).enabledBarcodeFormats)
+            assertFalse(QR_CODE_FORMAT in settingsOf(repository).enabledBarcodeFormats)
+            assertFalse(QR_CODE_FORMAT in settingsOf(repository()).enabledBarcodeFormats)
+        }
     }
 
     @Test
     fun barcodeFormats_anotherEnabled_keepsTheDefaultEnabledToo() {
-        val repository = repository()
+        runTest {
+            val repository = repository()
 
-        runBlocking {
             repository.update {
                 it.withBarcodeFormat(formatName = AZTEC_FORMAT, enabled = true)
             }
-        }
+            repository.awaitPersisted()
 
-        assertEquals(
-            setOf(QR_CODE_FORMAT, AZTEC_FORMAT),
-            settingsOf(repository()).enabledBarcodeFormats,
-        )
+            assertEquals(
+                setOf(QR_CODE_FORMAT, AZTEC_FORMAT),
+                settingsOf(repository()).enabledBarcodeFormats,
+            )
+        }
     }
 
     private companion object {
@@ -390,5 +484,7 @@ class SettingsRepositoryTest {
         const val SOME_ASPECT_RATIO = 1
         const val SOME_PHOTO_QUALITY = 71
         const val OTHER_PHOTO_QUALITY = 42
+
+        const val WRITES = 50
     }
 }
