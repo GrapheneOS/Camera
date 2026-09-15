@@ -7,11 +7,11 @@ import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffects
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -21,6 +21,8 @@ interface ViewfinderCameraDelegate {
     val sessionState: ViewfinderSessionState
     val lensFacing: Int
     val flashMode: Int
+
+    fun bind(stateHolder: ViewfinderStateHolder)
 
     fun attach(
         environment: CameraSessionEnvironment,
@@ -52,6 +54,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val resolveAvailableModes: ResolveAvailableModes,
 ) : ViewfinderCameraDelegate {
 
+    private lateinit var stateHolder: ViewfinderStateHolder
+
+    private var isBound = false
+
     private var attachment: Attachment? = null
 
     private val attached: Attachment
@@ -81,16 +87,27 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return attached.session
         }
 
-    override var sessionState: ViewfinderSessionState = ViewfinderSessionState()
-        private set
+    override val sessionState: ViewfinderSessionState
+        get() {
+            return stateHolder.state.value.session
+        }
 
     override val lensFacing: Int
         get() {
             return session.lensFacing
         }
 
-    override var flashMode: Int = SettingsDefaults.FLASH_MODE
-        private set
+    override val flashMode: Int
+        get() {
+            return stateHolder.state.value.flashMode
+        }
+
+    override fun bind(stateHolder: ViewfinderStateHolder) {
+        if (isBound) return
+        isBound = true
+
+        this.stateHolder = stateHolder
+    }
 
     override fun attach(
         environment: CameraSessionEnvironment,
@@ -116,7 +133,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     override fun detach() {
         attachment?.session?.listener = null
         attachment = null
-        sessionState = ViewfinderSessionState()
+        stateHolder.update { it.copy(session = ViewfinderSessionState()) }
     }
 
     override fun initialize(
@@ -249,8 +266,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun applyFlashMode(value: Int) {
-        flashMode = value
         session.imageCapture?.flashMode = value
+        stateHolder.update { it.copy(flashMode = value) }
     }
 
     override fun onZoomStateChanged() {
@@ -275,12 +292,14 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     private fun refreshSessionState() {
-        sessionState = ViewfinderSessionState(
+        val sessionState = ViewfinderSessionState(
             lensFacing = session.lensFacing,
             canTakePicture = session.imageCapture != null,
             isFlashAvailable = session.isFlashAvailable,
             canApplyVideoStabilization = session.canApplyVideoStabilization(),
         )
+
+        stateHolder.update { it.copy(session = sessionState) }
     }
 
     private fun qrLensFacing(extensionMode: Int): Int {

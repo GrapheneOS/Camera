@@ -6,12 +6,22 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 interface ViewfinderSettingsDelegate {
     val settings: CameraSettings
     val modeSettings: ModeSettings
     val requireLocation: Boolean
+
+    fun bind(
+        scope: CoroutineScope,
+        stateHolder: ViewfinderStateHolder,
+    )
 
     fun cycleGridType()
     fun setFocusTimeout(seconds: Long)
@@ -31,23 +41,50 @@ interface ViewfinderSettingsDelegate {
 
 internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderSettingsDelegate {
+
+    private lateinit var stateHolder: ViewfinderStateHolder
+
+    private var isBound = false
 
     override val settings: CameraSettings
         get() {
-            return settingsRepository.settings.value
+            return stateHolder.state.value.settings
         }
 
-    override var modeSettings: ModeSettings = ModeSettings()
-        private set
+    override val modeSettings: ModeSettings
+        get() {
+            return stateHolder.state.value.modeSettings
+        }
 
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
     // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
     // the preference back here would resurrect the very stale "on" the coercion exists to drop.
-    override var requireLocation: Boolean = false
-        private set
+    override val requireLocation: Boolean
+        get() {
+            return stateHolder.state.value.requireLocation
+        }
 
     private var slot: ModeSlot? = null
+
+    override fun bind(
+        scope: CoroutineScope,
+        stateHolder: ViewfinderStateHolder,
+    ) {
+        if (isBound) return
+        isBound = true
+
+        this.stateHolder = stateHolder
+
+        stateHolder.update { it.copy(settings = settingsRepository.settings.value) }
+
+        scope.launch(mainDispatcher) {
+            settingsRepository.settings.collect { settings ->
+                stateHolder.update { it.copy(settings = settings) }
+            }
+        }
+    }
 
     override fun cycleGridType() {
         val next = when (settings.gridType) {
@@ -90,55 +127,72 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     override fun selectModeSlot(slot: ModeSlot) {
         this.slot = slot
-        modeSettings = settingsRepository.modeSettings(slot)
+
+        val modeSettings = settingsRepository.modeSettings(slot)
+
+        stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
     override fun setFlashMode(value: Int) {
-        writeMode { slot ->
+        val modeSettings = writeMode { slot ->
             settingsRepository.setFlashMode(
                 slot = slot,
                 value = value,
             )
         }
+
+        stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
     override fun setGeoTagging(enabled: Boolean) {
         // A permission result is delivered before the first onResume of an activity the system
         // recreated, so this can run before a mode has been slotted — see modeSettings.
-        writeMode { slot ->
+        val modeSettings = writeMode { slot ->
             settingsRepository.setGeoTagging(
                 slot = slot,
                 value = enabled,
             )
         }
 
-        requireLocation = enabled
+        stateHolder.update {
+            it.copy(
+                modeSettings = modeSettings,
+                requireLocation = enabled,
+            )
+        }
     }
 
     override fun setSelfIllumination(enabled: Boolean) {
-        writeMode { slot ->
+        val modeSettings = writeMode { slot ->
             settingsRepository.setSelfIllumination(
                 slot = slot,
                 value = enabled,
             )
         }
+
+        stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
     override fun setVideoQuality(quality: Quality) {
-        writeMode { slot ->
+        val modeSettings = writeMode { slot ->
             settingsRepository.setVideoQuality(
                 slot = slot,
                 value = quality,
             )
         }
+
+        stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
     private fun update(transform: (CameraSettings) -> CameraSettings) {
-        settingsRepository.update(transform)
+        val settings = settingsRepository.update(transform)
+
+        stateHolder.update { it.copy(settings = settings) }
     }
 
-    private fun writeMode(write: (ModeSlot) -> ModeSettings) {
-        val current = slot ?: return
-        modeSettings = write(current)
+    private fun writeMode(write: (ModeSlot) -> ModeSettings): ModeSettings {
+        val current = slot ?: return modeSettings
+
+        return write(current)
     }
 }

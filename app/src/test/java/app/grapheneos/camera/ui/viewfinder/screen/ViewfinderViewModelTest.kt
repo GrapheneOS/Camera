@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import androidx.lifecycle.viewModelScope
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
@@ -11,6 +12,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +84,9 @@ class ViewfinderViewModelTest {
         return ViewfinderViewModel(
             entryPoint = ENTRY_POINT,
             settingsDelegate = mockk<ViewfinderSettingsDelegate>(relaxed = true),
-            modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true),
+            modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true) {
+                every { defaultMode } returns CameraMode.CAMERA
+            },
             cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true),
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,

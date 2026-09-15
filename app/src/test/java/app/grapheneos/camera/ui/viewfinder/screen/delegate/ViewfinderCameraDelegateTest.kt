@@ -6,11 +6,15 @@ import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffects
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -180,6 +184,13 @@ class ViewfinderCameraDelegateTest {
                 showsCameraModeTabs = showsCameraModeTabs,
             ),
             resolveAvailableModes = mockk(),
+        )
+
+        delegate.bind(
+            ViewfinderStateHolder(
+                initial = ViewfinderState(mode = CameraMode.CAMERA),
+                render = { ViewfinderUiState() },
+            ),
         )
 
         delegate.attach(
