@@ -29,10 +29,7 @@ import android.widget.Spinner
 import android.widget.ToggleButton
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.StringRes
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.core.app.ActivityCompat
@@ -40,7 +37,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -92,6 +88,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
+    private var waitForFocusLockSetting: View
 
     var settingsFrame: View
 
@@ -188,13 +185,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         flashToggle = binding.flashToggleOption
         flashToggle.setOnClickListener {
-            if (mActivity.requiresVideoModeOnly) {
-                mActivity.showMessage(
-                    getString(R.string.flash_switch_unsupported)
-                )
-            } else {
-                viewfinder.onAction(CameraAction.FlashToggleClicked)
-            }
+            viewfinder.onAction(CameraAction.FlashToggleClicked)
         }
 
         aRToggle = binding.aspectRatioToggle
@@ -243,10 +234,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
-
-        if (mActivity.requiresVideoModeOnly) {
-            binding.waitForFocusLockSetting.visibility = View.GONE
-        }
 
         waitForFocusLockSwitch = binding.waitForFocusLockSwitch
         waitForFocusLockSwitch.setOnClickListener {
@@ -327,6 +314,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
+        waitForFocusLockSetting = binding.waitForFocusLockSetting
 
         includeAudioToggle = binding.includeAudioSwitch
         includeAudioToggle.setOnClickListener {
@@ -517,6 +505,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         enableEISSetting.visibility = visibleOrGone(state.stabilizationSettingVisible)
         selfIlluminationSetting.visibility = visibleOrGone(state.selfIlluminationSettingVisible)
         timerSetting.visibility = visibleOrGone(state.timerSettingVisible)
+        waitForFocusLockSetting.visibility = visibleOrGone(state.waitForFocusLockSettingVisible)
     }
 
     private fun visibleOrGone(visible: Boolean): Int {

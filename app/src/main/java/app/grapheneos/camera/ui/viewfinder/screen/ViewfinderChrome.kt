@@ -15,4 +15,16 @@ interface ViewfinderChrome {
     fun applyExposureState(exposureState: ExposureState)
 
     fun updateGyroscopeIndicator(inPhotoMode: Boolean)
+
+    fun updateLastFrame()
+
+    fun cancelPendingCapture()
+
+    fun forceUpdateOrientationSensor()
+
+    fun hideExposurePanel()
+
+    fun startFocusTimer()
+
+    fun cancelFocusTimer()
 }

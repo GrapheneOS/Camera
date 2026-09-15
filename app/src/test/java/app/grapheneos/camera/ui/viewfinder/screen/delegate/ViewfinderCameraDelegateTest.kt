@@ -9,7 +9,6 @@ import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffects
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -31,7 +30,6 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderCameraDelegateTest {
 
     private val environment = mockk<CameraSessionEnvironment>(relaxed = true)
-    private val effects = mockk<ViewfinderEffects>(relaxed = true)
     private val chrome = mockk<ViewfinderChrome>(relaxed = true)
     private val session = mockk<CameraSession>(relaxed = true)
 
@@ -60,7 +58,7 @@ class ViewfinderCameraDelegateTest {
         val started = delegate.beginBind(forced = false)
 
         assertFalse(started)
-        verify(exactly = 0) { effects.cancelPendingCapture() }
+        verify(exactly = 0) { chrome.cancelPendingCapture() }
     }
 
     @Test
@@ -194,7 +192,6 @@ class ViewfinderCameraDelegateTest {
 
         delegate.attach(
             environment = environment,
-            effects = effects,
             chrome = chrome,
             session = session,
             emitEffect = { emitted += it },
