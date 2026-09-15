@@ -1,25 +1,13 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
 
 interface ViewfinderUiStateMapper {
-
-    fun map(
-        mode: CameraMode,
-        isVideoMode: Boolean,
-        flashMode: Int,
-        aspectRatio: Int,
-        requireLocation: Boolean,
-        settings: CameraSettings,
-        modeSettings: ModeSettings,
-        session: ViewfinderSessionState,
-    ): ViewfinderUiState
+    fun map(state: ViewfinderState): ViewfinderUiState
 }
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor(
@@ -27,18 +15,13 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
     private val captureUiStateMapper: CaptureUiStateMapper,
 ) : ViewfinderUiStateMapper {
 
-    override fun map(
-        mode: CameraMode,
-        isVideoMode: Boolean,
-        flashMode: Int,
-        aspectRatio: Int,
-        requireLocation: Boolean,
-        settings: CameraSettings,
-        modeSettings: ModeSettings,
-        session: ViewfinderSessionState,
-    ): ViewfinderUiState {
+    override fun map(state: ViewfinderState): ViewfinderUiState {
+        val settings = state.settings
+        val isVideoMode = state.isVideoMode()
+        val inPhotoMode = state.isInPhotoMode()
+
         val chrome = when {
-            mode.isQr -> qrState(settings)
+            state.isQrMode() -> qrState(settings)
 
             else -> captureState(
                 isVideoMode = isVideoMode,
@@ -46,33 +29,18 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             )
         }
 
-        val inPhotoMode = !mode.isQr && !isVideoMode
-
         return chrome.copy(
             gridType = settings.gridType,
-            mode = mode,
-            aspectRatio = aspectRatio,
-            isQrMode = mode.isQr,
+            mode = state.mode,
+            aspectRatio = state.aspectRatio(),
+            isQrMode = state.isQrMode(),
             isVideoMode = isVideoMode,
             inPhotoMode = inPhotoMode,
             scanAllCodes = settings.scanAllCodes,
             focusTimeoutSeconds = settings.focusTimeoutSeconds,
             gyroscopeSuggestionsVisible = inPhotoMode && settings.gyroscopeSuggestions,
-            settingsSheet = settingsSheetUiStateMapper.map(
-                isVideoMode = isVideoMode,
-                flashMode = flashMode,
-                aspectRatio = aspectRatio,
-                requireLocation = requireLocation,
-                settings = settings,
-                modeSettings = modeSettings,
-                session = session,
-            ),
-            capture = captureUiStateMapper.map(
-                requireLocation = requireLocation,
-                settings = settings,
-                modeSettings = modeSettings,
-                session = session,
-            ),
+            settingsSheet = settingsSheetUiStateMapper.map(state),
+            capture = captureUiStateMapper.map(state),
         )
     }
 

@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import androidx.camera.core.CameraSelector
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -24,10 +26,14 @@ class CaptureUiStateMapperTest {
         session: ViewfinderSessionState = ViewfinderSessionState(),
     ): CaptureUiState {
         return mapper.map(
-            requireLocation = requireLocation,
-            settings = settings,
-            modeSettings = modeSettings,
-            session = session,
+            ViewfinderState(
+                mode = CameraMode.CAMERA,
+                requiresVideoModeOnly = false,
+                requireLocation = requireLocation,
+                settings = settings,
+                modeSettings = modeSettings,
+                session = session,
+            ),
         )
     }
 

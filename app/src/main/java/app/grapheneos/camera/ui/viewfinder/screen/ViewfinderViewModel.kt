@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
-import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
@@ -23,6 +22,7 @@ import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -57,14 +57,18 @@ class ViewfinderViewModel @Inject constructor(
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
+    private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     ViewfinderScreenModel {
 
     private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = modeDelegate.defaultMode),
-        render = ::renderUiState,
+        initial = ViewfinderState(
+            mode = modeDelegate.defaultMode,
+            requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
+        ),
+        render = uiStateMapper::map,
     )
     override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
 
@@ -152,13 +156,13 @@ class ViewfinderViewModel @Inject constructor(
     private fun setSelfIllumination(enabled: Boolean) {
         settingsDelegate.setSelfIllumination(enabled)
 
-        emitEffect(Effect.ApplySelfIllumination(uiState.value.capture.selfIlluminate))
+        emitEffect(Effect.ApplySelfIllumination(stateHolder.state.value.selfIlluminate()))
     }
 
-    private fun reloadSettings() {
+    private fun applyModeSettings() {
         slotCurrentMode()
 
-        if (modeDelegate.isVideoMode) {
+        if (stateHolder.state.value.isVideoMode()) {
             emitEffect(Effect.ReloadVideoQualities)
         }
 
@@ -188,7 +192,7 @@ class ViewfinderViewModel @Inject constructor(
     private fun onCameraAction(action: CameraAction) {
         when (action) {
             is CameraAction.ModeSelected -> switchMode(action.mode)
-            is CameraAction.LensSwitchClicked -> toggleCameraSelector()
+            is CameraAction.LensSwitchClicked -> switchLens()
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
         }
@@ -203,8 +207,8 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onLifecycleAction(action: LifecycleAction) {
         when (action) {
-            is LifecycleAction.CameraPermissionGranted -> initializeCamera()
-            is LifecycleAction.PreviewStreamingStarted -> reloadSettings()
+            is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
+            is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
             is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
 
             is LifecycleAction.RecordAudioPermissionGranted,
@@ -288,21 +292,19 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun toggleAspectRatio() {
-        val current = modeDelegate.aspectRatio(settingsDelegate.settings.aspectRatio)
-
-        val next = when (current) {
+        val next = when (stateHolder.state.value.aspectRatio()) {
             AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
             else -> AspectRatio.RATIO_16_9
         }
 
         settingsDelegate.setAspectRatio(next)
 
-        startCamera(true)
+        startCamera(forced = true)
     }
 
-    private fun toggleCameraSelector() {
+    private fun switchLens() {
         if (cameraDelegate.toggleLensFacing(modeDelegate.currentMode.extensionMode)) {
-            startCamera(true)
+            startCamera(forced = true)
         }
     }
 
@@ -321,7 +323,7 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
     }
 
-    private fun initializeCamera(forced: Boolean = false) {
+    private fun initializeCamera(forced: Boolean) {
         when {
             cameraDelegate.isProviderReady -> startCamera(forced = forced)
             else -> cameraDelegate.initialize(
@@ -331,8 +333,7 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    // Start the camera with latest hard configuration
-    private fun startCamera(forced: Boolean = false) {
+    private fun startCamera(forced: Boolean) {
         if (!cameraDelegate.beginBind(forced)) return
 
         slotCurrentMode()
@@ -342,29 +343,14 @@ class ViewfinderViewModel @Inject constructor(
         cameraDelegate.applyFlashMode(settingsDelegate.modeSettings.flashMode)
 
         val target = cameraDelegate.selectLens(
-            isQrMode = modeDelegate.isQrMode,
+            isQrMode = stateHolder.state.value.isQrMode(),
             extensionMode = modeDelegate.currentMode.extensionMode,
         ) ?: return
 
-        val settings = settingsDelegate.settings
-
         val outcome = cameraDelegate.bindCamera(
-            CameraBindSettings(
-                mode = modeDelegate.currentMode,
-                isQrMode = modeDelegate.isQrMode,
-                isVideoMode = modeDelegate.isVideoMode,
-                requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
-                qrLensFacing = target.qrLensFacing,
-                rotation = target.rotation,
-                aspectRatio = modeDelegate.aspectRatio(settings.aspectRatio),
-                flashMode = cameraDelegate.flashMode,
-                photoQuality = settings.photoQuality,
-                videoQuality = settingsDelegate.modeSettings.videoQuality,
-                waitForFocusLock = settings.waitForFocusLock,
-                enableZsl = settings.enableZsl,
-                enableEis = settings.enableEis,
-                selectHighestResolution = settings.selectHighestResolution,
-                mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
+            cameraBindSettingsMapper.map(
+                state = stateHolder.state.value,
+                target = target,
             ),
         )
 
@@ -392,8 +378,8 @@ class ViewfinderViewModel @Inject constructor(
             }
 
             BindOutcome.BOUND -> cameraDelegate.announceBind(
-                aspectRatio = modeDelegate.aspectRatio(settingsDelegate.settings.aspectRatio),
-                isInPhotoMode = modeDelegate.isInPhotoMode,
+                aspectRatio = stateHolder.state.value.aspectRatio(),
+                isInPhotoMode = stateHolder.state.value.isInPhotoMode(),
                 currentMode = { modeDelegate.currentMode },
             )
         }
@@ -407,7 +393,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun flashPreview() {
-        emitEffect(Effect.FlashPreview(uiState.value.capture.selfIlluminate))
+        emitEffect(Effect.FlashPreview(stateHolder.state.value.selfIlluminate()))
     }
 
     private fun switchMode(mode: CameraMode) {
@@ -417,7 +403,7 @@ class ViewfinderViewModel @Inject constructor(
 
         cameraDelegate.cancelFocusTimer()
 
-        startCamera(true)
+        startCamera(forced = true)
 
         // A mode can change with no touch involved, so the strip follows the camera and not the
         // other way round - currentMode, because an extension that fails to bind falls back to
@@ -430,19 +416,6 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun emitEffect(effect: Effect) {
         screenEffects.trySend(effect)
-    }
-
-    private fun renderUiState(state: ViewfinderState): ViewfinderUiState {
-        return uiStateMapper.map(
-            mode = state.mode,
-            isVideoMode = modeDelegate.isVideoMode,
-            flashMode = state.flashMode,
-            aspectRatio = modeDelegate.aspectRatio(state.settings.aspectRatio),
-            requireLocation = state.requireLocation,
-            settings = state.settings,
-            modeSettings = state.modeSettings,
-            session = state.session,
-        )
     }
 
     private fun slotCurrentMode() {
