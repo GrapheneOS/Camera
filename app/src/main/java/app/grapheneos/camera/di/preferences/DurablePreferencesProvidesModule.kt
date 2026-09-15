@@ -14,7 +14,6 @@ import app.grapheneos.camera.data.media.store.storagePrefsSerializer
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.SettingsPrefsMigration
 import app.grapheneos.camera.data.settings.store.settingsPrefsSerializer
-import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.DurablePreferences
 import dagger.Module
 import dagger.Provides
@@ -22,7 +21,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -33,13 +31,11 @@ internal class DurablePreferencesProvidesModule {
     @DurablePreferences
     fun provideDurableSettingsPrefs(
         @ApplicationContext context: Context,
-        @ApplicationScope scope: CoroutineScope,
     ): DataStore<SettingsPrefs> {
         return DataStoreFactory.create(
             serializer = settingsPrefsSerializer,
             corruptionHandler = ReplaceFileCorruptionHandler { SettingsPrefs() },
             migrations = listOf(SettingsPrefsMigration(context)),
-            scope = scope,
         ) {
             context.dataStoreFile(SETTINGS_PREFS_FILE_NAME)
         }
@@ -50,13 +46,11 @@ internal class DurablePreferencesProvidesModule {
     @DurablePreferences
     fun provideDurableStoragePrefs(
         @ApplicationContext context: Context,
-        @ApplicationScope scope: CoroutineScope,
     ): DataStore<StoragePrefs> {
         return DataStoreFactory.create(
             serializer = storagePrefsSerializer,
             corruptionHandler = ReplaceFileCorruptionHandler { StoragePrefs() },
             migrations = listOf(StoragePrefsMigration(context)),
-            scope = scope,
         ) {
             context.dataStoreFile(STORAGE_PREFS_FILE_NAME)
         }
@@ -66,13 +60,11 @@ internal class DurablePreferencesProvidesModule {
     @Singleton
     fun provideDurableMediaPrefs(
         @ApplicationContext context: Context,
-        @ApplicationScope scope: CoroutineScope,
     ): DataStore<MediaPrefs> {
         return DataStoreFactory.create(
             serializer = mediaPrefsSerializer,
             corruptionHandler = ReplaceFileCorruptionHandler { MediaPrefs() },
             migrations = listOf(MediaPrefsMigration(context)),
-            scope = scope,
         ) {
             context.dataStoreFile(MEDIA_PREFS_FILE_NAME)
         }

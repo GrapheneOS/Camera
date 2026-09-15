@@ -56,7 +56,7 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             storedSettings.value = CameraSettings(gridType = GridType.FOUR_BY_FOUR)
 
-            val delegate = createDelegate()
+            createDelegate()
 
             assertEquals(GridType.FOUR_BY_FOUR, stateHolder.state.value.settings.gridType)
         }
@@ -85,11 +85,10 @@ class ViewfinderSettingsDelegateTest {
     @Test
     fun settings_changedElsewhere_reachTheState() {
         runTest {
-            val delegate = createDelegate()
+            createDelegate()
 
             storedSettings.value = CameraSettings(removeExifAfterCapture = false)
 
-            assertFalse(stateHolder.state.value.settings.removeExifAfterCapture)
             assertFalse(stateHolder.state.value.settings.removeExifAfterCapture)
         }
     }

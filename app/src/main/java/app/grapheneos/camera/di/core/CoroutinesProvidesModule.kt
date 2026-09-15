@@ -27,10 +27,16 @@ internal class CoroutinesProvidesModule {
     }
 
     @Provides
+    @DefaultDispatcher
+    fun provideDefaultDispatcher(): CoroutineDispatcher {
+        return Dispatchers.Default
+    }
+
+    @Provides
     @Singleton
     @ApplicationScope
     fun provideApplicationScope(
-        @IoDispatcher dispatcher: CoroutineDispatcher,
+        @DefaultDispatcher dispatcher: CoroutineDispatcher,
     ): CoroutineScope {
         return CoroutineScope(SupervisorJob() + dispatcher)
     }

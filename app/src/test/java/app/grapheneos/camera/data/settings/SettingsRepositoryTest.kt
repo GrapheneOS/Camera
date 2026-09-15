@@ -91,7 +91,7 @@ class SettingsRepositoryTest {
             modeSettingsMapper = modeSettingsMapper,
             storedVideoQualityMapper = storedVideoQualityMapper,
             writeScope = backgroundScope,
-            ioDispatcher = mainDispatcherRule.testDispatcher,
+            defaultDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 

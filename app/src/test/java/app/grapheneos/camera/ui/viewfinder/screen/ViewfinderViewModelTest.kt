@@ -357,7 +357,7 @@ class ViewfinderViewModelTest {
             val effects = collectEffects(viewModel)
             every { modeDelegate.select(any()) } answers {
                 val mode = firstArg<CameraMode>()
-                stateHolder.update { it.copy(mode = mode) }
+                stateHolder.update { state -> state.copy(mode = mode) }
                 true
             }
             every { cameraDelegate.beginBind(forced = any()) } returns true
@@ -397,6 +397,7 @@ class ViewfinderViewModelTest {
             cameraBindSettingsMapper = mockk(relaxed = true),
             applicationScope = applicationScope,
             mainDispatcher = mainDispatcherRule.testDispatcher,
+            defaultDispatcher = mainDispatcherRule.testDispatcher,
         )
 
         val boundStateHolder = slot<ViewfinderStateHolder>()
