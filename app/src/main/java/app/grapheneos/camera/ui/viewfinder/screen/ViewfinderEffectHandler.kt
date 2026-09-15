@@ -107,7 +107,6 @@ internal class ViewfinderEffectHandler(
         )
 
         activity.previewGrid.gridType = state.gridType
-        activity.renderedState = state
         activity.cbText.text = state.selfTimerBadge
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
 
