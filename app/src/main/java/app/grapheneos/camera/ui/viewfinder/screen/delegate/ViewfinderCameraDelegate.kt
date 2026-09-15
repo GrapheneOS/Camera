@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
@@ -19,6 +20,7 @@ import javax.inject.Inject
 interface ViewfinderCameraDelegate {
     val sessionState: ViewfinderSessionState
     val lensFacing: Int
+    val flashMode: Int
 
     fun attach(
         environment: CameraSessionEnvironment,
@@ -86,6 +88,9 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         get() {
             return session.lensFacing
         }
+
+    override var flashMode: Int = SettingsDefaults.FLASH_MODE
+        private set
 
     override fun attach(
         environment: CameraSessionEnvironment,
@@ -244,6 +249,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun applyFlashMode(value: Int) {
+        flashMode = value
         session.imageCapture?.flashMode = value
     }
 
