@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.viewfinder
 
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegateImpl
 import dagger.Binds
@@ -15,4 +17,9 @@ internal abstract class ViewfinderViewModelBindsModule {
     abstract fun bindViewfinderSettingsDelegate(
         impl: ViewfinderSettingsDelegateImpl,
     ): ViewfinderSettingsDelegate
+
+    @Binds
+    abstract fun bindViewfinderModeDelegate(
+        impl: ViewfinderModeDelegateImpl,
+    ): ViewfinderModeDelegate
 }
