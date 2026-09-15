@@ -4,6 +4,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -18,9 +19,11 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -149,7 +152,25 @@ class ViewfinderCameraDelegateTest {
         delegate.detach()
 
         assertEquals(ViewfinderSessionState(), delegate.sessionState)
-        verify(exactly = 1) { session.listener = null }
+    }
+
+    @Test
+    fun isProviderReady_withoutAProvider_isFalse() {
+        every { session.cameraProvider } returns null
+
+        val delegate = createAttachedDelegate()
+
+        assertFalse(delegate.isProviderReady)
+    }
+
+    @Test
+    fun sessionEvents_areTheAttachedSessions() {
+        val events = MutableSharedFlow<CameraSessionEvent>()
+        every { session.events } returns events
+
+        val delegate = createAttachedDelegate()
+
+        assertSame(events, delegate.sessionEvents)
     }
 
     @Test
@@ -198,7 +219,6 @@ class ViewfinderCameraDelegateTest {
             effects = effects,
             chrome = chrome,
             session = session,
-            listener = mockk(),
             emitEffect = { emitted += it },
         )
 
