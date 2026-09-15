@@ -43,7 +43,7 @@ app/src/main/java/app/grapheneos/camera/
       store/            the preferences files themselves, and the keys features share
     settings/
       model/            CameraSettings, per-mode setting values
-      repository/       SettingsRepository (entry-mode-scoped, never application-scoped)
+      repository/       SettingsRepository (the owner's, or a copy for a secure session)
     camera/
       model/            CameraCapabilities, lens/extension descriptors
       repository/       CameraProviderSource
@@ -63,9 +63,12 @@ app/src/main/java/app/grapheneos/camera/
     core/               Theme.kt, Preview.kt
     common/components/  composables shared across screens
     viewfinder/
-      screen/           ViewfinderScreen, ViewfinderViewModel, ViewfinderEffectHandler
-        model/          ViewfinderUiState, ViewfinderAction, ViewfinderScreenEffect, NavEvent
-        mapper/         domain → UiState mappers
+      screen/           ViewfinderScreen, ViewfinderViewModel, ViewfinderStateHolder,
+                        ViewfinderEffectHandler
+        model/          ViewfinderState, ViewfinderUiState, ViewfinderAction,
+                        ViewfinderScreenEffect, NavEvent
+        mapper/         mappers from ViewfinderState
+        delegate/       ViewModel delegates: settings, mode, camera
       components/       CaptureButton, ModeTabStrip, ZoomSlider, GridOverlay, FocusRing, ...
     gallery/            same screen/{model,mapper} + components/ shape
     videoplayer/        "
@@ -130,6 +133,10 @@ extension bind `UnsupportedOperationException`s, gallery NPEs.
   ./gradlew :app:connectedDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.class=app.grapheneos.camera.VideoCapturerRegressionTest
   ```
+- Unit tests that create `CameraSettings`, `ModeSettings`, `ViewfinderState`, `ViewfinderUiState`
+  or a relaxed mock of a CameraX class run with `RobolectricTestRunner`.
+- Coroutine tests use `runTest`, `backgroundScope` for injected scopes and
+  `testutil/MainDispatcherRule` for the main dispatcher.
 - **Known flake:**
   `VideoCapturerRegressionTest.leavingACaptureSessionWhileRecording_defersThePreview`
   fails only in full-suite runs, and does so on unmodified `main` too. Re-run it alone before
@@ -146,9 +153,9 @@ The pre-migration code has no ViewModels and no coroutines in the camera path (r
 around it — `SettingsDialog`, `ImageCapturer`, `VideoCapturer`, `QRAnalyzer`, the custom Views —
 hold a `MainActivity` and reach into it. Reading state back out of that tree is the coupling the
 migration exists to undo (`CamConfig` used to answer `requireLocation` with
-`settingsDialog.locToggle.isChecked`); `ViewfinderController` now holds the state and pushes it out
-through `ViewfinderChrome`/`ViewfinderEffects`. Do not add a new read of the View tree from below
-the UI.
+`settingsDialog.locToggle.isChecked`); `ViewfinderViewModel` now holds the state: the Views render
+its `uiState` and send input through `onAction`, and the camera bind still reaches back through
+`ViewfinderChrome`. Do not add a new read of the View tree from below the UI.
 
 ### Target
 
@@ -183,7 +190,8 @@ Roles:
 
 - **Repository** (`data/<feature>/repository/`): the feature's public data API. Exposes `Flow`s
   and `suspend` functions; applies `flowOn(dispatcher)` itself so callers never think about
-  threads.
+  threads. `SettingsRepository` is the exception: its writes are synchronous in memory and saved to
+  disk afterwards, and nothing else writes its storage.
 - **Store** (`data/<feature>/store/`): the only thing that knows a storage mechanism —
   `SharedPreferences`, MediaStore, SAF, a file. It opens that storage itself, and takes and returns
   the feature's own types: keys, encodings and file names never leave it. Nothing above the
@@ -196,8 +204,8 @@ Roles:
   (`ShareCapturedItem`), interface exposing `suspend operator fun invoke(...)`. Returns a
   sealed result type from `domain/<feature>/model/`, not exceptions.
 - **Mapper**: pure `map(input): output` — no side effects, no Context.
-- Dispatchers are injected via qualifiers (`@IoDispatcher`, `@DefaultDispatcher`) declared in
-  `di/core/`, never referenced as `Dispatchers.IO` inline.
+- Dispatchers and scopes are injected via the qualifiers in `di/core/`, never referenced as
+  `Dispatchers.IO` inline.
 - **DI** (`di/<feature>/`): one `@Module @InstallIn(SingletonComponent::class)` abstract class per
   feature with `@Binds @Reusable` for each interface→Impl pair. Everything is `internal`.
   **Preferences are the exception, and they are opened and chosen in two different places.** The
@@ -241,6 +249,9 @@ Roles:
   `import ...model.ViewfinderAction as Action`.
 - A ViewModel that outgrows one file splits into `delegate/` classes by responsibility
   (selection, optimistic updates, ...), not into a bigger ViewModel.
+- Work that must finish after the screen is gone runs on `@ApplicationScope`.
+- The viewfinder's delegates write `ViewfinderState` through `ViewfinderStateHolder`, which updates
+  `uiState` before `update` returns. Delegates do not call each other.
 
 ---
 
@@ -448,6 +459,5 @@ migrating the UI is exactly when they stop being reachable, and left behind they
 - **Never add a commit co-author unless the user explicitly asks.**
 - Commit messages: imperative mood, describing the behavior change rather than the mechanism —
   match the existing log ("Don't initialize the camera while its permission is not granted").
-- Test-facing seams in `ViewfinderController` (`mPlayer`, `photoQuality`, `switchMode`) and
-  `CameraSession` (`camera`) are written to by the instrumented suite. They stay writable until the
-  screen that owns them is migrated.
+- The test-facing seam `MainActivity.tunePlayer` is written to by the instrumented suite. It stays
+  writable until the viewfinder is migrated.
