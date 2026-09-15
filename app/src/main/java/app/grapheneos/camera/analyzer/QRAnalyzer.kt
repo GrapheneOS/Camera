@@ -1,8 +1,8 @@
 package app.grapheneos.camera.analyzer
 
 import android.util.Log
-import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
+import app.grapheneos.camera.data.camera.session.QrCodeAnalyzer
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
 class QRAnalyzer(
     private val mActivity: MainActivity,
     private val scanAllCodes: () -> Boolean,
-) : Analyzer {
+) : QrCodeAnalyzer {
     companion object {
         private const val TAG = "QRCodeImageAnalyzer"
     }
@@ -32,7 +32,7 @@ class QRAnalyzer(
         refreshHints()
     }
 
-    fun refreshHints() {
+    override fun refreshHints() {
         val allowedFormats = mActivity.barcodeFormats.enabled
 
         val supportedHints: MutableMap<DecodeHintType, Any> = EnumMap(
