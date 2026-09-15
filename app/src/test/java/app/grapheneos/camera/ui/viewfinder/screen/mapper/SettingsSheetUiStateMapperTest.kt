@@ -4,11 +4,13 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,22 +24,23 @@ class SettingsSheetUiStateMapperTest {
     private val mapper: SettingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl()
 
     private fun map(
-        isVideoMode: Boolean = false,
+        mode: CameraMode = CameraMode.CAMERA,
         flashMode: Int = ImageCapture.FLASH_MODE_OFF,
-        aspectRatio: Int = AspectRatio.RATIO_4_3,
         requireLocation: Boolean = false,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
     ): SettingsSheetUiState {
         return mapper.map(
-            isVideoMode = isVideoMode,
-            flashMode = flashMode,
-            aspectRatio = aspectRatio,
-            requireLocation = requireLocation,
-            settings = settings,
-            modeSettings = modeSettings,
-            session = session,
+            ViewfinderState(
+                mode = mode,
+                requiresVideoModeOnly = false,
+                flashMode = flashMode,
+                requireLocation = requireLocation,
+                settings = settings,
+                modeSettings = modeSettings,
+                session = session,
+            ),
         )
     }
 
@@ -74,8 +77,8 @@ class SettingsSheetUiStateMapperTest {
 
     @Test
     fun videoRows_areOnlyShownInVideoMode() {
-        val video = map(isVideoMode = true)
-        val photo = map(isVideoMode = false)
+        val video = map(mode = CameraMode.VIDEO)
+        val photo = map(mode = CameraMode.CAMERA)
 
         assertTrue(video.includeAudioSettingVisible)
         assertTrue(video.videoQualitySettingVisible)
@@ -90,9 +93,9 @@ class SettingsSheetUiStateMapperTest {
     fun stabilization_needsBothVideoModeAndACameraThatCanDoIt() {
         val capable = ViewfinderSessionState(canApplyVideoStabilization = true)
 
-        assertTrue(map(isVideoMode = true, session = capable).stabilizationSettingVisible)
-        assertFalse(map(isVideoMode = false, session = capable).stabilizationSettingVisible)
-        assertFalse(map(isVideoMode = true).stabilizationSettingVisible)
+        assertTrue(map(mode = CameraMode.VIDEO, session = capable).stabilizationSettingVisible)
+        assertFalse(map(mode = CameraMode.CAMERA, session = capable).stabilizationSettingVisible)
+        assertFalse(map(mode = CameraMode.VIDEO).stabilizationSettingVisible)
     }
 
     @Test
@@ -130,8 +133,8 @@ class SettingsSheetUiStateMapperTest {
 
     @Test
     fun aspectRatioToggle_announcesTheRatioItIsOn() {
-        val wide = map(aspectRatio = AspectRatio.RATIO_16_9)
-        val narrow = map(aspectRatio = AspectRatio.RATIO_4_3)
+        val wide = map(settings = CameraSettings(aspectRatio = AspectRatio.RATIO_16_9))
+        val narrow = map(settings = CameraSettings(aspectRatio = AspectRatio.RATIO_4_3))
 
         assertTrue(wide.is16by9)
         assertEquals(R.string.aspect_ratio_16_9, wide.aspectRatioDescription)

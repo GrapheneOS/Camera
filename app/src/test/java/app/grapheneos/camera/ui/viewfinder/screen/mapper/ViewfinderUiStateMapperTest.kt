@@ -1,12 +1,10 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import androidx.camera.core.AspectRatio
-import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -25,18 +23,15 @@ class ViewfinderUiStateMapperTest {
 
     private fun map(
         mode: CameraMode = CameraMode.CAMERA,
-        isVideoMode: Boolean = false,
+        requiresVideoModeOnly: Boolean = false,
         settings: CameraSettings = CameraSettings(),
     ): ViewfinderUiState {
         return mapper.map(
-            mode = mode,
-            isVideoMode = isVideoMode,
-            flashMode = ImageCapture.FLASH_MODE_OFF,
-            aspectRatio = AspectRatio.RATIO_4_3,
-            requireLocation = false,
-            settings = settings,
-            modeSettings = ModeSettings(),
-            session = ViewfinderSessionState(),
+            ViewfinderState(
+                mode = mode,
+                requiresVideoModeOnly = requiresVideoModeOnly,
+                settings = settings,
+            ),
         )
     }
 
@@ -74,7 +69,7 @@ class ViewfinderUiStateMapperTest {
 
     @Test
     fun videoMode_announcesRecordingAndKeepsTheFlipCameraIcon() {
-        val state = map(isVideoMode = true)
+        val state = map(mode = CameraMode.VIDEO)
 
         assertEquals(R.drawable.recording, state.captureButtonIcon)
         assertEquals(R.string.start_recording, state.captureButtonDescription)
@@ -83,17 +78,27 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun videoOnlyEntryPoint_recordsWhicheverModeIsSelected() {
+        val state = map(mode = CameraMode.CAMERA, requiresVideoModeOnly = true)
+
+        assertTrue(state.isVideoMode)
+        assertFalse(state.inPhotoMode)
+        assertEquals(R.drawable.recording, state.captureButtonIcon)
+        assertEquals(AspectRatio.RATIO_16_9, state.aspectRatio)
+    }
+
+    @Test
     fun micMutedIcon_isOnlyForAVideoModeRecordingWithoutAudio() {
         val silentVideo = map(
-            isVideoMode = true,
+            mode = CameraMode.VIDEO,
             settings = CameraSettings(includeAudio = false),
         )
         val audibleVideo = map(
-            isVideoMode = true,
+            mode = CameraMode.VIDEO,
             settings = CameraSettings(includeAudio = true),
         )
         val photo = map(
-            isVideoMode = false,
+            mode = CameraMode.CAMERA,
             settings = CameraSettings(includeAudio = false),
         )
         val qr = map(
@@ -111,7 +116,7 @@ class ViewfinderUiStateMapperTest {
     fun selfTimerBadge_isHiddenWhereNoCountdownRuns() {
         val photo = map(settings = CameraSettings(selfTimerDurationSeconds = SOME_SECONDS))
         val video = map(
-            isVideoMode = true,
+            mode = CameraMode.VIDEO,
             settings = CameraSettings(selfTimerDurationSeconds = SOME_SECONDS),
         )
         val qr = map(
