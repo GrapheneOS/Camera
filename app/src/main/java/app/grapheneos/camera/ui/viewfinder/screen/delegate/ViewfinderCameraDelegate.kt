@@ -4,6 +4,7 @@ import androidx.camera.core.CameraSelector
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -16,11 +17,14 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
 interface ViewfinderCameraDelegate {
     val sessionState: ViewfinderSessionState
     val lensFacing: Int
     val flashMode: Int
+    val isProviderReady: Boolean
+    val sessionEvents: Flow<CameraSessionEvent>
 
     fun bind(stateHolder: ViewfinderStateHolder)
 
@@ -29,7 +33,6 @@ interface ViewfinderCameraDelegate {
         effects: ViewfinderEffects,
         chrome: ViewfinderChrome,
         session: CameraSession,
-        listener: CameraSession.Listener,
         emitEffect: (Effect) -> Unit,
     )
 
@@ -38,7 +41,7 @@ interface ViewfinderCameraDelegate {
     fun initialize(forced: Boolean, extensionMode: Int)
     fun beginBind(forced: Boolean): Boolean
     fun selectLens(isQrMode: Boolean, extensionMode: Int): ViewfinderBindTarget?
-    fun bind(settings: CameraBindSettings): BindOutcome
+    fun bindCamera(settings: CameraBindSettings): BindOutcome
     fun announceBind(aspectRatio: Int, isInPhotoMode: Boolean, currentMode: () -> CameraMode)
 
     fun toggleLensFacing(extensionMode: Int): Boolean
@@ -102,6 +105,16 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return stateHolder.state.value.flashMode
         }
 
+    override val isProviderReady: Boolean
+        get() {
+            return session.cameraProvider != null
+        }
+
+    override val sessionEvents: Flow<CameraSessionEvent>
+        get() {
+            return session.events
+        }
+
     override fun bind(stateHolder: ViewfinderStateHolder) {
         if (isBound) return
         isBound = true
@@ -114,7 +127,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         effects: ViewfinderEffects,
         chrome: ViewfinderChrome,
         session: CameraSession,
-        listener: CameraSession.Listener,
         emitEffect: (Effect) -> Unit,
     ) {
         attachment = Attachment(
@@ -125,13 +137,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             emitEffect = emitEffect,
         )
 
-        session.listener = listener
-
         refreshSessionState()
     }
 
     override fun detach() {
-        attachment?.session?.listener = null
         attachment = null
         stateHolder.update { it.copy(session = ViewfinderSessionState()) }
     }
@@ -199,7 +208,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         )
     }
 
-    override fun bind(settings: CameraBindSettings): BindOutcome {
+    override fun bindCamera(settings: CameraBindSettings): BindOutcome {
         effects.forceUpdateOrientationSensor()
 
         val outcome = session.bind(settings)

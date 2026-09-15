@@ -4,13 +4,13 @@ import android.util.Log
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.Quality
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -35,6 +35,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -59,8 +60,7 @@ class ViewfinderViewModel @Inject constructor(
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
-    ViewfinderScreenModel,
-    CameraSession.Listener {
+    ViewfinderScreenModel {
 
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = modeDelegate.defaultMode),
@@ -70,6 +70,8 @@ class ViewfinderViewModel @Inject constructor(
 
     private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
     override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
+
+    private var sessionEvents: Job? = null
 
     init {
         modeDelegate.bind(stateHolder)
@@ -91,29 +93,46 @@ class ViewfinderViewModel @Inject constructor(
             effects = effects,
             chrome = chrome,
             session = session,
-            listener = this,
             emitEffect = ::emitEffect,
         )
+
+        sessionEvents?.cancel()
+        sessionEvents = viewModelScope.launch(mainDispatcher) {
+            cameraDelegate.sessionEvents.collect { event ->
+                onSessionEvent(event)
+            }
+        }
     }
 
     fun detach() {
+        sessionEvents?.cancel()
+        sessionEvents = null
+
         cameraDelegate.detach()
     }
 
-    override fun onZoomStateChanged() {
-        cameraDelegate.onZoomStateChanged()
-    }
+    private fun onSessionEvent(event: CameraSessionEvent) {
+        when (event) {
+            is CameraSessionEvent.ZoomStateChanged -> {
+                cameraDelegate.onZoomStateChanged()
+            }
 
-    override fun onCameraProviderUnavailable() {
-        emitEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
-    }
+            is CameraSessionEvent.CameraProviderUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
+            }
 
-    override fun onExtensionsUnavailable() {
-        emitEffect(Effect.ShowMessage(R.string.extensions_manager_init_failure))
-    }
+            is CameraSessionEvent.ExtensionsUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.extensions_manager_init_failure))
+            }
 
-    override fun onProviderReady(forced: Boolean) {
-        startCamera(forced = forced)
+            is CameraSessionEvent.ProviderReady -> {
+                startCamera(forced = event.forced)
+            }
+
+            is CameraSessionEvent.FeaturesSelected -> {
+                onFeaturesSelected(event)
+            }
+        }
     }
 
     private fun setFlashMode(value: Int) {
@@ -287,31 +306,29 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    override fun onFeaturesSelected(
-        boundLensFacing: Int,
-        requested: List<GroupableFeature>,
-        qualityFeature: GroupableFeature?,
-        selected: Set<GroupableFeature>,
-    ) {
+    private fun onFeaturesSelected(event: CameraSessionEvent.FeaturesSelected) {
         // The full request-vs-result picture (including which stabilization feature, if any,
         // survived) is only ever logged, never shown: the lead wants EIS left silently in its
         // known state -- 4K keeps priority and stabilization is given up without a notice.
-        Log.i(TAG, "Requested $requested but got $selected")
+        Log.i(TAG, "Requested ${event.requested} but got ${event.selected}")
 
         val droppedQuality = resolveDroppedVideoQuality(
-            lensFacing = boundLensFacing,
-            requestedQualityFeature = qualityFeature,
-            selected = selected,
+            lensFacing = event.boundLensFacing,
+            requestedQualityFeature = event.qualityFeature,
+            selected = event.selected,
         ) ?: return
 
         emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
     }
 
     private fun initializeCamera(forced: Boolean = false) {
-        cameraDelegate.initialize(
-            forced = forced,
-            extensionMode = modeDelegate.currentMode.extensionMode,
-        )
+        when {
+            cameraDelegate.isProviderReady -> startCamera(forced = forced)
+            else -> cameraDelegate.initialize(
+                forced = forced,
+                extensionMode = modeDelegate.currentMode.extensionMode,
+            )
+        }
     }
 
     // Start the camera with latest hard configuration
@@ -331,7 +348,7 @@ class ViewfinderViewModel @Inject constructor(
 
         val settings = settingsDelegate.settings
 
-        val outcome = cameraDelegate.bind(
+        val outcome = cameraDelegate.bindCamera(
             CameraBindSettings(
                 mode = modeDelegate.currentMode,
                 isQrMode = modeDelegate.isQrMode,
