@@ -15,6 +15,7 @@ import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
@@ -60,6 +61,7 @@ class ViewfinderViewModel @Inject constructor(
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     ViewfinderScreenModel {
 
@@ -398,7 +400,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun onStorageLocationNotFound() {
-        applicationScope.launch(mainDispatcher) {
+        applicationScope.launch(defaultDispatcher) {
             revertToMediaStoreLocation()
             emitEffect(Effect.ShowStorageLocationNotFound)
         }
