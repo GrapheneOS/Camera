@@ -96,7 +96,7 @@ open class MoreSettings :
     }
 
     private fun updateSettings(transform: (CameraSettings) -> CameraSettings) {
-        runBlocking { settingsRepository.update(transform) }
+        settingsRepository.update(transform)
     }
 
     private fun setStorageLocation(location: String) {
