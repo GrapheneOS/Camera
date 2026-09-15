@@ -4,39 +4,25 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
-import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
 
 interface SettingsSheetUiStateMapper {
-
-    fun map(
-        isVideoMode: Boolean,
-        flashMode: Int,
-        aspectRatio: Int,
-        requireLocation: Boolean,
-        settings: CameraSettings,
-        modeSettings: ModeSettings,
-        session: ViewfinderSessionState,
-    ): SettingsSheetUiState
+    fun map(state: ViewfinderState): SettingsSheetUiState
 }
 
 internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSheetUiStateMapper {
 
-    override fun map(
-        isVideoMode: Boolean,
-        flashMode: Int,
-        aspectRatio: Int,
-        requireLocation: Boolean,
-        settings: CameraSettings,
-        modeSettings: ModeSettings,
-        session: ViewfinderSessionState,
-    ): SettingsSheetUiState {
+    override fun map(state: ViewfinderState): SettingsSheetUiState {
+        val settings = state.settings
+        val session = state.session
+        val isVideoMode = state.isVideoMode()
+        val aspectRatio = state.aspectRatio()
+
         val flash = flashOf(
-            flashMode = flashMode,
+            flashMode = state.flashMode,
             isFlashAvailable = session.isFlashAvailable,
         )
 
@@ -46,9 +32,9 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             includeAudio = settings.includeAudio,
             focusTimeoutSeconds = settings.focusTimeoutSeconds,
             selfTimerSeconds = settings.selfTimerDurationSeconds,
-            videoQuality = modeSettings.videoQuality,
-            geoTagging = requireLocation,
-            selfIllumination = modeSettings.selfIllumination,
+            videoQuality = state.modeSettings.videoQuality,
+            geoTagging = state.requireLocation,
+            selfIllumination = state.modeSettings.selfIllumination,
             stabilizationEnabled = settings.enableEis,
             waitForFocusLock = settings.waitForFocusLock,
             is16by9 = aspectRatio == AspectRatio.RATIO_16_9,

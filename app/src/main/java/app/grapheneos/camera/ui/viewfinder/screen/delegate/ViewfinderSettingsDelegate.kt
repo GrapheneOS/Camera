@@ -59,8 +59,9 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         }
 
     // Session state rather than the stored value: geo-tagging is only ever on once the permission
-    // is actually granted, and reloadSettings() is what settles a stored "on" against that. Reading
-    // the preference back here would resurrect the very stale "on" the coercion exists to drop.
+    // is actually granted, and applyModeSettings() is what settles a stored "on" against that.
+    // Reading the preference back here would resurrect the very stale "on" the coercion exists to
+    // drop.
     override val requireLocation: Boolean
         get() {
             return stateHolder.state.value.requireLocation
