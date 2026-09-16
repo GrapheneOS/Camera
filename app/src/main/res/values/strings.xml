@@ -234,4 +234,10 @@
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
     <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
+
+    <!-- Max resolution (long edge) setting -->
+    <string name="max_long_edge_title">Max resolution</string>
+    <string name="max_long_edge_desc">Longest edge in pixels for captured photos. 0 = no limit. If the value is below the smallest size the camera supports, that smallest size is used.</string>
+    <string name="pixel_symbol">px</string>
+    <string name="invalid_max_long_edge_value">Invalid value set for maximum resolution</string>
 </resources>
