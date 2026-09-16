@@ -1,5 +1,6 @@
 package app.grapheneos.camera.analyzer
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.camera.core.ImageAnalysis.Analyzer
 import androidx.camera.core.ImageProxy
@@ -9,6 +10,7 @@ import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.PlanarYUVLuminanceSource
+import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.ReaderException
 import com.google.zxing.common.HybridBinarizer
 import java.util.EnumMap
@@ -17,6 +19,32 @@ import kotlin.math.roundToInt
 class QRAnalyzer(private val mActivity: MainActivity) : Analyzer {
     companion object {
         private const val TAG = "QRCodeImageAnalyzer"
+
+        fun scanStillImage(bitmap: Bitmap, possibleFormats: List<BarcodeFormat>): String? {
+            val width = bitmap.width
+            val height = bitmap.height
+            val pixels = IntArray(width * height)
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+            val hints: MutableMap<DecodeHintType, Any> = EnumMap(DecodeHintType::class.java)
+            hints[DecodeHintType.POSSIBLE_FORMATS] = possibleFormats
+            hints[DecodeHintType.TRY_HARDER] = true
+
+            val reader = MultiFormatReader().apply { setHints(hints) }
+
+            val source = RGBLuminanceSource(width, height, pixels)
+            decodeOrNull(reader, BinaryBitmap(HybridBinarizer(source)))?.let { return it }
+            return decodeOrNull(reader, BinaryBitmap(HybridBinarizer(source.invert())))
+        }
+
+        private fun decodeOrNull(reader: MultiFormatReader, binaryBitmap: BinaryBitmap): String? {
+            reader.reset()
+            return try {
+                reader.decodeWithState(binaryBitmap).text
+            } catch (e: ReaderException) {
+                null
+            }
+        }
     }
 
     private var frameCounter = 0

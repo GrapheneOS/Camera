@@ -2074,7 +2074,13 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
-            mActivity.thirdOption.visibility = View.INVISIBLE
+
+            mActivity.thirdOption.visibility = View.VISIBLE
+            mActivity.whiteOptionCircle.visibility = View.INVISIBLE
+            mActivity.imagePreview.visibility = View.INVISIBLE
+            mActivity.thirdCircle.visibility = View.INVISIBLE
+            mActivity.playPreview.visibility = View.INVISIBLE
+            mActivity.qrImageImport.visibility = View.VISIBLE
 
             if (scanAllCodes) {
                 mActivity.setFlipCameraIcon(
@@ -2098,6 +2104,12 @@ class CamConfig(private val mActivity: MainActivity) {
         } else {
             mActivity.qrOverlay.visibility = View.INVISIBLE
             mActivity.thirdOption.visibility = View.VISIBLE
+
+            mActivity.qrImageImport.visibility = View.GONE
+            mActivity.whiteOptionCircle.visibility = View.VISIBLE
+            mActivity.imagePreview.visibility = View.VISIBLE
+            mActivity.thirdCircle.visibility = View.VISIBLE
+
             mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
             mActivity.cancelButtonView.visibility = View.VISIBLE
 
