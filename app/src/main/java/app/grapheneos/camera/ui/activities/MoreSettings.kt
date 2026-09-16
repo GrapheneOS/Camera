@@ -174,6 +174,18 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             camConfig.removeExifAfterCapture = exifToggle.isChecked
         }
 
+        val iccToggle = binding.removeIccToggle
+        val iccToggleSetting = binding.removeIccSetting
+
+        iccToggleSetting.setOnClickListener {
+            iccToggle.performClick()
+        }
+
+        iccToggle.isChecked = camConfig.removeICCAfterCapture
+        iccToggle.setOnClickListener {
+            camConfig.removeICCAfterCapture = iccToggle.isChecked
+        }
+
         val gSwitch = binding.gyroscopeSettingSwitch
         gSwitch.isChecked = camConfig.gSuggestions
         gSwitch.setOnClickListener {
