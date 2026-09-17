@@ -500,10 +500,11 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="1013" column="100" source="standard:max-line-length" />
-        <error line="1168" column="100" source="standard:max-line-length" />
-        <error line="1517" column="17" source="standard:chain-wrapping" />
-        <error line="1705" column="27" source="standard:property-naming" />
+        <error line="1011" column="100" source="standard:max-line-length" />
+        <error line="1166" column="100" source="standard:max-line-length" />
+        <error line="1515" column="17" source="standard:chain-wrapping" />
+        <error line="1699" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="1702" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />
@@ -550,22 +551,14 @@
         <error line="6" column="52" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/seekbar/ExposureBar.kt">
-        <error line="80" column="66" source="standard:argument-list-wrapping" />
+        <error line="3" column="1" source="standard:import-ordering" />
+        <error line="81" column="66" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/seekbar/ZoomBar.kt">
-        <error line="77" column="66" source="standard:argument-list-wrapping" />
-        <error line="132" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="134" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="141" column="1" source="standard:no-blank-line-before-rbrace" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/util/CameraControl.kt">
-        <error line="6" column="21" source="standard:class-signature" />
-        <error line="6" column="55" source="standard:class-signature" />
-        <error line="20" column="56" source="standard:multiline-if-else" />
-        <error line="21" column="61" source="standard:multiline-if-else" />
-        <error line="23" column="64" source="standard:multiline-if-else" />
-        <error line="24" column="18" source="standard:multiline-if-else" />
-        <error line="28" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="74" column="66" source="standard:argument-list-wrapping" />
+        <error line="129" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="131" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="140" column="1" source="standard:no-blank-line-before-rbrace" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/ImageDecoderUtils.kt">
         <error line="6" column="20" source="standard:class-signature" />

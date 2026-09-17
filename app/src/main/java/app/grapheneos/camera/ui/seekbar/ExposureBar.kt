@@ -16,6 +16,7 @@ import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 
 class ExposureBar : AppCompatSeekBar {
@@ -113,8 +114,9 @@ class ExposureBar : AppCompatSeekBar {
                 Log.i("progress", progress.toString())
                 Log.i("max", max.toString())
 
-                mainActivity.session.camera?.cameraControl
-                    ?.setExposureCompensationIndex(progress)
+                mainActivity.viewfinder.onAction(
+                    CameraAction.ExposureSliderDragged(compensationIndex = progress),
+                )
 
                 showPanel()
 

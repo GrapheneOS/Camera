@@ -18,8 +18,8 @@ import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import kotlin.math.roundToInt
 
@@ -47,11 +47,8 @@ class ZoomBar : AppCompatSeekBar {
 
     private lateinit var mainActivity: MainActivity
 
-    private lateinit var session: CameraSession
-
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
-        session = mainActivity.session
     }
 
     fun showPanel() {
@@ -137,7 +134,9 @@ class ZoomBar : AppCompatSeekBar {
                 if (progress < 1) progress = 1
                 if (progress > 100) progress = 100
 
-                session.camera?.cameraControl?.setLinearZoom(progress / 100f)
+                mainActivity.viewfinder.onAction(
+                    CameraAction.ZoomSliderDragged(linearZoom = progress / 100f),
+                )
 
             }
             MotionEvent.ACTION_CANCEL -> {
