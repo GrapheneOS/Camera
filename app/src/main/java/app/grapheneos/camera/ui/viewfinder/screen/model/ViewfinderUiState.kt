@@ -12,6 +12,7 @@ data class ViewfinderUiState(
     val qrScanTogglesVisible: Boolean = false,
     val thirdOptionVisible: Boolean = true,
     val cancelButtonVisible: Boolean = true,
+    val capturedPreviewVisible: Boolean = false,
     val micMutedIconVisible: Boolean = false,
     @DrawableRes val captureButtonBackground: Int = R.drawable.cbutton_bg,
     @DrawableRes val captureButtonIcon: Int = R.drawable.camera_shutter,
