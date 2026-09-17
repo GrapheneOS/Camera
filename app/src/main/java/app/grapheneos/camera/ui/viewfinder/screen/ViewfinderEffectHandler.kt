@@ -15,20 +15,21 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import app.grapheneos.camera.App
 import app.grapheneos.camera.R
-import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
+import app.grapheneos.camera.data.camera.session.QrCodeAnalyzer
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import java.util.concurrent.Executor
 
 internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
 ) : CameraSessionEnvironment,
-    ViewfinderEffects,
     ViewfinderChrome {
 
     override val sessionContext: Context
@@ -70,11 +71,65 @@ internal class ViewfinderEffectHandler(
             }
         }
 
-    override fun showMessage(@StringRes message: Int) {
+    fun handle(effect: Effect) {
+        when (effect) {
+            is Effect.ShowMessage -> showMessage(effect.message)
+            is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
+            is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
+            is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
+            is Effect.GoToModeTab -> goToModeTab(effect.mode)
+            is Effect.ShowZoomPanel -> showZoomPanel()
+            is Effect.HideZoomPanel -> hideZoomPanel()
+            is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
+            is Effect.ResetTorchToggle -> resetTorchToggle()
+            is Effect.ReloadVideoQualities -> reloadVideoQualities()
+            is Effect.StartLocationUpdates -> startLocationUpdates()
+            is Effect.StopLocationUpdates -> stopLocationUpdates()
+        }
+    }
+
+    private var renderedCaptureButtonIcon: Int? = null
+
+    fun render(state: ViewfinderUiState) {
+        activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
+        activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
+        activity.cancelButtonView.visibility = visibleOrInvisible(state.cancelButtonVisible)
+
+        activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
+        activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
+
+        activity.captureButton.setBackgroundResource(state.captureButtonBackground)
+        renderCaptureButton(state)
+        activity.setFlipCameraIcon(
+            icon = state.flipCameraIcon,
+            description = state.flipCameraDescription,
+        )
+
+        activity.previewGrid.gridType = state.gridType
+        activity.cbText.text = state.selfTimerBadge
+        activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
+
+        activity.settingsDialog.render(state.settingsSheet)
+    }
+
+    private fun renderCaptureButton(state: ViewfinderUiState) {
+        // The drawable must stay the same one the recording's corner-radius animation is holding
+        // on to: replacing it, even with the same resource, would cut that animation short.
+        if (state.captureButtonIcon != renderedCaptureButtonIcon) {
+            activity.captureButton.setImageResource(state.captureButtonIcon)
+            renderedCaptureButtonIcon = state.captureButtonIcon
+        }
+
+        activity.captureButton.contentDescription = activity.getString(
+            state.captureButtonDescription,
+        )
+    }
+
+    private fun showMessage(@StringRes message: Int) {
         activity.showMessage(message)
     }
 
-    override fun showVideoQualityUnsupported(quality: Quality) {
+    private fun showVideoQualityUnsupported(quality: Quality) {
         activity.showMessage(
             activity.getString(
                 R.string.quality_unsupported,
@@ -99,23 +154,26 @@ internal class ViewfinderEffectHandler(
         activity.cancelFocusTimer()
     }
 
-    override fun onRequireLocationChanged(required: Boolean) {
-        activity.onRequireLocationChanged(required)
+    private fun startLocationUpdates() {
+        activity.onRequireLocationChanged(required = true)
+    }
+
+    private fun stopLocationUpdates() {
+        activity.onRequireLocationChanged(required = false)
     }
 
     override fun shouldAskForLocationPermission(): Boolean {
         return (activity.applicationContext as App).shouldAskForLocationPermission()
     }
 
-    override fun createTunePlayer(): TunePlayer {
-        return TunePlayer(activity)
+    override fun createQrAnalyzer(): QrCodeAnalyzer {
+        return QRAnalyzer(
+            mActivity = activity,
+            scanAllCodes = { activity.viewfinder.uiState.value.scanAllCodes },
+        )
     }
 
-    override fun createQrAnalyzer(): QRAnalyzer {
-        return QRAnalyzer(activity)
-    }
-
-    override fun showStorageLocationNotFound() {
+    private fun showStorageLocationNotFound() {
         showStorageLocationNotFoundDialog(activity)
     }
 
@@ -131,12 +189,27 @@ internal class ViewfinderEffectHandler(
         activity.exposureBar.setExposureConfig(exposureState)
     }
 
-    override fun updateZoomThumb(shouldShowPanel: Boolean) {
-        activity.zoomBar.updateThumb(shouldShowPanel)
+    override fun updateZoomThumb() {
+        activity.zoomBar.updateThumb()
     }
 
-    override fun setMicMutedIconVisible(visible: Boolean) {
-        activity.micOffIcon.visibility = when {
+    private fun showZoomPanel() {
+        activity.zoomBar.showPanel()
+    }
+
+    private fun hideZoomPanel() {
+        activity.zoomBar.hidePanel()
+    }
+
+    private fun visibleOrInvisible(visible: Boolean): Int {
+        return when {
+            visible -> View.VISIBLE
+            else -> View.INVISIBLE
+        }
+    }
+
+    private fun visibleOrGone(visible: Boolean): Int {
+        return when {
             visible -> View.VISIBLE
             else -> View.GONE
         }
@@ -163,110 +236,25 @@ internal class ViewfinderEffectHandler(
         )
     }
 
-    override fun goToModeTab(mode: CameraMode) {
+    private fun goToModeTab(mode: CameraMode) {
         activity.tabLayout.getTabForMode(mode)?.let { tab ->
             activity.tabLayout.goToTab(tab)
         }
     }
 
-    override fun onFlashModeChanged() {
-        activity.settingsDialog.updateFlashMode()
-    }
-
-    override fun onIncludeAudioChanged(enabled: Boolean) {
-        activity.settingsDialog.includeAudioToggle.isChecked = enabled
-    }
-
-    override fun onGeoTaggingChanged(enabled: Boolean) {
-        activity.settingsDialog.locToggle.isChecked = enabled
-    }
-
-    override fun onSelfIlluminationChanged(enabled: Boolean) {
-        activity.settingsDialog.selfIlluminationToggle.isChecked = enabled
-        activity.settingsDialog.selfIllumination()
-    }
-
-    override fun reloadVideoQualities() {
+    private fun reloadVideoQualities() {
         activity.settingsDialog.reloadQualities()
     }
 
-    override fun showOnlyRelevantSettings() {
-        activity.settingsDialog.showOnlyRelevantSettings()
+    private fun applySelfIllumination(enabled: Boolean) {
+        activity.settingsDialog.selfIllumination(enabled)
     }
 
-    override fun resetTorchToggle() {
+    private fun resetTorchToggle() {
         activity.settingsDialog.torchToggle.isChecked = false
     }
 
-    override fun applyModeChrome(
-        mode: CameraMode,
-        isVideoMode: Boolean,
-        scanAllCodes: Boolean,
-    ) {
-        when (mode) {
-            CameraMode.QR_SCAN -> {
-                activity.qrOverlay.visibility = View.VISIBLE
-                activity.thirdOption.visibility = View.INVISIBLE
-
-                applyScanAllCodesChrome(scanAllCodes)
-
-                activity.cancelButtonView.visibility = View.INVISIBLE
-
-                activity.captureButton.setBackgroundResource(android.R.color.transparent)
-                // Entering QR mode always leaves the torch off
-                activity.setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
-
-                activity.micOffIcon.visibility = View.GONE
-            }
-
-            else -> {
-                activity.qrOverlay.visibility = View.INVISIBLE
-                activity.thirdOption.visibility = View.VISIBLE
-                activity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
-                activity.cancelButtonView.visibility = View.VISIBLE
-
-                activity.qrScanToggles.visibility = View.GONE
-
-                activity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
-
-                when {
-                    isVideoMode -> {
-                        activity.setCaptureButtonIcon(
-                            icon = R.drawable.recording,
-                            description = R.string.start_recording,
-                        )
-                    }
-
-                    else -> {
-                        activity.setCaptureButtonIcon(
-                            icon = R.drawable.camera_shutter,
-                            description = R.string.capture,
-                        )
-
-                        activity.micOffIcon.visibility = View.GONE
-                    }
-                }
-            }
-        }
-
-        activity.updateSelfTimerBadge()
-    }
-
-    override fun applyScanAllCodesChrome(scanAllCodes: Boolean) {
-        when {
-            scanAllCodes -> {
-                activity.setFlipCameraIcon(R.drawable.cancel, R.string.stop_scanning_all_formats)
-                activity.qrScanToggles.visibility = View.GONE
-            }
-
-            else -> {
-                activity.setFlipCameraIcon(R.drawable.auto, R.string.scan_all_formats)
-                activity.qrScanToggles.visibility = View.VISIBLE
-            }
-        }
-    }
-
-    override fun flashPreview(selfIlluminate: Boolean) {
+    private fun flashPreview(selfIlluminate: Boolean) {
         val animation: Animation = when {
             selfIlluminate -> AlphaAnimation(0f, 0.8f)
             else -> AlphaAnimation(1f, 0f)

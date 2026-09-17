@@ -6,39 +6,25 @@ import app.grapheneos.camera.data.core.model.CameraMode
 
 interface ViewfinderChrome {
 
-    fun applyModeChrome(mode: CameraMode, isVideoMode: Boolean, scanAllCodes: Boolean)
-
-    fun applyScanAllCodesChrome(scanAllCodes: Boolean)
-
     fun setCameraModeTabs(modes: Set<CameraMode>, currentMode: CameraMode)
-
-    fun goToModeTab(mode: CameraMode)
 
     fun onPreviewBound(aspectRatio: Int, cameraInfo: CameraInfo)
 
-    fun updateZoomThumb(shouldShowPanel: Boolean)
+    fun updateZoomThumb()
 
     fun applyExposureState(exposureState: ExposureState)
 
-    fun hideExposurePanel()
-
-    fun setMicMutedIconVisible(visible: Boolean)
-
     fun updateGyroscopeIndicator(inPhotoMode: Boolean)
 
-    fun onFlashModeChanged()
+    fun updateLastFrame()
 
-    fun onIncludeAudioChanged(enabled: Boolean)
+    fun cancelPendingCapture()
 
-    fun onGeoTaggingChanged(enabled: Boolean)
+    fun forceUpdateOrientationSensor()
 
-    fun onSelfIlluminationChanged(enabled: Boolean)
+    fun hideExposurePanel()
 
-    fun onRequireLocationChanged(required: Boolean)
+    fun startFocusTimer()
 
-    fun reloadVideoQualities()
-
-    fun showOnlyRelevantSettings()
-
-    fun resetTorchToggle()
+    fun cancelFocusTimer()
 }

@@ -82,11 +82,11 @@ class App : Application() {
                 }
                 this.activity = activity
             },
-            onSecureActivityCountChanged = { opened ->
-                when {
-                    opened -> secureSessionPreferences.onSecureActivityCreated()
-                    else -> secureSessionPreferences.onSecureActivityDestroyed()
-                }
+            onSecureActivityCreated = {
+                secureSessionPreferences.onSecureActivityCreated()
+            },
+            onSecureActivityDestroyed = { isChangingConfigurations ->
+                secureSessionPreferences.onSecureActivityDestroyed(isChangingConfigurations)
             },
         )
     }

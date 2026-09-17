@@ -27,11 +27,11 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
@@ -43,11 +43,12 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 interface CameraSession {
-
-    var listener: Listener?
-    var lensFacing: Int
+    val events: Flow<CameraSessionEvent>
 
     val cameraProvider: ProcessCameraProvider?
     val camera: Camera?
@@ -57,6 +58,7 @@ interface CameraSession {
     val iAnalyzer: ImageAnalysis?
     val zoomState: ZoomState?
 
+    var lensFacing: Int
     val extensionsAvailable: Boolean
     val isFlashAvailable: Boolean
     val isZslSupported: Boolean
@@ -71,19 +73,6 @@ interface CameraSession {
     fun toggleTorchState()
     fun reattachZoomState()
     fun refreshQrHints()
-
-    interface Listener {
-        fun onZoomStateChanged()
-        fun onCameraProviderUnavailable()
-        fun onExtensionsUnavailable()
-        fun onProviderReady(forced: Boolean)
-        fun onFeaturesSelected(
-            boundLensFacing: Int,
-            requested: List<GroupableFeature>,
-            qualityFeature: GroupableFeature?,
-            selected: Set<GroupableFeature>,
-        )
-    }
 }
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -98,7 +87,11 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val snapshotProbeCache: SnapshotProbeCache,
 ) : CameraSession {
 
-    override var listener: CameraSession.Listener? = null
+    private val sessionEvents = MutableSharedFlow<CameraSessionEvent>(
+        extraBufferCapacity = EVENT_BUFFER_CAPACITY,
+    )
+
+    override val events: Flow<CameraSessionEvent> = sessionEvents.asSharedFlow()
 
     override var camera: Camera? = null
 
@@ -129,7 +122,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val zoomStateObserver = Observer<ZoomState> {
         zoomState = it
         if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-            listener?.onZoomStateChanged()
+            sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
         }
     }
 
@@ -151,7 +144,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     private var extensionProbesInFlight = false
 
-    private var qrAnalyzer: QRAnalyzer? = null
+    private var qrAnalyzer: QrCodeAnalyzer? = null
 
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
@@ -252,14 +245,11 @@ internal class CameraSessionImpl @AssistedInject constructor(
     }
 
     override fun initialize(forced: Boolean, extensionMode: Int) {
-        if (cameraProvider != null) {
-            listener?.onProviderReady(forced)
-            return
-        }
+        if (cameraProvider != null) return
 
         cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
             when (provider) {
-                null -> listener?.onCameraProviderUnavailable()
+                null -> sessionEvents.tryEmit(CameraSessionEvent.CameraProviderUnavailable)
                 else -> onCameraProviderReady(provider, forced, extensionMode)
             }
         }
@@ -279,18 +269,11 @@ internal class CameraSessionImpl @AssistedInject constructor(
         }
         cameraProvider = provider
 
-        // Manually switch to the other lens facing (if the default lens facing isn't
-        // supported for the current device)
-        val isDefaultLensSupported = isLensFacingSupported(
-            lensFacing = lensFacing,
-            extensionMode = extensionMode,
-        )
-
-        if (!isDefaultLensSupported) {
-            lensFacing = when (lensFacing) {
-                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-                else -> CameraSelector.LENS_FACING_BACK
-            }
+        lensFacing = supportedLensFacing(preferred = lensFacing) {
+            isLensFacingSupported(
+                lensFacing = it,
+                extensionMode = extensionMode,
+            )
         }
 
         cameraProviderSource.acquireExtensionsManager(
@@ -298,11 +281,11 @@ internal class CameraSessionImpl @AssistedInject constructor(
             provider,
         ) { manager ->
             when (manager) {
-                null -> listener?.onExtensionsUnavailable()
+                null -> sessionEvents.tryEmit(CameraSessionEvent.ExtensionsUnavailable)
                 else -> extensionsManager = manager
             }
 
-            listener?.onProviderReady(forced)
+            sessionEvents.tryEmit(CameraSessionEvent.ProviderReady(forced = forced))
         }
     }
 
@@ -727,11 +710,13 @@ internal class CameraSessionImpl @AssistedInject constructor(
                 sessionConfig.setFeatureSelectionListener(
                     environment.sessionMainExecutor
                 ) { selected ->
-                    listener?.onFeaturesSelected(
-                        boundLensFacing = boundLensFacing,
-                        requested = requested,
-                        qualityFeature = requiredQualityFeature,
-                        selected = selected,
+                    sessionEvents.tryEmit(
+                        CameraSessionEvent.FeaturesSelected(
+                            boundLensFacing = boundLensFacing,
+                            requested = requested,
+                            qualityFeature = requiredQualityFeature,
+                            selected = selected,
+                        ),
                     )
                 }
             }
@@ -800,6 +785,8 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     companion object {
         private const val TAG = "CameraSession"
+
+        private const val EVENT_BUFFER_CAPACITY = 64
 
         private const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
 

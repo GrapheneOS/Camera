@@ -48,8 +48,10 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
@@ -70,11 +72,16 @@ import androidx.core.view.isVisible
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.grapheneos.camera.App
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
@@ -103,8 +110,11 @@ import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
@@ -121,6 +131,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import javax.inject.Provider
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
@@ -133,9 +144,6 @@ open class MainActivity : AppCompatActivity() {
     lateinit var cameraSessionFactory: CameraSessionFactory
 
     @Inject
-    lateinit var viewfinder: ViewfinderController
-
-    @Inject
     lateinit var settingsRepository: SettingsRepository
 
     @Inject
@@ -146,6 +154,13 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var capturedItemSession: CapturedItemSession
+
+    @Inject
+    lateinit var viewfinderProvider: Provider<ViewfinderViewModel>
+
+    val viewfinder: ViewfinderViewModel by viewModels {
+        viewModelFactory { initializer { viewfinderProvider.get() } }
+    }
 
     lateinit var session: CameraSession
 
@@ -163,6 +178,9 @@ open class MainActivity : AppCompatActivity() {
     lateinit var imageCapturer: ImageCapturer
 
     lateinit var videoCapturer: VideoCapturer
+
+    @set:VisibleForTesting
+    lateinit var tunePlayer: TunePlayer
 
     lateinit var settingsDialog: SettingsDialog
 
@@ -285,7 +303,10 @@ open class MainActivity : AppCompatActivity() {
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
 
-    var timerDuration = 0
+    val selfTimerSeconds: Int
+        get() {
+            return viewfinder.uiState.value.settingsSheet.selfTimerSeconds
+        }
 
     private var bottomNavigationBarPadding: Int = 0
 
@@ -327,7 +348,7 @@ open class MainActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) {
             shouldRestartRecording = true
-            viewfinder.startCamera(true)
+            viewfinder.onAction(LifecycleAction.RecordAudioPermissionGranted)
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
@@ -387,7 +408,7 @@ open class MainActivity : AppCompatActivity() {
         builder.setNegativeButton(R.string.cancel, null)
 
         builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-            viewfinder.includeAudio = false
+            viewfinder.onAction(SettingsAction.AudioToggled(enabled = false))
             onDisableAudio()
         }
 
@@ -417,7 +438,7 @@ open class MainActivity : AppCompatActivity() {
         transitionShown = false
         mainOverlay.visibility = View.INVISIBLE
 
-        if (viewfinder.isQRMode) {
+        if (viewfinder.uiState.value.isQrMode) {
             return
         }
 
@@ -647,7 +668,7 @@ open class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Permission granted.")
 
                 // Setup the camera since the permission is available
-                viewfinder.initializeCamera()
+                viewfinder.onAction(LifecycleAction.CameraPermissionGranted)
             }
             shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
                 Log.i(TAG, "The user has default denied camera permission.")
@@ -701,7 +722,7 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         // there are no camera controls in qr mode
-        if (viewfinder.isQRMode) {
+        if (viewfinder.uiState.value.isQrMode) {
             return super.onKeyUp(keyCode, event)
         }
 
@@ -743,21 +764,21 @@ open class MainActivity : AppCompatActivity() {
         // Will also be called by Android Lifecycle when the app starts up
         checkPermissions()
 
-        if (viewfinder.isQRMode) {
+        if (viewfinder.uiState.value.isQrMode) {
             startFocusTimer()
         }
 
         updateThumbnail()
 
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             requestLocation()
         }
 
         // If the preview of video capture activity isn't showing
-        if (!(this is VideoCaptureActivity && thirdOption.isVisible)) {
+        if (!(this is VideoCaptureActivity && viewfinder.uiState.value.capturedPreviewVisible)) {
             if (!isQRDialogShowing) {
                 if (hasCameraPermission()) {
-                    viewfinder.initializeCamera(true)
+                    viewfinder.onAction(LifecycleAction.ScreenResumed)
                 } else {
                     Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
                 }
@@ -794,12 +815,12 @@ open class MainActivity : AppCompatActivity() {
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
-        if (viewfinder.isQRMode) {
+        if (viewfinder.uiState.value.isQrMode) {
             cancelFocusTimer()
         } else {
             imageCapturer.cancelPendingCaptureRequest()
         }
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             application.dropLocationUpdates()
         }
         lastFrame = null
@@ -816,13 +837,32 @@ open class MainActivity : AppCompatActivity() {
         session = cameraSessionFactory.create(environment = sessionHandler)
         viewfinder.attach(
             environment = sessionHandler,
-            effects = sessionHandler,
             chrome = sessionHandler,
             session = session,
         )
         cameraControl = CameraControl(session)
+        tunePlayer = TunePlayer(
+            context = this,
+            soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
+        )
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.uiState.collect { state ->
+                    sessionHandler.render(state)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.effects.collect { effect ->
+                    sessionHandler.handle(effect)
+                }
+            }
+        }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             capturedItemSession.prepare()
@@ -845,7 +885,7 @@ open class MainActivity : AppCompatActivity() {
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 hidePreviewTransition()
-                viewfinder.reloadSettings()
+                viewfinder.onAction(LifecycleAction.PreviewStreamingStarted)
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
@@ -881,8 +921,8 @@ open class MainActivity : AppCompatActivity() {
         }
         flipCameraCircle.setOnClickListener {
             resetAutoSleep()
-            if (viewfinder.isQRMode) {
-                viewfinder.scanAllCodes = !viewfinder.scanAllCodes
+            if (viewfinder.uiState.value.isQrMode) {
+                viewfinder.onAction(SettingsAction.ScanAllCodesToggleClicked)
                 return@setOnClickListener
             }
 
@@ -910,7 +950,7 @@ open class MainActivity : AppCompatActivity() {
             rotate.interpolator = LinearInterpolator()
 
             it.startAnimation(rotate)
-            viewfinder.toggleCameraSelector()
+            viewfinder.onAction(CameraAction.LensSwitchClicked)
         }
 
         binding.thirdCircle.setOnClickListener {
@@ -940,21 +980,16 @@ open class MainActivity : AppCompatActivity() {
             // would otherwise capture in the mode being left behind.
             tabLayout.settleNow()
 
-            if (viewfinder.isVideoMode) {
+            if (viewfinder.uiState.value.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
                     videoCapturer.startRecording()
                 }
-            } else if (viewfinder.isQRMode) {
-                session.toggleTorchState()
-                if (session.isTorchOn) {
-                    setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
-                } else {
-                    setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
-                }
+            } else if (viewfinder.uiState.value.isQrMode) {
+                viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
-                if (timerDuration == 0) {
+                if (selfTimerSeconds == 0) {
                     imageCapturer.takePicture()
                 } else {
                     if (cdTimer.isRunning) {
@@ -970,7 +1005,7 @@ open class MainActivity : AppCompatActivity() {
         exposureBar.setMainActivity(this)
 
         settingsIcon.setOnClickListener {
-            if (!viewfinder.isQRMode) {
+            if (!viewfinder.uiState.value.isQrMode) {
                 settingsDialog.show()
             }
         }
@@ -1005,8 +1040,6 @@ open class MainActivity : AppCompatActivity() {
                 }
             }
         })
-
-        previewGrid.setMainActivity(this)
 
         var isInsetSet = false
 
@@ -1111,9 +1144,6 @@ open class MainActivity : AppCompatActivity() {
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
-        viewfinder.loadSettings()
-
-        barcodeFormats.load()
         selectBarcodeFormatToggles()
         session.refreshQrHints()
 
@@ -1181,7 +1211,7 @@ open class MainActivity : AppCompatActivity() {
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
         // already have dragged the strip, so put it back on the mode the camera is really in.
         if (videoCapturer.isRecording) {
-            tabLayout.getTabForMode(viewfinder.currentMode)?.let {
+            tabLayout.getTabForMode(viewfinder.uiState.value.mode)?.let {
                 tabLayout.goToTab(it)
             }
             return
@@ -1195,15 +1225,15 @@ open class MainActivity : AppCompatActivity() {
             // holds the main thread for half a second, so a transition left to the stream state
             // would only reach the screen after the wait it is there to explain. Guarded on the
             // mode really changing, since nothing would rebind to take it back down again.
-            if (mode != viewfinder.currentMode) {
+            if (mode != viewfinder.uiState.value.mode) {
                 showPreviewTransition()
             }
 
             // switchMode() puts the strip on the mode the camera actually ended up in, which is a
             // different one when an extension fails to bind.
             tabLayout.goToTab(selectedTab) {
-                if (mode != viewfinder.currentMode) {
-                    viewfinder.switchMode(mode)
+                if (mode != viewfinder.uiState.value.mode) {
+                    viewfinder.onAction(CameraAction.ModeSelected(mode))
                 } else if (
                     transitionShown &&
                     previewView.previewStreamState.value == StreamState.STREAMING
@@ -1220,10 +1250,9 @@ open class MainActivity : AppCompatActivity() {
 
     /** Shows the pending self-timer duration on the capture button, where it applies at all. */
     fun updateSelfTimerBadge() {
-        cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
-        // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
-        val applies = timerDuration != 0 && !viewfinder.isQRMode && !viewfinder.isVideoMode
-        cbText.visibility = if (applies) View.VISIBLE else View.INVISIBLE
+        val state = viewfinder.uiState.value
+        cbText.text = state.selfTimerBadge
+        cbText.visibility = if (state.selfTimerBadgeVisible) View.VISIBLE else View.INVISIBLE
     }
 
     fun restartRecordingWithMicPermission() {
@@ -1372,7 +1401,7 @@ open class MainActivity : AppCompatActivity() {
 
             builder.setOnDismissListener {
                 isQRDialogShowing = false
-                viewfinder.startCamera(true)
+                viewfinder.onAction(LifecycleAction.QrResultDismissed)
             }
 
             session.cameraProvider?.unbindAll()
@@ -1402,16 +1431,6 @@ open class MainActivity : AppCompatActivity() {
     fun setFlipCameraIcon(@DrawableRes icon: Int, @StringRes description: Int) {
         binding.flipCameraIconContent.setImageResource(icon)
         binding.flipCameraIconContent.contentDescription = getString(description)
-    }
-
-    /**
-     * The big middle button is a shutter, a record/stop button and a torch switch depending on
-     * the mode, so its description has to travel with its drawable exactly like the one in
-     * [setFlipCameraIcon] does.
-     */
-    fun setCaptureButtonIcon(@DrawableRes icon: Int, @StringRes description: Int) {
-        captureButton.setImageResource(icon)
-        captureButton.contentDescription = getString(description)
     }
 
     /**
@@ -1473,7 +1492,7 @@ open class MainActivity : AppCompatActivity() {
         session.preview?.targetRotation =
             previewView.display?.rotation ?: Surface.ROTATION_0
         session.camera?.cameraInfo?.let {
-            previewView.applyPreviewRatio(viewfinder.aspectRatio, it)
+            previewView.applyPreviewRatio(viewfinder.uiState.value.aspectRatio, it)
         }
 
         rootView.post { sensorNotifier?.notifyListeners() }
@@ -1538,7 +1557,7 @@ open class MainActivity : AppCompatActivity() {
     ) {
         // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
         // mode this returns to
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             requestLocation(application.isAnyLocationProvideActive())
         }
     }
@@ -1550,7 +1569,7 @@ open class MainActivity : AppCompatActivity() {
         if (!application.shouldAskForLocationPermission()) {
             requestLocation()
         } else {
-            viewfinder.requireLocation = false
+            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
         }
     }
 
@@ -1578,7 +1597,7 @@ open class MainActivity : AppCompatActivity() {
 
                     it.setOnDismissListener {
                         if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            viewfinder.requireLocation = false
+                            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
                         }
                     }
                 }.showIgnoringShortEdgeMode()
@@ -1667,8 +1686,6 @@ open class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    open fun shouldShowCameraModeTabs() = true
 
     private fun restartRecordingIfPermissionsWasUnavailable() {
         if (shouldRestartRecording) {

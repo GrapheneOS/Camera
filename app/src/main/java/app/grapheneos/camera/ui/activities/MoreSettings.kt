@@ -96,7 +96,7 @@ open class MoreSettings :
     }
 
     private fun updateSettings(transform: (CameraSettings) -> CameraSettings) {
-        runBlocking { settingsRepository.update(transform) }
+        settingsRepository.update(transform)
     }
 
     private fun setStorageLocation(location: String) {
@@ -335,8 +335,8 @@ open class MoreSettings :
         // the up arrow, Home, task switch) used to drop whatever had been typed, silently.
         // Commit here so that every exit path persists; a snackbar would be pointless on a
         // screen that is going away, so the invalid-value complaint is suppressed.
-        // onCreate() can bail out before the views exist (no ViewfinderController in the intent) and the
-        // lifecycle still runs through onPause, hence the initialization check.
+        // onCreate() can bail out before the views exist and the lifecycle still runs through
+        // onPause, hence the initialization check.
         if (this::pQField.isInitialized) {
             dumpData(notifyOnInvalidValue = false)
         }

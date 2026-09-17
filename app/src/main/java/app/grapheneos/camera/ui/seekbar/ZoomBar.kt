@@ -21,7 +21,6 @@ import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 import kotlin.math.roundToInt
 
 class ZoomBar : AppCompatSeekBar {
@@ -47,13 +46,11 @@ class ZoomBar : AppCompatSeekBar {
         .inflate(R.layout.zoom_bar_thumb, null, false)
 
     private lateinit var mainActivity: MainActivity
-    private lateinit var viewfinder: ViewfinderController
 
     private lateinit var session: CameraSession
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
-        viewfinder = mainActivity.viewfinder
         session = mainActivity.session
     }
 
@@ -63,7 +60,7 @@ class ZoomBar : AppCompatSeekBar {
         closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
     }
 
-    private fun hidePanel() {
+    fun hidePanel() {
         togglePanel(View.GONE)
     }
 
@@ -88,14 +85,8 @@ class ZoomBar : AppCompatSeekBar {
         super.onSizeChanged(h, w, oldh, oldw)
     }
 
-    fun updateThumb(shouldShowPanel: Boolean = true) {
+    fun updateThumb() {
         val zoomState: ZoomState? = session.zoomState
-
-        if (shouldShowPanel) {
-            showPanel()
-        } else {
-            hidePanel()
-        }
 
         var zoomRatio = 1.0f
         var linearZoom = 0.0f

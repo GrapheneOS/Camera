@@ -1,12 +1,10 @@
 package app.grapheneos.camera.ui
 
-import android.Manifest
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Rect
 import android.os.Handler
@@ -29,22 +27,21 @@ import android.widget.Spinner
 import android.widget.ToggleButton
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.StringRes
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ImageCapture
 import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.Collections
@@ -53,7 +50,7 @@ import kotlin.math.max
 @SuppressLint("ClickableViewAccessibility")
 class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     Dialog(themedContext) {
-    val viewfinder = mActivity.viewfinder
+    val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
     private val session = mActivity.session
 
@@ -88,6 +85,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
+    private var waitForFocusLockSetting: View
 
     var settingsFrame: View
 
@@ -178,38 +176,31 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                     getString(R.string.toggle_geo_tagging_unsupported_while_recording)
                 )
             } else {
-                viewfinder.requireLocation = locToggle.isChecked
+                viewfinder.onAction(SettingsAction.GeoTaggingToggled(locToggle.isChecked))
             }
         }
 
         flashToggle = binding.flashToggleOption
         flashToggle.setOnClickListener {
-            if (mActivity.requiresVideoModeOnly) {
-                mActivity.showMessage(
-                    getString(R.string.flash_switch_unsupported)
-                )
-            } else {
-                viewfinder.toggleFlashMode()
-            }
+            viewfinder.onAction(CameraAction.FlashToggleClicked)
         }
 
         aRToggle = binding.aspectRatioToggle
         aRToggle.setOnClickListener {
-            if (viewfinder.isVideoMode) {
-                updateAspectRatioToggle(is16by9 = true)
+            if (sheetState.aspectRatioFixed) {
+                aRToggle.isChecked = sheetState.is16by9
                 mActivity.showMessage(
                     getString(R.string.four_by_three_unsupported_in_video)
                 )
             } else {
-                viewfinder.toggleAspectRatio()
-                updateAspectRatioToggle(viewfinder.aspectRatio == AspectRatio.RATIO_16_9)
+                viewfinder.onAction(CameraAction.AspectRatioToggleClicked)
             }
         }
 
         torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
             if (session.isFlashAvailable) {
-                session.toggleTorchState()
+                viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(
@@ -220,13 +211,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         gridToggle = binding.gridToggleOption
         gridToggle.setOnClickListener {
-            viewfinder.gridType = when (viewfinder.gridType) {
-                GridType.NONE -> GridType.THREE_BY_THREE
-                GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
-                GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
-                GridType.GOLDEN_RATIO -> GridType.NONE
-            }
-            updateGridToggleUI()
+            viewfinder.onAction(SettingsAction.GridToggleClicked)
         }
 
         videoQualitySpinner = binding.videoQualitySpinner
@@ -247,22 +232,18 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
 
-        if (mActivity.requiresVideoModeOnly) {
-            binding.waitForFocusLockSetting.visibility = View.GONE
-        }
-
         waitForFocusLockSwitch = binding.waitForFocusLockSwitch
-        waitForFocusLockSwitch.isChecked = viewfinder.waitForFocusLock
         waitForFocusLockSwitch.setOnClickListener {
-            viewfinder.waitForFocusLock = waitForFocusLockSwitch.isChecked
-            if (session.cameraProvider != null) {
-                viewfinder.startCamera(true)
-            }
+            viewfinder.onAction(
+                SettingsAction.FocusLockToggled(waitForFocusLockSwitch.isChecked),
+            )
         }
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
-        selfIlluminationToggle.setOnCheckedChangeListener { _, isChecked ->
-            viewfinder.selfIlluminate = isChecked
+        selfIlluminationToggle.setOnClickListener {
+            viewfinder.onAction(
+                SettingsAction.SelfIlluminationToggled(selfIlluminationToggle.isChecked),
+            )
         }
         binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -330,44 +311,13 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
+        waitForFocusLockSetting = binding.waitForFocusLockSetting
 
         includeAudioToggle = binding.includeAudioSwitch
-        includeAudioToggle.setOnCheckedChangeListener { _, _ ->
-            if (mActivity.videoCapturer.isRecording) {
-                if (ActivityCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO)
-                    != PackageManager.PERMISSION_GRANTED) {
-
-                    // Inform the user why enabling this option isn't possible
-                    mActivity.showMessage(context.getString(R.string.audio_permission_failed_in_recording))
-
-                    // Ensure the option is visually off
-                    includeAudioToggle.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-
-                if (!mActivity.videoCapturer.includeAudio) {
-                    mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")
-                    includeAudioToggle.isChecked = false
-                    return@setOnCheckedChangeListener
-                }
-
-                if  (includeAudioToggle.isChecked) {
-                    mActivity.videoCapturer.unmuteRecording()
-                } else {
-                    mActivity.videoCapturer.muteRecording()
-                }
-            }
-        }
-
         includeAudioToggle.setOnClickListener {
-            mActivity.micOffIcon.visibility = if (includeAudioToggle.isChecked) {
-                View.GONE
-            } else {
-                View.VISIBLE
-            }
-
-            viewfinder.includeAudio = includeAudioToggle.isChecked
+            viewfinder.onAction(SettingsAction.AudioToggled(includeAudioToggle.isChecked))
         }
+
         binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
             includeAudioToggle.dispatchTouchEvent(event)
@@ -375,9 +325,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         enableEISToggle = binding.enableEisSwitch
-        enableEISToggle.setOnCheckedChangeListener { _, isChecked ->
-            viewfinder.enableEIS = isChecked
-            viewfinder.startCamera(true)
+        enableEISToggle.setOnClickListener {
+            viewfinder.onAction(SettingsAction.StabilizationToggled(enableEISToggle.isChecked))
         }
         binding.enableEisSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -495,47 +444,57 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         })
     }
 
-    fun showOnlyRelevantSettings() {
-        if (viewfinder.isVideoMode) {
-            includeAudioSetting.visibility = View.VISIBLE
-            videoQualitySetting.visibility = View.VISIBLE
-            enableEISSetting.visibility = if (session.canApplyVideoStabilization()) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-        } else {
-            includeAudioSetting.visibility = View.GONE
-            enableEISSetting.visibility = View.GONE
-            videoQualitySetting.visibility = View.GONE
-        }
+    private var sheetState = SettingsSheetUiState()
 
-        selfIlluminationSetting.visibility =
-            if (session.lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
-
-        timerSetting.visibility = if (viewfinder.isVideoMode) {
-            View.GONE
-        } else {
-            View.VISIBLE
-        }
+    private fun storedSheetState(): SettingsSheetUiState {
+        return viewfinder.uiState.value.settingsSheet
     }
 
+    fun render(state: SettingsSheetUiState) {
+        sheetState = state
+
+        flashToggle.setImageResource(state.flashIcon)
+        flashToggle.contentDescription = mActivity.getString(state.flashDescription)
+
+        includeAudioToggle.isChecked = state.includeAudio
+        enableEISToggle.isChecked = state.stabilizationEnabled
+        waitForFocusLockSwitch.isChecked = state.waitForFocusLock
+
+        aRToggle.isChecked = state.is16by9
+        ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
+
+        gridToggle.setImageResource(state.gridIcon)
+        gridToggle.contentDescription = mActivity.getString(state.gridDescription)
+
+        locToggle.isChecked = state.geoTagging
+        selfIlluminationToggle.isChecked = state.selfIllumination
+
+        includeAudioSetting.visibility = visibleOrGone(state.includeAudioSettingVisible)
+        videoQualitySetting.visibility = visibleOrGone(state.videoQualitySettingVisible)
+        enableEISSetting.visibility = visibleOrGone(state.stabilizationSettingVisible)
+        selfIlluminationSetting.visibility = visibleOrGone(state.selfIlluminationSettingVisible)
+        timerSetting.visibility = visibleOrGone(state.timerSettingVisible)
+        waitForFocusLockSetting.visibility = visibleOrGone(state.waitForFocusLockSettingVisible)
+    }
+
+    private fun visibleOrGone(visible: Boolean): Int {
+        return when {
+            visible -> View.VISIBLE
+            else -> View.GONE
+        }
+    }
 
     fun updateFocusTimeout(selectedOption: String) {
 
         if (selectedOption == timeOptions[0]) {
-            viewfinder.focusTimeout = 0
+            viewfinder.onAction(SettingsAction.FocusTimeoutSelected(seconds = 0))
         } else {
 
             try {
                 val durS = selectedOption.substring(0, selectedOption.length - 1)
                 val dur = durS.toLong()
 
-                viewfinder.focusTimeout = dur
+                viewfinder.onAction(SettingsAction.FocusTimeoutSelected(seconds = dur))
 
             } catch (exception: Exception) {
 
@@ -550,40 +509,28 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     private fun updateTimerDuration(duration: Int) {
-        mActivity.timerDuration = duration
-        mActivity.updateSelfTimerBadge()
         // Common rather than per-mode: a mode's preferences are not slotted until the camera
         // starts, which happens after this dialog is built.
-        viewfinder.selfTimerDuration = duration
+        viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = duration))
+        mActivity.updateSelfTimerBadge()
     }
 
     private fun restoreTimerDuration() {
-        val duration = viewfinder.selfTimerDuration
-        // Apply directly: Spinner.setSelection() only posts its selection callback, so the duration
-        // would otherwise stay unset for a looper pass.
-        updateTimerDuration(duration)
+        val duration = storedSheetState().selfTimerSeconds
 
         val option = if (duration == 0) timeOptions[0] else "${duration}s"
         timerSpinner.setSelection(timeOptions.indexOf(option).coerceAtLeast(0), false)
     }
 
-    fun updateVideoQuality(quality: Quality, resCam: Boolean = true) {
-        if (quality == viewfinder.videoQuality) return
-
-        viewfinder.videoQuality = quality
-
-        if (resCam) {
-            viewfinder.startCamera(true)
-        } else {
-            videoQualitySpinner.setSelection(videoQualities.indexOf(quality))
-        }
+    fun updateVideoQuality(quality: Quality) {
+        viewfinder.onAction(SettingsAction.VideoQualitySelected(quality))
     }
 
     private var wasSelfIlluminationOn = false
 
-    fun selfIllumination() {
+    fun selfIllumination(enabled: Boolean) {
 
-        if (viewfinder.selfIlluminate) {
+        if (enabled) {
 
             val colorFrom: Int = Color.BLACK
             val colorTo: Int = mActivity.getColor(R.color.self_illumination_light)
@@ -677,7 +624,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             setBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
         }
 
-        wasSelfIlluminationOn = viewfinder.selfIlluminate
+        wasSelfIlluminationOn = enabled
     }
 
     private val slideDownAnimation: Animation by lazy {
@@ -766,65 +713,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun loadInitialState() {
-        updateGridToggleUI()
-        updateFocusTimeout(focusTimeoutLabel(viewfinder.focusTimeout))
-        enableEISToggle.isChecked = viewfinder.enableEIS
-    }
-
-    fun updateGridToggleUI() {
-        mActivity.previewGrid.postInvalidate()
-        // The description has to travel with the drawable: this control cycles through four
-        // states, so a fixed "Grid Toggle" label left a screen reader unable to report any of them
-        val (icon, description) = when (viewfinder.gridType) {
-            GridType.NONE -> R.drawable.grid_off_circle to R.string.grid_off
-            GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle to R.string.grid_3x3
-            GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle to R.string.grid_4x4
-            GridType.GOLDEN_RATIO ->
-                R.drawable.grid_goldenratio_circle to R.string.grid_golden_ratio
-        }
-        gridToggle.setImageResource(icon)
-        gridToggle.contentDescription = mActivity.getString(description)
-    }
-
-    fun updateFlashMode() {
-        val (icon, description) = if (session.isFlashAvailable) {
-            when (viewfinder.flashMode) {
-                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
-                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
-                else -> R.drawable.flash_off_circle to R.string.flash_off
-            }
-        } else {
-            R.drawable.flash_off_circle to R.string.flash_off
-        }
-        flashToggle.setImageResource(icon)
-        flashToggle.contentDescription = mActivity.getString(description)
-    }
-
-    /**
-     * The ratio itself is the toggle's on/off text, which its content description hides from
-     * accessibility services: announce it as the toggle's state instead.
-     */
-    private fun updateAspectRatioToggle(is16by9: Boolean) {
-        aRToggle.isChecked = is16by9
-        val ratio = if (is16by9) R.string.aspect_ratio_16_9 else R.string.aspect_ratio_4_3
-        ViewCompat.setStateDescription(aRToggle, mActivity.getString(ratio))
+        updateFocusTimeout(focusTimeoutLabel(storedSheetState().focusTimeoutSeconds))
     }
 
     override fun show() {
 
         this.resize()
 
-        updateFlashMode()
-
-        if (viewfinder.isVideoMode) {
-            updateAspectRatioToggle(is16by9 = true)
-        } else {
-            updateAspectRatioToggle(viewfinder.aspectRatio == AspectRatio.RATIO_16_9)
-        }
-
         torchToggle.isChecked = session.isTorchOn
-
-        updateGridToggleUI()
 
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
@@ -853,8 +749,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         videoQualitySpinner.adapter = adapter
 
-        if (viewfinder.videoQuality != Quality.HIGHEST) {
-            videoQualitySpinner.setSelection(videoQualities.indexOf(viewfinder.videoQuality))
+        val storedQuality = storedSheetState().videoQuality
+
+        if (storedQuality != Quality.HIGHEST) {
+            videoQualitySpinner.setSelection(videoQualities.indexOf(storedQuality))
         }
     }
 }
