@@ -1,10 +1,10 @@
 package app.grapheneos.camera.domain.camera.usecase
 
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
-import androidx.camera.video.Quality
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.core.model.VideoQuality
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -17,10 +17,10 @@ class ResolveDroppedVideoQualityImplTest {
     private val resolve = ResolveDroppedVideoQualityImpl(VideoQualityFeatureMapperImpl())
 
     private fun droppedQuality(
-        lensFacing: Int = BACK,
+        lensFacing: LensFacing = LensFacing.BACK,
         requestedQualityFeature: GroupableFeature? = QUALITY,
         selected: Set<GroupableFeature> = emptySet(),
-    ): Quality? {
+    ): VideoQuality? {
         return resolve(
             lensFacing = lensFacing,
             requestedQualityFeature = requestedQualityFeature,
@@ -40,7 +40,7 @@ class ResolveDroppedVideoQualityImplTest {
 
     @Test
     fun invoke_theQualityWasDropped_reportsIt() {
-        assertEquals(Quality.UHD, droppedQuality())
+        assertEquals(VideoQuality.UHD, droppedQuality())
     }
 
     @Test
@@ -50,22 +50,22 @@ class ResolveDroppedVideoQualityImplTest {
 
     @Test
     fun invoke_theSameLossTwiceOnOneCamera_reportsItOnce() {
-        assertEquals(Quality.UHD, droppedQuality())
+        assertEquals(VideoQuality.UHD, droppedQuality())
         assertNull(droppedQuality())
     }
 
     @Test
     fun invoke_theSameLossOnBothCameras_reportsItPerCamera() {
-        assertEquals(Quality.UHD, droppedQuality(lensFacing = BACK))
-        assertEquals(Quality.UHD, droppedQuality(lensFacing = FRONT))
+        assertEquals(VideoQuality.UHD, droppedQuality(lensFacing = LensFacing.BACK))
+        assertEquals(VideoQuality.UHD, droppedQuality(lensFacing = LensFacing.FRONT))
     }
 
     @Test
     fun invoke_aSatisfiedBindOnTheOtherCamera_leavesThisCamerasLossRemembered() {
-        droppedQuality(lensFacing = BACK)
-        droppedQuality(lensFacing = FRONT, selected = setOf(QUALITY))
+        droppedQuality(lensFacing = LensFacing.BACK)
+        droppedQuality(lensFacing = LensFacing.FRONT, selected = setOf(QUALITY))
 
-        assertNull(droppedQuality(lensFacing = BACK))
+        assertNull(droppedQuality(lensFacing = LensFacing.BACK))
     }
 
     @Test
@@ -73,23 +73,20 @@ class ResolveDroppedVideoQualityImplTest {
         droppedQuality()
         droppedQuality(selected = setOf(QUALITY))
 
-        assertEquals(Quality.UHD, droppedQuality())
+        assertEquals(VideoQuality.UHD, droppedQuality())
     }
 
     @Test
     fun invoke_aDifferentQualityIsDropped_reportsItEvenOnTheSameCamera() {
-        assertEquals(Quality.UHD, droppedQuality())
+        assertEquals(VideoQuality.UHD, droppedQuality())
 
         assertEquals(
-            Quality.FHD,
+            VideoQuality.FHD,
             droppedQuality(requestedQualityFeature = GroupableFeatures.FHD_RECORDING),
         )
     }
 
     private companion object {
-        const val BACK = CameraSelector.LENS_FACING_BACK
-        const val FRONT = CameraSelector.LENS_FACING_FRONT
-
         val QUALITY: GroupableFeature = GroupableFeatures.UHD_RECORDING
     }
 }

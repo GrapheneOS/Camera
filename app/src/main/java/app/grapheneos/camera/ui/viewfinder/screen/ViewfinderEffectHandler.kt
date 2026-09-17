@@ -10,7 +10,6 @@ import androidx.annotation.StringRes
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExposureState
 import androidx.camera.core.Preview
-import androidx.camera.video.Quality
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import app.grapheneos.camera.App
@@ -18,7 +17,9 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.camera.session.QrCodeAnalyzer
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
@@ -129,7 +130,7 @@ internal class ViewfinderEffectHandler(
         activity.showMessage(message)
     }
 
-    private fun showVideoQualityUnsupported(quality: Quality) {
+    private fun showVideoQualityUnsupported(quality: VideoQuality) {
         activity.showMessage(
             activity.getString(
                 R.string.quality_unsupported,
@@ -215,7 +216,7 @@ internal class ViewfinderEffectHandler(
         }
     }
 
-    override fun onPreviewBound(aspectRatio: Int, cameraInfo: CameraInfo) {
+    override fun onPreviewBound(aspectRatio: AspectRatio, cameraInfo: CameraInfo) {
         // Focus camera on touch/tap
         activity.previewView.setOnTouchListener(activity.gestureHandler)
         activity.previewView.applyPreviewRatio(aspectRatio, cameraInfo)

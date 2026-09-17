@@ -1,21 +1,21 @@
 package app.grapheneos.camera.data.settings.model
 
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.ImageCapture
-import androidx.camera.video.Quality
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import com.google.zxing.BarcodeFormat
 
 object SettingsDefaults {
 
     val GRID_TYPE = GridType.NONE
 
-    val VIDEO_QUALITY: Quality = Quality.HIGHEST
+    val VIDEO_QUALITY = VideoQuality.HIGHEST
 
     val ENABLED_BARCODE_FORMATS = setOf(BarcodeFormat.QR_CODE.name)
 
-    const val ASPECT_RATIO = AspectRatio.RATIO_4_3
+    val ASPECT_RATIO = AspectRatio.RATIO_4_3
 
-    const val FLASH_MODE = ImageCapture.FLASH_MODE_OFF
+    val FLASH_MODE = FlashMode.OFF
 
     const val FOCUS_TIMEOUT_SECONDS = 5L
 

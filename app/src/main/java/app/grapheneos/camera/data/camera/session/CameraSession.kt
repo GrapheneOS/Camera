@@ -19,14 +19,13 @@ import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
-import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
@@ -35,9 +34,13 @@ import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
+import app.grapheneos.camera.data.core.model.ExtensionMode
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -58,16 +61,18 @@ interface CameraSession {
     val iAnalyzer: ImageAnalysis?
     val zoomState: ZoomState?
 
-    var lensFacing: Int
+    var lensFacing: LensFacing
     val extensionsAvailable: Boolean
     val isFlashAvailable: Boolean
     val isZslSupported: Boolean
     val isTorchOn: Boolean
 
-    fun initialize(forced: Boolean, extensionMode: Int)
+    fun initialize(forced: Boolean, extensionMode: ExtensionMode?)
     fun bind(settings: CameraBindSettings): BindOutcome
-    fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean
-    fun selectLensFacing(lensFacing: Int)
+    fun isLensFacingSupported(lensFacing: LensFacing, extensionMode: ExtensionMode?): Boolean
+    fun selectLensFacing(lensFacing: LensFacing)
+    fun setFlashMode(flashMode: FlashMode)
+    fun supportedVideoQualities(): List<VideoQuality>
     fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit)
     fun canApplyVideoStabilization(): Boolean
     fun toggleTorchState()
@@ -83,6 +88,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val featureCombinationSupport: FeatureCombinationSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
+    private val cameraXConstantsMapper: CameraXConstantsMapper,
     private val inVideoSnapshotSupportResolver: InVideoSnapshotSupportResolver,
     private val snapshotProbeCache: SnapshotProbeCache,
 ) : CameraSession {
@@ -105,9 +111,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     override var lensFacing = DEFAULT_LENS_FACING
 
-    private var cameraSelector: CameraSelector = CameraSelector.Builder()
-        .requireLensFacing(DEFAULT_LENS_FACING)
-        .build()
+    private var cameraSelector: CameraSelector = selectorFor(DEFAULT_LENS_FACING)
 
     // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
     // extension is bound, because CameraX then queries the extension's zoom range through
@@ -184,10 +188,20 @@ internal class CameraSessionImpl @AssistedInject constructor(
         qrAnalyzer?.refreshHints()
     }
 
-    override fun selectLensFacing(lensFacing: Int) {
-        cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
+    override fun selectLensFacing(lensFacing: LensFacing) {
+        cameraSelector = selectorFor(lensFacing)
+    }
+
+    override fun setFlashMode(flashMode: FlashMode) {
+        imageCapture?.flashMode = cameraXConstantsMapper.map(flashMode)
+    }
+
+    override fun supportedVideoQualities(): List<VideoQuality> {
+        val cameraInfo = camera?.cameraInfo ?: return emptyList()
+
+        return Recorder.getVideoCapabilities(cameraInfo)
+            .getSupportedQualities(DynamicRange.SDR)
+            .mapNotNull { cameraXConstantsMapper.map(it) }
     }
 
     // Every bind hands out a fresh LiveData in extension modes, and the old observer would
@@ -244,7 +258,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return provider.getCameraInfo(cameraSelector)
     }
 
-    override fun initialize(forced: Boolean, extensionMode: Int) {
+    override fun initialize(forced: Boolean, extensionMode: ExtensionMode?) {
         if (cameraProvider != null) return
 
         cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
@@ -258,7 +272,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private fun onCameraProviderReady(
         provider: ProcessCameraProvider,
         forced: Boolean,
-        extensionMode: Int,
+        extensionMode: ExtensionMode?,
     ) {
         if (!snapshotProbeCache.isProbedThrough(provider)) {
             // A different provider instance means the camera stack was reinitialized:
@@ -269,7 +283,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
         }
         cameraProvider = provider
 
-        lensFacing = supportedLensFacing(preferred = lensFacing) {
+        lensFacing = lensFacing.supportedOrOpposite {
             isLensFacingSupported(
                 lensFacing = it,
                 extensionMode = extensionMode,
@@ -371,7 +385,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
         provider: ProcessCameraProvider,
         em: ExtensionsManager,
         selector: CameraSelector,
-        extensionMode: Int,
+        extensionMode: ExtensionMode,
     ): Boolean? {
         // What the vendor advertises is as static as the vendor init verdict below, so a
         // negative answer is cached the same way -- notably, isExtensionAvailable() is *not*
@@ -382,12 +396,14 @@ internal class CameraSessionImpl @AssistedInject constructor(
         // to retry later -- rather than propagating out: on the background probe thread an escaping
         // exception would strand the round with extensionProbesInFlight still set, blocking every
         // later tab refresh.
+        val cameraXExtensionMode = cameraXConstantsMapper.map(extensionMode)
+
         return try {
             when {
-                !em.isExtensionAvailable(selector, extensionMode) -> false
+                !em.isExtensionAvailable(selector, cameraXExtensionMode) -> false
                 else -> {
                     provider.getCameraInfo(
-                        em.getExtensionEnabledCameraSelector(selector, extensionMode)
+                        em.getExtensionEnabledCameraSelector(selector, cameraXExtensionMode)
                     )
                     true
                 }
@@ -410,12 +426,10 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     private fun isExtensionUsable(
         selector: CameraSelector,
-        lensFacing: Int,
-        extensionMode: Int,
+        lensFacing: LensFacing,
+        extensionMode: ExtensionMode,
         probeOnMiss: Boolean = true,
     ): Boolean {
-        if (extensionMode == ExtensionMode.NONE) return true
-
         val em = extensionsManager ?: return false
         val provider = cameraProvider ?: return false
 
@@ -455,12 +469,12 @@ internal class CameraSessionImpl @AssistedInject constructor(
     }
 
     // Maps the user-chosen video quality to the equivalent groupable feature, for use when a
-    // feature group is passed to SessionConfig (see startCamera). Quality.HIGHEST has no
+    // feature group is passed to SessionConfig (see startCamera). VideoQuality.HIGHEST has no
     // groupable equivalent and is resolved to the highest quality the current camera supports,
     // mirroring what QualitySelector.from(Quality.HIGHEST) would have selected.
-    private fun videoQualityAsGroupableFeature(videoQuality: Quality): GroupableFeature? {
+    private fun videoQualityAsGroupableFeature(videoQuality: VideoQuality): GroupableFeature? {
         val quality = when (videoQuality) {
-            Quality.HIGHEST -> highestSupportedVideoQuality()
+            VideoQuality.HIGHEST -> highestSupportedVideoQuality()
             else -> videoQuality
         } ?: return null
 
@@ -476,7 +490,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return feature
     }
 
-    private fun highestSupportedVideoQuality(): Quality? {
+    private fun highestSupportedVideoQuality(): VideoQuality? {
         val cameraInfo = try {
             cameraProvider?.getCameraInfo(cameraSelector)
         } catch (exception: IllegalArgumentException) {
@@ -487,7 +501,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return cameraInfo?.let {
             Recorder.getVideoCapabilities(it)
                 .getSupportedQualities(DynamicRange.SDR)
-                .firstOrNull()
+                .firstNotNullOfOrNull { quality -> cameraXConstantsMapper.map(quality) }
         }
     }
 
@@ -496,12 +510,13 @@ internal class CameraSessionImpl @AssistedInject constructor(
     // describe a later bind by the time this runs, and the message would then name settings (or
     // dedup against a camera) that this result never involved.
 
-    override fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean {
-        var tCameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
+    override fun isLensFacingSupported(
+        lensFacing: LensFacing,
+        extensionMode: ExtensionMode?,
+    ): Boolean {
+        var tCameraSelector = selectorFor(lensFacing)
 
-        if (extensionMode != ExtensionMode.NONE) {
+        if (extensionMode != null) {
             extensionsManager?.let { em ->
                 if (!isExtensionUsable(tCameraSelector, lensFacing, extensionMode)) {
                     return false
@@ -510,7 +525,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
                 try {
                     tCameraSelector = em.getExtensionEnabledCameraSelector(
                         tCameraSelector,
-                        extensionMode,
+                        cameraXConstantsMapper.map(extensionMode),
                     )
                 } catch (_: IllegalArgumentException) {
                     return false
@@ -532,14 +547,17 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
         val extMode = settings.mode.extensionMode
         var appliedExtension: ExtensionKey? = null
-        if (extMode != ExtensionMode.NONE) {
+        if (extMode != null) {
             val em = extensionsManager
             if (em != null && isExtensionUsable(cameraSelector, lensFacing, extMode)) {
                 appliedExtension = ExtensionKey(
                     lensFacing = lensFacing,
                     extensionMode = extMode,
                 )
-                cameraSelector = em.getExtensionEnabledCameraSelector(cameraSelector, extMode)
+                cameraSelector = em.getExtensionEnabledCameraSelector(
+                    cameraSelector,
+                    cameraXConstantsMapper.map(extMode),
+                )
             } else {
                 Log.e(TAG, "Mode $settings.mode isn't available for this device")
             }
@@ -615,13 +633,11 @@ internal class CameraSessionImpl @AssistedInject constructor(
             qrAnalyzer = analyzer
             iAnalyzer = mIAnalyzer
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
-            cameraSelector = CameraSelector.Builder()
-                .requireLensFacing(
-                    requireNotNull(settings.qrLensFacing) {
-                        "QR mode needs a lens facing"
-                    }
-                )
-                .build()
+            cameraSelector = selectorFor(
+                requireNotNull(settings.qrLensFacing) {
+                    "QR mode needs a lens facing"
+                }
+            )
 
             useCasesList.add(mIAnalyzer)
         } else {
@@ -771,10 +787,10 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return extensionAvailabilityRepository.unprobed()
     }
 
-    private fun selectorFor(lensFacing: Int): CameraSelector {
+    private fun selectorFor(lensFacing: LensFacing): CameraSelector {
         return when (lensFacing) {
-            CameraSelector.LENS_FACING_FRONT -> FRONT_CAMERA_SELECTOR
-            else -> REAR_CAMERA_SELECTOR
+            LensFacing.FRONT -> FRONT_CAMERA_SELECTOR
+            LensFacing.BACK -> REAR_CAMERA_SELECTOR
         }
     }
 
@@ -788,7 +804,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
         private const val EVENT_BUFFER_CAPACITY = 64
 
-        private const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
+        private val DEFAULT_LENS_FACING = LensFacing.BACK
 
         private val FRONT_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_FRONT)

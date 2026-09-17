@@ -19,7 +19,9 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.SettingsPrefsMigration
+import app.grapheneos.camera.data.settings.store.StoredAspectRatio
 import app.grapheneos.camera.data.settings.store.StoredCameraSettings
+import app.grapheneos.camera.data.settings.store.StoredFlashMode
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import kotlinx.coroutines.runBlocking
@@ -220,7 +222,7 @@ class SettingsPrefsMigrationTest {
             modes.getValue(MODE.name),
         )
         assertEquals(
-            StoredModeSettings(flashMode = SOME_FLASH_MODE),
+            StoredModeSettings(flashMode = StoredFlashMode.ON),
             modes.getValue(OTHER_MODE.name),
         )
     }
@@ -230,12 +232,12 @@ class SettingsPrefsMigrationTest {
         val futureMode = "A_MODE_FROM_THE_FUTURE"
         val current = SettingsPrefs(
             common = StoredCameraSettings(
-                aspectRatio = 1,
+                aspectRatio = StoredAspectRatio.RATIO_16_9,
                 photoQuality = 55,
             ),
             modes = mapOf(
                 MODE.name to StoredModeSettings(geoTagging = true),
-                futureMode to StoredModeSettings(flashMode = 2),
+                futureMode to StoredModeSettings(flashMode = StoredFlashMode.OFF),
             ),
         )
         commons().edit(commit = true) { putInt(PHOTO_QUALITY, SOME_PHOTO_QUALITY) }
@@ -243,11 +245,22 @@ class SettingsPrefsMigrationTest {
 
         val migrated = runBlocking { migration.migrate(current) }
 
-        assertEquals(1, migrated.common.aspectRatio)
+        assertEquals(StoredAspectRatio.RATIO_16_9, migrated.common.aspectRatio)
         assertEquals(SOME_PHOTO_QUALITY, migrated.common.photoQuality)
         assertEquals(true, migrated.modes.getValue(MODE.name).geoTagging)
-        assertEquals(SOME_FLASH_MODE, migrated.modes.getValue(MODE.name).flashMode)
+        assertEquals(StoredFlashMode.ON, migrated.modes.getValue(MODE.name).flashMode)
         assertEquals(current.modes.getValue(futureMode), migrated.modes.getValue(futureMode))
+    }
+
+    @Test
+    fun migrate_legacyFlashModeAndAspectRatio_keepTheirMeaning() {
+        commons().edit(commit = true) { putInt(ASPECT_RATIO, LEGACY_ASPECT_RATIO_16_9) }
+        modePreferences(MODE).edit(commit = true) { putInt(FLASH_MODE, LEGACY_FLASH_MODE_AUTO) }
+
+        val migrated = migrate()
+
+        assertEquals(StoredAspectRatio.RATIO_16_9, migrated.common.aspectRatio)
+        assertEquals(StoredFlashMode.AUTO, migrated.modes.getValue(MODE.name).flashMode)
     }
 
     @Test
@@ -312,6 +325,7 @@ class SettingsPrefsMigrationTest {
         val MODE = CameraMode.VIDEO
         val OTHER_MODE = CameraMode.CAMERA
 
+        const val ASPECT_RATIO = "aspect_ratio"
         const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
         const val FLASH_MODE = "flash_mode"
         const val FOCUS_TIMEOUT = "focus_timeout"
@@ -327,5 +341,7 @@ class SettingsPrefsMigrationTest {
         const val MAX_PHOTO_QUALITY = 100
         const val SOME_PHOTO_QUALITY = 71
         const val SOME_FLASH_MODE = 1
+        const val LEGACY_FLASH_MODE_AUTO = 0
+        const val LEGACY_ASPECT_RATIO_16_9 = 1
     }
 }

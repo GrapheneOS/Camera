@@ -1,10 +1,10 @@
 package app.grapheneos.camera.data.camera
 
-import androidx.camera.core.CameraSelector
-import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ExtensionMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -35,8 +35,7 @@ class ExtensionAvailabilityRepositoryImplTest {
     @Test
     fun unprobed_aColdCache_listsEveryExtensionModeOnBothLenses() {
         val extensionModes = CameraMode.entries
-            .map { it.extensionMode }
-            .filter { it != ExtensionMode.NONE }
+            .mapNotNull { it.extensionMode }
             .toSet()
 
         val unprobed = repository.unprobed()
@@ -44,14 +43,9 @@ class ExtensionAvailabilityRepositoryImplTest {
         assertEquals(extensionModes.size * 2, unprobed.size)
         assertEquals(extensionModes, unprobed.map { it.extensionMode }.toSet())
         assertEquals(
-            setOf(CameraSelector.LENS_FACING_FRONT, CameraSelector.LENS_FACING_BACK),
+            setOf(LensFacing.FRONT, LensFacing.BACK),
             unprobed.map { it.lensFacing }.toSet(),
         )
-    }
-
-    @Test
-    fun unprobed_aModeWithoutAnExtension_isNeverListed() {
-        assertTrue(repository.unprobed().none { it.extensionMode == ExtensionMode.NONE })
     }
 
     @Test
@@ -97,12 +91,12 @@ class ExtensionAvailabilityRepositoryImplTest {
 
     private companion object {
         val NIGHT_FRONT = ExtensionKey(
-            lensFacing = CameraSelector.LENS_FACING_FRONT,
+            lensFacing = LensFacing.FRONT,
             extensionMode = ExtensionMode.NIGHT,
         )
 
         val NIGHT_BACK = ExtensionKey(
-            lensFacing = CameraSelector.LENS_FACING_BACK,
+            lensFacing = LensFacing.BACK,
             extensionMode = ExtensionMode.NIGHT,
         )
     }

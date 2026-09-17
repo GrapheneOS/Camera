@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.camera
 
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
@@ -46,6 +48,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindFeatureCombinationSupport(
         impl: FeatureCombinationSupportImpl,
     ): FeatureCombinationSupport
+
+    @Binds
+    @Reusable
+    abstract fun bindCameraXConstantsMapper(
+        impl: CameraXConstantsMapperImpl,
+    ): CameraXConstantsMapper
 
     @Binds
     @Reusable

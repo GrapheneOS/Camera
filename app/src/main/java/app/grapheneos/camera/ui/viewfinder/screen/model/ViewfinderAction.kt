@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import androidx.camera.video.Quality
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 
 sealed interface ViewfinderAction {
 
@@ -87,7 +87,7 @@ sealed interface ViewfinderAction {
         ) : SettingsAction
 
         data class VideoQualitySelected(
-            val quality: Quality,
+            val quality: VideoQuality,
         ) : SettingsAction
     }
 }

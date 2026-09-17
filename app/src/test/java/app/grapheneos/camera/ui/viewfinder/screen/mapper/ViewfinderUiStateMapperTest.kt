@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import androidx.camera.core.AspectRatio
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType

@@ -2,8 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.camera.core.AspectRatio
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.GridType
 
@@ -23,7 +23,7 @@ data class ViewfinderUiState(
     val selfTimerBadgeVisible: Boolean = false,
     val gridType: GridType = GridType.NONE,
     val mode: CameraMode = CameraMode.CAMERA,
-    val aspectRatio: Int = AspectRatio.RATIO_4_3,
+    val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,
     val isQrMode: Boolean = false,
     val isVideoMode: Boolean = false,
     val inPhotoMode: Boolean = true,

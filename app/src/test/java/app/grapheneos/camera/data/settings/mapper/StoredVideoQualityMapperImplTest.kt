@@ -1,6 +1,6 @@
 package app.grapheneos.camera.data.settings.mapper
 
-import androidx.camera.video.Quality
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import org.junit.Assert.assertEquals
@@ -15,16 +15,15 @@ class StoredVideoQualityMapperImplTest {
 
     @Test
     fun map_aQualityNamingAResolution_isStoredUnderThatName() {
-        assertEquals(StoredVideoQuality.UHD, mapper.map(Quality.UHD))
-        assertEquals(StoredVideoQuality.FHD, mapper.map(Quality.FHD))
-        assertEquals(StoredVideoQuality.HD, mapper.map(Quality.HD))
-        assertEquals(StoredVideoQuality.SD, mapper.map(Quality.SD))
+        assertEquals(StoredVideoQuality.UHD, mapper.map(VideoQuality.UHD))
+        assertEquals(StoredVideoQuality.FHD, mapper.map(VideoQuality.FHD))
+        assertEquals(StoredVideoQuality.HD, mapper.map(VideoQuality.HD))
+        assertEquals(StoredVideoQuality.SD, mapper.map(VideoQuality.SD))
     }
 
     @Test
     fun map_aQualityNamingNoResolution_isLeftToTheDevice() {
-        assertEquals(StoredVideoQuality.DEVICE_CHOICE, mapper.map(Quality.HIGHEST))
-        assertEquals(StoredVideoQuality.DEVICE_CHOICE, mapper.map(Quality.LOWEST))
+        assertEquals(StoredVideoQuality.DEVICE_CHOICE, mapper.map(VideoQuality.HIGHEST))
     }
 
     @Test
@@ -43,10 +42,10 @@ class StoredVideoQualityMapperImplTest {
 
     private companion object {
         val OFFERED_QUALITIES = listOf(
-            Quality.UHD,
-            Quality.FHD,
-            Quality.HD,
-            Quality.SD,
+            VideoQuality.UHD,
+            VideoQuality.FHD,
+            VideoQuality.HD,
+            VideoQuality.SD,
         )
     }
 }

@@ -1,15 +1,16 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import androidx.camera.core.CameraSelector
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
-import app.grapheneos.camera.data.camera.session.oppositeLensFacing
-import app.grapheneos.camera.data.camera.session.supportedLensFacing
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ExtensionMode
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
@@ -21,7 +22,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
 interface ViewfinderCameraDelegate {
-    val lensFacing: Int
+    val lensFacing: LensFacing
     val isProviderReady: Boolean
     val sessionEvents: Flow<CameraSessionEvent>
 
@@ -33,17 +34,20 @@ interface ViewfinderCameraDelegate {
         session: CameraSession,
         emitEffect: (Effect) -> Unit,
     )
-
     fun detach()
 
-    fun initialize(forced: Boolean, extensionMode: Int)
+    fun initialize(forced: Boolean, extensionMode: ExtensionMode?)
     fun beginBind(forced: Boolean): Boolean
-    fun selectLens(isQrMode: Boolean, extensionMode: Int): ViewfinderBindTarget?
+    fun selectLens(isQrMode: Boolean, extensionMode: ExtensionMode?): ViewfinderBindTarget?
     fun bindCamera(settings: CameraBindSettings): BindOutcome
-    fun announceBind(aspectRatio: Int, isInPhotoMode: Boolean, currentMode: () -> CameraMode)
+    fun announceBind(
+        aspectRatio: AspectRatio,
+        isInPhotoMode: Boolean,
+        currentMode: () -> CameraMode,
+    )
 
-    fun toggleLensFacing(extensionMode: Int): Boolean
-    fun applyFlashMode(value: Int)
+    fun toggleLensFacing(extensionMode: ExtensionMode?): Boolean
+    fun applyFlashMode(value: FlashMode)
     fun toggleTorch()
     fun onZoomStateChanged()
     fun refreshQrHints()
@@ -84,7 +88,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return attached.session
         }
 
-    override val lensFacing: Int
+    override val lensFacing: LensFacing
         get() {
             return session.lensFacing
         }
@@ -129,7 +133,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     override fun initialize(
         forced: Boolean,
-        extensionMode: Int,
+        extensionMode: ExtensionMode?,
     ) {
         session.initialize(
             forced = forced,
@@ -147,13 +151,16 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         return true
     }
 
-    override fun selectLens(isQrMode: Boolean, extensionMode: Int): ViewfinderBindTarget? {
+    override fun selectLens(
+        isQrMode: Boolean,
+        extensionMode: ExtensionMode?,
+    ): ViewfinderBindTarget? {
         val rotation = environment.displayRotation
 
         if (!environment.isSessionActive) return null
 
         // Silent: a lens the user picks is refused, with a message, in toggleLensFacing().
-        session.lensFacing = supportedLensFacing(preferred = session.lensFacing) {
+        session.lensFacing = session.lensFacing.supportedOrOpposite {
             session.isLensFacingSupported(
                 lensFacing = it,
                 extensionMode = extensionMode,
@@ -192,7 +199,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun announceBind(
-        aspectRatio: Int,
+        aspectRatio: AspectRatio,
         isInPhotoMode: Boolean,
         currentMode: () -> CameraMode,
     ) {
@@ -212,11 +219,11 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         chrome.updateGyroscopeIndicator(isInPhotoMode)
     }
 
-    override fun toggleLensFacing(extensionMode: Int): Boolean {
-        val toggled = oppositeLensFacing(session.lensFacing)
+    override fun toggleLensFacing(extensionMode: ExtensionMode?): Boolean {
+        val toggled = session.lensFacing.opposite()
         val isSupported = session.isLensFacingSupported(
             lensFacing = toggled,
-            extensionMode = extensionMode
+            extensionMode = extensionMode,
         )
 
         if (isSupported) {
@@ -225,8 +232,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
 
         val message = when (toggled) {
-            CameraSelector.LENS_FACING_BACK -> R.string.rear_camera_unavailable
-            else -> R.string.front_camera_unavailable
+            LensFacing.BACK -> R.string.rear_camera_unavailable
+            LensFacing.FRONT -> R.string.front_camera_unavailable
         }
 
         emitEffect(Effect.ShowMessage(message))
@@ -234,8 +241,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         return false
     }
 
-    override fun applyFlashMode(value: Int) {
-        session.imageCapture?.flashMode = value
+    override fun applyFlashMode(value: FlashMode) {
+        session.setFlashMode(value)
         stateHolder.update { it.copy(flashMode = value) }
     }
 
@@ -277,19 +284,19 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(session = sessionState) }
     }
 
-    private fun qrLensFacing(extensionMode: Int): Int {
+    private fun qrLensFacing(extensionMode: ExtensionMode?): LensFacing {
         val isRearLensSupported = session.isLensFacingSupported(
-            lensFacing = CameraSelector.LENS_FACING_BACK,
+            lensFacing = LensFacing.BACK,
             extensionMode = extensionMode,
         )
 
         if (isRearLensSupported) {
-            return CameraSelector.LENS_FACING_BACK
+            return LensFacing.BACK
         }
 
         emitEffect(Effect.ShowMessage(R.string.qr_rear_camera_unavailable))
 
-        return CameraSelector.LENS_FACING_FRONT
+        return LensFacing.FRONT
     }
 
     private fun loadTabs(currentMode: () -> CameraMode) {

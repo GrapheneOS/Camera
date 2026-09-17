@@ -2,8 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.camera.video.Quality
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 
 data class SettingsSheetUiState(
@@ -12,7 +12,7 @@ data class SettingsSheetUiState(
     val includeAudio: Boolean = false,
     val focusTimeoutSeconds: Long = SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
     val selfTimerSeconds: Int = 0,
-    val videoQuality: Quality = SettingsDefaults.VIDEO_QUALITY,
+    val videoQuality: VideoQuality = SettingsDefaults.VIDEO_QUALITY,
     val geoTagging: Boolean = false,
     val selfIllumination: Boolean = false,
     val stabilizationEnabled: Boolean = false,

@@ -1,24 +1,19 @@
 package app.grapheneos.camera.data.camera.model
 
-import androidx.camera.core.CameraSelector
+import app.grapheneos.camera.data.core.model.ExtensionMode
 
 data class ExtensionKey(
-    val lensFacing: Int,
-    val extensionMode: Int,
+    val lensFacing: LensFacing,
+    val extensionMode: ExtensionMode,
 ) {
     companion object {
-        fun onBothLenses(extensionMode: Int): List<ExtensionKey> {
-            return LENS_FACINGS.map { lensFacing ->
+        fun onBothLenses(extensionMode: ExtensionMode): List<ExtensionKey> {
+            return LensFacing.entries.map { lensFacing ->
                 ExtensionKey(
                     lensFacing = lensFacing,
                     extensionMode = extensionMode,
                 )
             }
         }
-
-        private val LENS_FACINGS = listOf(
-            CameraSelector.LENS_FACING_FRONT,
-            CameraSelector.LENS_FACING_BACK,
-        )
     }
 }

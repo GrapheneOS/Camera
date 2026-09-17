@@ -1,6 +1,5 @@
 package app.grapheneos.camera.data.camera.repository
 
-import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.core.model.CameraMode
 import javax.inject.Inject
@@ -54,9 +53,9 @@ internal class ExtensionAvailabilityRepositoryImpl @Inject constructor() :
         val result = arrayListOf<ExtensionKey>()
 
         for (mode in CameraMode.entries) {
-            if (mode.extensionMode == ExtensionMode.NONE) continue
+            val extensionMode = mode.extensionMode ?: continue
 
-            for (key in ExtensionKey.onBothLenses(mode.extensionMode)) {
+            for (key in ExtensionKey.onBothLenses(extensionMode)) {
                 if (usability[key] == null) {
                     result.add(key)
                 }

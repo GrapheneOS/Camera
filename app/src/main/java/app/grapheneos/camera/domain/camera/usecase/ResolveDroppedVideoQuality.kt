@@ -1,8 +1,9 @@
 package app.grapheneos.camera.domain.camera.usecase
 
 import androidx.camera.core.featuregroup.GroupableFeature
-import androidx.camera.video.Quality
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.core.model.VideoQuality
 import javax.inject.Inject
 
 // CameraX resolves a preferred feature group by dropping features until what is left is a
@@ -13,10 +14,10 @@ import javax.inject.Inject
 interface ResolveDroppedVideoQuality {
 
     operator fun invoke(
-        lensFacing: Int,
+        lensFacing: LensFacing,
         requestedQualityFeature: GroupableFeature?,
         selected: Set<GroupableFeature>,
-    ): Quality?
+    ): VideoQuality?
 }
 
 internal class ResolveDroppedVideoQualityImpl @Inject constructor(
@@ -29,13 +30,13 @@ internal class ResolveDroppedVideoQualityImpl @Inject constructor(
     // one doesn't re-announce the limited camera's unchanged hardware fact on every flip: a
     // fully-satisfied bind clears only its own camera's entry, so the next divergence on that
     // camera is genuinely new information while the other camera's stays remembered.
-    private val lastReported = HashMap<Int, Quality>()
+    private val lastReported = HashMap<LensFacing, VideoQuality>()
 
     override fun invoke(
-        lensFacing: Int,
+        lensFacing: LensFacing,
         requestedQualityFeature: GroupableFeature?,
         selected: Set<GroupableFeature>,
-    ): Quality? {
+    ): VideoQuality? {
         // Only report a dropped quality that can be named: a message that can't say which
         // quality it means would be worse than the caller's log line.
         val dropped = requestedQualityFeature

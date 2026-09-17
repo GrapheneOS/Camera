@@ -1,12 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
@@ -40,7 +40,7 @@ class ViewfinderCameraDelegateTest {
         render = { ViewfinderUiState() },
     )
 
-    private var lensFacing = CameraSelector.LENS_FACING_BACK
+    private var lensFacing = LensFacing.BACK
 
     @Before
     fun setUp() {
@@ -76,7 +76,7 @@ class ViewfinderCameraDelegateTest {
         every { environment.isSessionActive } returns false
 
         val delegate = createAttachedDelegate()
-        val target = delegate.selectLens(isQrMode = false, extensionMode = ExtensionMode.NONE)
+        val target = delegate.selectLens(isQrMode = false, extensionMode = null)
 
         assertNull(target)
         verify(exactly = 0) { session.selectLensFacing(any()) }
@@ -84,23 +84,23 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun selectLens_whenTheCurrentLensIsUnsupported_silentlyTakesTheOtherOne() {
-        lensUnsupported(CameraSelector.LENS_FACING_BACK)
+        lensUnsupported(LensFacing.BACK)
 
         val delegate = createAttachedDelegate()
-        delegate.selectLens(isQrMode = false, extensionMode = ExtensionMode.NONE)
+        delegate.selectLens(isQrMode = false, extensionMode = null)
 
-        verify(exactly = 1) { session.selectLensFacing(CameraSelector.LENS_FACING_FRONT) }
+        verify(exactly = 1) { session.selectLensFacing(LensFacing.FRONT) }
         assertTrue(emitted.isEmpty())
     }
 
     @Test
     fun selectLens_forQrWithoutARearLens_scansWithTheFrontOneAndSaysSo() {
-        lensUnsupported(CameraSelector.LENS_FACING_BACK)
+        lensUnsupported(LensFacing.BACK)
 
         val delegate = createAttachedDelegate()
-        val target = delegate.selectLens(isQrMode = true, extensionMode = ExtensionMode.NONE)
+        val target = delegate.selectLens(isQrMode = true, extensionMode = null)
 
-        assertEquals(CameraSelector.LENS_FACING_FRONT, target?.qrLensFacing)
+        assertEquals(LensFacing.FRONT, target?.qrLensFacing)
         assertEquals(
             listOf(ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable)),
             emitted,
@@ -109,13 +109,13 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun toggleLensFacing_toAnUnsupportedLens_revertsAndSaysSo() {
-        lensUnsupported(CameraSelector.LENS_FACING_FRONT)
+        lensUnsupported(LensFacing.FRONT)
 
         val delegate = createAttachedDelegate()
-        val switched = delegate.toggleLensFacing(extensionMode = ExtensionMode.NONE)
+        val switched = delegate.toggleLensFacing(extensionMode = null)
 
         assertFalse(switched)
-        assertEquals(CameraSelector.LENS_FACING_BACK, lensFacing)
+        assertEquals(LensFacing.BACK, lensFacing)
         assertEquals(
             listOf(ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable)),
             emitted,
@@ -125,10 +125,10 @@ class ViewfinderCameraDelegateTest {
     @Test
     fun toggleLensFacing_toASupportedLens_keepsIt() {
         val delegate = createAttachedDelegate()
-        val switched = delegate.toggleLensFacing(extensionMode = ExtensionMode.NONE)
+        val switched = delegate.toggleLensFacing(extensionMode = null)
 
         assertTrue(switched)
-        assertEquals(CameraSelector.LENS_FACING_FRONT, lensFacing)
+        assertEquals(LensFacing.FRONT, lensFacing)
     }
 
     @Test
@@ -136,7 +136,7 @@ class ViewfinderCameraDelegateTest {
         val delegate = createAttachedDelegate(showsCameraModeTabs = false)
 
         delegate.announceBind(
-            aspectRatio = 0,
+            aspectRatio = AspectRatio.RATIO_4_3,
             isInPhotoMode = true,
             currentMode = { error("tabs are not shown") },
         )
@@ -158,10 +158,10 @@ class ViewfinderCameraDelegateTest {
     fun applyFlashMode_isRememberedAcrossDetach() {
         val delegate = createAttachedDelegate()
 
-        delegate.applyFlashMode(ImageCapture.FLASH_MODE_AUTO)
+        delegate.applyFlashMode(FlashMode.AUTO)
         delegate.detach()
 
-        assertEquals(ImageCapture.FLASH_MODE_AUTO, stateHolder.state.value.flashMode)
+        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
     }
 
     @Test
@@ -187,7 +187,7 @@ class ViewfinderCameraDelegateTest {
         assertFalse(stateHolder.state.value.session.isTorchOn)
     }
 
-    private fun lensUnsupported(facing: Int) {
+    private fun lensUnsupported(facing: LensFacing) {
         every {
             session.isLensFacingSupported(
                 lensFacing = facing,

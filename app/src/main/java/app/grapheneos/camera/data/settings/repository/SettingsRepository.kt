@@ -1,7 +1,8 @@
 package app.grapheneos.camera.data.settings.repository
 
-import androidx.camera.video.Quality
 import androidx.datastore.core.DataStore
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapper
@@ -36,10 +37,10 @@ interface SettingsRepository {
 
     fun update(transform: (CameraSettings) -> CameraSettings): CameraSettings
     fun modeSettings(slot: ModeSlot): ModeSettings
-    fun setFlashMode(slot: ModeSlot, value: Int): ModeSettings
+    fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings
     fun setGeoTagging(slot: ModeSlot, value: Boolean): ModeSettings
     fun setSelfIllumination(slot: ModeSlot, value: Boolean): ModeSettings
-    fun setVideoQuality(slot: ModeSlot, value: Quality): ModeSettings
+    fun setVideoQuality(slot: ModeSlot, value: VideoQuality): ModeSettings
     fun sessionCopy(): SettingsRepository
 }
 
@@ -73,10 +74,10 @@ internal class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    override fun setFlashMode(slot: ModeSlot, value: Int): ModeSettings {
+    override fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings {
         return writeMode(
             slot = slot,
-            store = { stored -> stored.copy(flashMode = value) },
+            store = { stored -> stored.copy(flashMode = modeSettingsMapper.map(value)) },
             asRequested = { it.copy(flashMode = value) },
         )
     }
@@ -97,7 +98,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
         )
     }
 
-    override fun setVideoQuality(slot: ModeSlot, value: Quality): ModeSettings {
+    override fun setVideoQuality(slot: ModeSlot, value: VideoQuality): ModeSettings {
         return writeMode(
             slot = slot,
             store = { stored ->

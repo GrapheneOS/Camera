@@ -1,9 +1,9 @@
 package app.grapheneos.camera.domain.camera.usecase
 
-import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ExtensionMode
 import javax.inject.Inject
 
 interface ResolveAvailableModes {
@@ -31,14 +31,14 @@ internal class ResolveAvailableModesImpl @Inject constructor(
                 CameraMode.CAMERA, CameraMode.VIDEO -> true
                 CameraMode.QR_SCAN -> allowsQrScanning
                 else -> {
-                    check(mode.extensionMode != ExtensionMode.NONE)
-                    extensionsAvailable && isUsableOnEitherLens(mode.extensionMode)
+                    val extensionMode = checkNotNull(mode.extensionMode)
+                    extensionsAvailable && isUsableOnEitherLens(extensionMode)
                 }
             }
         }.toSet()
     }
 
-    private fun isUsableOnEitherLens(extensionMode: Int): Boolean {
+    private fun isUsableOnEitherLens(extensionMode: ExtensionMode): Boolean {
         return ExtensionKey.onBothLenses(extensionMode).any { key ->
             extensionAvailabilityRepository.verdict(key) == true
         }

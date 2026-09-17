@@ -1,6 +1,6 @@
 package app.grapheneos.camera.data.settings
 
-import androidx.camera.core.AspectRatio
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
@@ -8,7 +8,9 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
+import app.grapheneos.camera.data.settings.store.StoredAspectRatio
 import app.grapheneos.camera.data.settings.store.StoredCameraSettings
+import app.grapheneos.camera.data.settings.store.StoredFlashMode
 import app.grapheneos.camera.data.settings.store.StoredGridType
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.data.settings.store.StoredVideoQuality
@@ -120,6 +122,30 @@ class SettingsWireFormatTest {
     }
 
     @Test
+    fun aspectRatioValues_areStableWireValues() {
+        assertEquals(
+            mapOf(
+                StoredAspectRatio.UNKNOWN to """{"common":{"aspect_ratio":-1}}""",
+                StoredAspectRatio.RATIO_4_3 to """{"common":{"aspect_ratio":0}}""",
+                StoredAspectRatio.RATIO_16_9 to """{"common":{"aspect_ratio":1}}""",
+            ),
+            StoredAspectRatio.entries.associateWith {
+                encodeCommon(StoredCameraSettings(aspectRatio = it))
+            },
+        )
+    }
+
+    @Test
+    fun aspectRatio_aValueThisVersionDoesNotKnow_readsAsTheDefault() {
+        val stored = """{"common":{"aspect_ratio":7,"photo_quality":71}}"""
+
+        val settings = decode(stored)
+
+        assertEquals(SettingsDefaults.ASPECT_RATIO, settings.aspectRatio)
+        assertEquals(SOME_PHOTO_QUALITY, settings.photoQuality)
+    }
+
+    @Test
     fun gridType_aNameThisVersionNoLongerHas_readsAsTheDefault() {
         val stored = """{"common":{"grid_type":"SPIRAL_OF_THEODORUS","photo_quality":71}}"""
 
@@ -199,6 +225,31 @@ class SettingsWireFormatTest {
     }
 
     @Test
+    fun flashModeValues_areStableWireValues() {
+        assertEquals(
+            mapOf(
+                StoredFlashMode.UNKNOWN to """{"modes":{"VIDEO":{"flash_mode":-1}}}""",
+                StoredFlashMode.AUTO to """{"modes":{"VIDEO":{"flash_mode":0}}}""",
+                StoredFlashMode.ON to """{"modes":{"VIDEO":{"flash_mode":1}}}""",
+                StoredFlashMode.OFF to """{"modes":{"VIDEO":{"flash_mode":2}}}""",
+            ),
+            StoredFlashMode.entries.associateWith {
+                encodeMode(StoredModeSettings(flashMode = it))
+            },
+        )
+    }
+
+    @Test
+    fun flashMode_aValueThisVersionDoesNotKnow_readsAsUnknown() {
+        val stored = """{"modes":{"VIDEO":{"flash_mode":7,"geo_tagging":true}}}"""
+
+        val mode = decodeMode(stored)
+
+        assertEquals(StoredFlashMode.UNKNOWN, mode.flashMode)
+        assertEquals(true, mode.geoTagging)
+    }
+
+    @Test
     fun modeNames_areStableWireKeys() {
         assertEquals(
             mapOf(
@@ -217,7 +268,6 @@ class SettingsWireFormatTest {
 
     private companion object {
         const val MODE = "VIDEO"
-        const val SOME_FLASH_MODE = 2
         const val SOME_FOCUS_TIMEOUT_SECONDS = 10L
         const val SOME_SELF_TIMER_DURATION = 3
         const val SOME_PHOTO_QUALITY = 71
@@ -236,5 +286,7 @@ class SettingsWireFormatTest {
         const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode":2,""" +
             """"geo_tagging":true,"self_illumination":true,""" +
             """"video_quality_front":"HD","video_quality_back":"UHD"}}}"""
+
+        val SOME_FLASH_MODE = StoredFlashMode.OFF
     }
 }

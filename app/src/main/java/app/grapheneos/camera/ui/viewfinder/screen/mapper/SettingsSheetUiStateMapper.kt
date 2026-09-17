@@ -1,9 +1,9 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -41,7 +41,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             aspectRatioFixed = isVideoMode,
             aspectRatioDescription = when (aspectRatio) {
                 AspectRatio.RATIO_16_9 -> R.string.aspect_ratio_16_9
-                else -> R.string.aspect_ratio_4_3
+                AspectRatio.RATIO_4_3 -> R.string.aspect_ratio_4_3
             },
             gridIcon = gridIconOf(settings.gridType),
             gridDescription = gridDescriptionOf(settings.gridType),
@@ -49,7 +49,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             videoQualitySettingVisible = isVideoMode,
             stabilizationSettingVisible = isVideoMode && session.canApplyVideoStabilization,
             selfIlluminationSettingVisible =
-                session.lensFacing == CameraSelector.LENS_FACING_FRONT,
+                session.lensFacing == LensFacing.FRONT,
             timerSettingVisible = !isVideoMode,
             waitForFocusLockSettingVisible = !state.requiresVideoModeOnly,
         )
@@ -74,7 +74,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
     }
 
     private fun flashOf(
-        flashMode: Int,
+        flashMode: FlashMode,
         isFlashAvailable: Boolean,
     ): Pair<Int, Int> {
         if (!isFlashAvailable) {
@@ -82,9 +82,9 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
         }
 
         return when (flashMode) {
-            ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
-            ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
-            else -> R.drawable.flash_off_circle to R.string.flash_off
+            FlashMode.ON -> R.drawable.flash_on_circle to R.string.flash_on
+            FlashMode.AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
+            FlashMode.OFF -> R.drawable.flash_off_circle to R.string.flash_off
         }
     }
 }

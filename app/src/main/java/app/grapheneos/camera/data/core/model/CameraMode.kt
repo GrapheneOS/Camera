@@ -1,18 +1,16 @@
 package app.grapheneos.camera.data.core.model
 
-import androidx.camera.extensions.ExtensionMode
-
 enum class CameraMode(
-    val extensionMode: Int,
+    val extensionMode: ExtensionMode?,
 ) {
-    QR_SCAN(ExtensionMode.NONE),
+    QR_SCAN(null),
     AUTO(ExtensionMode.AUTO),
     FACE_RETOUCH(ExtensionMode.FACE_RETOUCH),
     PORTRAIT(ExtensionMode.BOKEH),
     NIGHT(ExtensionMode.NIGHT),
     HDR(ExtensionMode.HDR),
-    CAMERA(ExtensionMode.NONE),
-    VIDEO(ExtensionMode.NONE),
+    CAMERA(null),
+    VIDEO(null),
     ;
 
     val isQr: Boolean

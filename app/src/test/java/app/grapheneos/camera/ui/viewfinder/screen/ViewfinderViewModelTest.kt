@@ -1,13 +1,13 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.ImageCapture
-import androidx.camera.video.Quality
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
@@ -215,10 +215,10 @@ class ViewfinderViewModelTest {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             stateHolder.update {
-                it.copy(modeSettings = ModeSettings(videoQuality = Quality.UHD))
+                it.copy(modeSettings = ModeSettings(videoQuality = VideoQuality.UHD))
             }
 
-            viewModel.onAction(SettingsAction.VideoQualitySelected(Quality.UHD))
+            viewModel.onAction(SettingsAction.VideoQualitySelected(VideoQuality.UHD))
 
             verify(exactly = 0) { settingsDelegate.setVideoQuality(any()) }
             verify(exactly = 0) { cameraDelegate.beginBind(forced = any()) }
@@ -230,13 +230,13 @@ class ViewfinderViewModelTest {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             stateHolder.update {
-                it.copy(modeSettings = ModeSettings(videoQuality = Quality.UHD))
+                it.copy(modeSettings = ModeSettings(videoQuality = VideoQuality.UHD))
             }
 
-            viewModel.onAction(SettingsAction.VideoQualitySelected(Quality.FHD))
+            viewModel.onAction(SettingsAction.VideoQualitySelected(VideoQuality.FHD))
 
             verifyOrder {
-                settingsDelegate.setVideoQuality(Quality.FHD)
+                settingsDelegate.setVideoQuality(VideoQuality.FHD)
                 cameraDelegate.beginBind(forced = true)
             }
         }
@@ -303,15 +303,15 @@ class ViewfinderViewModelTest {
             stateHolder.update {
                 it.copy(
                     session = ViewfinderSessionState(isFlashAvailable = true),
-                    flashMode = ImageCapture.FLASH_MODE_OFF,
+                    flashMode = FlashMode.OFF,
                 )
             }
 
             viewModel.onAction(CameraAction.FlashToggleClicked)
 
             verifyOrder {
-                settingsDelegate.setFlashMode(ImageCapture.FLASH_MODE_ON)
-                cameraDelegate.applyFlashMode(ImageCapture.FLASH_MODE_ON)
+                settingsDelegate.setFlashMode(FlashMode.ON)
+                cameraDelegate.applyFlashMode(FlashMode.ON)
             }
         }
     }
