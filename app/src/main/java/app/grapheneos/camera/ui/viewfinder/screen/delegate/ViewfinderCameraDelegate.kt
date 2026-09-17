@@ -140,7 +140,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         val host = host ?: return null
         if (!session.isActive) return null
 
-        // Silent: a lens the user picks is refused, with a message, in toggleLensFacing().
+        // Silent: ViewfinderViewModel.switchLens() refuses a lens the user picks, with a message.
         session.lensFacing = session.lensFacing.supportedOrOpposite {
             session.isLensFacingSupported(
                 lensFacing = it,
@@ -165,7 +165,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
         val outcome = session.bind(settings)
 
-        refreshSessionState()
+        refreshSessionState(isVideoMode = settings.isVideoMode)
 
         return outcome
     }
@@ -295,14 +295,15 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = false)) }
     }
 
-    private fun refreshSessionState() {
+    private fun refreshSessionState(isVideoMode: Boolean) {
         stateHolder.update {
             it.copy(
                 session = it.session.copy(
                     lensFacing = session.lensFacing,
                     canTakePicture = session.imageCapture != null,
                     isFlashAvailable = session.isFlashAvailable,
-                    canApplyVideoStabilization = session.canApplyVideoStabilization(),
+                    canApplyVideoStabilization = isVideoMode &&
+                        session.canApplyVideoStabilization(),
                     isTorchOn = false,
                     isZslSupported = session.isZslSupported,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,

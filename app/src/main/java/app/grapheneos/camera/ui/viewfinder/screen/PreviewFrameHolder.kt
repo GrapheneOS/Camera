@@ -13,35 +13,48 @@ import androidx.core.graphics.createBitmap
 
 interface PreviewFrameHolder {
 
-    /** Called right before the camera is unbound, so the frame has to be taken before it returns. */
+    /**
+     * Called right before the camera is unbound, which empties the preview. It does not wait for a
+     * copy already under way: that copy stands in for the preview once it arrives.
+     */
     fun holdCurrentFrame()
 }
 
 internal class PreviewFrameHolderImpl(
     private val previewView: PreviewView,
+    private val onLateFrame: () -> Unit,
 ) : PreviewFrameHolder {
 
     @Volatile
     var lastFrame: Bitmap? = null
         private set
 
-    @Volatile
+    private val lock = Any()
+
     private var frameCopyPending = false
 
     // When the copy waiting in [lastFrame] was taken, or 0 when there is none waiting.
-    @Volatile
     private var framePrefetchedAt = 0L
+
+    private var isCopyAwaited = false
 
     private var frameCopyThread: HandlerThread? = null
 
     private var loggedMissingSurfaceView = false
 
     override fun holdCurrentFrame() {
-        if (hasFreshPrefetch()) {
-            framePrefetchedAt = 0
-            return
+        synchronized(lock) {
+            when {
+                hasFreshPrefetch() -> framePrefetchedAt = 0
+
+                frameCopyPending -> {
+                    lastFrame = null
+                    isCopyAwaited = true
+                }
+
+                else -> lastFrame = previewView.bitmap
+            }
         }
-        lastFrame = previewView.bitmap
     }
 
     // Starts a copy of the preview for [holdCurrentFrame] to pick up. previewView.bitmap blocks the
@@ -49,7 +62,7 @@ internal class PreviewFrameHolderImpl(
     // point where it can least afford to block; the same pixels copied asynchronously cost the main
     // thread nothing, as long as the copy is started early enough.
     fun prefetch() {
-        if (frameCopyPending || hasFreshPrefetch()) return
+        if (synchronized(lock) { frameCopyPending || hasFreshPrefetch() }) return
         if (previewView.width == 0 || previewView.height == 0) return
 
         val surfaceView = previewView.getChildAt(0) as? SurfaceView ?: run {
@@ -63,7 +76,7 @@ internal class PreviewFrameHolderImpl(
         }
         if (!surfaceView.holder.surface.isValid) return
 
-        frameCopyPending = true
+        synchronized(lock) { frameCopyPending = true }
         // Copying the surface rather than the window is what leaves the grid, the level and the
         // focus ring out of it, the way previewView.bitmap does -- and the window holds nothing but
         // a hole where the preview is, since the camera draws into a layer of its own.
@@ -76,8 +89,11 @@ internal class PreviewFrameHolderImpl(
     }
 
     fun clear() {
-        lastFrame = null
-        framePrefetchedAt = 0
+        synchronized(lock) {
+            lastFrame = null
+            framePrefetchedAt = 0
+            isCopyAwaited = false
+        }
     }
 
     fun release() {
@@ -96,11 +112,7 @@ internal class PreviewFrameHolderImpl(
         try {
             PixelCopy.request(surfaceView, copy, { result ->
                 when {
-                    result == PixelCopy.SUCCESS -> {
-                        lastFrame = copy
-                        framePrefetchedAt = SystemClock.uptimeMillis()
-                        frameCopyPending = false
-                    }
+                    result == PixelCopy.SUCCESS -> onCopied(copy)
                     // The surface only holds its last buffer until the camera takes the slot back,
                     // so a copy started in the gap between two preview frames comes back empty.
                     retries > 0 -> {
@@ -109,16 +121,38 @@ internal class PreviewFrameHolderImpl(
                             FRAME_COPY_RETRY_DELAY_MS,
                         )
                     }
-                    else -> {
-                        frameCopyPending = false
-                    }
+                    else -> onCopyFailed()
                 }
             }, handler)
         } catch (_: IllegalArgumentException) {
             // A surface that has gone throws here rather than reporting a failure, and the switch
             // this copy is for is what takes it away -- from the main thread, with nothing to keep
             // that from landing between a validity check and this call.
+            onCopyFailed()
+        }
+    }
+
+    private fun onCopied(copy: Bitmap) {
+        val wasAwaited = synchronized(lock) {
+            lastFrame = copy
             frameCopyPending = false
+            framePrefetchedAt = when {
+                isCopyAwaited -> 0L
+                else -> SystemClock.uptimeMillis()
+            }
+
+            isCopyAwaited.also { isCopyAwaited = false }
+        }
+
+        if (wasAwaited) {
+            previewView.post(onLateFrame)
+        }
+    }
+
+    private fun onCopyFailed() {
+        synchronized(lock) {
+            frameCopyPending = false
+            isCopyAwaited = false
         }
     }
 
