@@ -26,7 +26,6 @@ import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
-import app.grapheneos.camera.App
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -133,7 +132,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         var location: Location? = null
         if (viewfinder.uiState.value.capture.geoTagging) {
-            location = (mActivity.applicationContext as App).getLocation()
+            location = mActivity.locationRepository.currentLocation()
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
             }

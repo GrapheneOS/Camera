@@ -686,7 +686,7 @@ open class MainActivity : AppCompatActivity() {
             imageCapturer.cancelPendingCaptureRequest()
         }
         if (viewfinder.uiState.value.settingsSheet.geoTagging) {
-            application.dropLocationUpdates()
+            locationRepository.pauseUpdates()
         }
         previewFrames.clear()
     }
@@ -730,6 +730,14 @@ open class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.effects.collect { effect ->
                     sessionHandler.handle(effect)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                locationRepository.providersDisabled.collect {
+                    indicateLocationProvidedIsDisabled()
                 }
             }
         }
@@ -1421,7 +1429,7 @@ open class MainActivity : AppCompatActivity() {
         if (required) {
             requestLocation()
         } else {
-            application.disableLocationFetching()
+            locationRepository.stopUpdates()
         }
     }
 
@@ -1431,7 +1439,7 @@ open class MainActivity : AppCompatActivity() {
         // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
         // mode this returns to
         if (viewfinder.uiState.value.settingsSheet.geoTagging) {
-            requestLocation(application.isAnyLocationProvideActive())
+            requestLocation(locationRepository.isAnyProviderEnabled())
         }
     }
 
@@ -1478,7 +1486,10 @@ open class MainActivity : AppCompatActivity() {
 
             hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) ||
                 hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) -> {
-                application.requestLocationUpdates(reAttach)
+                if (!locationRepository.isLocationEnabled()) {
+                    indicateLocationProvidedIsDisabled()
+                }
+                locationRepository.startUpdates(reattach = reAttach)
             }
             else -> {
                 locationPermissionLauncher.launch(
