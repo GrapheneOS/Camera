@@ -15,7 +15,6 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import app.grapheneos.camera.App
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
@@ -84,7 +83,7 @@ class ImageCapturer(val mActivity: MainActivity) {
             session.lensFacing == LensFacing.FRONT && capture.saveImageAsPreviewed
 
         if (capture.geoTagging) {
-            val location = (mActivity.applicationContext as App).getLocation()
+            val location = mActivity.locationRepository.currentLocation()
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
             } else {
