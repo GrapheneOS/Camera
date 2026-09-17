@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
@@ -57,6 +58,7 @@ class ViewfinderViewModelTest {
     private val modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true)
     private val cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true)
     private val captureDelegate = mockk<ViewfinderCaptureDelegate>(relaxed = true)
+    private val locationRepository = mockk<LocationRepository>(relaxed = true)
 
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
 
@@ -243,15 +245,27 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun scanAllCodesToggleClicked_refreshesTheHintsOnlyAfterStoring() {
+    fun qrCodeScanned_fromTheAttachedSession_isHandedToTheCameraDelegate() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            attach(viewModel)
+
+            sessionEvents.emit(CameraSessionEvent.QrCodeScanned(text = QR_TEXT))
+
+            verify(exactly = 1) { cameraDelegate.onQrCodeScanned(QR_TEXT) }
+        }
+    }
+
+    @Test
+    fun qrResultDismissed_rebindsOnlyOnceTheResultIsDismissed() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(SettingsAction.ScanAllCodesToggleClicked)
+            viewModel.onAction(LifecycleAction.QrResultDismissed)
 
             verifyOrder {
-                settingsDelegate.toggleScanAllCodes()
-                cameraDelegate.refreshQrHints()
+                cameraDelegate.dismissQrResult()
+                cameraDelegate.beginBind(forced = true)
             }
         }
     }
@@ -319,7 +333,7 @@ class ViewfinderViewModelTest {
     @Test
     fun previewStreamingStarted_storedGeoTaggingWithoutPermission_staysOff() {
         runTest {
-            every { cameraDelegate.shouldAskForLocationPermission() } returns true
+            every { locationRepository.shouldAskForPermission() } returns true
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
@@ -391,7 +405,7 @@ class ViewfinderViewModelTest {
     @Test
     fun previewStreamingStarted_storedGeoTaggingWithPermission_turnsLocationUpdatesOn() {
         runTest {
-            every { cameraDelegate.shouldAskForLocationPermission() } returns false
+            every { locationRepository.shouldAskForPermission() } returns false
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
@@ -418,7 +432,7 @@ class ViewfinderViewModelTest {
             }
             every { cameraDelegate.beginBind(forced = any()) } returns true
             every { cameraDelegate.selectLens(isQrMode = any(), extensionMode = any()) } returns
-                ViewfinderBindTarget(rotation = 0, qrLensFacing = null)
+                ViewfinderBindTarget(qrLensFacing = null)
             every { cameraDelegate.bindCamera(any()) } returnsMany listOf(
                 BindOutcome.EXTENSION_UNUSABLE,
                 BindOutcome.BOUND,
@@ -502,6 +516,7 @@ class ViewfinderViewModelTest {
             captureDelegate = captureDelegate,
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
+            locationRepository = locationRepository,
             uiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),
             applicationScope = applicationScope,
@@ -530,14 +545,15 @@ class ViewfinderViewModelTest {
 
     private fun attach(viewModel: ViewfinderViewModel) {
         viewModel.attach(
-            environment = mockk(relaxed = true),
             chrome = mockk(relaxed = true),
+            previewFrames = mockk(relaxed = true),
             session = mockk(relaxed = true),
         )
     }
 
     private companion object {
         const val FOCUS_TIMEOUT_SECONDS = 3L
+        const val QR_TEXT = "https://grapheneos.org"
 
         val ENTRY_POINT = CameraEntryPoint(
             isSecureSession = false,

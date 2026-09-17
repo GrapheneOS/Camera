@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import com.google.zxing.BarcodeFormat
 
 data class CameraBindSettings(
     val mode: CameraMode,
@@ -11,7 +12,6 @@ data class CameraBindSettings(
     val isVideoMode: Boolean,
     val requiresVideoModeOnly: Boolean,
     val qrLensFacing: LensFacing?,
-    val rotation: Int,
     val aspectRatio: AspectRatio,
     val flashMode: FlashMode,
     val photoQuality: Int,
@@ -21,4 +21,5 @@ data class CameraBindSettings(
     val enableEis: Boolean,
     val selectHighestResolution: Boolean,
     val mirrorVideoOnFrontCamera: Boolean,
+    val barcodeFormats: Set<BarcodeFormat>,
 )

@@ -5,27 +5,32 @@ import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
+import app.grapheneos.camera.testutil.MainDispatcherRule
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import com.google.zxing.BarcodeFormat
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.test.TestScope
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,8 +38,13 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderCameraDelegateTest {
 
-    private val environment = mockk<CameraSessionEnvironment>(relaxed = true)
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val scope = TestScope(mainDispatcherRule.testDispatcher)
+
     private val chrome = mockk<ViewfinderChrome>(relaxed = true)
+    private val previewFrames = mockk<PreviewFrameHolder>(relaxed = true)
     private val session = mockk<CameraSession>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
 
@@ -54,7 +64,7 @@ class ViewfinderCameraDelegateTest {
         every {
             session.isLensFacingSupported(lensFacing = any(), extensionMode = any())
         } returns true
-        every { environment.isSessionActive } returns true
+        every { session.isActive } returns true
     }
 
     @Test
@@ -78,7 +88,7 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun selectLens_whileTheSessionIsInactive_selectsNothing() {
-        every { environment.isSessionActive } returns false
+        every { session.isActive } returns false
 
         val delegate = createAttachedDelegate()
         val target = delegate.selectLens(isQrMode = false, extensionMode = null)
@@ -96,6 +106,14 @@ class ViewfinderCameraDelegateTest {
 
         verify(exactly = 1) { session.selectLensFacing(LensFacing.FRONT) }
         assertTrue(emitted.isEmpty())
+    }
+
+    @Test
+    fun selectLens_holdsTheCurrentFrameForTheTransition() {
+        val delegate = createAttachedDelegate()
+        delegate.selectLens(isQrMode = false, extensionMode = null)
+
+        verify(exactly = 1) { previewFrames.holdCurrentFrame() }
     }
 
     @Test
@@ -319,6 +337,55 @@ class ViewfinderCameraDelegateTest {
         assertFalse(stateHolder.state.value.session.isTorchOn)
     }
 
+    @Test
+    fun onQrCodeScanned_showsTheResultOnceAndStopsTheCamera() {
+        val delegate = createAttachedDelegate()
+
+        delegate.onQrCodeScanned(QR_TEXT)
+        delegate.onQrCodeScanned(QR_TEXT)
+
+        verify(exactly = 1) { session.unbind() }
+        assertTrue(stateHolder.state.value.session.isQrResultShown)
+        assertEquals(listOf(ViewfinderScreenEffect.ShowQrResult(QR_TEXT)), emitted)
+    }
+
+    @Test
+    fun dismissQrResult_letsTheNextCodeBeShown() {
+        val delegate = createAttachedDelegate()
+
+        delegate.onQrCodeScanned(QR_TEXT)
+        delegate.dismissQrResult()
+        delegate.onQrCodeScanned(QR_TEXT)
+
+        verify(exactly = 2) { session.unbind() }
+    }
+
+    @Test
+    fun barcodeFormats_whenTheSettingsChangeThem_reachTheSession() {
+        createAttachedDelegate()
+
+        stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
+
+        verify(exactly = 1) { session.setBarcodeFormats(BarcodeFormat.entries.toSet()) }
+    }
+
+    @Test
+    fun barcodeFormats_withoutASession_areLeftToTheNextBind() {
+        val delegate = ViewfinderCameraDelegateImpl(
+            entryPoint = mockk(relaxed = true),
+            resolveAvailableModes = resolveAvailableModes,
+            mainDispatcher = mainDispatcherRule.testDispatcher,
+        )
+        delegate.bind(
+            scope = scope,
+            stateHolder = stateHolder,
+        )
+
+        stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
+
+        verify(exactly = 0) { session.setBarcodeFormats(any()) }
+    }
+
     private fun lensUnsupported(facing: LensFacing) {
         every {
             session.isLensFacingSupported(
@@ -341,13 +408,17 @@ class ViewfinderCameraDelegateTest {
                 showsCameraModeTabs = showsCameraModeTabs,
             ),
             resolveAvailableModes = resolveAvailableModes,
+            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 
-        delegate.bind(stateHolder)
+        delegate.bind(
+            scope = scope,
+            stateHolder = stateHolder,
+        )
 
         delegate.attach(
-            environment = environment,
             chrome = chrome,
+            previewFrames = previewFrames,
             session = session,
             emitEffect = { emitted += it },
         )
@@ -369,5 +440,6 @@ class ViewfinderCameraDelegateTest {
         )
 
         const val SENSOR_ORIENTATION = 90
+        const val QR_TEXT = "https://grapheneos.org"
     }
 }

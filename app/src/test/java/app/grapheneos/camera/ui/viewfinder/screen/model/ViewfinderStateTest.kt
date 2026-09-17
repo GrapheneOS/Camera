@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import com.google.zxing.BarcodeFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -78,5 +79,27 @@ class ViewfinderStateTest {
             modeSettings = modeSettings,
             session = session,
         )
+    }
+
+    @Test
+    fun barcodeFormats_scanningAllCodes_areEveryFormat() {
+        val state = state(
+            mode = CameraMode.QR_SCAN,
+            settings = CameraSettings(scanAllCodes = true),
+        )
+
+        assertEquals(BarcodeFormat.entries.toSet(), state.barcodeFormats())
+    }
+
+    @Test
+    fun barcodeFormats_otherwise_areTheEnabledOnes() {
+        val state = state(
+            mode = CameraMode.QR_SCAN,
+            settings = CameraSettings(
+                enabledBarcodeFormats = setOf(BarcodeFormat.AZTEC.name, BarcodeFormat.QR_CODE.name),
+            ),
+        )
+
+        assertEquals(setOf(BarcodeFormat.AZTEC, BarcodeFormat.QR_CODE), state.barcodeFormats())
     }
 }
