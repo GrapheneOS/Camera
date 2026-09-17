@@ -14,24 +14,23 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.utils.ImageUtil
-import androidxc.camera.core.impl.utils.Exif
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
-import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.fixExif
+import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
+import app.grapheneos.camera.domain.capture.model.CaptureMetadata
+import app.grapheneos.camera.domain.capture.model.CapturedImageExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.runBlocking
@@ -52,17 +51,18 @@ class ImageSaver(
     val imageCapturer: ImageCapturer,
     val appContext: Context,
     val captureOutputRepository: CaptureOutputRepository,
+    val exifMapper: CapturedImageExifMapper,
     val jpegQuality: Int,
     val storageLocation: String,
     val imageFileFormat: String,
-    val imageCaptureMetadata: ImageCapture.Metadata,
+    val imageCaptureMetadata: CaptureMetadata,
     val removeExifAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
 ) : ImageCapture.OnImageCapturedCallback()
 {
     val captureTime = Date()
-    val mainThreadExecutor = appContext.mainExecutor
+    val mainThreadExecutor: Executor = appContext.mainExecutor
 
     private var isCancelled = false
 
@@ -176,56 +176,23 @@ class ImageSaver(
         mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem) }
     }
 
-    // based on EXIF update sequence in androidx.camera.core.ImageSaver#saveImageToTempFile(),
-    // optimized to skip writing of the unfinished image to storage
     @Throws(ImageSaverException::class)
     private fun processExif(uncroppedJpegBytes: ByteArray): ByteArray {
         val startOfExifProcessing = timestamp()
 
-        val exif: Exif
-        try {
-            exif = Exif.createFromInputStream(ByteArrayInputStream(origJpegBytes))
-            if (cropRect != null) {
-                val orig = Exif.createFromInputStream(ByteArrayInputStream(uncroppedJpegBytes))
-                orig.copyToCroppedImage(exif)
-            }
-        } catch (e: Exception) {
-            throw ImageSaverException(Place.EXIF_PARSING, e)
-        }
-
-        // Overwrite the original orientation if the quirk exists.
-        if (!shouldUseExifOrientation) {
-            exif.rotate(orientation)
-        }
-        val metadata = imageCaptureMetadata
-        if (metadata.isReversedHorizontal) {
-            exif.flipHorizontally()
-        }
-        if (metadata.isReversedVertical) {
-            exif.flipVertically()
-        }
-
-        val exifInterface = exif.exifInterface
-
-        if (removeExifAfterCapture) {
-            // TODO improve clearExif() by moving it into ExifInterface
-            exifInterface.clearExif()
-        } else {
-            exifInterface.fixExif(captureTime)
-        }
-
-        // location metadata setting intentionally ignores the "clear EXIF after capture" setting
-        val location = metadata.location
-        if (location != null) {
-            exif.attachLocation(location)
-        }
-
-        val baos = ByteArrayOutputStream(origJpegBytes!!.size +
-                // make sure buffer doesn't need to be resized due to additional EXIF attributes
-                (100 * 1024))
-
-        try {
-            exifInterface.saveAttributes(ByteArrayInputStream(origJpegBytes), baos)
+        val processed = try {
+            exifMapper.map(
+                CapturedImageExif(
+                    jpegBytes = requireNotNull(origJpegBytes),
+                    uncroppedJpegBytes = uncroppedJpegBytes,
+                    isCropped = cropRect != null,
+                    orientationDegrees = orientation,
+                    shouldUseExifOrientation = shouldUseExifOrientation,
+                    metadata = imageCaptureMetadata,
+                    removeExif = removeExifAfterCapture,
+                    captureTime = captureTime,
+                ),
+            )
         } catch (e: Exception) {
             throw ImageSaverException(Place.EXIF_PARSING, e)
         }
@@ -233,11 +200,9 @@ class ImageSaver(
         // let GC collect this large buffer
         origJpegBytes = null
 
-        val res = baos.toByteArray()
-
         logDuration(startOfExifProcessing) {"exif processing"}
 
-        return res
+        return processed
     }
 
     private fun generateThumbnail() {
