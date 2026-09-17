@@ -12,6 +12,7 @@ import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.internal.muxer.MediaMuxerImpl
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
@@ -23,11 +24,13 @@ interface CameraSessionPlanFactory {
 }
 
 @SuppressLint("UnsafeOptInUsageError", "RestrictedApi")
-internal class CameraSessionPlanFactoryImpl @Inject constructor() : CameraSessionPlanFactory {
+internal class CameraSessionPlanFactoryImpl @Inject constructor(
+    private val cameraXConstantsMapper: CameraXConstantsMapper,
+) : CameraSessionPlanFactory {
 
     override fun create(request: CameraBindRequest): CameraSessionPlan {
         val aspectRatioStrategy = AspectRatioStrategy(
-            request.aspectRatio,
+            cameraXConstantsMapper.map(request.aspectRatio),
             AspectRatioStrategy.FALLBACK_RULE_AUTO,
         )
 
@@ -73,7 +76,8 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor() : CameraSessio
         when (request.featureGroup) {
             is FeatureGroupRequest.Requested -> {}
             FeatureGroupRequest.Unused -> {
-                recorderBuilder.setQualitySelector(QualitySelector.from(request.videoQuality))
+                val quality = cameraXConstantsMapper.map(request.videoQuality)
+                recorderBuilder.setQualitySelector(QualitySelector.from(quality))
             }
         }
 
@@ -115,7 +119,7 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor() : CameraSessio
             .setCaptureMode(cameraXCaptureMode(captureMode))
             .setTargetRotation(request.imageCaptureTargetRotation)
             .setResolutionSelector(resolutionSelectorBuilder.build())
-            .setFlashMode(request.flashMode)
+            .setFlashMode(cameraXConstantsMapper.map(request.flashMode))
             .setJpegQuality(request.photoQuality)
             .build()
     }

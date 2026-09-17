@@ -13,7 +13,7 @@ sealed interface CameraSessionEvent {
     ) : CameraSessionEvent
 
     data class FeaturesSelected(
-        val boundLensFacing: Int,
+        val boundLensFacing: LensFacing,
         val requested: List<GroupableFeature>,
         val qualityFeature: GroupableFeature?,
         val selected: Set<GroupableFeature>,

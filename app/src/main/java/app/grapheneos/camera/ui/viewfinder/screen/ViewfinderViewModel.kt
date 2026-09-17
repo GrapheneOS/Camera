@@ -1,18 +1,18 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.util.Log
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.video.Quality
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.DefaultDispatcher
@@ -144,7 +144,7 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    private fun setFlashMode(value: Int) {
+    private fun setFlashMode(value: FlashMode) {
         settingsDelegate.setFlashMode(value)
         cameraDelegate.applyFlashMode(value)
     }
@@ -279,7 +279,7 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    private fun onVideoQualitySelected(quality: Quality) {
+    private fun onVideoQualitySelected(quality: VideoQuality) {
         if (quality == state().modeSettings.videoQuality) return
 
         settingsDelegate.setVideoQuality(quality)
@@ -297,9 +297,9 @@ class ViewfinderViewModel @Inject constructor(
 
             currentState.session.isFlashAvailable -> {
                 val next = when (currentState.flashMode) {
-                    ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
-                    ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
-                    else -> ImageCapture.FLASH_MODE_OFF
+                    FlashMode.OFF -> FlashMode.ON
+                    FlashMode.ON -> FlashMode.AUTO
+                    FlashMode.AUTO -> FlashMode.OFF
                 }
 
                 setFlashMode(next)
@@ -314,7 +314,7 @@ class ViewfinderViewModel @Inject constructor(
     private fun toggleAspectRatio() {
         val next = when (state().aspectRatio()) {
             AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
-            else -> AspectRatio.RATIO_16_9
+            AspectRatio.RATIO_4_3 -> AspectRatio.RATIO_16_9
         }
 
         settingsDelegate.setAspectRatio(next)
@@ -452,7 +452,7 @@ class ViewfinderViewModel @Inject constructor(
         settingsDelegate.selectModeSlot(
             ModeSlot(
                 mode = state().mode,
-                isFrontFacing = cameraDelegate.lensFacing == CameraSelector.LENS_FACING_FRONT,
+                isFrontFacing = cameraDelegate.lensFacing == LensFacing.FRONT,
             ),
         )
     }

@@ -13,12 +13,12 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
@@ -81,8 +81,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         val imageMetadata = ImageCapture.Metadata()
         imageMetadata.isReversedHorizontal =
-            session.lensFacing == CameraSelector.LENS_FACING_FRONT
-                && capture.saveImageAsPreviewed
+            session.lensFacing == LensFacing.FRONT && capture.saveImageAsPreviewed
 
         if (capture.geoTagging) {
             val location = (mActivity.applicationContext as App).getLocation()
