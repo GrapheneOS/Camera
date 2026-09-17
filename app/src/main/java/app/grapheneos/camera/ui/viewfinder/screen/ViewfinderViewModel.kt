@@ -170,7 +170,7 @@ class ViewfinderViewModel @Inject constructor(
         val slotted = state()
 
         if (slotted.isVideoMode()) {
-            emitEffect(Effect.ReloadVideoQualities)
+            cameraDelegate.refreshVideoQualities()
         }
 
         cameraDelegate.applyFlashMode(slotted.modeSettings.flashMode)
@@ -399,15 +399,7 @@ class ViewfinderViewModel @Inject constructor(
                 switchMode(modeDelegate.defaultMode)
             }
 
-            BindOutcome.BOUND -> {
-                val boundState = state()
-
-                cameraDelegate.announceBind(
-                    aspectRatio = boundState.aspectRatio(),
-                    isInPhotoMode = boundState.isInPhotoMode(),
-                    currentMode = { state().mode },
-                )
-            }
+            BindOutcome.BOUND -> cameraDelegate.announceBind()
         }
     }
 

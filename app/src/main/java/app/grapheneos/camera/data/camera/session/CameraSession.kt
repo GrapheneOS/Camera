@@ -26,11 +26,14 @@ import androidx.camera.video.VideoCapture
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
+import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
+import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
@@ -60,6 +63,9 @@ interface CameraSession {
     val videoCapture: VideoCapture<Recorder>?
     val iAnalyzer: ImageAnalysis?
     val zoomState: ZoomState?
+    val zoom: CameraZoom?
+    val exposure: CameraExposure?
+    val sensorOrientationDegrees: Int?
 
     var lensFacing: LensFacing
     val extensionsAvailable: Boolean
@@ -89,6 +95,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
+    private val cameraXStateMapper: CameraXStateMapper,
     private val inVideoSnapshotSupportResolver: InVideoSnapshotSupportResolver,
     private val snapshotProbeCache: SnapshotProbeCache,
 ) : CameraSession {
@@ -153,6 +160,21 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val cameraExecutor by lazy {
         Executors.newSingleThreadExecutor()
     }
+
+    override val zoom: CameraZoom?
+        get() {
+            return zoomState?.let { cameraXStateMapper.map(it) }
+        }
+
+    override val exposure: CameraExposure?
+        get() {
+            return camera?.cameraInfo?.exposureState?.let { cameraXStateMapper.map(it) }
+        }
+
+    override val sensorOrientationDegrees: Int?
+        get() {
+            return camera?.cameraInfo?.sensorRotationDegrees
+        }
 
     override val extensionsAvailable: Boolean
         get() {

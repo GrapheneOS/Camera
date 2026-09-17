@@ -7,8 +7,6 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.annotation.StringRes
-import androidx.camera.core.CameraInfo
-import androidx.camera.core.ExposureState
 import androidx.camera.core.Preview
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -81,15 +79,19 @@ internal class ViewfinderEffectHandler(
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
             is Effect.ShowZoomPanel -> showZoomPanel()
             is Effect.HideZoomPanel -> hideZoomPanel()
+            is Effect.HideExposurePanel -> hideExposurePanel()
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
-            is Effect.ResetTorchToggle -> resetTorchToggle()
-            is Effect.ReloadVideoQualities -> reloadVideoQualities()
             is Effect.StartLocationUpdates -> startLocationUpdates()
             is Effect.StopLocationUpdates -> stopLocationUpdates()
         }
     }
 
     private var renderedCaptureButtonIcon: Int? = null
+    private var renderedModes: Set<CameraMode> = emptySet()
+    private var renderedAspectRatio: AspectRatio? = null
+
+    private var renderedSensorOrientationDegrees: Int? = null
+    private var renderedInPhotoMode: Boolean? = null
 
     fun render(state: ViewfinderUiState) {
         activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
@@ -111,6 +113,48 @@ internal class ViewfinderEffectHandler(
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
 
         activity.settingsDialog.render(state.settingsSheet)
+        activity.zoomBar.render(state.zoom)
+        activity.exposureBar.render(state.exposure)
+
+        renderModeTabs(state)
+        renderBoundPreview(state)
+    }
+
+    private fun renderModeTabs(state: ViewfinderUiState) {
+        if (state.availableModes == renderedModes) return
+        renderedModes = state.availableModes
+
+        activity.tabLayout.setModes(
+            modes = state.availableModes,
+            currentMode = state.mode,
+            onTabTouched = activity::finalizeMode,
+        )
+    }
+
+    private fun renderBoundPreview(state: ViewfinderUiState) {
+        val sensorOrientationDegrees = state.sensorOrientationDegrees ?: return
+
+        // Focus camera on touch/tap
+        activity.previewView.setOnTouchListener(activity.gestureHandler)
+
+        if (state.aspectRatio != renderedAspectRatio ||
+            sensorOrientationDegrees != renderedSensorOrientationDegrees
+        ) {
+            renderedAspectRatio = state.aspectRatio
+            renderedSensorOrientationDegrees = sensorOrientationDegrees
+            activity.previewView.applyPreviewRatio(
+                aspectRatio = state.aspectRatio,
+                sensorOrientationDegrees = sensorOrientationDegrees,
+            )
+        }
+
+        if (state.inPhotoMode != renderedInPhotoMode) {
+            renderedInPhotoMode = state.inPhotoMode
+            when {
+                state.inPhotoMode -> activity.sensorNotifier?.forceUpdateGyro()
+                else -> activity.gCircleFrame.visibility = View.GONE
+            }
+        }
     }
 
     private fun renderCaptureButton(state: ViewfinderUiState) {
@@ -182,16 +226,8 @@ internal class ViewfinderEffectHandler(
         activity.imageCapturer.cancelPendingCaptureRequest()
     }
 
-    override fun hideExposurePanel() {
+    private fun hideExposurePanel() {
         activity.exposureBar.hidePanel()
-    }
-
-    override fun applyExposureState(exposureState: ExposureState) {
-        activity.exposureBar.setExposureConfig(exposureState)
-    }
-
-    override fun updateZoomThumb() {
-        activity.zoomBar.updateThumb()
     }
 
     private fun showZoomPanel() {
@@ -216,43 +252,14 @@ internal class ViewfinderEffectHandler(
         }
     }
 
-    override fun onPreviewBound(aspectRatio: AspectRatio, cameraInfo: CameraInfo) {
-        // Focus camera on touch/tap
-        activity.previewView.setOnTouchListener(activity.gestureHandler)
-        activity.previewView.applyPreviewRatio(aspectRatio, cameraInfo)
-    }
-
-    override fun updateGyroscopeIndicator(inPhotoMode: Boolean) {
-        when {
-            inPhotoMode -> activity.sensorNotifier?.forceUpdateGyro()
-            else -> activity.gCircleFrame.visibility = View.GONE
-        }
-    }
-
-    override fun setCameraModeTabs(modes: Set<CameraMode>, currentMode: CameraMode) {
-        activity.tabLayout.setModes(
-            modes = modes,
-            currentMode = currentMode,
-            onTabTouched = activity::finalizeMode,
-        )
-    }
-
     private fun goToModeTab(mode: CameraMode) {
         activity.tabLayout.getTabForMode(mode)?.let { tab ->
             activity.tabLayout.goToTab(tab)
         }
     }
 
-    private fun reloadVideoQualities() {
-        activity.settingsDialog.reloadQualities()
-    }
-
     private fun applySelfIllumination(enabled: Boolean) {
         activity.settingsDialog.selfIllumination(enabled)
-    }
-
-    private fun resetTorchToggle() {
-        activity.settingsDialog.torchToggle.isChecked = false
     }
 
     private fun flashPreview(selfIlluminate: Boolean) {

@@ -30,6 +30,11 @@ data class ViewfinderUiState(
     val scanAllCodes: Boolean = false,
     val focusTimeoutSeconds: Long = 0,
     val gyroscopeSuggestionsVisible: Boolean = false,
+    val availableModes: Set<CameraMode> = emptySet(),
+    val zslSupported: Boolean = false,
+    val sensorOrientationDegrees: Int? = null,
+    val zoom: ZoomUiState = ZoomUiState(),
+    val exposure: ExposureUiState? = null,
     val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
     val capture: CaptureUiState = CaptureUiState(),
 )
