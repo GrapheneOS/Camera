@@ -16,7 +16,6 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -32,7 +31,6 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
@@ -48,6 +46,7 @@ import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
@@ -56,13 +55,11 @@ import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import com.google.zxing.BarcodeFormat
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.concurrent.thread
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -103,15 +100,13 @@ interface CameraSession {
     fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long)
     fun cancelFocusAndMetering()
     fun reattachZoomState()
+    fun setPreviewTarget(target: PreviewTarget?)
     fun setBarcodeFormats(barcodeFormats: Set<BarcodeFormat>)
     fun unbind()
 }
 
 @SuppressLint("UnsafeOptInUsageError")
-internal class CameraSessionImpl @AssistedInject constructor(
-    @Assisted private val lifecycleOwner: LifecycleOwner,
-    @Assisted private val surfaceProvider: Preview.SurfaceProvider,
-    @Assisted private val meteringPointFactory: MeteringPointFactory,
+internal class CameraSessionImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val displayManager: DisplayManager,
     private val cameraProviderSource: CameraProviderSource,
@@ -166,6 +161,8 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val attachZoomState = Runnable {
         if (!isActive) return@Runnable
 
+        val lifecycleOwner = previewTarget?.lifecycleOwner ?: return@Runnable
+
         zoomStateSource = camera?.cameraInfo?.zoomState?.also {
             it.observe(lifecycleOwner, zoomStateObserver)
         }
@@ -177,9 +174,13 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     private val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
 
+    private var previewTarget: PreviewTarget? = null
+
     override val isActive: Boolean
         get() {
-            return lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED
+            val lifecycle = previewTarget?.lifecycleOwner?.lifecycle ?: return false
+
+            return lifecycle.currentState != Lifecycle.State.DESTROYED
         }
 
     override var cameraProvider: ProcessCameraProvider? = null
@@ -190,9 +191,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     private var qrAnalyzer: QrCodeAnalyzer? = null
 
-    private val cameraExecutor by lazy {
-        Executors.newSingleThreadExecutor()
-    }
+    private val cameraExecutor = Executors.newSingleThreadExecutor()
 
     override val zoom: CameraZoom?
         get() {
@@ -248,7 +247,8 @@ internal class CameraSessionImpl @AssistedInject constructor(
     }
 
     private fun focusOnQrScanArea() {
-        if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        val lifecycle = previewTarget?.lifecycleOwner?.lifecycle ?: return
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
 
         val point = SurfaceOrientedMeteringPointFactory(1f, 1f)
             .createPoint(0.5f, 0.5f, QR_SCAN_AREA_RATIO)
@@ -274,6 +274,20 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return Recorder.getVideoCapabilities(cameraInfo)
             .getSupportedQualities(DynamicRange.SDR)
             .mapNotNull { cameraXConstantsMapper.map(it) }
+    }
+
+    override fun setPreviewTarget(target: PreviewTarget?) {
+        previewTarget = target
+    }
+
+    fun close() {
+        handler.removeCallbacks(attachZoomState)
+        handler.removeCallbacks(qrAutofocus)
+        zoomStateSource?.removeObserver(zoomStateObserver)
+        zoomStateSource = null
+        previewTarget = null
+
+        cameraExecutor.shutdown()
     }
 
     // Every bind hands out a fresh LiveData in extension modes, and the old observer would
@@ -335,6 +349,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     }
 
     override fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long) {
+        val meteringPointFactory = previewTarget?.meteringPointFactory ?: return
         val point = meteringPointFactory.createPoint(x, y)
         val builder = FocusMeteringAction.Builder(point)
 
@@ -641,6 +656,9 @@ internal class CameraSessionImpl @AssistedInject constructor(
         val provider = requireNotNull(cameraProvider) {
             "Camera provider is not ready yet"
         }
+        val target = requireNotNull(previewTarget) {
+            "No screen to show the camera on"
+        }
 
         // Unbind/close all other camera(s) [if any]
         provider.unbindAll()
@@ -761,7 +779,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
         preview = plan.preview.also {
             useCasesList.add(it)
-            it.surfaceProvider = surfaceProvider
+            it.surfaceProvider = target.surfaceProvider
         }
 
         // Not every camera can run video, photo and preview at once. Ask before binding rather
@@ -845,7 +863,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
             }
 
             camera = provider.bindToLifecycle(
-                lifecycleOwner,
+                target.lifecycleOwner,
                 cameraSelector,
                 sessionConfig
             )
@@ -903,15 +921,6 @@ internal class CameraSessionImpl @AssistedInject constructor(
             LensFacing.FRONT -> FRONT_CAMERA_SELECTOR
             LensFacing.BACK -> REAR_CAMERA_SELECTOR
         }
-    }
-
-    @AssistedFactory
-    interface Factory {
-        fun create(
-            lifecycleOwner: LifecycleOwner,
-            surfaceProvider: Preview.SurfaceProvider,
-            meteringPointFactory: MeteringPointFactory,
-        ): CameraSessionImpl
     }
 
     companion object {

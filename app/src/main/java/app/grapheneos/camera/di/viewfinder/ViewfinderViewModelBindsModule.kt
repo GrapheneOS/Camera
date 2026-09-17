@@ -11,28 +11,33 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ActivityComponent
+import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.android.scopes.ViewModelScoped
 
 @Module
-@InstallIn(ActivityComponent::class)
+@InstallIn(ViewModelComponent::class)
 internal abstract class ViewfinderViewModelBindsModule {
 
     @Binds
+    @ViewModelScoped
     abstract fun bindViewfinderSettingsDelegate(
         impl: ViewfinderSettingsDelegateImpl,
     ): ViewfinderSettingsDelegate
 
     @Binds
+    @ViewModelScoped
     abstract fun bindViewfinderModeDelegate(
         impl: ViewfinderModeDelegateImpl,
     ): ViewfinderModeDelegate
 
     @Binds
+    @ViewModelScoped
     abstract fun bindViewfinderCameraDelegate(
         impl: ViewfinderCameraDelegateImpl,
     ): ViewfinderCameraDelegate
 
     @Binds
+    @ViewModelScoped
     abstract fun bindViewfinderCaptureDelegate(
         impl: ViewfinderCaptureDelegateImpl,
     ): ViewfinderCaptureDelegate
