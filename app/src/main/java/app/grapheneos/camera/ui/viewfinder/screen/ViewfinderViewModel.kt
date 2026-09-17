@@ -8,11 +8,11 @@ import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.DefaultDispatcher
@@ -59,6 +59,7 @@ class ViewfinderViewModel @Inject constructor(
     private val captureDelegate: ViewfinderCaptureDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
+    private val locationRepository: LocationRepository,
     private val uiStateMapper: ViewfinderUiStateMapper,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
@@ -84,7 +85,10 @@ class ViewfinderViewModel @Inject constructor(
 
     init {
         modeDelegate.bind(stateHolder)
-        cameraDelegate.bind(stateHolder)
+        cameraDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
         captureDelegate.bind(stateHolder)
         settingsDelegate.bind(
             scope = viewModelScope,
@@ -93,13 +97,13 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     fun attach(
-        environment: CameraSessionEnvironment,
         chrome: ViewfinderChrome,
+        previewFrames: PreviewFrameHolder,
         session: CameraSession,
     ) {
         cameraDelegate.attach(
-            environment = environment,
             chrome = chrome,
+            previewFrames = previewFrames,
             session = session,
             emitEffect = ::emitEffect,
         )
@@ -136,6 +140,10 @@ class ViewfinderViewModel @Inject constructor(
 
             is CameraSessionEvent.ProviderReady -> {
                 startCamera(forced = event.forced)
+            }
+
+            is CameraSessionEvent.QrCodeScanned -> {
+                cameraDelegate.onQrCodeScanned(event.text)
             }
 
             is CameraSessionEvent.FeaturesSelected -> {
@@ -181,7 +189,7 @@ class ViewfinderViewModel @Inject constructor(
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
         setRequireLocation(
             enabled = slotted.modeSettings.geoTagging &&
-                !cameraDelegate.shouldAskForLocationPermission(),
+                !locationRepository.shouldAskForPermission(),
         )
 
         setSelfIllumination(slotted.modeSettings.selfIllumination)
@@ -241,11 +249,9 @@ class ViewfinderViewModel @Inject constructor(
             is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
             is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
             is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
+            is LifecycleAction.RecordAudioPermissionGranted -> startCamera(forced = true)
             is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
-
-            is LifecycleAction.RecordAudioPermissionGranted,
-            is LifecycleAction.QrResultDismissed,
-            -> startCamera(forced = true)
+            is LifecycleAction.QrResultDismissed -> dismissQrResult()
         }
     }
 
@@ -253,7 +259,6 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is SettingsAction.ScanAllCodesToggleClicked -> {
                 settingsDelegate.toggleScanAllCodes()
-                cameraDelegate.refreshQrHints()
             }
 
             is SettingsAction.GridToggleClicked -> {
@@ -427,6 +432,12 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
+    private fun dismissQrResult() {
+        cameraDelegate.dismissQrResult()
+
+        startCamera(forced = true)
+    }
+
     private fun dismissCapturedPreview() {
         captureDelegate.dismissCapturedPreview()
 
@@ -439,8 +450,6 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun switchMode(mode: CameraMode) {
         if (!modeDelegate.select(mode)) return
-
-        cameraDelegate.cancelFocusTimer()
 
         startCamera(forced = true)
 

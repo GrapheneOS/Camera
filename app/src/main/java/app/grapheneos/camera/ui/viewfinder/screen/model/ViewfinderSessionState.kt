@@ -12,6 +12,7 @@ data class ViewfinderSessionState(
     val isFlashAvailable: Boolean = false,
     val canApplyVideoStabilization: Boolean = false,
     val isTorchOn: Boolean = false,
+    val isQrResultShown: Boolean = false,
     val isZslSupported: Boolean = false,
     val sensorOrientationDegrees: Int? = null,
     val zoom: CameraZoom? = null,

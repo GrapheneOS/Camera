@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import com.google.zxing.BarcodeFormat
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +41,7 @@ class CameraBindSettingsMapperTest {
 
         val settings = mapper.map(
             state = state,
-            target = ViewfinderBindTarget(rotation = ROTATION, qrLensFacing = null),
+            target = ViewfinderBindTarget(qrLensFacing = null),
         )
 
         assertEquals(
@@ -50,7 +51,6 @@ class CameraBindSettingsMapperTest {
                 isVideoMode = false,
                 requiresVideoModeOnly = false,
                 qrLensFacing = null,
-                rotation = ROTATION,
                 aspectRatio = AspectRatio.RATIO_16_9,
                 flashMode = FlashMode.AUTO,
                 photoQuality = PHOTO_QUALITY,
@@ -60,6 +60,7 @@ class CameraBindSettingsMapperTest {
                 enableEis = true,
                 selectHighestResolution = true,
                 mirrorVideoOnFrontCamera = true,
+                barcodeFormats = setOf(BarcodeFormat.QR_CODE),
             ),
             settings,
         )
@@ -75,10 +76,7 @@ class CameraBindSettingsMapperTest {
 
         val settings = mapper.map(
             state = state,
-            target = ViewfinderBindTarget(
-                rotation = ROTATION,
-                qrLensFacing = LensFacing.FRONT,
-            ),
+            target = ViewfinderBindTarget(qrLensFacing = LensFacing.FRONT),
         )
 
         assertEquals(true, settings.isQrMode)
@@ -95,7 +93,7 @@ class CameraBindSettingsMapperTest {
 
         val settings = mapper.map(
             state = state,
-            target = ViewfinderBindTarget(rotation = ROTATION, qrLensFacing = null),
+            target = ViewfinderBindTarget(qrLensFacing = null),
         )
 
         assertEquals(true, settings.isVideoMode)
@@ -104,7 +102,6 @@ class CameraBindSettingsMapperTest {
     }
 
     private companion object {
-        const val ROTATION = 1
         const val PHOTO_QUALITY = 87
     }
 }

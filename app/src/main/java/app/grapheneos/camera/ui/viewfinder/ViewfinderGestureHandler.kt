@@ -166,7 +166,6 @@ internal class ViewfinderGestureHandler(
                 showMoreQrFormatOptions(
                     activity = activity,
                     barcodeFormats = activity.barcodeFormats,
-                    onApplied = { activity.session.refreshQrHints() },
                 )
             }
         }

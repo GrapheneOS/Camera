@@ -1,21 +1,11 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import android.content.Context
-import android.os.Build
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.annotation.StringRes
-import androidx.camera.core.MeteringPointFactory
-import androidx.camera.core.Preview
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
-import app.grapheneos.camera.App
 import app.grapheneos.camera.R
-import app.grapheneos.camera.analyzer.QRAnalyzer
-import app.grapheneos.camera.data.camera.session.CameraSessionEnvironment
-import app.grapheneos.camera.data.camera.session.QrCodeAnalyzer
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -25,56 +15,10 @@ import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import java.util.concurrent.Executor
 
 internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
-) : CameraSessionEnvironment,
-    ViewfinderChrome {
-
-    override val sessionContext: Context
-        get() {
-            return activity
-        }
-
-    override val sessionLifecycleOwner: LifecycleOwner
-        get() {
-            return activity
-        }
-
-    override val sessionMainExecutor: Executor
-        get() {
-            return ContextCompat.getMainExecutor(activity)
-        }
-
-    override val isSessionActive: Boolean
-        get() {
-            return !activity.isDestroyed && !activity.isFinishing
-        }
-
-    override val previewSurfaceProvider: Preview.SurfaceProvider
-        get() {
-            return activity.previewView.surfaceProvider
-        }
-
-    override val previewMeteringPointFactory: MeteringPointFactory
-        get() {
-            return activity.previewView.meteringPointFactory
-        }
-
-    override val displayRotation: Int
-        get() {
-            return when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
-                    activity.display?.rotation ?: deprecatedDisplayRotation()
-                }
-
-                // We don't really have any option here, but this initialization ensures that the
-                // app doesn't break later when the below deprecated option gets removed post
-                // Android R
-                else -> deprecatedDisplayRotation()
-            }
-        }
+) : ViewfinderChrome {
 
     fun handle(effect: Effect) {
         when (effect) {
@@ -83,6 +27,7 @@ internal class ViewfinderEffectHandler(
             is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
+            is Effect.ShowQrResult -> activity.showQrResult(effect.text)
             is Effect.ShowZoomPanel -> showZoomPanel()
             is Effect.HideZoomPanel -> hideZoomPanel()
             is Effect.HideExposurePanel -> hideExposurePanel()
@@ -189,20 +134,8 @@ internal class ViewfinderEffectHandler(
         )
     }
 
-    override fun updateLastFrame() {
-        activity.updateLastFrame()
-    }
-
     override fun forceUpdateOrientationSensor() {
         activity.forceUpdateOrientationSensor()
-    }
-
-    override fun startFocusTimer() {
-        activity.startFocusTimer()
-    }
-
-    override fun cancelFocusTimer() {
-        activity.cancelFocusTimer()
     }
 
     private fun startLocationUpdates() {
@@ -211,17 +144,6 @@ internal class ViewfinderEffectHandler(
 
     private fun stopLocationUpdates() {
         activity.onRequireLocationChanged(required = false)
-    }
-
-    override fun shouldAskForLocationPermission(): Boolean {
-        return (activity.applicationContext as App).shouldAskForLocationPermission()
-    }
-
-    override fun createQrAnalyzer(): QrCodeAnalyzer {
-        return QRAnalyzer(
-            mActivity = activity,
-            scanAllCodes = { activity.viewfinder.uiState.value.scanAllCodes },
-        )
     }
 
     private fun showStorageLocationNotFound() {
@@ -308,11 +230,6 @@ internal class ViewfinderEffectHandler(
         )
 
         activity.mainOverlay.startAnimation(animation)
-    }
-
-    @Suppress("DEPRECATION")
-    private fun deprecatedDisplayRotation(): Int {
-        return activity.windowManager.defaultDisplay.rotation
     }
 
     private companion object {
