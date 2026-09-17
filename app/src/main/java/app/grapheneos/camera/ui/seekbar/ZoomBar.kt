@@ -14,14 +14,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatSeekBar
-import androidx.camera.core.ZoomState
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import java.util.Locale
 import kotlin.math.roundToInt
 
 class ZoomBar : AppCompatSeekBar {
@@ -47,14 +47,9 @@ class ZoomBar : AppCompatSeekBar {
         .inflate(R.layout.zoom_bar_thumb, null, false)
 
     private lateinit var mainActivity: MainActivity
-    private lateinit var viewfinder: ViewfinderController
-
-    private lateinit var session: CameraSession
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
-        viewfinder = mainActivity.viewfinder
-        session = mainActivity.session
     }
 
     fun showPanel() {
@@ -63,7 +58,7 @@ class ZoomBar : AppCompatSeekBar {
         closePanelHandler.postDelayed(closePanelRunnable, PANEL_VISIBILITY_DURATION)
     }
 
-    private fun hidePanel() {
+    fun hidePanel() {
         togglePanel(View.GONE)
     }
 
@@ -88,27 +83,16 @@ class ZoomBar : AppCompatSeekBar {
         super.onSizeChanged(h, w, oldh, oldw)
     }
 
-    fun updateThumb(shouldShowPanel: Boolean = true) {
-        val zoomState: ZoomState? = session.zoomState
+    private var renderedZoom: ZoomUiState? = null
 
-        if (shouldShowPanel) {
-            showPanel()
-        } else {
-            hidePanel()
-        }
+    fun render(zoom: ZoomUiState) {
+        if (zoom == renderedZoom) return
+        renderedZoom = zoom
 
-        var zoomRatio = 1.0f
-        var linearZoom = 0.0f
-
-        if (zoomState != null) {
-            zoomRatio = zoomState.zoomRatio
-            linearZoom = zoomState.linearZoom
-        }
-
-        progress = (linearZoom * 100).roundToInt()
+        progress = (zoom.linearZoom * 100).roundToInt()
 
         val textView: TextView = thumbView.findViewById(R.id.progress) as TextView
-        val text = String.format("%.1fx", zoomRatio)
+        val text = String.format(Locale.getDefault(), "%.1fx", zoom.zoomRatio)
 
         textView.text = text
 
@@ -151,7 +135,9 @@ class ZoomBar : AppCompatSeekBar {
                 if (progress < 1) progress = 1
                 if (progress > 100) progress = 100
 
-                session.camera?.cameraControl?.setLinearZoom(progress / 100f)
+                mainActivity.viewfinder.onAction(
+                    CameraAction.ZoomSliderDragged(linearZoom = progress / 100f),
+                )
 
             }
             MotionEvent.ACTION_CANCEL -> {

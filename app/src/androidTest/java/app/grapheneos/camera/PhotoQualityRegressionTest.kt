@@ -6,9 +6,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -41,8 +41,8 @@ class PhotoQualityRegressionTest {
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
             // The same instance More Settings edits, so it can be read while that screen is up
-            val viewfinder = viewfinderOf(scenario)
-            val stored = viewfinder.photoQuality
+            val repository = settingsRepositoryOf(scenario)
+            val stored = repository.settings.value.photoQuality
 
             val settings = openMoreSettings(scenario)
             val field = settings.findViewById<EditText>(R.id.photo_quality)
@@ -54,7 +54,7 @@ class PhotoQualityRegressionTest {
 
                 instrumentation.callActivityOnPause(settings)
 
-                assertEquals(stored, viewfinder.photoQuality)
+                assertEquals(stored, repository.settings.value.photoQuality)
                 assertEquals(stored.toString(), field.text.toString())
             }
         }
@@ -66,8 +66,8 @@ class PhotoQualityRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             waitUntil(scenario, "camera is bound") { it.session.camera != null }
 
-            val viewfinder = viewfinderOf(scenario)
-            val stored = viewfinder.photoQuality
+            val repository = settingsRepositoryOf(scenario)
+            val stored = repository.settings.value.photoQuality
 
             val settings = openMoreSettings(scenario)
             val field = settings.findViewById<EditText>(R.id.photo_quality)
@@ -77,18 +77,18 @@ class PhotoQualityRegressionTest {
                     field.setText("77")
                     instrumentation.callActivityOnPause(settings)
 
-                    assertEquals(77, viewfinder.photoQuality)
+                    assertEquals(77, repository.settings.value.photoQuality)
                 }
             } finally {
-                viewfinder.photoQuality = stored
+                repository.update { it.copy(photoQuality = stored) }
             }
         }
     }
 
-    private fun viewfinderOf(scenario: ActivityScenario<MainActivity>): ViewfinderController {
-        lateinit var viewfinder: ViewfinderController
-        scenario.onActivity { viewfinder = it.viewfinder }
-        return viewfinder
+    private fun settingsRepositoryOf(scenario: ActivityScenario<MainActivity>): SettingsRepository {
+        lateinit var repository: SettingsRepository
+        scenario.onActivity { repository = it.settingsRepository }
+        return repository
     }
 
     private fun openMoreSettings(scenario: ActivityScenario<MainActivity>): MoreSettings {

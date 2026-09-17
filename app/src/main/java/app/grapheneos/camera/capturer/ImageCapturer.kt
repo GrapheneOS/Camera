@@ -13,22 +13,25 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.util.printStackTraceToString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 private const val imageFileFormat = ".jpg"
 
 class ImageCapturer(val mActivity: MainActivity) {
-    val viewfinder = mActivity.viewfinder
+
+    private val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
     private val session = mActivity.session
 
@@ -65,7 +68,9 @@ class ImageCapturer(val mActivity: MainActivity) {
             return
         }
 
-        if (!viewfinder.canTakePicture) {
+        val capture = viewfinder.uiState.value.capture
+
+        if (!capture.canTakePicture) {
             mActivity.showMessage(R.string.unsupported_taking_picture_while_recording)
             return
         }
@@ -76,10 +81,9 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         val imageMetadata = ImageCapture.Metadata()
         imageMetadata.isReversedHorizontal =
-            session.lensFacing == CameraSelector.LENS_FACING_FRONT
-                && viewfinder.saveImageAsPreviewed
+            session.lensFacing == LensFacing.FRONT && capture.saveImageAsPreviewed
 
-        if (viewfinder.requireLocation) {
+        if (capture.geoTagging) {
             val location = (mActivity.applicationContext as App).getLocation()
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
@@ -99,7 +103,7 @@ class ImageCapturer(val mActivity: MainActivity) {
             mActivity.capturedItemSession.storageLocation,
             imageFileFormat,
             imageMetadata,
-            viewfinder.removeExifAfterCapture,
+            capture.removeExifAfterCapture,
             targetThumbnailWidth = preview.width,
             targetThumbnailHeight = preview.height,
         )
@@ -123,11 +127,11 @@ class ImageCapturer(val mActivity: MainActivity) {
         unfadeCaptureButton()
         currentImageSaver = null
 
-        viewfinder.mPlayer?.playShutterSound()
-        viewfinder.snapPreview()
+        mActivity.tunePlayer.playShutterSound()
+        viewfinder.onAction(CaptureAction.PictureCaptured)
 
         mActivity.previewLoader.visibility = View.VISIBLE
-        if (viewfinder.selfIlluminate) {
+        if (viewfinder.uiState.value.capture.selfIlluminate) {
 
             val animation: Animation = AlphaAnimation(0.8f, 0f)
             animation.duration = 200
@@ -178,7 +182,7 @@ class ImageCapturer(val mActivity: MainActivity) {
     }
 
     fun onStorageLocationNotFound() {
-        viewfinder.onStorageLocationNotFound()
+        viewfinder.onAction(CaptureAction.StorageLocationNotFound)
     }
 
     fun onImageSaverError(exception: ImageSaverException, skipErrorDialog: Boolean) {

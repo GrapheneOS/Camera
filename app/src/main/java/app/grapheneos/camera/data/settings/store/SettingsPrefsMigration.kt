@@ -53,7 +53,9 @@ internal class SettingsPrefsMigration(
         current: StoredCameraSettings,
     ): StoredCameraSettings {
         return current.copy(
-            aspectRatio = intOrNull(commons, ASPECT_RATIO) ?: current.aspectRatio,
+            aspectRatio = intOrNull(commons, ASPECT_RATIO)
+                ?.let(StoredAspectRatioSerializer::fromWireValue)
+                ?: current.aspectRatio,
             gridType = readGridType(commons) ?: current.gridType,
             focusTimeoutSeconds = readFocusTimeoutSeconds(commons)
                 ?: current.focusTimeoutSeconds,
@@ -163,7 +165,9 @@ internal class SettingsPrefsMigration(
         current: StoredModeSettings,
     ): StoredModeSettings {
         return current.copy(
-            flashMode = intOrNull(modePreferences, FLASH_MODE) ?: current.flashMode,
+            flashMode = intOrNull(modePreferences, FLASH_MODE)
+                ?.let(StoredFlashModeSerializer::fromWireValue)
+                ?: current.flashMode,
             geoTagging = booleanOrNull(modePreferences, GEO_TAGGING) ?: current.geoTagging,
             selfIllumination = booleanOrNull(modePreferences, SELF_ILLUMINATION)
                 ?: current.selfIllumination,

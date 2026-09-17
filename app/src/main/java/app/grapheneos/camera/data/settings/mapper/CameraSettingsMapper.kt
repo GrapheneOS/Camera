@@ -1,8 +1,10 @@
 package app.grapheneos.camera.data.settings.mapper
 
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import app.grapheneos.camera.data.settings.store.StoredAspectRatio
 import app.grapheneos.camera.data.settings.store.StoredCameraSettings
 import app.grapheneos.camera.data.settings.store.StoredGridType
 import javax.inject.Inject
@@ -19,7 +21,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
     @Suppress("CyclomaticComplexMethod")
     override fun map(stored: StoredCameraSettings): CameraSettings {
         return CameraSettings(
-            aspectRatio = stored.aspectRatio ?: SettingsDefaults.ASPECT_RATIO,
+            aspectRatio = map(stored.aspectRatio),
             gridType = map(stored.gridType),
             focusTimeoutSeconds = stored.focusTimeoutSeconds
                 ?: SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
@@ -50,7 +52,9 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
     @Suppress("SimplifyBooleanWithConstants")
     override fun map(settings: CameraSettings): StoredCameraSettings {
         return StoredCameraSettings(
-            aspectRatio = settings.aspectRatio.takeUnless { it == SettingsDefaults.ASPECT_RATIO },
+            aspectRatio = settings.aspectRatio
+                .takeUnless { it == SettingsDefaults.ASPECT_RATIO }
+                ?.let(::map),
             gridType = settings.gridType
                 .takeUnless { it == SettingsDefaults.GRID_TYPE }
                 ?.let(::map),
@@ -85,15 +89,34 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
         )
     }
 
+    private fun map(stored: StoredAspectRatio?): AspectRatio {
+        return when (stored) {
+            StoredAspectRatio.RATIO_4_3 -> AspectRatio.RATIO_4_3
+            StoredAspectRatio.RATIO_16_9 -> AspectRatio.RATIO_16_9
+
+            StoredAspectRatio.UNKNOWN,
+            null,
+            -> SettingsDefaults.ASPECT_RATIO
+        }
+    }
+
+    private fun map(aspectRatio: AspectRatio): StoredAspectRatio {
+        return when (aspectRatio) {
+            AspectRatio.RATIO_4_3 -> StoredAspectRatio.RATIO_4_3
+            AspectRatio.RATIO_16_9 -> StoredAspectRatio.RATIO_16_9
+        }
+    }
+
     private fun map(stored: StoredGridType?): GridType {
         return when (stored) {
-            null,
-            StoredGridType.UNKNOWN,
-            -> SettingsDefaults.GRID_TYPE
             StoredGridType.NONE -> GridType.NONE
             StoredGridType.THREE_BY_THREE -> GridType.THREE_BY_THREE
             StoredGridType.FOUR_BY_FOUR -> GridType.FOUR_BY_FOUR
             StoredGridType.GOLDEN_RATIO -> GridType.GOLDEN_RATIO
+
+            StoredGridType.UNKNOWN,
+            null,
+            -> SettingsDefaults.GRID_TYPE
         }
     }
 

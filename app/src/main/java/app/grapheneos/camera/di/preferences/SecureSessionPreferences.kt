@@ -4,7 +4,6 @@ import androidx.datastore.core.DataStore
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
@@ -13,21 +12,13 @@ import kotlinx.coroutines.runBlocking
 @Singleton
 internal class SecureSessionPreferences @Inject constructor() {
 
-    private var settings: DataStore<SettingsPrefs>? = null
     private var storage: DataStore<StoragePrefs>? = null
     private var sessionSettingsRepository: SettingsRepository? = null
     private var openActivities = 0
 
-    fun settingsSnapshotOf(durable: DataStore<SettingsPrefs>): DataStore<SettingsPrefs> {
-        return settings ?: snapshotOf(durable).also { settings = it }
-    }
-
-    fun settingsRepository(
-        durable: DataStore<SettingsPrefs>,
-        create: (DataStore<SettingsPrefs>) -> SettingsRepository,
-    ): SettingsRepository {
+    fun settingsRepository(owners: SettingsRepository): SettingsRepository {
         return sessionSettingsRepository
-            ?: create(settingsSnapshotOf(durable)).also { sessionSettingsRepository = it }
+            ?: owners.sessionCopy().also { sessionSettingsRepository = it }
     }
 
     fun storageSnapshotOf(durable: DataStore<StoragePrefs>): DataStore<StoragePrefs> {
@@ -38,15 +29,19 @@ internal class SecureSessionPreferences @Inject constructor() {
         openActivities++
     }
 
-    fun onSecureActivityDestroyed() {
+    fun onSecureActivityDestroyed(isChangingConfigurations: Boolean) {
         openActivities--
 
-        if (openActivities <= 0) {
-            openActivities = 0
-            settings = null
-            storage = null
-            sessionSettingsRepository = null
-        }
+        if (openActivities > 0) return
+
+        openActivities = 0
+
+        // The ViewModel outlives a configuration change and keeps writing to the copy it was built
+        // with, so the recreated Activity has to be handed that same copy rather than a fresh one.
+        if (isChangingConfigurations) return
+
+        storage = null
+        sessionSettingsRepository = null
     }
 
     private fun <T> snapshotOf(durable: DataStore<T>): DataStore<T> {

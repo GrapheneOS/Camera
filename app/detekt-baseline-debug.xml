@@ -10,7 +10,6 @@
     <ID>CyclomaticComplexMethod:MainActivity.kt:MainActivity$@SuppressLint("ClickableViewAccessibility") override fun onCreate</ID>
     <ID>CyclomaticComplexMethod:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$override fun onSensorChanged</ID>
     <ID>CyclomaticComplexMethod:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
-    <ID>EmptyCatchBlock:QRAnalyzer.kt:QRAnalyzer${ }</ID>
     <ID>EmptyFunctionBlock:ActivityLifeCycleHelper.kt:ActivityLifeCycleHelper${}</ID>
     <ID>EmptyFunctionBlock:App.kt:App.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ImageCapturer.kt:ImageCapturer.&lt;no name provided&gt;${}</ID>
@@ -26,8 +25,6 @@
     <ID>HasPlatformType:InAppGallery.kt:InAppGallery$val asyncImageLoader = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:InAppGallery.kt:InAppGallery$val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:MainActivity.kt:MainActivity$val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()</ID>
-    <ID>ImplicitDefaultLocale:QRAnalyzer.kt:QRAnalyzer$"%.02f".format(fps)</ID>
-    <ID>ImplicitDefaultLocale:ZoomBar.kt:ZoomBar$String.format("%.1fx", zoomRatio)</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is IllegalArgumentException</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is UnsupportedOperationException</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception is IllegalArgumentException</ID>
@@ -38,7 +35,6 @@
     <ID>LongMethod:InAppGallery.kt:InAppGallery$override fun onCreate</ID>
     <ID>LongMethod:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
     <ID>LongMethod:MainActivity.kt:MainActivity$@SuppressLint("ClickableViewAccessibility") override fun onCreate</ID>
-    <ID>LongMethod:MainActivity.kt:MainActivity$fun onScanResultSuccess</ID>
     <ID>LongMethod:MoreSettings.kt:MoreSettings$override fun onCreate</ID>
     <ID>LongMethod:SettingsDialog.kt:SettingsDialog$fun selfIllumination</ID>
     <ID>LongMethod:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
@@ -87,7 +83,6 @@
     <ID>MagicNumber:PreviewView.kt:3</ID>
     <ID>MagicNumber:PreviewView.kt:4</ID>
     <ID>MagicNumber:PreviewView.kt:9</ID>
-    <ID>MagicNumber:QRAnalyzer.kt:QRAnalyzer$180</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$180</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$270</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$5</ID>
@@ -104,17 +99,14 @@
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$5</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$90f</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$100</ID>
-    <ID>MagicNumber:ZoomBar.kt:ZoomBar$100f</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$300</ID>
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$90f</ID>
     <ID>MatchingDeclarationName:ImageDecoderUtils.kt:ImageResizer : OnHeaderDecodedListener</ID>
-    <ID>MaxLineLength:SettingsDialog.kt:SettingsDialog$mActivity.showMessage("Enabling audio while recording is not currently supported when it was disabled at the start")</ID>
     <ID>NestedBlockDepth:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
     <ID>NewLineAtEndOfFile:GSlideTransformer.kt:app.grapheneos.camera.GSlideTransformer.kt</ID>
     <ID>NewLineAtEndOfFile:SettingsFrameLayout.kt:app.grapheneos.camera.ui.SettingsFrameLayout.kt</ID>
     <ID>NewLineAtEndOfFile:SystemSettingsObserver.kt:app.grapheneos.camera.ktx.SystemSettingsObserver.kt</ID>
     <ID>NewLineAtEndOfFile:VideoCaptureActivity.kt:app.grapheneos.camera.ui.activities.VideoCaptureActivity.kt</ID>
-    <ID>NewLineAtEndOfFile:VideoOnlyActivity.kt:app.grapheneos.camera.ui.activities.VideoOnlyActivity.kt</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) { null } else { it } }</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ it.copy(enableCameraSounds = csSwitch.isChecked) }</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ it.copy(enableZsl = !settings.enableZsl) }</ID>
@@ -131,9 +123,7 @@
     <ID>PrintStackTrace:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$exception</ID>
     <ID>ReturnCount:App.kt:App$fun getLocation: Location?</ID>
     <ID>ReturnCount:App.kt:App$fun isAnyLocationProvideActive: Boolean</ID>
-    <ID>ReturnCount:BarcodeFormats.kt:BarcodeFormats$fun setEnabled: Boolean</ID>
     <ID>ReturnCount:BottomTabLayout.kt:BottomTabLayout$private fun settleDuration: Long</ID>
-    <ID>ReturnCount:ViewfinderController.kt:ViewfinderController$fun startCamera</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$@SuppressLint("RestrictedApi") override fun bind: BindOutcome</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$override fun isLensFacingSupported: Boolean</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$override fun probeUnknownExtensions</ID>
@@ -141,7 +131,6 @@
     <ID>ReturnCount:CapturedItems.kt:CapturedItems$fun parseCapturedItem: CapturedItem?</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
-    <ID>ReturnCount:MainActivity.kt:MainActivity$fun prefetchLastFrame</ID>
     <ID>ReturnCount:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$override fun onSensorChanged</ID>
     <ID>ReturnCount:SettingsDialog.kt:SettingsDialog$private fun updatePanelRegion: Boolean</ID>
     <ID>ReturnCount:Utils.kt:fun storageLocationToUiString: String</ID>
@@ -153,7 +142,6 @@
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItems.kt:e: ActivityNotFoundException</ID>
     <ID>SwallowedException:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
-    <ID>SwallowedException:QRAnalyzer.kt:QRAnalyzer$e: ReaderException</ID>
     <ID>SwallowedException:SettingsDialog.kt:SettingsDialog$exception: Exception</ID>
     <ID>SwallowedException:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$exception: Exception</ID>
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$e: Exception</ID>

@@ -18,9 +18,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.Looper
-import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
@@ -29,9 +27,7 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.PixelCopy
 import android.view.Surface
-import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -48,43 +44,47 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
+import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.FocusMeteringAction
-import androidx.camera.core.MeteringPointFactory
-import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isVisible
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
+import androidx.lifecycle.DEFAULT_ARGS_KEY
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import app.grapheneos.camera.App
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.CameraSessionFactory
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ktx.SystemSettingsObserver
@@ -103,9 +103,13 @@ import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderController
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
-import app.grapheneos.camera.util.CameraControl
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.resolveActivity
@@ -130,12 +134,6 @@ import kotlinx.coroutines.launch
 open class MainActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var cameraSessionFactory: CameraSessionFactory
-
-    @Inject
-    lateinit var viewfinder: ViewfinderController
-
-    @Inject
     lateinit var settingsRepository: SettingsRepository
 
     @Inject
@@ -145,8 +143,16 @@ open class MainActivity : AppCompatActivity() {
     lateinit var barcodeFormats: BarcodeFormats
 
     @Inject
+    lateinit var locationRepository: LocationRepository
+
+    @Inject
     lateinit var capturedItemSession: CapturedItemSession
 
+    val viewfinder: ViewfinderViewModel by viewModels(
+        extrasProducer = { viewfinderCreationExtras() },
+    )
+
+    @Inject
     lateinit var session: CameraSession
 
     private val application: App
@@ -163,6 +169,9 @@ open class MainActivity : AppCompatActivity() {
     lateinit var imageCapturer: ImageCapturer
 
     lateinit var videoCapturer: VideoCapturer
+
+    @set:VisibleForTesting
+    lateinit var tunePlayer: TunePlayer
 
     lateinit var settingsDialog: SettingsDialog
 
@@ -267,52 +276,26 @@ open class MainActivity : AppCompatActivity() {
 
     private var audioPermissionDialog: AlertDialog? = null
 
-    @Volatile
-    var lastFrame: Bitmap? = null
-        private set
-
-    @Volatile
-    private var frameCopyPending = false
-
-    // When the copy waiting in [lastFrame] was taken, or 0 when there is none waiting.
-    @Volatile
-    private var framePrefetchedAt = 0L
-
-    private var frameCopyThread: HandlerThread? = null
-
-    private var loggedMissingSurfaceView = false
+    internal val previewFrames by lazy {
+        PreviewFrameHolderImpl(
+            previewView = previewView,
+            onLateFrame = ::showLateTransitionFrame,
+        )
+    }
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
 
-    var timerDuration = 0
+    val selfTimerSeconds: Int
+        get() {
+            return viewfinder.uiState.value.settingsSheet.selfTimerSeconds
+        }
 
     private var bottomNavigationBarPadding: Int = 0
 
     private var shouldRestartRecording = false
 
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
-
-    private val runnable = Runnable {
-        val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
-            previewView.width.toFloat(),
-            previewView.height.toFloat()
-        )
-
-        val autoFocusPoint = factory.createPoint(
-            previewView.width / 2.0f,
-            previewView.height / 2.0f,
-            QROverlay.RATIO
-        )
-
-        session.camera?.cameraControl?.startFocusAndMetering(
-            FocusMeteringAction.Builder(autoFocusPoint).disableAutoCancel().build()
-        )
-
-        startFocusTimer()
-    }
-
-    private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var snackBar: Snackbar
 
@@ -327,7 +310,7 @@ open class MainActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) {
             shouldRestartRecording = true
-            viewfinder.startCamera(true)
+            viewfinder.onAction(LifecycleAction.RecordAudioPermissionGranted)
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
@@ -360,14 +343,6 @@ open class MainActivity : AppCompatActivity() {
         orientationHandler.onDeviceAngleChange(xDegrees, zDegrees)
     }
 
-    fun startFocusTimer() {
-        handler.postDelayed(runnable, autoCenterFocusDuration)
-    }
-
-    fun cancelFocusTimer() {
-        handler.removeCallbacks(runnable)
-    }
-
     private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {
         val builder = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.audio_permission_dialog_title)
@@ -387,7 +362,7 @@ open class MainActivity : AppCompatActivity() {
         builder.setNegativeButton(R.string.cancel, null)
 
         builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-            viewfinder.includeAudio = false
+            viewfinder.onAction(SettingsAction.AudioToggled(enabled = false))
             onDisableAudio()
         }
 
@@ -399,7 +374,7 @@ open class MainActivity : AppCompatActivity() {
         transitionShown = true
         previewGrid.visibility = View.INVISIBLE
 
-        val lastFrame = lastFrame
+        val lastFrame = previewFrames.lastFrame
         if (lastFrame == null || this is CaptureActivity) return
 
         // The still is of the camera being left behind, and the box under it takes the new camera's
@@ -413,11 +388,17 @@ open class MainActivity : AppCompatActivity() {
         mainOverlay.visibility = View.VISIBLE
     }
 
+    private fun showLateTransitionFrame() {
+        if (transitionShown) {
+            showPreviewTransition()
+        }
+    }
+
     private fun hidePreviewTransition() {
         transitionShown = false
         mainOverlay.visibility = View.INVISIBLE
 
-        if (viewfinder.isQRMode) {
+        if (viewfinder.uiState.value.isQrMode) {
             return
         }
 
@@ -429,106 +410,16 @@ open class MainActivity : AppCompatActivity() {
         settingsIcon.isEnabled = true
     }
 
-    fun updateLastFrame() {
-        if (hasFreshPrefetch()) {
-            framePrefetchedAt = 0
-            return
-        }
-        lastFrame = previewView.bitmap
-    }
-
-    // Starts a copy of the preview for [updateLastFrame] to pick up. previewView.bitmap blocks the
-    // caller on a GPU readback for about a tenth of a second, and startCamera() reads it at the
-    // point where it can least afford to block; the same pixels copied asynchronously cost the main
-    // thread nothing, as long as the copy is started early enough.
-    fun prefetchLastFrame() {
-        if (frameCopyPending || hasFreshPrefetch()) return
-        if (previewView.width == 0 || previewView.height == 0) return
-
-        val surfaceView = previewView.getChildAt(0) as? SurfaceView ?: run {
-            // PreviewView falls back to a TextureView on hardware that cannot take a SurfaceView,
-            // and then there is no surface here to copy the preview out of.
-            if (!loggedMissingSurfaceView) {
-                loggedMissingSurfaceView = true
-                Log.i(TAG, "Preview is not backed by a SurfaceView; no frame to prefetch")
-            }
-            return
-        }
-        if (!surfaceView.holder.surface.isValid) return
-
-        frameCopyPending = true
-        // Copying the surface rather than the window is what leaves the grid, the level and the
-        // focus ring out of it, the way previewView.bitmap does -- and the window holds nothing but
-        // a hole where the preview is, since the camera draws into a layer of its own.
-        copyPreviewInto(
-            createBitmap(previewView.width, previewView.height),
-            surfaceView,
-            Handler(frameCopyLooper()),
-            FRAME_COPY_RETRIES,
-        )
-    }
-
-    // [handler] is deliberately not the main thread's: the copy itself takes about 40ms, but the
-    // switch it is meant for blocks the main thread, so a callback queued there would only arrive
-    // once the switch it was supposed to spare had already paid for a frame of its own.
-    private fun copyPreviewInto(
-        copy: Bitmap,
-        surfaceView: SurfaceView,
-        handler: Handler,
-        retries: Int,
-    ) {
-        try {
-            PixelCopy.request(surfaceView, copy, { result ->
-                when {
-                    result == PixelCopy.SUCCESS -> {
-                        lastFrame = copy
-                        framePrefetchedAt = SystemClock.uptimeMillis()
-                        frameCopyPending = false
-                    }
-                    // The surface only holds its last buffer until the camera takes the slot back,
-                    // so a copy started in the gap between two preview frames comes back empty.
-                    retries > 0 -> {
-                        handler.postDelayed(
-                            { copyPreviewInto(copy, surfaceView, handler, retries - 1) },
-                            FRAME_COPY_RETRY_DELAY_MS,
-                        )
-                    }
-                    else -> {
-                        frameCopyPending = false
-                    }
-                }
-            }, handler)
-        } catch (_: IllegalArgumentException) {
-            // A surface that has gone throws here rather than reporting a failure, and the switch
-            // this copy is for is what takes it away -- from the main thread, with nothing to keep
-            // that from landing between a validity check and this call.
-            frameCopyPending = false
-        }
-    }
-
-    private fun frameCopyLooper(): Looper {
-        frameCopyThread?.let { return it.looper }
-        return HandlerThread("frame-copy").apply {
-            start()
-            frameCopyThread = this
-        }.looper
-    }
-
     // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
     // handed a gesture once the scroll view has taken it back off the tab -- by which point a
     // switch started by a plain tap has already happened. The freshness window keeps a touch that
     // switches nothing from costing more than one copy every couple of seconds.
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            prefetchLastFrame()
+            previewFrames.prefetch()
         }
         return super.dispatchTouchEvent(ev)
     }
-
-    // A copy taken for a switch that never happened shows a scene the camera has since moved on
-    // from, which is worse behind the transition than paying for a fresh one.
-    private fun hasFreshPrefetch(): Boolean = framePrefetchedAt != 0L &&
-        SystemClock.uptimeMillis() - framePrefetchedAt < PREFETCH_FRESHNESS_MS
 
     fun animateFocusRing(x: Float, y: Float) {
         // Move the focus ring so that its center is at the tap location (x, y)
@@ -647,7 +538,7 @@ open class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Permission granted.")
 
                 // Setup the camera since the permission is available
-                viewfinder.initializeCamera()
+                viewfinder.onAction(LifecycleAction.CameraPermissionGranted)
             }
             shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
                 Log.i(TAG, "The user has default denied camera permission.")
@@ -701,7 +592,7 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         // there are no camera controls in qr mode
-        if (viewfinder.isQRMode) {
+        if (viewfinder.uiState.value.isQrMode) {
             return super.onKeyUp(keyCode, event)
         }
 
@@ -715,13 +606,13 @@ open class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_FOCUS -> {
                 // cancel any manual focus
                 // CameraX will start the continuous autofocus (if supported) automatically
-                previewView.controller?.cameraControl?.cancelFocusAndMetering()
+                viewfinder.onAction(CameraAction.FocusKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_IN -> {
-                cameraControl.zoomIn()
+                viewfinder.onAction(CameraAction.ZoomInKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_OUT -> {
-                cameraControl.zoomOut()
+                viewfinder.onAction(CameraAction.ZoomOutKeyPressed)
             }
         }
         return super.onKeyUp(keyCode, event)
@@ -743,21 +634,17 @@ open class MainActivity : AppCompatActivity() {
         // Will also be called by Android Lifecycle when the app starts up
         checkPermissions()
 
-        if (viewfinder.isQRMode) {
-            startFocusTimer()
-        }
-
         updateThumbnail()
 
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             requestLocation()
         }
 
         // If the preview of video capture activity isn't showing
-        if (!(this is VideoCaptureActivity && thirdOption.isVisible)) {
-            if (!isQRDialogShowing) {
+        if (!(this is VideoCaptureActivity && viewfinder.uiState.value.capturedPreviewVisible)) {
+            if (!viewfinder.uiState.value.qrResultVisible) {
                 if (hasCameraPermission()) {
-                    viewfinder.initializeCamera(true)
+                    viewfinder.onAction(LifecycleAction.ScreenResumed)
                 } else {
                     Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
                 }
@@ -794,16 +681,13 @@ open class MainActivity : AppCompatActivity() {
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
-        if (viewfinder.isQRMode) {
-            cancelFocusTimer()
-        } else {
+        if (!viewfinder.uiState.value.isQrMode) {
             imageCapturer.cancelPendingCaptureRequest()
         }
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             application.dropLocationUpdates()
         }
-        lastFrame = null
-        framePrefetchedAt = 0
+        previewFrames.clear()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -813,16 +697,41 @@ open class MainActivity : AppCompatActivity() {
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
         val sessionHandler = ViewfinderEffectHandler(this)
-        session = cameraSessionFactory.create(environment = sessionHandler)
-        viewfinder.attach(
-            environment = sessionHandler,
-            effects = sessionHandler,
-            chrome = sessionHandler,
-            session = session,
+        viewfinder.onAction(
+            LifecycleAction.ScreenCreated(
+                host = ViewfinderHost(
+                    previewTarget = PreviewTarget(
+                        lifecycleOwner = this,
+                        surfaceProvider = previewView.surfaceProvider,
+                        meteringPointFactory = previewView.meteringPointFactory,
+                    ),
+                    chrome = sessionHandler,
+                    previewFrames = previewFrames,
+                ),
+            ),
         )
-        cameraControl = CameraControl(session)
+        tunePlayer = TunePlayer(
+            context = this,
+            soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
+        )
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.uiState.collect { state ->
+                    sessionHandler.render(state)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.effects.collect { effect ->
+                    sessionHandler.handle(effect)
+                }
+            }
+        }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             capturedItemSession.prepare()
@@ -845,7 +754,7 @@ open class MainActivity : AppCompatActivity() {
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
                 hidePreviewTransition()
-                viewfinder.reloadSettings()
+                viewfinder.onAction(LifecycleAction.PreviewStreamingStarted)
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
@@ -881,8 +790,8 @@ open class MainActivity : AppCompatActivity() {
         }
         flipCameraCircle.setOnClickListener {
             resetAutoSleep()
-            if (viewfinder.isQRMode) {
-                viewfinder.scanAllCodes = !viewfinder.scanAllCodes
+            if (viewfinder.uiState.value.isQrMode) {
+                viewfinder.onAction(SettingsAction.ScanAllCodesToggleClicked)
                 return@setOnClickListener
             }
 
@@ -910,7 +819,7 @@ open class MainActivity : AppCompatActivity() {
             rotate.interpolator = LinearInterpolator()
 
             it.startAnimation(rotate)
-            viewfinder.toggleCameraSelector()
+            viewfinder.onAction(CameraAction.LensSwitchClicked)
         }
 
         binding.thirdCircle.setOnClickListener {
@@ -940,21 +849,16 @@ open class MainActivity : AppCompatActivity() {
             // would otherwise capture in the mode being left behind.
             tabLayout.settleNow()
 
-            if (viewfinder.isVideoMode) {
+            if (viewfinder.uiState.value.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
                     videoCapturer.startRecording()
                 }
-            } else if (viewfinder.isQRMode) {
-                session.toggleTorchState()
-                if (session.isTorchOn) {
-                    setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
-                } else {
-                    setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
-                }
+            } else if (viewfinder.uiState.value.isQrMode) {
+                viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
-                if (timerDuration == 0) {
+                if (selfTimerSeconds == 0) {
                     imageCapturer.takePicture()
                 } else {
                     if (cdTimer.isRunning) {
@@ -970,7 +874,7 @@ open class MainActivity : AppCompatActivity() {
         exposureBar.setMainActivity(this)
 
         settingsIcon.setOnClickListener {
-            if (!viewfinder.isQRMode) {
+            if (!viewfinder.uiState.value.isQrMode) {
                 settingsDialog.show()
             }
         }
@@ -1005,8 +909,6 @@ open class MainActivity : AppCompatActivity() {
                 }
             }
         })
-
-        previewGrid.setMainActivity(this)
 
         var isInsetSet = false
 
@@ -1095,7 +997,6 @@ open class MainActivity : AppCompatActivity() {
             showMoreQrFormatOptions(
                 activity = this,
                 barcodeFormats = barcodeFormats,
-                onApplied = { session.refreshQrHints() },
             )
         }
 
@@ -1111,11 +1012,7 @@ open class MainActivity : AppCompatActivity() {
         azToggle.mActivity = this
         azToggle.key = BarcodeFormat.AZTEC.name
 
-        viewfinder.loadSettings()
-
-        barcodeFormats.load()
         selectBarcodeFormatToggles()
-        session.refreshQrHints()
 
         settingsDialog.loadInitialState()
 
@@ -1181,7 +1078,7 @@ open class MainActivity : AppCompatActivity() {
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
         // already have dragged the strip, so put it back on the mode the camera is really in.
         if (videoCapturer.isRecording) {
-            tabLayout.getTabForMode(viewfinder.currentMode)?.let {
+            tabLayout.getTabForMode(viewfinder.uiState.value.mode)?.let {
                 tabLayout.goToTab(it)
             }
             return
@@ -1195,15 +1092,15 @@ open class MainActivity : AppCompatActivity() {
             // holds the main thread for half a second, so a transition left to the stream state
             // would only reach the screen after the wait it is there to explain. Guarded on the
             // mode really changing, since nothing would rebind to take it back down again.
-            if (mode != viewfinder.currentMode) {
+            if (mode != viewfinder.uiState.value.mode) {
                 showPreviewTransition()
             }
 
             // switchMode() puts the strip on the mode the camera actually ended up in, which is a
             // different one when an extension fails to bind.
             tabLayout.goToTab(selectedTab) {
-                if (mode != viewfinder.currentMode) {
-                    viewfinder.switchMode(mode)
+                if (mode != viewfinder.uiState.value.mode) {
+                    viewfinder.onAction(CameraAction.ModeSelected(mode))
                 } else if (
                     transitionShown &&
                     previewView.previewStreamState.value == StreamState.STREAMING
@@ -1220,10 +1117,9 @@ open class MainActivity : AppCompatActivity() {
 
     /** Shows the pending self-timer duration on the capture button, where it applies at all. */
     fun updateSelfTimerBadge() {
-        cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
-        // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
-        val applies = timerDuration != 0 && !viewfinder.isQRMode && !viewfinder.isVideoMode
-        cbText.visibility = if (applies) View.VISIBLE else View.INVISIBLE
+        val state = viewfinder.uiState.value
+        cbText.text = state.selfTimerBadge
+        cbText.visibility = if (state.selfTimerBadgeVisible) View.VISIBLE else View.INVISIBLE
     }
 
     fun restartRecordingWithMicPermission() {
@@ -1279,105 +1175,106 @@ open class MainActivity : AppCompatActivity() {
         return String(hexChars)
     }
 
-    private var isQRDialogShowing = false
-
-    fun onScanResultSuccess(rawText: String) {
-        if (isQRDialogShowing) return
-
-        isQRDialogShowing = true
-
+    fun showQrResult(rawText: String) {
         val hString = bytesToHex(
             rawText.toByteArray(StandardCharsets.UTF_8)
         )
 
-        runOnUiThread {
-            val builder = MaterialAlertDialogBuilder(this)
-            val dialogBinding = ScanResultDialogBinding.inflate(layoutInflater)
-            builder.setView(dialogBinding.root)
+        val builder = MaterialAlertDialogBuilder(this)
+        val dialogBinding = ScanResultDialogBinding.inflate(layoutInflater)
+        builder.setView(dialogBinding.root)
 
-            val tabLayout: TabLayout = dialogBinding.encodingTabs
-            val textView = dialogBinding.scanResultText
+        val tabLayout: TabLayout = dialogBinding.encodingTabs
+        val textView = dialogBinding.scanResultText
 
-            val intentView = Intent(Intent.ACTION_VIEW, rawText.toUri())
+        val intentView = Intent(Intent.ACTION_VIEW, rawText.toUri())
 
-            if (packageManager.resolveActivity(intentView, 0L) != null) {
-                dialogBinding.openWith.setOnClickListener {
-                    val chooser = Intent.createChooser(intentView, getString(R.string.open_with))
-                    startActivity(chooser)
-                }
-            } else {
-                dialogBinding.openWith.visibility = View.GONE
+        if (packageManager.resolveActivity(intentView, 0L) != null) {
+            dialogBinding.openWith.setOnClickListener {
+                val chooser = Intent.createChooser(intentView, getString(R.string.open_with))
+                startActivity(chooser)
             }
+        } else {
+            dialogBinding.openWith.visibility = View.GONE
+        }
 
-            tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
 
-                override fun onTabSelected(tab: TabLayout.Tab?) {
-                    when (tab?.text.toString()) {
-                        "Binary" -> {
-                            textView.autoLinkMask = 0
-                            textView.text = hString
-                        }
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.text.toString()) {
+                    "Binary" -> {
+                        textView.autoLinkMask = 0
+                        textView.text = hString
+                    }
 
-                        "UTF-8" -> {
-                            textView.autoLinkMask =
-                                Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
-                            textView.text = rawText
-                        }
+                    "UTF-8" -> {
+                        textView.autoLinkMask =
+                            Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
+                        textView.text = rawText
                     }
                 }
+            }
 
-                override fun onTabReselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
 
-                override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            })
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+        })
 
-            tabLayout.addTab(
-                tabLayout.newTab().apply {
-                    text = "UTF-8"
-                }
+        tabLayout.addTab(
+            tabLayout.newTab().apply {
+                text = "UTF-8"
+            }
+        )
+
+        tabLayout.addTab(
+            tabLayout.newTab().apply {
+                text = "Binary"
+            }
+        )
+
+        val ctc: ImageButton = dialogBinding.copyQrText
+        ctc.setOnClickListener {
+            val clipboardManager = getSystemService(
+                Context.CLIPBOARD_SERVICE
+            ) as ClipboardManager
+            val clipData = ClipData.newPlainText(
+                "text",
+                textView.text
             )
+            clipboardManager.setPrimaryClip(clipData)
 
-            tabLayout.addTab(
-                tabLayout.newTab().apply {
-                    text = "Binary"
-                }
+            showMessage(getString(R.string.copied_text_to_clipboard))
+        }
+
+        val sButton: ImageButton = dialogBinding.shareQrText
+        sButton.setOnClickListener {
+            val sIntent = Intent(Intent.ACTION_SEND)
+            sIntent.type = "text/plain"
+            sIntent.putExtra(Intent.EXTRA_TEXT, textView.text.toString())
+            startActivity(
+                Intent.createChooser(
+                    sIntent,
+                    getString(R.string.share_text_via)
+                )
             )
+        }
 
-            val ctc: ImageButton = dialogBinding.copyQrText
-            ctc.setOnClickListener {
-                val clipboardManager = getSystemService(
-                    Context.CLIPBOARD_SERVICE
-                ) as ClipboardManager
-                val clipData = ClipData.newPlainText(
-                    "text",
-                    textView.text
-                )
-                clipboardManager.setPrimaryClip(clipData)
+        builder.setOnDismissListener {
+            viewfinder.onAction(LifecycleAction.QrResultDismissed)
+        }
 
-                showMessage(getString(R.string.copied_text_to_clipboard))
-            }
+        builder.showIgnoringShortEdgeMode()
+    }
 
-            val sButton: ImageButton = dialogBinding.shareQrText
-            sButton.setOnClickListener {
-                val sIntent = Intent(Intent.ACTION_SEND)
-                sIntent.type = "text/plain"
-                sIntent.putExtra(Intent.EXTRA_TEXT, textView.text.toString())
-                startActivity(
-                    Intent.createChooser(
-                        sIntent,
-                        getString(R.string.share_text_via)
-                    )
-                )
-            }
+    private fun viewfinderCreationExtras(): CreationExtras {
+        val defaults = defaultViewModelCreationExtras
+        val arguments = Bundle().apply {
+            defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
+            putAll(ViewfinderViewModel.arguments(cameraEntryPoint))
+        }
 
-            builder.setOnDismissListener {
-                isQRDialogShowing = false
-                viewfinder.startCamera(true)
-            }
-
-            session.cameraProvider?.unbindAll()
-
-            builder.showIgnoringShortEdgeMode()
+        return MutableCreationExtras(defaults).apply {
+            set(DEFAULT_ARGS_KEY, arguments)
         }
     }
 
@@ -1402,16 +1299,6 @@ open class MainActivity : AppCompatActivity() {
     fun setFlipCameraIcon(@DrawableRes icon: Int, @StringRes description: Int) {
         binding.flipCameraIconContent.setImageResource(icon)
         binding.flipCameraIconContent.contentDescription = getString(description)
-    }
-
-    /**
-     * The big middle button is a shutter, a record/stop button and a torch switch depending on
-     * the mode, so its description has to travel with its drawable exactly like the one in
-     * [setFlipCameraIcon] does.
-     */
-    fun setCaptureButtonIcon(@DrawableRes icon: Int, @StringRes description: Int) {
-        captureButton.setImageResource(icon)
-        captureButton.contentDescription = getString(description)
     }
 
     /**
@@ -1472,8 +1359,12 @@ open class MainActivity : AppCompatActivity() {
         // by onOrientationChange.
         session.preview?.targetRotation =
             previewView.display?.rotation ?: Surface.ROTATION_0
-        session.camera?.cameraInfo?.let {
-            previewView.applyPreviewRatio(viewfinder.aspectRatio, it)
+        val state = viewfinder.uiState.value
+        state.sensorOrientationDegrees?.let {
+            previewView.applyPreviewRatio(
+                aspectRatio = state.aspectRatio,
+                sensorOrientationDegrees = it,
+            )
         }
 
         rootView.post { sensorNotifier?.notifyListeners() }
@@ -1520,8 +1411,8 @@ open class MainActivity : AppCompatActivity() {
         super.onDestroy()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
-        frameCopyThread?.quitSafely()
-        viewfinder.detach()
+        previewFrames.release()
+        viewfinder.onAction(LifecycleAction.ScreenDestroyed)
         capturedItemSession.close()
     }
 
@@ -1538,7 +1429,7 @@ open class MainActivity : AppCompatActivity() {
     ) {
         // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
         // mode this returns to
-        if (viewfinder.requireLocation) {
+        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             requestLocation(application.isAnyLocationProvideActive())
         }
     }
@@ -1547,10 +1438,10 @@ open class MainActivity : AppCompatActivity() {
     private val locationPermissionLauncher = registerForActivityResult(
         RequestMultiplePermissions()
     ) {
-        if (!application.shouldAskForLocationPermission()) {
+        if (!locationRepository.shouldAskForPermission()) {
             requestLocation()
         } else {
-            viewfinder.requireLocation = false
+            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
         }
     }
 
@@ -1578,7 +1469,7 @@ open class MainActivity : AppCompatActivity() {
 
                     it.setOnDismissListener {
                         if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            viewfinder.requireLocation = false
+                            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
                         }
                     }
                 }.showIgnoringShortEdgeMode()
@@ -1614,7 +1505,7 @@ open class MainActivity : AppCompatActivity() {
         isStarted = false
         // Stop explicitly rather than letting the unbind tear the recording down for us.
         if (this::videoCapturer.isInitialized && videoCapturer.isRecording) {
-            updateLastFrame()
+            previewFrames.holdCurrentFrame()
             videoCapturer.stopRecording()
         }
         super.onStop()
@@ -1668,8 +1559,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    open fun shouldShowCameraModeTabs() = true
-
     private fun restartRecordingIfPermissionsWasUnavailable() {
         if (shouldRestartRecording) {
             shouldRestartRecording = false
@@ -1677,17 +1566,9 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var cameraControl: CameraControl
-
     companion object {
         private const val TAG = "GOCam"
-        private const val autoCenterFocusDuration = 2000L
+
         private val hexArray = "0123456789ABCDEF".toCharArray()
-
-        private const val PREFETCH_FRESHNESS_MS = 2_000L
-
-        // One preview frame at 30fps, the wait for the camera to fill the surface again.
-        private const val FRAME_COPY_RETRY_DELAY_MS = 33L
-        private const val FRAME_COPY_RETRIES = 3
     }
 }

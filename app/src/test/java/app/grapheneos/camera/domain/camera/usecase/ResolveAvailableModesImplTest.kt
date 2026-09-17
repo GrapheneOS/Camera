@@ -1,10 +1,10 @@
 package app.grapheneos.camera.domain.camera.usecase
 
-import androidx.camera.core.CameraSelector
-import androidx.camera.extensions.ExtensionMode
 import app.grapheneos.camera.data.camera.model.ExtensionKey
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ExtensionMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -76,12 +76,12 @@ class ResolveAvailableModesImplTest {
 
     private companion object {
         val NIGHT_FRONT = ExtensionKey(
-            lensFacing = CameraSelector.LENS_FACING_FRONT,
+            lensFacing = LensFacing.FRONT,
             extensionMode = ExtensionMode.NIGHT,
         )
 
         val NIGHT_BACK = ExtensionKey(
-            lensFacing = CameraSelector.LENS_FACING_BACK,
+            lensFacing = LensFacing.BACK,
             extensionMode = ExtensionMode.NIGHT,
         )
     }

@@ -11,12 +11,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatSeekBar
-import androidx.camera.core.ExposureState
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 
 class ExposureBar : AppCompatSeekBar {
     constructor(context: Context) : super(context)
@@ -42,16 +43,17 @@ class ExposureBar : AppCompatSeekBar {
         this.mainActivity = mainActivity
     }
 
-    fun setExposureConfig(exposureState: ExposureState) {
-        max = exposureState.exposureCompensationRange.upper
-        min = exposureState.exposureCompensationRange.lower
+    private var renderedExposure: ExposureUiState? = null
 
-        incrementProgressBy(exposureState.exposureCompensationIndex)
+    fun render(exposure: ExposureUiState?) {
+        if (exposure == renderedExposure) return
+        renderedExposure = exposure
 
-        Log.i("TAG", "Setting progress from setExposureConfig")
-        progress = (exposureState.exposureCompensationStep.numerator
-                / exposureState.exposureCompensationStep.denominator) *
-                exposureState.exposureCompensationIndex
+        if (exposure == null) return
+
+        max = exposure.max
+        min = exposure.min
+        progress = exposure.progress
 
         onSizeChanged(width, height, 0, 0)
     }
@@ -112,8 +114,9 @@ class ExposureBar : AppCompatSeekBar {
                 Log.i("progress", progress.toString())
                 Log.i("max", max.toString())
 
-                mainActivity.session.camera?.cameraControl
-                    ?.setExposureCompensationIndex(progress)
+                mainActivity.viewfinder.onAction(
+                    CameraAction.ExposureSliderDragged(compensationIndex = progress),
+                )
 
                 showPanel()
 

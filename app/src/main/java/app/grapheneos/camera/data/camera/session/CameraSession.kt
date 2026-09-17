@@ -1,149 +1,131 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Size
+import android.view.Display
+import android.view.Surface
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
-import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.Quality
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import app.grapheneos.camera.analyzer.QRAnalyzer
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
+import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraExposure
+import app.grapheneos.camera.data.camera.model.CameraSessionEvent
+import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.PreviewTarget
+import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
+import app.grapheneos.camera.data.core.model.ExtensionMode
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
+import com.google.zxing.BarcodeFormat
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.concurrent.thread
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 interface CameraSession {
-
-    var listener: Listener?
-    var lensFacing: Int
+    val events: Flow<CameraSessionEvent>
 
     val cameraProvider: ProcessCameraProvider?
+    val isActive: Boolean
+    var lensFacing: LensFacing
+
     val camera: Camera?
     val preview: Preview?
     val imageCapture: ImageCapture?
     val videoCapture: VideoCapture<Recorder>?
     val iAnalyzer: ImageAnalysis?
-    val zoomState: ZoomState?
 
     val extensionsAvailable: Boolean
     val isFlashAvailable: Boolean
     val isZslSupported: Boolean
     val isTorchOn: Boolean
+    val exposure: CameraExposure?
+    val sensorOrientationDegrees: Int?
+    val zoom: CameraZoom?
 
-    fun initialize(forced: Boolean, extensionMode: Int)
+    fun setPreviewTarget(target: PreviewTarget?)
+    fun initialize(forced: Boolean, extensionMode: ExtensionMode?)
+    fun isLensFacingSupported(lensFacing: LensFacing, extensionMode: ExtensionMode?): Boolean
+    fun selectLensFacing(lensFacing: LensFacing)
     fun bind(settings: CameraBindSettings): BindOutcome
-    fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean
-    fun selectLensFacing(lensFacing: Int)
+    fun unbind()
     fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit)
+    fun supportedVideoQualities(): List<VideoQuality>
     fun canApplyVideoStabilization(): Boolean
+    fun setFlashMode(flashMode: FlashMode)
     fun toggleTorchState()
+    fun setZoomRatio(zoomRatio: Float)
+    fun setLinearZoom(linearZoom: Float)
+    fun setExposureCompensationIndex(index: Int)
+    fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long)
+    fun cancelFocusAndMetering()
     fun reattachZoomState()
-    fun refreshQrHints()
-
-    interface Listener {
-        fun onZoomStateChanged()
-        fun onCameraProviderUnavailable()
-        fun onExtensionsUnavailable()
-        fun onProviderReady(forced: Boolean)
-        fun onFeaturesSelected(
-            boundLensFacing: Int,
-            requested: List<GroupableFeature>,
-            qualityFeature: GroupableFeature?,
-            selected: Set<GroupableFeature>,
-        )
-    }
+    fun setBarcodeFormats(barcodeFormats: Set<BarcodeFormat>)
 }
 
 @SuppressLint("UnsafeOptInUsageError")
-internal class CameraSessionImpl @AssistedInject constructor(
-    @Assisted private val environment: CameraSessionEnvironment,
+internal class CameraSessionImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val displayManager: DisplayManager,
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
+    private val cameraXConstantsMapper: CameraXConstantsMapper,
+    private val cameraXStateMapper: CameraXStateMapper,
     private val inVideoSnapshotSupportResolver: InVideoSnapshotSupportResolver,
     private val snapshotProbeCache: SnapshotProbeCache,
 ) : CameraSession {
 
-    override var listener: CameraSession.Listener? = null
+    private val sessionEvents = MutableSharedFlow<CameraSessionEvent>(
+        extraBufferCapacity = EVENT_BUFFER_CAPACITY,
+    )
 
-    override var camera: Camera? = null
-
-    override var imageCapture: ImageCapture? = null
-
-    override var preview: Preview? = null
-
-    override var videoCapture: VideoCapture<Recorder>? = null
-
-    override var iAnalyzer: ImageAnalysis? = null
-
-    override var lensFacing = DEFAULT_LENS_FACING
-
-    private var cameraSelector: CameraSelector = CameraSelector.Builder()
-        .requireLensFacing(DEFAULT_LENS_FACING)
-        .build()
-
-    // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
-    // extension is bound, because CameraX then queries the extension's zoom range through
-    // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
-    // of the camera on any path that runs more than once per bind. It is null from the moment a
-    // bind starts until attachZoomState has run, which is where that query was moved to.
-    override var zoomState: ZoomState? = null
-        private set
-
-    private var zoomStateSource: LiveData<ZoomState>? = null
-
-    private val zoomStateObserver = Observer<ZoomState> {
-        zoomState = it
-        if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-            listener?.onZoomStateChanged()
-        }
-    }
-
-    private val handler = Handler(Looper.getMainLooper())
-
-    private val attachZoomState = Runnable {
-        if (!environment.isSessionActive) return@Runnable
-
-        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
-            it.observe(environment.sessionLifecycleOwner, zoomStateObserver)
-        }
-
-        zoomState = zoomStateSource?.value
-    }
+    override val events: Flow<CameraSessionEvent> = sessionEvents.asSharedFlow()
 
     override var cameraProvider: ProcessCameraProvider? = null
 
@@ -151,11 +133,30 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     private var extensionProbesInFlight = false
 
-    private var qrAnalyzer: QRAnalyzer? = null
+    private var previewTarget: PreviewTarget? = null
 
-    private val cameraExecutor by lazy {
-        Executors.newSingleThreadExecutor()
-    }
+    override val isActive: Boolean
+        get() {
+            val lifecycle = previewTarget?.lifecycleOwner?.lifecycle ?: return false
+
+            return lifecycle.currentState != Lifecycle.State.DESTROYED
+        }
+
+    override var lensFacing = DEFAULT_LENS_FACING
+
+    private var cameraSelector: CameraSelector = selectorFor(DEFAULT_LENS_FACING)
+
+    override var camera: Camera? = null
+
+    override var preview: Preview? = null
+
+    override var imageCapture: ImageCapture? = null
+
+    override var videoCapture: VideoCapture<Recorder>? = null
+
+    override var iAnalyzer: ImageAnalysis? = null
+
+    private var qrAnalyzer: QrCodeAnalyzer? = null
 
     override val extensionsAvailable: Boolean
         get() {
@@ -187,79 +188,93 @@ internal class CameraSessionImpl @AssistedInject constructor(
             }
         }
 
-    override fun refreshQrHints() {
-        qrAnalyzer?.refreshHints()
+    override val exposure: CameraExposure?
+        get() {
+            return camera?.cameraInfo?.exposureState?.let { cameraXStateMapper.map(it) }
+        }
+
+    override val sensorOrientationDegrees: Int?
+        get() {
+            return camera?.cameraInfo?.sensorRotationDegrees
+        }
+
+    override val zoom: CameraZoom?
+        get() {
+            return zoomState?.let { cameraXStateMapper.map(it) }
+        }
+
+    // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
+    // extension is bound, because CameraX then queries the extension's zoom range through
+    // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
+    // of the camera on any path that runs more than once per bind. It is null from the moment a
+    // bind starts until attachZoomState has run, which is where that query was moved to.
+    private var zoomState: ZoomState? = null
+
+    private var zoomStateSource: LiveData<ZoomState>? = null
+
+    private val zoomStateObserver = Observer<ZoomState> {
+        zoomState = it
+        if (it.linearZoom != 0f || it.zoomRatio != 1f) {
+            sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
+        }
     }
 
-    override fun selectLensFacing(lensFacing: Int) {
-        cameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
+    private val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
+
+    private val cameraExecutor = Executors.newSingleThreadExecutor()
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val attachZoomState = Runnable {
+        if (!isActive) return@Runnable
+
+        val lifecycleOwner = previewTarget?.lifecycleOwner ?: return@Runnable
+
+        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
+            it.observe(lifecycleOwner, zoomStateObserver)
+        }
+
+        zoomState = zoomStateSource?.value
     }
 
-    // Every bind hands out a fresh LiveData in extension modes, and the old observer would
-    // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
-    // thumb once per bind that had ever happened.
-    override fun reattachZoomState() {
+    private val qrAutofocus = Runnable { focusOnQrScanArea() }
+
+    override fun setPreviewTarget(target: PreviewTarget?) {
+        previewTarget = target
+
+        if (target == null) {
+            forgetBoundCamera()
+        }
+    }
+
+    fun close() {
+        setPreviewTarget(null)
+
+        cameraExecutor.shutdown()
+    }
+
+    // CameraX unbinds every use case of a lifecycle that reaches ON_DESTROY, and this session
+    // outlives the screen whose lifecycle that was.
+    private fun forgetBoundCamera() {
+        handler.removeCallbacks(attachZoomState)
+        handler.removeCallbacks(qrAutofocus)
         zoomStateSource?.removeObserver(zoomStateObserver)
         zoomStateSource = null
         zoomState = null
-        // Reading the new one is what costs ~100 ms behind an extension, and nothing before the
-        // next message needs it: the bar below draws a freshly bound camera's 1.0x either way, and
-        // every other reader is a gesture.
-        handler.removeCallbacks(attachZoomState)
-        handler.post(attachZoomState)
+        camera = null
+        preview = null
+        imageCapture = null
+        videoCapture = null
+        iAnalyzer = null
+        qrAnalyzer = null
     }
 
-    // Whether the EIS toggle has anything to act on. Stabilization is only ever requested through
-    // the feature group (see startCamera), which in turn needs the platform to be able to verify
-    // feature combinations, so a camera that can stabilize is not on its own enough: where the
-    // group cannot be used nothing applies EIS, and offering the toggle there is offering a
-    // control that does nothing.
-    override fun canApplyVideoStabilization(): Boolean {
-        return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
-    }
+    override fun initialize(forced: Boolean, extensionMode: ExtensionMode?) {
+        if (cameraProvider != null) return
 
-    private fun isVideoStabilizationSupported(): Boolean {
-        // The toggle asks for both kinds of stabilization (see the preferred feature group in
-        // startCamera), preferring the preview kind and falling back to the recording-only kind,
-        // so it is meaningful whenever either one is available. Testing only the recorder
-        // capability both hid the toggle on cameras that can stabilize the preview but not the
-        // recording, and offered it on cameras where only the recorder can stabilize - where
-        // the bind used to ask exclusively for preview stabilization, leaving the toggle with
-        // nothing to do.
-        return isPreviewStabilizationSupported() || isRecorderStabilizationSupported()
-    }
-
-    private fun isPreviewStabilizationSupported(): Boolean {
-        return Preview.getPreviewCapabilities(getCurrentCameraInfo()).isStabilizationSupported
-    }
-
-    private fun isRecorderStabilizationSupported(): Boolean {
-        return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
-    }
-
-    override fun toggleTorchState() {
-        isTorchOn = !isTorchOn
-    }
-
-    private fun getCurrentCameraInfo(): CameraInfo {
-        val provider = requireNotNull(cameraProvider) {
-            "Camera provider is not ready yet"
-        }
-
-        return provider.getCameraInfo(cameraSelector)
-    }
-
-    override fun initialize(forced: Boolean, extensionMode: Int) {
-        if (cameraProvider != null) {
-            listener?.onProviderReady(forced)
-            return
-        }
-
-        cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
+        cameraProviderSource.acquireProvider(context) { provider ->
             when (provider) {
-                null -> listener?.onCameraProviderUnavailable()
+                null -> sessionEvents.tryEmit(CameraSessionEvent.CameraProviderUnavailable)
                 else -> onCameraProviderReady(provider, forced, extensionMode)
             }
         }
@@ -268,42 +283,95 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private fun onCameraProviderReady(
         provider: ProcessCameraProvider,
         forced: Boolean,
-        extensionMode: Int,
+        extensionMode: ExtensionMode?,
     ) {
         if (!snapshotProbeCache.isProbedThrough(provider)) {
             // A different provider instance means the camera stack was reinitialized:
             // extension verdicts probed through the previous instance (including bind-time
-            // blacklists, see startCamera) describe vendor state that no longer exists.
+            // blacklists, see bind) describe vendor state that no longer exists.
             extensionAvailabilityRepository.clear()
             snapshotProbeCache.adopt(provider)
         }
         cameraProvider = provider
 
-        // Manually switch to the other lens facing (if the default lens facing isn't
-        // supported for the current device)
-        val isDefaultLensSupported = isLensFacingSupported(
-            lensFacing = lensFacing,
-            extensionMode = extensionMode,
-        )
-
-        if (!isDefaultLensSupported) {
-            lensFacing = when (lensFacing) {
-                CameraSelector.LENS_FACING_BACK -> CameraSelector.LENS_FACING_FRONT
-                else -> CameraSelector.LENS_FACING_BACK
-            }
+        lensFacing = lensFacing.supportedOrOpposite {
+            isLensFacingSupported(
+                lensFacing = it,
+                extensionMode = extensionMode,
+            )
         }
 
         cameraProviderSource.acquireExtensionsManager(
-            environment.sessionContext,
+            context,
             provider,
         ) { manager ->
             when (manager) {
-                null -> listener?.onExtensionsUnavailable()
+                null -> sessionEvents.tryEmit(CameraSessionEvent.ExtensionsUnavailable)
                 else -> extensionsManager = manager
             }
 
-            listener?.onProviderReady(forced)
+            sessionEvents.tryEmit(CameraSessionEvent.ProviderReady(forced = forced))
         }
+    }
+
+    override fun isLensFacingSupported(
+        lensFacing: LensFacing,
+        extensionMode: ExtensionMode?,
+    ): Boolean {
+        var tCameraSelector = selectorFor(lensFacing)
+
+        if (extensionMode != null) {
+            extensionsManager?.let { em ->
+                if (!isExtensionUsable(tCameraSelector, lensFacing, extensionMode)) {
+                    return false
+                }
+
+                try {
+                    tCameraSelector = em.getExtensionEnabledCameraSelector(
+                        tCameraSelector,
+                        cameraXConstantsMapper.map(extensionMode),
+                    )
+                } catch (_: IllegalArgumentException) {
+                    return false
+                }
+            }
+        }
+
+        return cameraProvider?.hasCamera(tCameraSelector) ?: false
+    }
+
+    override fun selectLensFacing(lensFacing: LensFacing) {
+        cameraSelector = selectorFor(lensFacing)
+    }
+
+    private fun isExtensionUsable(
+        selector: CameraSelector,
+        lensFacing: LensFacing,
+        extensionMode: ExtensionMode,
+        probeOnMiss: Boolean = true,
+    ): Boolean {
+        val em = extensionsManager ?: return false
+        val provider = cameraProvider ?: return false
+
+        val key = ExtensionKey(
+            lensFacing = lensFacing,
+            extensionMode = extensionMode,
+        )
+        extensionAvailabilityRepository.verdict(key)?.let { return it }
+
+        if (!probeOnMiss) return false
+
+        // A background probe round (probeUnknownExtensions) may already be asking the vendor about
+        // this very key. Probing inline here would run a second synchronous vendor round trip on
+        // the main thread and race that round's verdict write. While a round is in flight, treat
+        // the miss as "unusable for now"; the round fills the cache and the next rebind/tab refresh
+        // picks up the real verdict. The inline probe stays for the not-in-flight cold case, where
+        // it is the only path to a verdict.
+        if (extensionProbesInFlight) return false
+
+        val verdict = probeExtension(provider, em, selector, extensionMode) ?: return false
+        extensionAvailabilityRepository.record(key, usable = verdict)
+        return verdict
     }
 
     // ExtensionsManager.isExtensionAvailable() answers from CameraExtensionCharacteristics'
@@ -324,87 +392,37 @@ internal class CameraSessionImpl @AssistedInject constructor(
     //
     // The cache is read and written on the main thread only, which is also what keeps the two
     // activities that can share it (a secure session over a running one) from racing each other.
-    // probeExtension() itself also runs on the probe thread that loadTabs() spawns, but its
-    // results come back through the main executor.
+    // probeExtension() itself also runs on the probe thread that probeUnknownExtensions() spawns,
+    // but its results come back through the main executor.
     //
     // true/false is a verdict that is safe to cache; null is a failure that may be transient and
     // must not be (see ExtensionAvailabilityRepository). The provider and manager are parameters
     // rather than the fields because this also runs off the main thread, where the fields could
     // be swapped out mid-probe.
-
-    // Refreshing the tabs must not run extension probes on the calling (main) thread: the
-    // first refresh after process start needs one vendor-extender init round trip over
-    // binder per advertised mode per lens, which measures at over half a second of blocked
-    // main thread -- more than a hundred dropped frames -- during startup on a Pixel 7 Pro.
-    // The probes run on their own short-lived thread instead (not cameraExecutor, which the
-    // QR analyzer may be draining) and the tabs are built once every verdict is in, so the
-    // tab bar still appears exactly once, fully formed, at the same time it used to; until
-    // then swipes and taps resolve to no tab and the app simply stays in the current mode.
-    // Later refreshes find the cache warm and rebuild synchronously, exactly as before.
-    override fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit) {
-        val pending = unprobedExtensions()
-        if (pending.isEmpty()) {
-            onSettled()
-            return
-        }
-
-        if (extensionProbesInFlight) return
-        val provider = cameraProvider ?: return
-        val em = extensionsManager ?: return
-        extensionProbesInFlight = true
-
-        thread {
-            val verdicts = HashMap<ExtensionKey, Boolean?>()
-            for (key in pending) {
-                verdicts[key] = probeExtension(
-                    provider = provider,
-                    em = em,
-                    selector = selectorFor(key.lensFacing),
-                    extensionMode = key.extensionMode
-                )
-            }
-
-            environment.sessionMainExecutor.execute {
-                extensionProbesInFlight = false
-                if (!environment.isSessionActive) return@execute
-
-                if (!snapshotProbeCache.isProbedThrough(provider)) {
-                    // The camera stack was reinitialized while probing: these verdicts describe
-                    // vendor state that no longer exists (the same reasoning as the cache clear
-                    // in initialize). Any refresh that ran for the new provider found this round
-                    // still in flight and skipped scheduling, so start over for it.
-                    onRestart()
-                    return@execute
-                }
-
-                extensionAvailabilityRepository.recordProbeRound(verdicts)
-                onSettled()
-            }
-        }
-    }
-
     @Suppress("TooGenericExceptionCaught")
     private fun probeExtension(
         provider: ProcessCameraProvider,
         em: ExtensionsManager,
         selector: CameraSelector,
-        extensionMode: Int,
+        extensionMode: ExtensionMode,
     ): Boolean? {
         // What the vendor advertises is as static as the vendor init verdict below, so a
         // negative answer is cached the same way -- notably, isExtensionAvailable() is *not*
         // the cheap in-process lookup it appears to be: on Android 17 every call costs a round
         // trip to the vendor's extensions proxy service, which is exactly the kind of work this
-        // probe exists to keep off the main thread (see loadTabs). It sits inside the try below so
-        // that a transient failure of that round trip is treated like any other -- returning null
-        // to retry later -- rather than propagating out: on the background probe thread an escaping
-        // exception would strand the round with extensionProbesInFlight still set, blocking every
-        // later tab refresh.
+        // probe exists to keep off the main thread (see probeUnknownExtensions). It sits inside the
+        // try below so that a transient failure of that round trip is treated like any other --
+        // returning null to retry later -- rather than propagating out: on the background probe
+        // thread an escaping exception would strand the round with extensionProbesInFlight still
+        // set, blocking every later tab refresh.
+        val cameraXExtensionMode = cameraXConstantsMapper.map(extensionMode)
+
         return try {
             when {
-                !em.isExtensionAvailable(selector, extensionMode) -> false
+                !em.isExtensionAvailable(selector, cameraXExtensionMode) -> false
                 else -> {
                     provider.getCameraInfo(
-                        em.getExtensionEnabledCameraSelector(selector, extensionMode)
+                        em.getExtensionEnabledCameraSelector(selector, cameraXExtensionMode)
                     )
                     true
                 }
@@ -425,138 +443,32 @@ internal class CameraSessionImpl @AssistedInject constructor(
         }
     }
 
-    private fun isExtensionUsable(
-        selector: CameraSelector,
-        lensFacing: Int,
-        extensionMode: Int,
-        probeOnMiss: Boolean = true,
-    ): Boolean {
-        if (extensionMode == ExtensionMode.NONE) return true
-
-        val em = extensionsManager ?: return false
-        val provider = cameraProvider ?: return false
-
-        val key = ExtensionKey(
-            lensFacing = lensFacing,
-            extensionMode = extensionMode,
-        )
-        extensionAvailabilityRepository.verdict(key)?.let { return it }
-
-        if (!probeOnMiss) return false
-
-        // A background probe round (loadTabs) may already be asking the vendor about this very
-        // key. Probing inline here would run a second synchronous vendor round trip on the main
-        // thread and race that round's verdict write. While a round is in flight, treat the miss
-        // as "unusable for now"; the round fills the cache and the next rebind/tab refresh picks
-        // up the real verdict. The inline probe stays for the not-in-flight cold case, where it is
-        // the only path to a verdict.
-        if (extensionProbesInFlight) return false
-
-        val verdict = probeExtension(provider, em, selector, extensionMode) ?: return false
-        extensionAvailabilityRepository.record(key, usable = verdict)
-        return verdict
-    }
-
-    private fun canVerifyFeatureCombinations(): Boolean {
-        val cameraInfo = try {
-            cameraProvider?.getCameraInfo(cameraSelector)
-        } catch (exception: IllegalArgumentException) {
-            Log.w(TAG, "Unable to resolve camera info for feature combination gate", exception)
-            null
-        }
-
-        return when (cameraInfo) {
-            null -> false
-            else -> featureCombinationSupport.canVerify(cameraInfo)
-        }
-    }
-
-    // Maps the user-chosen video quality to the equivalent groupable feature, for use when a
-    // feature group is passed to SessionConfig (see startCamera). Quality.HIGHEST has no
-    // groupable equivalent and is resolved to the highest quality the current camera supports,
-    // mirroring what QualitySelector.from(Quality.HIGHEST) would have selected.
-    private fun videoQualityAsGroupableFeature(videoQuality: Quality): GroupableFeature? {
-        val quality = when (videoQuality) {
-            Quality.HIGHEST -> highestSupportedVideoQuality()
-            else -> videoQuality
-        } ?: return null
-
-        val feature = videoQualityFeatureMapper.map(quality)
-
-        if (feature == null) {
-            // Not fatal: startCamera() then requests no quality feature at all and the quality is
-            // left to Recorder's default selector. Worth a log because it means the user's
-            // explicit choice is silently not being asked for.
-            Log.w(TAG, "No groupable feature equivalent for video quality $quality")
-        }
-
-        return feature
-    }
-
-    private fun highestSupportedVideoQuality(): Quality? {
-        val cameraInfo = try {
-            cameraProvider?.getCameraInfo(cameraSelector)
-        } catch (exception: IllegalArgumentException) {
-            Log.w(TAG, "Unable to resolve camera info for quality lookup", exception)
-            null
-        }
-
-        return cameraInfo?.let {
-            Recorder.getVideoCapabilities(it)
-                .getSupportedQualities(DynamicRange.SDR)
-                .firstOrNull()
-        }
-    }
-
-    // What was asked for -- including which camera it was asked of -- is passed in rather than
-    // read back from a field: the callback is delivered asynchronously, so a field could already
-    // describe a later bind by the time this runs, and the message would then name settings (or
-    // dedup against a camera) that this result never involved.
-
-    override fun isLensFacingSupported(lensFacing: Int, extensionMode: Int): Boolean {
-        var tCameraSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
-
-        if (extensionMode != ExtensionMode.NONE) {
-            extensionsManager?.let { em ->
-                if (!isExtensionUsable(tCameraSelector, lensFacing, extensionMode)) {
-                    return false
-                }
-
-                try {
-                    tCameraSelector = em.getExtensionEnabledCameraSelector(
-                        tCameraSelector,
-                        extensionMode,
-                    )
-                } catch (_: IllegalArgumentException) {
-                    return false
-                }
-            }
-        }
-
-        return cameraProvider?.hasCamera(tCameraSelector) ?: false
-    }
-
     @SuppressLint("RestrictedApi")
     override fun bind(settings: CameraBindSettings): BindOutcome {
         val provider = requireNotNull(cameraProvider) {
             "Camera provider is not ready yet"
         }
+        val target = requireNotNull(previewTarget) {
+            "No screen to show the camera on"
+        }
 
         // Unbind/close all other camera(s) [if any]
         provider.unbindAll()
+        handler.removeCallbacks(qrAutofocus)
 
         val extMode = settings.mode.extensionMode
         var appliedExtension: ExtensionKey? = null
-        if (extMode != ExtensionMode.NONE) {
+        if (extMode != null) {
             val em = extensionsManager
             if (em != null && isExtensionUsable(cameraSelector, lensFacing, extMode)) {
                 appliedExtension = ExtensionKey(
                     lensFacing = lensFacing,
                     extensionMode = extMode,
                 )
-                cameraSelector = em.getExtensionEnabledCameraSelector(cameraSelector, extMode)
+                cameraSelector = em.getExtensionEnabledCameraSelector(
+                    cameraSelector,
+                    cameraXConstantsMapper.map(extMode),
+                )
             } else {
                 Log.e(TAG, "Mode $settings.mode isn't available for this device")
             }
@@ -603,8 +515,8 @@ internal class CameraSessionImpl @AssistedInject constructor(
             includesVideoCapture = !settings.isQrMode && settings.isVideoMode,
             includesImageCapture = !settings.isQrMode && !settings.requiresVideoModeOnly,
             aspectRatio = settings.aspectRatio,
-            imageCaptureTargetRotation = imageCapture?.targetRotation ?: settings.rotation,
-            previewTargetRotation = preview?.targetRotation ?: settings.rotation,
+            imageCaptureTargetRotation = imageCapture?.targetRotation ?: displayRotation(),
+            previewTargetRotation = preview?.targetRotation ?: displayRotation(),
             flashMode = settings.flashMode,
             photoQuality = settings.photoQuality,
             waitForFocusLock = settings.waitForFocusLock,
@@ -618,7 +530,12 @@ internal class CameraSessionImpl @AssistedInject constructor(
         val plan = cameraSessionPlanFactory.create(bindRequest)
 
         if (settings.isQrMode) {
-            val analyzer = environment.createQrAnalyzer()
+            val analyzer = QrCodeAnalyzer(
+                barcodeFormats = settings.barcodeFormats,
+                onCodeScanned = { text ->
+                    sessionEvents.tryEmit(CameraSessionEvent.QrCodeScanned(text))
+                },
+            )
             val strategy = ResolutionStrategy(
                 Size(960, 960),
                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
@@ -632,15 +549,14 @@ internal class CameraSessionImpl @AssistedInject constructor(
             qrAnalyzer = analyzer
             iAnalyzer = mIAnalyzer
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
-            cameraSelector = CameraSelector.Builder()
-                .requireLensFacing(
-                    requireNotNull(settings.qrLensFacing) {
-                        "QR mode needs a lens facing"
-                    }
-                )
-                .build()
+            cameraSelector = selectorFor(
+                requireNotNull(settings.qrLensFacing) {
+                    "QR mode needs a lens facing"
+                }
+            )
 
             useCasesList.add(mIAnalyzer)
+            handler.postDelayed(qrAutofocus, QR_AUTOFOCUS_INTERVAL_MILLIS)
         } else {
             plan.videoCapture?.let {
                 videoCapture = it
@@ -655,7 +571,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
         preview = plan.preview.also {
             useCasesList.add(it)
-            it.surfaceProvider = environment.previewSurfaceProvider
+            it.surfaceProvider = target.surfaceProvider
         }
 
         // Not every camera can run video, photo and preview at once. Ask before binding rather
@@ -722,22 +638,28 @@ internal class CameraSessionImpl @AssistedInject constructor(
             )
 
             if (plan.preferredFeatures.isNotEmpty()) {
+                // What was asked for -- including which camera it was asked of -- is captured here
+                // rather than read back from a field in the listener: it is called asynchronously,
+                // so a field could already describe a later bind by then, and the event would name
+                // settings (or dedup against a camera) that this result never involved.
                 val requested = plan.preferredFeatures.toList()
                 val boundLensFacing = lensFacing
                 sessionConfig.setFeatureSelectionListener(
-                    environment.sessionMainExecutor
+                    mainExecutor
                 ) { selected ->
-                    listener?.onFeaturesSelected(
-                        boundLensFacing = boundLensFacing,
-                        requested = requested,
-                        qualityFeature = requiredQualityFeature,
-                        selected = selected,
+                    sessionEvents.tryEmit(
+                        CameraSessionEvent.FeaturesSelected(
+                            boundLensFacing = boundLensFacing,
+                            requested = requested,
+                            qualityFeature = requiredQualityFeature,
+                            selected = selected,
+                        ),
                     )
                 }
             }
 
             camera = provider.bindToLifecycle(
-                environment.sessionLifecycleOwner,
+                target.lifecycleOwner,
                 cameraSelector,
                 sessionConfig
             )
@@ -780,28 +702,249 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return BindOutcome.BOUND
     }
 
+    override fun unbind() {
+        cameraProvider?.unbindAll()
+    }
+
+    // Maps the user-chosen video quality to the equivalent groupable feature, for use when a
+    // feature group is passed to SessionConfig (see bind). VideoQuality.HIGHEST has no
+    // groupable equivalent and is resolved to the highest quality the current camera supports,
+    // mirroring what QualitySelector.from(Quality.HIGHEST) would have selected.
+    private fun videoQualityAsGroupableFeature(videoQuality: VideoQuality): GroupableFeature? {
+        val quality = when (videoQuality) {
+            VideoQuality.HIGHEST -> highestSupportedVideoQuality()
+            else -> videoQuality
+        } ?: return null
+
+        val feature = videoQualityFeatureMapper.map(quality)
+
+        if (feature == null) {
+            // Not fatal: bind() then requests no quality feature at all and the quality is
+            // left to Recorder's default selector. Worth a log because it means the user's
+            // explicit choice is silently not being asked for.
+            Log.w(TAG, "No groupable feature equivalent for video quality $quality")
+        }
+
+        return feature
+    }
+
+    private fun highestSupportedVideoQuality(): VideoQuality? {
+        val cameraInfo = try {
+            cameraProvider?.getCameraInfo(cameraSelector)
+        } catch (exception: IllegalArgumentException) {
+            Log.w(TAG, "Unable to resolve camera info for quality lookup", exception)
+            null
+        }
+
+        return cameraInfo?.let {
+            Recorder.getVideoCapabilities(it)
+                .getSupportedQualities(DynamicRange.SDR)
+                .firstNotNullOfOrNull { quality -> cameraXConstantsMapper.map(quality) }
+        }
+    }
+
+    private fun displayRotation(): Int {
+        return displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
+    }
+
+    // Refreshing the tabs must not run extension probes on the calling (main) thread: the
+    // first refresh after process start needs one vendor-extender init round trip over
+    // binder per advertised mode per lens, which measures at over half a second of blocked
+    // main thread -- more than a hundred dropped frames -- during startup on a Pixel 7 Pro.
+    // The probes run on their own short-lived thread instead (not cameraExecutor, which the
+    // QR analyzer may be draining) and the tabs are built once every verdict is in, so the
+    // tab bar still appears exactly once, fully formed, at the same time it used to; until
+    // then swipes and taps resolve to no tab and the app simply stays in the current mode.
+    // Later refreshes find the cache warm and rebuild synchronously, exactly as before.
+    override fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit) {
+        val pending = unprobedExtensions()
+        if (pending.isEmpty()) {
+            onSettled()
+            return
+        }
+
+        if (extensionProbesInFlight) return
+        val provider = cameraProvider ?: return
+        val em = extensionsManager ?: return
+        extensionProbesInFlight = true
+
+        thread {
+            val verdicts = HashMap<ExtensionKey, Boolean?>()
+            for (key in pending) {
+                verdicts[key] = probeExtension(
+                    provider = provider,
+                    em = em,
+                    selector = selectorFor(key.lensFacing),
+                    extensionMode = key.extensionMode
+                )
+            }
+
+            mainExecutor.execute {
+                extensionProbesInFlight = false
+                if (!isActive) return@execute
+
+                if (!snapshotProbeCache.isProbedThrough(provider)) {
+                    // The camera stack was reinitialized while probing: these verdicts describe
+                    // vendor state that no longer exists (the same reasoning as the cache clear
+                    // in onCameraProviderReady). Any refresh that ran for the new provider found
+                    // this round still in flight and skipped scheduling, so start over for it.
+                    onRestart()
+                    return@execute
+                }
+
+                extensionAvailabilityRepository.recordProbeRound(verdicts)
+                onSettled()
+            }
+        }
+    }
+
     private fun unprobedExtensions(): List<ExtensionKey> {
         if (extensionsManager == null || cameraProvider == null) return emptyList()
 
         return extensionAvailabilityRepository.unprobed()
     }
 
-    private fun selectorFor(lensFacing: Int): CameraSelector {
-        return when (lensFacing) {
-            CameraSelector.LENS_FACING_FRONT -> FRONT_CAMERA_SELECTOR
-            else -> REAR_CAMERA_SELECTOR
+    override fun supportedVideoQualities(): List<VideoQuality> {
+        val cameraInfo = camera?.cameraInfo ?: return emptyList()
+
+        return Recorder.getVideoCapabilities(cameraInfo)
+            .getSupportedQualities(DynamicRange.SDR)
+            .mapNotNull { cameraXConstantsMapper.map(it) }
+    }
+
+    // Whether the EIS toggle has anything to act on. Stabilization is only ever requested through
+    // the feature group (see bind), which in turn needs the platform to be able to verify
+    // feature combinations, so a camera that can stabilize is not on its own enough: where the
+    // group cannot be used nothing applies EIS, and offering the toggle there is offering a
+    // control that does nothing.
+    override fun canApplyVideoStabilization(): Boolean {
+        return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
+    }
+
+    private fun canVerifyFeatureCombinations(): Boolean {
+        val cameraInfo = try {
+            cameraProvider?.getCameraInfo(cameraSelector)
+        } catch (exception: IllegalArgumentException) {
+            Log.w(TAG, "Unable to resolve camera info for feature combination gate", exception)
+            null
+        }
+
+        return when (cameraInfo) {
+            null -> false
+            else -> featureCombinationSupport.canVerify(cameraInfo)
         }
     }
 
-    @AssistedFactory
-    interface Factory {
-        fun create(environment: CameraSessionEnvironment): CameraSessionImpl
+    private fun isVideoStabilizationSupported(): Boolean {
+        // The toggle asks for both kinds of stabilization (see the preferred feature group in
+        // bind), preferring the preview kind and falling back to the recording-only kind,
+        // so it is meaningful whenever either one is available. Testing only the recorder
+        // capability both hid the toggle on cameras that can stabilize the preview but not the
+        // recording, and offered it on cameras where only the recorder can stabilize - where
+        // the bind used to ask exclusively for preview stabilization, leaving the toggle with
+        // nothing to do.
+        return isPreviewStabilizationSupported() || isRecorderStabilizationSupported()
+    }
+
+    private fun isPreviewStabilizationSupported(): Boolean {
+        return Preview.getPreviewCapabilities(getCurrentCameraInfo()).isStabilizationSupported
+    }
+
+    private fun isRecorderStabilizationSupported(): Boolean {
+        return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
+    }
+
+    private fun getCurrentCameraInfo(): CameraInfo {
+        val provider = requireNotNull(cameraProvider) {
+            "Camera provider is not ready yet"
+        }
+
+        return provider.getCameraInfo(cameraSelector)
+    }
+
+    override fun setFlashMode(flashMode: FlashMode) {
+        imageCapture?.flashMode = cameraXConstantsMapper.map(flashMode)
+    }
+
+    override fun toggleTorchState() {
+        isTorchOn = !isTorchOn
+    }
+
+    override fun setZoomRatio(zoomRatio: Float) {
+        camera?.cameraControl?.setZoomRatio(zoomRatio)
+    }
+
+    override fun setLinearZoom(linearZoom: Float) {
+        camera?.cameraControl?.setLinearZoom(linearZoom)
+    }
+
+    override fun setExposureCompensationIndex(index: Int) {
+        camera?.cameraControl?.setExposureCompensationIndex(index)
+    }
+
+    override fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long) {
+        val meteringPointFactory = previewTarget?.meteringPointFactory ?: return
+        val point = meteringPointFactory.createPoint(x, y)
+        val builder = FocusMeteringAction.Builder(point)
+
+        when (autoCancelSeconds) {
+            0L -> builder.disableAutoCancel()
+            else -> builder.setAutoCancelDuration(autoCancelSeconds, TimeUnit.SECONDS)
+        }
+
+        camera?.cameraControl?.startFocusAndMetering(builder.build())
+    }
+
+    override fun cancelFocusAndMetering() {
+        camera?.cameraControl?.cancelFocusAndMetering()
+    }
+
+    // Every bind hands out a fresh LiveData in extension modes, and the old observer would
+    // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
+    // thumb once per bind that had ever happened.
+    override fun reattachZoomState() {
+        zoomStateSource?.removeObserver(zoomStateObserver)
+        zoomStateSource = null
+        zoomState = null
+        // Reading the new one is what costs ~100 ms behind an extension, and nothing before the
+        // next message needs it: the bar below draws a freshly bound camera's 1.0x either way, and
+        // every other reader is a gesture.
+        handler.removeCallbacks(attachZoomState)
+        handler.post(attachZoomState)
+    }
+
+    override fun setBarcodeFormats(barcodeFormats: Set<BarcodeFormat>) {
+        qrAnalyzer?.setBarcodeFormats(barcodeFormats)
+    }
+
+    private fun focusOnQrScanArea() {
+        val lifecycle = previewTarget?.lifecycleOwner?.lifecycle ?: return
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+
+        val point = SurfaceOrientedMeteringPointFactory(1f, 1f)
+            .createPoint(0.5f, 0.5f, QR_SCAN_AREA_RATIO)
+
+        camera?.cameraControl?.startFocusAndMetering(
+            FocusMeteringAction.Builder(point).disableAutoCancel().build()
+        )
+
+        handler.postDelayed(qrAutofocus, QR_AUTOFOCUS_INTERVAL_MILLIS)
+    }
+
+    private fun selectorFor(lensFacing: LensFacing): CameraSelector {
+        return when (lensFacing) {
+            LensFacing.FRONT -> FRONT_CAMERA_SELECTOR
+            LensFacing.BACK -> REAR_CAMERA_SELECTOR
+        }
     }
 
     companion object {
         private const val TAG = "CameraSession"
 
-        private const val DEFAULT_LENS_FACING = CameraSelector.LENS_FACING_BACK
+        private const val EVENT_BUFFER_CAPACITY = 64
+        private const val QR_AUTOFOCUS_INTERVAL_MILLIS = 2000L
+
+        private val DEFAULT_LENS_FACING = LensFacing.BACK
 
         private val FRONT_CAMERA_SELECTOR: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_FRONT)

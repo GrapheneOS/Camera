@@ -19,6 +19,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
 import java.io.ByteArrayOutputStream
 import java.lang.Exception
@@ -72,8 +74,8 @@ open class CaptureActivity : MainActivity() {
 
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
-        // Redundant now that no tabs get built here (see shouldShowCameraModeTabs), but kept so a
-        // regression in that override cannot hand the user a mode switcher mid-capture
+        // Redundant now that no tabs get built here (see CameraEntryPoint.showsCameraModeTabs), but
+        // kept so a regression there cannot hand the user a mode switcher mid-capture
         tabLayout.visibility = View.INVISIBLE
 
         // Remove the margin so that that the previewView can take some more space
@@ -99,11 +101,8 @@ open class CaptureActivity : MainActivity() {
         // also the only screen where it should be reachable by accessibility services.
         cancelButtonView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
 
-        // Remove the third option/circle from the UI
-        thirdOption.visibility = View.INVISIBLE
-
         captureButton.setOnClickListener {
-            if (timerDuration == 0) {
+            if (selfTimerSeconds == 0) {
                 takePicture()
             } else {
                 if (cdTimer.isRunning) {
@@ -124,12 +123,6 @@ open class CaptureActivity : MainActivity() {
 
         // Display the activity
     }
-
-    /**
-     * Hiding the strip is not enough on its own: a fling reads the tab model rather than the strip,
-     * so it switched modes here anyway. There is no mode to switch to in a capture session.
-     */
-    override fun shouldShowCameraModeTabs() = false
 
     fun takePicture() {
 
@@ -165,7 +158,8 @@ open class CaptureActivity : MainActivity() {
         )
     }
 
-    open fun showPreview() {
+    protected fun showPreview() {
+        viewfinder.onAction(CaptureAction.CapturedPreviewShown)
 
         session.cameraProvider?.unbindAll()
 
@@ -183,8 +177,8 @@ open class CaptureActivity : MainActivity() {
         previewView.visibility = View.INVISIBLE
     }
 
-    open fun hidePreview() {
-        viewfinder.startCamera(true)
+    private fun hidePreview() {
+        viewfinder.onAction(LifecycleAction.CapturedPreviewDismissed)
 
         settingsIcon.visibility = View.VISIBLE
 
