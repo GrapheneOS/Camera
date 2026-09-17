@@ -12,6 +12,7 @@ import com.google.zxing.PlanarYUVLuminanceSource
 import com.google.zxing.ReaderException
 import com.google.zxing.common.HybridBinarizer
 import java.util.EnumMap
+import java.util.Locale
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -93,7 +94,7 @@ internal class QrCodeAnalyzer(
         val now = System.nanoTime()
         val delta = now - lastFpsTimestamp
         val fps = NANOS_PER_SECOND * FPS_FRAME_COUNT.toFloat() / delta
-        Log.d(TAG, "Analysis FPS: ${"%.02f".format(fps)}")
+        Log.d(TAG, "Analysis FPS: ${"%.02f".format(Locale.ROOT, fps)}")
         lastFpsTimestamp = now
     }
 
