@@ -9,6 +9,7 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -48,6 +49,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -62,7 +64,6 @@ interface CameraSession {
     val imageCapture: ImageCapture?
     val videoCapture: VideoCapture<Recorder>?
     val iAnalyzer: ImageAnalysis?
-    val zoomState: ZoomState?
     val zoom: CameraZoom?
     val exposure: CameraExposure?
     val sensorOrientationDegrees: Int?
@@ -82,6 +83,11 @@ interface CameraSession {
     fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit)
     fun canApplyVideoStabilization(): Boolean
     fun toggleTorchState()
+    fun setZoomRatio(zoomRatio: Float)
+    fun setLinearZoom(linearZoom: Float)
+    fun setExposureCompensationIndex(index: Int)
+    fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long)
+    fun cancelFocusAndMetering()
     fun reattachZoomState()
     fun refreshQrHints()
 }
@@ -125,8 +131,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
     // of the camera on any path that runs more than once per bind. It is null from the moment a
     // bind starts until attachZoomState has run, which is where that query was moved to.
-    override var zoomState: ZoomState? = null
-        private set
+    private var zoomState: ZoomState? = null
 
     private var zoomStateSource: LiveData<ZoomState>? = null
 
@@ -270,6 +275,34 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     override fun toggleTorchState() {
         isTorchOn = !isTorchOn
+    }
+
+    override fun setZoomRatio(zoomRatio: Float) {
+        camera?.cameraControl?.setZoomRatio(zoomRatio)
+    }
+
+    override fun setLinearZoom(linearZoom: Float) {
+        camera?.cameraControl?.setLinearZoom(linearZoom)
+    }
+
+    override fun setExposureCompensationIndex(index: Int) {
+        camera?.cameraControl?.setExposureCompensationIndex(index)
+    }
+
+    override fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long) {
+        val point = environment.previewMeteringPointFactory.createPoint(x, y)
+        val builder = FocusMeteringAction.Builder(point)
+
+        when (autoCancelSeconds) {
+            0L -> builder.disableAutoCancel()
+            else -> builder.setAutoCancelDuration(autoCancelSeconds, TimeUnit.SECONDS)
+        }
+
+        camera?.cameraControl?.startFocusAndMetering(builder.build())
+    }
+
+    override fun cancelFocusAndMetering() {
+        camera?.cameraControl?.cancelFocusAndMetering()
     }
 
     private fun getCurrentCameraInfo(): CameraInfo {

@@ -15,6 +15,29 @@ sealed interface ViewfinderAction {
 
         data object AspectRatioToggleClicked : CameraAction
 
+        data object ZoomInKeyPressed : CameraAction
+
+        data object ZoomOutKeyPressed : CameraAction
+
+        data object FocusKeyPressed : CameraAction
+
+        data class PreviewTapped(
+            val x: Float,
+            val y: Float,
+        ) : CameraAction
+
+        data class PreviewPinched(
+            val scaleFactor: Float,
+        ) : CameraAction
+
+        data class ZoomSliderDragged(
+            val linearZoom: Float,
+        ) : CameraAction
+
+        data class ExposureSliderDragged(
+            val compensationIndex: Int,
+        ) : CameraAction
+
         data class ModeSelected(
             val mode: CameraMode,
         ) : CameraAction
