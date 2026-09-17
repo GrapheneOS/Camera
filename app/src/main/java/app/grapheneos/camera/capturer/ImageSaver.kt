@@ -1,15 +1,11 @@
 package app.grapheneos.camera.capturer
 
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.ImageDecoder
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.net.Uri
-import android.provider.DocumentsContract
-import android.provider.MediaStore
-import android.system.Os
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
@@ -24,13 +20,11 @@ import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.clearExif
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.data.media.store.imageCollectionUri
 import app.grapheneos.camera.fixExif
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
-import app.grapheneos.camera.util.getTreeDocumentUri
-import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -40,12 +34,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
-
-// see com.android.externalstorage.ExternalStorageProvider and
-// com.android.internal.content.FileSystemProvider
-const val SAF_URI_HOST_EXTERNAL_STORAGE = "com.android.externalstorage.documents"
-
-const val DEFAULT_MEDIA_STORE_CAPTURE_PATH = "DCIM/Camera"
+import kotlinx.coroutines.runBlocking
 
 /*
 Based on androidx.camera.core.ImageSaver
@@ -62,6 +51,7 @@ open a Uri during the thumbnail generation
 class ImageSaver(
     val imageCapturer: ImageCapturer,
     val appContext: Context,
+    val captureOutputRepository: CaptureOutputRepository,
     val jpegQuality: Int,
     val storageLocation: String,
     val imageFileFormat: String,
@@ -72,7 +62,6 @@ class ImageSaver(
 ) : ImageCapture.OnImageCapturedCallback()
 {
     val captureTime = Date()
-    val contentResolver = appContext.contentResolver
     val mainThreadExecutor = appContext.mainExecutor
 
     private var isCancelled = false
@@ -163,46 +152,23 @@ class ImageSaver(
         val startOfWriting = timestamp()
 
         val uri = try {
-            obtainOutputUri()!!
+            obtainOutputUri()
         } catch (e: Exception) {
             throw ImageSaverException(Place.FILE_CREATION, e)
         }
 
-        val shouldFsync = when (uri.host) {
-            MediaStore.AUTHORITY,
-            SAF_URI_HOST_EXTERNAL_STORAGE ->
-                true
-            else ->
-                false
-        }
-
         try {
-            contentResolver.openAssetFileDescriptor(uri, "w")!!.use {
-                val fd = it.fileDescriptor
-                val bytes = processedJpegBytes
-                var off = 0
-                val len = bytes.size
-                do {
-                    // "-1" is never returned to indicate an error, ErrnoException is thrown instead
-                    off += Os.write(fd, bytes, off, len - off)
-                } while (off != len)
-
-                if (shouldFsync) {
-                    Os.fsync(fd)
-                }
-            }
+            runBlocking { captureOutputRepository.write(uri, processedJpegBytes) }
         } catch (e: Exception) {
             deleteIncompleteImage(uri)
             throw ImageSaverException(Place.FILE_WRITE, e)
         }
 
-        if (saveToMediaStore()) {
-            try {
-                removePendingFlagFromUri(contentResolver, uri)
-            } catch (e: Exception) {
-                // don't delete the image in this case, since it's already fully written out
-                throw ImageSaverException(Place.FILE_WRITE_COMPLETION, e)
-            }
+        try {
+            runBlocking { captureOutputRepository.publish(uri) }
+        } catch (e: Exception) {
+            // don't delete the image in this case, since it's already fully written out
+            throw ImageSaverException(Place.FILE_WRITE_COMPLETION, e)
         }
         logDuration(startOfWriting) {"image writing (saveToMediaStore: ${saveToMediaStore()})"}
 
@@ -298,33 +264,27 @@ class ImageSaver(
     private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
 
     @Throws(Exception::class)
-    fun obtainOutputUri(): Uri? {
-        if (saveToMediaStore()) {
-            val cv = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName())
-                put(MediaStore.MediaColumns.MIME_TYPE, mimeType())
-                put(MediaStore.MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
-                put(MediaStore.MediaColumns.IS_PENDING, 1)
+    fun obtainOutputUri(): Uri {
+        try {
+            return runBlocking {
+                captureOutputRepository.createImage(
+                    storageLocation = storageLocation,
+                    fileName = fileName(),
+                    mimeType = mimeType(),
+                )
             }
-
-            return contentResolver.insert(imageCollectionUri, cv)
-        } else {
-            try {
-                val treeUri = Uri.parse(storageLocation)
-                val treeDocumentUri = getTreeDocumentUri(treeUri)
-                return DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType(), fileName())!!
-            } catch (e: Exception) {
+        } catch (e: Exception) {
+            if (!saveToMediaStore()) {
                 appContext.mainExecutor.execute(imageCapturer::onStorageLocationNotFound)
                 skipErrorDialog = true
-                throw e
             }
+            throw e
         }
     }
 
     private fun deleteIncompleteImage(uri: Uri) {
         try {
-            val num = contentResolver.delete(uri, null, null)
-            check(num == 1) { "unexpected number of deleted rows: $num" }
+            runBlocking { captureOutputRepository.delete(uri) }
         } catch (deleteException: Exception) {
             Log.w(TAG, "unable to delete an incomplete image $uri", deleteException)
         }

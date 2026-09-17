@@ -8,8 +8,8 @@ import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import app.grapheneos.camera.R
-import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
-import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepository.Companion.DEFAULT_MEDIA_STORE_CAPTURE_PATH
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepository.Companion.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.ByteArrayOutputStream
 import java.io.IOException
