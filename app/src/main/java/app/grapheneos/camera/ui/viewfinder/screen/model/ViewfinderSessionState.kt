@@ -1,9 +1,9 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import androidx.camera.core.CameraSelector
+import app.grapheneos.camera.data.camera.model.LensFacing
 
 data class ViewfinderSessionState(
-    val lensFacing: Int = CameraSelector.LENS_FACING_BACK,
+    val lensFacing: LensFacing = LensFacing.BACK,
     val canTakePicture: Boolean = false,
     val isFlashAvailable: Boolean = false,
     val canApplyVideoStabilization: Boolean = false,

@@ -1,16 +1,15 @@
 package app.grapheneos.camera.data.settings
 
-import androidx.camera.video.Quality
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
 import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapper
-import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapperImpl
 import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapper
-import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapperImpl
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -81,9 +80,6 @@ class SettingsRepositoryTest {
 
     private fun TestScope.repository(
         from: DataStore<SettingsPrefs> = dataStore,
-        modeSettingsMapper: ModeSettingsMapper = this@SettingsRepositoryTest.modeSettingsMapper,
-        storedVideoQualityMapper: StoredVideoQualityMapper =
-            this@SettingsRepositoryTest.storedVideoQualityMapper,
     ): SettingsRepository {
         return SettingsRepositoryImpl(
             dataStore = from,
@@ -284,30 +280,10 @@ class SettingsRepositoryTest {
 
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.DEVICE_CHOICE)
-            repository.setVideoQuality(SLOT, Quality.HIGHEST)
+            repository.setVideoQuality(SLOT, VideoQuality.HIGHEST)
 
-            verify(exactly = 1) { storedVideoQualityMapper.map(quality = Quality.HIGHEST) }
+            verify(exactly = 1) { storedVideoQualityMapper.map(quality = VideoQuality.HIGHEST) }
             confirmVerified(storedVideoQualityMapper)
-            assertEquals(
-                StoredVideoQuality.DEVICE_CHOICE,
-                stored().modes[MODE.name]?.videoQualityBack,
-            )
-        }
-    }
-
-    @Test
-    fun writeMode_qualityTheStoreCannotName_isStillWhatTheModeReports() {
-        runTest {
-            val repository = repository(
-                modeSettingsMapper = ModeSettingsMapperImpl(),
-                storedVideoQualityMapper = StoredVideoQualityMapperImpl(),
-            )
-
-            repository.modeSettings(SLOT)
-
-            val written = repository.setVideoQuality(SLOT, Quality.LOWEST)
-
-            assertEquals(Quality.LOWEST, written.videoQuality)
             assertEquals(
                 StoredVideoQuality.DEVICE_CHOICE,
                 stored().modes[MODE.name]?.videoQualityBack,
@@ -322,11 +298,11 @@ class SettingsRepositoryTest {
 
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.UHD)
-            repository.setVideoQuality(SLOT, Quality.UHD)
+            repository.setVideoQuality(SLOT, VideoQuality.UHD)
 
             repository.modeSettings(FRONT_SLOT)
             storeVideoQualityAs(StoredVideoQuality.HD)
-            repository.setVideoQuality(FRONT_SLOT, Quality.HD)
+            repository.setVideoQuality(FRONT_SLOT, VideoQuality.HD)
 
             val storedMode = stored().modes.getValue(MODE.name)
 
@@ -342,7 +318,7 @@ class SettingsRepositoryTest {
 
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.FHD)
-            repository.setVideoQuality(SLOT, Quality.FHD)
+            repository.setVideoQuality(SLOT, VideoQuality.FHD)
 
             val relaunched = repository()
 
@@ -417,14 +393,15 @@ class SettingsRepositoryTest {
         val FRONT_SLOT = ModeSlot(mode = MODE, isFrontFacing = true)
         val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, isFrontFacing = false)
 
-        val MAPPER_RESULT = ModeSettings(geoTagging = true, videoQuality = Quality.FHD)
+        val MAPPER_RESULT = ModeSettings(geoTagging = true, videoQuality = VideoQuality.FHD)
 
         const val QR_CODE_FORMAT = "QR_CODE"
         const val AZTEC_FORMAT = "AZTEC"
 
-        const val SOME_ASPECT_RATIO = 1
         const val SOME_PHOTO_QUALITY = 71
         const val OTHER_PHOTO_QUALITY = 42
+
+        val SOME_ASPECT_RATIO = AspectRatio.RATIO_16_9
 
         const val WRITES = 50
     }

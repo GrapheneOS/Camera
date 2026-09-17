@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import androidx.annotation.StringRes
-import androidx.camera.video.Quality
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 
 sealed interface ViewfinderScreenEffect {
 
@@ -29,7 +29,7 @@ sealed interface ViewfinderScreenEffect {
     ) : ViewfinderScreenEffect
 
     data class ShowVideoQualityUnsupported(
-        val quality: Quality,
+        val quality: VideoQuality,
     ) : ViewfinderScreenEffect
 
     data class FlashPreview(

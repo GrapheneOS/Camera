@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import androidx.camera.video.Quality
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -25,15 +27,15 @@ interface ViewfinderSettingsDelegate {
     fun setSelfTimerDuration(seconds: Int)
     fun setEnableEis(enabled: Boolean)
     fun setWaitForFocusLock(enabled: Boolean)
-    fun setAspectRatio(value: Int)
+    fun setAspectRatio(value: AspectRatio)
     fun toggleScanAllCodes()
     fun setIncludeAudio(enabled: Boolean)
 
     fun selectModeSlot(slot: ModeSlot)
-    fun setFlashMode(value: Int)
+    fun setFlashMode(value: FlashMode)
     fun setGeoTagging(enabled: Boolean)
     fun setSelfIllumination(enabled: Boolean)
-    fun setVideoQuality(quality: Quality)
+    fun setVideoQuality(quality: VideoQuality)
 }
 
 internal class ViewfinderSettingsDelegateImpl @Inject constructor(
@@ -92,7 +94,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         update { it.copy(waitForFocusLock = enabled) }
     }
 
-    override fun setAspectRatio(value: Int) {
+    override fun setAspectRatio(value: AspectRatio) {
         update { it.copy(aspectRatio = value) }
     }
 
@@ -112,7 +114,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
-    override fun setFlashMode(value: Int) {
+    override fun setFlashMode(value: FlashMode) {
         val modeSettings = writeMode { slot ->
             settingsRepository.setFlashMode(
                 slot = slot,
@@ -152,7 +154,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
-    override fun setVideoQuality(quality: Quality) {
+    override fun setVideoQuality(quality: VideoQuality) {
         val modeSettings = writeMode { slot ->
             settingsRepository.setVideoQuality(
                 slot = slot,

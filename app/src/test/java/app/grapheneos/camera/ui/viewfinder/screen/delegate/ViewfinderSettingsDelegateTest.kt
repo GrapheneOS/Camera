@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import androidx.camera.video.Quality
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -150,15 +150,15 @@ class ViewfinderSettingsDelegateTest {
     @Test
     fun perModeWrite_afterAModeIsSlotted_keepsWhatTheRepositoryStored() {
         runTest {
-            val stored = SLOTTED.copy(videoQuality = Quality.UHD)
+            val stored = SLOTTED.copy(videoQuality = VideoQuality.UHD)
             every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
             every {
-                settingsRepository.setVideoQuality(slot = SLOT, value = Quality.UHD)
+                settingsRepository.setVideoQuality(slot = SLOT, value = VideoQuality.UHD)
             } returns stored
 
             val delegate = createDelegate()
             delegate.selectModeSlot(SLOT)
-            delegate.setVideoQuality(Quality.UHD)
+            delegate.setVideoQuality(VideoQuality.UHD)
 
             assertEquals(stored, stateHolder.state.value.modeSettings)
         }
@@ -182,6 +182,6 @@ class ViewfinderSettingsDelegateTest {
         const val SELF_TIMER_SECONDS = 5
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
-        val SLOTTED = ModeSettings(geoTagging = true, videoQuality = Quality.FHD)
+        val SLOTTED = ModeSettings(geoTagging = true, videoQuality = VideoQuality.FHD)
     }
 }
