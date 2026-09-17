@@ -318,6 +318,25 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
+    fun bindCamera_outsideVideoMode_doesNotAskWhetherVideoCanBeStabilized() {
+        val delegate = createAttachedDelegate()
+        delegate.bindCamera(mockk(relaxed = true) { every { isVideoMode } returns false })
+
+        verify(exactly = 0) { session.canApplyVideoStabilization() }
+        assertFalse(stateHolder.state.value.session.canApplyVideoStabilization)
+    }
+
+    @Test
+    fun bindCamera_inVideoMode_publishesWhetherVideoCanBeStabilized() {
+        every { session.canApplyVideoStabilization() } returns true
+
+        val delegate = createAttachedDelegate()
+        delegate.bindCamera(mockk(relaxed = true) { every { isVideoMode } returns true })
+
+        assertTrue(stateHolder.state.value.session.canApplyVideoStabilization)
+    }
+
+    @Test
     fun bindCamera_leavesTheTorchOff() {
         every { session.isTorchOn } returns true
 
