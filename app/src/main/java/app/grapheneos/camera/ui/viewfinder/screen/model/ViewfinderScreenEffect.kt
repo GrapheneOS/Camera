@@ -10,9 +10,7 @@ sealed interface ViewfinderScreenEffect {
 
     data object HideZoomPanel : ViewfinderScreenEffect
 
-    data object ResetTorchToggle : ViewfinderScreenEffect
-
-    data object ReloadVideoQualities : ViewfinderScreenEffect
+    data object HideExposurePanel : ViewfinderScreenEffect
 
     data object StartLocationUpdates : ViewfinderScreenEffect
 
