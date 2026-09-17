@@ -12,7 +12,7 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate

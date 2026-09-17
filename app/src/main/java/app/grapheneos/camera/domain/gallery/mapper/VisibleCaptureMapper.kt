@@ -2,7 +2,7 @@ package app.grapheneos.camera.domain.gallery.mapper
 
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import javax.inject.Inject
 
 interface VisibleCaptureMapper {

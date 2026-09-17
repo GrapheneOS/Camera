@@ -5,7 +5,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
 import java.io.IOException
 import javax.inject.Inject

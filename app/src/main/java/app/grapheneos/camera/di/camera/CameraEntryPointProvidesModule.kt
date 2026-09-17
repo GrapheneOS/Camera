@@ -1,7 +1,7 @@
 package app.grapheneos.camera.di.camera
 
 import android.content.Context
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.QrTile
 import app.grapheneos.camera.ui.activities.SecureActivity

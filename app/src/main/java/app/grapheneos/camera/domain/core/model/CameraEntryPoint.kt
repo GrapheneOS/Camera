@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.camera.model
+package app.grapheneos.camera.domain.core.model
 
 data class CameraEntryPoint(
     val isSecureSession: Boolean,
