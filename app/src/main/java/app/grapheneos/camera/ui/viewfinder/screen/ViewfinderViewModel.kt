@@ -203,6 +203,23 @@ class ViewfinderViewModel @Inject constructor(
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
             is CameraAction.TorchToggleClicked -> cameraDelegate.toggleTorch()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
+            is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
+            is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
+            is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
+            is CameraAction.PreviewPinched -> cameraDelegate.scaleZoom(action.scaleFactor)
+            is CameraAction.ZoomSliderDragged -> cameraDelegate.setLinearZoom(action.linearZoom)
+
+            is CameraAction.ExposureSliderDragged -> {
+                cameraDelegate.setExposureCompensation(action.compensationIndex)
+            }
+
+            is CameraAction.PreviewTapped -> {
+                cameraDelegate.focusAt(
+                    x = action.x,
+                    y = action.y,
+                    autoCancelSeconds = state().settings.focusTimeoutSeconds,
+                )
+            }
         }
     }
 
@@ -455,5 +472,7 @@ class ViewfinderViewModel @Inject constructor(
 
     private companion object {
         const val TAG = "ViewfinderViewModel"
+
+        const val ZOOM_KEY_STEP = 1f
     }
 }

@@ -5,11 +5,10 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
-import androidx.camera.core.FocusMeteringAction
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
-import java.util.concurrent.TimeUnit
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import kotlin.math.abs
 
 internal class ViewfinderGestureHandler(
@@ -50,27 +49,13 @@ internal class ViewfinderGestureHandler(
         val x = event.x
         val y = event.y
 
-        val camera = activity.session.camera ?: return true
-
-        val autoFocusPoint = activity.previewView.meteringPointFactory.createPoint(x, y)
         activity.animateFocusRing(x, y)
-
-        val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
 
         if (!activity.viewfinder.uiState.value.isVideoMode) {
             activity.tunePlayer.playFocusStartSound()
         }
 
-        if (activity.viewfinder.uiState.value.focusTimeoutSeconds == 0L) {
-            focusBuilder.disableAutoCancel()
-        } else {
-            focusBuilder.setAutoCancelDuration(
-                activity.viewfinder.uiState.value.focusTimeoutSeconds,
-                TimeUnit.SECONDS,
-            )
-        }
-
-        camera.cameraControl.startFocusAndMetering(focusBuilder.build())
+        activity.viewfinder.onAction(CameraAction.PreviewTapped(x = x, y = y))
 
         activity.exposureBar.showPanel()
         activity.zoomBar.showPanel()
@@ -81,15 +66,9 @@ internal class ViewfinderGestureHandler(
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
 
-        val zoomState = activity.session.zoomState
-        var scale = 1f
-
-        if (zoomState != null) {
-            scale = zoomState.zoomRatio * detector.scaleFactor
-        }
-
-        val camera = activity.session.camera ?: return true
-        camera.cameraControl.setZoomRatio(scale)
+        activity.viewfinder.onAction(
+            CameraAction.PreviewPinched(scaleFactor = detector.scaleFactor),
+        )
 
         return true
     }

@@ -7,6 +7,7 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.annotation.StringRes
+import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.Preview
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -54,6 +55,11 @@ internal class ViewfinderEffectHandler(
     override val previewSurfaceProvider: Preview.SurfaceProvider
         get() {
             return activity.previewView.surfaceProvider
+        }
+
+    override val previewMeteringPointFactory: MeteringPointFactory
+        get() {
+            return activity.previewView.meteringPointFactory
         }
 
     override val displayRotation: Int

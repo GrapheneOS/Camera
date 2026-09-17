@@ -140,17 +140,17 @@ class ModeSwitchLatencyRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             awaitModeTabs(scenario)
             waitUntil(scenario, "the zoom state is attached") {
-                it.session.zoomState != null
+                it.session.zoom != null
             }
 
             scenario.onActivity {
                 it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
 
-                assertNull("the bind read the zoom state", it.session.zoomState)
+                assertNull("the bind read the zoom state", it.session.zoom)
             }
 
             waitUntil(scenario, "the zoom state is attached again") {
-                it.session.zoomState != null
+                it.session.zoom != null
             }
         }
     }
@@ -168,7 +168,7 @@ class ModeSwitchLatencyRegressionTest {
                 it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
             }
             waitUntil(scenario, "the zoom state is attached") {
-                it.session.zoomState != null
+                it.session.zoom != null
             }
 
             scenario.onActivity { it.session.camera!!.cameraControl.setLinearZoom(0.5f) }
@@ -177,7 +177,7 @@ class ModeSwitchLatencyRegressionTest {
                 it.zoomBar.progress == 50
             }
             scenario.onActivity {
-                assertEquals(0.5f, it.session.zoomState!!.linearZoom, 0.01f)
+                assertEquals(0.5f, it.session.zoom!!.linearZoom, 0.01f)
             }
         }
     }

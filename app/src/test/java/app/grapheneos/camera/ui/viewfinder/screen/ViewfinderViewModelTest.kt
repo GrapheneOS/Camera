@@ -335,6 +335,37 @@ class ViewfinderViewModelTest {
     }
 
     @Test
+    fun previewTapped_focusesThereForTheChosenTimeout() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(settings = CameraSettings(focusTimeoutSeconds = FOCUS_TIMEOUT_SECONDS))
+            }
+
+            viewModel.onAction(CameraAction.PreviewTapped(x = 10f, y = 20f))
+
+            verify(exactly = 1) {
+                cameraDelegate.focusAt(x = 10f, y = 20f, autoCancelSeconds = FOCUS_TIMEOUT_SECONDS)
+            }
+        }
+    }
+
+    @Test
+    fun zoomKeys_stepTheZoomByOneInEitherDirection() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(CameraAction.ZoomInKeyPressed)
+            viewModel.onAction(CameraAction.ZoomOutKeyPressed)
+
+            verifyOrder {
+                cameraDelegate.stepZoom(1f)
+                cameraDelegate.stepZoom(-1f)
+            }
+        }
+    }
+
+    @Test
     fun previewStreamingStarted_inVideoMode_refreshesTheVideoQualities() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
@@ -506,6 +537,8 @@ class ViewfinderViewModelTest {
     }
 
     private companion object {
+        const val FOCUS_TIMEOUT_SECONDS = 3L
+
         val ENTRY_POINT = CameraEntryPoint(
             isSecureSession = false,
             isCaptureSession = false,

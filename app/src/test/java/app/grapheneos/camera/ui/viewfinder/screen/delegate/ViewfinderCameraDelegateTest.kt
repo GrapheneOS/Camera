@@ -20,6 +20,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -183,13 +184,58 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun bindCamera_forgetsTheOldCamerasExposure() {
+    fun stepZoom_pastEitherEnd_stopsThere() {
+        every { session.zoom } returns ZOOM
+
+        val delegate = createAttachedDelegate()
+        delegate.stepZoom(step = 100f)
+        delegate.stepZoom(step = -100f)
+
+        verifyOrder {
+            session.setZoomRatio(ZOOM.maxZoomRatio)
+            session.setZoomRatio(ZOOM.minZoomRatio)
+        }
+    }
+
+    @Test
+    fun stepZoom_outOfTheWideAngleCamera_stopsAtThePrimaryOne() {
+        every { session.zoom } returns ZOOM.copy(zoomRatio = 0.6f, minZoomRatio = 0.5f)
+
+        val delegate = createAttachedDelegate()
+        delegate.stepZoom(step = 1f)
+
+        verify(exactly = 1) { session.setZoomRatio(1f) }
+    }
+
+    @Test
+    fun stepZoom_beforeTheZoomIsKnown_leavesTheZoomAlone() {
+        every { session.zoom } returns null
+
+        val delegate = createAttachedDelegate()
+        delegate.stepZoom(step = 1f)
+
+        verify(exactly = 0) { session.setZoomRatio(any()) }
+    }
+
+    @Test
+    fun scaleZoom_scalesTheCurrentRatio() {
+        every { session.zoom } returns ZOOM
+
+        val delegate = createAttachedDelegate()
+        delegate.scaleZoom(scaleFactor = 1.5f)
+
+        verify(exactly = 1) { session.setZoomRatio(ZOOM.zoomRatio * 1.5f) }
+    }
+
+    @Test
+    fun setExposureCompensation_isAppliedAndPublished() {
         stateHolder.update { it.copy(session = it.session.copy(exposure = EXPOSURE)) }
 
         val delegate = createAttachedDelegate()
-        delegate.bindCamera(mockk(relaxed = true))
+        delegate.setExposureCompensation(compensationIndex = 5)
 
-        assertNull(stateHolder.state.value.session.exposure)
+        verify(exactly = 1) { session.setExposureCompensationIndex(5) }
+        assertEquals(5, stateHolder.state.value.session.exposure?.compensationIndex)
     }
 
     @Test
