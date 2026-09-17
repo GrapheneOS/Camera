@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
+import android.location.Location
 import android.os.Build
 import android.util.Log
 import android.view.View
@@ -18,6 +19,7 @@ import androidx.camera.core.ImageCaptureException
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
@@ -78,18 +80,19 @@ class ImageCapturer(val mActivity: MainActivity) {
             return
         }
 
-        val imageMetadata = ImageCapture.Metadata()
-        imageMetadata.isReversedHorizontal =
-            session.lensFacing == LensFacing.FRONT && capture.saveImageAsPreviewed
-
+        var location: Location? = null
         if (capture.geoTagging) {
-            val location = mActivity.locationRepository.currentLocation()
+            location = mActivity.locationRepository.currentLocation()
             if (location == null) {
                 mActivity.showMessage(R.string.location_unavailable)
-            } else {
-                imageMetadata.location = location
             }
         }
+
+        val imageMetadata = CaptureMetadata(
+            reversedHorizontal = session.lensFacing == LensFacing.FRONT &&
+                capture.saveImageAsPreviewed,
+            location = location,
+        )
 
         val preview = mActivity.imagePreview
 
@@ -99,6 +102,7 @@ class ImageCapturer(val mActivity: MainActivity) {
             this,
             mActivity.applicationContext,
             mActivity.captureOutputRepository,
+            mActivity.exifMapper,
             imageCapture.jpegQuality,
             mActivity.capturedItemSession.storageLocation,
             imageFileFormat,

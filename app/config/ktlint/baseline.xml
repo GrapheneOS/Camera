@@ -171,31 +171,31 @@
         <error line="10" column="105" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
-        <error line="29" column="19" source="standard:property-naming" />
-        <error line="31" column="21" source="standard:class-signature" />
-        <error line="31" column="48" source="standard:class-signature" />
-        <error line="40" column="35" source="standard:colon-spacing" />
-        <error line="135" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="155" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="171" column="43" source="standard:argument-list-wrapping" />
-        <error line="171" column="85" source="standard:argument-list-wrapping" />
-        <error line="171" column="101" source="standard:max-line-length" />
-        <error line="171" column="112" source="standard:argument-list-wrapping" />
-        <error line="194" column="26" source="standard:property-wrapping" />
-        <error line="194" column="47" source="standard:wrapping" />
-        <error line="194" column="47" source="standard:argument-list-wrapping" />
-        <error line="194" column="58" source="standard:argument-list-wrapping" />
-        <error line="194" column="78" source="standard:argument-list-wrapping" />
-        <error line="194" column="101" source="standard:max-line-length" />
-        <error line="194" column="107" source="standard:argument-list-wrapping" />
-        <error line="195" column="51" source="standard:wrapping" />
-        <error line="195" column="52" source="standard:argument-list-wrapping" />
-        <error line="212" column="43" source="standard:argument-list-wrapping" />
-        <error line="212" column="82" source="standard:argument-list-wrapping" />
-        <error line="212" column="101" source="standard:max-line-length" />
-        <error line="212" column="102" source="standard:argument-list-wrapping" />
-        <error line="226" column="1" source="standard:indent" />
-        <error line="227" column="1" source="standard:indent" />
+        <error line="31" column="19" source="standard:property-naming" />
+        <error line="33" column="21" source="standard:class-signature" />
+        <error line="33" column="48" source="standard:class-signature" />
+        <error line="42" column="35" source="standard:colon-spacing" />
+        <error line="139" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="159" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="175" column="43" source="standard:argument-list-wrapping" />
+        <error line="175" column="85" source="standard:argument-list-wrapping" />
+        <error line="175" column="101" source="standard:max-line-length" />
+        <error line="175" column="112" source="standard:argument-list-wrapping" />
+        <error line="198" column="26" source="standard:property-wrapping" />
+        <error line="198" column="47" source="standard:wrapping" />
+        <error line="198" column="47" source="standard:argument-list-wrapping" />
+        <error line="198" column="58" source="standard:argument-list-wrapping" />
+        <error line="198" column="78" source="standard:argument-list-wrapping" />
+        <error line="198" column="101" source="standard:max-line-length" />
+        <error line="198" column="107" source="standard:argument-list-wrapping" />
+        <error line="199" column="51" source="standard:wrapping" />
+        <error line="199" column="52" source="standard:argument-list-wrapping" />
+        <error line="216" column="43" source="standard:argument-list-wrapping" />
+        <error line="216" column="82" source="standard:argument-list-wrapping" />
+        <error line="216" column="101" source="standard:max-line-length" />
+        <error line="216" column="102" source="standard:argument-list-wrapping" />
+        <error line="230" column="1" source="standard:indent" />
+        <error line="231" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaver.kt">
         <error line="63" column="1" source="standard:curly-spacing" />
@@ -213,26 +213,20 @@
         <error line="144" column="105" source="standard:argument-list-wrapping" />
         <error line="173" column="38" source="standard:curly-spacing" />
         <error line="173" column="95" source="standard:curly-spacing" />
-        <error line="223" column="42" source="standard:wrapping" />
-        <error line="223" column="42" source="standard:argument-list-wrapping" />
-        <error line="224" column="1" source="standard:indent" />
-        <error line="225" column="1" source="standard:indent" />
-        <error line="225" column="28" source="standard:wrapping" />
-        <error line="225" column="29" source="standard:argument-list-wrapping" />
-        <error line="238" column="45" source="standard:curly-spacing" />
-        <error line="238" column="62" source="standard:curly-spacing" />
-        <error line="246" column="39" source="standard:argument-list-wrapping" />
-        <error line="246" column="47" source="standard:argument-list-wrapping" />
-        <error line="246" column="60" source="standard:argument-list-wrapping" />
-        <error line="246" column="82" source="standard:argument-list-wrapping" />
-        <error line="246" column="101" source="standard:max-line-length" />
-        <error line="246" column="103" source="standard:argument-list-wrapping" />
-        <error line="246" column="104" source="standard:argument-list-wrapping" />
-        <error line="264" column="30" source="standard:binary-expression-wrapping" />
-        <error line="264" column="82" source="standard:argument-list-wrapping" />
-        <error line="264" column="97" source="standard:argument-list-wrapping" />
-        <error line="264" column="99" source="standard:binary-expression-wrapping" />
-        <error line="264" column="100" source="standard:max-line-length" />
+        <error line="203" column="45" source="standard:curly-spacing" />
+        <error line="203" column="62" source="standard:curly-spacing" />
+        <error line="211" column="39" source="standard:argument-list-wrapping" />
+        <error line="211" column="47" source="standard:argument-list-wrapping" />
+        <error line="211" column="60" source="standard:argument-list-wrapping" />
+        <error line="211" column="82" source="standard:argument-list-wrapping" />
+        <error line="211" column="101" source="standard:max-line-length" />
+        <error line="211" column="103" source="standard:argument-list-wrapping" />
+        <error line="211" column="104" source="standard:argument-list-wrapping" />
+        <error line="229" column="30" source="standard:binary-expression-wrapping" />
+        <error line="229" column="82" source="standard:argument-list-wrapping" />
+        <error line="229" column="97" source="standard:argument-list-wrapping" />
+        <error line="229" column="99" source="standard:binary-expression-wrapping" />
+        <error line="229" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaverException.kt">
         <error line="3" column="27" source="standard:class-signature" />
@@ -483,9 +477,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="894" column="100" source="standard:max-line-length" />
-        <error line="1047" column="100" source="standard:max-line-length" />
-        <error line="1397" column="17" source="standard:chain-wrapping" />
+        <error line="898" column="100" source="standard:max-line-length" />
+        <error line="1051" column="100" source="standard:max-line-length" />
+        <error line="1401" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />
