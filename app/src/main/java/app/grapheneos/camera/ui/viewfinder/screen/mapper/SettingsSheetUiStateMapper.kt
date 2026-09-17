@@ -4,6 +4,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -33,6 +34,13 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             focusTimeoutSeconds = settings.focusTimeoutSeconds,
             selfTimerSeconds = settings.selfTimerDurationSeconds,
             videoQuality = state.modeSettings.videoQuality,
+            videoQualities = session.videoQualities,
+            videoQualityPosition = videoQualityPosition(
+                videoQualities = session.videoQualities,
+                videoQuality = state.modeSettings.videoQuality,
+            ),
+            torchAvailable = session.isFlashAvailable,
+            torchOn = session.isTorchOn,
             geoTagging = state.requireLocation,
             selfIllumination = state.modeSettings.selfIllumination,
             stabilizationEnabled = settings.enableEis,
@@ -53,6 +61,19 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             timerSettingVisible = !isVideoMode,
             waitForFocusLockSettingVisible = !state.requiresVideoModeOnly,
         )
+    }
+
+    private fun videoQualityPosition(
+        videoQualities: List<VideoQuality>,
+        videoQuality: VideoQuality,
+    ): Int? {
+        // CameraX lists the supported qualities from the highest down.
+        val position = when (videoQuality) {
+            VideoQuality.HIGHEST -> 0
+            else -> videoQualities.indexOf(videoQuality)
+        }
+
+        return position.takeIf { it in videoQualities.indices }
     }
 
     private fun gridIconOf(gridType: GridType): Int {

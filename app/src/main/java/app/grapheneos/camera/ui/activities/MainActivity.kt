@@ -1491,8 +1491,12 @@ open class MainActivity : AppCompatActivity() {
         // by onOrientationChange.
         session.preview?.targetRotation =
             previewView.display?.rotation ?: Surface.ROTATION_0
-        session.camera?.cameraInfo?.let {
-            previewView.applyPreviewRatio(viewfinder.uiState.value.aspectRatio, it)
+        val state = viewfinder.uiState.value
+        state.sensorOrientationDegrees?.let {
+            previewView.applyPreviewRatio(
+                aspectRatio = state.aspectRatio,
+                sensorOrientationDegrees = it,
+            )
         }
 
         rootView.post { sensorNotifier?.notifyListeners() }

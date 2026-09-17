@@ -52,8 +52,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     Dialog(themedContext) {
     val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
-    private val session = mActivity.session
-
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
     private var dialog: View
     var locToggle: ToggleButton
@@ -199,7 +197,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
-            if (session.isFlashAvailable) {
+            if (sheetState.torchAvailable) {
                 viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
                 torchToggle.isChecked = false
@@ -495,6 +493,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         gridToggle.contentDescription = mActivity.getString(state.gridDescription)
 
         locToggle.isChecked = state.geoTagging
+        torchToggle.isChecked = state.torchOn
         selfIlluminationToggle.isChecked = state.selfIllumination
 
         includeAudioSetting.visibility = visibleOrGone(state.includeAudioSettingVisible)
@@ -503,6 +502,32 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         selfIlluminationSetting.visibility = visibleOrGone(state.selfIlluminationSettingVisible)
         timerSetting.visibility = visibleOrGone(state.timerSettingVisible)
         waitForFocusLockSetting.visibility = visibleOrGone(state.waitForFocusLockSettingVisible)
+
+        renderVideoQualities(state)
+    }
+
+    private fun renderVideoQualities(state: SettingsSheetUiState) {
+        if (state.videoQualities != videoQualities) {
+            videoQualities = state.videoQualities
+
+            val adapter = ArrayAdapter(
+                mActivity,
+                android.R.layout.simple_spinner_item,
+                videoQualities.map { videoQualityTitle(mActivity, it) },
+            )
+
+            adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+            )
+
+            videoQualitySpinner.adapter = adapter
+        }
+
+        val position = state.videoQualityPosition ?: return
+
+        if (videoQualitySpinner.selectedItemPosition != position) {
+            videoQualitySpinner.setSelection(position)
+        }
     }
 
     private fun visibleOrGone(visible: Boolean): Int {
@@ -743,8 +768,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         this.resize()
 
-        torchToggle.isChecked = session.isTorchOn
-
         mActivity.settingsIcon.visibility = View.INVISIBLE
         super.show()
         backCallback.isEnabled = true
@@ -755,27 +778,5 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     override fun dismiss() {
         backCallback.isEnabled = false
         super.dismiss()
-    }
-
-    fun reloadQualities() {
-        videoQualities = session.supportedVideoQualities()
-
-        val adapter = ArrayAdapter(
-            mActivity,
-            android.R.layout.simple_spinner_item,
-            videoQualities.map { videoQualityTitle(mActivity, it) },
-        )
-
-        adapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
-
-        videoQualitySpinner.adapter = adapter
-
-        val storedQuality = storedSheetState().videoQuality
-
-        if (storedQuality != VideoQuality.HIGHEST) {
-            videoQualitySpinner.setSelection(videoQualities.indexOf(storedQuality))
-        }
     }
 }

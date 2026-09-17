@@ -14,13 +14,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatSeekBar
-import androidx.camera.core.ZoomState
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import kotlin.math.roundToInt
 
 class ZoomBar : AppCompatSeekBar {
@@ -85,21 +85,16 @@ class ZoomBar : AppCompatSeekBar {
         super.onSizeChanged(h, w, oldh, oldw)
     }
 
-    fun updateThumb() {
-        val zoomState: ZoomState? = session.zoomState
+    private var renderedZoom: ZoomUiState? = null
 
-        var zoomRatio = 1.0f
-        var linearZoom = 0.0f
+    fun render(zoom: ZoomUiState) {
+        if (zoom == renderedZoom) return
+        renderedZoom = zoom
 
-        if (zoomState != null) {
-            zoomRatio = zoomState.zoomRatio
-            linearZoom = zoomState.linearZoom
-        }
-
-        progress = (linearZoom * 100).roundToInt()
+        progress = (zoom.linearZoom * 100).roundToInt()
 
         val textView: TextView = thumbView.findViewById(R.id.progress) as TextView
-        val text = String.format("%.1fx", zoomRatio)
+        val text = String.format("%.1fx", zoom.zoomRatio)
 
         textView.text = text
 
