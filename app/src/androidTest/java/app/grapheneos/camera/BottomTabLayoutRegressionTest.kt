@@ -292,7 +292,7 @@ class BottomTabLayoutRegressionTest {
                     startMode,
                     activity.viewfinder.uiState.value.mode,
                 )
-                prefetched = activity.lastFrame
+                prefetched = activity.previewFrames.lastFrame
                 assertNotNull("the drag started no copy of the preview", prefetched)
             }
 
@@ -303,7 +303,7 @@ class BottomTabLayoutRegressionTest {
                 assertSame(
                     "the switch read a fresh frame back instead of using the one waiting for it",
                     prefetched,
-                    it.lastFrame,
+                    it.previewFrames.lastFrame,
                 )
             }
         }
@@ -365,7 +365,7 @@ class BottomTabLayoutRegressionTest {
                 val nextMode = tabs.getTabAt(nextTo(tabs.selectedTabPosition, tabs.tabCount))!!.tag
                     as CameraMode
                 activity.viewfinder.onAction(CameraAction.ModeSelected(nextMode))
-                activity.prefetchLastFrame()
+                activity.previewFrames.prefetch()
             }
             scenario.moveToState(Lifecycle.State.CREATED)
             // Outlast the retries, which is where the copy meets the surface the exit took away.
@@ -426,8 +426,8 @@ class BottomTabLayoutRegressionTest {
             awaitStrip(scenario)
 
             // The transition only goes up over a frame to blur, and nothing has taken one yet.
-            scenario.onActivity { it.prefetchLastFrame() }
-            waitUntil(scenario, "a frame is ready to blur") { it.lastFrame != null }
+            scenario.onActivity { it.previewFrames.prefetch() }
+            waitUntil(scenario, "a frame is ready to blur") { it.previewFrames.lastFrame != null }
 
             var startMode: CameraMode? = null
             scenario.onActivity { activity ->

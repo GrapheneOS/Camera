@@ -27,7 +27,6 @@ internal class CameraBindSettingsMapperImpl @Inject constructor() : CameraBindSe
             isVideoMode = state.isVideoMode(),
             requiresVideoModeOnly = state.requiresVideoModeOnly,
             qrLensFacing = target.qrLensFacing,
-            rotation = target.rotation,
             aspectRatio = state.aspectRatio(),
             flashMode = state.flashMode,
             photoQuality = settings.photoQuality,
@@ -37,6 +36,7 @@ internal class CameraBindSettingsMapperImpl @Inject constructor() : CameraBindSe
             enableEis = settings.enableEis,
             selectHighestResolution = settings.selectHighestResolution,
             mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
+            barcodeFormats = state.barcodeFormats(),
         )
     }
 }

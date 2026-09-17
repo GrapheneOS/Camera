@@ -46,8 +46,6 @@ class QRToggle @JvmOverloads constructor(
             if (!barcodeFormats.setEnabled(formatName = key, enabled = selected)) {
                 mActivity.showMessage(R.string.no_barcode_selected)
             }
-
-            mActivity.session.refreshQrHints()
         }
 
         refreshToggleUI()

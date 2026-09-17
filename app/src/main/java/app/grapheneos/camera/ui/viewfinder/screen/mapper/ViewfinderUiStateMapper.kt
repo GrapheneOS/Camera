@@ -42,6 +42,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
         return chrome.copy(
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
+            qrResultVisible = state.session.isQrResultShown,
             gridType = settings.gridType,
             mode = state.mode,
             aspectRatio = state.aspectRatio(),
@@ -49,7 +50,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             isVideoMode = isVideoMode,
             inPhotoMode = inPhotoMode,
             scanAllCodes = settings.scanAllCodes,
-            focusTimeoutSeconds = settings.focusTimeoutSeconds,
             gyroscopeSuggestionsVisible = inPhotoMode && settings.gyroscopeSuggestions,
             availableModes = state.session.availableModes,
             zslSupported = state.session.isZslSupported,

@@ -76,7 +76,7 @@ class VideoCaptureActivity : CaptureActivity() {
     }
 
     private fun showRecordingPreview() {
-        bitmap = previewView.bitmap ?: lastFrame
+        bitmap = previewView.bitmap ?: previewFrames.lastFrame
 
         showPreview()
     }

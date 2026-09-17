@@ -1,10 +1,14 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Size
+import android.view.Display
+import android.view.Surface
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -12,8 +16,10 @@ import androidx.camera.core.DynamicRange
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ZoomState
@@ -24,6 +30,9 @@ import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
@@ -39,15 +48,19 @@ import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import com.google.zxing.BarcodeFormat
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -73,6 +86,7 @@ interface CameraSession {
     val isFlashAvailable: Boolean
     val isZslSupported: Boolean
     val isTorchOn: Boolean
+    val isActive: Boolean
 
     fun initialize(forced: Boolean, extensionMode: ExtensionMode?)
     fun bind(settings: CameraBindSettings): BindOutcome
@@ -89,12 +103,17 @@ interface CameraSession {
     fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long)
     fun cancelFocusAndMetering()
     fun reattachZoomState()
-    fun refreshQrHints()
+    fun setBarcodeFormats(barcodeFormats: Set<BarcodeFormat>)
+    fun unbind()
 }
 
 @SuppressLint("UnsafeOptInUsageError")
 internal class CameraSessionImpl @AssistedInject constructor(
-    @Assisted private val environment: CameraSessionEnvironment,
+    @Assisted private val lifecycleOwner: LifecycleOwner,
+    @Assisted private val surfaceProvider: Preview.SurfaceProvider,
+    @Assisted private val meteringPointFactory: MeteringPointFactory,
+    @ApplicationContext private val context: Context,
+    private val displayManager: DisplayManager,
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
@@ -145,14 +164,23 @@ internal class CameraSessionImpl @AssistedInject constructor(
     private val handler = Handler(Looper.getMainLooper())
 
     private val attachZoomState = Runnable {
-        if (!environment.isSessionActive) return@Runnable
+        if (!isActive) return@Runnable
 
         zoomStateSource = camera?.cameraInfo?.zoomState?.also {
-            it.observe(environment.sessionLifecycleOwner, zoomStateObserver)
+            it.observe(lifecycleOwner, zoomStateObserver)
         }
 
         zoomState = zoomStateSource?.value
     }
+
+    private val qrAutofocus = Runnable { focusOnQrScanArea() }
+
+    private val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
+
+    override val isActive: Boolean
+        get() {
+            return lifecycleOwner.lifecycle.currentState != Lifecycle.State.DESTROYED
+        }
 
     override var cameraProvider: ProcessCameraProvider? = null
 
@@ -211,8 +239,25 @@ internal class CameraSessionImpl @AssistedInject constructor(
             }
         }
 
-    override fun refreshQrHints() {
-        qrAnalyzer?.refreshHints()
+    override fun setBarcodeFormats(barcodeFormats: Set<BarcodeFormat>) {
+        qrAnalyzer?.setBarcodeFormats(barcodeFormats)
+    }
+
+    override fun unbind() {
+        cameraProvider?.unbindAll()
+    }
+
+    private fun focusOnQrScanArea() {
+        if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+
+        val point = SurfaceOrientedMeteringPointFactory(1f, 1f)
+            .createPoint(0.5f, 0.5f, QR_SCAN_AREA_RATIO)
+
+        camera?.cameraControl?.startFocusAndMetering(
+            FocusMeteringAction.Builder(point).disableAutoCancel().build()
+        )
+
+        handler.postDelayed(qrAutofocus, QR_AUTOFOCUS_INTERVAL_MILLIS)
     }
 
     override fun selectLensFacing(lensFacing: LensFacing) {
@@ -290,7 +335,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     }
 
     override fun startFocusAndMetering(x: Float, y: Float, autoCancelSeconds: Long) {
-        val point = environment.previewMeteringPointFactory.createPoint(x, y)
+        val point = meteringPointFactory.createPoint(x, y)
         val builder = FocusMeteringAction.Builder(point)
 
         when (autoCancelSeconds) {
@@ -316,7 +361,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
     override fun initialize(forced: Boolean, extensionMode: ExtensionMode?) {
         if (cameraProvider != null) return
 
-        cameraProviderSource.acquireProvider(environment.sessionContext) { provider ->
+        cameraProviderSource.acquireProvider(context) { provider ->
             when (provider) {
                 null -> sessionEvents.tryEmit(CameraSessionEvent.CameraProviderUnavailable)
                 else -> onCameraProviderReady(provider, forced, extensionMode)
@@ -346,7 +391,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
         }
 
         cameraProviderSource.acquireExtensionsManager(
-            environment.sessionContext,
+            context,
             provider,
         ) { manager ->
             when (manager) {
@@ -416,9 +461,9 @@ internal class CameraSessionImpl @AssistedInject constructor(
                 )
             }
 
-            environment.sessionMainExecutor.execute {
+            mainExecutor.execute {
                 extensionProbesInFlight = false
-                if (!environment.isSessionActive) return@execute
+                if (!isActive) return@execute
 
                 if (!snapshotProbeCache.isProbedThrough(provider)) {
                     // The camera stack was reinitialized while probing: these verdicts describe
@@ -599,6 +644,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
         // Unbind/close all other camera(s) [if any]
         provider.unbindAll()
+        handler.removeCallbacks(qrAutofocus)
 
         val extMode = settings.mode.extensionMode
         var appliedExtension: ExtensionKey? = null
@@ -659,8 +705,8 @@ internal class CameraSessionImpl @AssistedInject constructor(
             includesVideoCapture = !settings.isQrMode && settings.isVideoMode,
             includesImageCapture = !settings.isQrMode && !settings.requiresVideoModeOnly,
             aspectRatio = settings.aspectRatio,
-            imageCaptureTargetRotation = imageCapture?.targetRotation ?: settings.rotation,
-            previewTargetRotation = preview?.targetRotation ?: settings.rotation,
+            imageCaptureTargetRotation = imageCapture?.targetRotation ?: displayRotation(),
+            previewTargetRotation = preview?.targetRotation ?: displayRotation(),
             flashMode = settings.flashMode,
             photoQuality = settings.photoQuality,
             waitForFocusLock = settings.waitForFocusLock,
@@ -674,7 +720,12 @@ internal class CameraSessionImpl @AssistedInject constructor(
         val plan = cameraSessionPlanFactory.create(bindRequest)
 
         if (settings.isQrMode) {
-            val analyzer = environment.createQrAnalyzer()
+            val analyzer = QrCodeAnalyzer(
+                barcodeFormats = settings.barcodeFormats,
+                onCodeScanned = { text ->
+                    sessionEvents.tryEmit(CameraSessionEvent.QrCodeScanned(text))
+                },
+            )
             val strategy = ResolutionStrategy(
                 Size(960, 960),
                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
@@ -695,6 +746,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
             )
 
             useCasesList.add(mIAnalyzer)
+            handler.postDelayed(qrAutofocus, QR_AUTOFOCUS_INTERVAL_MILLIS)
         } else {
             plan.videoCapture?.let {
                 videoCapture = it
@@ -709,7 +761,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
         preview = plan.preview.also {
             useCasesList.add(it)
-            it.surfaceProvider = environment.previewSurfaceProvider
+            it.surfaceProvider = surfaceProvider
         }
 
         // Not every camera can run video, photo and preview at once. Ask before binding rather
@@ -779,7 +831,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
                 val requested = plan.preferredFeatures.toList()
                 val boundLensFacing = lensFacing
                 sessionConfig.setFeatureSelectionListener(
-                    environment.sessionMainExecutor
+                    mainExecutor
                 ) { selected ->
                     sessionEvents.tryEmit(
                         CameraSessionEvent.FeaturesSelected(
@@ -793,7 +845,7 @@ internal class CameraSessionImpl @AssistedInject constructor(
             }
 
             camera = provider.bindToLifecycle(
-                environment.sessionLifecycleOwner,
+                lifecycleOwner,
                 cameraSelector,
                 sessionConfig
             )
@@ -836,6 +888,10 @@ internal class CameraSessionImpl @AssistedInject constructor(
         return BindOutcome.BOUND
     }
 
+    private fun displayRotation(): Int {
+        return displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
+    }
+
     private fun unprobedExtensions(): List<ExtensionKey> {
         if (extensionsManager == null || cameraProvider == null) return emptyList()
 
@@ -851,13 +907,18 @@ internal class CameraSessionImpl @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(environment: CameraSessionEnvironment): CameraSessionImpl
+        fun create(
+            lifecycleOwner: LifecycleOwner,
+            surfaceProvider: Preview.SurfaceProvider,
+            meteringPointFactory: MeteringPointFactory,
+        ): CameraSessionImpl
     }
 
     companion object {
         private const val TAG = "CameraSession"
 
         private const val EVENT_BUFFER_CAPACITY = 64
+        private const val QR_AUTOFOCUS_INTERVAL_MILLIS = 2000L
 
         private val DEFAULT_LENS_FACING = LensFacing.BACK
 

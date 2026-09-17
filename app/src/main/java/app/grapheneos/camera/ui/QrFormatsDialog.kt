@@ -8,7 +8,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 fun showMoreQrFormatOptions(
     activity: MainActivity,
     barcodeFormats: BarcodeFormats,
-    onApplied: () -> Unit,
 ) {
     val optionNames = barcodeFormats.uncommonNames()
 
@@ -21,9 +20,8 @@ fun showMoreQrFormatOptions(
                 .withIndex()
                 .associate { (index, name) -> name to values[index] }
 
-            when {
-                barcodeFormats.apply(selection) -> onApplied()
-                else -> activity.showMessage(R.string.no_barcode_selected)
+            if (!barcodeFormats.apply(selection)) {
+                activity.showMessage(R.string.no_barcode_selected)
             }
         },
     )
