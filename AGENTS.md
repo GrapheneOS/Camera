@@ -407,6 +407,8 @@ payoff of the migration:
   `rememberUpdatedState` rather than keying on them.
 - One primary public composable per file, `PascalCase`, file named after it. `@Preview` functions
   stay in the file that declares the composable they preview.
+- **The camera preview stays a `PreviewView` in an `AndroidView`** until the viewfinder itself is
+  migrated.
 
 ### Resources
 

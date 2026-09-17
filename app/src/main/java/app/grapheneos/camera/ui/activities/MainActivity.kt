@@ -277,7 +277,12 @@ open class MainActivity : AppCompatActivity() {
 
     private var audioPermissionDialog: AlertDialog? = null
 
-    internal val previewFrames by lazy { PreviewFrameHolderImpl(previewView) }
+    internal val previewFrames by lazy {
+        PreviewFrameHolderImpl(
+            previewView = previewView,
+            onLateFrame = ::showLateTransitionFrame,
+        )
+    }
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
@@ -382,6 +387,12 @@ open class MainActivity : AppCompatActivity() {
         settingsIcon.visibility = View.INVISIBLE
         settingsIcon.isEnabled = false
         mainOverlay.visibility = View.VISIBLE
+    }
+
+    private fun showLateTransitionFrame() {
+        if (transitionShown) {
+            showPreviewTransition()
+        }
     }
 
     private fun hidePreviewTransition() {
