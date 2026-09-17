@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -13,6 +14,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -160,5 +162,55 @@ class SettingsSheetUiStateMapperTest {
         assertEquals(GridType.entries.size, byType.values.map { it.gridDescription }.toSet().size)
         assertEquals(R.drawable.grid_off_circle, byType.getValue(GridType.NONE).gridIcon)
         assertEquals(R.string.grid_off, byType.getValue(GridType.NONE).gridDescription)
+    }
+
+    @Test
+    fun videoQuality_theStoredOne_isSelectedAmongTheOffered() {
+        val state = map(
+            modeSettings = ModeSettings(videoQuality = VideoQuality.FHD),
+            session = ViewfinderSessionState(videoQualities = OFFERED_QUALITIES),
+        )
+
+        assertEquals(OFFERED_QUALITIES, state.videoQualities)
+        assertEquals(1, state.videoQualityPosition)
+    }
+
+    @Test
+    fun videoQuality_leftToTheDevice_selectsTheHighestOffered() {
+        val state = map(
+            modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST),
+            session = ViewfinderSessionState(videoQualities = OFFERED_QUALITIES),
+        )
+
+        assertEquals(0, state.videoQualityPosition)
+    }
+
+    @Test
+    fun videoQuality_notOfferedByThisCamera_selectsNothing() {
+        val state = map(
+            modeSettings = ModeSettings(videoQuality = VideoQuality.SD),
+            session = ViewfinderSessionState(videoQualities = OFFERED_QUALITIES),
+        )
+
+        assertNull(state.videoQualityPosition)
+    }
+
+    @Test
+    fun videoQuality_beforeTheQualitiesAreKnown_selectsNothing() {
+        val state = map(modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST))
+
+        assertNull(state.videoQualityPosition)
+    }
+
+    @Test
+    fun torch_followsTheSession() {
+        val state = map(session = ViewfinderSessionState(isFlashAvailable = true, isTorchOn = true))
+
+        assertTrue(state.torchAvailable)
+        assertTrue(state.torchOn)
+    }
+
+    private companion object {
+        val OFFERED_QUALITIES = listOf(VideoQuality.UHD, VideoQuality.FHD, VideoQuality.HD)
     }
 }

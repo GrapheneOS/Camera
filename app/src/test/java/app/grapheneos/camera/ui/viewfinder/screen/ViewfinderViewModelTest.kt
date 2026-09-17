@@ -335,6 +335,29 @@ class ViewfinderViewModelTest {
     }
 
     @Test
+    fun previewStreamingStarted_inVideoMode_refreshesTheVideoQualities() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 1) { cameraDelegate.refreshVideoQualities() }
+        }
+    }
+
+    @Test
+    fun previewStreamingStarted_inPhotoMode_leavesTheVideoQualitiesAlone() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 0) { cameraDelegate.refreshVideoQualities() }
+        }
+    }
+
+    @Test
     fun previewStreamingStarted_storedGeoTaggingWithPermission_turnsLocationUpdatesOn() {
         runTest {
             every { cameraDelegate.shouldAskForLocationPermission() } returns false
