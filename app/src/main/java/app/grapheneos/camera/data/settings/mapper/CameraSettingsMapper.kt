@@ -96,7 +96,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
 
             StoredAspectRatio.UNKNOWN,
             null,
-                -> SettingsDefaults.ASPECT_RATIO
+            -> SettingsDefaults.ASPECT_RATIO
         }
     }
 
@@ -116,7 +116,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
 
             StoredGridType.UNKNOWN,
             null,
-                -> SettingsDefaults.GRID_TYPE
+            -> SettingsDefaults.GRID_TYPE
         }
     }
 
