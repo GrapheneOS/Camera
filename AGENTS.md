@@ -150,13 +150,12 @@ extension bind `UnsupportedOperationException`s, gallery NPEs.
 
 The pre-migration code has no ViewModels and no coroutines in the camera path (raw `thread {}`,
 `Executors`, `Handler`). `MainActivity` still owns the viewfinder's View tree, and the classes
-around it — `SettingsDialog`, `ImageCapturer`, `VideoCapturer`, `QRAnalyzer`, the custom Views —
+around it — `SettingsDialog`, `ImageCapturer`, `VideoCapturer`, the custom Views —
 hold a `MainActivity` and reach into it. Reading state back out of that tree is the coupling the
 migration exists to undo (`CamConfig` used to answer `requireLocation` with
 `settingsDialog.locToggle.isChecked`); `ViewfinderViewModel` now holds the state: the Views render
-its `uiState` and send most input through `onAction` — the zoom and exposure controls still
-drive the camera session directly — and the camera bind still reaches back through
-`ViewfinderChrome`. Do not add a new read of the View tree from below the UI.
+its `uiState` and send their input through `onAction`, and the camera bind still reaches back
+through `ViewfinderChrome`. Do not add a new read of the View tree from below the UI.
 
 ### Target
 
@@ -215,8 +214,11 @@ Roles:
   session is given is a `@Provides` in an `ActivityComponent` module, built on `@ActivityContext`
   and `@ActivityScoped` rather than `@Reusable`: it selects between the owner's storage and a
   throwaway copy of it, from the entry point it was given, and nowhere else — a session that has to
-  ask twice can be handed a second copy, and everything it changed in the first is lost. Nothing
-  below reads the entry point to find out which it got. Storage that stays durable whatever the
+  ask twice can be handed a second copy, and everything it changed in the first is lost. A
+  ViewModel outlives its Activity, so it makes the same choice in a `ViewModelComponent` module,
+  `@ViewModelScoped`, from the `CameraEntryPoint` its Activity puts in its creation arguments; both
+  are handed the one copy `SecureSessionPreferences` keeps for the secure session. Nothing below
+  reads the entry point to find out which it got. Storage that stays durable whatever the
   session — what the app has captured, as opposed to what the owner configured — is separate,
   provided under its own qualifier, so that "this outlives the lockscreen session" is a binding a
   reviewer can see rather than a branch inside a store.

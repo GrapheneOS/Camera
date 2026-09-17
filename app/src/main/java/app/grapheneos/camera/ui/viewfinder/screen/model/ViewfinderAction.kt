@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 
 sealed interface ViewfinderAction {
 
@@ -73,6 +74,12 @@ sealed interface ViewfinderAction {
         data object QrResultDismissed : LifecycleAction
 
         data object CapturedPreviewDismissed : LifecycleAction
+
+        data object ScreenDestroyed : LifecycleAction
+
+        data class ScreenCreated(
+            val host: ViewfinderHost,
+        ) : LifecycleAction
     }
 
     sealed interface SettingsAction : ViewfinderAction {

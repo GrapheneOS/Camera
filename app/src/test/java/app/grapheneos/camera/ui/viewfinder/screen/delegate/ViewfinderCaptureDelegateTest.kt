@@ -56,12 +56,12 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
-    fun detach_forgetsWhatTheActivityWasShowing() {
+    fun onScreenDestroyed_forgetsWhatTheScreenWasShowing() {
         val delegate = createDelegate()
 
         delegate.startRecording()
         delegate.showCapturedPreview()
-        delegate.detach()
+        delegate.onScreenDestroyed()
 
         assertEquals(ViewfinderCaptureState(), capture())
     }

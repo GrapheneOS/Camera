@@ -7,7 +7,7 @@ import javax.inject.Inject
 interface ViewfinderCaptureDelegate {
 
     fun bind(stateHolder: ViewfinderStateHolder)
-    fun detach()
+    fun onScreenDestroyed()
 
     fun startRecording()
     fun setRecordingPaused(paused: Boolean)
@@ -30,7 +30,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
         this.stateHolder = stateHolder
     }
 
-    override fun detach() {
+    override fun onScreenDestroyed() {
         stateHolder.update { it.copy(capture = ViewfinderCaptureState()) }
     }
 

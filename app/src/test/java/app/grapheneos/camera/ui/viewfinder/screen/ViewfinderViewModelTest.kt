@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -110,11 +111,9 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun providerReady_fromTheAttachedSession_startsTheBind() {
+    fun providerReady_startsTheBind() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            attach(viewModel)
-
+            createViewModel(applicationScope = backgroundScope)
             sessionEvents.emit(CameraSessionEvent.ProviderReady(forced = true))
 
             verify(exactly = 1) { cameraDelegate.beginBind(forced = true) }
@@ -122,15 +121,74 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun sessionEvents_afterDetach_areIgnored() {
+    fun screenCreated_lendsTheScreenToTheCameraUntilTheScreenIsDestroyed() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            attach(viewModel)
-            viewModel.detach()
+            val host = mockk<ViewfinderHost>()
 
-            sessionEvents.emit(CameraSessionEvent.ProviderReady(forced = true))
+            viewModel.onAction(LifecycleAction.ScreenCreated(host))
+            viewModel.onAction(LifecycleAction.ScreenDestroyed)
+
+            verifyOrder {
+                cameraDelegate.onScreenCreated(host)
+                cameraDelegate.onScreenDestroyed()
+                captureDelegate.onScreenDestroyed()
+            }
+        }
+    }
+
+    @Test
+    fun zoomStateChanged_publishesTheZoomAndShowsItsPanel() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            sessionEvents.emit(CameraSessionEvent.ZoomStateChanged)
+
+            verify(exactly = 1) { cameraDelegate.onZoomStateChanged() }
+            assertEquals(listOf(ViewfinderScreenEffect.ShowZoomPanel), effects)
+        }
+    }
+
+    @Test
+    fun lensSwitchClicked_towardsAnUnavailableLens_saysSoAndDoesNotRebind() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            every { cameraDelegate.lensFacing } returns LensFacing.BACK
+            every { cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any()) }
+                .returns(false)
+
+            viewModel.onAction(CameraAction.LensSwitchClicked)
 
             verify(exactly = 0) { cameraDelegate.beginBind(forced = any()) }
+            assertEquals(
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable)),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun startCamera_forQrWithoutARearLens_saysItScansWithTheFrontOne() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            every { cameraDelegate.beginBind(forced = any()) } returns true
+            every { cameraDelegate.selectLens(isQrMode = any(), extensionMode = any()) } returns
+                ViewfinderBindTarget(qrLensFacing = LensFacing.FRONT)
+            every { cameraDelegate.bindCamera(any()) } returns BindOutcome.BOUND
+
+            viewModel.onAction(LifecycleAction.QrResultDismissed)
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.HideExposurePanel,
+                    ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable),
+                    ViewfinderScreenEffect.HideZoomPanel,
+                ),
+                effects,
+            )
         }
     }
 
@@ -245,14 +303,16 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun qrCodeScanned_fromTheAttachedSession_isHandedToTheCameraDelegate() {
+    fun qrCodeScanned_showsTheResultOnlyWhenNoneIsShown() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            attach(viewModel)
+            val effects = collectEffects(viewModel)
+            every { cameraDelegate.showQrResult() } returnsMany listOf(true, false)
 
             sessionEvents.emit(CameraSessionEvent.QrCodeScanned(text = QR_TEXT))
+            sessionEvents.emit(CameraSessionEvent.QrCodeScanned(text = QR_TEXT))
 
-            verify(exactly = 1) { cameraDelegate.onQrCodeScanned(QR_TEXT) }
+            assertEquals(listOf(ViewfinderScreenEffect.ShowQrResult(QR_TEXT)), effects)
         }
     }
 
@@ -443,7 +503,10 @@ class ViewfinderViewModelTest {
             assertEquals(CameraMode.CAMERA, stateHolder.state.value.mode)
             assertEquals(
                 listOf(
+                    ViewfinderScreenEffect.HideExposurePanel,
                     ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
+                    ViewfinderScreenEffect.HideExposurePanel,
+                    ViewfinderScreenEffect.HideZoomPanel,
                     ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
                     ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
                 ),
@@ -541,14 +604,6 @@ class ViewfinderViewModelTest {
         }
 
         return effects
-    }
-
-    private fun attach(viewModel: ViewfinderViewModel) {
-        viewModel.attach(
-            chrome = mockk(relaxed = true),
-            previewFrames = mockk(relaxed = true),
-            session = mockk(relaxed = true),
-        )
     }
 
     private companion object {

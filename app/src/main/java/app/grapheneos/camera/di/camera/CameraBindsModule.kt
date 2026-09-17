@@ -10,8 +10,6 @@ import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.CameraProviderSourceImpl
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
-import app.grapheneos.camera.data.camera.session.CameraSessionFactory
-import app.grapheneos.camera.data.camera.session.CameraSessionFactoryImpl
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactory
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactoryImpl
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
@@ -92,10 +90,4 @@ internal abstract class CameraBindsModule {
     abstract fun bindSnapshotProbeCache(
         impl: SnapshotProbeCacheImpl,
     ): SnapshotProbeCache
-
-    @Binds
-    @Reusable
-    abstract fun bindCameraSessionFactory(
-        impl: CameraSessionFactoryImpl,
-    ): CameraSessionFactory
 }
