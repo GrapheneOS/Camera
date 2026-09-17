@@ -7,4 +7,5 @@ data class ViewfinderSessionState(
     val canTakePicture: Boolean = false,
     val isFlashAvailable: Boolean = false,
     val canApplyVideoStabilization: Boolean = false,
+    val isTorchOn: Boolean = false,
 )

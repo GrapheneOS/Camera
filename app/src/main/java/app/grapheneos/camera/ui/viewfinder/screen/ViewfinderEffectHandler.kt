@@ -88,6 +88,8 @@ internal class ViewfinderEffectHandler(
         }
     }
 
+    private var renderedCaptureButtonIcon: Int? = null
+
     fun render(state: ViewfinderUiState) {
         activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
         activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
@@ -97,10 +99,7 @@ internal class ViewfinderEffectHandler(
         activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
 
         activity.captureButton.setBackgroundResource(state.captureButtonBackground)
-        activity.setCaptureButtonIcon(
-            icon = state.captureButtonIcon,
-            description = state.captureButtonDescription,
-        )
+        renderCaptureButton(state)
         activity.setFlipCameraIcon(
             icon = state.flipCameraIcon,
             description = state.flipCameraDescription,
@@ -111,6 +110,19 @@ internal class ViewfinderEffectHandler(
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
 
         activity.settingsDialog.render(state.settingsSheet)
+    }
+
+    private fun renderCaptureButton(state: ViewfinderUiState) {
+        // The drawable must stay the same one the recording's corner-radius animation is holding
+        // on to: replacing it, even with the same resource, would cut that animation short.
+        if (state.captureButtonIcon != renderedCaptureButtonIcon) {
+            activity.captureButton.setImageResource(state.captureButtonIcon)
+            renderedCaptureButtonIcon = state.captureButtonIcon
+        }
+
+        activity.captureButton.contentDescription = activity.getString(
+            state.captureButtonDescription,
+        )
     }
 
     private fun showMessage(@StringRes message: Int) {
