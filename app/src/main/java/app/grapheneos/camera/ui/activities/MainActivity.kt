@@ -1566,7 +1566,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-
     companion object {
         private const val TAG = "GOCam"
 

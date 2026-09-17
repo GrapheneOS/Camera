@@ -21,6 +21,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import java.util.Locale
 import kotlin.math.roundToInt
 
 class ZoomBar : AppCompatSeekBar {
@@ -91,7 +92,7 @@ class ZoomBar : AppCompatSeekBar {
         progress = (zoom.linearZoom * 100).roundToInt()
 
         val textView: TextView = thumbView.findViewById(R.id.progress) as TextView
-        val text = String.format("%.1fx", zoom.zoomRatio)
+        val text = String.format(Locale.getDefault(), "%.1fx", zoom.zoomRatio)
 
         textView.text = text
 

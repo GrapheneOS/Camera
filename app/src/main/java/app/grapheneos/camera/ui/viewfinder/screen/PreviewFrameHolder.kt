@@ -63,18 +63,8 @@ internal class PreviewFrameHolderImpl(
     // thread nothing, as long as the copy is started early enough.
     fun prefetch() {
         if (synchronized(lock) { frameCopyPending || hasFreshPrefetch() }) return
-        if (previewView.width == 0 || previewView.height == 0) return
 
-        val surfaceView = previewView.getChildAt(0) as? SurfaceView ?: run {
-            // PreviewView falls back to a TextureView on hardware that cannot take a SurfaceView,
-            // and then there is no surface here to copy the preview out of.
-            if (!loggedMissingSurfaceView) {
-                loggedMissingSurfaceView = true
-                Log.i(TAG, "Preview is not backed by a SurfaceView; no frame to prefetch")
-            }
-            return
-        }
-        if (!surfaceView.holder.surface.isValid) return
+        val surfaceView = copyableSurfaceView() ?: return
 
         synchronized(lock) { frameCopyPending = true }
         // Copying the surface rather than the window is what leaves the grid, the level and the
@@ -98,6 +88,21 @@ internal class PreviewFrameHolderImpl(
 
     fun release() {
         frameCopyThread?.quitSafely()
+    }
+
+    private fun copyableSurfaceView(): SurfaceView? {
+        if (previewView.width == 0 || previewView.height == 0) return null
+
+        val surfaceView = previewView.getChildAt(0) as? SurfaceView
+
+        // PreviewView falls back to a TextureView on hardware that cannot take a SurfaceView, and
+        // then there is no surface here to copy the preview out of.
+        if (surfaceView == null && !loggedMissingSurfaceView) {
+            loggedMissingSurfaceView = true
+            Log.i(TAG, "Preview is not backed by a SurfaceView; no frame to prefetch")
+        }
+
+        return surfaceView?.takeIf { it.holder.surface.isValid }
     }
 
     // [handler] is deliberately not the main thread's: the copy itself takes about 40ms, but the

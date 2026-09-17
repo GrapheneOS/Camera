@@ -125,8 +125,9 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun beginBind(forced: Boolean): Boolean {
-        val host = host ?: return false
-        if ((!forced && session.camera != null) || session.cameraProvider == null) return false
+        val host = host?.takeIf {
+            session.cameraProvider != null && (forced || session.camera == null)
+        } ?: return false
 
         host.chrome.cancelPendingCapture()
 
@@ -137,8 +138,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         isQrMode: Boolean,
         extensionMode: ExtensionMode?,
     ): ViewfinderBindTarget? {
-        val host = host ?: return null
-        if (!session.isActive) return null
+        val host = host?.takeIf { session.isActive } ?: return null
 
         // Silent: ViewfinderViewModel.switchLens() refuses a lens the user picks, with a message.
         session.lensFacing = session.lensFacing.supportedOrOpposite {
