@@ -44,6 +44,7 @@ interface ViewfinderCameraDelegate {
 
     fun toggleLensFacing(extensionMode: Int): Boolean
     fun applyFlashMode(value: Int)
+    fun toggleTorch()
     fun onZoomStateChanged()
     fun refreshQrHints()
     fun cancelFocusTimer()
@@ -236,6 +237,12 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     override fun applyFlashMode(value: Int) {
         session.imageCapture?.flashMode = value
         stateHolder.update { it.copy(flashMode = value) }
+    }
+
+    override fun toggleTorch() {
+        session.toggleTorchState()
+
+        stateHolder.update { it.copy(session = it.session.copy(isTorchOn = session.isTorchOn)) }
     }
 
     override fun onZoomStateChanged() {

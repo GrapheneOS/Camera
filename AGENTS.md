@@ -154,7 +154,8 @@ around it — `SettingsDialog`, `ImageCapturer`, `VideoCapturer`, `QRAnalyzer`, 
 hold a `MainActivity` and reach into it. Reading state back out of that tree is the coupling the
 migration exists to undo (`CamConfig` used to answer `requireLocation` with
 `settingsDialog.locToggle.isChecked`); `ViewfinderViewModel` now holds the state: the Views render
-its `uiState` and send input through `onAction`, and the camera bind still reaches back through
+its `uiState` and send most input through `onAction` — the zoom and exposure controls still
+drive the camera session directly — and the camera bind still reaches back through
 `ViewfinderChrome`. Do not add a new read of the View tree from below the UI.
 
 ### Target
@@ -162,7 +163,7 @@ its `uiState` and send input through `onAction`, and the camera bind still reach
 Compose + Hilt + per-screen unidirectional data flow + `data`/`domain`/`ui` layering; Material3
 Expressive styling.
 Strategy is foundation-first: extract a testable domain layer underneath the existing Views
-(keeping the instrumented regression suite green *and unmodified*), then replace the UI one screen
+(keeping the instrumented regression suite green, its assertions unchanged), then replace the UI one screen
 at a time — **leaf screens first, viewfinder last**.
 
 ### Architectural rules (new code)
@@ -428,9 +429,9 @@ migrating the UI is exactly when they stop being reachable, and left behind they
   test, tooling) are fine, each sorted internally.
 - **CameraX is strictly pinned.** The app imports three CameraX `internal` APIs that carry no
   compatibility guarantee, so a bump can break capture *at runtime* while CI stays green. The
-  catalog uses `strictly` so that a bump fails resolution instead. Read the comment on `camerax` in
-  `gradle/libs.versions.toml` before touching it; replacing the three imports with supported
-  equivalents is its own change, and comes first.
+  catalog uses `strictly` so that a bump fails resolution instead. The three are
+  `ImageUtil` and `ExifRotationAvailability` from `camera-core` and `MediaMuxerImpl` from
+  `camera-video`; replacing them with supported equivalents is its own change, and comes first.
 - **Dependency hash verification is enforced** via `gradle/verification-metadata.xml` — every
   artifact's checksum is pinned, so any new or changed dependency fails the build until its hashes
   are recorded there. On a verification error: **stop and ask the user to fix it.** Do not edit

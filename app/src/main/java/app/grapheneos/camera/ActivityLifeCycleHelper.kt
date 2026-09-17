@@ -8,12 +8,13 @@ import app.grapheneos.camera.ui.activities.SecureActivity
 
 class ActivityLifeCycleHelper(
     private val onResumedActivityChanged: (activity: MainActivity?) -> Unit,
-    private val onSecureActivityCountChanged: (opened: Boolean) -> Unit,
+    private val onSecureActivityCreated: () -> Unit,
+    private val onSecureActivityDestroyed: (isChangingConfigurations: Boolean) -> Unit,
 ) : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         if (activity is SecureActivity) {
-            onSecureActivityCountChanged(true)
+            onSecureActivityCreated()
         }
     }
 
@@ -37,7 +38,7 @@ class ActivityLifeCycleHelper(
 
     override fun onActivityDestroyed(activity: Activity) {
         if (activity is SecureActivity) {
-            onSecureActivityCountChanged(false)
+            onSecureActivityDestroyed(activity.isChangingConfigurations)
         }
     }
 }

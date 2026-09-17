@@ -29,6 +29,10 @@ internal class CameraEntryPointProvidesModule {
             requiresVideoModeOnly = context is VideoOnlyActivity ||
                 context is VideoCaptureActivity,
             allowsQrScanning = context !is SecureMainActivity,
+            // Hiding the strip is not enough on its own: a fling reads the tab model rather than
+            // the strip, and a transparent strip still takes taps, since a disabled parent does not
+            // disable its children. There is no mode to switch to in these sessions, so build no
+            // tabs at all.
             showsCameraModeTabs = context !is VideoOnlyActivity &&
                 context !is CaptureActivity &&
                 context !is QrTile,

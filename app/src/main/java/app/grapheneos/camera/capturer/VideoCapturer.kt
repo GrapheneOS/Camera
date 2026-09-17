@@ -76,11 +76,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
             if (isRecording) {
                 if (value) {
                     recording?.pause()
-                    mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
                 } else {
                     recording?.resume()
-                    mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
                 }
+                viewfinder.onAction(CaptureAction.RecordingPauseToggled(paused = value))
             }
             field = value
         }
@@ -424,21 +423,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         animateCaptureButtonCorners(dp16, dp8)
 
-        // The user may have paused before the recording actually started.
-        if (isPaused) {
-            mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
-        } else {
-            mActivity.setFlipCameraIcon(R.drawable.pause, R.string.pause_recording)
-        }
-        mActivity.cancelButtonView.visibility = View.GONE
-
-        // Only the description changes: the drawable stays the same one the corner-radius
-        // animation above is holding on to, and replacing it would cut that animation short.
-        mActivity.captureButton.contentDescription = mActivity.getString(R.string.stop_recording)
-
-        if (mActivity.requiresVideoModeOnly) {
-            mActivity.thirdOption.visibility = View.INVISIBLE
-        }
+        viewfinder.onAction(CaptureAction.RecordingStarted)
 
         // While recording, the gallery button turns into a shutter for stills
         mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
@@ -456,16 +441,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
         animateCaptureButtonCorners(dp8, dp16)
 
         mActivity.timerView.visibility = View.GONE
-        mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
-        mActivity.captureButton.contentDescription =
-            mActivity.getString(R.string.start_recording)
 
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
         mActivity.settingsDialog.enableEISToggle.isEnabled = true
-
-        if (mActivity !is VideoCaptureActivity) {
-            mActivity.thirdOption.visibility = View.VISIBLE
-        }
 
         if (!mActivity.requiresVideoModeOnly) {
             mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = true
@@ -475,12 +453,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // at record start it was repurposed into an in-video shutter ("Capture") unconditionally,
         // so restoring it only for non-VideoCaptureActivity would strand a stale "Capture" label
         // there. The non-recording third-circle click opens the gallery in every activity, so
-        // open_gallery is the accurate label. Cancel/tab visibility stays guarded, as those don't
-        // apply to VideoCaptureActivity.
+        // open_gallery is the accurate label. Tab visibility stays guarded, as tabs don't apply to
+        // VideoCaptureActivity.
         mActivity.setThirdCircleIcon(R.drawable.option_circle, R.string.open_gallery)
 
         if (mActivity !is VideoCaptureActivity) {
-            mActivity.cancelButtonView.visibility = View.VISIBLE
             mActivity.tabLayout.visibility = View.VISIBLE
         }
 
@@ -494,6 +471,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.muteToggle.visibility = View.GONE
 
         isRecording = false
+
+        viewfinder.onAction(CaptureAction.RecordingStopped)
 
         mActivity.forceUpdateOrientationSensor()
     }

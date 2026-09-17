@@ -14,6 +14,7 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -55,6 +56,7 @@ class ViewfinderViewModelTest {
     private val settingsDelegate = mockk<ViewfinderSettingsDelegate>(relaxed = true)
     private val modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true)
     private val cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true)
+    private val captureDelegate = mockk<ViewfinderCaptureDelegate>(relaxed = true)
 
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
 
@@ -382,6 +384,58 @@ class ViewfinderViewModelTest {
         }
     }
 
+    @Test
+    fun capturedPreviewDismissed_forgetsThePreviewBeforeRebinding() {
+        runTest {
+            every { cameraDelegate.beginBind(forced = true) } returns true
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(LifecycleAction.CapturedPreviewDismissed)
+
+            verifyOrder {
+                captureDelegate.dismissCapturedPreview()
+                cameraDelegate.beginBind(forced = true)
+            }
+        }
+    }
+
+    @Test
+    fun capturedPreviewShown_isRecorded() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(CaptureAction.CapturedPreviewShown)
+
+            verify(exactly = 1) { captureDelegate.showCapturedPreview() }
+        }
+    }
+
+    @Test
+    fun recordingActions_reachTheCaptureDelegate() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(CaptureAction.RecordingStarted)
+            viewModel.onAction(CaptureAction.RecordingPauseToggled(paused = true))
+            viewModel.onAction(CaptureAction.RecordingStopped)
+
+            verifyOrder {
+                captureDelegate.startRecording()
+                captureDelegate.setRecordingPaused(paused = true)
+                captureDelegate.stopRecording()
+            }
+        }
+    }
+
+    @Test
+    fun torchToggleClicked_togglesTheTorch() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(CameraAction.TorchToggleClicked)
+
+            verify(exactly = 1) { cameraDelegate.toggleTorch() }
+        }
+    }
+
     private fun createViewModel(
         applicationScope: CoroutineScope,
         entryPoint: CameraEntryPoint = ENTRY_POINT,
@@ -391,6 +445,7 @@ class ViewfinderViewModelTest {
             settingsDelegate = settingsDelegate,
             modeDelegate = modeDelegate,
             cameraDelegate = cameraDelegate,
+            captureDelegate = captureDelegate,
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             uiStateMapper = mockk(relaxed = true),

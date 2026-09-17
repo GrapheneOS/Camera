@@ -17,7 +17,7 @@ import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.di.core.IoDispatcher
-import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -49,7 +49,7 @@ interface CapturedItemRepository {
 internal class CapturedItemRepositoryImpl @Inject constructor(
     private val storagePrefs: DataStore<StoragePrefs>,
     private val mediaPrefs: DataStore<MediaPrefs>,
-    @ActivityContext private val context: Context,
+    @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
 

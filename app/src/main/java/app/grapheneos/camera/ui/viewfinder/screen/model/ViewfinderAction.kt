@@ -11,6 +11,8 @@ sealed interface ViewfinderAction {
 
         data object FlashToggleClicked : CameraAction
 
+        data object TorchToggleClicked : CameraAction
+
         data object AspectRatioToggleClicked : CameraAction
 
         data class ModeSelected(
@@ -23,6 +25,16 @@ sealed interface ViewfinderAction {
         data object PictureCaptured : CaptureAction
 
         data object StorageLocationNotFound : CaptureAction
+
+        data object RecordingStarted : CaptureAction
+
+        data object RecordingStopped : CaptureAction
+
+        data object CapturedPreviewShown : CaptureAction
+
+        data class RecordingPauseToggled(
+            val paused: Boolean,
+        ) : CaptureAction
     }
 
     sealed interface LifecycleAction : ViewfinderAction {

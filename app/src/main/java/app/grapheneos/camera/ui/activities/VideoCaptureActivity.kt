@@ -23,8 +23,6 @@ class VideoCaptureActivity : CaptureActivity() {
         whiteOptionCircle = findViewById(R.id.white_option_circle)
         playPreview = findViewById(R.id.play_preview)
 
-        setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
-
         captureButton.setOnClickListener OnClickListener@{
             if (videoCapturer.isRecording) {
                 videoCapturer.stopRecording()
@@ -80,14 +78,7 @@ class VideoCaptureActivity : CaptureActivity() {
     private fun showRecordingPreview() {
         bitmap = previewView.bitmap ?: lastFrame
 
-        cancelButtonView.visibility = View.VISIBLE
-
         showPreview()
-    }
-
-    override fun showPreview() {
-        super.showPreview()
-        thirdOption.visibility = View.VISIBLE
     }
 
     private fun confirmVideo() {
@@ -104,10 +95,5 @@ class VideoCaptureActivity : CaptureActivity() {
             setResult(RESULT_OK, resultIntent)
         }
         finish()
-    }
-
-    override fun hidePreview() {
-        super.hidePreview()
-        thirdOption.visibility = View.INVISIBLE
     }
 }

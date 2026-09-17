@@ -38,7 +38,7 @@ class SecureSessionPreferencesTest {
         val viewfinder = sessionRepository()
         secureSession.onSecureActivityCreated()
         // The settings screen of the same session closes; the viewfinder is still there.
-        secureSession.onSecureActivityDestroyed()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = false)
 
         assertSame(viewfinder, sessionRepository())
     }
@@ -48,7 +48,7 @@ class SecureSessionPreferencesTest {
         secureSession.onSecureActivityCreated()
 
         val firstSession = sessionRepository()
-        secureSession.onSecureActivityDestroyed()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = false)
         secureSession.onSecureActivityCreated()
 
         assertNotSame(firstSession, sessionRepository())
@@ -56,14 +56,38 @@ class SecureSessionPreferencesTest {
 
     @Test
     fun anUnbalancedDestroy_doesNotStrandTheCounter() {
-        secureSession.onSecureActivityDestroyed()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = false)
         secureSession.onSecureActivityCreated()
 
         val session = sessionRepository()
-        secureSession.onSecureActivityDestroyed()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = false)
         secureSession.onSecureActivityCreated()
 
         assertNotSame(session, sessionRepository())
+    }
+
+    @Test
+    fun anActivityRecreatedForAConfigurationChange_keepsTheCopy() {
+        secureSession.onSecureActivityCreated()
+
+        val beforeRecreation = sessionRepository()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = true)
+        secureSession.onSecureActivityCreated()
+
+        assertSame(beforeRecreation, sessionRepository())
+    }
+
+    @Test
+    fun theSessionAfterARecreatedOne_getsACopyOfItsOwn() {
+        secureSession.onSecureActivityCreated()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = true)
+        secureSession.onSecureActivityCreated()
+
+        val recreatedSession = sessionRepository()
+        secureSession.onSecureActivityDestroyed(isChangingConfigurations = false)
+        secureSession.onSecureActivityCreated()
+
+        assertNotSame(recreatedSession, sessionRepository())
     }
 
     private fun sessionRepository(): SettingsRepository {
