@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
-import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.LensFacing
@@ -14,9 +13,8 @@ import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import com.google.zxing.BarcodeFormat
@@ -45,10 +43,14 @@ class ViewfinderCameraDelegateTest {
 
     private val chrome = mockk<ViewfinderChrome>(relaxed = true)
     private val previewFrames = mockk<PreviewFrameHolder>(relaxed = true)
+
+    private val host = ViewfinderHost(
+        previewTarget = mockk(relaxed = true),
+        chrome = chrome,
+        previewFrames = previewFrames,
+    )
     private val session = mockk<CameraSession>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
-
-    private val emitted = mutableListOf<ViewfinderScreenEffect>()
 
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
@@ -105,7 +107,6 @@ class ViewfinderCameraDelegateTest {
         delegate.selectLens(isQrMode = false, extensionMode = null)
 
         verify(exactly = 1) { session.selectLensFacing(LensFacing.FRONT) }
-        assertTrue(emitted.isEmpty())
     }
 
     @Test
@@ -117,38 +118,36 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun selectLens_forQrWithoutARearLens_scansWithTheFrontOneAndSaysSo() {
+    fun selectLens_forQrWithoutARearLens_scansWithTheFrontOne() {
         lensUnsupported(LensFacing.BACK)
 
         val delegate = createAttachedDelegate()
         val target = delegate.selectLens(isQrMode = true, extensionMode = null)
 
         assertEquals(LensFacing.FRONT, target?.qrLensFacing)
-        assertEquals(
-            listOf(ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable)),
-            emitted,
-        )
     }
 
     @Test
-    fun toggleLensFacing_toAnUnsupportedLens_revertsAndSaysSo() {
+    fun switchLensFacing_toAnUnsupportedLens_keepsTheCurrentOne() {
         lensUnsupported(LensFacing.FRONT)
 
         val delegate = createAttachedDelegate()
-        val switched = delegate.toggleLensFacing(extensionMode = null)
+        val switched = delegate.switchLensFacing(
+            lensFacing = LensFacing.FRONT,
+            extensionMode = null,
+        )
 
         assertFalse(switched)
         assertEquals(LensFacing.BACK, lensFacing)
-        assertEquals(
-            listOf(ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable)),
-            emitted,
-        )
     }
 
     @Test
-    fun toggleLensFacing_toASupportedLens_keepsIt() {
+    fun switchLensFacing_toASupportedLens_takesIt() {
         val delegate = createAttachedDelegate()
-        val switched = delegate.toggleLensFacing(extensionMode = null)
+        val switched = delegate.switchLensFacing(
+            lensFacing = LensFacing.FRONT,
+            extensionMode = null,
+        )
 
         assertTrue(switched)
         assertEquals(LensFacing.FRONT, lensFacing)
@@ -188,17 +187,6 @@ class ViewfinderCameraDelegateTest {
 
         assertEquals(ZOOM, stateHolder.state.value.session.zoom)
         assertEquals(EXPOSURE, stateHolder.state.value.session.exposure)
-        assertEquals(listOf(ViewfinderScreenEffect.HideZoomPanel), emitted)
-    }
-
-    @Test
-    fun beginBind_hidesTheExposurePanel() {
-        every { session.camera } returns null
-
-        val delegate = createAttachedDelegate()
-        delegate.beginBind(forced = true)
-
-        assertEquals(listOf(ViewfinderScreenEffect.HideExposurePanel), emitted)
     }
 
     @Test
@@ -257,14 +245,13 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun onZoomStateChanged_publishesTheZoomAndShowsItsPanel() {
+    fun onZoomStateChanged_publishesTheZoom() {
         every { session.zoom } returns ZOOM
 
         val delegate = createAttachedDelegate()
         delegate.onZoomStateChanged()
 
         assertEquals(ZOOM, stateHolder.state.value.session.zoom)
-        assertEquals(listOf(ViewfinderScreenEffect.ShowZoomPanel), emitted)
     }
 
     @Test
@@ -295,23 +282,27 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun detach_forgetsTheSession() {
-        every { session.isFlashAvailable } returns true
+    fun onScreenDestroyed_keepsWhatTheCameraIsDoing() {
+        every { session.lensFacing } returns LensFacing.FRONT
 
         val delegate = createAttachedDelegate()
-        delegate.detach()
+        delegate.bindCamera(mockk(relaxed = true))
+        delegate.applyFlashMode(FlashMode.AUTO)
+        delegate.onScreenDestroyed()
 
-        assertEquals(ViewfinderSessionState(), stateHolder.state.value.session)
+        assertEquals(LensFacing.FRONT, stateHolder.state.value.session.lensFacing)
+        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
     }
 
     @Test
-    fun applyFlashMode_isRememberedAcrossDetach() {
+    fun onScreenDestroyed_forgetsTheScreenAndTheResultItWasShowing() {
         val delegate = createAttachedDelegate()
+        delegate.showQrResult()
+        delegate.onScreenDestroyed()
 
-        delegate.applyFlashMode(FlashMode.AUTO)
-        delegate.detach()
-
-        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
+        verify(exactly = 1) { session.setPreviewTarget(null) }
+        assertFalse(stateHolder.state.value.session.isQrResultShown)
+        assertFalse(delegate.beginBind(forced = true))
     }
 
     @Test
@@ -338,24 +329,23 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun onQrCodeScanned_showsTheResultOnceAndStopsTheCamera() {
+    fun showQrResult_showsItOnceAndStopsTheCamera() {
         val delegate = createAttachedDelegate()
 
-        delegate.onQrCodeScanned(QR_TEXT)
-        delegate.onQrCodeScanned(QR_TEXT)
+        assertTrue(delegate.showQrResult())
+        assertFalse(delegate.showQrResult())
 
         verify(exactly = 1) { session.unbind() }
         assertTrue(stateHolder.state.value.session.isQrResultShown)
-        assertEquals(listOf(ViewfinderScreenEffect.ShowQrResult(QR_TEXT)), emitted)
     }
 
     @Test
     fun dismissQrResult_letsTheNextCodeBeShown() {
         val delegate = createAttachedDelegate()
 
-        delegate.onQrCodeScanned(QR_TEXT)
+        delegate.showQrResult()
         delegate.dismissQrResult()
-        delegate.onQrCodeScanned(QR_TEXT)
+        delegate.showQrResult()
 
         verify(exactly = 2) { session.unbind() }
     }
@@ -367,23 +357,6 @@ class ViewfinderCameraDelegateTest {
         stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
 
         verify(exactly = 1) { session.setBarcodeFormats(BarcodeFormat.entries.toSet()) }
-    }
-
-    @Test
-    fun barcodeFormats_withoutASession_areLeftToTheNextBind() {
-        val delegate = ViewfinderCameraDelegateImpl(
-            entryPoint = mockk(relaxed = true),
-            resolveAvailableModes = resolveAvailableModes,
-            mainDispatcher = mainDispatcherRule.testDispatcher,
-        )
-        delegate.bind(
-            scope = scope,
-            stateHolder = stateHolder,
-        )
-
-        stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
-
-        verify(exactly = 0) { session.setBarcodeFormats(any()) }
     }
 
     private fun lensUnsupported(facing: LensFacing) {
@@ -399,6 +372,7 @@ class ViewfinderCameraDelegateTest {
         showsCameraModeTabs: Boolean = true,
     ): ViewfinderCameraDelegate {
         val delegate = ViewfinderCameraDelegateImpl(
+            session = session,
             entryPoint = CameraEntryPoint(
                 isSecureSession = false,
                 isCaptureSession = false,
@@ -416,12 +390,7 @@ class ViewfinderCameraDelegateTest {
             stateHolder = stateHolder,
         )
 
-        delegate.attach(
-            chrome = chrome,
-            previewFrames = previewFrames,
-            session = session,
-            emitEffect = { emitted += it },
-        )
+        delegate.onScreenCreated(host)
 
         return delegate
     }
@@ -440,6 +409,5 @@ class ViewfinderCameraDelegateTest {
         )
 
         const val SENSOR_ORIENTATION = 90
-        const val QR_TEXT = "https://grapheneos.org"
     }
 }

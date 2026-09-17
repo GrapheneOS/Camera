@@ -60,15 +60,15 @@ import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isVisible
 import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
+import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import app.grapheneos.camera.App
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
@@ -77,13 +77,14 @@ import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.CameraSessionFactory
-import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
+import app.grapheneos.camera.di.camera.CameraEntryPointViewModelProvidesModule
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
@@ -101,10 +102,11 @@ import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
-import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -124,7 +126,6 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
-import javax.inject.Provider
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
@@ -132,9 +133,6 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 open class MainActivity : AppCompatActivity() {
-
-    @Inject
-    lateinit var cameraSessionFactory: CameraSessionFactory
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -151,13 +149,11 @@ open class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var capturedItemSession: CapturedItemSession
 
+    val viewfinder: ViewfinderViewModel by viewModels(
+        extrasProducer = { viewfinderCreationExtras() },
+    )
+
     @Inject
-    lateinit var viewfinderProvider: Provider<ViewfinderViewModel>
-
-    val viewfinder: ViewfinderViewModel by viewModels {
-        viewModelFactory { initializer { viewfinderProvider.get() } }
-    }
-
     lateinit var session: CameraSession
 
     private val application: App
@@ -691,15 +687,18 @@ open class MainActivity : AppCompatActivity() {
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
         val sessionHandler = ViewfinderEffectHandler(this)
-        session = cameraSessionFactory.create(
-            lifecycleOwner = this,
-            surfaceProvider = previewView.surfaceProvider,
-            meteringPointFactory = previewView.meteringPointFactory,
-        )
-        viewfinder.attach(
-            chrome = sessionHandler,
-            previewFrames = previewFrames,
-            session = session,
+        viewfinder.onAction(
+            LifecycleAction.ScreenCreated(
+                host = ViewfinderHost(
+                    previewTarget = PreviewTarget(
+                        lifecycleOwner = this,
+                        surfaceProvider = previewView.surfaceProvider,
+                        meteringPointFactory = previewView.meteringPointFactory,
+                    ),
+                    chrome = sessionHandler,
+                    previewFrames = previewFrames,
+                ),
+            ),
         )
         tunePlayer = TunePlayer(
             context = this,
@@ -1257,6 +1256,18 @@ open class MainActivity : AppCompatActivity() {
         builder.showIgnoringShortEdgeMode()
     }
 
+    private fun viewfinderCreationExtras(): CreationExtras {
+        val defaults = defaultViewModelCreationExtras
+        val arguments = Bundle().apply {
+            defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
+            putAll(CameraEntryPointViewModelProvidesModule.arguments(cameraEntryPoint))
+        }
+
+        return MutableCreationExtras(defaults).apply {
+            set(DEFAULT_ARGS_KEY, arguments)
+        }
+    }
+
     fun showMessage(@StringRes message: Int) {
         showMessage(getString(message))
     }
@@ -1391,7 +1402,7 @@ open class MainActivity : AppCompatActivity() {
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         previewFrames.release()
-        viewfinder.detach()
+        viewfinder.onAction(LifecycleAction.ScreenDestroyed)
         capturedItemSession.close()
     }
 
