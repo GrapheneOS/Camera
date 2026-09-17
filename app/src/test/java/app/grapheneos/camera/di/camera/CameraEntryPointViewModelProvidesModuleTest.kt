@@ -1,7 +1,8 @@
 package app.grapheneos.camera.di.camera
 
 import androidx.lifecycle.SavedStateHandle
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,7 +16,7 @@ class CameraEntryPointViewModelProvidesModuleTest {
     @Test
     fun cameraEntryPoint_readsBackWhatTheActivityPutInTheArguments() {
         listOf(SECURE_ENTRY_POINT, CAPTURE_ENTRY_POINT).forEach { entryPoint ->
-            val arguments = CameraEntryPointViewModelProvidesModule.arguments(entryPoint)
+            val arguments = ViewfinderViewModel.arguments(entryPoint)
             val handle = SavedStateHandle(
                 arguments.keySet().associateWith { arguments.getBoolean(it) },
             )
