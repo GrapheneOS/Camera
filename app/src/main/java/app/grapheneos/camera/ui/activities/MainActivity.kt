@@ -115,7 +115,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
-import app.grapheneos.camera.util.CameraControl
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.resolveActivity
@@ -736,13 +735,13 @@ open class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_FOCUS -> {
                 // cancel any manual focus
                 // CameraX will start the continuous autofocus (if supported) automatically
-                previewView.controller?.cameraControl?.cancelFocusAndMetering()
+                viewfinder.onAction(CameraAction.FocusKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_IN -> {
-                cameraControl.zoomIn()
+                viewfinder.onAction(CameraAction.ZoomInKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_OUT -> {
-                cameraControl.zoomOut()
+                viewfinder.onAction(CameraAction.ZoomOutKeyPressed)
             }
         }
         return super.onKeyUp(keyCode, event)
@@ -840,7 +839,6 @@ open class MainActivity : AppCompatActivity() {
             chrome = sessionHandler,
             session = session,
         )
-        cameraControl = CameraControl(session)
         tunePlayer = TunePlayer(
             context = this,
             soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
@@ -1698,7 +1696,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var cameraControl: CameraControl
 
     companion object {
         private const val TAG = "GOCam"

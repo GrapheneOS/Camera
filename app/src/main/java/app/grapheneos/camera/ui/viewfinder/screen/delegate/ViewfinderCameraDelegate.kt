@@ -43,6 +43,12 @@ interface ViewfinderCameraDelegate {
     fun toggleLensFacing(extensionMode: ExtensionMode?): Boolean
     fun applyFlashMode(value: FlashMode)
     fun toggleTorch()
+    fun stepZoom(step: Float)
+    fun scaleZoom(scaleFactor: Float)
+    fun setLinearZoom(linearZoom: Float)
+    fun setExposureCompensation(compensationIndex: Int)
+    fun focusAt(x: Float, y: Float, autoCancelSeconds: Long)
+    fun cancelFocus()
     fun onZoomStateChanged()
     fun refreshVideoQualities()
     fun refreshQrHints()
@@ -247,6 +253,57 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
     }
 
+    override fun stepZoom(step: Float) {
+        val zoom = session.zoom ?: return
+        val requested = zoom.zoomRatio + step
+
+        val zoomRatio = when {
+            requested > zoom.maxZoomRatio -> zoom.maxZoomRatio
+            requested < zoom.minZoomRatio -> zoom.minZoomRatio
+            // smoothly transition between wide angle camera to primary one
+            zoom.zoomRatio < 1f && requested > 1f -> 1f
+            else -> requested
+        }
+
+        session.setZoomRatio(zoomRatio)
+    }
+
+    override fun scaleZoom(scaleFactor: Float) {
+        val zoomRatio = session.zoom?.let { it.zoomRatio * scaleFactor } ?: 1f
+
+        session.setZoomRatio(zoomRatio)
+    }
+
+    override fun setLinearZoom(linearZoom: Float) {
+        session.setLinearZoom(linearZoom)
+    }
+
+    override fun setExposureCompensation(compensationIndex: Int) {
+        session.setExposureCompensationIndex(compensationIndex)
+
+        stateHolder.update {
+            val exposure = it.session.exposure?.copy(compensationIndex = compensationIndex)
+
+            it.copy(session = it.session.copy(exposure = exposure))
+        }
+    }
+
+    override fun focusAt(
+        x: Float,
+        y: Float,
+        autoCancelSeconds: Long,
+    ) {
+        session.startFocusAndMetering(
+            x = x,
+            y = y,
+            autoCancelSeconds = autoCancelSeconds,
+        )
+    }
+
+    override fun cancelFocus() {
+        session.cancelFocusAndMetering()
+    }
+
     override fun onZoomStateChanged() {
         stateHolder.update {
             it.copy(session = it.session.copy(zoom = session.zoom))
@@ -290,9 +347,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                     isTorchOn = false,
                     isZslSupported = session.isZslSupported,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,
-                    // Unknown until announceBind(). The gap is what resets an exposure bar the
-                    // user dragged when the new camera reports the same exposure as the old one.
-                    exposure = null,
                 ),
             )
         }
