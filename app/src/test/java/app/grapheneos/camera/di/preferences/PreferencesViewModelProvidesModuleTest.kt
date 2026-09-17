@@ -1,7 +1,7 @@
 package app.grapheneos.camera.di.preferences
 
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertSame

@@ -3,7 +3,7 @@ package app.grapheneos.camera.di.media
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
 import app.grapheneos.camera.data.media.repository.LockscreenCapturedItemRepository
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

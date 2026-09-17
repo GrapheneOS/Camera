@@ -84,8 +84,7 @@ import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
-import app.grapheneos.camera.di.camera.CameraEntryPointViewModelProvidesModule
-import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ktx.SystemSettingsObserver
@@ -1271,7 +1270,7 @@ open class MainActivity : AppCompatActivity() {
         val defaults = defaultViewModelCreationExtras
         val arguments = Bundle().apply {
             defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
-            putAll(CameraEntryPointViewModelProvidesModule.arguments(cameraEntryPoint))
+            putAll(ViewfinderViewModel.arguments(cameraEntryPoint))
         }
 
         return MutableCreationExtras(defaults).apply {
