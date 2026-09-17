@@ -2,7 +2,7 @@ package app.grapheneos.camera.data.camera.mapper
 
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
-import androidx.camera.video.Quality
+import app.grapheneos.camera.data.core.model.VideoQuality
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -16,16 +16,15 @@ class VideoQualityFeatureMapperImplTest {
 
     @Test
     fun map_aQualityNamingAResolution_hasAGroupableEquivalent() {
-        assertEquals(GroupableFeatures.UHD_RECORDING, mapper.map(Quality.UHD))
-        assertEquals(GroupableFeatures.FHD_RECORDING, mapper.map(Quality.FHD))
-        assertEquals(GroupableFeatures.HD_RECORDING, mapper.map(Quality.HD))
-        assertEquals(GroupableFeatures.SD_RECORDING, mapper.map(Quality.SD))
+        assertEquals(GroupableFeatures.UHD_RECORDING, mapper.map(VideoQuality.UHD))
+        assertEquals(GroupableFeatures.FHD_RECORDING, mapper.map(VideoQuality.FHD))
+        assertEquals(GroupableFeatures.HD_RECORDING, mapper.map(VideoQuality.HD))
+        assertEquals(GroupableFeatures.SD_RECORDING, mapper.map(VideoQuality.SD))
     }
 
     @Test
     fun map_aQualityNamingNoResolution_hasNoGroupableEquivalent() {
-        assertNull(mapper.map(Quality.HIGHEST))
-        assertNull(mapper.map(Quality.LOWEST))
+        assertNull(mapper.map(VideoQuality.HIGHEST))
     }
 
     @Test
@@ -45,10 +44,10 @@ class VideoQualityFeatureMapperImplTest {
 
     private companion object {
         val GROUPABLE_QUALITIES = listOf(
-            Quality.UHD,
-            Quality.FHD,
-            Quality.HD,
-            Quality.SD,
+            VideoQuality.UHD,
+            VideoQuality.FHD,
+            VideoQuality.HD,
+            VideoQuality.SD,
         )
     }
 }

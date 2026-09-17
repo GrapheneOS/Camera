@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui
 
 import android.content.Context
-import androidx.camera.video.Quality
 import androidx.test.core.app.ApplicationProvider
+import app.grapheneos.camera.data.core.model.VideoQuality
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,14 +15,14 @@ class VideoQualityTitleTest {
 
     @Test
     fun videoQualityTitle_offeredQualities_keepTheirWording() {
-        assertEquals("2160p (UHD)", videoQualityTitle(context, Quality.UHD))
-        assertEquals("1080p (FHD)", videoQualityTitle(context, Quality.FHD))
-        assertEquals("720p (HD)", videoQualityTitle(context, Quality.HD))
-        assertEquals("480p (SD)", videoQualityTitle(context, Quality.SD))
+        assertEquals("2160p (UHD)", videoQualityTitle(context, VideoQuality.UHD))
+        assertEquals("1080p (FHD)", videoQualityTitle(context, VideoQuality.FHD))
+        assertEquals("720p (HD)", videoQualityTitle(context, VideoQuality.HD))
+        assertEquals("480p (SD)", videoQualityTitle(context, VideoQuality.SD))
     }
 
     @Test
     fun videoQualityTitle_aQualityWithNoName_fallsBackRatherThanThrowing() {
-        assertEquals("Unknown", videoQualityTitle(context, Quality.HIGHEST))
+        assertEquals("Unknown", videoQualityTitle(context, VideoQuality.HIGHEST))
     }
 }

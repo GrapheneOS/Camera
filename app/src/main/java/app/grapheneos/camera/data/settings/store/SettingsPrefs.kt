@@ -44,7 +44,7 @@ internal data class SettingsPrefs(
 @Serializable
 internal data class StoredCameraSettings(
     @SerialName("aspect_ratio")
-    val aspectRatio: Int? = null,
+    val aspectRatio: StoredAspectRatio? = null,
     @SerialName("grid_type")
     val gridType: StoredGridType? = null,
     @SerialName("focus_timeout_seconds")
@@ -82,7 +82,7 @@ internal data class StoredCameraSettings(
 @Serializable
 internal data class StoredModeSettings(
     @SerialName("flash_mode")
-    val flashMode: Int? = null,
+    val flashMode: StoredFlashMode? = null,
     @SerialName("geo_tagging")
     val geoTagging: Boolean? = null,
     @SerialName("self_illumination")
@@ -131,6 +131,82 @@ internal object StoredGridTypeSerializer : KSerializer<StoredGridType> {
     }
 }
 
+@Serializable(with = StoredAspectRatioSerializer::class)
+internal enum class StoredAspectRatio {
+    UNKNOWN,
+    RATIO_4_3,
+    RATIO_16_9,
+}
+
+internal object StoredAspectRatioSerializer : KSerializer<StoredAspectRatio> {
+
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
+        serialName = "StoredAspectRatio",
+        kind = PrimitiveKind.INT,
+    )
+
+    override fun serialize(encoder: Encoder, value: StoredAspectRatio) {
+        encoder.encodeInt(wireValue(value))
+    }
+
+    override fun deserialize(decoder: Decoder): StoredAspectRatio {
+        return fromWireValue(decoder.decodeInt())
+    }
+
+    fun fromWireValue(stored: Int): StoredAspectRatio {
+        return StoredAspectRatio.entries.firstOrNull { wireValue(it) == stored }
+            ?: StoredAspectRatio.UNKNOWN
+    }
+
+    // The stored values are CameraX's AspectRatio.RATIO_* constants.
+    private fun wireValue(aspectRatio: StoredAspectRatio): Int {
+        return when (aspectRatio) {
+            StoredAspectRatio.UNKNOWN -> UNKNOWN_WIRE_VALUE
+            StoredAspectRatio.RATIO_4_3 -> 0
+            StoredAspectRatio.RATIO_16_9 -> 1
+        }
+    }
+}
+
+@Serializable(with = StoredFlashModeSerializer::class)
+internal enum class StoredFlashMode {
+    UNKNOWN,
+    AUTO,
+    ON,
+    OFF,
+}
+
+internal object StoredFlashModeSerializer : KSerializer<StoredFlashMode> {
+
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
+        serialName = "StoredFlashMode",
+        kind = PrimitiveKind.INT,
+    )
+
+    override fun serialize(encoder: Encoder, value: StoredFlashMode) {
+        encoder.encodeInt(wireValue(value))
+    }
+
+    override fun deserialize(decoder: Decoder): StoredFlashMode {
+        return fromWireValue(decoder.decodeInt())
+    }
+
+    fun fromWireValue(stored: Int): StoredFlashMode {
+        return StoredFlashMode.entries.firstOrNull { wireValue(it) == stored }
+            ?: StoredFlashMode.UNKNOWN
+    }
+
+    // The stored values are CameraX's ImageCapture.FLASH_MODE_* constants.
+    private fun wireValue(flashMode: StoredFlashMode): Int {
+        return when (flashMode) {
+            StoredFlashMode.UNKNOWN -> UNKNOWN_WIRE_VALUE
+            StoredFlashMode.AUTO -> 0
+            StoredFlashMode.ON -> 1
+            StoredFlashMode.OFF -> 2
+        }
+    }
+}
+
 @Serializable(with = StoredVideoQualitySerializer::class)
 internal enum class StoredVideoQuality {
     DEVICE_CHOICE,
@@ -170,6 +246,8 @@ internal object StoredVideoQualitySerializer : KSerializer<StoredVideoQuality> {
         }
     }
 }
+
+private const val UNKNOWN_WIRE_VALUE = -1
 
 internal val settingsPrefsSerializer: Serializer<SettingsPrefs> = JsonPreferenceSerializer(
     serializer = SettingsPrefs.serializer(),

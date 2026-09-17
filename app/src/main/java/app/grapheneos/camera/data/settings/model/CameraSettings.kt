@@ -1,7 +1,9 @@
 package app.grapheneos.camera.data.settings.model
 
+import app.grapheneos.camera.data.core.model.AspectRatio
+
 data class CameraSettings(
-    val aspectRatio: Int = SettingsDefaults.ASPECT_RATIO,
+    val aspectRatio: AspectRatio = SettingsDefaults.ASPECT_RATIO,
     val gridType: GridType = SettingsDefaults.GRID_TYPE,
     val focusTimeoutSeconds: Long = SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
     val selfTimerDurationSeconds: Int = SettingsDefaults.SELF_TIMER_DURATION,

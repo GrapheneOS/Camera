@@ -1,16 +1,18 @@
 package app.grapheneos.camera.data.camera.session
 
-import androidx.camera.core.AspectRatio
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.video.GroupableFeatures
-import androidx.camera.video.Quality
+import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.ImageCaptureMode
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -68,7 +70,7 @@ class CameraSessionPlanFactoryImplTest {
     @Test
     fun invoke_theRequestedFlashAndRotation_reachTheImageCapture() {
         val plan = buildPlan(
-            request(flashMode = ImageCapture.FLASH_MODE_ON, imageCaptureTargetRotation = 3),
+            request(flashMode = FlashMode.ON, imageCaptureTargetRotation = 3),
         )
 
         assertEquals(ImageCapture.FLASH_MODE_ON, plan.imageCapture?.flashMode)
@@ -129,7 +131,7 @@ class CameraSessionPlanFactoryImplTest {
     }
 
     private fun buildPlan(request: CameraBindRequest): CameraSessionPlan {
-        return CameraSessionPlanFactoryImpl().create(request)
+        return CameraSessionPlanFactoryImpl(CameraXConstantsMapperImpl()).create(request)
     }
 
     private fun CameraSessionPlan.useCases(): List<UseCase> {
@@ -149,7 +151,7 @@ class CameraSessionPlanFactoryImplTest {
     private fun request(
         includesVideoCapture: Boolean = false,
         includesImageCapture: Boolean = true,
-        flashMode: Int = ImageCapture.FLASH_MODE_OFF,
+        flashMode: FlashMode = FlashMode.OFF,
         imageCaptureTargetRotation: Int = 0,
         waitForFocusLock: Boolean = false,
         enableZsl: Boolean = false,
@@ -166,7 +168,7 @@ class CameraSessionPlanFactoryImplTest {
             waitForFocusLock = waitForFocusLock,
             enableZsl = enableZsl,
             selectHighestResolution = false,
-            videoQuality = Quality.UHD,
+            videoQuality = VideoQuality.UHD,
             mirrorVideoOnFrontCamera = false,
             featureGroup = featureGroup,
         )
