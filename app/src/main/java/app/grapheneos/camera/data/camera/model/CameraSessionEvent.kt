@@ -12,6 +12,10 @@ sealed interface CameraSessionEvent {
         val forced: Boolean,
     ) : CameraSessionEvent
 
+    data class QrCodeScanned(
+        val text: String,
+    ) : CameraSessionEvent
+
     data class FeaturesSelected(
         val boundLensFacing: LensFacing,
         val requested: List<GroupableFeature>,

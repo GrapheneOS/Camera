@@ -30,6 +30,10 @@ sealed interface ViewfinderScreenEffect {
         val quality: VideoQuality,
     ) : ViewfinderScreenEffect
 
+    data class ShowQrResult(
+        val text: String,
+    ) : ViewfinderScreenEffect
+
     data class FlashPreview(
         val selfIlluminate: Boolean,
     ) : ViewfinderScreenEffect

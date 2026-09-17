@@ -170,11 +170,6 @@
         <error line="10" column="104" source="standard:argument-list-wrapping" />
         <error line="10" column="105" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/analyzer/QRAnalyzer.kt">
-        <error line="86" column="30" source="standard:argument-list-wrapping" />
-        <error line="87" column="32" source="standard:argument-list-wrapping" />
-        <error line="88" column="32" source="standard:argument-list-wrapping" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
         <error line="30" column="19" source="standard:property-naming" />
         <error line="32" column="21" source="standard:class-signature" />
@@ -349,10 +344,10 @@
         <error line="87" column="58" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/QROverlay.kt">
-        <error line="13" column="17" source="standard:class-signature" />
-        <error line="13" column="35" source="standard:class-signature" />
-        <error line="13" column="54" source="standard:class-signature" />
-        <error line="68" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="14" column="17" source="standard:class-signature" />
+        <error line="14" column="35" source="standard:class-signature" />
+        <error line="14" column="54" source="standard:class-signature" />
+        <error line="65" column="1" source="standard:no-blank-line-before-rbrace" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/QRToggle.kt">
         <error line="10" column="23" source="standard:parameter-list-wrapping" />
@@ -361,8 +356,8 @@
         <error line="41" column="35" source="standard:wrapping" />
         <error line="42" column="53" source="standard:argument-list-wrapping" />
         <error line="43" column="13" source="standard:wrapping" />
-        <error line="57" column="27" source="standard:property-naming" />
-        <error line="58" column="27" source="standard:property-naming" />
+        <error line="55" column="27" source="standard:property-naming" />
+        <error line="56" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/SettingsDialog.kt">
         <error line="48" column="22" source="standard:class-signature" />
@@ -500,11 +495,11 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="1011" column="100" source="standard:max-line-length" />
-        <error line="1166" column="100" source="standard:max-line-length" />
-        <error line="1515" column="17" source="standard:chain-wrapping" />
-        <error line="1699" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="1702" column="27" source="standard:property-naming" />
+        <error line="3" column="1" source="standard:import-ordering" />
+        <error line="873" column="100" source="standard:max-line-length" />
+        <error line="1026" column="100" source="standard:max-line-length" />
+        <error line="1364" column="17" source="standard:chain-wrapping" />
+        <error line="1548" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />
@@ -559,6 +554,9 @@
         <error line="129" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="131" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="140" column="1" source="standard:no-blank-line-before-rbrace" />
+    </file>
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/screen/delegate/ViewfinderCameraDelegate.kt">
+        <error line="3" column="1" source="standard:import-ordering" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/ImageDecoderUtils.kt">
         <error line="6" column="20" source="standard:class-signature" />

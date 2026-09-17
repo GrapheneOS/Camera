@@ -9,12 +9,9 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 
 class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
-    companion object {
-        const val RATIO = 0.6f
-    }
-
     private val boxPaint: Paint = Paint().apply {
         color = 0Xffffff
         style = Paint.Style.STROKE
@@ -42,7 +39,7 @@ class QROverlay(context: Context, attrs: AttributeSet) : View(context, attrs) {
         val overlayWidth = width.toFloat()
         val overlayHeight = height.toFloat()
 
-        size = overlayHeight.coerceAtMost(overlayWidth) * RATIO
+        size = overlayHeight.coerceAtMost(overlayWidth) * QR_SCAN_AREA_RATIO
 
         val cx = overlayWidth / 2
         val cy = overlayHeight / 2

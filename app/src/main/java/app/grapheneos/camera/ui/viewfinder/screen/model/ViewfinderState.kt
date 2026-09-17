@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import com.google.zxing.BarcodeFormat
 
 data class ViewfinderState(
     val mode: CameraMode,
@@ -38,6 +39,15 @@ data class ViewfinderState(
             isVideoMode() -> AspectRatio.RATIO_16_9
             isQrMode() -> AspectRatio.RATIO_4_3
             else -> settings.aspectRatio
+        }
+    }
+
+    fun barcodeFormats(): Set<BarcodeFormat> {
+        return when {
+            settings.scanAllCodes -> BarcodeFormat.entries.toSet()
+            else -> BarcodeFormat.entries.filterTo(mutableSetOf()) {
+                it.name in settings.enabledBarcodeFormats
+            }
         }
     }
 
