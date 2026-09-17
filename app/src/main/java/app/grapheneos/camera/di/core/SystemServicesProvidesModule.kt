@@ -1,5 +1,6 @@
 package app.grapheneos.camera.di.core
 
+import android.content.ContentResolver
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.location.LocationManager
@@ -13,6 +14,14 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 internal class SystemServicesProvidesModule {
+
+    @Provides
+    @Reusable
+    fun provideContentResolver(
+        @ApplicationContext context: Context,
+    ): ContentResolver {
+        return context.contentResolver
+    }
 
     @Provides
     @Reusable

@@ -81,6 +81,7 @@ import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
@@ -148,6 +149,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var capturedItemSession: CapturedItemSession
+
+    @Inject
+    lateinit var captureOutputRepository: CaptureOutputRepository
 
     val viewfinder: ViewfinderViewModel by viewModels(
         extrasProducer = { viewfinderCreationExtras() },

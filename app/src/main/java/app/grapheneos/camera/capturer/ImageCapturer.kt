@@ -98,6 +98,7 @@ class ImageCapturer(val mActivity: MainActivity) {
         val imageSaver = ImageSaver(
             this,
             mActivity.applicationContext,
+            mActivity.captureOutputRepository,
             imageCapture.jpegQuality,
             mActivity.capturedItemSession.storageLocation,
             imageFileFormat,
