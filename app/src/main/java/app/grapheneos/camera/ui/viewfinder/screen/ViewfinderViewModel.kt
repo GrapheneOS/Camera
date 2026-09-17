@@ -21,6 +21,7 @@ import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
@@ -55,6 +56,7 @@ class ViewfinderViewModel @Inject constructor(
     private val settingsDelegate: ViewfinderSettingsDelegate,
     private val modeDelegate: ViewfinderModeDelegate,
     private val cameraDelegate: ViewfinderCameraDelegate,
+    private val captureDelegate: ViewfinderCaptureDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
@@ -69,6 +71,7 @@ class ViewfinderViewModel @Inject constructor(
         initial = ViewfinderState(
             mode = modeDelegate.defaultMode,
             requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
+            isCaptureSession = entryPoint.isCaptureSession,
         ),
         render = uiStateMapper::map,
     )
@@ -82,6 +85,7 @@ class ViewfinderViewModel @Inject constructor(
     init {
         modeDelegate.bind(stateHolder)
         cameraDelegate.bind(stateHolder)
+        captureDelegate.bind(stateHolder)
         settingsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
@@ -113,6 +117,7 @@ class ViewfinderViewModel @Inject constructor(
         sessionEvents = null
 
         cameraDelegate.detach()
+        captureDelegate.detach()
     }
 
     private fun onSessionEvent(event: CameraSessionEvent) {
@@ -196,6 +201,7 @@ class ViewfinderViewModel @Inject constructor(
             is CameraAction.ModeSelected -> switchMode(action.mode)
             is CameraAction.LensSwitchClicked -> switchLens()
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
+            is CameraAction.TorchToggleClicked -> cameraDelegate.toggleTorch()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
         }
     }
@@ -204,6 +210,12 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is CaptureAction.PictureCaptured -> flashPreview()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
+            is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
+            is CaptureAction.RecordingStarted -> captureDelegate.startRecording()
+            is CaptureAction.RecordingStopped -> captureDelegate.stopRecording()
+            is CaptureAction.RecordingPauseToggled -> {
+                captureDelegate.setRecordingPaused(action.paused)
+            }
         }
     }
 
@@ -212,10 +224,10 @@ class ViewfinderViewModel @Inject constructor(
             is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
             is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
             is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
+            is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
 
             is LifecycleAction.RecordAudioPermissionGranted,
             is LifecycleAction.QrResultDismissed,
-            is LifecycleAction.CapturedPreviewDismissed,
             -> startCamera(forced = true)
         }
     }
@@ -404,6 +416,12 @@ class ViewfinderViewModel @Inject constructor(
             revertToMediaStoreLocation()
             emitEffect(Effect.ShowStorageLocationNotFound)
         }
+    }
+
+    private fun dismissCapturedPreview() {
+        captureDelegate.dismissCapturedPreview()
+
+        startCamera(forced = true)
     }
 
     private fun flashPreview() {

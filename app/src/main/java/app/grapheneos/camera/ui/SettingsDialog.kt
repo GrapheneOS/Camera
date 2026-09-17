@@ -200,7 +200,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
             if (session.isFlashAvailable) {
-                session.toggleTorchState()
+                viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(

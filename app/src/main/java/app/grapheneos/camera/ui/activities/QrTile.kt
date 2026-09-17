@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.core.content.getSystemService
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 
 // Requires integration into the OS, see config_defaultQrCodeComponent in frameworks/base.
 //
@@ -19,8 +18,6 @@ class QrTile : SecureMainActivity() {
         super.onCreate(savedInstanceState)
         viewfinder.onAction(CameraAction.ModeSelected(CameraMode.QR_SCAN))
     }
-
-    override fun shouldShowCameraModeTabs() = false
 
     override fun startActivity(intent: Intent, options: Bundle?) {
         val keyguardManager = getSystemService<KeyguardManager>()!!

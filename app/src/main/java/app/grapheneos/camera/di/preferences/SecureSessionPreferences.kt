@@ -29,14 +29,19 @@ internal class SecureSessionPreferences @Inject constructor() {
         openActivities++
     }
 
-    fun onSecureActivityDestroyed() {
+    fun onSecureActivityDestroyed(isChangingConfigurations: Boolean) {
         openActivities--
 
-        if (openActivities <= 0) {
-            openActivities = 0
-            storage = null
-            sessionSettingsRepository = null
-        }
+        if (openActivities > 0) return
+
+        openActivities = 0
+
+        // The ViewModel outlives a configuration change and keeps writing to the copy it was built
+        // with, so the recreated Activity has to be handed that same copy rather than a fresh one.
+        if (isChangingConfigurations) return
+
+        storage = null
+        sessionSettingsRepository = null
     }
 
     private fun <T> snapshotOf(durable: DataStore<T>): DataStore<T> {
