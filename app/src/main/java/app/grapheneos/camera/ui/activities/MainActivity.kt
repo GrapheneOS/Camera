@@ -775,7 +775,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         // If the preview of video capture activity isn't showing
-        if (!(this is VideoCaptureActivity && thirdOption.isVisible)) {
+        if (!(this is VideoCaptureActivity && viewfinder.uiState.value.capturedPreviewVisible)) {
             if (!isQRDialogShowing) {
                 if (hasCameraPermission()) {
                     viewfinder.onAction(LifecycleAction.ScreenResumed)
@@ -987,12 +987,7 @@ open class MainActivity : AppCompatActivity() {
                     videoCapturer.startRecording()
                 }
             } else if (viewfinder.uiState.value.isQrMode) {
-                session.toggleTorchState()
-                if (session.isTorchOn) {
-                    setCaptureButtonIcon(R.drawable.torch_on_button, R.string.turn_torch_off)
-                } else {
-                    setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
-                }
+                viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
                 if (selfTimerSeconds == 0) {
                     imageCapturer.takePicture()
@@ -1439,16 +1434,6 @@ open class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * The big middle button is a shutter, a record/stop button and a torch switch depending on
-     * the mode, so its description has to travel with its drawable exactly like the one in
-     * [setFlipCameraIcon] does.
-     */
-    fun setCaptureButtonIcon(@DrawableRes icon: Int, @StringRes description: Int) {
-        captureButton.setImageResource(icon)
-        captureButton.contentDescription = getString(description)
-    }
-
-    /**
      * `thirdCircle` is the view that carries the click listener, so it is the one that has to be
      * described: it opens the gallery, except while a video is being recorded, when it takes a
      * still instead.
@@ -1701,8 +1686,6 @@ open class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    open fun shouldShowCameraModeTabs() = true
 
     private fun restartRecordingIfPermissionsWasUnavailable() {
         if (shouldRestartRecording) {

@@ -164,6 +164,29 @@ class ViewfinderCameraDelegateTest {
         assertEquals(ImageCapture.FLASH_MODE_AUTO, stateHolder.state.value.flashMode)
     }
 
+    @Test
+    fun toggleTorch_recordsWhatTheSessionReportsAfterwards() {
+        var torchOn = false
+        every { session.isTorchOn } answers { torchOn }
+        every { session.toggleTorchState() } answers { torchOn = !torchOn }
+
+        val delegate = createAttachedDelegate()
+        delegate.toggleTorch()
+
+        assertTrue(stateHolder.state.value.session.isTorchOn)
+    }
+
+    @Test
+    fun bindCamera_leavesTheTorchOff() {
+        every { session.isTorchOn } returns true
+
+        val delegate = createAttachedDelegate()
+        delegate.toggleTorch()
+        delegate.bindCamera(mockk(relaxed = true))
+
+        assertFalse(stateHolder.state.value.session.isTorchOn)
+    }
+
     private fun lensUnsupported(facing: Int) {
         every {
             session.isLensFacingSupported(
