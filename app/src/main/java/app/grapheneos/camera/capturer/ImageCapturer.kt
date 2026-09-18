@@ -103,6 +103,7 @@ class ImageCapturer(val mActivity: MainActivity) {
             mActivity.applicationContext,
             mActivity.storeCapturedImage,
             mActivity.exifMapper,
+            mActivity.jpegExtractor,
             imageCapture.jpegQuality,
             mActivity.capturedItemSession.storageLocation,
             imageFileFormat,

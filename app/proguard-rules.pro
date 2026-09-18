@@ -1,4 +1,4 @@
-# ImageSaver reaches androidx.camera.core.internal.utils.ImageUtil#cropJpegByteArray by
+# JpegExtractor reaches androidx.camera.core.internal.utils.ImageUtil#cropJpegByteArray by
 # reflection because it is private and copying it out isn't worth the maintenance burden. R8
 # does recognize a getDeclaredMethod() call with a constant class, name and parameter list and
 # keeps the target, but that inference is the only thing standing between this app and a
