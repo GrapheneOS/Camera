@@ -2,6 +2,8 @@ package app.grapheneos.camera.di.capture
 
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapperImpl
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImageImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -17,4 +19,10 @@ internal abstract class CaptureBindsModule {
     abstract fun bindCapturedImageExifMapper(
         impl: CapturedImageExifMapperImpl,
     ): CapturedImageExifMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindStoreCapturedImage(
+        impl: StoreCapturedImageImpl,
+    ): StoreCapturedImage
 }

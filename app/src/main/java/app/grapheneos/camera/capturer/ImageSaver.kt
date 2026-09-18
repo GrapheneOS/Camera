@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.ImageDecoder
 import android.graphics.ImageFormat
 import android.graphics.Rect
-import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
@@ -18,11 +17,12 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
+import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import java.io.IOException
@@ -49,7 +49,7 @@ open a Uri during the thumbnail generation
 class ImageSaver(
     val imageCapturer: ImageCapturer,
     val appContext: Context,
-    val captureOutputRepository: CaptureOutputRepository,
+    val storeCapturedImage: StoreCapturedImage,
     val exifMapper: CapturedImageExifMapper,
     val jpegQuality: Int,
     val storageLocation: String,
@@ -150,24 +150,27 @@ class ImageSaver(
 
         val startOfWriting = timestamp()
 
-        val uri = try {
-            obtainOutputUri()
-        } catch (e: Exception) {
-            throw ImageSaverException(Place.FILE_CREATION, e)
+        val result = runBlocking {
+            storeCapturedImage(
+                jpegBytes = processedJpegBytes,
+                storageLocation = storageLocation,
+                fileName = fileName(),
+                mimeType = mimeType(),
+            )
         }
 
-        try {
-            runBlocking { captureOutputRepository.write(uri, processedJpegBytes) }
-        } catch (e: Exception) {
-            deleteIncompleteImage(uri)
-            throw ImageSaverException(Place.FILE_WRITE, e)
-        }
+        val uri = when (result) {
+            is StoreCapturedImageResult.Stored -> result.uri
 
-        try {
-            runBlocking { captureOutputRepository.publish(uri) }
-        } catch (e: Exception) {
-            // don't delete the image in this case, since it's already fully written out
-            throw ImageSaverException(Place.FILE_WRITE_COMPLETION, e)
+            is StoreCapturedImageResult.StorageLocationNotFound -> {
+                mainThreadExecutor.execute(imageCapturer::onStorageLocationNotFound)
+                skipErrorDialog = true
+                throw ImageSaverException(Place.FILE_CREATION, result.cause)
+            }
+
+            is StoreCapturedImageResult.Failed -> {
+                throw ImageSaverException(placeOf(result.stage), result.cause)
+            }
         }
         logDuration(startOfWriting) {"image writing (saveToMediaStore: ${saveToMediaStore()})"}
 
@@ -227,30 +230,11 @@ class ImageSaver(
 
     private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
 
-    @Throws(Exception::class)
-    fun obtainOutputUri(): Uri {
-        try {
-            return runBlocking {
-                captureOutputRepository.createImage(
-                    storageLocation = storageLocation,
-                    fileName = fileName(),
-                    mimeType = mimeType(),
-                )
-            }
-        } catch (e: Exception) {
-            if (!saveToMediaStore()) {
-                appContext.mainExecutor.execute(imageCapturer::onStorageLocationNotFound)
-                skipErrorDialog = true
-            }
-            throw e
-        }
-    }
-
-    private fun deleteIncompleteImage(uri: Uri) {
-        try {
-            runBlocking { captureOutputRepository.delete(uri) }
-        } catch (deleteException: Exception) {
-            Log.w(TAG, "unable to delete an incomplete image $uri", deleteException)
+    private fun placeOf(stage: StoreCapturedImageResult.Stage): Place {
+        return when (stage) {
+            StoreCapturedImageResult.Stage.FILE_CREATION -> Place.FILE_CREATION
+            StoreCapturedImageResult.Stage.FILE_WRITE -> Place.FILE_WRITE
+            StoreCapturedImageResult.Stage.FILE_WRITE_COMPLETION -> Place.FILE_WRITE_COMPLETION
         }
     }
 
