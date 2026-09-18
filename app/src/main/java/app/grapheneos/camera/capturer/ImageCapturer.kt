@@ -111,6 +111,7 @@ class ImageCapturer(val mActivity: MainActivity) {
             capture.removeExifAfterCapture,
             targetThumbnailWidth = preview.width,
             targetThumbnailHeight = preview.height,
+            pipeline = mActivity.capturedImagePipeline,
         )
 
         currentImageSaver = imageSaver
