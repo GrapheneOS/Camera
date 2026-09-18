@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 
 interface CapturedImagePipeline {
 
+    fun enqueueExtraction(extraction: suspend () -> Unit)
+
     fun enqueueWrite(write: suspend () -> Unit)
 
     fun enqueueThumbnail(thumbnail: suspend () -> Unit)
@@ -20,21 +22,26 @@ internal class CapturedImagePipelineImpl @Inject constructor(
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : CapturedImagePipeline {
 
+    private val extractions = Channel<suspend () -> Unit>(capacity = Channel.UNLIMITED)
     private val writes = Channel<suspend () -> Unit>(capacity = Channel.UNLIMITED)
     private val thumbnails = Channel<suspend () -> Unit>(capacity = Channel.UNLIMITED)
 
     init {
-        applicationScope.launch(defaultDispatcher) {
-            for (write in writes) {
-                write()
+        listOf(
+            extractions,
+            writes,
+            thumbnails,
+        ).forEach { stage ->
+            applicationScope.launch(defaultDispatcher) {
+                for (work in stage) {
+                    work()
+                }
             }
         }
+    }
 
-        applicationScope.launch(defaultDispatcher) {
-            for (thumbnail in thumbnails) {
-                thumbnail()
-            }
-        }
+    override fun enqueueExtraction(extraction: suspend () -> Unit) {
+        extractions.trySend(extraction)
     }
 
     override fun enqueueWrite(write: suspend () -> Unit) {
