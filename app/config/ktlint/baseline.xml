@@ -231,21 +231,21 @@
         <error line="147" column="84" source="standard:argument-list-wrapping" />
         <error line="147" column="101" source="standard:max-line-length" />
         <error line="147" column="106" source="standard:argument-list-wrapping" />
-        <error line="242" column="68" source="standard:trailing-comma-on-declaration-site" />
-        <error line="244" column="49" source="standard:argument-list-wrapping" />
-        <error line="244" column="63" source="standard:argument-list-wrapping" />
-        <error line="244" column="101" source="standard:max-line-length" />
-        <error line="244" column="102" source="standard:argument-list-wrapping" />
-        <error line="244" column="113" source="standard:argument-list-wrapping" />
-        <error line="244" column="114" source="standard:argument-list-wrapping" />
-        <error line="248" column="49" source="standard:argument-list-wrapping" />
-        <error line="248" column="63" source="standard:argument-list-wrapping" />
-        <error line="248" column="96" source="standard:argument-list-wrapping" />
-        <error line="248" column="101" source="standard:max-line-length" />
-        <error line="248" column="107" source="standard:argument-list-wrapping" />
-        <error line="248" column="108" source="standard:argument-list-wrapping" />
-        <error line="463" column="1" source="standard:indent" />
-        <error line="464" column="1" source="standard:indent" />
+        <error line="243" column="68" source="standard:trailing-comma-on-declaration-site" />
+        <error line="245" column="49" source="standard:argument-list-wrapping" />
+        <error line="245" column="63" source="standard:argument-list-wrapping" />
+        <error line="245" column="101" source="standard:max-line-length" />
+        <error line="245" column="102" source="standard:argument-list-wrapping" />
+        <error line="245" column="113" source="standard:argument-list-wrapping" />
+        <error line="245" column="114" source="standard:argument-list-wrapping" />
+        <error line="249" column="49" source="standard:argument-list-wrapping" />
+        <error line="249" column="63" source="standard:argument-list-wrapping" />
+        <error line="249" column="96" source="standard:argument-list-wrapping" />
+        <error line="249" column="101" source="standard:max-line-length" />
+        <error line="249" column="107" source="standard:argument-list-wrapping" />
+        <error line="249" column="108" source="standard:argument-list-wrapping" />
+        <error line="454" column="1" source="standard:indent" />
+        <error line="455" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ktx/SystemSettingsObserver.kt">
         <error line="16" column="37" source="standard:trailing-comma-on-declaration-site" />
@@ -456,8 +456,8 @@
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="918" column="100" source="standard:max-line-length" />
-        <error line="1071" column="100" source="standard:max-line-length" />
-        <error line="1421" column="17" source="standard:chain-wrapping" />
+        <error line="1069" column="100" source="standard:max-line-length" />
+        <error line="1419" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

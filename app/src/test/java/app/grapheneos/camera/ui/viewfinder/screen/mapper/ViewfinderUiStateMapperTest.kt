@@ -256,6 +256,43 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun recordingWithAudio_offersTheMuteToggle() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            settings = CameraSettings(includeAudio = true),
+            capture = ViewfinderCaptureState(
+                recordingPhase = RecordingPhase.RECORDING,
+                isRecordingMuted = true,
+            ),
+        )
+
+        assertTrue(state.muteToggleVisible)
+        assertTrue(state.isRecordingMuted)
+    }
+
+    @Test
+    fun recordingWithoutAudio_hidesTheMuteToggle() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            settings = CameraSettings(includeAudio = false),
+            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+        )
+
+        assertFalse(state.muteToggleVisible)
+    }
+
+    @Test
+    fun startingRecording_hidesTheMuteToggleUntilItStarts() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            settings = CameraSettings(includeAudio = true),
+            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+        )
+
+        assertFalse(state.muteToggleVisible)
+    }
+
+    @Test
     fun noRecording_isNotActive() {
         assertFalse(map(mode = CameraMode.VIDEO).isRecordingActive)
     }
