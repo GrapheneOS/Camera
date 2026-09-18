@@ -3,6 +3,10 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 interface ViewfinderCaptureDelegate {
 
@@ -18,6 +22,8 @@ interface ViewfinderCaptureDelegate {
 
     fun startPictureSave()
     fun finishPictureSave()
+
+    fun selfTimer(seconds: Int): Flow<Int>
 
     fun showCapturedPreview()
     fun dismissCapturedPreview()
@@ -74,6 +80,15 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
         updateCapture { it.copy(isSavingPicture = false) }
     }
 
+    override fun selfTimer(seconds: Int): Flow<Int> {
+        return flow {
+            for (secondsLeft in seconds downTo 1) {
+                emit(secondsLeft)
+                delay(SELF_TIMER_TICK)
+            }
+        }
+    }
+
     override fun showCapturedPreview() {
         updateCapture { it.copy(isCapturedPreviewShown = true) }
     }
@@ -84,5 +99,9 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
 
     private fun updateCapture(transform: (ViewfinderCaptureState) -> ViewfinderCaptureState) {
         stateHolder.update { it.copy(capture = transform(it.capture)) }
+    }
+
+    private companion object {
+        private val SELF_TIMER_TICK = 1.seconds
     }
 }

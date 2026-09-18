@@ -287,11 +287,10 @@
         <error line="16" column="23" source="standard:parameter-list-wrapping" />
         <error line="16" column="23" source="standard:class-signature" />
         <error line="16" column="50" source="standard:trailing-comma-on-declaration-site" />
-        <error line="23" column="27" source="standard:property-naming" />
+        <error line="22" column="27" source="standard:property-naming" />
+        <error line="24" column="19" source="standard:property-naming" />
         <error line="25" column="19" source="standard:property-naming" />
-        <error line="26" column="19" source="standard:property-naming" />
-        <error line="82" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="101" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="91" column="1" source="standard:no-empty-first-line-in-method-block" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/CustomGrid.kt">
         <error line="14" column="22" source="standard:trailing-comma-on-declaration-site" />

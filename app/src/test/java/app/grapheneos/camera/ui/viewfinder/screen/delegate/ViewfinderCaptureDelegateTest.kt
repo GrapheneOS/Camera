@@ -5,6 +5,9 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,6 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderCaptureDelegateTest {
 
@@ -64,6 +68,22 @@ class ViewfinderCaptureDelegateTest {
 
         delegate.finishPictureSave()
         assertFalse(capture().isSavingPicture)
+    }
+
+    @Test
+    fun selfTimer_countsDownOneSecondApart() = runTest {
+        val ticks = mutableListOf<Pair<Int, Long>>()
+
+        createDelegate().selfTimer(seconds = 3).collect { ticks += it to currentTime }
+
+        assertEquals(listOf(3 to 0L, 2 to 1_000L, 1 to 2_000L), ticks)
+    }
+
+    @Test
+    fun selfTimer_endsASecondAfterTheLastTick() = runTest {
+        createDelegate().selfTimer(seconds = 3).collect {}
+
+        assertEquals(3_000L, currentTime)
     }
 
     @Test
