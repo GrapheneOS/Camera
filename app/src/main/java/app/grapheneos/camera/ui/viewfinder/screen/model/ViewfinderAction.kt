@@ -46,7 +46,13 @@ sealed interface ViewfinderAction {
 
     sealed interface CaptureAction : ViewfinderAction {
 
+        data object PictureCaptureStarted : CaptureAction
+
         data object PictureCaptured : CaptureAction
+
+        data object PictureCaptureFailed : CaptureAction
+
+        data object PictureCaptureCancelled : CaptureAction
 
         data object StorageLocationNotFound : CaptureAction
 

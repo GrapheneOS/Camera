@@ -571,6 +571,29 @@ class ViewfinderViewModelTest {
     }
 
     @Test
+    fun pictureCaptureActions_reachTheCaptureDelegate() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(CaptureAction.PictureCaptureStarted)
+            viewModel.onAction(CaptureAction.PictureCaptured)
+            viewModel.onAction(CaptureAction.PictureCaptureStarted)
+            viewModel.onAction(CaptureAction.PictureCaptureFailed)
+            viewModel.onAction(CaptureAction.PictureCaptureStarted)
+            viewModel.onAction(CaptureAction.PictureCaptureCancelled)
+
+            verifyOrder {
+                captureDelegate.startPictureCapture()
+                captureDelegate.finishPictureCapture()
+                captureDelegate.startPictureCapture()
+                captureDelegate.finishPictureCapture()
+                captureDelegate.startPictureCapture()
+                captureDelegate.finishPictureCapture()
+            }
+        }
+    }
+
+    @Test
     fun torchToggleClicked_togglesTheTorch() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
