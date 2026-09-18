@@ -39,6 +39,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,6 +83,8 @@ class ViewfinderViewModel @Inject constructor(
 
     private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
     override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
+
+    private var selfTimer: Job? = null
 
     init {
         modeDelegate.bind(stateHolder)
@@ -146,6 +149,8 @@ class ViewfinderViewModel @Inject constructor(
             is CaptureAction.PictureCaptureCancelled -> captureDelegate.finishPictureCapture()
             is CaptureAction.PictureSaveFailed -> captureDelegate.finishPictureSave()
             is CaptureAction.PictureThumbnailShown -> captureDelegate.finishPictureSave()
+            is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
+            is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
             is CaptureAction.RecordingStarted -> captureDelegate.startRecording()
@@ -301,6 +306,31 @@ class ViewfinderViewModel @Inject constructor(
         captureDelegate.finishPictureSave()
     }
 
+    private fun startSelfTimer() {
+        cancelSelfTimer()
+
+        emitEffect(Effect.SelfTimer.Started)
+
+        val seconds = state().settings.selfTimerDurationSeconds
+        selfTimer = viewModelScope.launch(mainDispatcher) {
+            captureDelegate.selfTimer(seconds).collect { secondsLeft ->
+                emitEffect(Effect.SelfTimer.Ticked(secondsLeft))
+            }
+
+            emitEffect(Effect.SelfTimer.Finished)
+        }
+    }
+
+    private fun cancelSelfTimer() {
+        // Cancelling puts back the controls the countdown hid. Doing that when no countdown is up
+        // would resurrect the ones the current mode hid for its own reasons: QR mode hides
+        // thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
+        if (selfTimer?.isActive != true) return
+
+        selfTimer?.cancel()
+        emitEffect(Effect.SelfTimer.Cancelled)
+    }
+
     private fun onStorageLocationNotFound() {
         applicationScope.launch(defaultDispatcher) {
             revertToMediaStoreLocation()
@@ -313,6 +343,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun onScreenDestroyed() {
+        selfTimer?.cancel()
         cameraDelegate.onScreenDestroyed()
         captureDelegate.onScreenDestroyed()
     }

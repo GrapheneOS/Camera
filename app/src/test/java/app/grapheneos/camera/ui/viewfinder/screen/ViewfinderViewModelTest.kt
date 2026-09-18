@@ -35,8 +35,12 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -621,6 +625,73 @@ class ViewfinderViewModelTest {
     }
 
     @Test
+    fun selfTimerStartClicked_reportsEachSecondAndTheEnd() {
+        runTest {
+            every { captureDelegate.selfTimer(any()) } returns flowOf(2, 1)
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CaptureAction.SelfTimerStartClicked)
+
+            verify(exactly = 1) {
+                captureDelegate.selfTimer(seconds = CameraSettings().selfTimerDurationSeconds)
+            }
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.SelfTimer.Started,
+                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 2),
+                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 1),
+                    ViewfinderScreenEffect.SelfTimer.Finished,
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun selfTimerCancelClicked_putsTheControlsBackOnlyWhileACountdownIsUp() {
+        runTest {
+            every { captureDelegate.selfTimer(any()) } returns endlessSelfTimer()
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CaptureAction.SelfTimerStartClicked)
+            viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
+            viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.SelfTimer.Started,
+                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 3),
+                    ViewfinderScreenEffect.SelfTimer.Cancelled,
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun screenDestroyed_dropsTheCountdownWithoutPuttingTheControlsBack() {
+        runTest {
+            every { captureDelegate.selfTimer(any()) } returns endlessSelfTimer()
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CaptureAction.SelfTimerStartClicked)
+            viewModel.onAction(LifecycleAction.ScreenDestroyed)
+            viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.SelfTimer.Started,
+                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 3),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
     fun torchToggleClicked_togglesTheTorch() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
@@ -655,6 +726,13 @@ class ViewfinderViewModelTest {
         stateHolder = boundStateHolder.captured
 
         return viewModel
+    }
+
+    private fun endlessSelfTimer(): Flow<Int> {
+        return flow {
+            emit(3)
+            awaitCancellation()
+        }
     }
 
     private fun TestScope.collectEffects(

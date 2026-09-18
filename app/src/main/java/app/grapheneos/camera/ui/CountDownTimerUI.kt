@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.os.CountDownTimer
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.View
@@ -11,12 +10,12 @@ import androidx.appcompat.widget.AppCompatTextView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 
 class CountDownTimerUI @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : AppCompatTextView(context, attrs) {
 
-    private lateinit var timer: CountDownTimer
     lateinit var mActivity: MainActivity
 
     companion object {
@@ -37,63 +36,54 @@ class CountDownTimerUI @JvmOverloads constructor(
     }
 
     fun startTimer() {
-        cancelTimer()
-
-        timer = object : CountDownTimer(mActivity.selfTimerSeconds * 1000L, 1000L) {
-            override fun onTick(pendingMs: Long) {
-                val pendingS = (pendingMs / 1000) + 1
-
-                val scaleAnimation = ValueAnimator.ofFloat(startSize, endSize)
-                scaleAnimation.interpolator = AccelerateDecelerateInterpolator()
-                scaleAnimation.duration = textAnimDuration
-
-                scaleAnimation.addUpdateListener { valueAnimator ->
-                    textSize = valueAnimator.animatedValue as Float
-                }
-
-                val opacityAnimation = ValueAnimator.ofFloat(1f, 0f)
-                opacityAnimation.interpolator = AccelerateDecelerateInterpolator()
-                opacityAnimation.duration = textAnimDuration
-
-                opacityAnimation.addUpdateListener { valueAnimator ->
-                    alpha = valueAnimator.animatedValue as Float
-                }
-
-                scaleAnimation.start()
-                opacityAnimation.start()
-
-                text = pendingS.toString()
-
-                if (text == "1") {
-                    mActivity.tunePlayer.playTimerFinalSSound()
-                } else {
-                    mActivity.tunePlayer.playTimerIncrementSound()
-                }
-            }
-
-            override fun onFinish() {
-                onTimerEnd()
-                if (mActivity is CaptureActivity) {
-                    (mActivity as CaptureActivity).takePicture()
-                } else {
-                    mActivity.imageCapturer.takePicture()
-                }
-            }
-
-        }
-
-        beforeTimeStarts()
-
-        timer.start()
+        mActivity.viewfinder.onAction(CaptureAction.SelfTimerStartClicked)
     }
 
     fun cancelTimer() {
-        // onTimerEnd() force-shows the controls that beforeTimeStarts() hid. Running it when no
-        // countdown is up would resurrect the ones the current mode hid for its own reasons: QR mode
-        // hides thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
-        if (!isRunning) return
+        mActivity.viewfinder.onAction(CaptureAction.SelfTimerCancelClicked)
+    }
 
-        timer.cancel()
+    fun onTimerStarted() {
+        beforeTimeStarts()
+    }
+
+    fun onTick(secondsLeft: Int) {
+        val scaleAnimation = ValueAnimator.ofFloat(startSize, endSize)
+        scaleAnimation.interpolator = AccelerateDecelerateInterpolator()
+        scaleAnimation.duration = textAnimDuration
+
+        scaleAnimation.addUpdateListener { valueAnimator ->
+            textSize = valueAnimator.animatedValue as Float
+        }
+
+        val opacityAnimation = ValueAnimator.ofFloat(1f, 0f)
+        opacityAnimation.interpolator = AccelerateDecelerateInterpolator()
+        opacityAnimation.duration = textAnimDuration
+
+        opacityAnimation.addUpdateListener { valueAnimator ->
+            alpha = valueAnimator.animatedValue as Float
+        }
+
+        scaleAnimation.start()
+        opacityAnimation.start()
+
+        text = secondsLeft.toString()
+
+        when (secondsLeft) {
+            1 -> mActivity.tunePlayer.playTimerFinalSSound()
+            else -> mActivity.tunePlayer.playTimerIncrementSound()
+        }
+    }
+
+    fun onTimerFinished() {
+        onTimerEnd()
+        when (mActivity) {
+            is CaptureActivity -> (mActivity as CaptureActivity).takePicture()
+            else -> mActivity.imageCapturer.takePicture()
+        }
+    }
+
+    fun onTimerCancelled() {
         onTimerEnd(true)
     }
 
