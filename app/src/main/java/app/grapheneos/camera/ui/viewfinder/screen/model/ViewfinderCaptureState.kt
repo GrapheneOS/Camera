@@ -5,4 +5,5 @@ data class ViewfinderCaptureState(
     val isRecordingPaused: Boolean = false,
     val isCapturedPreviewShown: Boolean = false,
     val isTakingPicture: Boolean = false,
+    val isSavingPicture: Boolean = false,
 )
