@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -13,6 +14,7 @@ interface ViewfinderCaptureDelegate {
     fun bind(stateHolder: ViewfinderStateHolder)
     fun onScreenDestroyed()
 
+    fun requestRecording()
     fun startRecording()
     fun setRecordingPaused(paused: Boolean)
     fun stopRecording()
@@ -47,11 +49,16 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
         stateHolder.update { it.copy(capture = ViewfinderCaptureState()) }
     }
 
-    override fun startRecording() {
-        updateCapture { it.copy(isRecording = true) }
+    override fun requestRecording() {
+        updateCapture { it.copy(recordingPhase = RecordingPhase.STARTING) }
     }
 
-    // Not tied to isRecording: the user may have paused before the recording actually started.
+    override fun startRecording() {
+        updateCapture { it.copy(recordingPhase = RecordingPhase.RECORDING) }
+    }
+
+    // Not tied to the recording phase: the user may have paused before the recording actually
+    // started.
     override fun setRecordingPaused(paused: Boolean) {
         updateCapture { it.copy(isRecordingPaused = paused) }
     }
@@ -59,7 +66,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
     override fun stopRecording() {
         updateCapture {
             it.copy(
-                isRecording = false,
+                recordingPhase = RecordingPhase.IDLE,
                 isRecordingPaused = false,
             )
         }

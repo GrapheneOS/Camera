@@ -148,6 +148,12 @@ internal class ViewfinderGestureHandler(
         return abs(distance) > SWIPE_THRESHOLD && abs(velocity) > SWIPE_VELOCITY_THRESHOLD
     }
 
+    private fun isSwipeBlocked(): Boolean {
+        return isZooming ||
+            activity.cdTimer.isRunning ||
+            activity.viewfinder.uiState.value.isRecordingActive
+    }
+
     private fun onSwipeBottom() {
         if (isZooming || activity.cdTimer.isRunning) return
 
@@ -172,7 +178,7 @@ internal class ViewfinderGestureHandler(
     }
 
     private fun onSwipeRight() {
-        if (isZooming || activity.cdTimer.isRunning || activity.videoCapturer.isRecording) return
+        if (isSwipeBlocked()) return
 
         if (activity is VideoOnlyActivity) return
 
@@ -190,14 +196,14 @@ internal class ViewfinderGestureHandler(
     }
 
     private fun onSwipeTop() {
-        if (isZooming || activity.cdTimer.isRunning || activity.videoCapturer.isRecording) return
+        if (isSwipeBlocked()) return
 
         wasSwiping = true
         activity.settingsDialog.slideDialogUp()
     }
 
     private fun onSwipeLeft() {
-        if (isZooming || activity.cdTimer.isRunning || activity.videoCapturer.isRecording) return
+        if (isSwipeBlocked()) return
 
         if (activity is VideoOnlyActivity) return
 
