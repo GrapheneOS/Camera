@@ -12,11 +12,11 @@ import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,16 +45,10 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
-    fun createImage_inMediaStore_insertsAPendingItemUnderTheCameraFolder() {
-        val uri = runBlocking {
-            repository.createImage(
-                storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
-                fileName = FILE_NAME,
-                mimeType = MIME_TYPE,
-            )
-        }
-
+    fun createImage_inMediaStore_insertsAPendingItemUnderTheCameraFolder() = runTest {
+        val uri = createImage()
         val values = requireNotNull(mediaProvider.inserted)
+
         assertEquals(INSERTED_URI, uri)
         assertEquals(FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
         assertEquals(MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
@@ -66,47 +60,65 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
-    fun createImage_whenMediaStoreRefusesTheInsert_throws() {
+    fun createImage_whenMediaStoreRefusesTheInsert_throws() = runTest {
         mediaProvider.insertResult = null
 
-        assertThrows(IOException::class.java) {
-            runBlocking {
-                repository.createImage(
-                    storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
-                    fileName = FILE_NAME,
-                    mimeType = MIME_TYPE,
-                )
-            }
-        }
+        val failure = runCatching {
+            createImage()
+        }.exceptionOrNull()
+
+        assertTrue(failure is IOException)
     }
 
     @Test
-    fun publish_mediaStoreItem_clearsThePendingFlag() {
-        runBlocking { repository.publish(INSERTED_URI) }
+    fun publish_mediaStoreItem_clearsThePendingFlag() = runTest {
+        repository.publish(INSERTED_URI)
 
         val values = requireNotNull(mediaProvider.updated)
         assertEquals(0, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
     }
 
     @Test
-    fun publish_documentItem_leavesMediaStoreUntouched() {
-        runBlocking { repository.publish(Uri.parse(DOCUMENT_URI)) }
+    fun publish_documentItem_leavesMediaStoreUntouched() = runTest {
+        repository.publish(Uri.parse(DOCUMENT_URI))
 
         assertNull(mediaProvider.updated)
     }
 
     @Test
-    fun delete_whenNoRowIsDeleted_throws() {
+    fun delete_whenNoRowIsDeleted_throws() = runTest {
         mediaProvider.deletedRows = 0
 
-        assertThrows(IllegalStateException::class.java) {
-            runBlocking { repository.delete(INSERTED_URI) }
-        }
+        val failure = runCatching {
+            repository.delete(INSERTED_URI)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IOException)
+    }
+
+    @Test
+    fun createImage_whenMediaStoreDeniesAccess_throwsAnIOException() = runTest {
+        mediaProvider.insertFailure = SecurityException()
+
+        val failure = runCatching {
+            createImage()
+        }.exceptionOrNull()
+
+        assertTrue(failure is IOException)
+    }
+
+    private suspend fun createImage(): Uri {
+        return repository.createImage(
+            storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
+            fileName = FILE_NAME,
+            mimeType = MIME_TYPE,
+        )
     }
 
     private class FakeMediaProvider : ContentProvider() {
 
         var insertResult: Uri? = INSERTED_URI
+        var insertFailure: RuntimeException? = null
         var deletedRows = 1
 
         var inserted: ContentValues? = null
@@ -131,6 +143,7 @@ class CaptureOutputRepositoryTest {
         }
 
         override fun insert(uri: Uri, values: ContentValues?): Uri? {
+            insertFailure?.let { throw it }
             inserted = values
             return insertResult
         }

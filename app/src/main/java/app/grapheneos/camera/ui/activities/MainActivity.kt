@@ -81,11 +81,11 @@ import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
@@ -152,7 +152,7 @@ open class MainActivity : AppCompatActivity() {
     lateinit var capturedItemSession: CapturedItemSession
 
     @Inject
-    lateinit var captureOutputRepository: CaptureOutputRepository
+    lateinit var storeCapturedImage: StoreCapturedImage
 
     @Inject
     lateinit var exifMapper: CapturedImageExifMapper
