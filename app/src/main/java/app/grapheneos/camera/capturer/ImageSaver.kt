@@ -6,7 +6,6 @@ import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
-import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.CapturedItem
@@ -29,8 +28,6 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.Executor
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 /*
 Based on androidx.camera.core.ImageSaver
@@ -58,8 +55,7 @@ class ImageSaver(
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
     val pipeline: CapturedImagePipeline,
-) : ImageCapture.OnImageCapturedCallback()
-{
+) {
     val captureTime: ZonedDateTime = ZonedDateTime.now()
     val mainThreadExecutor: Executor = appContext.mainExecutor
 
@@ -69,9 +65,15 @@ class ImageSaver(
         isCancelled = true
     }
 
-    override fun onCaptureSuccess(image: ImageProxy) {
-        mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
+    fun onCaptureSuccess(image: ImageProxy) {
+        imageCapturer.onCaptureSuccess()
 
+        pipeline.enqueueExtraction {
+            extractJpeg(image)
+        }
+    }
+
+    private fun extractJpeg(image: ImageProxy) {
         capturedJpeg = try {
             jpegExtractor.extract(image, jpegQuality)
         } catch (e: Exception) {
@@ -213,12 +215,10 @@ class ImageSaver(
         }
     }
 
-    // implementation of ImageCapture.OnImageCapturedCallback.onError
-    override fun onError(exception: ImageCaptureException) {
-        mainThreadExecutor.execute {
-            if (isCancelled) return@execute
-            imageCapturer.onCaptureError(exception)
-        }
+    fun onCaptureError(exception: ImageCaptureException) {
+        if (isCancelled) return
+
+        imageCapturer.onCaptureError(exception)
     }
 
     private var skipErrorDialog = false
@@ -228,8 +228,6 @@ class ImageSaver(
     }
 
     companion object {
-        val imageCaptureCallbackExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-
         private const val TAG = "ImageSaver"
         private const val LOG_DURATION = false
     }

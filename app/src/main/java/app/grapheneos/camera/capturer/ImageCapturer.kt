@@ -14,8 +14,8 @@ import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.takePicture
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.util.printStackTraceToString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.launch
 
 private const val imageFileFormat = ".jpg"
 
@@ -116,7 +117,17 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         currentImageSaver = imageSaver
 
-        imageCapture.takePicture(ImageSaver.imageCaptureCallbackExecutor, imageSaver)
+        mActivity.applicationScope.launch(mActivity.mainDispatcher) {
+            val image = try {
+                imageCapture.takePicture()
+            } catch (e: ImageCaptureException) {
+                imageSaver.onCaptureError(e)
+                return@launch
+            }
+
+            imageSaver.onCaptureSuccess(image)
+        }
+
         fadeCaptureButton()
     }
 
