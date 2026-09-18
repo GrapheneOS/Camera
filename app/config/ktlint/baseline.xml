@@ -195,35 +195,24 @@
         <error line="231" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaver.kt">
-        <error line="63" column="1" source="standard:curly-spacing" />
-        <error line="63" column="1" source="standard:class-signature" />
-        <error line="142" column="44" source="standard:argument-list-wrapping" />
-        <error line="142" column="62" source="standard:argument-list-wrapping" />
-        <error line="142" column="89" source="standard:wrapping" />
-        <error line="142" column="90" source="standard:argument-list-wrapping" />
-        <error line="144" column="32" source="standard:binary-expression-wrapping" />
-        <error line="144" column="58" source="standard:argument-list-wrapping" />
-        <error line="144" column="64" source="standard:argument-list-wrapping" />
-        <error line="144" column="84" source="standard:argument-list-wrapping" />
-        <error line="144" column="94" source="standard:argument-list-wrapping" />
-        <error line="144" column="101" source="standard:max-line-length" />
-        <error line="144" column="105" source="standard:argument-list-wrapping" />
-        <error line="173" column="38" source="standard:curly-spacing" />
-        <error line="173" column="95" source="standard:curly-spacing" />
-        <error line="203" column="45" source="standard:curly-spacing" />
-        <error line="203" column="62" source="standard:curly-spacing" />
-        <error line="211" column="39" source="standard:argument-list-wrapping" />
-        <error line="211" column="47" source="standard:argument-list-wrapping" />
-        <error line="211" column="60" source="standard:argument-list-wrapping" />
-        <error line="211" column="82" source="standard:argument-list-wrapping" />
-        <error line="211" column="101" source="standard:max-line-length" />
-        <error line="211" column="103" source="standard:argument-list-wrapping" />
-        <error line="211" column="104" source="standard:argument-list-wrapping" />
-        <error line="229" column="30" source="standard:binary-expression-wrapping" />
-        <error line="229" column="82" source="standard:argument-list-wrapping" />
-        <error line="229" column="97" source="standard:argument-list-wrapping" />
-        <error line="229" column="99" source="standard:binary-expression-wrapping" />
-        <error line="229" column="100" source="standard:max-line-length" />
+        <error line="60" column="1" source="standard:curly-spacing" />
+        <error line="60" column="1" source="standard:class-signature" />
+        <error line="136" column="38" source="standard:curly-spacing" />
+        <error line="136" column="95" source="standard:curly-spacing" />
+        <error line="169" column="45" source="standard:curly-spacing" />
+        <error line="169" column="62" source="standard:curly-spacing" />
+        <error line="177" column="39" source="standard:argument-list-wrapping" />
+        <error line="177" column="47" source="standard:argument-list-wrapping" />
+        <error line="177" column="60" source="standard:argument-list-wrapping" />
+        <error line="177" column="82" source="standard:argument-list-wrapping" />
+        <error line="177" column="101" source="standard:max-line-length" />
+        <error line="177" column="103" source="standard:argument-list-wrapping" />
+        <error line="177" column="104" source="standard:argument-list-wrapping" />
+        <error line="195" column="30" source="standard:binary-expression-wrapping" />
+        <error line="195" column="82" source="standard:argument-list-wrapping" />
+        <error line="195" column="97" source="standard:argument-list-wrapping" />
+        <error line="195" column="99" source="standard:binary-expression-wrapping" />
+        <error line="195" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaverException.kt">
         <error line="3" column="27" source="standard:class-signature" />
