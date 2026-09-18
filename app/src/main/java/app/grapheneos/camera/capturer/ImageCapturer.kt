@@ -42,28 +42,6 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     private var currentImageSaver : ImageSaver? = null
 
-    private fun fadeCaptureButton() {
-        mActivity.captureButton.isEnabled = false
-
-        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
-        animation.duration = 200
-        animation.interpolator = LinearInterpolator()
-        animation.fillAfter = true
-
-        mActivity.captureButton.startAnimation(animation)
-    }
-
-    private fun unfadeCaptureButton() {
-        mActivity.captureButton.isEnabled = true
-
-        val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 1f)
-        animation.duration = 200
-        animation.interpolator = LinearInterpolator()
-        animation.fillAfter = true
-
-        mActivity.captureButton.startAnimation(animation)
-    }
-
     @SuppressLint("RestrictedApi")
     fun takePicture() {
         if (session.camera == null) {
@@ -128,20 +106,19 @@ class ImageCapturer(val mActivity: MainActivity) {
             imageSaver.onCaptureSuccess(image)
         }
 
-        fadeCaptureButton()
+        viewfinder.onAction(CaptureAction.PictureCaptureStarted)
     }
 
     fun cancelPendingCaptureRequest() {
         if (isTakingPicture) {
             currentImageSaver?.cancelCaptureRequest()
 
-            unfadeCaptureButton()
             currentImageSaver = null
+            viewfinder.onAction(CaptureAction.PictureCaptureCancelled)
         }
     }
 
     fun onCaptureSuccess() {
-        unfadeCaptureButton()
         currentImageSaver = null
 
         mActivity.tunePlayer.playShutterSound()
@@ -180,8 +157,8 @@ class ImageCapturer(val mActivity: MainActivity) {
     fun onCaptureError(exception: ImageCaptureException) {
         Log.e(TAG, "onCaptureError", exception)
 
-        unfadeCaptureButton()
         currentImageSaver = null
+        viewfinder.onAction(CaptureAction.PictureCaptureFailed)
         mActivity.previewLoader.visibility = View.GONE
 
         if (mActivity.isStarted) {
