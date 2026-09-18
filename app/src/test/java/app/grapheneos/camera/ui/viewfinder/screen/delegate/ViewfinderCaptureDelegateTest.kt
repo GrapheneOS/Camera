@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
@@ -32,9 +33,36 @@ class ViewfinderCaptureDelegateTest {
         delegate.startRecording()
 
         assertEquals(
-            ViewfinderCaptureState(isRecording = true, isRecordingPaused = true),
+            ViewfinderCaptureState(
+                recordingPhase = RecordingPhase.RECORDING,
+                isRecordingPaused = true,
+            ),
             capture(),
         )
+    }
+
+    @Test
+    fun recording_goesFromRequestedToStartedToStopped() {
+        val delegate = createDelegate()
+
+        delegate.requestRecording()
+        assertEquals(RecordingPhase.STARTING, capture().recordingPhase)
+
+        delegate.startRecording()
+        assertEquals(RecordingPhase.RECORDING, capture().recordingPhase)
+
+        delegate.stopRecording()
+        assertEquals(RecordingPhase.IDLE, capture().recordingPhase)
+    }
+
+    @Test
+    fun stopRecording_beforeItStarted_returnsToIdle() {
+        val delegate = createDelegate()
+
+        delegate.requestRecording()
+        delegate.stopRecording()
+
+        assertEquals(RecordingPhase.IDLE, capture().recordingPhase)
     }
 
     @Test

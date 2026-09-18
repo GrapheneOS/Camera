@@ -22,6 +22,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -562,11 +563,13 @@ class ViewfinderViewModelTest {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(CaptureAction.RecordingStarted)
-            viewModel.onAction(CaptureAction.RecordingPauseToggled(paused = true))
-            viewModel.onAction(CaptureAction.RecordingStopped)
+            viewModel.onAction(RecordingAction.RecordingRequested)
+            viewModel.onAction(RecordingAction.RecordingStarted)
+            viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
+            viewModel.onAction(RecordingAction.RecordingStopped)
 
             verifyOrder {
+                captureDelegate.requestRecording()
                 captureDelegate.startRecording()
                 captureDelegate.setRecordingPaused(paused = true)
                 captureDelegate.stopRecording()

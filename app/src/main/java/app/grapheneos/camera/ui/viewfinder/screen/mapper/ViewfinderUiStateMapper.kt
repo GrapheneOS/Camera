@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
@@ -42,6 +43,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
         return chrome.copy(
             captureButtonEnabled = !state.capture.isTakingPicture,
+            isRecordingActive = state.capture.recordingPhase != RecordingPhase.IDLE,
             thumbnailLoaderVisible = state.capture.isSavingPicture,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
             qrResultVisible = state.session.isQrResultShown,
@@ -157,7 +159,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         chrome: ViewfinderUiState,
         capture: ViewfinderCaptureState,
     ): ViewfinderUiState {
-        if (!capture.isRecording) return chrome
+        if (capture.recordingPhase != RecordingPhase.RECORDING) return chrome
 
         return chrome.copy(
             cancelButtonVisible = false,
@@ -183,7 +185,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 state.requiresVideoModeOnly && state.capture.isCapturedPreviewShown
             }
 
-            state.requiresVideoModeOnly -> !state.capture.isRecording
+            state.requiresVideoModeOnly -> state.capture.recordingPhase != RecordingPhase.RECORDING
 
             else -> true
         }

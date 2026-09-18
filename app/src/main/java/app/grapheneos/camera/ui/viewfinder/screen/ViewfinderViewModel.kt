@@ -31,6 +31,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -109,6 +110,7 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is CameraAction -> onCameraAction(action)
             is CaptureAction -> onCaptureAction(action)
+            is RecordingAction -> onRecordingAction(action)
             is LifecycleAction -> onLifecycleAction(action)
             is SettingsAction -> onSettingsAction(action)
         }
@@ -153,9 +155,15 @@ class ViewfinderViewModel @Inject constructor(
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
-            is CaptureAction.RecordingStarted -> captureDelegate.startRecording()
-            is CaptureAction.RecordingStopped -> captureDelegate.stopRecording()
-            is CaptureAction.RecordingPauseToggled -> {
+        }
+    }
+
+    private fun onRecordingAction(action: RecordingAction) {
+        when (action) {
+            is RecordingAction.RecordingRequested -> captureDelegate.requestRecording()
+            is RecordingAction.RecordingStarted -> captureDelegate.startRecording()
+            is RecordingAction.RecordingStopped -> captureDelegate.stopRecording()
+            is RecordingAction.RecordingPauseToggled -> {
                 captureDelegate.setRecordingPaused(action.paused)
             }
         }

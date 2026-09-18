@@ -24,7 +24,7 @@ class VideoCaptureActivity : CaptureActivity() {
         playPreview = findViewById(R.id.play_preview)
 
         captureButton.setOnClickListener OnClickListener@{
-            if (videoCapturer.isRecording) {
+            if (viewfinder.uiState.value.isRecordingActive) {
                 videoCapturer.stopRecording()
             } else {
                 videoCapturer.startRecording()

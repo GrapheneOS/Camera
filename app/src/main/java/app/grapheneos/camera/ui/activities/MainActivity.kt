@@ -832,7 +832,7 @@ open class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (videoCapturer.isRecording) {
+            if (viewfinder.uiState.value.isRecordingActive) {
                 videoCapturer.isPaused = !videoCapturer.isPaused
                 return@setOnClickListener
             }
@@ -861,7 +861,7 @@ open class MainActivity : AppCompatActivity() {
 
         binding.thirdCircle.setOnClickListener {
             resetAutoSleep()
-            if (videoCapturer.isRecording) {
+            if (viewfinder.uiState.value.isRecordingActive) {
                 imageCapturer.takePicture()
             } else {
                 openGallery()
@@ -870,7 +870,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         binding.thirdCircle.setOnLongClickListener {
-            if (videoCapturer.isRecording) {
+            if (viewfinder.uiState.value.isRecordingActive) {
                 imageCapturer.takePicture()
             } else {
                 shareLatestMedia()
@@ -887,7 +887,7 @@ open class MainActivity : AppCompatActivity() {
             tabLayout.settleNow()
 
             if (viewfinder.uiState.value.isVideoMode) {
-                if (videoCapturer.isRecording) {
+                if (viewfinder.uiState.value.isRecordingActive) {
                     videoCapturer.stopRecording()
                 } else {
                     videoCapturer.startRecording()
@@ -1114,7 +1114,7 @@ open class MainActivity : AppCompatActivity() {
         // The strip is untouchable during a recording but not while its start sound still plays, and
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
         // already have dragged the strip, so put it back on the mode the camera is really in.
-        if (videoCapturer.isRecording) {
+        if (viewfinder.uiState.value.isRecordingActive) {
             tabLayout.getTabForMode(viewfinder.uiState.value.mode)?.let {
                 tabLayout.goToTab(it)
             }
@@ -1544,7 +1544,7 @@ open class MainActivity : AppCompatActivity() {
     override fun onStop() {
         isStarted = false
         // Stop explicitly rather than letting the unbind tear the recording down for us.
-        if (this::videoCapturer.isInitialized && videoCapturer.isRecording) {
+        if (this::videoCapturer.isInitialized && viewfinder.uiState.value.isRecordingActive) {
             previewFrames.holdCurrentFrame()
             videoCapturer.stopRecording()
         }
