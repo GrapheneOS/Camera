@@ -72,6 +72,8 @@ internal class ViewfinderEffectHandler(
         activity.previewGrid.gridType = state.gridType
         activity.cbText.text = state.selfTimerBadge
         activity.cbText.visibility = visibleOrInvisible(state.selfTimerBadgeVisible)
+        activity.cdTimer.visibility = visibleOrGone(state.selfTimerCountdownVisible)
+        activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
 
         activity.settingsDialog.render(state.settingsSheet)
         activity.zoomBar.render(state.zoom)

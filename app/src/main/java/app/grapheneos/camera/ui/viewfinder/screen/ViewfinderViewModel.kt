@@ -310,13 +310,15 @@ class ViewfinderViewModel @Inject constructor(
         cancelSelfTimer()
 
         emitEffect(Effect.SelfTimer.Started)
+        captureDelegate.setSelfTimerRunning(true)
 
         val seconds = state().settings.selfTimerDurationSeconds
         selfTimer = viewModelScope.launch(mainDispatcher) {
-            captureDelegate.selfTimer(seconds).collect { secondsLeft ->
+            captureDelegate.selfTimerCountdown(seconds).collect { secondsLeft ->
                 emitEffect(Effect.SelfTimer.Ticked(secondsLeft))
             }
 
+            captureDelegate.setSelfTimerRunning(false)
             emitEffect(Effect.SelfTimer.Finished)
         }
     }
@@ -328,6 +330,7 @@ class ViewfinderViewModel @Inject constructor(
         if (selfTimer?.isActive != true) return
 
         selfTimer?.cancel()
+        captureDelegate.setSelfTimerRunning(false)
         emitEffect(Effect.SelfTimer.Cancelled)
     }
 

@@ -24,6 +24,8 @@ data class ViewfinderUiState(
     @StringRes val flipCameraDescription: Int = R.string.flip_camera,
     val selfTimerBadge: String = "",
     val selfTimerBadgeVisible: Boolean = false,
+    val selfTimerCountdownVisible: Boolean = false,
+    val selfTimerCancelVisible: Boolean = false,
     val gridType: GridType = GridType.NONE,
     val mode: CameraMode = CameraMode.CAMERA,
     val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,

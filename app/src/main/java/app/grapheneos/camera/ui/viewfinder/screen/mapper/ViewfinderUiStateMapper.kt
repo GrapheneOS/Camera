@@ -120,12 +120,13 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
     ): ViewfinderUiState {
         val settings = state.settings
         val selfTimerSeconds = settings.selfTimerDurationSeconds
+        val isSelfTimerRunning = state.capture.isSelfTimerRunning
 
         return ViewfinderUiState(
             qrOverlayVisible = false,
             qrScanTogglesVisible = false,
-            thirdOptionVisible = thirdOptionVisible(state),
-            cancelButtonVisible = true,
+            thirdOptionVisible = thirdOptionVisible(state) && !isSelfTimerRunning,
+            cancelButtonVisible = !isSelfTimerRunning,
             micMutedIconVisible = isVideoMode && !settings.includeAudio,
             captureButtonBackground = R.drawable.cbutton_bg,
             captureButtonIcon = when {
@@ -134,6 +135,10 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             },
             captureButtonDescription = when {
                 isVideoMode -> R.string.start_recording
+                // The capture button cancels the countdown while one is up, so it must not keep
+                // announcing itself as the shutter. Only the description changes; the cross is
+                // drawn over the button.
+                isSelfTimerRunning -> R.string.cancel_timer
                 else -> R.string.capture
             },
             flipCameraIcon = R.drawable.flip_camera,
@@ -142,7 +147,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 0 -> ""
                 else -> "${selfTimerSeconds}s"
             },
-            selfTimerBadgeVisible = selfTimerSeconds != 0 && !isVideoMode,
+            selfTimerBadgeVisible = selfTimerSeconds != 0 && !isVideoMode && !isSelfTimerRunning,
+            selfTimerCountdownVisible = isSelfTimerRunning,
+            selfTimerCancelVisible = isSelfTimerRunning,
         )
     }
 
