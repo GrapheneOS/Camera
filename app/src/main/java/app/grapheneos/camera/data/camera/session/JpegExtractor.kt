@@ -1,12 +1,16 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
 import android.graphics.ImageFormat
-import android.graphics.Rect
+import android.os.Build
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.utils.ImageUtil
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 interface JpegExtractor {
@@ -59,28 +63,43 @@ internal class JpegExtractorImpl @Inject constructor() : JpegExtractor {
         }
     }
 
-    @SuppressLint("RestrictedApi")
     override fun crop(
         jpeg: CapturedJpeg,
         jpegQuality: Int,
     ): ByteArray {
-        // cropJpegByteArray call is slow, overhead from reflection doesn't matter in this case
-        // copying out cropJpegByteArray method isn't worth the maintenance burden
-        val cropJpegByteArray = ImageUtil::class.java.getDeclaredMethod(
-            "cropJpegByteArray",
-            ByteArray::class.java,
-            Rect::class.java,
-            Int::class.javaPrimitiveType,
-        )
-        cropJpegByteArray.isAccessible = true
+        val cropRect = requireNotNull(jpeg.cropRect) {
+            "the captured JPEG has nothing to crop"
+        }
 
-        val cropped = cropJpegByteArray.invoke(
-            null,
-            jpeg.jpegBytes,
-            jpeg.cropRect,
-            jpegQuality,
-        )
+        val decoder = regionDecoder(jpeg.jpegBytes)
+        val bitmap = try {
+            val region = decoder.decodeRegion(cropRect, BitmapFactory.Options())
+            checkNotNull(region) { "unable to decode the cropped region" }
+        } finally {
+            decoder.recycle()
+        }
 
-        return cropped as ByteArray
+        val output = ByteArrayOutputStream()
+        try {
+            val isEncoded = bitmap.compress(Bitmap.CompressFormat.JPEG, jpegQuality, output)
+            check(isEncoded) { "unable to encode the cropped JPEG" }
+        } finally {
+            bitmap.recycle()
+        }
+
+        return output.toByteArray()
+    }
+
+    private fun regionDecoder(jpegBytes: ByteArray): BitmapRegionDecoder {
+        return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                BitmapRegionDecoder.newInstance(jpegBytes, 0, jpegBytes.size)
+            }
+
+            else -> {
+                @Suppress("DEPRECATION")
+                BitmapRegionDecoder.newInstance(jpegBytes, 0, jpegBytes.size, false)
+            }
+        }
     }
 }
