@@ -16,6 +16,9 @@ interface ViewfinderCaptureDelegate {
     fun startPictureCapture()
     fun finishPictureCapture()
 
+    fun startPictureSave()
+    fun finishPictureSave()
+
     fun showCapturedPreview()
     fun dismissCapturedPreview()
 }
@@ -61,6 +64,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
 
     override fun finishPictureCapture() {
         updateCapture { it.copy(isTakingPicture = false) }
+    }
+
+    override fun startPictureSave() {
+        updateCapture { it.copy(isSavingPicture = true) }
+    }
+
+    override fun finishPictureSave() {
+        updateCapture { it.copy(isSavingPicture = false) }
     }
 
     override fun showCapturedPreview() {

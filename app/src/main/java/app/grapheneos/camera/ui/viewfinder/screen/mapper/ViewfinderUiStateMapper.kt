@@ -42,6 +42,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
         return chrome.copy(
             captureButtonEnabled = !state.capture.isTakingPicture,
+            thumbnailLoaderVisible = state.capture.isSavingPicture,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
             qrResultVisible = state.session.isQrResultShown,
             gridType = settings.gridType,

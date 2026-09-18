@@ -142,8 +142,10 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is CaptureAction.PictureCaptureStarted -> captureDelegate.startPictureCapture()
             is CaptureAction.PictureCaptured -> onPictureCaptured()
-            is CaptureAction.PictureCaptureFailed -> captureDelegate.finishPictureCapture()
+            is CaptureAction.PictureCaptureFailed -> onPictureCaptureFailed()
             is CaptureAction.PictureCaptureCancelled -> captureDelegate.finishPictureCapture()
+            is CaptureAction.PictureSaveFailed -> captureDelegate.finishPictureSave()
+            is CaptureAction.PictureThumbnailShown -> captureDelegate.finishPictureSave()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
             is CaptureAction.RecordingStarted -> captureDelegate.startRecording()
@@ -289,8 +291,14 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onPictureCaptured() {
         captureDelegate.finishPictureCapture()
+        captureDelegate.startPictureSave()
 
         emitEffect(Effect.FlashPreview(state().selfIlluminate()))
+    }
+
+    private fun onPictureCaptureFailed() {
+        captureDelegate.finishPictureCapture()
+        captureDelegate.finishPictureSave()
     }
 
     private fun onStorageLocationNotFound() {

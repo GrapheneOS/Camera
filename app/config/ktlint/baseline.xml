@@ -172,27 +172,27 @@
         <error line="34" column="21" source="standard:class-signature" />
         <error line="34" column="48" source="standard:class-signature" />
         <error line="43" column="35" source="standard:colon-spacing" />
-        <error line="129" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="149" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="165" column="43" source="standard:argument-list-wrapping" />
-        <error line="165" column="85" source="standard:argument-list-wrapping" />
-        <error line="165" column="101" source="standard:max-line-length" />
-        <error line="165" column="112" source="standard:argument-list-wrapping" />
-        <error line="188" column="26" source="standard:property-wrapping" />
-        <error line="188" column="47" source="standard:wrapping" />
-        <error line="188" column="47" source="standard:argument-list-wrapping" />
-        <error line="188" column="58" source="standard:argument-list-wrapping" />
-        <error line="188" column="78" source="standard:argument-list-wrapping" />
-        <error line="188" column="101" source="standard:max-line-length" />
-        <error line="188" column="107" source="standard:argument-list-wrapping" />
-        <error line="189" column="51" source="standard:wrapping" />
-        <error line="189" column="52" source="standard:argument-list-wrapping" />
-        <error line="206" column="43" source="standard:argument-list-wrapping" />
-        <error line="206" column="82" source="standard:argument-list-wrapping" />
-        <error line="206" column="101" source="standard:max-line-length" />
-        <error line="206" column="102" source="standard:argument-list-wrapping" />
-        <error line="220" column="1" source="standard:indent" />
-        <error line="221" column="1" source="standard:indent" />
+        <error line="128" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="148" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="163" column="43" source="standard:argument-list-wrapping" />
+        <error line="163" column="85" source="standard:argument-list-wrapping" />
+        <error line="163" column="101" source="standard:max-line-length" />
+        <error line="163" column="112" source="standard:argument-list-wrapping" />
+        <error line="186" column="26" source="standard:property-wrapping" />
+        <error line="186" column="47" source="standard:wrapping" />
+        <error line="186" column="47" source="standard:argument-list-wrapping" />
+        <error line="186" column="58" source="standard:argument-list-wrapping" />
+        <error line="186" column="78" source="standard:argument-list-wrapping" />
+        <error line="186" column="101" source="standard:max-line-length" />
+        <error line="186" column="107" source="standard:argument-list-wrapping" />
+        <error line="187" column="51" source="standard:wrapping" />
+        <error line="187" column="52" source="standard:argument-list-wrapping" />
+        <error line="204" column="43" source="standard:argument-list-wrapping" />
+        <error line="204" column="82" source="standard:argument-list-wrapping" />
+        <error line="204" column="101" source="standard:max-line-length" />
+        <error line="204" column="102" source="standard:argument-list-wrapping" />
+        <error line="218" column="1" source="standard:indent" />
+        <error line="219" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaver.kt">
         <error line="182" column="45" source="standard:curly-spacing" />
