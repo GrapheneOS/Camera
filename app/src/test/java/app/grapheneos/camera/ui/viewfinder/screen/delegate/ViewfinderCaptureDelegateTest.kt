@@ -56,6 +56,17 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun pictureSave_isInProgressUntilFinished() {
+        val delegate = createDelegate()
+
+        delegate.startPictureSave()
+        assertTrue(capture().isSavingPicture)
+
+        delegate.finishPictureSave()
+        assertFalse(capture().isSavingPicture)
+    }
+
+    @Test
     fun capturedPreview_isShownUntilDismissed() {
         val delegate = createDelegate()
 

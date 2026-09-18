@@ -178,6 +178,18 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun savingAPicture_showsTheThumbnailLoader() {
+        val state = map(capture = ViewfinderCaptureState(isSavingPicture = true))
+
+        assertTrue(state.thumbnailLoaderVisible)
+    }
+
+    @Test
+    fun noPictureBeingSaved_hidesTheThumbnailLoader() {
+        assertFalse(map().thumbnailLoaderVisible)
+    }
+
+    @Test
     fun recording_keepsItsControlsWhenASettingChanges() {
         val state = map(
             mode = CameraMode.VIDEO,

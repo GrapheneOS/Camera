@@ -22,6 +22,7 @@ internal class ViewfinderEffectHandler(
 
     private var renderedCaptureButtonIcon: Int? = null
     private var renderedCaptureButtonEnabled = true
+    private var renderedThumbnailLoaderVisible = false
     private var renderedModes: Set<CameraMode> = emptySet()
     private var renderedAspectRatio: AspectRatio? = null
     private var renderedSensorOrientationDegrees: Int? = null
@@ -68,6 +69,7 @@ internal class ViewfinderEffectHandler(
 
         renderCaptureButton(state)
         renderCaptureButtonEnabled(state.captureButtonEnabled)
+        renderThumbnailLoader(state.thumbnailLoaderVisible)
         renderModeTabs(state)
         renderBoundPreview(state)
     }
@@ -138,6 +140,13 @@ internal class ViewfinderEffectHandler(
         animation.fillAfter = true
 
         activity.captureButton.startAnimation(animation)
+    }
+
+    private fun renderThumbnailLoader(visible: Boolean) {
+        if (visible == renderedThumbnailLoaderVisible) return
+
+        renderedThumbnailLoaderVisible = visible
+        activity.previewLoader.visibility = visibleOrGone(visible)
     }
 
     private fun showMessage(@StringRes message: Int) {

@@ -124,7 +124,6 @@ class ImageCapturer(val mActivity: MainActivity) {
         mActivity.tunePlayer.playShutterSound()
         viewfinder.onAction(CaptureAction.PictureCaptured)
 
-        mActivity.previewLoader.visibility = View.VISIBLE
         if (viewfinder.uiState.value.capture.selfIlluminate) {
 
             val animation: Animation = AlphaAnimation(0.8f, 0f)
@@ -159,7 +158,6 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         currentImageSaver = null
         viewfinder.onAction(CaptureAction.PictureCaptureFailed)
-        mActivity.previewLoader.visibility = View.GONE
 
         if (mActivity.isStarted) {
             val msg = mActivity.getString(R.string.unable_to_capture_image_verbose, exception.imageCaptureError)
@@ -181,7 +179,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     fun onImageSaverError(exception: ImageSaverException, skipErrorDialog: Boolean) {
         Log.e(TAG, "onImageSaverError", exception)
-        mActivity.previewLoader.visibility = View.GONE
+        viewfinder.onAction(CaptureAction.PictureSaveFailed)
 
         if (!mActivity.isStarted) {
             val channelId = "image_saver_error"
@@ -236,7 +234,7 @@ class ImageCapturer(val mActivity: MainActivity) {
     }
 
     fun onThumbnailGenerated(thumbnail: Bitmap) {
-        mActivity.previewLoader.visibility = View.GONE
+        viewfinder.onAction(CaptureAction.PictureThumbnailShown)
         mActivity.imagePreview.setImageBitmap(thumbnail)
     }
 
