@@ -85,6 +85,8 @@ import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
+import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.CapturedImagePipeline
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
@@ -132,6 +134,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -164,6 +168,14 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var capturedImagePipeline: CapturedImagePipeline
+
+    @Inject
+    @ApplicationScope
+    lateinit var applicationScope: CoroutineScope
+
+    @Inject
+    @MainImmediateDispatcher
+    lateinit var mainDispatcher: CoroutineDispatcher
 
     val viewfinder: ViewfinderViewModel by viewModels(
         extrasProducer = { viewfinderCreationExtras() },

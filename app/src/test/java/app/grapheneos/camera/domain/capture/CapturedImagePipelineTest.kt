@@ -53,6 +53,29 @@ class CapturedImagePipelineTest {
     }
 
     @Test
+    fun enqueueExtraction_doesNotWaitForTheWriteBeforeIt() = runTest {
+        val pipeline = pipeline(backgroundScope)
+
+        pipeline.enqueueExtraction {
+            finished += "first extraction"
+            pipeline.enqueueWrite {
+                delay(SLOW_WRITE_MS)
+                finished += "first write"
+            }
+        }
+        pipeline.enqueueExtraction {
+            delay(FAST_WRITE_MS)
+            finished += "second extraction"
+        }
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf("first extraction", "second extraction", "first write"),
+            finished,
+        )
+    }
+
+    @Test
     fun enqueueThumbnail_finishesThumbnailsInTheOrderTheyWereQueued() = runTest {
         val pipeline = pipeline(backgroundScope)
 
