@@ -6,7 +6,8 @@ import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapperImpl
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
 import java.io.ByteArrayInputStream
-import java.util.Date
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -96,7 +97,7 @@ class CapturedImageExifMapperTest {
             shouldUseExifOrientation = shouldUseExifOrientation,
             metadata = metadata,
             removeExif = removeExif,
-            captureTime = Date(CAPTURE_TIME_MS),
+            captureTime = ZonedDateTime.of(2026, 7, 24, 15, 30, 12, 0, ZoneOffset.UTC),
         )
     }
 
@@ -128,8 +129,6 @@ class CapturedImageExifMapperTest {
 
     private companion object {
         const val FIXTURE_NAME = "/captured_image.jpg"
-
-        const val CAPTURE_TIME_MS = 1_785_000_000_000L
 
         const val LATITUDE = 52.374
         const val LONGITUDE = 4.9

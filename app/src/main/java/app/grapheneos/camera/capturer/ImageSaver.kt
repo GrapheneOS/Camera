@@ -27,12 +27,11 @@ import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.runBlocking
 
 /*
@@ -61,7 +60,7 @@ class ImageSaver(
     @Px val targetThumbnailHeight: Int,
 ) : ImageCapture.OnImageCapturedCallback()
 {
-    val captureTime = Date()
+    val captureTime: ZonedDateTime = ZonedDateTime.now()
     val mainThreadExecutor: Executor = appContext.mainExecutor
 
     private var isCancelled = false
@@ -220,7 +219,7 @@ class ImageSaver(
 
     private fun dateString() =
         // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous one
-        SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
+        DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
 
     private fun fileName(): String {
         return IMAGE_NAME_PREFIX + dateString() + imageFileFormat

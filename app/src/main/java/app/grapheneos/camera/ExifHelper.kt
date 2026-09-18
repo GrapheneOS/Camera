@@ -1,9 +1,8 @@
 package app.grapheneos.camera
 
 import androidxc.exifinterface.media.ExifInterface
-import java.util.TimeZone
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 
@@ -163,26 +162,18 @@ private val exifAttributes = arrayOf(
     ExifInterface.TAG_SUBFILE_TYPE,
 )
 
-fun ExifInterface.fixExif(captureTime: Date) {
-    val millis = TimeZone.getDefault().getOffset(captureTime.time)
+private val exifDateTimeFormat = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss", Locale.US)
 
-    val totalMins = (millis / (1000 * 60))
+private val exifOffsetTimeFormat = DateTimeFormatter.ofPattern("xxx", Locale.US)
 
-    val hours = (totalMins / 60)
-    var hoursStrRep = hours.toString().padStart(2, '0')
-
-    if (hours >= 0)
-        hoursStrRep = "+${hoursStrRep}"
-
-    val mins = (totalMins % 60).toString().padEnd(2, '0')
-
-    val offsetTime = "$hoursStrRep:$mins"
+fun ExifInterface.fixExif(captureTime: ZonedDateTime) {
+    val offsetTime = exifOffsetTimeFormat.format(captureTime)
 
     setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
     setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
 //    exifInterface.setAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED, offset_time)
 
-    val nowStrRep = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(captureTime)
+    val nowStrRep = exifDateTimeFormat.format(captureTime)
 
     setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
     setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)

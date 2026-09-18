@@ -1,6 +1,6 @@
 package app.grapheneos.camera.domain.capture.model
 
-import java.util.Date
+import java.time.ZonedDateTime
 
 class CapturedImageExif(
     val jpegBytes: ByteArray,
@@ -10,5 +10,5 @@ class CapturedImageExif(
     val shouldUseExifOrientation: Boolean,
     val metadata: CaptureMetadata,
     val removeExif: Boolean,
-    val captureTime: Date,
+    val captureTime: ZonedDateTime,
 )
