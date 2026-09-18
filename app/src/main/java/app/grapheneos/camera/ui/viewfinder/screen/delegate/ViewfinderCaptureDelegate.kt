@@ -13,6 +13,9 @@ interface ViewfinderCaptureDelegate {
     fun setRecordingPaused(paused: Boolean)
     fun stopRecording()
 
+    fun startPictureCapture()
+    fun finishPictureCapture()
+
     fun showCapturedPreview()
     fun dismissCapturedPreview()
 }
@@ -50,6 +53,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
                 isRecordingPaused = false,
             )
         }
+    }
+
+    override fun startPictureCapture() {
+        updateCapture { it.copy(isTakingPicture = true) }
+    }
+
+    override fun finishPictureCapture() {
+        updateCapture { it.copy(isTakingPicture = false) }
     }
 
     override fun showCapturedPreview() {

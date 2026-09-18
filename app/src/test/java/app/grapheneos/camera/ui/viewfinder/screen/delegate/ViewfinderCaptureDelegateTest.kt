@@ -45,6 +45,17 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun pictureCapture_isInProgressUntilFinished() {
+        val delegate = createDelegate()
+
+        delegate.startPictureCapture()
+        assertTrue(capture().isTakingPicture)
+
+        delegate.finishPictureCapture()
+        assertFalse(capture().isTakingPicture)
+    }
+
+    @Test
     fun capturedPreview_isShownUntilDismissed() {
         val delegate = createDelegate()
 

@@ -140,7 +140,10 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onCaptureAction(action: CaptureAction) {
         when (action) {
-            is CaptureAction.PictureCaptured -> flashPreview()
+            is CaptureAction.PictureCaptureStarted -> captureDelegate.startPictureCapture()
+            is CaptureAction.PictureCaptured -> onPictureCaptured()
+            is CaptureAction.PictureCaptureFailed -> captureDelegate.finishPictureCapture()
+            is CaptureAction.PictureCaptureCancelled -> captureDelegate.finishPictureCapture()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
             is CaptureAction.RecordingStarted -> captureDelegate.startRecording()
@@ -284,7 +287,9 @@ class ViewfinderViewModel @Inject constructor(
         startCamera(forced = true)
     }
 
-    private fun flashPreview() {
+    private fun onPictureCaptured() {
+        captureDelegate.finishPictureCapture()
+
         emitEffect(Effect.FlashPreview(state().selfIlluminate()))
     }
 

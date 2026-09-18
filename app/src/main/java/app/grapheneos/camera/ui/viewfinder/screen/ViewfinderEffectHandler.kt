@@ -20,6 +20,13 @@ internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
 ) : ViewfinderChrome {
 
+    private var renderedCaptureButtonIcon: Int? = null
+    private var renderedCaptureButtonEnabled = true
+    private var renderedModes: Set<CameraMode> = emptySet()
+    private var renderedAspectRatio: AspectRatio? = null
+    private var renderedSensorOrientationDegrees: Int? = null
+    private var renderedInPhotoMode: Boolean? = null
+
     fun handle(effect: Effect) {
         when (effect) {
             is Effect.ShowMessage -> showMessage(effect.message)
@@ -37,13 +44,6 @@ internal class ViewfinderEffectHandler(
         }
     }
 
-    private var renderedCaptureButtonIcon: Int? = null
-    private var renderedModes: Set<CameraMode> = emptySet()
-    private var renderedAspectRatio: AspectRatio? = null
-
-    private var renderedSensorOrientationDegrees: Int? = null
-    private var renderedInPhotoMode: Boolean? = null
-
     fun render(state: ViewfinderUiState) {
         activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
         activity.thirdOption.visibility = visibleOrInvisible(state.thirdOptionVisible)
@@ -53,7 +53,6 @@ internal class ViewfinderEffectHandler(
         activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
 
         activity.captureButton.setBackgroundResource(state.captureButtonBackground)
-        renderCaptureButton(state)
         activity.setFlipCameraIcon(
             icon = state.flipCameraIcon,
             description = state.flipCameraDescription,
@@ -67,6 +66,8 @@ internal class ViewfinderEffectHandler(
         activity.zoomBar.render(state.zoom)
         activity.exposureBar.render(state.exposure)
 
+        renderCaptureButton(state)
+        renderCaptureButtonEnabled(state.captureButtonEnabled)
         renderModeTabs(state)
         renderBoundPreview(state)
     }
@@ -119,6 +120,24 @@ internal class ViewfinderEffectHandler(
         activity.captureButton.contentDescription = activity.getString(
             state.captureButtonDescription,
         )
+    }
+
+    private fun renderCaptureButtonEnabled(enabled: Boolean) {
+        if (enabled == renderedCaptureButtonEnabled) return
+
+        renderedCaptureButtonEnabled = enabled
+        activity.captureButton.isEnabled = enabled
+
+        val targetAlpha = when {
+            enabled -> CAPTURE_BUTTON_ENABLED_ALPHA
+            else -> CAPTURE_BUTTON_DISABLED_ALPHA
+        }
+        val animation = AlphaAnimation(activity.captureButton.alpha, targetAlpha)
+        animation.duration = CAPTURE_BUTTON_FADE_DURATION
+        animation.interpolator = LinearInterpolator()
+        animation.fillAfter = true
+
+        activity.captureButton.startAnimation(animation)
     }
 
     private fun showMessage(@StringRes message: Int) {
@@ -235,5 +254,8 @@ internal class ViewfinderEffectHandler(
     private companion object {
         private const val PREVIEW_SNAP_DURATION = 200L
         private const val PREVIEW_SL_OVERLAY_DUR = 200L
+        private const val CAPTURE_BUTTON_FADE_DURATION = 200L
+        private const val CAPTURE_BUTTON_ENABLED_ALPHA = 1f
+        private const val CAPTURE_BUTTON_DISABLED_ALPHA = 0.6f
     }
 }

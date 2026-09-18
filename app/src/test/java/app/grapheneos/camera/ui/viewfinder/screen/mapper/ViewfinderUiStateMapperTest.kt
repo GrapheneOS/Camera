@@ -166,6 +166,18 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun takingAPicture_disablesTheShutter() {
+        val state = map(capture = ViewfinderCaptureState(isTakingPicture = true))
+
+        assertFalse(state.captureButtonEnabled)
+    }
+
+    @Test
+    fun noPictureInProgress_leavesTheShutterEnabled() {
+        assertTrue(map().captureButtonEnabled)
+    }
+
+    @Test
     fun recording_keepsItsControlsWhenASettingChanges() {
         val state = map(
             mode = CameraMode.VIDEO,
