@@ -85,6 +85,7 @@ import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
+import app.grapheneos.camera.domain.capture.CapturedImagePipeline
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -160,6 +161,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var jpegExtractor: JpegExtractor
+
+    @Inject
+    lateinit var capturedImagePipeline: CapturedImagePipeline
 
     val viewfinder: ViewfinderViewModel by viewModels(
         extrasProducer = { viewfinderCreationExtras() },
