@@ -62,6 +62,8 @@ internal class ViewfinderEffectHandler(
 
         activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
         activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
+        activity.muteToggle.visibility = visibleOrGone(state.muteToggleVisible)
+        activity.setMuteToggleState(muted = state.isRecordingMuted)
 
         activity.captureButton.setBackgroundResource(state.captureButtonBackground)
         activity.setFlipCameraIcon(

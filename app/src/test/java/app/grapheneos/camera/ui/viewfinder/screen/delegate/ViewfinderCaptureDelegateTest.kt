@@ -66,6 +66,29 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun requestRecording_doesNotCarryOverThePreviousPauseOrMute() {
+        val delegate = createDelegate()
+
+        delegate.setRecordingPaused(paused = true)
+        delegate.setRecordingMuted(muted = true)
+        delegate.requestRecording()
+
+        assertFalse(capture().isRecordingPaused)
+        assertFalse(capture().isRecordingMuted)
+    }
+
+    @Test
+    fun stopRecording_forgetsTheMute() {
+        val delegate = createDelegate()
+
+        delegate.startRecording()
+        delegate.setRecordingMuted(muted = true)
+        delegate.stopRecording()
+
+        assertFalse(capture().isRecordingMuted)
+    }
+
+    @Test
     fun stopRecording_forgetsThePause() {
         val delegate = createDelegate()
 

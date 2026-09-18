@@ -1056,11 +1056,9 @@ open class MainActivity : AppCompatActivity() {
         muteToggle.setOnClickListener {
             if (videoCapturer.isMuted) {
                 videoCapturer.unmuteRecording()
-                setMuteToggleState(muted = false)
                 showMessage(R.string.video_audio_recording_unmuted)
             } else {
                 videoCapturer.muteRecording()
-                setMuteToggleState(muted = true)
                 showMessage(R.string.video_audio_recording_muted)
             }
         }

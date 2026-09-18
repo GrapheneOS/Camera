@@ -17,6 +17,7 @@ interface ViewfinderCaptureDelegate {
     fun requestRecording()
     fun startRecording()
     fun setRecordingPaused(paused: Boolean)
+    fun setRecordingMuted(muted: Boolean)
     fun stopRecording()
 
     fun startPictureCapture()
@@ -50,7 +51,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
     }
 
     override fun requestRecording() {
-        updateCapture { it.copy(recordingPhase = RecordingPhase.STARTING) }
+        // Don't leak paused/muted state from the previous recording into this one.
+        updateCapture {
+            it.copy(
+                recordingPhase = RecordingPhase.STARTING,
+                isRecordingPaused = false,
+                isRecordingMuted = false,
+            )
+        }
     }
 
     override fun startRecording() {
@@ -63,11 +71,16 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
         updateCapture { it.copy(isRecordingPaused = paused) }
     }
 
+    override fun setRecordingMuted(muted: Boolean) {
+        updateCapture { it.copy(isRecordingMuted = muted) }
+    }
+
     override fun stopRecording() {
         updateCapture {
             it.copy(
                 recordingPhase = RecordingPhase.IDLE,
                 isRecordingPaused = false,
+                isRecordingMuted = false,
             )
         }
     }

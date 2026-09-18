@@ -78,6 +78,10 @@ sealed interface ViewfinderAction {
         data class RecordingPauseToggled(
             val paused: Boolean,
         ) : RecordingAction
+
+        data class RecordingMuteToggled(
+            val muted: Boolean,
+        ) : RecordingAction
     }
 
     sealed interface LifecycleAction : ViewfinderAction {

@@ -566,12 +566,14 @@ class ViewfinderViewModelTest {
             viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingStarted)
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
+            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
             viewModel.onAction(RecordingAction.RecordingStopped)
 
             verifyOrder {
                 captureDelegate.requestRecording()
                 captureDelegate.startRecording()
                 captureDelegate.setRecordingPaused(paused = true)
+                captureDelegate.setRecordingMuted(muted = true)
                 captureDelegate.stopRecording()
             }
         }
