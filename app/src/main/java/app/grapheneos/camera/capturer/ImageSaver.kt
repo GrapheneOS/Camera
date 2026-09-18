@@ -2,6 +2,7 @@ package app.grapheneos.camera.capturer
 
 import android.content.Context
 import android.graphics.ImageDecoder
+import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
@@ -15,27 +16,27 @@ import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
 import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.domain.capture.CapturedImagePipeline
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.util.ImageResizer
-import app.grapheneos.camera.util.executeIfAlive
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlinx.coroutines.runBlocking
 
 /*
 Based on androidx.camera.core.ImageSaver
 
 Main differences:
-- image saving stages are pipelined: extractJpegBytes(), saveImage() and generateThumbnail() can
+- image saving stages are pipelined: JpegExtractor.extract(), saveImage() and generateThumbnail() can
 execute concurrently, each processing a different image
 - image is written to storage only once, after all the processing is completed. androidx ImageSaver
 writes and reads it back from storage multiple times
@@ -56,6 +57,7 @@ class ImageSaver(
     val removeExifAfterCapture: Boolean,
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
+    val pipeline: CapturedImagePipeline,
 ) : ImageCapture.OnImageCapturedCallback()
 {
     val captureTime: ZonedDateTime = ZonedDateTime.now()
@@ -77,10 +79,10 @@ class ImageSaver(
             return
         }
 
-        imageWriterExecutor.execute(this::saveImage)
+        pipeline.enqueueWrite(this::saveImage)
     }
 
-    private fun saveImage() {
+    private suspend fun saveImage() {
         try {
             saveImageInner()
         } catch (e: ImageSaverException) {
@@ -88,14 +90,16 @@ class ImageSaver(
             return
         }
 
-        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
+        if (!imageCapturer.mActivity.isDestroyed) {
+            pipeline.enqueueThumbnail(this::generateThumbnail)
+        }
     }
 
     private var capturedJpeg: CapturedJpeg? = null
     private lateinit var processedJpegBytes: ByteArray
 
     @Throws(ImageSaverException::class)
-    private fun saveImageInner() {
+    private suspend fun saveImageInner() {
         val jpeg = requireNotNull(capturedJpeg)
         val jpegBytes = when (jpeg.cropRect) {
             null -> jpeg.jpegBytes
@@ -111,16 +115,27 @@ class ImageSaver(
 
         val startOfWriting = timestamp()
 
-        val result = runBlocking {
-            storeCapturedImage(
-                jpegBytes = processedJpegBytes,
-                storageLocation = storageLocation,
-                fileName = fileName(),
-                mimeType = mimeType(),
-            )
+        val result = storeCapturedImage(
+            jpegBytes = processedJpegBytes,
+            storageLocation = storageLocation,
+            fileName = fileName(),
+            mimeType = mimeType(),
+        )
+
+        val uri = storedUri(result)
+        logDuration(startOfWriting) {
+            "image writing (saveToMediaStore: ${saveToMediaStore()})"
         }
 
-        val uri = when (result) {
+        val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
+        mainThreadExecutor.execute {
+            imageCapturer.onImageSaverSuccess(capturedItem)
+        }
+    }
+
+    @Throws(ImageSaverException::class)
+    private fun storedUri(result: StoreCapturedImageResult): Uri {
+        return when (result) {
             is StoreCapturedImageResult.Stored -> result.uri
 
             is StoreCapturedImageResult.StorageLocationNotFound -> {
@@ -133,10 +148,6 @@ class ImageSaver(
                 throw ImageSaverException(placeOf(result.stage), result.cause)
             }
         }
-        logDuration(startOfWriting) {"image writing (saveToMediaStore: ${saveToMediaStore()})"}
-
-        val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
-        mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem) }
     }
 
     @Throws(ImageSaverException::class)
@@ -217,8 +228,7 @@ class ImageSaver(
     }
 
     companion object {
-        val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()
-        private val imageWriterExecutor = Executors.newSingleThreadExecutor()
+        val imageCaptureCallbackExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
         private const val TAG = "ImageSaver"
         private const val LOG_DURATION = false
