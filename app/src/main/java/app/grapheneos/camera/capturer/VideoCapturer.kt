@@ -191,8 +191,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
             pendingRecording.withAudioEnabled()
         }
 
-        beforeRecordingStarts()
-
         // The sound callback may fire more than once; a second PendingRecording.start() throws.
         var consumed = false
 
@@ -333,63 +331,21 @@ class VideoCapturer(private val mActivity: MainActivity) {
         animator.start()
     }
 
-    private fun beforeRecordingStarts() {
-        mActivity.previewView.keepScreenOn = true
-    }
-
     private fun onRecordingStart() {
-        // TODO: Uncomment this once the main indicator UI gets implemented
-        // mActivity.micOffIcon.visibility = View.GONE
-
         animateCaptureButtonCorners(dp16, dp8)
-
-        mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
-        mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
         reportRecordingState(RecordingAction.RecordingStarted)
 
-        mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
-
-        // While recording, the gallery button turns into a shutter for stills
-        mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
-        mActivity.timerView.visibility = View.VISIBLE
-
-        mActivity.settingsDialog.includeAudioToggle.isEnabled = false
     }
 
     private fun afterRecordingStops() {
         animateCaptureButtonCorners(dp8, dp16)
 
-        mActivity.timerView.visibility = View.GONE
-
-        mActivity.settingsDialog.videoQualitySpinner.isEnabled = true
-        mActivity.settingsDialog.enableEISToggle.isEnabled = true
-
-        if (!mActivity.requiresVideoModeOnly) {
-            mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = true
-        }
-
-        // Always restore the third-circle icon and its accessibility label to the gallery button:
-        // at record start it was repurposed into an in-video shutter ("Capture") unconditionally,
-        // so restoring it only for non-VideoCaptureActivity would strand a stale "Capture" label
-        // there. The non-recording third-circle click opens the gallery in every activity, so
-        // open_gallery is the accurate label. Tab visibility stays guarded, as tabs don't apply to
-        // VideoCaptureActivity.
-        mActivity.setThirdCircleIcon(R.drawable.option_circle, R.string.open_gallery)
-
         if (mActivity !is VideoCaptureActivity) {
             mActivity.tabLayout.visibility = View.VISIBLE
         }
-
-        mActivity.previewView.keepScreenOn = false
-
-        // TODO: Uncomment this once the main indicator UI gets implemented
-        // if (!mActivity.config.includeAudio)
-        //   mActivity.micOffIcon.visibility = View.VISIBLE
-
-        mActivity.settingsDialog.includeAudioToggle.isEnabled = true
 
         reportRecordingState(RecordingAction.RecordingStopped)
 

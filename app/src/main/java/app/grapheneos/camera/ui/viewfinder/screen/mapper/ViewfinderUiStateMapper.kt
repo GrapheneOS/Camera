@@ -48,6 +48,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             isRecordingMuted = state.capture.isRecordingMuted,
             muteToggleVisible = state.capture.recordingPhase == RecordingPhase.RECORDING &&
                 settings.includeAudio,
+            keepScreenOn = state.capture.recordingPhase != RecordingPhase.IDLE,
             thumbnailLoaderVisible = state.capture.isSavingPicture,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
             qrResultVisible = state.session.isQrResultShown,
@@ -133,6 +134,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             qrScanTogglesVisible = false,
             thirdOptionVisible = thirdOptionVisible(state) && !isSelfTimerRunning,
             cancelButtonVisible = !isSelfTimerRunning,
+            // TODO: hide it during a recording once the recording has its own indicator
             micMutedIconVisible = isVideoMode && !settings.includeAudio,
             captureButtonBackground = R.drawable.cbutton_bg,
             captureButtonIcon = when {
@@ -167,6 +169,10 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
         return chrome.copy(
             cancelButtonVisible = false,
+            recordingTimerVisible = true,
+            // While recording, the gallery button turns into a shutter for stills
+            thirdCircleIcon = R.drawable.camera_shutter,
+            thirdCircleDescription = R.string.capture,
             captureButtonDescription = R.string.stop_recording,
             flipCameraIcon = when {
                 capture.isRecordingPaused -> R.drawable.play

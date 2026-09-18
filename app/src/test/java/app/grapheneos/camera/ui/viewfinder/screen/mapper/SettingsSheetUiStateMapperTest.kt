@@ -9,7 +9,9 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import org.junit.Assert.assertEquals
@@ -33,6 +35,7 @@ class SettingsSheetUiStateMapperTest {
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
+        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
     ): SettingsSheetUiState {
         return mapper.map(
             ViewfinderState(
@@ -43,12 +46,39 @@ class SettingsSheetUiStateMapperTest {
                 settings = settings,
                 modeSettings = modeSettings,
                 session = session,
+                capture = capture,
             ),
         )
     }
 
     private fun sessionWithFlash(): ViewfinderSessionState {
         return ViewfinderSessionState(isFlashAvailable = true)
+    }
+
+    @Test
+    fun recording_locksTheSettingsItWasStartedWith() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+        )
+
+        assertFalse(state.includeAudioSettingEnabled)
+        assertFalse(state.videoQualitySettingEnabled)
+        assertFalse(state.stabilizationSettingEnabled)
+        assertFalse(state.waitForFocusLockSettingEnabled)
+    }
+
+    @Test
+    fun noRecording_leavesTheSettingsChangeable() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+        )
+
+        assertTrue(state.includeAudioSettingEnabled)
+        assertTrue(state.videoQualitySettingEnabled)
+        assertTrue(state.stabilizationSettingEnabled)
+        assertTrue(state.waitForFocusLockSettingEnabled)
     }
 
     @Test
