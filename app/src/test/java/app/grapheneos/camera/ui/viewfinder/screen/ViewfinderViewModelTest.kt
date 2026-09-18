@@ -625,16 +625,20 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun selfTimerStartClicked_reportsEachSecondAndTheEnd() {
+    fun selfTimerStartClicked_countsDownTheStoredDurationAndReportsTheEnd() {
         runTest {
-            every { captureDelegate.selfTimer(any()) } returns flowOf(2, 1)
+            val storedSeconds = CameraSettings().selfTimerDurationSeconds
+            every {
+                captureDelegate.selfTimerCountdown(seconds = storedSeconds)
+            } returns flowOf(2, 1)
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(CaptureAction.SelfTimerStartClicked)
 
-            verify(exactly = 1) {
-                captureDelegate.selfTimer(seconds = CameraSettings().selfTimerDurationSeconds)
+            verifyOrder {
+                captureDelegate.setSelfTimerRunning(true)
+                captureDelegate.setSelfTimerRunning(false)
             }
             assertEquals(
                 listOf(
@@ -651,7 +655,7 @@ class ViewfinderViewModelTest {
     @Test
     fun selfTimerCancelClicked_putsTheControlsBackOnlyWhileACountdownIsUp() {
         runTest {
-            every { captureDelegate.selfTimer(any()) } returns endlessSelfTimer()
+            every { captureDelegate.selfTimerCountdown(any()) } returns endlessSelfTimer()
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
@@ -659,6 +663,11 @@ class ViewfinderViewModelTest {
             viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
             viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
 
+            verifyOrder {
+                captureDelegate.setSelfTimerRunning(true)
+                captureDelegate.setSelfTimerRunning(false)
+            }
+            verify(exactly = 1) { captureDelegate.setSelfTimerRunning(false) }
             assertEquals(
                 listOf(
                     ViewfinderScreenEffect.SelfTimer.Started,
@@ -673,7 +682,7 @@ class ViewfinderViewModelTest {
     @Test
     fun screenDestroyed_dropsTheCountdownWithoutPuttingTheControlsBack() {
         runTest {
-            every { captureDelegate.selfTimer(any()) } returns endlessSelfTimer()
+            every { captureDelegate.selfTimerCountdown(any()) } returns endlessSelfTimer()
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 

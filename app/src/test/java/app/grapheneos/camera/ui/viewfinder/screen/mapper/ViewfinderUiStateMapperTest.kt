@@ -178,6 +178,33 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun selfTimerCountdown_hidesTheControlsItWouldRaceAndOffersToCancel() {
+        val state = map(
+            settings = CameraSettings(selfTimerDurationSeconds = 5),
+            capture = ViewfinderCaptureState(isSelfTimerRunning = true),
+        )
+
+        assertFalse(state.thirdOptionVisible)
+        assertFalse(state.cancelButtonVisible)
+        assertFalse(state.selfTimerBadgeVisible)
+        assertTrue(state.selfTimerCountdownVisible)
+        assertTrue(state.selfTimerCancelVisible)
+        assertEquals(R.string.cancel_timer, state.captureButtonDescription)
+    }
+
+    @Test
+    fun noSelfTimerCountdown_leavesTheShutterAndBadge() {
+        val state = map(settings = CameraSettings(selfTimerDurationSeconds = 5))
+
+        assertTrue(state.thirdOptionVisible)
+        assertTrue(state.cancelButtonVisible)
+        assertTrue(state.selfTimerBadgeVisible)
+        assertFalse(state.selfTimerCountdownVisible)
+        assertFalse(state.selfTimerCancelVisible)
+        assertEquals(R.string.capture, state.captureButtonDescription)
+    }
+
+    @Test
     fun savingAPicture_showsTheThumbnailLoader() {
         val state = map(capture = ViewfinderCaptureState(isSavingPicture = true))
 

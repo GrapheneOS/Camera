@@ -23,7 +23,8 @@ interface ViewfinderCaptureDelegate {
     fun startPictureSave()
     fun finishPictureSave()
 
-    fun selfTimer(seconds: Int): Flow<Int>
+    fun setSelfTimerRunning(running: Boolean)
+    fun selfTimerCountdown(seconds: Int): Flow<Int>
 
     fun showCapturedPreview()
     fun dismissCapturedPreview()
@@ -80,7 +81,11 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor() : ViewfinderC
         updateCapture { it.copy(isSavingPicture = false) }
     }
 
-    override fun selfTimer(seconds: Int): Flow<Int> {
+    override fun setSelfTimerRunning(running: Boolean) {
+        updateCapture { it.copy(isSelfTimerRunning = running) }
+    }
+
+    override fun selfTimerCountdown(seconds: Int): Flow<Int> {
         return flow {
             for (secondsLeft in seconds downTo 1) {
                 emit(secondsLeft)
