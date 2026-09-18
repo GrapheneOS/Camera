@@ -62,12 +62,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
     // Invoking this abandons a start still queued behind the record-start sound.
     private var cancelDeferredStart: (() -> Unit)? = null
 
-    var isMuted = false
-        private set
+    val isMuted: Boolean
+        get() = viewfinder.uiState.value.isRecordingMuted
 
     var includeAudio: Boolean = false
 
-    var isPaused = false
+    var isPaused: Boolean
+        get() = viewfinder.uiState.value.isRecordingPaused
         set(value) {
             if (isRecording) {
                 if (value) {
@@ -77,7 +78,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 }
                 reportRecordingState(RecordingAction.RecordingPauseToggled(paused = value))
             }
-            field = value
         }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -334,10 +334,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun beforeRecordingStarts() {
-        // Don't leak paused/muted state from the previous recording into this one.
-        isPaused = false
-        isMuted = false
-
         mActivity.previewView.keepScreenOn = true
     }
 
@@ -361,11 +357,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.timerView.visibility = View.VISIBLE
 
         mActivity.settingsDialog.includeAudioToggle.isEnabled = false
-
-        if (viewfinder.uiState.value.capture.includeAudio) {
-            mActivity.setMuteToggleState(muted = isMuted)
-            mActivity.muteToggle.visibility = View.VISIBLE
-        }
     }
 
     private fun afterRecordingStops() {
@@ -399,7 +390,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         //   mActivity.micOffIcon.visibility = View.VISIBLE
 
         mActivity.settingsDialog.includeAudioToggle.isEnabled = true
-        mActivity.muteToggle.visibility = View.GONE
 
         reportRecordingState(RecordingAction.RecordingStopped)
 
@@ -409,14 +399,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
     fun muteRecording() {
         if (!isRecording) return
         check(viewfinder.uiState.value.capture.includeAudio)
-        isMuted = true
+        viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = true))
         recording?.mute(true)
     }
 
     fun unmuteRecording() {
         if (!isRecording) return
         check(viewfinder.uiState.value.capture.includeAudio)
-        isMuted = false
+        viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = false))
         recording?.mute(false)
     }
 

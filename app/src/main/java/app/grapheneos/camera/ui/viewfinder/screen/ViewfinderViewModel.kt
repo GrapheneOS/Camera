@@ -163,8 +163,13 @@ class ViewfinderViewModel @Inject constructor(
             is RecordingAction.RecordingRequested -> captureDelegate.requestRecording()
             is RecordingAction.RecordingStarted -> captureDelegate.startRecording()
             is RecordingAction.RecordingStopped -> captureDelegate.stopRecording()
+
             is RecordingAction.RecordingPauseToggled -> {
                 captureDelegate.setRecordingPaused(action.paused)
+            }
+
+            is RecordingAction.RecordingMuteToggled -> {
+                captureDelegate.setRecordingMuted(action.muted)
             }
         }
     }
