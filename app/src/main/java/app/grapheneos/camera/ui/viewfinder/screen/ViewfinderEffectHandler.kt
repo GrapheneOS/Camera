@@ -42,6 +42,16 @@ internal class ViewfinderEffectHandler(
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
             is Effect.StartLocationUpdates -> startLocationUpdates()
             is Effect.StopLocationUpdates -> stopLocationUpdates()
+            is Effect.SelfTimer -> handleSelfTimer(effect)
+        }
+    }
+
+    private fun handleSelfTimer(effect: Effect.SelfTimer) {
+        when (effect) {
+            is Effect.SelfTimer.Started -> activity.cdTimer.onTimerStarted()
+            is Effect.SelfTimer.Ticked -> activity.cdTimer.onTick(effect.secondsLeft)
+            is Effect.SelfTimer.Finished -> activity.cdTimer.onTimerFinished()
+            is Effect.SelfTimer.Cancelled -> activity.cdTimer.onTimerCancelled()
         }
     }
 

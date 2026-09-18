@@ -41,4 +41,17 @@ sealed interface ViewfinderScreenEffect {
     data class GoToModeTab(
         val mode: CameraMode,
     ) : ViewfinderScreenEffect
+
+    sealed interface SelfTimer : ViewfinderScreenEffect {
+
+        data object Started : SelfTimer
+
+        data object Finished : SelfTimer
+
+        data object Cancelled : SelfTimer
+
+        data class Ticked(
+            val secondsLeft: Int,
+        ) : SelfTimer
+    }
 }

@@ -58,6 +58,10 @@ sealed interface ViewfinderAction {
 
         data object PictureThumbnailShown : CaptureAction
 
+        data object SelfTimerStartClicked : CaptureAction
+
+        data object SelfTimerCancelClicked : CaptureAction
+
         data object StorageLocationNotFound : CaptureAction
 
         data object RecordingStarted : CaptureAction
