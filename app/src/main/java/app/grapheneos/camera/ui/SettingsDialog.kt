@@ -455,6 +455,11 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         enableEISToggle.isChecked = state.stabilizationEnabled
         waitForFocusLockSwitch.isChecked = state.waitForFocusLock
 
+        includeAudioToggle.isEnabled = state.includeAudioSettingEnabled
+        videoQualitySpinner.isEnabled = state.videoQualitySettingEnabled
+        enableEISToggle.isEnabled = state.stabilizationSettingEnabled
+        waitForFocusLockSwitch.isEnabled = state.waitForFocusLockSettingEnabled
+
         aRToggle.isChecked = state.is16by9
         ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
 

@@ -32,4 +32,8 @@ data class SettingsSheetUiState(
     val selfIlluminationSettingVisible: Boolean = false,
     val timerSettingVisible: Boolean = true,
     val waitForFocusLockSettingVisible: Boolean = true,
+    val includeAudioSettingEnabled: Boolean = true,
+    val videoQualitySettingEnabled: Boolean = true,
+    val stabilizationSettingEnabled: Boolean = true,
+    val waitForFocusLockSettingEnabled: Boolean = true,
 )

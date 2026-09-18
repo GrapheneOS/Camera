@@ -293,6 +293,41 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun recording_turnsTheGalleryButtonIntoAShutterAndShowsTheTimer() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+        )
+
+        assertEquals(R.drawable.camera_shutter, state.thirdCircleIcon)
+        assertEquals(R.string.capture, state.thirdCircleDescription)
+        assertTrue(state.recordingTimerVisible)
+        assertTrue(state.keepScreenOn)
+    }
+
+    @Test
+    fun startingRecording_keepsTheScreenOnBeforeTheChromeChanges() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+        )
+
+        assertTrue(state.keepScreenOn)
+        assertEquals(R.drawable.option_circle, state.thirdCircleIcon)
+        assertFalse(state.recordingTimerVisible)
+    }
+
+    @Test
+    fun noRecording_opensTheGalleryAndLetsTheScreenSleep() {
+        val state = map(mode = CameraMode.VIDEO)
+
+        assertEquals(R.drawable.option_circle, state.thirdCircleIcon)
+        assertEquals(R.string.open_gallery, state.thirdCircleDescription)
+        assertFalse(state.recordingTimerVisible)
+        assertFalse(state.keepScreenOn)
+    }
+
+    @Test
     fun noRecording_isNotActive() {
         assertFalse(map(mode = CameraMode.VIDEO).isRecordingActive)
     }
