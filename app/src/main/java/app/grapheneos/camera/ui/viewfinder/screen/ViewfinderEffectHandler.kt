@@ -63,7 +63,15 @@ internal class ViewfinderEffectHandler(
         activity.qrScanToggles.visibility = visibleOrGone(state.qrScanTogglesVisible)
         activity.micOffIcon.visibility = visibleOrGone(state.micMutedIconVisible)
         activity.muteToggle.visibility = visibleOrGone(state.muteToggleVisible)
-        activity.setMuteToggleState(muted = state.isRecordingMuted)
+        activity.setMuteToggleState(
+            muted = state.isRecordingMuted,
+        )
+        activity.setThirdCircleIcon(
+            icon = state.thirdCircleIcon,
+            description = state.thirdCircleDescription,
+        )
+        activity.timerView.visibility = visibleOrGone(state.recordingTimerVisible)
+        activity.previewView.keepScreenOn = state.keepScreenOn
 
         activity.captureButton.setBackgroundResource(state.captureButtonBackground)
         activity.setFlipCameraIcon(
