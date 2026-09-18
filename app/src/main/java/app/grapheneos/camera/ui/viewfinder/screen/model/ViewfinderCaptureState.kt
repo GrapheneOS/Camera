@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
 data class ViewfinderCaptureState(
-    val isRecording: Boolean = false,
+    val recordingPhase: RecordingPhase = RecordingPhase.IDLE,
     val isRecordingPaused: Boolean = false,
     val isCapturedPreviewShown: Boolean = false,
     val isTakingPicture: Boolean = false,

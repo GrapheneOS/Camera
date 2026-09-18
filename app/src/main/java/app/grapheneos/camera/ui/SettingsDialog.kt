@@ -113,7 +113,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         moreSettingsButton = binding.moreSettings
         moreSettingsButton.setOnClickListener {
-            if (!mActivity.videoCapturer.isRecording) {
+            if (!mActivity.viewfinder.uiState.value.isRecordingActive) {
                 MoreSettings.start(mActivity)
             } else {
                 mActivity.showMessage(getString(R.string.more_settings_unavailable_during_recording))
@@ -165,7 +165,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         locToggle = binding.locationToggle
         locToggle.setOnClickListener {
-            if (mActivity.videoCapturer.isRecording) {
+            if (mActivity.viewfinder.uiState.value.isRecordingActive) {
                 locToggle.isChecked = !locToggle.isChecked
                 mActivity.showMessage(
                     getString(R.string.toggle_geo_tagging_unsupported_while_recording)

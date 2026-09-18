@@ -64,15 +64,20 @@ sealed interface ViewfinderAction {
 
         data object StorageLocationNotFound : CaptureAction
 
-        data object RecordingStarted : CaptureAction
-
-        data object RecordingStopped : CaptureAction
-
         data object CapturedPreviewShown : CaptureAction
+    }
+
+    sealed interface RecordingAction : ViewfinderAction {
+
+        data object RecordingRequested : RecordingAction
+
+        data object RecordingStarted : RecordingAction
+
+        data object RecordingStopped : RecordingAction
 
         data class RecordingPauseToggled(
             val paused: Boolean,
-        ) : CaptureAction
+        ) : RecordingAction
     }
 
     sealed interface LifecycleAction : ViewfinderAction {

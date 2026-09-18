@@ -38,6 +38,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
@@ -51,8 +52,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val session = mActivity.session
 
-    var isRecording = false
-        private set
+    val isRecording: Boolean
+        get() = viewfinder.uiState.value.isRecordingActive
 
     private val videoFileFormat = ".mp4"
 
@@ -74,7 +75,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 } else {
                     recording?.resume()
                 }
-                reportRecordingState(CaptureAction.RecordingPauseToggled(paused = value))
+                reportRecordingState(RecordingAction.RecordingPauseToggled(paused = value))
             }
             field = value
         }
@@ -152,7 +153,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
         if (session.camera == null) return
         val recorder = session.videoCapture?.output ?: return
         if (isRecording) return
-        isRecording = true
+
+        viewfinder.onAction(RecordingAction.RecordingRequested)
 
         val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
@@ -166,7 +168,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 includeAudio = true
             } else {
                 ctx.restartRecordingWithMicPermission()
-                isRecording = false
+                viewfinder.onAction(RecordingAction.RecordingStopped)
                 return
             }
         }
@@ -179,7 +181,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 viewfinder.onAction(CaptureAction.StorageLocationNotFound)
             }
             ctx.showMessage(R.string.unable_to_access_output_file)
-            isRecording = false
+            viewfinder.onAction(RecordingAction.RecordingStopped)
             return
         }
 
@@ -348,7 +350,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
         mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
-        reportRecordingState(CaptureAction.RecordingStarted)
+        reportRecordingState(RecordingAction.RecordingStarted)
 
         mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
 
@@ -399,9 +401,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         mActivity.settingsDialog.includeAudioToggle.isEnabled = true
         mActivity.muteToggle.visibility = View.GONE
 
-        isRecording = false
-
-        reportRecordingState(CaptureAction.RecordingStopped)
+        reportRecordingState(RecordingAction.RecordingStopped)
 
         mActivity.forceUpdateOrientationSensor()
     }
@@ -431,7 +431,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording = null
     }
 
-    private fun reportRecordingState(action: CaptureAction) {
+    private fun reportRecordingState(action: RecordingAction) {
         if (mActivity.isDestroyed) {
             return
         }
