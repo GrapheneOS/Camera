@@ -10,10 +10,6 @@ import android.graphics.Bitmap
 import android.location.Location
 import android.os.Build
 import android.util.Log
-import android.view.View
-import android.view.animation.AlphaAnimation
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.takePicture
 import app.grapheneos.camera.CapturedItem
@@ -123,34 +119,6 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         mActivity.tunePlayer.playShutterSound()
         viewfinder.onAction(CaptureAction.PictureCaptured)
-
-        if (viewfinder.uiState.value.capture.selfIlluminate) {
-
-            val animation: Animation = AlphaAnimation(0.8f, 0f)
-            animation.duration = 200
-            animation.interpolator = LinearInterpolator()
-            animation.fillAfter = true
-
-            mActivity.mainOverlay.setImageResource(android.R.color.white)
-
-            animation.setAnimationListener(
-                object : Animation.AnimationListener {
-                    override fun onAnimationStart(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.VISIBLE
-                    }
-
-                    override fun onAnimationEnd(p0: Animation?) {
-                        mActivity.mainOverlay.visibility = View.INVISIBLE
-                        mActivity.mainOverlay.setImageResource(android.R.color.transparent)
-                    }
-
-                    override fun onAnimationRepeat(p0: Animation?) {}
-
-                }
-            )
-
-            mActivity.mainOverlay.startAnimation(animation)
-        }
     }
 
     fun onCaptureError(exception: ImageCaptureException) {
