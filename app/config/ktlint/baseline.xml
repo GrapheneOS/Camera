@@ -116,14 +116,11 @@
         <error line="164" column="78" source="standard:trailing-comma-on-declaration-site" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ExifHelper.kt">
-        <error line="3" column="1" source="standard:import-ordering" />
-        <error line="9" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="16" column="5" source="standard:comment-spacing" />
-        <error line="148" column="5" source="standard:comment-spacing" />
-        <error line="175" column="9" source="standard:multiline-if-else" />
-        <error line="175" column="26" source="standard:string-template" />
-        <error line="198" column="1" source="standard:comment-spacing" />
-        <error line="251" column="1" source="standard:comment-spacing" />
+        <error line="8" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="15" column="5" source="standard:comment-spacing" />
+        <error line="147" column="5" source="standard:comment-spacing" />
+        <error line="189" column="1" source="standard:comment-spacing" />
+        <error line="242" column="1" source="standard:comment-spacing" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/GSlideTransformer.kt">
         <error line="47" column="1" source="standard:final-newline" />
