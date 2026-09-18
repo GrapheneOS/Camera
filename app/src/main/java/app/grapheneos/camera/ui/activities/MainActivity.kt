@@ -79,6 +79,7 @@ import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
@@ -156,6 +157,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var exifMapper: CapturedImageExifMapper
+
+    @Inject
+    lateinit var jpegExtractor: JpegExtractor
 
     val viewfinder: ViewfinderViewModel by viewModels(
         extrasProducer = { viewfinderCreationExtras() },

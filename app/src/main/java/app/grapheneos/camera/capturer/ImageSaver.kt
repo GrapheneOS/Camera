@@ -1,22 +1,19 @@
 package app.grapheneos.camera.capturer
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.ImageDecoder
-import android.graphics.ImageFormat
-import android.graphics.Rect
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
-import androidx.camera.core.internal.utils.ImageUtil
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.capturer.ImageSaverException.Place
+import app.grapheneos.camera.data.camera.model.CapturedJpeg
+import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
@@ -51,6 +48,7 @@ class ImageSaver(
     val appContext: Context,
     val storeCapturedImage: StoreCapturedImage,
     val exifMapper: CapturedImageExifMapper,
+    val jpegExtractor: JpegExtractor,
     val jpegQuality: Int,
     val storageLocation: String,
     val imageFileFormat: String,
@@ -72,44 +70,14 @@ class ImageSaver(
     override fun onCaptureSuccess(image: ImageProxy) {
         mainThreadExecutor.execute(imageCapturer::onCaptureSuccess)
 
-        try {
-            extractJpegBytes(image)
+        capturedJpeg = try {
+            jpegExtractor.extract(image, jpegQuality)
         } catch (e: Exception) {
             handleError(ImageSaverException(Place.IMAGE_EXTRACTION, e))
             return
         }
 
         imageWriterExecutor.execute(this::saveImage)
-    }
-
-    // based on androidx.camera.core.ImageSaver#imageToJpegByteArray(),
-    // optimized to avoid extracting uncropped image twice and to close ImageProxy sooner
-    @SuppressLint("RestrictedApi")
-    @Throws(ImageUtil.CodecFailedException::class)
-    private fun extractJpegBytes(image: ImageProxy) {
-        try {
-            cropRect = if (ImageUtil.shouldCropImage(image)) image.cropRect else null
-            val imageFormat = image.format
-
-            origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
-                ImageUtil.jpegImageToJpegByteArray(image)
-            } else if (imageFormat == ImageFormat.YUV_420_888) {
-                ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)
-            } else {
-                throw IllegalStateException("unknown imageFormat $imageFormat")
-            }
-
-            shouldUseExifOrientation = ExifRotationAvailability().shouldUseExifOrientation(image)
-            orientation = image.imageInfo.rotationDegrees
-        } finally {
-            /*
-             from javadoc of the Image class:
-             Since Images are often directly produced or consumed by hardware components, they are
-             a limited resource shared across the system, and should be closed as soon as
-             they are no longer needed.
-             */
-            image.close()
-        }
     }
 
     private fun saveImage() {
@@ -123,30 +91,23 @@ class ImageSaver(
         imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
     }
 
-    private var cropRect: Rect? = null
-    private var origJpegBytes: ByteArray? = null
+    private var capturedJpeg: CapturedJpeg? = null
     private lateinit var processedJpegBytes: ByteArray
-    private var shouldUseExifOrientation = false
-    private var orientation = 0
 
     @Throws(ImageSaverException::class)
     private fun saveImageInner() {
-        val uncroppedJpegBytes = origJpegBytes!!
-        if (cropRect != null) {
-            try {
-                // cropJpegByteArray call is slow, overhead from reflection doesn't matter in this case
-                // copying out cropJpegByteArray method isn't worth the maintenance burden
-                val cropJpegByteArray = ImageUtil::class.java.getDeclaredMethod(
-                    "cropJpegByteArray",
-                    ByteArray::class.java, Rect::class.java, Int::class.javaPrimitiveType)
-                cropJpegByteArray.isAccessible = true
-                origJpegBytes = cropJpegByteArray.invoke(null, uncroppedJpegBytes, cropRect, jpegQuality) as ByteArray
+        val jpeg = requireNotNull(capturedJpeg)
+        val jpegBytes = when (jpeg.cropRect) {
+            null -> jpeg.jpegBytes
+
+            else -> try {
+                jpegExtractor.crop(jpeg, jpegQuality)
             } catch (e: Exception) {
                 throw ImageSaverException(Place.IMAGE_CROPPING, e)
             }
         }
 
-        processedJpegBytes = processExif(uncroppedJpegBytes)
+        processedJpegBytes = processExif(jpeg, jpegBytes)
 
         val startOfWriting = timestamp()
 
@@ -179,17 +140,20 @@ class ImageSaver(
     }
 
     @Throws(ImageSaverException::class)
-    private fun processExif(uncroppedJpegBytes: ByteArray): ByteArray {
+    private fun processExif(
+        jpeg: CapturedJpeg,
+        jpegBytes: ByteArray,
+    ): ByteArray {
         val startOfExifProcessing = timestamp()
 
         val processed = try {
             exifMapper.map(
                 CapturedImageExif(
-                    jpegBytes = requireNotNull(origJpegBytes),
-                    uncroppedJpegBytes = uncroppedJpegBytes,
-                    isCropped = cropRect != null,
-                    orientationDegrees = orientation,
-                    shouldUseExifOrientation = shouldUseExifOrientation,
+                    jpegBytes = jpegBytes,
+                    uncroppedJpegBytes = jpeg.jpegBytes,
+                    isCropped = jpeg.cropRect != null,
+                    orientationDegrees = jpeg.orientationDegrees,
+                    shouldUseExifOrientation = jpeg.shouldUseExifOrientation,
                     metadata = imageCaptureMetadata,
                     removeExif = removeExifAfterCapture,
                     captureTime = captureTime,
@@ -200,7 +164,7 @@ class ImageSaver(
         }
 
         // let GC collect this large buffer
-        origJpegBytes = null
+        capturedJpeg = null
 
         logDuration(startOfExifProcessing) {"exif processing"}
 
