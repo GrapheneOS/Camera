@@ -16,7 +16,6 @@ internal class CaptureUiStateMapperImpl @Inject constructor() : CaptureUiStateMa
             saveImageAsPreviewed = state.settings.saveImageAsPreviewed,
             removeExifAfterCapture = state.settings.removeExifAfterCapture,
             geoTagging = state.requireLocation,
-            selfIlluminate = state.selfIlluminate(),
             includeAudio = state.settings.includeAudio,
             cameraSounds = state.settings.enableCameraSounds,
         )

@@ -220,7 +220,7 @@ internal class ViewfinderEffectHandler(
 
     private fun flashPreview(selfIlluminate: Boolean) {
         val animation: Animation = when {
-            selfIlluminate -> AlphaAnimation(0f, 0.8f)
+            selfIlluminate -> AlphaAnimation(SELF_ILLUMINATION_OVERLAY_ALPHA, 0f)
             else -> AlphaAnimation(1f, 0f)
         }
 
@@ -247,10 +247,8 @@ internal class ViewfinderEffectHandler(
                 }
 
                 override fun onAnimationEnd(p0: Animation?) {
-                    if (!selfIlluminate) {
-                        activity.mainOverlay.visibility = View.INVISIBLE
-                        activity.mainOverlay.setImageResource(android.R.color.transparent)
-                    }
+                    activity.mainOverlay.visibility = View.INVISIBLE
+                    activity.mainOverlay.setImageResource(android.R.color.transparent)
                 }
 
                 override fun onAnimationRepeat(p0: Animation?) {}
@@ -263,6 +261,7 @@ internal class ViewfinderEffectHandler(
     private companion object {
         private const val PREVIEW_SNAP_DURATION = 200L
         private const val PREVIEW_SL_OVERLAY_DUR = 200L
+        private const val SELF_ILLUMINATION_OVERLAY_ALPHA = 0.8f
         private const val CAPTURE_BUTTON_FADE_DURATION = 200L
         private const val CAPTURE_BUTTON_ENABLED_ALPHA = 1f
         private const val CAPTURE_BUTTON_DISABLED_ALPHA = 0.6f
