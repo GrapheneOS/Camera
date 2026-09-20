@@ -1,23 +1,35 @@
 package app.grapheneos.camera.ui
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
+import androidx.core.view.children
 import app.grapheneos.camera.CameraMode
 import com.google.android.material.tabs.TabLayout
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
 
 class BottomTabLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : TabLayout(context, attrs) {
 
-    private var sp = 0
+    // Scroll position that centers each tab, indexed by tab position.
+    private val tabCenters: ArrayList<Int> = arrayListOf()
 
-    private val snapPoints: ArrayList<Int> = arrayListOf()
+    private var suppressScroll = false
 
-    private var isDragging = false
+    private var onSettled: Runnable? = null
 
-    private lateinit var tabParent: ViewGroup
+    private val scroller = ValueAnimator().apply {
+        interpolator = AnimationUtils.loadInterpolator(
+            context, android.R.interpolator.fast_out_slow_in
+        )
+        addUpdateListener { scrollTo(it.animatedValue as Int, 0) }
+    }
 
     val selectedTab: Tab?
         get() {
@@ -35,14 +47,19 @@ class BottomTabLayout @JvmOverloads constructor(
         return null
     }
 
-    // Called for every event dispatched to the strip, tabs included, so this sees the whole gesture
-    // even once a tab's own view has taken the touch.
-    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        when (ev.action) {
-            MotionEvent.ACTION_MOVE -> isDragging = true
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> isDragging = false
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            cancelSettle()
         }
-        return super.onInterceptTouchEvent(ev)
+
+        val isHandled = super.dispatchTouchEvent(ev)
+
+        // Only a lifted finger commits a mode, so nothing else would put the strip back.
+        if (ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+            selectedTab?.let(::goToTab)
+        }
+
+        return isHandled
     }
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
@@ -50,117 +67,149 @@ class BottomTabLayout @JvmOverloads constructor(
 
         if (tabCount == 0) return
 
-        tabParent = getChildAt(0) as ViewGroup
-        val firstTab = tabParent.getChildAt(0)
-        val lastTab = tabParent.getChildAt(tabParent.childCount - 1)
-        sp = width / 2 - firstTab.width / 2
-        getChildAt(0).setPaddingRelative(
-            sp,
+        val tabParent = getChildAt(0) as ViewGroup
+        tabParent.setPaddingRelative(
+            width / 2 - tabParent.getChildAt(0).width / 2,
             0,
-            width / 2 - lastTab.width / 2,
+            width / 2 - tabParent.getChildAt(tabParent.childCount - 1).width / 2,
             0
         )
 
-        snapPoints.clear()
+        val centers = tabParent
+            .children
+            .take(tabCount)
+            .map { it.left + it.width / 2 - width / 2 }
+            .toList()
 
-        for (tabIndex in 0 until tabCount) {
-            snapPoints.add(calculateScrollXStartForTab(tabIndex))
-            snapPoints.add(calculateScrollXEndForTab(tabIndex))
+        if (centers == tabCenters) {
+            drawSelectionAtScroll(scrollX)
+            return
         }
 
-        centerSelectedTab()
-    }
-
-    private fun centerSelectedTab() {
-        getTabAt(selectedTabPosition)?.let {
-            centerTab(it)
-        }
+        // The tabs really moved, so any scroll still running is aimed at a stale position and
+        // there is nothing to animate from.
+        tabCenters.clear()
+        tabCenters.addAll(centers)
+        cancelSettle()
+        setScrollPosition(selectedTabPosition, 0f, true)
     }
 
     override fun onScrollChanged(x: Int, y: Int, oldX: Int, oldY: Int) {
         super.onScrollChanged(x, y, oldX, oldY)
 
-        // snapPoints is empty until the first layout pass, and goes stale when the tab set is
-        // rebuilt, so an index taken from it may no longer name a tab.
-        if (snapPoints.isEmpty() || snapPoints.last() == 0) {
-            return
-        }
-
-        // Only a finger on the strip picks a mode this way. Centering a tab animates the scroll
-        // position through the snap ranges of every tab in between, and switching mode blocks the
-        // main thread for long enough that those frames arrive after the switch -- the first of them
-        // still at the tab the animation started from, which would drag the highlight back onto the
-        // mode the camera just left.
-        if (!isDragging) {
-            return
-        }
-
-        for (i in snapPoints.indices step 2) {
-
-            val start = snapPoints[i]
-            val end = snapPoints[i + 1]
-
-            if (x in start..end) {
-                val index = i / 2
-                val tab = getTabAt(index) ?: return
-                if (selectedTabPosition != index) {
-                    selectTab(tab)
-                }
-                return
-            }
-
-        }
+        drawSelectionAtScroll(x)
     }
 
     fun getTabAtX(x: Int): Tab? {
-        for (i in snapPoints.indices step 2) {
-            val start = snapPoints[i]
-            val end = snapPoints[i + 1]
+        return when {
+            tabCenters.size != tabCount -> null
+            else -> getTabAt(fractionalTabPosition(x).roundToInt())
+        }
+    }
 
-            if (x in start..end) {
-                val index = i / 2
-                if (selectedTabPosition != index) {
-                    return getTabAt(index)
-                }
-            }
+    fun goToTab(tab: Tab, onSettled: Runnable? = null) {
+        selectTab(tab)
 
+        drawSelectionAtScroll(scrollX)
+
+        cancelSettle()
+
+        val target = tabCenters.getOrNull(tab.position) ?: run {
+            onSettled?.run()
+            return
         }
 
-        return null
+        val duration = settleDuration(abs(target - scrollX))
+        if (duration == 0L || !ValueAnimator.areAnimatorsEnabled()) {
+            scrollTo(target, 0)
+            onSettled?.run()
+            return
+        }
+
+        scroller.duration = duration
+        scroller.setIntValues(scrollX, target)
+        scroller.start()
+
+        onSettled?.let {
+            this.onSettled = it
+            postDelayed(it, duration)
+        }
     }
 
-    fun centerTab(tab: Tab) {
-        if (!this::tabParent.isInitialized) return
-        val targetScrollX = calculateScrollXForTab(tab.position)
+    fun settleNow() {
+        if (scroller.isStarted) {
+            scroller.end()
+        }
 
-        if (scrollX != targetScrollX)
-            smoothScrollTo(targetScrollX, 0)
+        val settled = onSettled ?: return
+        onSettled = null
+        removeCallbacks(settled)
+
+        settled.run()
     }
 
-    private fun calculateScrollXForTab(position: Int): Int {
-        val selectedChild = tabParent.getChildAt(position) ?: return 0
-        val selectedWidth = selectedChild.width
-
-        return selectedChild.left + selectedWidth / 2 - width / 2
+    private fun cancelSettle() {
+        scroller.cancel()
+        onSettled?.let { removeCallbacks(it) }
+        onSettled = null
     }
 
-    private fun calculateScrollXStartForTab(position: Int): Int {
-        val selectedChild = tabParent.getChildAt(position) ?: return 0
-        val selectedWidth = selectedChild.width
+    private fun settleDuration(distance: Int): Long {
+        if (tabCenters.size < 2) {
+            return SETTLE_DURATION_MS
+        }
 
-        return selectedChild.left + selectedWidth / 2 - width / 2
+        val pitch = abs(tabCenters.last() - tabCenters.first()) / (tabCenters.size - 1)
+        if (pitch == 0) {
+            return SETTLE_DURATION_MS
+        }
+
+        return (SETTLE_DURATION_MS * distance / pitch)
+            .coerceAtMost(SETTLE_DURATION_MS)
     }
 
-    private fun calculateScrollXEndForTab(position: Int): Int {
-        val selectedChild = tabParent.getChildAt(position) ?: return 0
-        val selectedWidth = selectedChild.width
+    private fun drawSelectionAtScroll(x: Int) {
+        // tabCenters stays stale from a rebuild of the tab set until the layout pass after it.
+        if (tabCenters.size != tabCount) return
 
-        return selectedChild.left + selectedWidth - width / 2
+        val position = fractionalTabPosition(x)
+        val index = position.toInt()
+
+        // setScrollPosition() also scrolls to whatever it draws, and the strip is already exactly
+        // where it wants to be.
+        suppressScroll = true
+
+        try {
+            setScrollPosition(index, position - index, true)
+        } finally {
+            suppressScroll = false
+        }
+    }
+
+    override fun scrollTo(x: Int, y: Int) {
+        if (!suppressScroll) {
+            super.scrollTo(x, y)
+        }
+    }
+
+    private fun fractionalTabPosition(x: Int): Float {
+        for (index in 0 until tabCenters.lastIndex) {
+            val fraction =
+                (x - tabCenters[index]).toFloat() / (tabCenters[index + 1] - tabCenters[index])
+            if (fraction < 1f) {
+                return (index + fraction).coerceAtLeast(0f)
+            }
+        }
+        return tabCenters.lastIndex.toFloat()
     }
 
     fun getAllModes(): Set<CameraMode> {
         return IntRange(0, tabCount - 1).map {
             getTabAt(it)!!.tag as CameraMode
         }.toSet()
+    }
+
+    private companion object {
+        private const val SETTLE_DURATION_MS = 300L
     }
 }

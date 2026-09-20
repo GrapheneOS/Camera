@@ -18,7 +18,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
@@ -27,9 +29,11 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.PixelCopy
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.Surface
+import android.view.SurfaceView
 import android.view.View
 import android.view.View.OnTouchListener
 import android.view.ViewGroup
@@ -108,6 +112,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
+import androidx.core.graphics.scale
+import androidx.core.net.toUri
+import androidx.core.view.isVisible
+import androidx.core.graphics.createBitmap
 
 open class MainActivity : AppCompatActivity(),
     OnTouchListener,
@@ -131,8 +139,24 @@ open class MainActivity : AppCompatActivity(),
     // is already visible and to dismiss it if the permission gets granted.
     private var cameraPermissionDialog: AlertDialog? = null
     private var audioPermissionDialog: AlertDialog? = null
+
+    @Volatile
     var lastFrame: Bitmap? = null
         private set
+
+    @Volatile
+    private var frameCopyPending = false
+
+    // When the copy waiting in [lastFrame] was taken, or 0 when there is none waiting.
+    @Volatile
+    private var framePrefetchedAt = 0L
+
+    private var frameCopyThread: HandlerThread? = null
+
+    private var loggedMissingSurfaceView = false
+
+    // Whether the transition still is standing in for the preview.
+    private var transitionShown = false
 
     private lateinit var mainFrame: View
     lateinit var rootView: View
@@ -343,9 +367,138 @@ open class MainActivity : AppCompatActivity(),
         audioPermissionDialog = builder.showIgnoringShortEdgeMode()
     }
 
+    // The blurred still that stands in for the preview whenever the camera is not streaming.
+    private fun showPreviewTransition() {
+        transitionShown = true
+        previewGrid.visibility = View.INVISIBLE
+
+        val lastFrame = lastFrame
+        if (lastFrame == null || this is CaptureActivity) return
+
+        // The still is of the camera being left behind, and the box under it takes the new camera's
+        // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's
+        // fitStart, which is there for the captured photo CaptureActivity shows in this same view,
+        // would leave a bar down the side of the preview until the new camera streams.
+        mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
+        setBlurBitmapCompat(mainOverlay, lastFrame)
+        settingsIcon.visibility = View.INVISIBLE
+        settingsIcon.isEnabled = false
+        mainOverlay.visibility = View.VISIBLE
+    }
+
+    private fun hidePreviewTransition() {
+        transitionShown = false
+        mainOverlay.visibility = View.INVISIBLE
+
+        if (camConfig.isQRMode) {
+            return
+        }
+
+        previewGrid.visibility = View.VISIBLE
+        if (!settingsDialog.isShowing) {
+            settingsIcon.visibility = View.VISIBLE
+        }
+
+        settingsIcon.isEnabled = true
+    }
+
     fun updateLastFrame() {
+        if (hasFreshPrefetch()) {
+            framePrefetchedAt = 0
+            return
+        }
         lastFrame = previewView.bitmap
     }
+
+    // Starts a copy of the preview for [updateLastFrame] to pick up. previewView.bitmap blocks the
+    // caller on a GPU readback for about a tenth of a second, and startCamera() reads it at the
+    // point where it can least afford to block; the same pixels copied asynchronously cost the main
+    // thread nothing, as long as the copy is started early enough.
+    fun prefetchLastFrame() {
+        if (frameCopyPending || hasFreshPrefetch()) return
+        if (previewView.width == 0 || previewView.height == 0) return
+
+        val surfaceView = previewView.getChildAt(0) as? SurfaceView ?: run {
+            // PreviewView falls back to a TextureView on hardware that cannot take a SurfaceView,
+            // and then there is no surface here to copy the preview out of.
+            if (!loggedMissingSurfaceView) {
+                loggedMissingSurfaceView = true
+                Log.i(TAG, "Preview is not backed by a SurfaceView; no frame to prefetch")
+            }
+            return
+        }
+        if (!surfaceView.holder.surface.isValid) return
+
+        frameCopyPending = true
+        // Copying the surface rather than the window is what leaves the grid, the level and the
+        // focus ring out of it, the way previewView.bitmap does -- and the window holds nothing but
+        // a hole where the preview is, since the camera draws into a layer of its own.
+        copyPreviewInto(
+            createBitmap(previewView.width, previewView.height),
+            surfaceView,
+            Handler(frameCopyLooper()),
+            FRAME_COPY_RETRIES,
+        )
+    }
+
+    // [handler] is deliberately not the main thread's: the copy itself takes about 40ms, but the
+    // switch it is meant for blocks the main thread, so a callback queued there would only arrive
+    // once the switch it was supposed to spare had already paid for a frame of its own.
+    private fun copyPreviewInto(
+        copy: Bitmap,
+        surfaceView: SurfaceView,
+        handler: Handler,
+        retries: Int,
+    ) {
+        try {
+            PixelCopy.request(surfaceView, copy, { result ->
+                when {
+                    result == PixelCopy.SUCCESS -> {
+                        lastFrame = copy
+                        framePrefetchedAt = SystemClock.uptimeMillis()
+                        frameCopyPending = false
+                    }
+                    // The surface only holds its last buffer until the camera takes the slot back,
+                    // so a copy started in the gap between two preview frames comes back empty.
+                    retries > 0 -> {
+                        handler.postDelayed(
+                            { copyPreviewInto(copy, surfaceView, handler, retries - 1) },
+                            FRAME_COPY_RETRY_DELAY_MS,
+                        )
+                    }
+                    else -> {
+                        frameCopyPending = false
+                    }
+                }
+            }, handler)
+        } catch (_: IllegalArgumentException) {
+            // A surface that has gone throws here rather than reporting a failure, and the switch
+            // this copy is for is what takes it away -- from the main thread, with nothing to keep
+            // that from landing between a validity check and this call.
+            frameCopyPending = false
+        }
+    }
+
+    private fun frameCopyLooper(): Looper {
+        frameCopyThread?.let { return it.looper }
+        return HandlerThread("frame-copy").apply { start(); frameCopyThread = this }.looper
+    }
+
+    // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
+    // handed a gesture once the scroll view has taken it back off the tab -- by which point a
+    // switch started by a plain tap has already happened. The freshness window keeps a touch that
+    // switches nothing from costing more than one copy every couple of seconds.
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            prefetchLastFrame()
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    // A copy taken for a switch that never happened shows a scene the camera has since moved on
+    // from, which is worse behind the transition than paying for a fresh one.
+    private fun hasFreshPrefetch(): Boolean = framePrefetchedAt != 0L &&
+            SystemClock.uptimeMillis() - framePrefetchedAt < PREFETCH_FRESHNESS_MS
 
     private fun animateFocusRing(x: Float, y: Float) {
 
@@ -571,7 +724,7 @@ open class MainActivity : AppCompatActivity(),
         }
 
         // If the preview of video capture activity isn't showing
-        if (!(this is VideoCaptureActivity && thirdOption.visibility == View.VISIBLE)) {
+        if (!(this is VideoCaptureActivity && thirdOption.isVisible)) {
             if (!isQRDialogShowing) {
                 if (hasCameraPermission()) {
                     camConfig.initializeCamera(true)
@@ -589,7 +742,12 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
+
+        // Leaving a mode switch waiting on an animation that will never finish would strand the
+        // strip on a mode the camera never entered.
+        tabLayout.settleNow()
         pauseOrientationSensor()
+
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
@@ -602,6 +760,7 @@ open class MainActivity : AppCompatActivity(),
             application.dropLocationUpdates()
         }
         lastFrame = null
+        framePrefetchedAt = 0
     }
 
     lateinit var gestureDetector: GestureDetector
@@ -643,26 +802,12 @@ open class MainActivity : AppCompatActivity(),
         timerView = binding.timer
         previewView.previewStreamState.observe(this) { state: StreamState ->
             if (state == StreamState.STREAMING) {
-                mainOverlay.visibility = View.INVISIBLE
+                hidePreviewTransition()
                 camConfig.reloadSettings()
-                if (!camConfig.isQRMode) {
-                    previewGrid.visibility = View.VISIBLE
-                    if (!settingsDialog.isShowing) {
-                        settingsIcon.visibility = View.VISIBLE
-                    }
-                    settingsIcon.isEnabled = true
-                }
 
                 restartRecordingIfPermissionsWasUnavailable()
             } else {
-                previewGrid.visibility = View.INVISIBLE
-                val lastFrame = lastFrame
-                if (lastFrame != null && this !is CaptureActivity) {
-                    setBlurBitmapCompat(mainOverlay, lastFrame)
-                    settingsIcon.visibility = View.INVISIBLE
-                    settingsIcon.isEnabled = false
-                    mainOverlay.visibility = View.VISIBLE
-                }
+                showPreviewTransition()
             }
         }
         flipCameraCircle = binding.flipCameraCircle
@@ -753,6 +898,11 @@ open class MainActivity : AppCompatActivity(),
         captureButton = binding.captureButton
         captureButton.setOnClickListener {
             resetAutoSleep()
+
+            // A mode the strip is still settling into has not reached the camera yet, and this
+            // would otherwise capture in the mode being left behind.
+            tabLayout.settleNow()
+
             if (camConfig.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
@@ -1036,8 +1186,7 @@ open class MainActivity : AppCompatActivity(),
         // already have dragged the strip, so put it back on the mode the camera is really in.
         if (videoCapturer.isRecording) {
             tabLayout.getTabForMode(camConfig.currentMode)?.let {
-                tabLayout.selectTab(it)
-                tabLayout.centerTab(it)
+                tabLayout.goToTab(it)
             }
             return
         }
@@ -1045,11 +1194,30 @@ open class MainActivity : AppCompatActivity(),
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
             val mode = selectedTab.tag as CameraMode
-            // The strip has to follow the touch even when the mode does not change, so do not
-            // leave this to switchMode(), which returns early for the mode it is already in.
-            tabLayout.selectTab(selectedTab)
-            tabLayout.centerTab(selectedTab)
-            camConfig.switchMode(mode)
+
+            // Blurred while the strip is still gliding, not once the camera has gone: the rebind
+            // holds the main thread for half a second, so a transition left to the stream state
+            // would only reach the screen after the wait it is there to explain. Guarded on the
+            // mode really changing, since nothing would rebind to take it back down again.
+            if (mode != camConfig.currentMode) {
+                showPreviewTransition()
+            }
+
+            // switchMode() puts the strip on the mode the camera actually ended up in, which is a
+            // different one when an extension fails to bind.
+            tabLayout.goToTab(selectedTab) {
+                if (mode != camConfig.currentMode) {
+                    camConfig.switchMode(mode)
+                } else if (
+                    transitionShown &&
+                    previewView.previewStreamState.value == StreamState.STREAMING
+                ) {
+                    // A transition raised for a switch this tap has just cancelled, over a camera
+                    // that never stopped streaming: nothing is left to rebind and take it down.
+                    hidePreviewTransition()
+                }
+            }
+
             resetAutoSleep()
         }
     }
@@ -1135,7 +1303,7 @@ open class MainActivity : AppCompatActivity(),
             val tabLayout: TabLayout = dialogBinding.encodingTabs
             val textView = dialogBinding.scanResultText
 
-            val intentView = Intent(Intent.ACTION_VIEW, Uri.parse(rawText))
+            val intentView = Intent(Intent.ACTION_VIEW, rawText.toUri())
 
             if (packageManager.resolveActivity(intentView, 0L) != null) {
                 dialogBinding.openWith.setOnClickListener {
@@ -1355,6 +1523,12 @@ open class MainActivity : AppCompatActivity(),
         private const val SWIPE_VELOCITY_THRESHOLD = 100
 
         private const val GYRO_VIBE_WAIT_TIME = 250L
+
+        private const val PREFETCH_FRESHNESS_MS = 2_000L
+
+        // One preview frame at 30fps, the wait for the camera to fill the surface again.
+        private const val FRAME_COPY_RETRY_DELAY_MS = 33L
+        private const val FRAME_COPY_RETRIES = 3
     }
 
     override fun onDown(e: MotionEvent): Boolean {
@@ -1719,6 +1893,7 @@ open class MainActivity : AppCompatActivity(),
         super.onDestroy()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
+        frameCopyThread?.quitSafely()
     }
 
     fun locationCamConfigChanged(required: Boolean) {
@@ -1848,7 +2023,7 @@ open class MainActivity : AppCompatActivity(),
                         val h = it.height.toDouble()
                         val ratio = max(w / side, h / side)
 
-                        bitmap = Bitmap.createScaledBitmap(it, (w / ratio).toInt(), (h / ratio).toInt(), true)
+                        bitmap = it.scale((w / ratio).toInt(), (h / ratio).toInt())
                         origBitmap.recycle()
                     }
                 } else if (item.type == ITEM_TYPE_IMAGE) {
