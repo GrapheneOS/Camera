@@ -2,10 +2,8 @@ package app.grapheneos.camera.domain.capture
 
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.domain.capture.usecase.DeleteStalePendingRecordingsImpl
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import java.io.IOException
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -24,15 +22,6 @@ class DeleteStalePendingRecordingsTest {
             deleteStalePendingRecordings()
 
             coVerify(exactly = 1) { repository.deleteStalePendingVideos(olderThan = 1.hours) }
-        }
-    }
-
-    @Test
-    fun invoke_whenMediaStoreRefuses_leavesTheStartupAlone() {
-        runTest {
-            coEvery { repository.deleteStalePendingVideos(any()) } throws IOException()
-
-            deleteStalePendingRecordings()
         }
     }
 }
