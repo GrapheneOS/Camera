@@ -1,7 +1,6 @@
 package app.grapheneos.camera.domain.capture.model
 
 import android.net.Uri
-import java.io.IOException
 
 sealed interface StoreCapturedImageResult {
 
@@ -10,12 +9,12 @@ sealed interface StoreCapturedImageResult {
     ) : StoreCapturedImageResult
 
     data class StorageLocationNotFound(
-        val cause: IOException,
+        val cause: Exception,
     ) : StoreCapturedImageResult
 
     data class Failed(
         val stage: Stage,
-        val cause: IOException,
+        val cause: Exception,
     ) : StoreCapturedImageResult
 
     enum class Stage {

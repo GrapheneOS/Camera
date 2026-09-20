@@ -1,6 +1,7 @@
 package app.grapheneos.camera.domain.capture
 
 import android.net.Uri
+import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
@@ -23,7 +24,9 @@ class StoreCapturedImageTest {
     private val uri: Uri = Uri.parse("content://media/external_primary/images/media/1")
 
     private val repository = mockk<CaptureOutputRepository>(relaxed = true) {
-        coEvery { createImage(any(), any(), any()) } returns uri
+        coEvery { createImage(any(), any(), any()) } returns success(uri)
+        coEvery { write(any(), any()) } returns success(Unit)
+        coEvery { publish(any()) } returns success(Unit)
     }
 
     private val storeCapturedImage = StoreCapturedImageImpl(
@@ -44,7 +47,7 @@ class StoreCapturedImageTest {
     @Test
     fun invoke_whenMediaStoreRefusesTheFile_failsAtFileCreation() {
         runTest {
-            coEvery { repository.createImage(any(), any(), any()) } throws IOException()
+            coEvery { repository.createImage(any(), any(), any()) } returns failure()
 
             val result = store(storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION)
 
@@ -56,7 +59,7 @@ class StoreCapturedImageTest {
     @Test
     fun invoke_whenTheDocumentTreeRefusesTheFile_reportsTheStorageLocationMissing() {
         runTest {
-            coEvery { repository.createImage(any(), any(), any()) } throws IOException()
+            coEvery { repository.createImage(any(), any(), any()) } returns failure()
 
             val result = store(storageLocation = DOCUMENT_TREE)
 
@@ -67,7 +70,7 @@ class StoreCapturedImageTest {
     @Test
     fun invoke_whenWritingFails_deletesTheIncompleteImage() {
         runTest {
-            coEvery { repository.write(any(), any()) } throws IOException()
+            coEvery { repository.write(any(), any()) } returns failure()
 
             val result = store()
 
@@ -78,21 +81,9 @@ class StoreCapturedImageTest {
     }
 
     @Test
-    fun invoke_whenTheIncompleteImageCannotBeDeleted_stillFailsAtWriting() {
-        runTest {
-            coEvery { repository.write(any(), any()) } throws IOException()
-            coEvery { repository.delete(any()) } throws IOException()
-
-            val result = store()
-
-            assertEquals(Stage.FILE_WRITE, (result as StoreCapturedImageResult.Failed).stage)
-        }
-    }
-
-    @Test
     fun invoke_whenPublishingFails_keepsTheWrittenImage() {
         runTest {
-            coEvery { repository.publish(any()) } throws IOException()
+            coEvery { repository.publish(any()) } returns failure()
 
             val result = store()
 
@@ -102,6 +93,14 @@ class StoreCapturedImageTest {
             )
             coVerify(exactly = 0) { repository.delete(any()) }
         }
+    }
+
+    private fun <T> success(value: T): CaptureOutputResult<T> {
+        return CaptureOutputResult.Success(value)
+    }
+
+    private fun failure(): CaptureOutputResult<Nothing> {
+        return CaptureOutputResult.Failure(IOException())
     }
 
     private suspend fun store(

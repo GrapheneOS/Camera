@@ -1,12 +1,11 @@
 package app.grapheneos.camera.domain.capture.usecase
 
 import android.net.Uri
-import android.util.Log
+import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult.Stage
-import java.io.IOException
 import javax.inject.Inject
 
 interface StoreCapturedImage {
@@ -29,66 +28,60 @@ internal class StoreCapturedImageImpl @Inject constructor(
         fileName: String,
         mimeType: String,
     ): StoreCapturedImageResult {
-        val uri = try {
-            captureOutputRepository.createImage(
-                storageLocation = storageLocation,
-                fileName = fileName,
-                mimeType = mimeType,
-            )
-        } catch (exception: IOException) {
-            return when (storageLocation) {
-                CapturedItemRepository.MEDIA_STORE_LOCATION -> {
-                    StoreCapturedImageResult.Failed(
-                        stage = Stage.FILE_CREATION,
-                        cause = exception,
-                    )
-                }
-
-                else -> StoreCapturedImageResult.StorageLocationNotFound(cause = exception)
-            }
-        }
-
-        return writeAndPublish(
-            uri = uri,
-            jpegBytes = jpegBytes,
+        val created = captureOutputRepository.createImage(
+            storageLocation = storageLocation,
+            fileName = fileName,
+            mimeType = mimeType,
         )
+
+        return when (created) {
+            is CaptureOutputResult.Success -> writeAndPublish(
+                uri = created.value,
+                jpegBytes = jpegBytes,
+            )
+
+            is CaptureOutputResult.Failure -> notCreated(
+                storageLocation = storageLocation,
+                cause = created.cause,
+            )
+        }
     }
 
-    private suspend fun writeAndPublish(
-        uri: Uri,
-        jpegBytes: ByteArray,
+    private fun notCreated(
+        storageLocation: String,
+        cause: Exception,
     ): StoreCapturedImageResult {
-        try {
-            captureOutputRepository.write(uri, jpegBytes)
-        } catch (exception: IOException) {
-            deleteIncompleteImage(uri)
+        return when (storageLocation) {
+            CapturedItemRepository.MEDIA_STORE_LOCATION -> {
+                StoreCapturedImageResult.Failed(
+                    stage = Stage.FILE_CREATION,
+                    cause = cause,
+                )
+            }
+
+            else -> StoreCapturedImageResult.StorageLocationNotFound(cause = cause)
+        }
+    }
+
+    private suspend fun writeAndPublish(uri: Uri, jpegBytes: ByteArray): StoreCapturedImageResult {
+        val written = captureOutputRepository.write(uri, jpegBytes)
+        if (written is CaptureOutputResult.Failure) {
+            captureOutputRepository.delete(uri)
+
             return StoreCapturedImageResult.Failed(
                 stage = Stage.FILE_WRITE,
-                cause = exception,
+                cause = written.cause,
             )
         }
 
-        return try {
-            captureOutputRepository.publish(uri)
-            StoreCapturedImageResult.Stored(uri = uri)
-        } catch (exception: IOException) {
+        return when (val published = captureOutputRepository.publish(uri)) {
+            is CaptureOutputResult.Success -> StoreCapturedImageResult.Stored(uri = uri)
+
             // don't delete the image in this case, since it's already fully written out
-            StoreCapturedImageResult.Failed(
+            is CaptureOutputResult.Failure -> StoreCapturedImageResult.Failed(
                 stage = Stage.FILE_WRITE_COMPLETION,
-                cause = exception,
+                cause = published.cause,
             )
         }
-    }
-
-    private suspend fun deleteIncompleteImage(uri: Uri) {
-        try {
-            captureOutputRepository.delete(uri)
-        } catch (deleteException: IOException) {
-            Log.w(TAG, "unable to delete an incomplete image $uri", deleteException)
-        }
-    }
-
-    private companion object {
-        private const val TAG = "StoreCapturedImage"
     }
 }

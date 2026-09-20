@@ -18,12 +18,14 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -364,7 +366,12 @@ class StalledMediaProviderRegressionTest {
             scenario.onActivity {
                 camera = it
                 it.tunePlayer = immediateTunePlayer()
-                it.videoCapturer.contentResolver = ContentResolver.wrap(mediaProvider)
+                val stallingResolver = ContentResolver.wrap(mediaProvider)
+                it.captureOutputRepository = CaptureOutputRepositoryImpl(
+                    contentResolver = stallingResolver,
+                    ioDispatcher = Dispatchers.IO,
+                )
+                it.videoCapturer.contentResolver = stallingResolver
             }
             val capturedBefore = lastCapturedUri(scenario)
             try {

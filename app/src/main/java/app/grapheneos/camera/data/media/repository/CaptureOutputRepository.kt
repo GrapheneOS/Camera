@@ -3,12 +3,15 @@ package app.grapheneos.camera.data.media.repository
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.system.ErrnoException
 import android.system.Os
+import android.util.Log
 import androidx.core.net.toUri
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
+import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.store.imageCollectionUri
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
@@ -22,26 +25,29 @@ import kotlinx.coroutines.withContext
 
 interface CaptureOutputRepository {
 
-    @Throws(IOException::class)
     suspend fun createImage(
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): Uri
+    ): CaptureOutputResult<Uri>
 
-    @Throws(IOException::class)
+    suspend fun createVideo(
+        storageLocation: String,
+        fileName: String,
+        mimeType: String,
+    ): CaptureOutputResult<Uri>
+
+    suspend fun openForWriting(uri: Uri): CaptureOutputResult<ParcelFileDescriptor>
+
     suspend fun write(
         uri: Uri,
         bytes: ByteArray,
-    )
+    ): CaptureOutputResult<Unit>
 
-    @Throws(IOException::class)
-    suspend fun publish(uri: Uri)
+    suspend fun publish(uri: Uri): CaptureOutputResult<Unit>
 
-    @Throws(IOException::class)
     suspend fun delete(uri: Uri)
 
-    @Throws(IOException::class)
     suspend fun deleteStalePendingVideos(olderThan: Duration)
 
     companion object {
@@ -62,28 +68,40 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): Uri {
-        val uri = onStorage {
-            when (storageLocation) {
-                CapturedItemRepository.MEDIA_STORE_LOCATION -> insertPendingImage(
-                    fileName = fileName,
-                    mimeType = mimeType,
-                )
-
-                else -> DocumentsContract.createDocument(
-                    contentResolver,
-                    getTreeDocumentUri(storageLocation.toUri()),
-                    mimeType,
-                    fileName,
-                )
-            }
-        }
-
-        return uri ?: throw IOException("unable to create $fileName in $storageLocation")
+    ): CaptureOutputResult<Uri> {
+        return create(
+            collection = imageCollectionUri,
+            storageLocation = storageLocation,
+            fileName = fileName,
+            mimeType = mimeType,
+        )
     }
 
-    override suspend fun write(uri: Uri, bytes: ByteArray) {
-        onStorage {
+    override suspend fun createVideo(
+        storageLocation: String,
+        fileName: String,
+        mimeType: String,
+    ): CaptureOutputResult<Uri> {
+        return create(
+            collection = videoCollectionUri,
+            storageLocation = storageLocation,
+            fileName = fileName,
+            mimeType = mimeType,
+        )
+    }
+
+    override suspend fun openForWriting(uri: Uri): CaptureOutputResult<ParcelFileDescriptor> {
+        return onStorage {
+            contentResolver.openFileDescriptor(uri, "w")
+                ?: throw IOException("unable to open $uri")
+        }
+    }
+
+    override suspend fun write(
+        uri: Uri,
+        bytes: ByteArray,
+    ): CaptureOutputResult<Unit> {
+        return onStorage {
             val descriptor = contentResolver.openAssetFileDescriptor(uri, "w")
                 ?: throw IOException("unable to open $uri")
 
@@ -103,21 +121,23 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun publish(uri: Uri) {
-        if (uri.host != MediaStore.AUTHORITY) return
+    override suspend fun publish(uri: Uri): CaptureOutputResult<Unit> {
+        if (uri.host != MediaStore.AUTHORITY) {
+            return CaptureOutputResult.Success(Unit)
+        }
 
-        onStorage {
+        return onStorage {
             removePendingFlagFromUri(contentResolver, uri)
         }
     }
 
     override suspend fun delete(uri: Uri) {
-        val deletedRows = onStorage {
-            contentResolver.delete(uri, null, null)
-        }
+        onStorage {
+            val deletedRows = contentResolver.delete(uri, null, null)
 
-        if (deletedRows != 1) {
-            throw IOException("unexpected number of deleted rows: $deletedRows")
+            if (deletedRows != 1) {
+                throw IOException("unexpected number of deleted rows: $deletedRows")
+            }
         }
     }
 
@@ -137,7 +157,37 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun insertPendingImage(fileName: String, mimeType: String): Uri? {
+    private suspend fun create(
+        collection: Uri,
+        storageLocation: String,
+        fileName: String,
+        mimeType: String,
+    ): CaptureOutputResult<Uri> {
+        return onStorage {
+            val uri = when (storageLocation) {
+                CapturedItemRepository.MEDIA_STORE_LOCATION -> insertPending(
+                    collection = collection,
+                    fileName = fileName,
+                    mimeType = mimeType,
+                )
+
+                else -> DocumentsContract.createDocument(
+                    contentResolver,
+                    getTreeDocumentUri(storageLocation.toUri()),
+                    mimeType,
+                    fileName,
+                )
+            }
+
+            uri ?: throw IOException("unable to create $fileName in $storageLocation")
+        }
+    }
+
+    private fun insertPending(
+        collection: Uri,
+        fileName: String,
+        mimeType: String,
+    ): Uri? {
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -148,14 +198,16 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
 
-        return contentResolver.insert(imageCollectionUri, values)
+        return contentResolver.insert(collection, values)
     }
 
-    private suspend fun <T> onStorage(block: () -> T): T {
+    private suspend fun <T> onStorage(block: () -> T): CaptureOutputResult<T> {
         return withContext(ioDispatcher) {
             val failure = try {
-                return@withContext block()
+                return@withContext CaptureOutputResult.Success(block())
             } catch (exception: ErrnoException) {
+                exception
+            } catch (exception: IOException) {
                 exception
             } catch (exception: SecurityException) {
                 exception
@@ -167,7 +219,9 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
                 exception
             }
 
-            throw IOException(failure)
+            Log.w(TAG, "the capture storage refused the request", failure)
+
+            CaptureOutputResult.Failure(failure)
         }
     }
 
@@ -179,5 +233,9 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
 
             else -> false
         }
+    }
+
+    private companion object {
+        private const val TAG = "CaptureOutputRepository"
     }
 }

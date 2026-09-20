@@ -5,22 +5,29 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
+import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import java.io.IOException
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
@@ -30,6 +37,9 @@ import org.robolectric.RobolectricTestRunner
 class CaptureOutputRepositoryTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
     private lateinit var mediaProvider: FakeMediaProvider
 
@@ -49,10 +59,10 @@ class CaptureOutputRepositoryTest {
     @Test
     fun createImage_inMediaStore_insertsAPendingItemUnderTheCameraFolder() {
         runTest {
-            val uri = createImage()
+            val created = createImage()
             val values = requireNotNull(mediaProvider.inserted)
 
-            assertEquals(INSERTED_URI, uri)
+            assertEquals(CaptureOutputResult.Success(INSERTED_URI), created)
             assertEquals(FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
             assertEquals(MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
             assertEquals(
@@ -64,15 +74,51 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
-    fun createImage_whenMediaStoreRefusesTheInsert_throws() {
+    fun createImage_whenMediaStoreRefusesTheInsert_reportsTheFailure() {
         runTest {
             mediaProvider.insertResult = null
 
-            val failure = runCatching {
-                createImage()
-            }.exceptionOrNull()
+            assertTrue(createImage() is CaptureOutputResult.Failure)
+        }
+    }
 
-            assertTrue(failure is IOException)
+    @Test
+    fun createVideo_inMediaStore_insertsIntoTheVideoCollection() {
+        runTest {
+            val created = repository.createVideo(
+                storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
+                fileName = VIDEO_FILE_NAME,
+                mimeType = VIDEO_MIME_TYPE,
+            )
+
+            val values = requireNotNull(mediaProvider.inserted)
+            assertEquals(CaptureOutputResult.Success(INSERTED_URI), created)
+            assertEquals(VIDEO_FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
+            assertEquals(VIDEO_MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
+            assertEquals(1, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
+        }
+    }
+
+    @Test
+    fun openForWriting_handsOutADescriptorThatWritesToTheItem() {
+        runTest {
+            val file = temporaryFolder.newFile()
+            mediaProvider.file = file
+
+            val descriptor = requireNotNull(
+                repository.openForWriting(INSERTED_URI).valueOrNull(),
+            )
+            FileOutputStream(descriptor.fileDescriptor).use { it.write(JPEG_BYTES) }
+            descriptor.close()
+
+            assertArrayEquals(JPEG_BYTES, file.readBytes())
+        }
+    }
+
+    @Test
+    fun openForWriting_whenTheProviderHasNoFile_reportsTheFailure() {
+        runTest {
+            assertTrue(repository.openForWriting(INSERTED_URI) is CaptureOutputResult.Failure)
         }
     }
 
@@ -96,19 +142,6 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
-    fun delete_whenNoRowIsDeleted_throws() {
-        runTest {
-            mediaProvider.deletedRows = 0
-
-            val failure = runCatching {
-                repository.delete(INSERTED_URI)
-            }.exceptionOrNull()
-
-            assertTrue(failure is IOException)
-        }
-    }
-
-    @Test
     fun deleteStalePendingVideos_asksMediaStoreForOurOwnOldPendingRecordings() {
         runTest {
             repository.deleteStalePendingVideos(olderThan = 1.hours)
@@ -122,19 +155,17 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
-    fun createImage_whenMediaStoreDeniesAccess_throwsAnIOException() {
+    fun createImage_whenMediaStoreDeniesAccess_reportsTheFailure() {
         runTest {
             mediaProvider.insertFailure = SecurityException()
 
-            val failure = runCatching {
-                createImage()
-            }.exceptionOrNull()
+            val created = createImage()
 
-            assertTrue(failure is IOException)
+            assertTrue((created as CaptureOutputResult.Failure).cause is SecurityException)
         }
     }
 
-    private suspend fun createImage(): Uri {
+    private suspend fun createImage(): CaptureOutputResult<Uri> {
         return repository.createImage(
             storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
             fileName = FILE_NAME,
@@ -152,9 +183,16 @@ class CaptureOutputRepositoryTest {
         var updated: ContentValues? = null
         var deletionSelection: String? = null
         var deletionArguments: List<String> = emptyList()
+        var file: File? = null
 
         override fun onCreate(): Boolean {
             return true
+        }
+
+        override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
+            val target = file ?: throw FileNotFoundException("no file for $uri")
+
+            return ParcelFileDescriptor.open(target, ParcelFileDescriptor.MODE_READ_WRITE)
         }
 
         override fun query(
@@ -204,8 +242,11 @@ class CaptureOutputRepositoryTest {
     private companion object {
         const val FILE_NAME = "IMG_20260724_153012_345.jpg"
         const val MIME_TYPE = "image/jpeg"
+        const val VIDEO_FILE_NAME = "VID_20260724_153012.mp4"
+        const val VIDEO_MIME_TYPE = "video/mp4"
         const val DOCUMENT_URI = "content://com.example.documents/document/1"
 
+        val JPEG_BYTES = byteArrayOf(1, 2, 3)
         val INSERTED_URI: Uri = Uri.parse("content://media/external_primary/images/media/1")
     }
 }

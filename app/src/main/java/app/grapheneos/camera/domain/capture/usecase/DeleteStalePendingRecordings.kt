@@ -1,8 +1,6 @@
 package app.grapheneos.camera.domain.capture.usecase
 
-import android.util.Log
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
-import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
 
@@ -21,16 +19,10 @@ internal class DeleteStalePendingRecordingsImpl @Inject constructor(
 ) : DeleteStalePendingRecordings {
 
     override suspend fun invoke() {
-        try {
-            captureOutputRepository.deleteStalePendingVideos(olderThan = STALE_RECORDING_AGE)
-        } catch (e: IOException) {
-            Log.w(TAG, "unable to delete the stale pending recordings", e)
-        }
+        captureOutputRepository.deleteStalePendingVideos(olderThan = STALE_RECORDING_AGE)
     }
 
     private companion object {
-        private const val TAG = "DeleteStalePendingRecordings"
-
         private val STALE_RECORDING_AGE = 1.hours
     }
 }
