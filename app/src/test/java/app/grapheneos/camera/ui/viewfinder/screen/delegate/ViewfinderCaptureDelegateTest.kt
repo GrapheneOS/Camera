@@ -122,19 +122,23 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
-    fun selfTimer_countsDownOneSecondApart() = runTest {
-        val ticks = mutableListOf<Pair<Int, Long>>()
+    fun selfTimer_countsDownOneSecondApart() {
+        runTest {
+            val ticks = mutableListOf<Pair<Int, Long>>()
 
-        createDelegate().selfTimerCountdown(seconds = 3).collect { ticks += it to currentTime }
+            createDelegate().selfTimerCountdown(seconds = 3).collect { ticks += it to currentTime }
 
-        assertEquals(listOf(3 to 0L, 2 to 1_000L, 1 to 2_000L), ticks)
+            assertEquals(listOf(3 to 0L, 2 to 1_000L, 1 to 2_000L), ticks)
+        }
     }
 
     @Test
-    fun selfTimer_endsASecondAfterTheLastTick() = runTest {
-        createDelegate().selfTimerCountdown(seconds = 3).collect {}
+    fun selfTimer_endsASecondAfterTheLastTick() {
+        runTest {
+            createDelegate().selfTimerCountdown(seconds = 3).collect {}
 
-        assertEquals(3_000L, currentTime)
+            assertEquals(3_000L, currentTime)
+        }
     }
 
     @Test

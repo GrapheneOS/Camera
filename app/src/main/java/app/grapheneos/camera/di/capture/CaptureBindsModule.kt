@@ -4,6 +4,8 @@ import app.grapheneos.camera.domain.capture.CapturedImagePipeline
 import app.grapheneos.camera.domain.capture.CapturedImagePipelineImpl
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapperImpl
+import app.grapheneos.camera.domain.capture.usecase.DeleteStalePendingRecordings
+import app.grapheneos.camera.domain.capture.usecase.DeleteStalePendingRecordingsImpl
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImageImpl
 import dagger.Binds
@@ -34,4 +36,10 @@ internal abstract class CaptureBindsModule {
     abstract fun bindCapturedImagePipeline(
         impl: CapturedImagePipelineImpl,
     ): CapturedImagePipeline
+
+    @Binds
+    @Reusable
+    abstract fun bindDeleteStalePendingRecordings(
+        impl: DeleteStalePendingRecordingsImpl,
+    ): DeleteStalePendingRecordings
 }
