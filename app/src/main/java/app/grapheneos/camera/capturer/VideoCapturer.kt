@@ -22,11 +22,12 @@ import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
-import androidx.camera.video.VideoRecordEvent
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
+import app.grapheneos.camera.data.camera.model.RecordingEvent
+import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -260,11 +261,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
             cancelDeferredStart = null
 
             recording = pendingRecording.start(ctx.mainExecutor) { event ->
-                onRecordingEvent(
-                    event = event,
-                    recordingCtx = recordingCtx,
-                    dateString = dateString,
-                )
+                ctx.recordingEventMapper.map(event)?.let { recordingEvent ->
+                    onRecordingEvent(
+                        event = recordingEvent,
+                        recordingCtx = recordingCtx,
+                        dateString = dateString,
+                    )
+                }
             }
 
             // The Recording didn't exist yet when the mute/pause setters ran.
@@ -284,20 +287,18 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun onRecordingEvent(
-        event: VideoRecordEvent,
+        event: RecordingEvent,
         recordingCtx: RecordingContext,
         dateString: String,
     ) {
         when (event) {
-            is VideoRecordEvent.Start -> onRecordingStart()
+            is RecordingEvent.Started -> onRecordingStart()
 
-            is VideoRecordEvent.Status -> {
-                updateTimerTime(event.recordingStats.recordedDurationNanos)
-            }
+            is RecordingEvent.Progressed -> updateTimerTime(event.recordedDurationNanos)
 
-            is VideoRecordEvent.Finalize -> {
+            is RecordingEvent.Finalized -> {
                 onRecordingFinalized(
-                    event = event,
+                    outcome = event.outcome,
                     recordingCtx = recordingCtx,
                     dateString = dateString,
                 )
@@ -306,7 +307,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun onRecordingFinalized(
-        event: VideoRecordEvent.Finalize,
+        outcome: RecordingOutcome,
         recordingCtx: RecordingContext,
         dateString: String,
     ) {
@@ -314,7 +315,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.tunePlayer.playVRStopSound()
 
-        if (event.hasError() && !keepsWhatItWrote(event, recordingCtx)) {
+        if (!keepsWhatItWrote(outcome, recordingCtx)) {
             return
         }
 
@@ -322,39 +323,41 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun keepsWhatItWrote(
-        event: VideoRecordEvent.Finalize,
+        outcome: RecordingOutcome,
         recordingCtx: RecordingContext,
     ): Boolean {
         val ctx = mActivity
 
-        return when (event.error) {
-            VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
+        return when (outcome) {
+            is RecordingOutcome.Saved -> true
+
+            is RecordingOutcome.NothingPlayableWritten -> {
                 discardUnusedOutput(recordingCtx)
                 ctx.showMessage(R.string.recording_too_short_to_be_saved)
                 false
             }
 
-            VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
-            VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
-            VideoRecordEvent.Finalize.ERROR_UNKNOWN,
-            -> {
+            is RecordingOutcome.Failed -> {
                 discardUnusedOutput(recordingCtx)
-                ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                ctx.showMessage(
+                    ctx.getString(R.string.unable_to_save_video_verbose, outcome.errorCode),
+                )
                 false
             }
 
-            else -> {
-                ctx.showMessage(ctx.getString(R.string.error_during_recording, event.error))
+            is RecordingOutcome.Interrupted -> {
+                ctx.showMessage(
+                    ctx.getString(R.string.error_during_recording, outcome.errorCode),
+                )
 
                 // The errors left unnamed here (the camera going away, storage running out)
                 // finalize whatever was written before they hit, which is worth keeping — but
                 // only if anything was.
-                val wroteSomething = event.recordingStats.numBytesRecorded != 0L
-                if (!wroteSomething) {
+                if (!outcome.hasContent) {
                     discardUnusedOutput(recordingCtx)
                 }
 
-                wroteSomething
+                outcome.hasContent
             }
         }
     }
