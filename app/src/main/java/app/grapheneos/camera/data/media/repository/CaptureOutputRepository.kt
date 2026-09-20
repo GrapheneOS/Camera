@@ -133,10 +133,22 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
 
     override suspend fun delete(uri: Uri) {
         onStorage {
-            val deletedRows = contentResolver.delete(uri, null, null)
+            when (uri.host) {
+                MediaStore.AUTHORITY -> {
+                    val deletedRows = contentResolver.delete(uri, null, null)
 
-            if (deletedRows != 1) {
-                throw IOException("unexpected number of deleted rows: $deletedRows")
+                    if (deletedRows != 1) {
+                        throw IOException("unexpected number of deleted rows: $deletedRows")
+                    }
+                }
+
+                else -> {
+                    val isDeleted = DocumentsContract.deleteDocument(contentResolver, uri)
+
+                    if (!isDeleted) {
+                        throw IOException("unable to delete the document $uri")
+                    }
+                }
             }
         }
     }

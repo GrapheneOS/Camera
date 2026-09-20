@@ -15,7 +15,6 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
-import android.provider.DocumentsContract
 import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -28,6 +27,7 @@ import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
+import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
@@ -36,7 +36,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.util.formatVideoDuration
-import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -363,15 +362,23 @@ class VideoCapturer(private val mActivity: MainActivity) {
     @Suppress("TooGenericExceptionCaught")
     private fun saveRecording(recordingCtx: RecordingContext, dateString: String) {
         val ctx = mActivity
-        val uri = recordingCtx.uri
 
-        if (recordingCtx.isPendingMediaStoreUri) {
-            try {
-                removePendingFlagFromUri(ctx.contentResolver, uri)
-            } catch (e: Exception) {
-                ctx.showMessage(R.string.unable_to_save_video)
+        ctx.applicationScope.launch(ctx.mainDispatcher) {
+            if (recordingCtx.isPendingMediaStoreUri) {
+                val published = ctx.captureOutputRepository.publish(recordingCtx.uri)
+
+                if (published is CaptureOutputResult.Failure) {
+                    ctx.showMessage(R.string.unable_to_save_video)
+                }
             }
+
+            addRecordingToGallery(recordingCtx, dateString)
         }
+    }
+
+    private fun addRecordingToGallery(recordingCtx: RecordingContext, dateString: String) {
+        val ctx = mActivity
+        val uri = recordingCtx.uri
 
         if (recordingCtx.shouldAddToGallery) {
             val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
@@ -485,14 +492,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        try {
-            if (recordingCtx.isPendingMediaStoreUri) {
-                mActivity.contentResolver.delete(recordingCtx.uri, null, null)
-            } else {
-                DocumentsContract.deleteDocument(mActivity.contentResolver, recordingCtx.uri)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        val ctx = mActivity
+
+        ctx.applicationScope.launch(ctx.mainDispatcher) {
+            ctx.captureOutputRepository.delete(recordingCtx.uri)
         }
     }
 
