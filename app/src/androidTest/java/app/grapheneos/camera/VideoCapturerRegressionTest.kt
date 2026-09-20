@@ -20,7 +20,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import app.grapheneos.camera.capturer.deleteStalePendingRecordings
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -41,6 +41,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.math.abs
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
 
 @RunWith(AndroidJUnit4::class)
 class VideoCapturerRegressionTest {
@@ -249,25 +254,29 @@ class VideoCapturerRegressionTest {
      */
     @Test
     fun stalePendingRecordings_areReaped() {
-        val uri = insertPendingRecording()
-        try {
-            // A cutoff in the future stands in for an entry old enough to be an orphan
-            deleteStalePendingRecordings(targetContext, maxAge = -2000L)
-            assertFalse(pendingRecordingExists(uri))
-        } finally {
-            deletePendingRecording(uri)
+        runTest {
+            val uri = insertPendingRecording()
+            try {
+                // A cutoff in the future stands in for an entry old enough to be an orphan
+                deleteStalePendingVideos(olderThan = (-2).seconds)
+                assertFalse(pendingRecordingExists(uri))
+            } finally {
+                deletePendingRecording(uri)
+            }
         }
     }
 
     /** An in-flight recording is pending too, and reaping one would throw away the capture. */
     @Test
     fun freshPendingRecordings_surviveTheReaper() {
-        val uri = insertPendingRecording()
-        try {
-            deleteStalePendingRecordings(targetContext)
-            assertTrue(pendingRecordingExists(uri))
-        } finally {
-            deletePendingRecording(uri)
+        runTest {
+            val uri = insertPendingRecording()
+            try {
+                deleteStalePendingVideos(olderThan = 1.hours)
+                assertTrue(pendingRecordingExists(uri))
+            } finally {
+                deletePendingRecording(uri)
+            }
         }
     }
 
@@ -451,6 +460,15 @@ class VideoCapturerRegressionTest {
 
     private val targetContext
         get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    private suspend fun deleteStalePendingVideos(olderThan: Duration) {
+        val repository = CaptureOutputRepositoryImpl(
+            contentResolver = targetContext.contentResolver,
+            ioDispatcher = Dispatchers.IO,
+        )
+
+        repository.deleteStalePendingVideos(olderThan = olderThan)
+    }
 
     private fun insertPendingRecording(): Uri {
         val values = ContentValues().apply {

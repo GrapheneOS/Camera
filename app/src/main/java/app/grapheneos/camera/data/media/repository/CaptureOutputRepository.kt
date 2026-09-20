@@ -8,12 +8,15 @@ import android.provider.MediaStore
 import android.system.ErrnoException
 import android.system.Os
 import androidx.core.net.toUri
+import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.store.imageCollectionUri
+import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
@@ -37,6 +40,9 @@ interface CaptureOutputRepository {
 
     @Throws(IOException::class)
     suspend fun delete(uri: Uri)
+
+    @Throws(IOException::class)
+    suspend fun deleteStalePendingVideos(olderThan: Duration)
 
     companion object {
         const val DEFAULT_MEDIA_STORE_CAPTURE_PATH = "DCIM/Camera"
@@ -112,6 +118,22 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
 
         if (deletedRows != 1) {
             throw IOException("unexpected number of deleted rows: $deletedRows")
+        }
+    }
+
+    override suspend fun deleteStalePendingVideos(olderThan: Duration) {
+        val selection = "${MediaStore.MediaColumns.IS_PENDING} = 1" +
+            " AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?" +
+            " AND ${MediaStore.MediaColumns.DATE_ADDED} < ?"
+        val cutoffSeconds = (System.currentTimeMillis() - olderThan.inWholeMilliseconds) / 1000L
+        val arguments = arrayOf("$VIDEO_NAME_PREFIX%", cutoffSeconds.toString())
+
+        onStorage {
+            // Pending rows are filtered out of every operation unless they are explicitly asked for.
+            @Suppress("DEPRECATION")
+            val collection = MediaStore.setIncludePending(videoCollectionUri)
+
+            contentResolver.delete(collection, selection, arguments)
         }
     }
 

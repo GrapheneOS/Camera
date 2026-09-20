@@ -7,10 +7,12 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
+import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.IOException
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -45,66 +47,91 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
-    fun createImage_inMediaStore_insertsAPendingItemUnderTheCameraFolder() = runTest {
-        val uri = createImage()
-        val values = requireNotNull(mediaProvider.inserted)
+    fun createImage_inMediaStore_insertsAPendingItemUnderTheCameraFolder() {
+        runTest {
+            val uri = createImage()
+            val values = requireNotNull(mediaProvider.inserted)
 
-        assertEquals(INSERTED_URI, uri)
-        assertEquals(FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
-        assertEquals(MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
-        assertEquals(
-            CaptureOutputRepository.DEFAULT_MEDIA_STORE_CAPTURE_PATH,
-            values.getAsString(MediaStore.MediaColumns.RELATIVE_PATH),
-        )
-        assertEquals(1, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
+            assertEquals(INSERTED_URI, uri)
+            assertEquals(FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
+            assertEquals(MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
+            assertEquals(
+                CaptureOutputRepository.DEFAULT_MEDIA_STORE_CAPTURE_PATH,
+                values.getAsString(MediaStore.MediaColumns.RELATIVE_PATH),
+            )
+            assertEquals(1, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
+        }
     }
 
     @Test
-    fun createImage_whenMediaStoreRefusesTheInsert_throws() = runTest {
-        mediaProvider.insertResult = null
+    fun createImage_whenMediaStoreRefusesTheInsert_throws() {
+        runTest {
+            mediaProvider.insertResult = null
 
-        val failure = runCatching {
-            createImage()
-        }.exceptionOrNull()
+            val failure = runCatching {
+                createImage()
+            }.exceptionOrNull()
 
-        assertTrue(failure is IOException)
+            assertTrue(failure is IOException)
+        }
     }
 
     @Test
-    fun publish_mediaStoreItem_clearsThePendingFlag() = runTest {
-        repository.publish(INSERTED_URI)
+    fun publish_mediaStoreItem_clearsThePendingFlag() {
+        runTest {
+            repository.publish(INSERTED_URI)
 
-        val values = requireNotNull(mediaProvider.updated)
-        assertEquals(0, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
+            val values = requireNotNull(mediaProvider.updated)
+            assertEquals(0, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
+        }
     }
 
     @Test
-    fun publish_documentItem_leavesMediaStoreUntouched() = runTest {
-        repository.publish(Uri.parse(DOCUMENT_URI))
+    fun publish_documentItem_leavesMediaStoreUntouched() {
+        runTest {
+            repository.publish(Uri.parse(DOCUMENT_URI))
 
-        assertNull(mediaProvider.updated)
+            assertNull(mediaProvider.updated)
+        }
     }
 
     @Test
-    fun delete_whenNoRowIsDeleted_throws() = runTest {
-        mediaProvider.deletedRows = 0
+    fun delete_whenNoRowIsDeleted_throws() {
+        runTest {
+            mediaProvider.deletedRows = 0
 
-        val failure = runCatching {
-            repository.delete(INSERTED_URI)
-        }.exceptionOrNull()
+            val failure = runCatching {
+                repository.delete(INSERTED_URI)
+            }.exceptionOrNull()
 
-        assertTrue(failure is IOException)
+            assertTrue(failure is IOException)
+        }
     }
 
     @Test
-    fun createImage_whenMediaStoreDeniesAccess_throwsAnIOException() = runTest {
-        mediaProvider.insertFailure = SecurityException()
+    fun deleteStalePendingVideos_asksMediaStoreForOurOwnOldPendingRecordings() {
+        runTest {
+            repository.deleteStalePendingVideos(olderThan = 1.hours)
 
-        val failure = runCatching {
-            createImage()
-        }.exceptionOrNull()
+            val selection = requireNotNull(mediaProvider.deletionSelection)
+            val arguments = mediaProvider.deletionArguments
+            assertTrue(selection.contains(MediaStore.MediaColumns.IS_PENDING))
+            assertEquals("$VIDEO_NAME_PREFIX%", arguments[0])
+            assertTrue(arguments[1].toLong() < System.currentTimeMillis() / 1000L)
+        }
+    }
 
-        assertTrue(failure is IOException)
+    @Test
+    fun createImage_whenMediaStoreDeniesAccess_throwsAnIOException() {
+        runTest {
+            mediaProvider.insertFailure = SecurityException()
+
+            val failure = runCatching {
+                createImage()
+            }.exceptionOrNull()
+
+            assertTrue(failure is IOException)
+        }
     }
 
     private suspend fun createImage(): Uri {
@@ -123,6 +150,8 @@ class CaptureOutputRepositoryTest {
 
         var inserted: ContentValues? = null
         var updated: ContentValues? = null
+        var deletionSelection: String? = null
+        var deletionArguments: List<String> = emptyList()
 
         override fun onCreate(): Boolean {
             return true
@@ -153,6 +182,11 @@ class CaptureOutputRepositoryTest {
             selection: String?,
             selectionArgs: Array<out String>?,
         ): Int {
+            selection?.let {
+                deletionSelection = it
+                deletionArguments = selectionArgs?.toList().orEmpty()
+            }
+
             return deletedRows
         }
 
