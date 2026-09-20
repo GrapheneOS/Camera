@@ -214,36 +214,8 @@
         <error line="3" column="69" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/VideoCapturer.kt">
-        <error line="49" column="21" source="standard:class-signature" />
-        <error line="49" column="56" source="standard:class-signature" />
-        <error line="127" column="22" source="standard:binary-expression-wrapping" />
-        <error line="127" column="56" source="standard:argument-list-wrapping" />
-        <error line="127" column="73" source="standard:argument-list-wrapping" />
-        <error line="127" column="90" source="standard:argument-list-wrapping" />
-        <error line="127" column="100" source="standard:argument-list-wrapping" />
-        <error line="127" column="100" source="standard:max-line-length" />
-        <error line="127" column="108" source="standard:argument-list-wrapping" />
-        <error line="142" column="48" source="standard:comma-spacing" />
-        <error line="147" column="37" source="standard:argument-list-wrapping" />
-        <error line="147" column="55" source="standard:argument-list-wrapping" />
-        <error line="147" column="60" source="standard:argument-list-wrapping" />
-        <error line="147" column="64" source="standard:argument-list-wrapping" />
-        <error line="147" column="84" source="standard:argument-list-wrapping" />
-        <error line="147" column="101" source="standard:max-line-length" />
-        <error line="147" column="106" source="standard:argument-list-wrapping" />
-        <error line="241" column="68" source="standard:trailing-comma-on-declaration-site" />
-        <error line="243" column="49" source="standard:argument-list-wrapping" />
-        <error line="243" column="63" source="standard:argument-list-wrapping" />
-        <error line="243" column="101" source="standard:max-line-length" />
-        <error line="243" column="102" source="standard:argument-list-wrapping" />
-        <error line="243" column="113" source="standard:argument-list-wrapping" />
-        <error line="243" column="114" source="standard:argument-list-wrapping" />
-        <error line="247" column="49" source="standard:argument-list-wrapping" />
-        <error line="247" column="63" source="standard:argument-list-wrapping" />
-        <error line="247" column="96" source="standard:argument-list-wrapping" />
-        <error line="247" column="101" source="standard:max-line-length" />
-        <error line="247" column="107" source="standard:argument-list-wrapping" />
-        <error line="247" column="108" source="standard:argument-list-wrapping" />
+        <error line="45" column="21" source="standard:class-signature" />
+        <error line="45" column="56" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ktx/SystemSettingsObserver.kt">
         <error line="16" column="37" source="standard:trailing-comma-on-declaration-site" />
@@ -453,9 +425,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="918" column="100" source="standard:max-line-length" />
-        <error line="1069" column="100" source="standard:max-line-length" />
-        <error line="1419" column="17" source="standard:chain-wrapping" />
+        <error line="922" column="100" source="standard:max-line-length" />
+        <error line="1073" column="100" source="standard:max-line-length" />
+        <error line="1423" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

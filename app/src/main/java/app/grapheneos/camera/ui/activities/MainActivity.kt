@@ -82,6 +82,7 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
@@ -159,6 +160,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var storeCapturedImage: StoreCapturedImage
+
+    @Inject
+    lateinit var captureOutputRepository: CaptureOutputRepository
 
     @Inject
     lateinit var exifMapper: CapturedImageExifMapper
