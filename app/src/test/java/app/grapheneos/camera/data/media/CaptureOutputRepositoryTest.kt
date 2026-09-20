@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
@@ -142,6 +143,30 @@ class CaptureOutputRepositoryTest {
     }
 
     @Test
+    fun delete_mediaStoreItem_removesTheRow() {
+        runTest {
+            repository.delete(INSERTED_URI)
+
+            assertEquals(listOf(INSERTED_URI), mediaProvider.deletedUris)
+        }
+    }
+
+    @Test
+    fun delete_documentItem_goesThroughTheDocumentsProvider() {
+        runTest {
+            val documents = Robolectric
+                .buildContentProvider(FakeMediaProvider::class.java)
+                .create(DOCUMENT_AUTHORITY)
+                .get()
+
+            repository.delete(Uri.parse(DOCUMENT_URI))
+
+            assertEquals(1, documents.calls)
+            assertTrue(mediaProvider.deletedUris.isEmpty())
+        }
+    }
+
+    @Test
     fun deleteStalePendingVideos_asksMediaStoreForOurOwnOldPendingRecordings() {
         runTest {
             repository.deleteStalePendingVideos(olderThan = 1.hours)
@@ -183,10 +208,18 @@ class CaptureOutputRepositoryTest {
         var updated: ContentValues? = null
         var deletionSelection: String? = null
         var deletionArguments: List<String> = emptyList()
+        val deletedUris = mutableListOf<Uri>()
+        var calls = 0
         var file: File? = null
 
         override fun onCreate(): Boolean {
             return true
+        }
+
+        override fun call(method: String, arg: String?, extras: Bundle?): Bundle {
+            calls++
+
+            return Bundle()
         }
 
         override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
@@ -220,9 +253,13 @@ class CaptureOutputRepositoryTest {
             selection: String?,
             selectionArgs: Array<out String>?,
         ): Int {
-            selection?.let {
-                deletionSelection = it
-                deletionArguments = selectionArgs?.toList().orEmpty()
+            when (selection) {
+                null -> deletedUris += uri
+
+                else -> {
+                    deletionSelection = selection
+                    deletionArguments = selectionArgs?.toList().orEmpty()
+                }
             }
 
             return deletedRows
@@ -240,11 +277,12 @@ class CaptureOutputRepositoryTest {
     }
 
     private companion object {
+        const val DOCUMENT_AUTHORITY = "com.example.documents"
         const val FILE_NAME = "IMG_20260724_153012_345.jpg"
         const val MIME_TYPE = "image/jpeg"
         const val VIDEO_FILE_NAME = "VID_20260724_153012.mp4"
         const val VIDEO_MIME_TYPE = "video/mp4"
-        const val DOCUMENT_URI = "content://com.example.documents/document/1"
+        const val DOCUMENT_URI = "content://$DOCUMENT_AUTHORITY/document/1"
 
         val JPEG_BYTES = byteArrayOf(1, 2, 3)
         val INSERTED_URI: Uri = Uri.parse("content://media/external_primary/images/media/1")
