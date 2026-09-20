@@ -4,6 +4,8 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapperImpl
+import app.grapheneos.camera.data.camera.mapper.RecordingEventMapper
+import app.grapheneos.camera.data.camera.mapper.RecordingEventMapperImpl
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
@@ -62,6 +64,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindCameraXStateMapper(
         impl: CameraXStateMapperImpl,
     ): CameraXStateMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindRecordingEventMapper(
+        impl: RecordingEventMapperImpl,
+    ): RecordingEventMapper
 
     @Binds
     @Reusable

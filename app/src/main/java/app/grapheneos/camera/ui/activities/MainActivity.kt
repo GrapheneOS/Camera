@@ -77,6 +77,7 @@ import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
+import app.grapheneos.camera.data.camera.mapper.RecordingEventMapper
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.JpegExtractor
@@ -169,6 +170,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var jpegExtractor: JpegExtractor
+
+    @Inject
+    lateinit var recordingEventMapper: RecordingEventMapper
 
     @Inject
     lateinit var capturedImagePipeline: CapturedImagePipeline
