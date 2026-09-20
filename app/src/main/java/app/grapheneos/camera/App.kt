@@ -4,13 +4,17 @@ import android.app.Application
 import android.os.CountDownTimer
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import app.grapheneos.camera.capturer.deleteStalePendingRecordings
+import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.preferences.SecureSessionPreferences
+import app.grapheneos.camera.domain.capture.usecase.DeleteStalePendingRecordings
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
-import kotlin.concurrent.thread
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class App : Application() {
@@ -31,6 +35,17 @@ class App : Application() {
 
     @Inject
     internal lateinit var secureSessionPreferences: SecureSessionPreferences
+
+    @Inject
+    internal lateinit var deleteStalePendingRecordings: DeleteStalePendingRecordings
+
+    @Inject
+    @ApplicationScope
+    internal lateinit var applicationScope: CoroutineScope
+
+    @Inject
+    @DefaultDispatcher
+    internal lateinit var defaultDispatcher: CoroutineDispatcher
 
     private val activityLifeCycleHelper by lazy {
         ActivityLifeCycleHelper(
@@ -55,8 +70,8 @@ class App : Application() {
         registerActivityLifecycleCallbacks(activityLifeCycleHelper)
         DynamicColors.applyToActivitiesIfAvailable(this)
 
-        thread {
-            deleteStalePendingRecordings(this)
+        applicationScope.launch(defaultDispatcher) {
+            deleteStalePendingRecordings()
         }
     }
 

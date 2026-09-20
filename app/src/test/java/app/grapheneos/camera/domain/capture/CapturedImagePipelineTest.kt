@@ -1,5 +1,6 @@
 package app.grapheneos.camera.domain.capture
 
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -16,79 +17,87 @@ class CapturedImagePipelineTest {
     private val finished = mutableListOf<String>()
 
     @Test
-    fun enqueueWrite_finishesWritesInTheOrderTheyWereQueued() = runTest {
-        val pipeline = pipeline(backgroundScope)
+    fun enqueueWrite_finishesWritesInTheOrderTheyWereQueued() {
+        runTest {
+            val pipeline = pipeline(backgroundScope)
 
-        pipeline.enqueueWrite {
-            delay(SLOW_WRITE_MS)
-            finished += "first write"
-        }
-        pipeline.enqueueWrite {
-            delay(FAST_WRITE_MS)
-            finished += "second write"
-        }
-        advanceUntilIdle()
-
-        assertEquals(listOf("first write", "second write"), finished)
-    }
-
-    @Test
-    fun enqueueThumbnail_doesNotHoldBackTheNextWrite() = runTest {
-        val pipeline = pipeline(backgroundScope)
-
-        pipeline.enqueueWrite {
-            finished += "first write"
-            pipeline.enqueueThumbnail {
-                delay(SLOW_WRITE_MS)
-                finished += "first thumbnail"
-            }
-        }
-        pipeline.enqueueWrite {
-            delay(FAST_WRITE_MS)
-            finished += "second write"
-        }
-        advanceUntilIdle()
-
-        assertEquals(listOf("first write", "second write", "first thumbnail"), finished)
-    }
-
-    @Test
-    fun enqueueExtraction_doesNotWaitForTheWriteBeforeIt() = runTest {
-        val pipeline = pipeline(backgroundScope)
-
-        pipeline.enqueueExtraction {
-            finished += "first extraction"
             pipeline.enqueueWrite {
                 delay(SLOW_WRITE_MS)
                 finished += "first write"
             }
-        }
-        pipeline.enqueueExtraction {
-            delay(FAST_WRITE_MS)
-            finished += "second extraction"
-        }
-        advanceUntilIdle()
+            pipeline.enqueueWrite {
+                delay(FAST_WRITE_MS)
+                finished += "second write"
+            }
+            advanceUntilIdle()
 
-        assertEquals(
-            listOf("first extraction", "second extraction", "first write"),
-            finished,
-        )
+            assertEquals(listOf("first write", "second write"), finished)
+        }
     }
 
     @Test
-    fun enqueueThumbnail_finishesThumbnailsInTheOrderTheyWereQueued() = runTest {
-        val pipeline = pipeline(backgroundScope)
+    fun enqueueThumbnail_doesNotHoldBackTheNextWrite() {
+        runTest {
+            val pipeline = pipeline(backgroundScope)
 
-        pipeline.enqueueThumbnail {
-            delay(SLOW_WRITE_MS)
-            finished += "first thumbnail"
-        }
-        pipeline.enqueueThumbnail {
-            finished += "second thumbnail"
-        }
-        advanceUntilIdle()
+            pipeline.enqueueWrite {
+                finished += "first write"
+                pipeline.enqueueThumbnail {
+                    delay(SLOW_WRITE_MS)
+                    finished += "first thumbnail"
+                }
+            }
+            pipeline.enqueueWrite {
+                delay(FAST_WRITE_MS)
+                finished += "second write"
+            }
+            advanceUntilIdle()
 
-        assertEquals(listOf("first thumbnail", "second thumbnail"), finished)
+            assertEquals(listOf("first write", "second write", "first thumbnail"), finished)
+        }
+    }
+
+    @Test
+    fun enqueueExtraction_doesNotWaitForTheWriteBeforeIt() {
+        runTest {
+            val pipeline = pipeline(backgroundScope)
+
+            pipeline.enqueueExtraction {
+                finished += "first extraction"
+                pipeline.enqueueWrite {
+                    delay(SLOW_WRITE_MS)
+                    finished += "first write"
+                }
+            }
+            pipeline.enqueueExtraction {
+                delay(FAST_WRITE_MS)
+                finished += "second extraction"
+            }
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("first extraction", "second extraction", "first write"),
+                finished,
+            )
+        }
+    }
+
+    @Test
+    fun enqueueThumbnail_finishesThumbnailsInTheOrderTheyWereQueued() {
+        runTest {
+            val pipeline = pipeline(backgroundScope)
+
+            pipeline.enqueueThumbnail {
+                delay(SLOW_WRITE_MS)
+                finished += "first thumbnail"
+            }
+            pipeline.enqueueThumbnail {
+                finished += "second thumbnail"
+            }
+            advanceUntilIdle()
+
+            assertEquals(listOf("first thumbnail", "second thumbnail"), finished)
+        }
     }
 
     private fun TestScope.pipeline(scope: CoroutineScope): CapturedImagePipeline {
@@ -99,7 +108,7 @@ class CapturedImagePipelineTest {
     }
 
     private companion object {
-        const val SLOW_WRITE_MS = 100L
-        const val FAST_WRITE_MS = 10L
+        val SLOW_WRITE_MS = 100.milliseconds
+        val FAST_WRITE_MS = 10.milliseconds
     }
 }

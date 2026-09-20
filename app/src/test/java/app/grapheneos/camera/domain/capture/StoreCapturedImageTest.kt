@@ -31,65 +31,77 @@ class StoreCapturedImageTest {
     )
 
     @Test
-    fun invoke_whenEveryStepSucceeds_publishesTheWrittenImage() = runTest {
-        val result = store()
+    fun invoke_whenEveryStepSucceeds_publishesTheWrittenImage() {
+        runTest {
+            val result = store()
 
-        assertEquals(StoreCapturedImageResult.Stored(uri = uri), result)
-        coVerify { repository.write(uri, JPEG_BYTES) }
-        coVerify { repository.publish(uri) }
+            assertEquals(StoreCapturedImageResult.Stored(uri = uri), result)
+            coVerify { repository.write(uri, JPEG_BYTES) }
+            coVerify { repository.publish(uri) }
+        }
     }
 
     @Test
-    fun invoke_whenMediaStoreRefusesTheFile_failsAtFileCreation() = runTest {
-        coEvery { repository.createImage(any(), any(), any()) } throws IOException()
+    fun invoke_whenMediaStoreRefusesTheFile_failsAtFileCreation() {
+        runTest {
+            coEvery { repository.createImage(any(), any(), any()) } throws IOException()
 
-        val result = store(storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION)
+            val result = store(storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION)
 
-        assertEquals(Stage.FILE_CREATION, (result as StoreCapturedImageResult.Failed).stage)
-        coVerify(exactly = 0) { repository.write(any(), any()) }
+            assertEquals(Stage.FILE_CREATION, (result as StoreCapturedImageResult.Failed).stage)
+            coVerify(exactly = 0) { repository.write(any(), any()) }
+        }
     }
 
     @Test
-    fun invoke_whenTheDocumentTreeRefusesTheFile_reportsTheStorageLocationMissing() = runTest {
-        coEvery { repository.createImage(any(), any(), any()) } throws IOException()
+    fun invoke_whenTheDocumentTreeRefusesTheFile_reportsTheStorageLocationMissing() {
+        runTest {
+            coEvery { repository.createImage(any(), any(), any()) } throws IOException()
 
-        val result = store(storageLocation = DOCUMENT_TREE)
+            val result = store(storageLocation = DOCUMENT_TREE)
 
-        assertTrue(result is StoreCapturedImageResult.StorageLocationNotFound)
+            assertTrue(result is StoreCapturedImageResult.StorageLocationNotFound)
+        }
     }
 
     @Test
-    fun invoke_whenWritingFails_deletesTheIncompleteImage() = runTest {
-        coEvery { repository.write(any(), any()) } throws IOException()
+    fun invoke_whenWritingFails_deletesTheIncompleteImage() {
+        runTest {
+            coEvery { repository.write(any(), any()) } throws IOException()
 
-        val result = store()
+            val result = store()
 
-        assertEquals(Stage.FILE_WRITE, (result as StoreCapturedImageResult.Failed).stage)
-        coVerify { repository.delete(uri) }
-        coVerify(exactly = 0) { repository.publish(any()) }
+            assertEquals(Stage.FILE_WRITE, (result as StoreCapturedImageResult.Failed).stage)
+            coVerify { repository.delete(uri) }
+            coVerify(exactly = 0) { repository.publish(any()) }
+        }
     }
 
     @Test
-    fun invoke_whenTheIncompleteImageCannotBeDeleted_stillFailsAtWriting() = runTest {
-        coEvery { repository.write(any(), any()) } throws IOException()
-        coEvery { repository.delete(any()) } throws IOException()
+    fun invoke_whenTheIncompleteImageCannotBeDeleted_stillFailsAtWriting() {
+        runTest {
+            coEvery { repository.write(any(), any()) } throws IOException()
+            coEvery { repository.delete(any()) } throws IOException()
 
-        val result = store()
+            val result = store()
 
-        assertEquals(Stage.FILE_WRITE, (result as StoreCapturedImageResult.Failed).stage)
+            assertEquals(Stage.FILE_WRITE, (result as StoreCapturedImageResult.Failed).stage)
+        }
     }
 
     @Test
-    fun invoke_whenPublishingFails_keepsTheWrittenImage() = runTest {
-        coEvery { repository.publish(any()) } throws IOException()
+    fun invoke_whenPublishingFails_keepsTheWrittenImage() {
+        runTest {
+            coEvery { repository.publish(any()) } throws IOException()
 
-        val result = store()
+            val result = store()
 
-        assertEquals(
-            Stage.FILE_WRITE_COMPLETION,
-            (result as StoreCapturedImageResult.Failed).stage,
-        )
-        coVerify(exactly = 0) { repository.delete(any()) }
+            assertEquals(
+                Stage.FILE_WRITE_COMPLETION,
+                (result as StoreCapturedImageResult.Failed).stage,
+            )
+            coVerify(exactly = 0) { repository.delete(any()) }
+        }
     }
 
     private suspend fun store(
