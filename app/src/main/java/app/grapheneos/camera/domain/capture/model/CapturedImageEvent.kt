@@ -7,7 +7,14 @@ sealed interface CapturedImageEvent {
 
     data object Captured : CapturedImageEvent
 
+    data object LocationUnavailable : CapturedImageEvent
+
     data object StorageLocationNotFound : CapturedImageEvent
+
+    data class CaptureFailed(
+        val errorCode: Int,
+        val cause: Throwable,
+    ) : CapturedImageEvent
 
     data class Saved(
         val item: CapturedItem,
