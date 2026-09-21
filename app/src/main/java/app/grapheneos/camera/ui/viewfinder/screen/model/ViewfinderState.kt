@@ -13,6 +13,7 @@ data class ViewfinderState(
     val mode: CameraMode,
     val requiresVideoModeOnly: Boolean,
     val isCaptureSession: Boolean = false,
+    val showsCameraModeTabs: Boolean = false,
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
     // Settled against the location permission; never read back from the stored preference.

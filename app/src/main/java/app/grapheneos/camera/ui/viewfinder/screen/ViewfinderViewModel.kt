@@ -81,6 +81,7 @@ class ViewfinderViewModel @Inject constructor(
             mode = modeDelegate.defaultMode,
             requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
             isCaptureSession = entryPoint.isCaptureSession,
+            showsCameraModeTabs = entryPoint.showsCameraModeTabs,
         ),
         render = uiStateMapper::map,
     )
@@ -205,6 +206,10 @@ class ViewfinderViewModel @Inject constructor(
             is RecordingAction.RecordingRequested -> captureDelegate.requestRecording()
             is RecordingAction.RecordingStarted -> captureDelegate.startRecording()
             is RecordingAction.RecordingStopped -> captureDelegate.stopRecording()
+
+            is RecordingAction.RecordingProgressed -> {
+                captureDelegate.setRecordedDuration(action.duration)
+            }
 
             is RecordingAction.RecordingPauseToggled -> {
                 captureDelegate.setRecordingPaused(action.paused)

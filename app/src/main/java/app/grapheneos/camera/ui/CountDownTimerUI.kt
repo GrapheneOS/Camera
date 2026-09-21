@@ -7,7 +7,6 @@ import android.view.Gravity
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatTextView
-import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 
@@ -71,7 +70,6 @@ class CountDownTimerUI @JvmOverloads constructor(
     private fun beforeTimeStarts() {
         mActivity.settingsIcon.visibility = View.INVISIBLE
         mActivity.flipCameraCircle.visibility = View.INVISIBLE
-        mActivity.tabLayout.visibility = View.INVISIBLE
 
         isRunning = true
     }
@@ -79,10 +77,6 @@ class CountDownTimerUI @JvmOverloads constructor(
     fun onTimerEnded() {
         mActivity.settingsIcon.visibility = View.VISIBLE
         mActivity.flipCameraCircle.visibility = View.VISIBLE
-
-        if (mActivity !is CaptureActivity) {
-            mActivity.tabLayout.visibility = View.VISIBLE
-        }
 
         isRunning = false
     }

@@ -1,14 +1,9 @@
 package app.grapheneos.camera.capturer
 
 import android.Manifest
-import android.animation.ValueAnimator
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
-import android.graphics.drawable.StateListDrawable
 import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -16,7 +11,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.view.View
 import android.webkit.MimeTypeMap
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
@@ -33,10 +27,10 @@ import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.util.formatVideoDuration
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.launch
 
 class VideoCapturer(private val mActivity: MainActivity) {
@@ -67,10 +61,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
     private val handler = Handler(Looper.getMainLooper())
-
-    private fun updateTimerTime(timeInNanos: Long) {
-        mActivity.timerView.text = formatVideoDuration(timeInNanos / 1_000_000_000)
-    }
 
     private class RecordingContext(
         val uri: Uri,
@@ -279,7 +269,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
         when (event) {
             is RecordingEvent.Started -> onRecordingStart()
 
-            is RecordingEvent.Progressed -> updateTimerTime(event.recordedDurationNanos)
+            is RecordingEvent.Progressed -> {
+                viewfinder.onAction(
+                    RecordingAction.RecordingProgressed(
+                        duration = event.recordedDurationNanos.nanoseconds,
+                    ),
+                )
+            }
 
             is RecordingEvent.Finalized -> {
                 onRecordingFinalized(
@@ -384,50 +380,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
     }
 
-    private val dp16 = 16 * mActivity.resources.displayMetrics.density
-    private val dp8 = 8 * mActivity.resources.displayMetrics.density
-
-    // Skinned devices wrap the capture button shape in selectors and layer-lists
-    private fun findGradientDrawable(drawable: Drawable?): GradientDrawable? {
-        return when (drawable) {
-            is GradientDrawable -> drawable
-            is StateListDrawable -> findGradientDrawable(drawable.current)
-            is LayerDrawable -> {
-                (0 until drawable.numberOfLayers)
-                    .firstNotNullOfOrNull { findGradientDrawable(drawable.getDrawable(it)) }
-            }
-            else -> null
-        }
-    }
-
-    // If no shape can be dug out, skip the cosmetic animation rather than crash
-    private fun animateCaptureButtonCorners(from: Float, to: Float) {
-        val gd = findGradientDrawable(mActivity.captureButton.drawable) ?: return
-
-        val animator = ValueAnimator.ofFloat(from, to)
-        animator.setDuration(300)
-            .addUpdateListener { animation ->
-                gd.cornerRadius = animation.animatedValue as Float
-            }
-        animator.start()
-    }
-
     private fun onRecordingStart() {
-        animateCaptureButtonCorners(dp16, dp8)
-
         reportRecordingState(RecordingAction.RecordingStarted)
-
-        mActivity.tabLayout.visibility = View.INVISIBLE
-        mActivity.timerView.setText(R.string.start_value_timer)
     }
 
     private fun afterRecordingStops() {
-        animateCaptureButtonCorners(dp8, dp16)
-
-        if (mActivity !is VideoCaptureActivity) {
-            mActivity.tabLayout.visibility = View.VISIBLE
-        }
-
         reportRecordingState(RecordingAction.RecordingStopped)
 
         mActivity.forceUpdateOrientationSensor()

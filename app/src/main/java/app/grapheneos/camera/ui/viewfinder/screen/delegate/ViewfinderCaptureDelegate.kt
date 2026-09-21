@@ -10,6 +10,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,7 @@ interface ViewfinderCaptureDelegate {
 
     fun requestRecording()
     fun startRecording()
+    fun setRecordedDuration(duration: Duration)
     fun setRecordingPaused(paused: Boolean)
     fun setRecordingMuted(muted: Boolean)
     fun stopRecording()
@@ -159,6 +161,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         updateCapture {
             it.copy(
                 recordingPhase = RecordingPhase.STARTING,
+                recordedDuration = Duration.ZERO,
                 isRecordingPaused = false,
                 isRecordingMuted = false,
             )
@@ -167,6 +170,10 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     override fun startRecording() {
         updateCapture { it.copy(recordingPhase = RecordingPhase.RECORDING) }
+    }
+
+    override fun setRecordedDuration(duration: Duration) {
+        updateCapture { it.copy(recordedDuration = duration) }
     }
 
     // Not tied to the recording phase: the user may have paused before the recording actually

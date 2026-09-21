@@ -17,6 +17,8 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.io.IOException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -183,6 +185,19 @@ class ViewfinderCaptureDelegateTest {
         delegate.onScreenDestroyed()
 
         assertEquals(ViewfinderCaptureState(), capture())
+    }
+
+    @Test
+    fun aNewRecording_startsFromZeroAfterTheLastOne() {
+        val delegate = createDelegate()
+
+        delegate.requestRecording()
+        delegate.startRecording()
+        delegate.setRecordedDuration(42.seconds)
+        delegate.stopRecording()
+        delegate.requestRecording()
+
+        assertEquals(Duration.ZERO, capture().recordedDuration)
     }
 
     @Test
