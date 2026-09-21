@@ -77,10 +77,10 @@ import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
-import app.grapheneos.camera.data.camera.mapper.RecordingEventMapper
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.JpegExtractor
+import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
@@ -172,9 +172,6 @@ open class MainActivity : AppCompatActivity() {
     lateinit var jpegExtractor: JpegExtractor
 
     @Inject
-    lateinit var recordingEventMapper: RecordingEventMapper
-
-    @Inject
     lateinit var capturedImagePipeline: CapturedImagePipeline
 
     @Inject
@@ -191,6 +188,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var session: CameraSession
+
+    @Inject
+    lateinit var recordingSession: VideoRecordingSession
 
     private val application: App
         get() = applicationContext as App

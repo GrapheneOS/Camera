@@ -214,8 +214,8 @@
         <error line="3" column="69" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/VideoCapturer.kt">
-        <error line="45" column="21" source="standard:class-signature" />
-        <error line="45" column="56" source="standard:class-signature" />
+        <error line="42" column="21" source="standard:class-signature" />
+        <error line="42" column="56" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ktx/SystemSettingsObserver.kt">
         <error line="16" column="37" source="standard:trailing-comma-on-declaration-site" />
