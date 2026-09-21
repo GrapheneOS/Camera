@@ -12,11 +12,11 @@ sealed interface ViewfinderScreenEffect {
 
     data object HideExposurePanel : ViewfinderScreenEffect
 
-    data object StartLocationUpdates : ViewfinderScreenEffect
-
-    data object StopLocationUpdates : ViewfinderScreenEffect
-
     data object ShowStorageLocationNotFound : ViewfinderScreenEffect
+
+    data class SetLocationUpdates(
+        val enabled: Boolean,
+    ) : ViewfinderScreenEffect
 
     data class ShowMessage(
         @StringRes val message: Int,
@@ -41,6 +41,20 @@ sealed interface ViewfinderScreenEffect {
     data class GoToModeTab(
         val mode: CameraMode,
     ) : ViewfinderScreenEffect
+
+    sealed interface PictureFailure : ViewfinderScreenEffect {
+
+        data class Capture(
+            val errorCode: Int,
+            val details: PictureFailureDetails,
+        ) : PictureFailure
+
+        data class Save(
+            val stage: String,
+            val details: PictureFailureDetails,
+            val alreadyReported: Boolean,
+        ) : PictureFailure
+    }
 
     sealed interface SelfTimer : ViewfinderScreenEffect {
 

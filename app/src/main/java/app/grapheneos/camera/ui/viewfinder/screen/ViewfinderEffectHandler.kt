@@ -1,5 +1,10 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -11,6 +16,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
@@ -18,6 +24,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 
 internal class ViewfinderEffectHandler(
     private val activity: MainActivity,
+    private val clipboardManager: ClipboardManager,
+    private val notificationManager: NotificationManager,
 ) : ViewfinderChrome {
 
     private var renderedCaptureButtonIcon: Int? = null
@@ -40,10 +48,78 @@ internal class ViewfinderEffectHandler(
             is Effect.HideZoomPanel -> hideZoomPanel()
             is Effect.HideExposurePanel -> hideExposurePanel()
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
-            is Effect.StartLocationUpdates -> startLocationUpdates()
-            is Effect.StopLocationUpdates -> stopLocationUpdates()
+            is Effect.SetLocationUpdates -> setLocationUpdates(effect.enabled)
             is Effect.SelfTimer -> handleSelfTimer(effect)
+            is Effect.PictureFailure -> handlePictureFailure(effect)
         }
+    }
+
+    private fun handlePictureFailure(effect: Effect.PictureFailure) {
+        when (effect) {
+            is Effect.PictureFailure.Capture -> showCaptureFailure(effect)
+            is Effect.PictureFailure.Save -> showSaveFailure(effect)
+        }
+    }
+
+    private fun showCaptureFailure(effect: Effect.PictureFailure.Capture) {
+        if (!activity.isStarted) return
+
+        showPictureFailureDialog(
+            activity = activity,
+            message = activity.getString(
+                R.string.unable_to_capture_image_verbose,
+                effect.errorCode,
+            ),
+            details = effect.details,
+            onCopyDetails = { text ->
+                copyFailureDetails(effect.details.name, text)
+            },
+        )
+    }
+
+    private fun showSaveFailure(effect: Effect.PictureFailure.Save) {
+        if (!activity.isStarted) {
+            notifySaveFailure()
+            return
+        }
+
+        when {
+            effect.alreadyReported -> activity.showMessage(R.string.unable_to_save_image)
+
+            else -> showPictureFailureDialog(
+                activity = activity,
+                message = activity.getString(
+                    R.string.unable_to_save_image_verbose,
+                    effect.stage,
+                ),
+                details = effect.details,
+                onCopyDetails = { text ->
+                    copyFailureDetails(effect.details.name, text)
+                },
+            )
+        }
+    }
+
+    private fun copyFailureDetails(label: String, text: String) {
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text))
+        activity.showMessage(R.string.copied_text_to_clipboard)
+    }
+
+    private fun notifySaveFailure() {
+        val title = activity.getString(R.string.unable_to_save_image)
+        val channel = NotificationChannel(
+            SAVE_FAILURE_CHANNEL_ID,
+            title,
+            NotificationManager.IMPORTANCE_HIGH,
+        )
+
+        val notification = Notification.Builder(activity, SAVE_FAILURE_CHANNEL_ID).apply {
+            setSmallIcon(R.drawable.info)
+            setContentTitle(title)
+        }.build()
+
+        notificationManager.createNotificationChannel(channel)
+        notificationManager.notify(SAVE_FAILURE_NOTIFICATION_ID, notification)
     }
 
     private fun handleSelfTimer(effect: Effect.SelfTimer) {
@@ -188,12 +264,8 @@ internal class ViewfinderEffectHandler(
         activity.forceUpdateOrientationSensor()
     }
 
-    private fun startLocationUpdates() {
-        activity.onRequireLocationChanged(required = true)
-    }
-
-    private fun stopLocationUpdates() {
-        activity.onRequireLocationChanged(required = false)
+    private fun setLocationUpdates(enabled: Boolean) {
+        activity.onRequireLocationChanged(required = enabled)
     }
 
     private fun showStorageLocationNotFound() {
@@ -287,5 +359,7 @@ internal class ViewfinderEffectHandler(
         private const val CAPTURE_BUTTON_FADE_DURATION = 200L
         private const val CAPTURE_BUTTON_ENABLED_ALPHA = 1f
         private const val CAPTURE_BUTTON_DISABLED_ALPHA = 0.6f
+        private const val SAVE_FAILURE_CHANNEL_ID = "image_saver_error"
+        private const val SAVE_FAILURE_NOTIFICATION_ID = 1
     }
 }
