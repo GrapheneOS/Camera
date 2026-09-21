@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.core
 
+import android.app.NotificationManager
+import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.hardware.display.DisplayManager
@@ -14,6 +16,14 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 internal class SystemServicesProvidesModule {
+
+    @Provides
+    @Reusable
+    fun provideClipboardManager(
+        @ApplicationContext context: Context,
+    ): ClipboardManager {
+        return context.getSystemService(ClipboardManager::class.java)
+    }
 
     @Provides
     @Reusable
@@ -37,5 +47,13 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): LocationManager {
         return context.getSystemService(LocationManager::class.java)
+    }
+
+    @Provides
+    @Reusable
+    fun provideNotificationManager(
+        @ApplicationContext context: Context,
+    ): NotificationManager {
+        return context.getSystemService(NotificationManager::class.java)
     }
 }

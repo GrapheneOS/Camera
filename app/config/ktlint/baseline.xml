@@ -168,29 +168,10 @@
         <error line="10" column="105" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
-        <error line="28" column="19" source="standard:property-naming" />
-        <error line="30" column="21" source="standard:class-signature" />
-        <error line="30" column="48" source="standard:class-signature" />
-        <error line="39" column="35" source="standard:colon-spacing" />
-        <error line="131" column="43" source="standard:argument-list-wrapping" />
-        <error line="131" column="85" source="standard:argument-list-wrapping" />
-        <error line="131" column="101" source="standard:max-line-length" />
-        <error line="131" column="112" source="standard:argument-list-wrapping" />
-        <error line="154" column="26" source="standard:property-wrapping" />
-        <error line="154" column="47" source="standard:wrapping" />
-        <error line="154" column="47" source="standard:argument-list-wrapping" />
-        <error line="154" column="58" source="standard:argument-list-wrapping" />
-        <error line="154" column="78" source="standard:argument-list-wrapping" />
-        <error line="154" column="101" source="standard:max-line-length" />
-        <error line="154" column="107" source="standard:argument-list-wrapping" />
-        <error line="155" column="51" source="standard:wrapping" />
-        <error line="155" column="52" source="standard:argument-list-wrapping" />
-        <error line="172" column="43" source="standard:argument-list-wrapping" />
-        <error line="172" column="82" source="standard:argument-list-wrapping" />
-        <error line="172" column="101" source="standard:max-line-length" />
-        <error line="172" column="102" source="standard:argument-list-wrapping" />
-        <error line="186" column="1" source="standard:indent" />
-        <error line="187" column="1" source="standard:indent" />
+        <error line="21" column="19" source="standard:property-naming" />
+        <error line="23" column="21" source="standard:class-signature" />
+        <error line="23" column="48" source="standard:class-signature" />
+        <error line="32" column="35" source="standard:colon-spacing" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaver.kt">
         <error line="182" column="45" source="standard:curly-spacing" />
@@ -425,9 +406,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="926" column="100" source="standard:max-line-length" />
-        <error line="1077" column="100" source="standard:max-line-length" />
-        <error line="1427" column="17" source="standard:chain-wrapping" />
+        <error line="937" column="100" source="standard:max-line-length" />
+        <error line="1088" column="100" source="standard:max-line-length" />
+        <error line="1438" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

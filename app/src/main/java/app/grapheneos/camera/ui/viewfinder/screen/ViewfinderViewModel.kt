@@ -147,9 +147,9 @@ class ViewfinderViewModel @Inject constructor(
         when (action) {
             is CaptureAction.PictureCaptureStarted -> captureDelegate.startPictureCapture()
             is CaptureAction.PictureCaptured -> onPictureCaptured()
-            is CaptureAction.PictureCaptureFailed -> onPictureCaptureFailed()
+            is CaptureAction.PictureCaptureFailed -> onPictureCaptureFailed(action)
             is CaptureAction.PictureCaptureCancelled -> captureDelegate.finishPictureCapture()
-            is CaptureAction.PictureSaveFailed -> captureDelegate.finishPictureSave()
+            is CaptureAction.PictureSaveFailed -> onPictureSaveFailed(action)
             is CaptureAction.PictureThumbnailShown -> captureDelegate.finishPictureSave()
             is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
@@ -314,9 +314,28 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.FlashPreview(state().selfIlluminate()))
     }
 
-    private fun onPictureCaptureFailed() {
+    private fun onPictureCaptureFailed(action: CaptureAction.PictureCaptureFailed) {
         captureDelegate.finishPictureCapture()
         captureDelegate.finishPictureSave()
+
+        emitEffect(
+            Effect.PictureFailure.Capture(
+                errorCode = action.errorCode,
+                details = action.details,
+            ),
+        )
+    }
+
+    private fun onPictureSaveFailed(action: CaptureAction.PictureSaveFailed) {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(
+            Effect.PictureFailure.Save(
+                stage = action.stage,
+                details = action.details,
+                alreadyReported = action.alreadyReported,
+            ),
+        )
     }
 
     private fun startSelfTimer() {
@@ -388,12 +407,9 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun setRequireLocation(enabled: Boolean) {
-        when {
-            enabled -> emitEffect(Effect.StartLocationUpdates)
-            else -> emitEffect(Effect.StopLocationUpdates)
-        }
-
         settingsDelegate.setGeoTagging(enabled)
+
+        emitEffect(Effect.SetLocationUpdates(enabled = enabled))
     }
 
     private fun setSelfIllumination(enabled: Boolean) {

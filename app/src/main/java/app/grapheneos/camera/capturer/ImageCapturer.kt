@@ -1,14 +1,8 @@
 package app.grapheneos.camera.capturer
 
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.graphics.Bitmap
 import android.location.Location
-import android.os.Build
 import android.util.Log
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.takePicture
@@ -18,11 +12,10 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
-import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.util.printStackTraceToString
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
 private const val imageFileFormat = ".jpg"
@@ -125,12 +118,13 @@ class ImageCapturer(val mActivity: MainActivity) {
         Log.e(TAG, "onCaptureError", exception)
 
         currentImageSaver = null
-        viewfinder.onAction(CaptureAction.PictureCaptureFailed)
 
-        if (mActivity.isStarted) {
-            val msg = mActivity.getString(R.string.unable_to_capture_image_verbose, exception.imageCaptureError)
-            showErrorDialog(msg, exception)
-        }
+        viewfinder.onAction(
+            CaptureAction.PictureCaptureFailed(
+                errorCode = exception.imageCaptureError,
+                details = detailsOf(exception),
+            ),
+        )
     }
 
     fun onImageSaverSuccess(item: CapturedItem) {
@@ -147,58 +141,21 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     fun onImageSaverError(exception: ImageSaverException, skipErrorDialog: Boolean) {
         Log.e(TAG, "onImageSaverError", exception)
-        viewfinder.onAction(CaptureAction.PictureSaveFailed)
 
-        if (!mActivity.isStarted) {
-            val channelId = "image_saver_error"
-            val channel = NotificationChannel(channelId, mActivity.getString(R.string.unable_to_save_image),
-                NotificationManager.IMPORTANCE_HIGH)
-
-            val notif = Notification.Builder(mActivity, channelId).apply {
-                setSmallIcon(R.drawable.info)
-                setContentTitle(mActivity.getString(R.string.unable_to_save_image))
-            }.build()
-
-            mActivity.getSystemService(NotificationManager::class.java).let {
-                it.createNotificationChannel(channel)
-                it.notify(1, notif)
-            }
-            return
-        }
-
-        if (skipErrorDialog) {
-            mActivity.showMessage(R.string.unable_to_save_image)
-        } else {
-            val msg = mActivity.getString(R.string.unable_to_save_image_verbose, exception.place.name)
-            showErrorDialog(msg, exception)
-        }
+        viewfinder.onAction(
+            CaptureAction.PictureSaveFailed(
+                stage = exception.place.name,
+                details = detailsOf(exception),
+                alreadyReported = skipErrorDialog,
+            ),
+        )
     }
 
-    private fun showErrorDialog(message: String, exception: Throwable) {
-        val ctx = mActivity
-
-        MaterialAlertDialogBuilder(ctx).apply {
-            setMessage(message)
-            setPositiveButton(R.string.show_details) { _, _ ->
-                val pkgName = ctx.packageName
-                val pkgVersion = ctx.packageManager.getPackageInfo(pkgName, 0).longVersionCode
-                val text = "osVersion: ${Build.FINGERPRINT}" +
-                        "\npackage: $pkgName:$pkgVersion" +
-                        "\n\n${exception.printStackTraceToString()}"
-
-                MaterialAlertDialogBuilder(ctx).apply {
-                    setItems(text.lines().toTypedArray(), null)
-                    setNeutralButton(R.string.copy_to_clipboard) { _, _ ->
-                        val clipData = ClipData.newPlainText(exception.javaClass.name, text)
-                        val cm = mActivity.getSystemService(ClipboardManager::class.java)
-                        cm.setPrimaryClip(clipData)
-                        ctx.showMessage(R.string.copied_text_to_clipboard)
-                    }
-                    showIgnoringShortEdgeMode()
-                }
-            }
-            showIgnoringShortEdgeMode()
-        }
+    private fun detailsOf(exception: Throwable): PictureFailureDetails {
+        return PictureFailureDetails(
+            name = exception.javaClass.name,
+            stackTrace = exception.printStackTraceToString(),
+        )
     }
 
     fun onThumbnailGenerated(thumbnail: Bitmap) {
