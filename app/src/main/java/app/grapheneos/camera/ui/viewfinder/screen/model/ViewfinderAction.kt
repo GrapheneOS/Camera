@@ -50,11 +50,7 @@ sealed interface ViewfinderAction {
 
         data object PictureCaptured : CaptureAction
 
-        data object PictureCaptureFailed : CaptureAction
-
         data object PictureCaptureCancelled : CaptureAction
-
-        data object PictureSaveFailed : CaptureAction
 
         data object PictureThumbnailShown : CaptureAction
 
@@ -65,6 +61,17 @@ sealed interface ViewfinderAction {
         data object StorageLocationNotFound : CaptureAction
 
         data object CapturedPreviewShown : CaptureAction
+
+        data class PictureCaptureFailed(
+            val errorCode: Int,
+            val details: PictureFailureDetails,
+        ) : CaptureAction
+
+        data class PictureSaveFailed(
+            val stage: String,
+            val details: PictureFailureDetails,
+            val alreadyReported: Boolean,
+        ) : CaptureAction
     }
 
     sealed interface RecordingAction : ViewfinderAction {

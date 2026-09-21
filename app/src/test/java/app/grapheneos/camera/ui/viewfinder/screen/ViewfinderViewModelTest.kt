@@ -19,6 +19,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -422,7 +423,7 @@ class ViewfinderViewModelTest {
             viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
             verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
-            assertTrue(ViewfinderScreenEffect.StopLocationUpdates in effects)
+            assertTrue(ViewfinderScreenEffect.SetLocationUpdates(enabled = false) in effects)
         }
     }
 
@@ -494,7 +495,7 @@ class ViewfinderViewModelTest {
             viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
             verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
-            assertTrue(ViewfinderScreenEffect.StartLocationUpdates in effects)
+            assertTrue(ViewfinderScreenEffect.SetLocationUpdates(enabled = true) in effects)
         }
     }
 
@@ -587,7 +588,7 @@ class ViewfinderViewModelTest {
             viewModel.onAction(CaptureAction.PictureCaptureStarted)
             viewModel.onAction(CaptureAction.PictureCaptured)
             viewModel.onAction(CaptureAction.PictureCaptureStarted)
-            viewModel.onAction(CaptureAction.PictureCaptureFailed)
+            viewModel.onAction(captureFailed())
             viewModel.onAction(CaptureAction.PictureCaptureStarted)
             viewModel.onAction(CaptureAction.PictureCaptureCancelled)
 
@@ -622,10 +623,51 @@ class ViewfinderViewModelTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
             viewModel.onAction(CaptureAction.PictureThumbnailShown)
-            viewModel.onAction(CaptureAction.PictureSaveFailed)
-            viewModel.onAction(CaptureAction.PictureCaptureFailed)
+            viewModel.onAction(saveFailed())
+            viewModel.onAction(captureFailed())
 
             verify(exactly = 3) { captureDelegate.finishPictureSave() }
+        }
+    }
+
+    @Test
+    fun pictureCaptureFailed_reportsTheFailure() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(captureFailed())
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.PictureFailure.Capture(
+                        errorCode = CAPTURE_ERROR_CODE,
+                        details = FAILURE_DETAILS,
+                    ),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun pictureSaveFailed_reportsTheStageThatFailed() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(saveFailed(alreadyReported = true))
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.PictureFailure.Save(
+                        stage = SAVE_FAILURE_STAGE,
+                        details = FAILURE_DETAILS,
+                        alreadyReported = true,
+                    ),
+                ),
+                effects,
+            )
         }
     }
 
@@ -761,9 +803,31 @@ class ViewfinderViewModelTest {
         return effects
     }
 
+    private fun captureFailed(): CaptureAction.PictureCaptureFailed {
+        return CaptureAction.PictureCaptureFailed(
+            errorCode = CAPTURE_ERROR_CODE,
+            details = FAILURE_DETAILS,
+        )
+    }
+
+    private fun saveFailed(alreadyReported: Boolean = false): CaptureAction.PictureSaveFailed {
+        return CaptureAction.PictureSaveFailed(
+            stage = SAVE_FAILURE_STAGE,
+            details = FAILURE_DETAILS,
+            alreadyReported = alreadyReported,
+        )
+    }
+
     private companion object {
         const val FOCUS_TIMEOUT_SECONDS = 3L
         const val QR_TEXT = "https://grapheneos.org"
+        const val CAPTURE_ERROR_CODE = 2
+        const val SAVE_FAILURE_STAGE = "FILE_WRITE"
+
+        val FAILURE_DETAILS = PictureFailureDetails(
+            name = "java.io.IOException",
+            stackTrace = "java.io.IOException: no space left",
+        )
 
         val ENTRY_POINT = CameraEntryPoint(
             isSecureSession = false,

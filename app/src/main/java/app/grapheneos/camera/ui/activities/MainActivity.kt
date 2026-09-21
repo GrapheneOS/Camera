@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.activities
 import android.Manifest
 import android.animation.Animator
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -191,6 +192,12 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var recordingSession: VideoRecordingSession
+
+    @Inject
+    lateinit var clipboardManager: ClipboardManager
+
+    @Inject
+    lateinit var notificationManager: NotificationManager
 
     private val application: App
         get() = applicationContext as App
@@ -733,7 +740,11 @@ open class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
-        val sessionHandler = ViewfinderEffectHandler(this)
+        val sessionHandler = ViewfinderEffectHandler(
+            activity = this,
+            clipboardManager = clipboardManager,
+            notificationManager = notificationManager,
+        )
         viewfinder.onAction(
             LifecycleAction.ScreenCreated(
                 host = ViewfinderHost(
