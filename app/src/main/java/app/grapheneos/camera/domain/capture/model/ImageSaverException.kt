@@ -1,4 +1,4 @@
-package app.grapheneos.camera.capturer
+package app.grapheneos.camera.domain.capture.model
 
 class ImageSaverException(val place: Place, cause: Exception? = null) : Exception(cause) {
     enum class Place {

@@ -1,24 +1,23 @@
-package app.grapheneos.camera.capturer
+package app.grapheneos.camera.domain.capture
 
-import android.content.Context
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.annotation.Px
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
-import app.grapheneos.camera.capturer.ImageSaverException.Place
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
 import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.domain.capture.CapturedImagePipeline
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
+import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
+import app.grapheneos.camera.domain.capture.model.ImageSaverException
+import app.grapheneos.camera.domain.capture.model.ImageSaverException.Place
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.util.ImageResizer
@@ -27,7 +26,9 @@ import java.nio.ByteBuffer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /*
 Based on androidx.camera.core.ImageSaver
@@ -42,8 +43,8 @@ open a Uri during the thumbnail generation
 - ImageProxy isn't held open for the whole duration of storage IO, it's closed as soon as possible
  */
 class ImageSaver(
-    val imageCapturer: ImageCapturer,
-    val appContext: Context,
+    val scope: CoroutineScope,
+    val mainDispatcher: CoroutineDispatcher,
     val storeCapturedImage: StoreCapturedImage,
     val exifMapper: CapturedImageExifMapper,
     val jpegExtractor: JpegExtractor,
@@ -55,18 +56,13 @@ class ImageSaver(
     @Px val targetThumbnailWidth: Int,
     @Px val targetThumbnailHeight: Int,
     val pipeline: CapturedImagePipeline,
+    val needsThumbnail: () -> Boolean,
+    val onEvent: (CapturedImageEvent) -> Unit,
 ) {
     val captureTime: ZonedDateTime = ZonedDateTime.now()
-    val mainThreadExecutor: Executor = appContext.mainExecutor
-
-    private var isCancelled = false
-
-    fun cancelCaptureRequest() {
-        isCancelled = true
-    }
 
     fun onCaptureSuccess(image: ImageProxy) {
-        imageCapturer.onCaptureSuccess()
+        onEvent(CapturedImageEvent.Captured)
 
         pipeline.enqueueExtraction {
             extractJpeg(image)
@@ -92,7 +88,7 @@ class ImageSaver(
             return
         }
 
-        if (!imageCapturer.mActivity.isDestroyed) {
+        if (needsThumbnail()) {
             pipeline.enqueueThumbnail(this::generateThumbnail)
         }
     }
@@ -130,9 +126,7 @@ class ImageSaver(
         }
 
         val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
-        mainThreadExecutor.execute {
-            imageCapturer.onImageSaverSuccess(capturedItem)
-        }
+        emitOnMainThread(CapturedImageEvent.Saved(item = capturedItem))
     }
 
     @Throws(ImageSaverException::class)
@@ -141,7 +135,7 @@ class ImageSaver(
             is StoreCapturedImageResult.Stored -> result.uri
 
             is StoreCapturedImageResult.StorageLocationNotFound -> {
-                mainThreadExecutor.execute(imageCapturer::onStorageLocationNotFound)
+                emitOnMainThread(CapturedImageEvent.StorageLocationNotFound)
                 skipErrorDialog = true
                 throw ImageSaverException(Place.FILE_CREATION, result.cause)
             }
@@ -192,7 +186,7 @@ class ImageSaver(
             // reading from a ByteBuffer should never cause an IOException
             throw IllegalStateException("unable to generate a thumbnail", e)
         }
-        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
+        emitOnMainThread(CapturedImageEvent.ThumbnailReady(thumbnail = bitmap))
     }
 
     fun saveToMediaStore() = storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION
@@ -215,16 +209,21 @@ class ImageSaver(
         }
     }
 
-    fun onCaptureError(exception: ImageCaptureException) {
-        if (isCancelled) return
-
-        imageCapturer.onCaptureError(exception)
-    }
-
     private var skipErrorDialog = false
 
-    private fun handleError(e: ImageSaverException) {
-        mainThreadExecutor.execute { imageCapturer.onImageSaverError(e, skipErrorDialog) }
+    private fun handleError(exception: ImageSaverException) {
+        emitOnMainThread(
+            CapturedImageEvent.Failed(
+                cause = exception,
+                alreadyReported = skipErrorDialog,
+            ),
+        )
+    }
+
+    private fun emitOnMainThread(event: CapturedImageEvent) {
+        scope.launch(mainDispatcher) {
+            onEvent(event)
+        }
     }
 
     companion object {
