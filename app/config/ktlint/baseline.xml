@@ -168,10 +168,10 @@
         <error line="10" column="105" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
-        <error line="21" column="19" source="standard:property-naming" />
-        <error line="23" column="21" source="standard:class-signature" />
-        <error line="23" column="48" source="standard:class-signature" />
-        <error line="32" column="35" source="standard:colon-spacing" />
+        <error line="20" column="19" source="standard:property-naming" />
+        <error line="22" column="21" source="standard:class-signature" />
+        <error line="22" column="48" source="standard:class-signature" />
+        <error line="31" column="35" source="standard:colon-spacing" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageSaver.kt">
         <error line="182" column="45" source="standard:curly-spacing" />

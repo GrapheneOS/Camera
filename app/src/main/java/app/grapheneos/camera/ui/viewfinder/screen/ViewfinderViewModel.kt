@@ -150,7 +150,8 @@ class ViewfinderViewModel @Inject constructor(
             is CaptureAction.PictureCaptureFailed -> onPictureCaptureFailed(action)
             is CaptureAction.PictureCaptureCancelled -> captureDelegate.finishPictureCapture()
             is CaptureAction.PictureSaveFailed -> onPictureSaveFailed(action)
-            is CaptureAction.PictureThumbnailShown -> captureDelegate.finishPictureSave()
+            is CaptureAction.PictureSaved -> onPictureSaved(action)
+            is CaptureAction.PictureThumbnailReady -> onPictureThumbnailReady(action)
             is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
@@ -311,7 +312,18 @@ class ViewfinderViewModel @Inject constructor(
         captureDelegate.finishPictureCapture()
         captureDelegate.startPictureSave()
 
+        emitEffect(Effect.Picture.Captured)
         emitEffect(Effect.FlashPreview(state().selfIlluminate()))
+    }
+
+    private fun onPictureSaved(action: CaptureAction.PictureSaved) {
+        emitEffect(Effect.Picture.Saved(item = action.item))
+    }
+
+    private fun onPictureThumbnailReady(action: CaptureAction.PictureThumbnailReady) {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(Effect.Picture.ThumbnailReady(thumbnail = action.thumbnail))
     }
 
     private fun onPictureCaptureFailed(action: CaptureAction.PictureCaptureFailed) {
@@ -319,7 +331,7 @@ class ViewfinderViewModel @Inject constructor(
         captureDelegate.finishPictureSave()
 
         emitEffect(
-            Effect.PictureFailure.Capture(
+            Effect.Picture.CaptureFailed(
                 errorCode = action.errorCode,
                 details = action.details,
             ),
@@ -330,7 +342,7 @@ class ViewfinderViewModel @Inject constructor(
         captureDelegate.finishPictureSave()
 
         emitEffect(
-            Effect.PictureFailure.Save(
+            Effect.Picture.SaveFailed(
                 stage = action.stage,
                 details = action.details,
                 alreadyReported = action.alreadyReported,
