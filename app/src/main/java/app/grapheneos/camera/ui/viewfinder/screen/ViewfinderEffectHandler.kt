@@ -31,8 +31,6 @@ internal class ViewfinderEffectHandler(
     private val notificationManager: NotificationManager,
 ) : ViewfinderChrome {
 
-    private var renderedCaptureButtonIcon: Int? = null
-    private var renderedCaptureButtonEnabled = true
     private var renderedThumbnailLoaderVisible = false
     private var renderedModes: Set<CameraMode> = emptySet()
     private var renderedAspectRatio: AspectRatio? = null
@@ -168,9 +166,11 @@ internal class ViewfinderEffectHandler(
             description = state.thirdCircleDescription,
         )
         activity.timerView.visibility = visibleOrGone(state.recordingTimerVisible)
+        activity.timerView.text = state.recordingTimerText
+        activity.tabLayout.visibility = visibleOrInvisible(state.modeTabsVisible)
         activity.previewView.keepScreenOn = state.keepScreenOn
 
-        activity.captureButton.setBackgroundResource(state.captureButtonBackground)
+        activity.captureButton.render(state.captureButton)
         activity.setFlipCameraIcon(
             icon = state.flipCameraIcon,
             description = state.flipCameraDescription,
@@ -186,8 +186,6 @@ internal class ViewfinderEffectHandler(
         activity.zoomBar.render(state.zoom)
         activity.exposureBar.render(state.exposure)
 
-        renderCaptureButton(state)
-        renderCaptureButtonEnabled(state.captureButtonEnabled)
         renderThumbnailLoader(state.thumbnailLoaderVisible)
         renderModeTabs(state)
         renderBoundPreview(state)
@@ -228,37 +226,6 @@ internal class ViewfinderEffectHandler(
                 else -> activity.gCircleFrame.visibility = View.GONE
             }
         }
-    }
-
-    private fun renderCaptureButton(state: ViewfinderUiState) {
-        // The drawable must stay the same one the recording's corner-radius animation is holding
-        // on to: replacing it, even with the same resource, would cut that animation short.
-        if (state.captureButtonIcon != renderedCaptureButtonIcon) {
-            activity.captureButton.setImageResource(state.captureButtonIcon)
-            renderedCaptureButtonIcon = state.captureButtonIcon
-        }
-
-        activity.captureButton.contentDescription = activity.getString(
-            state.captureButtonDescription,
-        )
-    }
-
-    private fun renderCaptureButtonEnabled(enabled: Boolean) {
-        if (enabled == renderedCaptureButtonEnabled) return
-
-        renderedCaptureButtonEnabled = enabled
-        activity.captureButton.isEnabled = enabled
-
-        val targetAlpha = when {
-            enabled -> CAPTURE_BUTTON_ENABLED_ALPHA
-            else -> CAPTURE_BUTTON_DISABLED_ALPHA
-        }
-        val animation = AlphaAnimation(activity.captureButton.alpha, targetAlpha)
-        animation.duration = CAPTURE_BUTTON_FADE_DURATION
-        animation.interpolator = LinearInterpolator()
-        animation.fillAfter = true
-
-        activity.captureButton.startAnimation(animation)
     }
 
     private fun renderThumbnailLoader(visible: Boolean) {
@@ -380,9 +347,6 @@ internal class ViewfinderEffectHandler(
         private const val PREVIEW_SNAP_DURATION = 200L
         private const val PREVIEW_SL_OVERLAY_DUR = 200L
         private const val SELF_ILLUMINATION_OVERLAY_ALPHA = 0.8f
-        private const val CAPTURE_BUTTON_FADE_DURATION = 200L
-        private const val CAPTURE_BUTTON_ENABLED_ALPHA = 1f
-        private const val CAPTURE_BUTTON_DISABLED_ALPHA = 0.6f
         private const val SAVE_FAILURE_CHANNEL_ID = "image_saver_error"
         private const val SAVE_FAILURE_NOTIFICATION_ID = 1
     }

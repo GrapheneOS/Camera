@@ -74,10 +74,6 @@ open class CaptureActivity : MainActivity() {
 
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
-        // Redundant now that no tabs get built here (see CameraEntryPoint.showsCameraModeTabs), but
-        // kept so a regression there cannot hand the user a mode switcher mid-capture
-        tabLayout.visibility = View.INVISIBLE
-
         // Remove the margin so that that the previewView can take some more space
         (previewView.layoutParams as MarginLayoutParams).let {
             it.setMargins(it.leftMargin, it.topMargin, it.rightMargin, 0)
