@@ -52,8 +52,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val videoFileFormat = ".mp4"
 
-    // Invoking this abandons a start still waiting on its output or queued behind the record-start
-    // sound.
     private var cancelDeferredStart: (() -> Unit)? = null
 
     val isMuted: Boolean

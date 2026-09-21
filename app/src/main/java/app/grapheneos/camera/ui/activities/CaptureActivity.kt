@@ -124,7 +124,7 @@ open class CaptureActivity : MainActivity() {
         // Display the activity
     }
 
-    fun takePicture() {
+    override fun takePicture() {
 
         showMessage(
             getString(R.string.capturing_image)

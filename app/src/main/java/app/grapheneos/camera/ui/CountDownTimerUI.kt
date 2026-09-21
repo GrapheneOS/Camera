@@ -68,18 +68,6 @@ class CountDownTimerUI @JvmOverloads constructor(
         }
     }
 
-    fun onTimerFinished() {
-        onTimerEnd()
-        when (mActivity) {
-            is CaptureActivity -> (mActivity as CaptureActivity).takePicture()
-            else -> mActivity.imageCapturer.takePicture()
-        }
-    }
-
-    fun onTimerCancelled() {
-        onTimerEnd()
-    }
-
     private fun beforeTimeStarts() {
         mActivity.settingsIcon.visibility = View.INVISIBLE
         mActivity.flipCameraCircle.visibility = View.INVISIBLE
@@ -88,7 +76,7 @@ class CountDownTimerUI @JvmOverloads constructor(
         isRunning = true
     }
 
-    private fun onTimerEnd() {
+    fun onTimerEnded() {
         mActivity.settingsIcon.visibility = View.VISIBLE
         mActivity.flipCameraCircle.visibility = View.VISIBLE
 
