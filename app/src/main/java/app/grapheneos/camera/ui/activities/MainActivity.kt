@@ -82,12 +82,14 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.domain.capture.usecase.CreateRecordingOutput
+import app.grapheneos.camera.domain.capture.usecase.DiscardRecording
+import app.grapheneos.camera.domain.capture.usecase.PublishRecording
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
@@ -158,7 +160,13 @@ open class MainActivity : AppCompatActivity() {
     lateinit var capturedItemSession: CapturedItemSession
 
     @Inject
-    lateinit var captureOutputRepository: CaptureOutputRepository
+    lateinit var createRecordingOutput: CreateRecordingOutput
+
+    @Inject
+    lateinit var publishRecording: PublishRecording
+
+    @Inject
+    lateinit var discardRecording: DiscardRecording
 
     @Inject
     @ApplicationScope
