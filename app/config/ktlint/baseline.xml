@@ -167,10 +167,6 @@
         <error line="10" column="104" source="standard:argument-list-wrapping" />
         <error line="10" column="105" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
-        <error line="17" column="21" source="standard:class-signature" />
-        <error line="17" column="48" source="standard:class-signature" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/VideoCapturer.kt">
         <error line="42" column="21" source="standard:class-signature" />
         <error line="42" column="56" source="standard:class-signature" />
@@ -404,9 +400,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="929" column="100" source="standard:max-line-length" />
-        <error line="1080" column="100" source="standard:max-line-length" />
-        <error line="1430" column="17" source="standard:chain-wrapping" />
+        <error line="922" column="100" source="standard:max-line-length" />
+        <error line="1073" column="100" source="standard:max-line-length" />
+        <error line="1423" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

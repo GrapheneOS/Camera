@@ -70,22 +70,19 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun beginBind_whileAlreadyBoundAndNotForced_leavesTheCameraAlone() {
+    fun canBeginBind_whileAlreadyBoundAndNotForced_refusesTheBind() {
         val delegate = createAttachedDelegate()
-        val started = delegate.beginBind(forced = false)
 
-        assertFalse(started)
-        verify(exactly = 0) { chrome.cancelPendingCapture() }
+        assertFalse(delegate.canBeginBind(forced = false))
     }
 
     @Test
-    fun beginBind_withoutACameraProvider_leavesTheCameraAloneEvenWhenForced() {
+    fun canBeginBind_withoutACameraProvider_refusesTheBindEvenWhenForced() {
         every { session.cameraProvider } returns null
 
         val delegate = createAttachedDelegate()
-        val started = delegate.beginBind(forced = true)
 
-        assertFalse(started)
+        assertFalse(delegate.canBeginBind(forced = true))
     }
 
     @Test
@@ -302,7 +299,7 @@ class ViewfinderCameraDelegateTest {
 
         verify(exactly = 1) { session.setPreviewTarget(null) }
         assertFalse(stateHolder.state.value.session.isQrResultShown)
-        assertFalse(delegate.beginBind(forced = true))
+        assertFalse(delegate.canBeginBind(forced = true))
     }
 
     @Test

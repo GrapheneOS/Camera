@@ -17,6 +17,8 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
+import app.grapheneos.camera.domain.capture.model.ImageSaverException
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
@@ -24,7 +26,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -40,6 +41,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
@@ -73,6 +75,7 @@ class ViewfinderViewModelTest {
     private val locationRepository = mockk<LocationRepository>(relaxed = true)
 
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
+    private val captureEvents = MutableSharedFlow<CapturedImageEvent>()
 
     private val reverted = CompletableDeferred<Unit>()
 
@@ -88,6 +91,7 @@ class ViewfinderViewModelTest {
         }
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
         every { cameraDelegate.sessionEvents } returns sessionEvents
+        every { captureDelegate.captureEvents } returns captureEvents
     }
 
     @Test
@@ -98,7 +102,7 @@ class ViewfinderViewModelTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            verify(exactly = 1) { cameraDelegate.beginBind(forced = true) }
+            verify(exactly = 1) { cameraDelegate.canBeginBind(forced = true) }
             verify(exactly = 0) { cameraDelegate.initialize(forced = any(), extensionMode = any()) }
         }
     }
@@ -117,7 +121,7 @@ class ViewfinderViewModelTest {
                     extensionMode = CameraMode.CAMERA.extensionMode,
                 )
             }
-            verify(exactly = 0) { cameraDelegate.beginBind(forced = any()) }
+            verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
         }
     }
 
@@ -127,7 +131,7 @@ class ViewfinderViewModelTest {
             createViewModel(applicationScope = backgroundScope)
             sessionEvents.emit(CameraSessionEvent.ProviderReady(forced = true))
 
-            verify(exactly = 1) { cameraDelegate.beginBind(forced = true) }
+            verify(exactly = 1) { cameraDelegate.canBeginBind(forced = true) }
         }
     }
 
@@ -185,7 +189,7 @@ class ViewfinderViewModelTest {
 
             viewModel.onAction(CameraAction.LensSwitchClicked)
 
-            verify(exactly = 0) { cameraDelegate.beginBind(forced = any()) }
+            verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
             assertEquals(
                 listOf(ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable)),
                 effects,
@@ -198,7 +202,7 @@ class ViewfinderViewModelTest {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
-            every { cameraDelegate.beginBind(forced = any()) } returns true
+            every { cameraDelegate.canBeginBind(forced = any()) } returns true
             every { cameraDelegate.selectLens(isQrMode = any(), extensionMode = any()) } returns
                 ViewfinderBindTarget(qrLensFacing = LensFacing.FRONT)
             every { cameraDelegate.bindCamera(any()) } returns BindOutcome.BOUND
@@ -258,7 +262,7 @@ class ViewfinderViewModelTest {
 
             verifyOrder {
                 settingsDelegate.setEnableEis(true)
-                cameraDelegate.beginBind(forced = true)
+                cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
@@ -272,7 +276,7 @@ class ViewfinderViewModelTest {
 
             verifyOrder {
                 settingsDelegate.setWaitForFocusLock(true)
-                cameraDelegate.beginBind(forced = true)
+                cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
@@ -289,7 +293,7 @@ class ViewfinderViewModelTest {
 
             verifyOrder {
                 settingsDelegate.setAspectRatio(AspectRatio.RATIO_16_9)
-                cameraDelegate.beginBind(forced = true)
+                cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
@@ -305,7 +309,7 @@ class ViewfinderViewModelTest {
             viewModel.onAction(SettingsAction.VideoQualitySelected(VideoQuality.UHD))
 
             verify(exactly = 0) { settingsDelegate.setVideoQuality(any()) }
-            verify(exactly = 0) { cameraDelegate.beginBind(forced = any()) }
+            verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
         }
     }
 
@@ -321,7 +325,7 @@ class ViewfinderViewModelTest {
 
             verifyOrder {
                 settingsDelegate.setVideoQuality(VideoQuality.FHD)
-                cameraDelegate.beginBind(forced = true)
+                cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
@@ -349,7 +353,7 @@ class ViewfinderViewModelTest {
 
             verifyOrder {
                 cameraDelegate.dismissQrResult()
-                cameraDelegate.beginBind(forced = true)
+                cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
@@ -514,7 +518,7 @@ class ViewfinderViewModelTest {
                 stateHolder.update { state -> state.copy(mode = mode) }
                 true
             }
-            every { cameraDelegate.beginBind(forced = any()) } returns true
+            every { cameraDelegate.canBeginBind(forced = any()) } returns true
             every { cameraDelegate.selectLens(isQrMode = any(), extensionMode = any()) } returns
                 ViewfinderBindTarget(qrLensFacing = null)
             every { cameraDelegate.bindCamera(any()) } returnsMany listOf(
@@ -542,14 +546,14 @@ class ViewfinderViewModelTest {
     @Test
     fun capturedPreviewDismissed_forgetsThePreviewBeforeRebinding() {
         runTest {
-            every { cameraDelegate.beginBind(forced = true) } returns true
+            every { cameraDelegate.canBeginBind(forced = true) } returns true
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
             viewModel.onAction(LifecycleAction.CapturedPreviewDismissed)
 
             verifyOrder {
                 captureDelegate.dismissCapturedPreview()
-                cameraDelegate.beginBind(forced = true)
+                cameraDelegate.canBeginBind(forced = true)
             }
         }
     }
@@ -586,63 +590,66 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun pictureCaptureActions_reachTheCaptureDelegate() {
+    fun shutterClicked_withTheCameraReady_takesThePicture() {
         runTest {
+            every { cameraDelegate.isCameraReady } returns true
             val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
 
-            viewModel.onAction(CaptureAction.PictureCaptureStarted)
-            viewModel.onAction(CaptureAction.PictureCaptured)
-            viewModel.onAction(CaptureAction.PictureCaptureStarted)
-            viewModel.onAction(captureFailed())
-            viewModel.onAction(CaptureAction.PictureCaptureStarted)
-            viewModel.onAction(CaptureAction.PictureCaptureCancelled)
+            viewModel.onAction(CaptureAction.ShutterClicked)
 
-            verifyOrder {
-                captureDelegate.startPictureCapture()
-                captureDelegate.finishPictureCapture()
-                captureDelegate.startPictureCapture()
-                captureDelegate.finishPictureCapture()
-                captureDelegate.startPictureCapture()
-                captureDelegate.finishPictureCapture()
+            verify(exactly = 1) { captureDelegate.takePicture() }
+        }
+    }
+
+    @Test
+    fun shutterClicked_whileTheCameraCannotCapture_saysSoAndTakesNothing() {
+        runTest {
+            every { cameraDelegate.isCameraReady } returns true
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CaptureAction.ShutterClicked)
+
+            verify(exactly = 0) { captureDelegate.takePicture() }
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.ShowMessage(
+                        R.string.unsupported_taking_picture_while_recording,
+                    ),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun shutterClicked_whileACaptureIsInFlight_takesNothing() {
+        runTest {
+            every { cameraDelegate.isCameraReady } returns true
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(
+                    session = it.session.copy(canTakePicture = true),
+                    capture = it.capture.copy(isTakingPicture = true),
+                )
             }
+
+            viewModel.onAction(CaptureAction.ShutterClicked)
+
+            verify(exactly = 0) { captureDelegate.takePicture() }
         }
     }
 
     @Test
-    fun pictureCaptured_startsSavingIt() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-
-            viewModel.onAction(CaptureAction.PictureCaptured)
-
-            verifyOrder {
-                captureDelegate.finishPictureCapture()
-                captureDelegate.startPictureSave()
-            }
-        }
-    }
-
-    @Test
-    fun pictureSaveOutcomes_finishTheSave() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-
-            viewModel.onAction(CaptureAction.PictureThumbnailReady(thumbnail = THUMBNAIL))
-            viewModel.onAction(saveFailed())
-            viewModel.onAction(captureFailed())
-
-            verify(exactly = 3) { captureDelegate.finishPictureSave() }
-        }
-    }
-
-    @Test
-    fun pictureCaptured_soundsTheShutterBeforeFlashingThePreview() {
+    fun captured_startsSavingItAndSoundsTheShutterBeforeFlashingThePreview() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(CaptureAction.PictureCaptured)
+            captureEvents.emit(CapturedImageEvent.Captured)
 
+            verify(exactly = 1) { captureDelegate.startPictureSave() }
             assertEquals(
                 listOf(
                     ViewfinderScreenEffect.Picture.Captured,
@@ -654,25 +661,25 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun pictureSaved_handsTheItemOver() {
+    fun saved_handsTheItemOver() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
             val item = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
 
-            viewModel.onAction(CaptureAction.PictureSaved(item = item))
+            captureEvents.emit(CapturedImageEvent.Saved(item = item))
 
             assertEquals(listOf(ViewfinderScreenEffect.Picture.Saved(item)), effects)
         }
     }
 
     @Test
-    fun pictureThumbnailReady_showsItAndFinishesTheSave() {
+    fun thumbnailReady_showsItAndFinishesTheSave() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(CaptureAction.PictureThumbnailReady(thumbnail = THUMBNAIL))
+            captureEvents.emit(CapturedImageEvent.ThumbnailReady(thumbnail = THUMBNAIL))
 
             verify(exactly = 1) { captureDelegate.finishPictureSave() }
             assertEquals(
@@ -683,43 +690,57 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun pictureCaptureFailed_reportsTheFailure() {
+    fun locationUnavailable_saysSo() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(captureFailed())
+            captureEvents.emit(CapturedImageEvent.LocationUnavailable)
 
             assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Picture.CaptureFailed(
-                        errorCode = CAPTURE_ERROR_CODE,
-                        details = FAILURE_DETAILS,
-                    ),
-                ),
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.location_unavailable)),
                 effects,
             )
         }
     }
 
     @Test
-    fun pictureSaveFailed_reportsTheStageThatFailed() {
+    fun captureFailed_reportsTheFailureAndEndsBothStages() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            val cause = IOException("no camera")
+
+            captureEvents.emit(
+                CapturedImageEvent.CaptureFailed(errorCode = CAPTURE_ERROR_CODE, cause = cause),
+            )
+
+            verify(exactly = 1) { captureDelegate.finishPictureSave() }
+
+            val failure = effects.single() as ViewfinderScreenEffect.Picture.CaptureFailed
+            assertEquals(CAPTURE_ERROR_CODE, failure.errorCode)
+            assertEquals(cause.javaClass.name, failure.details.name)
+        }
+    }
+
+    @Test
+    fun saveFailed_reportsTheStageThatFailed() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(saveFailed(alreadyReported = true))
-
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Picture.SaveFailed(
-                        stage = SAVE_FAILURE_STAGE,
-                        details = FAILURE_DETAILS,
-                        alreadyReported = true,
-                    ),
+            captureEvents.emit(
+                CapturedImageEvent.Failed(
+                    cause = ImageSaverException(ImageSaverException.Place.FILE_WRITE),
+                    alreadyReported = true,
                 ),
-                effects,
             )
+
+            verify(exactly = 1) { captureDelegate.finishPictureSave() }
+
+            val failure = effects.single() as ViewfinderScreenEffect.Picture.SaveFailed
+            assertEquals(SAVE_FAILURE_STAGE, failure.stage)
+            assertTrue(failure.alreadyReported)
         }
     }
 
@@ -855,21 +876,6 @@ class ViewfinderViewModelTest {
         return effects
     }
 
-    private fun captureFailed(): CaptureAction.PictureCaptureFailed {
-        return CaptureAction.PictureCaptureFailed(
-            errorCode = CAPTURE_ERROR_CODE,
-            details = FAILURE_DETAILS,
-        )
-    }
-
-    private fun saveFailed(alreadyReported: Boolean = false): CaptureAction.PictureSaveFailed {
-        return CaptureAction.PictureSaveFailed(
-            stage = SAVE_FAILURE_STAGE,
-            details = FAILURE_DETAILS,
-            alreadyReported = alreadyReported,
-        )
-    }
-
     private companion object {
         const val FOCUS_TIMEOUT_SECONDS = 3L
         const val QR_TEXT = "https://grapheneos.org"
@@ -877,11 +883,6 @@ class ViewfinderViewModelTest {
         const val SAVE_FAILURE_STAGE = "FILE_WRITE"
 
         val THUMBNAIL: Bitmap = createBitmap(1, 1)
-
-        val FAILURE_DETAILS = PictureFailureDetails(
-            name = "java.io.IOException",
-            stackTrace = "java.io.IOException: no space left",
-        )
 
         val ENTRY_POINT = CameraEntryPoint(
             isSecureSession = false,

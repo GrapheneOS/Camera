@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
@@ -19,6 +20,7 @@ import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
+import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
@@ -27,6 +29,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -36,6 +39,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Setting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.util.printStackTraceToString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -93,7 +97,10 @@ class ViewfinderViewModel @Inject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
-        captureDelegate.bind(stateHolder)
+        captureDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
         settingsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
@@ -102,6 +109,12 @@ class ViewfinderViewModel @Inject constructor(
         viewModelScope.launch(mainDispatcher) {
             cameraDelegate.sessionEvents.collect { event ->
                 onSessionEvent(event)
+            }
+        }
+
+        viewModelScope.launch(mainDispatcher) {
+            captureDelegate.captureEvents.collect { event ->
+                onCapturedImageEvent(event)
             }
         }
     }
@@ -145,17 +158,45 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onCaptureAction(action: CaptureAction) {
         when (action) {
-            is CaptureAction.PictureCaptureStarted -> captureDelegate.startPictureCapture()
-            is CaptureAction.PictureCaptured -> onPictureCaptured()
-            is CaptureAction.PictureCaptureFailed -> onPictureCaptureFailed(action)
-            is CaptureAction.PictureCaptureCancelled -> captureDelegate.finishPictureCapture()
-            is CaptureAction.PictureSaveFailed -> onPictureSaveFailed(action)
-            is CaptureAction.PictureSaved -> onPictureSaved(action)
-            is CaptureAction.PictureThumbnailReady -> onPictureThumbnailReady(action)
+            is CaptureAction.ShutterClicked -> takePicture()
+            is CaptureAction.PictureCaptureCancelled -> captureDelegate.cancelPictureCapture()
             is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
+        }
+    }
+
+    private fun takePicture() {
+        val state = state()
+
+        when {
+            !cameraDelegate.isCameraReady -> Unit
+
+            !state.session.canTakePicture -> {
+                emitEffect(
+                    Effect.ShowMessage(R.string.unsupported_taking_picture_while_recording),
+                )
+            }
+
+            state.capture.isTakingPicture -> Unit
+
+            else -> captureDelegate.takePicture()
+        }
+    }
+
+    private fun onCapturedImageEvent(event: CapturedImageEvent) {
+        when (event) {
+            is CapturedImageEvent.Captured -> onPictureCaptured()
+            is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
+            is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
+            is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
+            is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
+            is CapturedImageEvent.Failed -> onPictureSaveFailed(event)
+
+            is CapturedImageEvent.LocationUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
+            }
         }
     }
 
@@ -309,43 +350,41 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun onPictureCaptured() {
-        captureDelegate.finishPictureCapture()
         captureDelegate.startPictureSave()
 
         emitEffect(Effect.Picture.Captured)
         emitEffect(Effect.FlashPreview(state().selfIlluminate()))
     }
 
-    private fun onPictureSaved(action: CaptureAction.PictureSaved) {
-        emitEffect(Effect.Picture.Saved(item = action.item))
-    }
-
-    private fun onPictureThumbnailReady(action: CaptureAction.PictureThumbnailReady) {
+    private fun onPictureThumbnailReady(thumbnail: Bitmap) {
         captureDelegate.finishPictureSave()
 
-        emitEffect(Effect.Picture.ThumbnailReady(thumbnail = action.thumbnail))
+        emitEffect(Effect.Picture.ThumbnailReady(thumbnail = thumbnail))
     }
 
-    private fun onPictureCaptureFailed(action: CaptureAction.PictureCaptureFailed) {
-        captureDelegate.finishPictureCapture()
+    private fun onPictureCaptureFailed(event: CapturedImageEvent.CaptureFailed) {
+        Log.e(TAG, "unable to capture a picture", event.cause)
+
         captureDelegate.finishPictureSave()
 
         emitEffect(
             Effect.Picture.CaptureFailed(
-                errorCode = action.errorCode,
-                details = action.details,
+                errorCode = event.errorCode,
+                details = detailsOf(event.cause),
             ),
         )
     }
 
-    private fun onPictureSaveFailed(action: CaptureAction.PictureSaveFailed) {
+    private fun onPictureSaveFailed(event: CapturedImageEvent.Failed) {
+        Log.e(TAG, "unable to save a picture", event.cause)
+
         captureDelegate.finishPictureSave()
 
         emitEffect(
             Effect.Picture.SaveFailed(
-                stage = action.stage,
-                details = action.details,
-                alreadyReported = action.alreadyReported,
+                stage = event.cause.place.name,
+                details = detailsOf(event.cause),
+                alreadyReported = event.alreadyReported,
             ),
         )
     }
@@ -378,6 +417,13 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.SelfTimer.Cancelled)
     }
 
+    private fun detailsOf(exception: Throwable): PictureFailureDetails {
+        return PictureFailureDetails(
+            name = exception.javaClass.name,
+            stackTrace = exception.printStackTraceToString(),
+        )
+    }
+
     private fun onStorageLocationNotFound() {
         applicationScope.launch(defaultDispatcher) {
             revertToMediaStoreLocation()
@@ -387,6 +433,7 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onScreenCreated(host: ViewfinderHost) {
         cameraDelegate.onScreenCreated(host)
+        captureDelegate.onScreenCreated(host)
     }
 
     private fun onScreenDestroyed() {
@@ -511,7 +558,9 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun startCamera(forced: Boolean) {
-        if (!cameraDelegate.beginBind(forced)) return
+        if (!cameraDelegate.canBeginBind(forced)) return
+
+        captureDelegate.cancelPictureCapture()
 
         emitEffect(Effect.HideExposurePanel)
 

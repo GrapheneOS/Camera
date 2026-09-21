@@ -1,12 +1,28 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
+import app.grapheneos.camera.domain.capture.usecase.CaptureImage
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import java.io.IOException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -19,6 +35,12 @@ import org.robolectric.RobolectricTestRunner
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderCaptureDelegateTest {
+
+    private val captureImage = mockk<CaptureImage>()
+    private val capturedItemRepository = mockk<CapturedItemRepository>()
+    private val chrome = mockk<ViewfinderChrome>()
+
+    private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
 
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = CameraMode.VIDEO, requiresVideoModeOnly = false),
@@ -100,17 +122,6 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
-    fun pictureCapture_isInProgressUntilFinished() {
-        val delegate = createDelegate()
-
-        delegate.startPictureCapture()
-        assertTrue(capture().isTakingPicture)
-
-        delegate.finishPictureCapture()
-        assertFalse(capture().isTakingPicture)
-    }
-
-    @Test
     fun pictureSave_isInProgressUntilFinished() {
         val delegate = createDelegate()
 
@@ -174,15 +185,83 @@ class ViewfinderCaptureDelegateTest {
         assertEquals(ViewfinderCaptureState(), capture())
     }
 
+    @Test
+    fun takePicture_marksTheCaptureAndReportsWhatTheUseCaseEmits() {
+        runTest {
+            val delegate = createDelegate(scope = backgroundScope)
+            val events = collectEvents(delegate)
+
+            delegate.takePicture()
+            assertTrue(capture().isTakingPicture)
+
+            emitCaptureEvent(CapturedImageEvent.Captured)
+
+            assertFalse(capture().isTakingPicture)
+            assertEquals(listOf(CapturedImageEvent.Captured), events)
+        }
+    }
+
+    @Test
+    fun cancelPictureCapture_keepsTheFailureItCausesQuiet() {
+        runTest {
+            val delegate = createDelegate(scope = backgroundScope)
+            val events = collectEvents(delegate)
+
+            delegate.takePicture()
+            delegate.cancelPictureCapture()
+            emitCaptureEvent(
+                CapturedImageEvent.CaptureFailed(errorCode = 1, cause = IOException("cancelled")),
+            )
+
+            assertFalse(capture().isTakingPicture)
+            assertTrue(events.isEmpty())
+        }
+    }
+
+    private fun emitCaptureEvent(event: CapturedImageEvent) {
+        onCaptureEvent.captured(event)
+    }
+
+    private fun TestScope.collectEvents(
+        delegate: ViewfinderCaptureDelegate,
+    ): List<CapturedImageEvent> {
+        val events = mutableListOf<CapturedImageEvent>()
+
+        backgroundScope.launch { delegate.captureEvents.collect { events += it } }
+
+        return events
+    }
+
     private fun capture(): ViewfinderCaptureState {
         return stateHolder.state.value.capture
     }
 
-    private fun createDelegate(): ViewfinderCaptureDelegate {
-        val delegate = ViewfinderCaptureDelegateImpl()
+    private fun createDelegate(
+        scope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher()),
+    ): ViewfinderCaptureDelegate {
+        coEvery { captureImage(any(), any(), capture(onCaptureEvent)) } returns Unit
+        every { capturedItemRepository.storageLocation } returns flowOf(STORAGE_LOCATION)
+        every { chrome.thumbnailSize() } returns ThumbnailSize(width = 1, height = 1)
 
-        delegate.bind(stateHolder)
+        val delegate = ViewfinderCaptureDelegateImpl(
+            captureImage = captureImage,
+            capturedItemRepository = capturedItemRepository,
+            mainDispatcher = UnconfinedTestDispatcher(),
+        )
+
+        delegate.bind(scope = scope, stateHolder = stateHolder)
+        delegate.onScreenCreated(
+            ViewfinderHost(
+                previewTarget = mockk(relaxed = true),
+                chrome = chrome,
+                previewFrames = mockk(relaxed = true),
+            ),
+        )
 
         return delegate
+    }
+
+    private companion object {
+        const val STORAGE_LOCATION = "MediaStore"
     }
 }
