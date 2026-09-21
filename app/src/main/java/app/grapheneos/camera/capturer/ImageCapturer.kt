@@ -9,7 +9,10 @@ import androidx.camera.core.takePicture
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.domain.capture.ImageSaver
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
+import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
+import app.grapheneos.camera.domain.capture.model.ImageSaverException
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
@@ -66,8 +69,8 @@ class ImageCapturer(val mActivity: MainActivity) {
         val imageCapture = session.imageCapture!!
 
         val imageSaver = ImageSaver(
-            this,
-            mActivity.applicationContext,
+            mActivity.applicationScope,
+            mActivity.mainDispatcher,
             mActivity.storeCapturedImage,
             mActivity.exifMapper,
             mActivity.jpegExtractor,
@@ -79,6 +82,8 @@ class ImageCapturer(val mActivity: MainActivity) {
             targetThumbnailWidth = preview.width,
             targetThumbnailHeight = preview.height,
             pipeline = mActivity.capturedImagePipeline,
+            needsThumbnail = { !mActivity.isDestroyed },
+            onEvent = { onCapturedImageEvent(it) },
         )
 
         currentImageSaver = imageSaver
@@ -86,8 +91,11 @@ class ImageCapturer(val mActivity: MainActivity) {
         mActivity.applicationScope.launch(mActivity.mainDispatcher) {
             val image = try {
                 imageCapture.takePicture()
-            } catch (e: ImageCaptureException) {
-                imageSaver.onCaptureError(e)
+            } catch (exception: ImageCaptureException) {
+                // A request the user cancelled still fails here, and was reported as cancelled.
+                if (currentImageSaver === imageSaver) {
+                    onCaptureError(exception)
+                }
                 return@launch
             }
 
@@ -99,20 +107,34 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     fun cancelPendingCaptureRequest() {
         if (isTakingPicture) {
-            currentImageSaver?.cancelCaptureRequest()
-
             currentImageSaver = null
             viewfinder.onAction(CaptureAction.PictureCaptureCancelled)
         }
     }
 
-    fun onCaptureSuccess() {
+    private fun onCapturedImageEvent(event: CapturedImageEvent) {
+        when (event) {
+            is CapturedImageEvent.Captured -> onCaptureSuccess()
+            is CapturedImageEvent.Saved -> onImageSaverSuccess(event.item)
+            is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
+
+            is CapturedImageEvent.ThumbnailReady -> {
+                onThumbnailGenerated(event.thumbnail)
+            }
+
+            is CapturedImageEvent.Failed -> {
+                onImageSaverError(event.cause, event.alreadyReported)
+            }
+        }
+    }
+
+    private fun onCaptureSuccess() {
         currentImageSaver = null
 
         viewfinder.onAction(CaptureAction.PictureCaptured)
     }
 
-    fun onCaptureError(exception: ImageCaptureException) {
+    private fun onCaptureError(exception: ImageCaptureException) {
         Log.e(TAG, "onCaptureError", exception)
 
         currentImageSaver = null
@@ -125,15 +147,18 @@ class ImageCapturer(val mActivity: MainActivity) {
         )
     }
 
-    fun onImageSaverSuccess(item: CapturedItem) {
+    private fun onImageSaverSuccess(item: CapturedItem) {
         viewfinder.onAction(CaptureAction.PictureSaved(item = item))
     }
 
-    fun onStorageLocationNotFound() {
+    private fun onStorageLocationNotFound() {
         viewfinder.onAction(CaptureAction.StorageLocationNotFound)
     }
 
-    fun onImageSaverError(exception: ImageSaverException, skipErrorDialog: Boolean) {
+    private fun onImageSaverError(
+        exception: ImageSaverException,
+        skipErrorDialog: Boolean,
+    ) {
         Log.e(TAG, "onImageSaverError", exception)
 
         viewfinder.onAction(
@@ -152,7 +177,7 @@ class ImageCapturer(val mActivity: MainActivity) {
         )
     }
 
-    fun onThumbnailGenerated(thumbnail: Bitmap) {
+    private fun onThumbnailGenerated(thumbnail: Bitmap) {
         viewfinder.onAction(CaptureAction.PictureThumbnailReady(thumbnail = thumbnail))
     }
 
