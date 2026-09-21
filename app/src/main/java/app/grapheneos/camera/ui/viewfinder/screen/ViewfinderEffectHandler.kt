@@ -142,8 +142,12 @@ internal class ViewfinderEffectHandler(
         when (effect) {
             is Effect.SelfTimer.Started -> activity.cdTimer.onTimerStarted()
             is Effect.SelfTimer.Ticked -> activity.cdTimer.onTick(effect.secondsLeft)
-            is Effect.SelfTimer.Finished -> activity.cdTimer.onTimerFinished()
-            is Effect.SelfTimer.Cancelled -> activity.cdTimer.onTimerCancelled()
+            is Effect.SelfTimer.Cancelled -> activity.cdTimer.onTimerEnded()
+
+            is Effect.SelfTimer.Finished -> {
+                activity.cdTimer.onTimerEnded()
+                activity.takePicture()
+            }
         }
     }
 

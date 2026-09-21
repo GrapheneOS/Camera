@@ -168,10 +168,8 @@
         <error line="10" column="105" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/ImageCapturer.kt">
-        <error line="23" column="19" source="standard:property-naming" />
-        <error line="25" column="21" source="standard:class-signature" />
-        <error line="25" column="48" source="standard:class-signature" />
-        <error line="34" column="35" source="standard:colon-spacing" />
+        <error line="17" column="21" source="standard:class-signature" />
+        <error line="17" column="48" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/capturer/VideoCapturer.kt">
         <error line="42" column="21" source="standard:class-signature" />
@@ -238,9 +236,9 @@
         <error line="15" column="23" source="standard:parameter-list-wrapping" />
         <error line="15" column="23" source="standard:class-signature" />
         <error line="15" column="50" source="standard:trailing-comma-on-declaration-site" />
-        <error line="103" column="27" source="standard:property-naming" />
-        <error line="105" column="19" source="standard:property-naming" />
-        <error line="106" column="19" source="standard:property-naming" />
+        <error line="91" column="27" source="standard:property-naming" />
+        <error line="93" column="19" source="standard:property-naming" />
+        <error line="94" column="19" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/CustomGrid.kt">
         <error line="14" column="22" source="standard:trailing-comma-on-declaration-site" />
@@ -406,9 +404,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="937" column="100" source="standard:max-line-length" />
-        <error line="1088" column="100" source="standard:max-line-length" />
-        <error line="1438" column="17" source="standard:chain-wrapping" />
+        <error line="929" column="100" source="standard:max-line-length" />
+        <error line="1080" column="100" source="standard:max-line-length" />
+        <error line="1430" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

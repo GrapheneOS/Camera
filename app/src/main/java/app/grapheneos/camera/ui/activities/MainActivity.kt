@@ -80,7 +80,6 @@ import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
@@ -90,9 +89,7 @@ import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
-import app.grapheneos.camera.domain.capture.CapturedImagePipeline
-import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
-import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
+import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
@@ -161,19 +158,10 @@ open class MainActivity : AppCompatActivity() {
     lateinit var capturedItemSession: CapturedItemSession
 
     @Inject
-    lateinit var storeCapturedImage: StoreCapturedImage
+    lateinit var captureImage: CaptureImage
 
     @Inject
     lateinit var captureOutputRepository: CaptureOutputRepository
-
-    @Inject
-    lateinit var exifMapper: CapturedImageExifMapper
-
-    @Inject
-    lateinit var jpegExtractor: JpegExtractor
-
-    @Inject
-    lateinit var capturedImagePipeline: CapturedImagePipeline
 
     @Inject
     @ApplicationScope
@@ -211,6 +199,10 @@ open class MainActivity : AppCompatActivity() {
         get() = gestureHandler.gestureDetector
 
     lateinit var imageCapturer: ImageCapturer
+
+    open fun takePicture() {
+        imageCapturer.takePicture()
+    }
 
     lateinit var videoCapturer: VideoCapturer
 
@@ -881,7 +873,7 @@ open class MainActivity : AppCompatActivity() {
         binding.thirdCircle.setOnClickListener {
             resetAutoSleep()
             if (viewfinder.uiState.value.isRecordingActive) {
-                imageCapturer.takePicture()
+                takePicture()
             } else {
                 openGallery()
                 Log.i(TAG, "Attempting to open gallery...")
@@ -890,7 +882,7 @@ open class MainActivity : AppCompatActivity() {
 
         binding.thirdCircle.setOnLongClickListener {
             if (viewfinder.uiState.value.isRecordingActive) {
-                imageCapturer.takePicture()
+                takePicture()
             } else {
                 shareLatestMedia()
             }
@@ -915,7 +907,7 @@ open class MainActivity : AppCompatActivity() {
                 viewfinder.onAction(CameraAction.TorchToggleClicked)
             } else {
                 if (selfTimerSeconds == 0) {
-                    imageCapturer.takePicture()
+                    takePicture()
                 } else {
                     if (cdTimer.isRunning) {
                         cdTimer.cancelTimer()
