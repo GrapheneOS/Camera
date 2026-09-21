@@ -75,7 +75,6 @@ import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
-import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.data.camera.model.PreviewTarget
@@ -89,7 +88,6 @@ import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
-import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
@@ -115,6 +113,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.util.ImageResizer
@@ -158,9 +157,6 @@ open class MainActivity : AppCompatActivity() {
     lateinit var capturedItemSession: CapturedItemSession
 
     @Inject
-    lateinit var captureImage: CaptureImage
-
-    @Inject
     lateinit var captureOutputRepository: CaptureOutputRepository
 
     @Inject
@@ -198,10 +194,8 @@ open class MainActivity : AppCompatActivity() {
     val gestureDetector: GestureDetector
         get() = gestureHandler.gestureDetector
 
-    lateinit var imageCapturer: ImageCapturer
-
     open fun takePicture() {
-        imageCapturer.takePicture()
+        viewfinder.onAction(CaptureAction.ShutterClicked)
     }
 
     lateinit var videoCapturer: VideoCapturer
@@ -718,7 +712,7 @@ open class MainActivity : AppCompatActivity() {
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
         if (!viewfinder.uiState.value.isQrMode) {
-            imageCapturer.cancelPendingCaptureRequest()
+            viewfinder.onAction(CaptureAction.PictureCaptureCancelled)
         }
         if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             locationRepository.pauseUpdates()
@@ -754,7 +748,6 @@ open class MainActivity : AppCompatActivity() {
             context = this,
             soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
         )
-        imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
