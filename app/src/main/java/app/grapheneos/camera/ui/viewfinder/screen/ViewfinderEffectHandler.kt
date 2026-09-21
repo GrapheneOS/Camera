@@ -21,6 +21,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
+import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 
@@ -292,8 +293,11 @@ internal class ViewfinderEffectHandler(
         showStorageLocationNotFoundDialog(activity)
     }
 
-    override fun cancelPendingCapture() {
-        activity.imageCapturer.cancelPendingCaptureRequest()
+    override fun thumbnailSize(): ThumbnailSize {
+        return ThumbnailSize(
+            width = activity.imagePreview.width,
+            height = activity.imagePreview.height,
+        )
     }
 
     private fun hideExposurePanel() {

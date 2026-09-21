@@ -1,7 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import android.graphics.Bitmap
-import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
@@ -48,9 +46,7 @@ sealed interface ViewfinderAction {
 
     sealed interface CaptureAction : ViewfinderAction {
 
-        data object PictureCaptureStarted : CaptureAction
-
-        data object PictureCaptured : CaptureAction
+        data object ShutterClicked : CaptureAction
 
         data object PictureCaptureCancelled : CaptureAction
 
@@ -61,25 +57,6 @@ sealed interface ViewfinderAction {
         data object StorageLocationNotFound : CaptureAction
 
         data object CapturedPreviewShown : CaptureAction
-
-        data class PictureSaved(
-            val item: CapturedItem,
-        ) : CaptureAction
-
-        data class PictureThumbnailReady(
-            val thumbnail: Bitmap,
-        ) : CaptureAction
-
-        data class PictureCaptureFailed(
-            val errorCode: Int,
-            val details: PictureFailureDetails,
-        ) : CaptureAction
-
-        data class PictureSaveFailed(
-            val stage: String,
-            val details: PictureFailureDetails,
-            val alreadyReported: Boolean,
-        ) : CaptureAction
     }
 
     sealed interface RecordingAction : ViewfinderAction {

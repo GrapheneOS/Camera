@@ -45,17 +45,9 @@ class CaptureUiStateMapperTest {
     }
 
     @Test
-    fun canTakePicture_comesFromTheBoundSession() {
-        assertTrue(map(session = ViewfinderSessionState(canTakePicture = true)).canTakePicture)
-        assertFalse(map(session = ViewfinderSessionState(canTakePicture = false)).canTakePicture)
-    }
-
-    @Test
     fun storedCaptureSettings_arePassedThrough() {
         val state = map(
             settings = CameraSettings(
-                saveImageAsPreviewed = false,
-                removeExifAfterCapture = false,
                 includeAudio = false,
                 enableCameraSounds = false,
             ),
@@ -63,8 +55,6 @@ class CaptureUiStateMapperTest {
 
         assertEquals(
             CaptureUiState(
-                saveImageAsPreviewed = false,
-                removeExifAfterCapture = false,
                 includeAudio = false,
                 cameraSounds = false,
             ),
