@@ -9,18 +9,14 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.webkit.MimeTypeMap
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
-import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.model.RecordingRequest
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.domain.capture.model.RecordingOutput
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -44,8 +40,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
     val isRecording: Boolean
         get() = viewfinder.uiState.value.isRecordingActive
 
-    private val videoFileFormat = ".mp4"
-
     private var cancelDeferredStart: (() -> Unit)? = null
 
     val isMuted: Boolean
@@ -63,22 +57,17 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val handler = Handler(Looper.getMainLooper())
 
     private class RecordingContext(
-        val uri: Uri,
-        val fileDescriptor: ParcelFileDescriptor,
+        val output: RecordingOutput,
         val location: Location?,
-        val shouldAddToGallery: Boolean,
-        val isPendingMediaStoreUri: Boolean,
     )
 
-    private class RecordingOutput(
-        val uri: Uri,
-        val shouldAddToGallery: Boolean,
-        val isPendingMediaStoreUri: Boolean,
-    )
-
-    private suspend fun createRecordingContext(fileName: String): RecordingContext? {
+    private suspend fun createRecordingContext(dateString: String): RecordingContext? {
         val ctx = mActivity
-        val output = createRecordingOutput(fileName) ?: return null
+        val output = ctx.createRecordingOutput(
+            storageLocation = ctx.capturedItemSession.storageLocation,
+            dateString = dateString,
+            foreignUri = foreignOutputUri(),
+        ) ?: return null
 
         var location: Location? = null
         if (viewfinder.uiState.value.capture.geoTagging) {
@@ -88,58 +77,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
             }
         }
 
-        val fileDescriptor = ctx.captureOutputRepository
-            .openForWriting(output.uri)
-            .valueOrNull()
-
-        return when (fileDescriptor) {
-            null -> null
-
-            else -> {
-                RecordingContext(
-                    uri = output.uri,
-                    fileDescriptor = fileDescriptor,
-                    location = location,
-                    shouldAddToGallery = output.shouldAddToGallery,
-                    isPendingMediaStoreUri = output.isPendingMediaStoreUri,
-                )
-            }
-        }
+        return RecordingContext(
+            output = output,
+            location = location,
+        )
     }
 
-    private suspend fun createRecordingOutput(fileName: String): RecordingOutput? {
-        val ctx = mActivity
-        val foreignUri = (ctx as? VideoCaptureActivity)
+    private fun foreignOutputUri(): Uri? {
+        return (mActivity as? VideoCaptureActivity)
             ?.takeIf { it.isOutputUriAvailable() }
             ?.outputUri
-
-        if (foreignUri != null) {
-            return RecordingOutput(
-                uri = foreignUri,
-                shouldAddToGallery = false,
-                isPendingMediaStoreUri = false,
-            )
-        }
-
-        val mimeType =
-            MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat) ?: "video/mp4"
-        val storageLocation = ctx.capturedItemSession.storageLocation
-        val uri = ctx.captureOutputRepository.createVideo(
-            storageLocation = storageLocation,
-            fileName = fileName,
-            mimeType = mimeType,
-        ).valueOrNull()
-
-        return when (uri) {
-            null -> null
-
-            else -> RecordingOutput(
-                uri = uri,
-                shouldAddToGallery = true,
-                isPendingMediaStoreUri =
-                    storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION,
-            )
-        }
     }
 
     fun startRecording() {
@@ -148,14 +95,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
         viewfinder.onAction(RecordingAction.RecordingRequested)
 
         val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
 
         if (requestsAudioPermission()) return
 
         val ctx = mActivity
 
         ctx.applicationScope.launch(ctx.mainDispatcher) {
-            val recordingCtx = createRecordingContext(fileName)
+            val recordingCtx = createRecordingContext(dateString)
             if (recordingCtx == null) {
                 onOutputUnavailable()
                 return@launch
@@ -232,7 +178,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
             recordingSession.start(
                 request = RecordingRequest(
-                    fileDescriptor = recordingCtx.fileDescriptor,
+                    fileDescriptor = recordingCtx.output.fileDescriptor,
                     location = recordingCtx.location,
                     includeAudio = includeAudio,
                 ),
@@ -343,17 +289,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun saveRecording(recordingCtx: RecordingContext, dateString: String) {
         val ctx = mActivity
 
         ctx.applicationScope.launch(ctx.mainDispatcher) {
-            if (recordingCtx.isPendingMediaStoreUri) {
-                val published = ctx.captureOutputRepository.publish(recordingCtx.uri)
-
-                if (published is CaptureOutputResult.Failure) {
-                    ctx.showMessage(R.string.unable_to_save_video)
-                }
+            if (!ctx.publishRecording(recordingCtx.output)) {
+                ctx.showMessage(R.string.unable_to_save_video)
             }
 
             addRecordingToGallery(recordingCtx, dateString)
@@ -362,9 +303,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private fun addRecordingToGallery(recordingCtx: RecordingContext, dateString: String) {
         val ctx = mActivity
-        val uri = recordingCtx.uri
+        val uri = recordingCtx.output.uri
 
-        if (recordingCtx.shouldAddToGallery) {
+        if (recordingCtx.output.isOwnFile) {
             val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
             ctx.capturedItemSession.recordCapturedItem(item)
 
@@ -424,21 +365,17 @@ class VideoCapturer(private val mActivity: MainActivity) {
     @Suppress("TooGenericExceptionCaught")
     private fun closeOutput(recordingCtx: RecordingContext) {
         try {
-            recordingCtx.fileDescriptor.close()
+            recordingCtx.output.fileDescriptor.close()
         } catch (e: Exception) {
             Log.w(TAG, "unable to close the recording output", e)
         }
     }
 
     private fun discardUnusedOutput(recordingCtx: RecordingContext) {
-        if (!recordingCtx.shouldAddToGallery) {
-            return
-        }
-
         val ctx = mActivity
 
         ctx.applicationScope.launch(ctx.mainDispatcher) {
-            ctx.captureOutputRepository.delete(recordingCtx.uri)
+            ctx.discardRecording(recordingCtx.output)
         }
     }
 
