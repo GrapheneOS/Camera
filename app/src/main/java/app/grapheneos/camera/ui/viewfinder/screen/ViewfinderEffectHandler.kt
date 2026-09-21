@@ -10,12 +10,14 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.annotation.StringRes
+import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
@@ -50,18 +52,32 @@ internal class ViewfinderEffectHandler(
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
             is Effect.SetLocationUpdates -> setLocationUpdates(effect.enabled)
             is Effect.SelfTimer -> handleSelfTimer(effect)
-            is Effect.PictureFailure -> handlePictureFailure(effect)
+            is Effect.Picture -> handlePicture(effect)
         }
     }
 
-    private fun handlePictureFailure(effect: Effect.PictureFailure) {
+    private fun handlePicture(effect: Effect.Picture) {
         when (effect) {
-            is Effect.PictureFailure.Capture -> showCaptureFailure(effect)
-            is Effect.PictureFailure.Save -> showSaveFailure(effect)
+            is Effect.Picture.Captured -> activity.tunePlayer.playShutterSound()
+            is Effect.Picture.Saved -> onPictureSaved(effect.item)
+            is Effect.Picture.CaptureFailed -> showCaptureFailure(effect)
+            is Effect.Picture.SaveFailed -> showSaveFailure(effect)
+
+            is Effect.Picture.ThumbnailReady -> {
+                activity.imagePreview.setImageBitmap(effect.thumbnail)
+            }
         }
     }
 
-    private fun showCaptureFailure(effect: Effect.PictureFailure.Capture) {
+    private fun onPictureSaved(item: CapturedItem) {
+        activity.capturedItemSession.recordCapturedItem(item)
+
+        if (activity is SecureMainActivity) {
+            activity.capturedItems.add(item)
+        }
+    }
+
+    private fun showCaptureFailure(effect: Effect.Picture.CaptureFailed) {
         if (!activity.isStarted) return
 
         showPictureFailureDialog(
@@ -77,7 +93,7 @@ internal class ViewfinderEffectHandler(
         )
     }
 
-    private fun showSaveFailure(effect: Effect.PictureFailure.Save) {
+    private fun showSaveFailure(effect: Effect.Picture.SaveFailed) {
         if (!activity.isStarted) {
             notifySaveFailure()
             return

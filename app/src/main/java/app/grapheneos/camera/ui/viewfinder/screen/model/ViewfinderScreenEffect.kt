@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
+import android.graphics.Bitmap
 import androidx.annotation.StringRes
+import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 
@@ -42,18 +44,28 @@ sealed interface ViewfinderScreenEffect {
         val mode: CameraMode,
     ) : ViewfinderScreenEffect
 
-    sealed interface PictureFailure : ViewfinderScreenEffect {
+    sealed interface Picture : ViewfinderScreenEffect {
 
-        data class Capture(
+        data object Captured : Picture
+
+        data class Saved(
+            val item: CapturedItem,
+        ) : Picture
+
+        data class ThumbnailReady(
+            val thumbnail: Bitmap,
+        ) : Picture
+
+        data class CaptureFailed(
             val errorCode: Int,
             val details: PictureFailureDetails,
-        ) : PictureFailure
+        ) : Picture
 
-        data class Save(
+        data class SaveFailed(
             val stage: String,
             val details: PictureFailureDetails,
             val alreadyReported: Boolean,
-        ) : PictureFailure
+        ) : Picture
     }
 
     sealed interface SelfTimer : ViewfinderScreenEffect {

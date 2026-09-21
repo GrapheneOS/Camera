@@ -1,6 +1,11 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.core.graphics.createBitmap
 import androidx.lifecycle.viewModelScope
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
@@ -622,11 +627,58 @@ class ViewfinderViewModelTest {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(CaptureAction.PictureThumbnailShown)
+            viewModel.onAction(CaptureAction.PictureThumbnailReady(thumbnail = THUMBNAIL))
             viewModel.onAction(saveFailed())
             viewModel.onAction(captureFailed())
 
             verify(exactly = 3) { captureDelegate.finishPictureSave() }
+        }
+    }
+
+    @Test
+    fun pictureCaptured_soundsTheShutterBeforeFlashingThePreview() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CaptureAction.PictureCaptured)
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.Picture.Captured,
+                    ViewfinderScreenEffect.FlashPreview(selfIlluminate = false),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun pictureSaved_handsTheItemOver() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            val item = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
+
+            viewModel.onAction(CaptureAction.PictureSaved(item = item))
+
+            assertEquals(listOf(ViewfinderScreenEffect.Picture.Saved(item)), effects)
+        }
+    }
+
+    @Test
+    fun pictureThumbnailReady_showsItAndFinishesTheSave() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(CaptureAction.PictureThumbnailReady(thumbnail = THUMBNAIL))
+
+            verify(exactly = 1) { captureDelegate.finishPictureSave() }
+            assertEquals(
+                listOf(ViewfinderScreenEffect.Picture.ThumbnailReady(THUMBNAIL)),
+                effects,
+            )
         }
     }
 
@@ -640,7 +692,7 @@ class ViewfinderViewModelTest {
 
             assertEquals(
                 listOf(
-                    ViewfinderScreenEffect.PictureFailure.Capture(
+                    ViewfinderScreenEffect.Picture.CaptureFailed(
                         errorCode = CAPTURE_ERROR_CODE,
                         details = FAILURE_DETAILS,
                     ),
@@ -660,7 +712,7 @@ class ViewfinderViewModelTest {
 
             assertEquals(
                 listOf(
-                    ViewfinderScreenEffect.PictureFailure.Save(
+                    ViewfinderScreenEffect.Picture.SaveFailed(
                         stage = SAVE_FAILURE_STAGE,
                         details = FAILURE_DETAILS,
                         alreadyReported = true,
@@ -823,6 +875,8 @@ class ViewfinderViewModelTest {
         const val QR_TEXT = "https://grapheneos.org"
         const val CAPTURE_ERROR_CODE = 2
         const val SAVE_FAILURE_STAGE = "FILE_WRITE"
+
+        val THUMBNAIL: Bitmap = createBitmap(1, 1)
 
         val FAILURE_DETAILS = PictureFailureDetails(
             name = "java.io.IOException",

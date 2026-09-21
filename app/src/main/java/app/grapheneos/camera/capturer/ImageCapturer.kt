@@ -11,7 +11,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -110,7 +109,6 @@ class ImageCapturer(val mActivity: MainActivity) {
     fun onCaptureSuccess() {
         currentImageSaver = null
 
-        mActivity.tunePlayer.playShutterSound()
         viewfinder.onAction(CaptureAction.PictureCaptured)
     }
 
@@ -128,11 +126,7 @@ class ImageCapturer(val mActivity: MainActivity) {
     }
 
     fun onImageSaverSuccess(item: CapturedItem) {
-        mActivity.capturedItemSession.recordCapturedItem(item)
-
-        if (mActivity is SecureMainActivity) {
-            mActivity.capturedItems.add(item)
-        }
+        viewfinder.onAction(CaptureAction.PictureSaved(item = item))
     }
 
     fun onStorageLocationNotFound() {
@@ -159,8 +153,7 @@ class ImageCapturer(val mActivity: MainActivity) {
     }
 
     fun onThumbnailGenerated(thumbnail: Bitmap) {
-        viewfinder.onAction(CaptureAction.PictureThumbnailShown)
-        mActivity.imagePreview.setImageBitmap(thumbnail)
+        viewfinder.onAction(CaptureAction.PictureThumbnailReady(thumbnail = thumbnail))
     }
 
     companion object {
