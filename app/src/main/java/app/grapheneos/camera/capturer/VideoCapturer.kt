@@ -18,16 +18,13 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
-import androidx.camera.video.FileDescriptorOutputOptions
-import androidx.camera.video.PendingRecording
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
+import app.grapheneos.camera.data.camera.model.RecordingRequest
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -48,12 +45,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val session = mActivity.session
 
+    private val recordingSession = mActivity.recordingSession
+
     val isRecording: Boolean
         get() = viewfinder.uiState.value.isRecordingActive
 
     private val videoFileFormat = ".mp4"
-
-    private var recording: Recording? = null
 
     // Invoking this abandons a start still waiting on its output or queued behind the record-start
     // sound.
@@ -66,11 +63,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         get() = viewfinder.uiState.value.isRecordingPaused
         set(value) {
             if (isRecording) {
-                if (value) {
-                    recording?.pause()
-                } else {
-                    recording?.resume()
-                }
+                recordingSession.setPaused(value)
                 reportRecordingState(RecordingAction.RecordingPauseToggled(paused = value))
             }
         }
@@ -82,9 +75,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private class RecordingContext(
-        val pendingRecording: PendingRecording,
         val uri: Uri,
         val fileDescriptor: ParcelFileDescriptor,
+        val location: Location?,
         val shouldAddToGallery: Boolean,
         val isPendingMediaStoreUri: Boolean,
     )
@@ -95,10 +88,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val isPendingMediaStoreUri: Boolean,
     )
 
-    private suspend fun createRecordingContext(
-        recorder: Recorder,
-        fileName: String,
-    ): RecordingContext? {
+    private suspend fun createRecordingContext(fileName: String): RecordingContext? {
         val ctx = mActivity
         val output = createRecordingOutput(fileName) ?: return null
 
@@ -118,14 +108,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
             null -> null
 
             else -> {
-                val outputOptions = FileDescriptorOutputOptions.Builder(fileDescriptor)
-                    .setLocation(location)
-                    .build()
-
                 RecordingContext(
-                    pendingRecording = recorder.prepareRecording(ctx, outputOptions),
                     uri = output.uri,
                     fileDescriptor = fileDescriptor,
+                    location = location,
                     shouldAddToGallery = output.shouldAddToGallery,
                     isPendingMediaStoreUri = output.isPendingMediaStoreUri,
                 )
@@ -169,7 +155,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun startRecording() {
-        val recorder = recorderForNewRecording() ?: return
+        if (!canStartRecording()) return
 
         viewfinder.onAction(RecordingAction.RecordingRequested)
 
@@ -190,7 +176,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         ctx.applicationScope.launch(ctx.mainDispatcher) {
-            val recordingCtx = createRecordingContext(recorder, fileName)
+            val recordingCtx = createRecordingContext(fileName)
 
             when {
                 isAbandoned || !isRecording -> recordingCtx?.let {
@@ -208,11 +194,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
     }
 
-    private fun recorderForNewRecording(): Recorder? {
+    private fun canStartRecording(): Boolean {
         return when {
-            session.camera == null -> null
-            isRecording -> null
-            else -> session.videoCapture?.output
+            session.camera == null -> false
+            isRecording -> false
+            else -> session.videoCapture != null
         }
     }
 
@@ -243,15 +229,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private fun startPreparedRecording(recordingCtx: RecordingContext, dateString: String) {
         val ctx = mActivity
-        val pendingRecording = recordingCtx.pendingRecording
-
-        if (viewfinder.uiState.value.capture.includeAudio &&
+        val includeAudio = viewfinder.uiState.value.capture.includeAudio &&
             ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PERMISSION_GRANTED
-        ) {
-            pendingRecording.withAudioEnabled()
-        }
 
-        // The sound callback may fire more than once; a second PendingRecording.start() throws.
+        // The sound callback may fire more than once; a second start() throws.
         var consumed = false
 
         cancelDeferredStart = {
@@ -270,26 +251,31 @@ class VideoCapturer(private val mActivity: MainActivity) {
             consumed = true
             cancelDeferredStart = null
 
-            recording = pendingRecording.start(ctx.mainExecutor) { event ->
-                ctx.recordingEventMapper.map(event)?.let { recordingEvent ->
+            recordingSession.start(
+                request = RecordingRequest(
+                    fileDescriptor = recordingCtx.fileDescriptor,
+                    location = recordingCtx.location,
+                    includeAudio = includeAudio,
+                ),
+                onEvent = { event ->
                     onRecordingEvent(
-                        event = recordingEvent,
+                        event = event,
                         recordingCtx = recordingCtx,
                         dateString = dateString,
                     )
-                }
-            }
+                },
+            )
 
             // The Recording didn't exist yet when the mute/pause setters ran.
             if (isMuted) {
-                recording?.mute(true)
+                recordingSession.setMuted(true)
             }
             if (isPaused) {
-                recording?.pause()
+                recordingSession.setPaused(true)
             }
 
             // FileDescriptorOutputOptions doc says that the file descriptor should be closed by
-            // the caller, and that it's safe to do so as soon as pendingRecording.start() returns
+            // the caller, and that it's safe to do so as soon as the recording has started
             closeOutput(recordingCtx)
         }
 
@@ -360,9 +346,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     ctx.getString(R.string.error_during_recording, outcome.errorCode),
                 )
 
-                // The errors left unnamed here (the camera going away, storage running out)
-                // finalize whatever was written before they hit, which is worth keeping — but
-                // only if anything was.
+                // An interrupted recording still finalizes whatever was written before the
+                // camera went away or the storage filled up, which is worth keeping — but only
+                // if anything was.
                 if (!outcome.hasContent) {
                     discardUnusedOutput(recordingCtx)
                 }
@@ -465,14 +451,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
         if (!isRecording) return
         check(viewfinder.uiState.value.capture.includeAudio)
         viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = true))
-        recording?.mute(true)
+        recordingSession.setMuted(true)
     }
 
     fun unmuteRecording() {
         if (!isRecording) return
         check(viewfinder.uiState.value.capture.includeAudio)
         viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = false))
-        recording?.mute(false)
+        recordingSession.setMuted(false)
     }
 
     fun stopRecording() {
@@ -481,9 +467,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             return
         }
 
-        recording?.stop()
-        recording?.close()
-        recording = null
+        recordingSession.stop()
     }
 
     private fun reportRecordingState(action: RecordingAction) {
