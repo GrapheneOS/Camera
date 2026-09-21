@@ -96,6 +96,7 @@ import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.ui.BottomTabLayout
+import app.grapheneos.camera.ui.CaptureButton
 import app.grapheneos.camera.ui.CountDownTimerUI
 import app.grapheneos.camera.ui.CustomGrid
 import app.grapheneos.camera.ui.QROverlay
@@ -241,7 +242,7 @@ open class MainActivity : AppCompatActivity() {
     val tabLayout: BottomTabLayout
         get() = binding.cameraModeTabs
 
-    val captureButton: ImageButton
+    val captureButton: CaptureButton
         get() = binding.captureButton
 
     val timerView: TextView

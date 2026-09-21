@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import kotlin.time.Duration
 
 sealed interface ViewfinderAction {
 
@@ -66,6 +67,10 @@ sealed interface ViewfinderAction {
         data object RecordingStarted : RecordingAction
 
         data object RecordingStopped : RecordingAction
+
+        data class RecordingProgressed(
+            val duration: Duration,
+        ) : RecordingAction
 
         data class RecordingPauseToggled(
             val paused: Boolean,

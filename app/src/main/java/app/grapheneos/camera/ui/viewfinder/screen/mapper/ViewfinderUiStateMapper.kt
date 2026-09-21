@@ -4,12 +4,14 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import app.grapheneos.camera.util.formatVideoDuration
 import javax.inject.Inject
 
 interface ViewfinderUiStateMapper {
@@ -42,13 +44,18 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         }
 
         return chrome.copy(
-            captureButtonEnabled = !state.capture.isTakingPicture,
+            captureButton = chrome.captureButton.copy(
+                enabled = !state.capture.isTakingPicture,
+                recording = state.capture.recordingPhase != RecordingPhase.IDLE,
+            ),
             isRecordingActive = state.capture.recordingPhase != RecordingPhase.IDLE,
             isRecordingPaused = state.capture.isRecordingPaused,
             isRecordingMuted = state.capture.isRecordingMuted,
             muteToggleVisible = state.capture.recordingPhase == RecordingPhase.RECORDING &&
                 settings.includeAudio,
             keepScreenOn = state.capture.recordingPhase != RecordingPhase.IDLE,
+            recordingTimerText = formatVideoDuration(state.capture.recordedDuration.inWholeSeconds),
+            modeTabsVisible = modeTabsVisible(state),
             thumbnailLoaderVisible = state.capture.isSavingPicture,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
             qrResultVisible = state.session.isQrResultShown,
@@ -101,15 +108,17 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             thirdOptionVisible = false,
             cancelButtonVisible = false,
             micMutedIconVisible = false,
-            captureButtonBackground = android.R.color.transparent,
-            captureButtonIcon = when {
-                isTorchOn -> R.drawable.torch_on_button
-                else -> R.drawable.torch_off_button
-            },
-            captureButtonDescription = when {
-                isTorchOn -> R.string.turn_torch_off
-                else -> R.string.turn_torch_on
-            },
+            captureButton = CaptureButtonUiState(
+                background = android.R.color.transparent,
+                icon = when {
+                    isTorchOn -> R.drawable.torch_on_button
+                    else -> R.drawable.torch_off_button
+                },
+                description = when {
+                    isTorchOn -> R.string.turn_torch_off
+                    else -> R.string.turn_torch_on
+                },
+            ),
             flipCameraIcon = when {
                 settings.scanAllCodes -> R.drawable.cancel
                 else -> R.drawable.auto
@@ -136,19 +145,20 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             cancelButtonVisible = !isSelfTimerRunning,
             // TODO: hide it during a recording once the recording has its own indicator
             micMutedIconVisible = isVideoMode && !settings.includeAudio,
-            captureButtonBackground = R.drawable.cbutton_bg,
-            captureButtonIcon = when {
-                isVideoMode -> R.drawable.recording
-                else -> R.drawable.camera_shutter
-            },
-            captureButtonDescription = when {
-                isVideoMode -> R.string.start_recording
-                // The capture button cancels the countdown while one is up, so it must not keep
-                // announcing itself as the shutter. Only the description changes; the cross is
-                // drawn over the button.
-                isSelfTimerRunning -> R.string.cancel_timer
-                else -> R.string.capture
-            },
+            captureButton = CaptureButtonUiState(
+                icon = when {
+                    isVideoMode -> R.drawable.recording
+                    else -> R.drawable.camera_shutter
+                },
+                description = when {
+                    isVideoMode -> R.string.start_recording
+                    // The capture button cancels the countdown while one is up, so it must not
+                    // keep announcing itself as the shutter. Only the description changes; the
+                    // cross is drawn over the button.
+                    isSelfTimerRunning -> R.string.cancel_timer
+                    else -> R.string.capture
+                },
+            ),
             flipCameraIcon = R.drawable.flip_camera,
             flipCameraDescription = R.string.flip_camera,
             selfTimerBadge = when (selfTimerSeconds) {
@@ -173,7 +183,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             // While recording, the gallery button turns into a shutter for stills
             thirdCircleIcon = R.drawable.camera_shutter,
             thirdCircleDescription = R.string.capture,
-            captureButtonDescription = R.string.stop_recording,
+            captureButton = chrome.captureButton.copy(description = R.string.stop_recording),
             flipCameraIcon = when {
                 capture.isRecordingPaused -> R.drawable.play
                 else -> R.drawable.pause
@@ -183,6 +193,12 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 else -> R.string.pause_recording
             },
         )
+    }
+
+    private fun modeTabsVisible(state: ViewfinderState): Boolean {
+        return state.showsCameraModeTabs &&
+            state.capture.recordingPhase != RecordingPhase.RECORDING &&
+            !state.capture.isSelfTimerRunning
     }
 
     /**
