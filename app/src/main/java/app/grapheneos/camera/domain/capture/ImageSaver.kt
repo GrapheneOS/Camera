@@ -96,7 +96,6 @@ class ImageSaver(
     private var capturedJpeg: CapturedJpeg? = null
     private lateinit var processedJpegBytes: ByteArray
 
-    @Throws(ImageSaverException::class)
     private suspend fun saveImageInner() {
         val jpeg = requireNotNull(capturedJpeg)
         val jpegBytes = when (jpeg.cropRect) {
@@ -129,7 +128,6 @@ class ImageSaver(
         emitOnMainThread(CapturedImageEvent.Saved(item = capturedItem))
     }
 
-    @Throws(ImageSaverException::class)
     private fun storedUri(result: StoreCapturedImageResult): Uri {
         return when (result) {
             is StoreCapturedImageResult.Stored -> result.uri
@@ -146,7 +144,6 @@ class ImageSaver(
         }
     }
 
-    @Throws(ImageSaverException::class)
     private fun processExif(
         jpeg: CapturedJpeg,
         jpegBytes: ByteArray,
@@ -173,7 +170,7 @@ class ImageSaver(
         // let GC collect this large buffer
         capturedJpeg = null
 
-        logDuration(startOfExifProcessing) {"exif processing"}
+        logDuration(startOfExifProcessing) { "exif processing" }
 
         return processed
     }
@@ -181,7 +178,10 @@ class ImageSaver(
     private fun generateThumbnail() {
         val source = ImageDecoder.createSource(ByteBuffer.wrap(processedJpegBytes))
         val bitmap = try {
-            ImageDecoder.decodeBitmap(source, ImageResizer(targetThumbnailWidth, targetThumbnailHeight))
+            ImageDecoder.decodeBitmap(
+                source,
+                ImageResizer(targetThumbnailWidth, targetThumbnailHeight),
+            )
         } catch (e: IOException) {
             // reading from a ByteBuffer should never cause an IOException
             throw IllegalStateException("unable to generate a thumbnail", e)
@@ -189,17 +189,23 @@ class ImageSaver(
         emitOnMainThread(CapturedImageEvent.ThumbnailReady(thumbnail = bitmap))
     }
 
-    fun saveToMediaStore() = storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION
+    private fun saveToMediaStore(): Boolean {
+        return storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION
+    }
 
-    private fun dateString() =
-        // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous one
-        DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
+    // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous
+    // one
+    private fun dateString(): String {
+        return DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
+    }
 
     private fun fileName(): String {
         return IMAGE_NAME_PREFIX + dateString() + imageFileFormat
     }
 
-    private fun mimeType() = MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
+    private fun mimeType(): String {
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
+    }
 
     private fun placeOf(stage: StoreCapturedImageResult.Stage): Place {
         return when (stage) {
@@ -231,7 +237,12 @@ class ImageSaver(
         private const val LOG_DURATION = false
     }
 
-    private fun timestamp() = if (LOG_DURATION) System.nanoTime() else 0
+    private fun timestamp(): Long {
+        return when {
+            LOG_DURATION -> System.nanoTime()
+            else -> 0
+        }
+    }
 
     private fun logDuration(start: Long, lazyMessage: () -> String) {
         if (LOG_DURATION) {
