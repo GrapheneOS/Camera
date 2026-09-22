@@ -8,6 +8,7 @@ data class CaptureButtonUiState(
     @DrawableRes val background: Int = R.drawable.cbutton_bg,
     @DrawableRes val icon: Int = R.drawable.camera_shutter,
     @StringRes val description: Int = R.string.capture,
+    val visible: Boolean = true,
     val enabled: Boolean = true,
     val recording: Boolean = false,
 )
