@@ -55,8 +55,8 @@ internal class SettingsRepositoryImpl @Inject constructor(
 
     private val prefs = MutableStateFlow(runBlocking { dataStore.data.first() })
 
-    private val storedSettings = MutableStateFlow(cameraSettingsMapper.map(prefs.value.common))
-    override val settings: StateFlow<CameraSettings> = storedSettings.asStateFlow()
+    private val _settings = MutableStateFlow(cameraSettingsMapper.map(prefs.value.common))
+    override val settings: StateFlow<CameraSettings> = _settings.asStateFlow()
 
     override fun update(transform: (CameraSettings) -> CameraSettings): CameraSettings {
         val updated = write { prefs ->
@@ -147,7 +147,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
     private fun write(transform: (SettingsPrefs) -> SettingsPrefs): SettingsPrefs {
         val updated = prefs.updateAndGet(transform)
 
-        storedSettings.value = cameraSettingsMapper.map(prefs.value.common)
+        _settings.value = cameraSettingsMapper.map(prefs.value.common)
 
         writeScope.launch(defaultDispatcher) {
             dataStore.updateData { prefs.value }
