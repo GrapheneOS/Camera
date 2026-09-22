@@ -12,6 +12,8 @@ import android.util.Log
 import androidx.core.net.toUri
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
+import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
+import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.data.media.store.imageCollectionUri
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
@@ -37,7 +39,9 @@ interface CaptureOutputRepository {
         mimeType: String,
     ): CaptureOutputResult<Uri>
 
-    suspend fun openForWriting(uri: Uri): CaptureOutputResult<ParcelFileDescriptor>
+    suspend fun openForWriting(
+        uri: Uri,
+    ): CaptureOutputResult<ParcelFileDescriptor>
 
     suspend fun write(
         uri: Uri,
@@ -49,14 +53,6 @@ interface CaptureOutputRepository {
     suspend fun delete(uri: Uri)
 
     suspend fun deleteStalePendingVideos(olderThan: Duration)
-
-    companion object {
-        const val DEFAULT_MEDIA_STORE_CAPTURE_PATH = "DCIM/Camera"
-
-        // see com.android.externalstorage.ExternalStorageProvider and
-        // com.android.internal.content.FileSystemProvider
-        const val SAF_URI_HOST_EXTERNAL_STORAGE = "com.android.externalstorage.documents"
-    }
 }
 
 internal class CaptureOutputRepositoryImpl @Inject constructor(
@@ -102,20 +98,19 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         bytes: ByteArray,
     ): CaptureOutputResult<Unit> {
         return onStorage {
-            val descriptor = contentResolver.openAssetFileDescriptor(uri, "w")
+            val outputDescriptor = contentResolver.openAssetFileDescriptor(uri, "w")
                 ?: throw IOException("unable to open $uri")
 
-            descriptor.use {
-                val fd = it.fileDescriptor
-                var offset = 0
+            outputDescriptor.use { descriptor ->
+                val fileDescriptor = descriptor.fileDescriptor
 
-                do {
-                    // "-1" is never returned to indicate an error, ErrnoException is thrown instead
-                    offset += Os.write(fd, bytes, offset, bytes.size - offset)
-                } while (offset != bytes.size)
+                descriptor.createOutputStream().use { outputStream ->
+                    outputStream.write(bytes)
+                    outputStream.flush()
 
-                if (shouldFsync(uri)) {
-                    Os.fsync(fd)
+                    if (shouldFsync(uri)) {
+                        Os.fsync(fileDescriptor)
+                    }
                 }
             }
         }
@@ -203,10 +198,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(
-                MediaStore.MediaColumns.RELATIVE_PATH,
-                CaptureOutputRepository.DEFAULT_MEDIA_STORE_CAPTURE_PATH,
-            )
+            put(MediaStore.MediaColumns.RELATIVE_PATH, MEDIA_STORE_CAPTURE_PATH)
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
 
@@ -239,10 +231,8 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
 
     private fun shouldFsync(uri: Uri): Boolean {
         return when (uri.host) {
-            MediaStore.AUTHORITY,
-            CaptureOutputRepository.SAF_URI_HOST_EXTERNAL_STORAGE,
-            -> true
-
+            MediaStore.AUTHORITY -> true
+            SAF_URI_HOST_EXTERNAL_STORAGE -> true
             else -> false
         }
     }

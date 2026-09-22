@@ -7,4 +7,13 @@ data class ViewfinderRecordingState(
     val duration: Duration = Duration.ZERO,
     val isPaused: Boolean = false,
     val isMuted: Boolean = false,
-)
+) {
+
+    fun isActive(): Boolean {
+        return phase != RecordingPhase.IDLE
+    }
+
+    fun isRecording(): Boolean {
+        return phase == RecordingPhase.RECORDING
+    }
+}

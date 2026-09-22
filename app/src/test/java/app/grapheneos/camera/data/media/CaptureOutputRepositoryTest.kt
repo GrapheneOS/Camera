@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
+import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -67,7 +68,7 @@ class CaptureOutputRepositoryTest {
             assertEquals(FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
             assertEquals(MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
             assertEquals(
-                CaptureOutputRepository.DEFAULT_MEDIA_STORE_CAPTURE_PATH,
+                MEDIA_STORE_CAPTURE_PATH,
                 values.getAsString(MediaStore.MediaColumns.RELATIVE_PATH),
             )
             assertEquals(1, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))

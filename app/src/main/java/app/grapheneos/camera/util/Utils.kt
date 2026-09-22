@@ -8,8 +8,8 @@ import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepository.Companion.DEFAULT_MEDIA_STORE_CAPTURE_PATH
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepository.Companion.SAF_URI_HOST_EXTERNAL_STORAGE
+import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
+import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -52,7 +52,7 @@ fun ExecutorService.executeIfAlive(r: Runnable) {
 
 fun storageLocationToUiString(ctx: Context, sl: String): String {
     if (sl == CapturedItemRepository.MEDIA_STORE_LOCATION) {
-        return "${ctx.getString(R.string.main_storage)}/$DEFAULT_MEDIA_STORE_CAPTURE_PATH"
+        return "${ctx.getString(R.string.main_storage)}/$MEDIA_STORE_CAPTURE_PATH"
     }
 
     val uri = Uri.parse(sl)

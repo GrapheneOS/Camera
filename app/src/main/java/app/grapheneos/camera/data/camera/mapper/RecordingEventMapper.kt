@@ -13,13 +13,17 @@ internal class RecordingEventMapperImpl @Inject constructor() : RecordingEventMa
 
     override fun map(event: VideoRecordEvent): RecordingEvent? {
         return when (event) {
-            is VideoRecordEvent.Start -> RecordingEvent.Started
+            is VideoRecordEvent.Start -> {
+                RecordingEvent.Started
+            }
 
             is VideoRecordEvent.Status -> {
                 RecordingEvent.Progressed(event.recordingStats.recordedDurationNanos)
             }
 
-            is VideoRecordEvent.Finalize -> RecordingEvent.Finalized(outcomeOf(event))
+            is VideoRecordEvent.Finalize -> {
+                RecordingEvent.Finalized(outcomeOf(event))
+            }
 
             else -> null
         }
@@ -33,7 +37,9 @@ internal class RecordingEventMapperImpl @Inject constructor() : RecordingEventMa
                 RecordingOutcome.NothingPlayableWritten
             }
 
-            event.error in UNRECOVERABLE_ERRORS -> RecordingOutcome.Failed(event.error)
+            event.error in UNRECOVERABLE_ERRORS -> {
+                RecordingOutcome.Failed(errorCode = event.error)
+            }
 
             else -> RecordingOutcome.Interrupted(
                 errorCode = event.error,
