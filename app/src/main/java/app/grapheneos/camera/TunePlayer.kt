@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
+import android.os.Looper
 
 private fun prepareMediaPlayer(context: Context, resid: Int, listener: MediaPlayer.OnPreparedListener) {
     MediaPlayer().apply {
@@ -17,6 +18,8 @@ open class TunePlayer(
     context: Context,
     private val soundsEnabled: () -> Boolean,
 ) {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private lateinit var shutterPlayer: MediaPlayer
 
@@ -50,7 +53,7 @@ open class TunePlayer(
         shutterPlayer.start()
     }
 
-    open fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
+    open fun playVRStartSound(onPlayed: Runnable) {
         if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) {
             onPlayed.run()
             return
@@ -63,7 +66,7 @@ open class TunePlayer(
                 delivered = true
                 vRecPlayer.setOnCompletionListener(null)
                 vRecPlayer.setOnErrorListener(null)
-                handler.postDelayed(onPlayed, 10)
+                mainHandler.postDelayed(onPlayed, SOUND_TO_START_DELAY_MS)
             }
         }
         vRecPlayer.setOnCompletionListener(deliverOnce)
@@ -97,5 +100,9 @@ open class TunePlayer(
         if (shouldNotPlayTune() || !::fSPlayer.isInitialized) return
         fSPlayer.seekTo(0)
         fSPlayer.start()
+    }
+
+    private companion object {
+        private const val SOUND_TO_START_DELAY_MS = 10L
     }
 }

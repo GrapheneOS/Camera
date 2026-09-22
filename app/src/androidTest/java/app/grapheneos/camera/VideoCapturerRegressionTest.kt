@@ -63,7 +63,7 @@ class VideoCapturerRegressionTest {
     /** Fires the callback twice, like a MediaPlayer error followed by normal completion. */
     private fun doubleFiringTunePlayer(): TunePlayer {
         return mockk(relaxed = true) {
-            every { playVRStartSound(handler = any(), onPlayed = any()) } answers {
+            every { playVRStartSound(onPlayed = any()) } answers {
                 val onPlayed = secondArg<Runnable>()
                 onPlayed.run()
                 onPlayed.run()
@@ -74,7 +74,7 @@ class VideoCapturerRegressionTest {
     /** Runs the callback synchronously, skipping the sound. */
     private fun immediateTunePlayer(): TunePlayer {
         return mockk(relaxed = true) {
-            every { playVRStartSound(handler = any(), onPlayed = any()) } answers {
+            every { playVRStartSound(onPlayed = any()) } answers {
                 secondArg<Runnable>().run()
             }
         }
@@ -83,7 +83,7 @@ class VideoCapturerRegressionTest {
     /** Holds the callback until the test releases it. */
     private fun manualTunePlayer(deferred: CapturingSlot<Runnable>): TunePlayer {
         return mockk(relaxed = true) {
-            every { playVRStartSound(handler = any(), onPlayed = capture(deferred)) } just Runs
+            every { playVRStartSound(onPlayed = capture(deferred)) } just Runs
         }
     }
 

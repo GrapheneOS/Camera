@@ -10,6 +10,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -27,6 +28,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDele
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUpdate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -43,6 +45,7 @@ import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
 import java.io.IOException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
@@ -78,6 +81,7 @@ class ViewfinderViewModelTest {
 
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
     private val captureEvents = MutableSharedFlow<CapturedImageEvent>()
+    private val recordingUpdates = MutableSharedFlow<RecordingUpdate>()
 
     private val reverted = CompletableDeferred<Unit>()
 
@@ -94,6 +98,7 @@ class ViewfinderViewModelTest {
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
         every { cameraDelegate.sessionEvents } returns sessionEvents
         every { captureDelegate.captureEvents } returns captureEvents
+        every { recordingDelegate.recordingUpdates } returns recordingUpdates
     }
 
     @Test
@@ -163,7 +168,7 @@ class ViewfinderViewModelTest {
             sessionEvents.emit(CameraSessionEvent.ZoomStateChanged)
 
             verify(exactly = 1) { cameraDelegate.refreshZoom() }
-            assertEquals(listOf(ViewfinderScreenEffect.ShowZoomPanel), effects)
+            assertEquals(listOf(ViewfinderScreenEffect.Panel.ShowZoom), effects)
         }
     }
 
@@ -213,9 +218,9 @@ class ViewfinderViewModelTest {
 
             assertEquals(
                 listOf(
-                    ViewfinderScreenEffect.HideExposurePanel,
+                    ViewfinderScreenEffect.Panel.HideExposure,
                     ViewfinderScreenEffect.ShowMessage(R.string.qr_rear_camera_unavailable),
-                    ViewfinderScreenEffect.HideZoomPanel,
+                    ViewfinderScreenEffect.Panel.HideZoom,
                 ),
                 effects,
             )
@@ -533,10 +538,10 @@ class ViewfinderViewModelTest {
             assertEquals(CameraMode.CAMERA, stateHolder.state.value.mode)
             assertEquals(
                 listOf(
-                    ViewfinderScreenEffect.HideExposurePanel,
+                    ViewfinderScreenEffect.Panel.HideExposure,
                     ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
-                    ViewfinderScreenEffect.HideExposurePanel,
-                    ViewfinderScreenEffect.HideZoomPanel,
+                    ViewfinderScreenEffect.Panel.HideExposure,
+                    ViewfinderScreenEffect.Panel.HideZoom,
                     ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
                     ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
                 ),
@@ -571,23 +576,181 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun recordingActions_reachTheCaptureDelegate() {
+    fun recordingRequested_withTheCameraReady_prepticksTheRecording() {
         runTest {
+            every { cameraDelegate.canRecord } returns true
+
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(RecordingAction.RecordingRequested)
-            viewModel.onAction(RecordingAction.RecordingStarted)
-            viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
-            viewModel.onAction(RecordingAction.RecordingStopped)
+            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
 
             verifyOrder {
                 recordingDelegate.requestRecording()
-                recordingDelegate.startRecording()
+                recordingDelegate.prepareRecording(includeLocation = false, includeAudio = true)
+            }
+        }
+    }
+
+    @Test
+    fun recordingRequested_withoutTheMicrophone_asksForItInsteadOfRecording() {
+        runTest {
+            every { cameraDelegate.canRecord } returns true
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = false))
+
+            verify(exactly = 0) {
+                recordingDelegate.prepareRecording(includeLocation = any(), includeAudio = any())
+            }
+            verify(exactly = 1) { recordingDelegate.markStopped() }
+            assertEquals(
+                listOf(ViewfinderScreenEffect.Recording.RequestAudioPermission),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun recordingRequested_withoutACameraToRecordWith_doesNothing() {
+        runTest {
+            every { cameraDelegate.canRecord } returns false
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+
+            verify(exactly = 0) { recordingDelegate.requestRecording() }
+        }
+    }
+
+    @Test
+    fun recordingActions_reachTheRecordingDelegate() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
+            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
+            viewModel.onAction(RecordingAction.StartSoundPlayed)
+            viewModel.onAction(RecordingAction.RecordingStopRequested)
+
+            verifyOrder {
                 recordingDelegate.setPaused(paused = true)
                 recordingDelegate.setMuted(muted = true)
-                recordingDelegate.stopRecording()
+                recordingDelegate.startPreparedRecording()
+                recordingDelegate.requestStop()
             }
+        }
+    }
+
+    @Test
+    fun recordingUpdates_soundTheStartAndDriveTheState() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            recordingUpdates.emit(RecordingUpdate.ReadyToStart)
+            recordingUpdates.emit(RecordingUpdate.Started)
+            recordingUpdates.emit(RecordingUpdate.Progressed(duration = 5.seconds))
+
+            verifyOrder {
+                recordingDelegate.startRecording()
+                recordingDelegate.setRecordedDuration(5.seconds)
+            }
+            assertEquals(listOf(ViewfinderScreenEffect.Recording.PlayStartSound), effects)
+        }
+    }
+
+    @Test
+    fun anAbandonedRecording_stopsWithoutTheStopSound() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            recordingUpdates.emit(RecordingUpdate.Abandoned)
+
+            verify(exactly = 1) { recordingDelegate.markStopped() }
+            assertEquals(listOf(ViewfinderScreenEffect.Recording.Stopped), effects)
+        }
+    }
+
+    @Test
+    fun aFinishedRecording_isSavedAndAnnounced() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            recordingUpdates.emit(RecordingUpdate.Finished(outcome = RecordingOutcome.Saved))
+
+            verifyOrder {
+                recordingDelegate.markStopped()
+                recordingDelegate.saveRecording()
+            }
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.Recording.Stopped,
+                    ViewfinderScreenEffect.Recording.PlayStopSound,
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun aRecordingTooShortToPlay_isThrownAwayWithAMessage() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            recordingUpdates.emit(
+                RecordingUpdate.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
+            )
+
+            verify(exactly = 1) { recordingDelegate.discardRecording() }
+            assertTrue(
+                ViewfinderScreenEffect.ShowMessage(
+                    R.string.recording_too_short_to_be_saved,
+                ) in effects,
+            )
+        }
+    }
+
+    @Test
+    fun anInterruptedRecording_keepsOnlyWhatItManagedToWrite() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            recordingUpdates.emit(
+                RecordingUpdate.Finished(
+                    outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = true),
+                ),
+            )
+            verify(exactly = 1) { recordingDelegate.saveRecording() }
+
+            recordingUpdates.emit(
+                RecordingUpdate.Finished(
+                    outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = false),
+                ),
+            )
+            verify(exactly = 1) { recordingDelegate.discardRecording() }
+        }
+    }
+
+    @Test
+    fun anUnusableOutput_revertsTheStorageLocationAndStops() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            recordingUpdates.emit(RecordingUpdate.OutputUnavailable)
+
+            verify(exactly = 1) { recordingDelegate.markStopped() }
+            assertTrue(
+                ViewfinderScreenEffect.ShowMessage(
+                    R.string.unable_to_access_output_file,
+                ) in effects,
+            )
         }
     }
 

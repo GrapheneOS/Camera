@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.net.Uri
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -18,10 +19,12 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 
@@ -45,13 +48,65 @@ internal class ViewfinderEffectHandler(
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
             is Effect.ShowQrResult -> activity.showQrResult(effect.text)
-            is Effect.ShowZoomPanel -> showZoomPanel()
-            is Effect.HideZoomPanel -> hideZoomPanel()
-            is Effect.HideExposurePanel -> hideExposurePanel()
+            is Effect.Panel -> handlePanel(effect)
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
             is Effect.SetLocationUpdates -> setLocationUpdates(effect.enabled)
             is Effect.SelfTimer -> handleSelfTimer(effect)
             is Effect.Picture -> handlePicture(effect)
+            is Effect.Recording -> handleRecording(effect)
+        }
+    }
+
+    private fun handlePanel(effect: Effect.Panel) {
+        when (effect) {
+            is Effect.Panel.ShowZoom -> activity.zoomBar.showPanel()
+            is Effect.Panel.HideZoom -> activity.zoomBar.hidePanel()
+            is Effect.Panel.HideExposure -> activity.exposureBar.hidePanel()
+        }
+    }
+
+    private fun handleRecording(effect: Effect.Recording) {
+        when (effect) {
+            is Effect.Recording.PlayStopSound -> activity.tunePlayer.playVRStopSound()
+            is Effect.Recording.Stopped -> activity.forceUpdateOrientationSensor()
+            is Effect.Recording.Saved -> onRecordingSaved(effect)
+
+            is Effect.Recording.PlayStartSound -> {
+                activity.tunePlayer.playVRStartSound {
+                    activity.viewfinder.onAction(RecordingAction.StartSoundPlayed)
+                }
+            }
+
+            is Effect.Recording.RequestAudioPermission -> {
+                activity.restartRecordingWithMicPermission()
+            }
+
+            is Effect.Recording.SaveFailed -> {
+                activity.showMessage(
+                    activity.getString(R.string.unable_to_save_video_verbose, effect.errorCode),
+                )
+            }
+
+            is Effect.Recording.Interrupted -> {
+                activity.showMessage(
+                    activity.getString(R.string.error_during_recording, effect.errorCode),
+                )
+            }
+        }
+    }
+
+    private fun onRecordingSaved(effect: Effect.Recording.Saved) {
+        effect.item?.let { item ->
+            activity.capturedItemSession.recordCapturedItem(item)
+            activity.updateThumbnail()
+
+            if (activity is SecureMainActivity) {
+                activity.capturedItems.add(item)
+            }
+        }
+
+        if (activity is VideoCaptureActivity) {
+            activity.afterRecording(effect.uri)
         }
     }
 
@@ -260,23 +315,17 @@ internal class ViewfinderEffectHandler(
         showStorageLocationNotFoundDialog(activity)
     }
 
+    override fun foreignOutputUri(): Uri? {
+        return (activity as? VideoCaptureActivity)
+            ?.takeIf { it.isOutputUriAvailable() }
+            ?.outputUri
+    }
+
     override fun thumbnailSize(): ThumbnailSize {
         return ThumbnailSize(
             width = activity.imagePreview.width,
             height = activity.imagePreview.height,
         )
-    }
-
-    private fun hideExposurePanel() {
-        activity.exposureBar.hidePanel()
-    }
-
-    private fun showZoomPanel() {
-        activity.zoomBar.showPanel()
-    }
-
-    private fun hideZoomPanel() {
-        activity.zoomBar.hidePanel()
     }
 
     private fun visibleOrInvisible(visible: Boolean): Int {

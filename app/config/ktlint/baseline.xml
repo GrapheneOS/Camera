@@ -157,19 +157,15 @@
         <error line="44" column="19" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/TunePlayer.kt">
-        <error line="8" column="100" source="standard:max-line-length" />
-        <error line="10" column="23" source="standard:argument-list-wrapping" />
-        <error line="10" column="32" source="standard:argument-list-wrapping" />
-        <error line="10" column="42" source="standard:binary-expression-wrapping" />
-        <error line="10" column="42" source="standard:argument-list-wrapping" />
-        <error line="10" column="98" source="standard:binary-expression-wrapping" />
-        <error line="10" column="101" source="standard:max-line-length" />
-        <error line="10" column="104" source="standard:argument-list-wrapping" />
-        <error line="10" column="105" source="standard:argument-list-wrapping" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/capturer/VideoCapturer.kt">
-        <error line="32" column="21" source="standard:class-signature" />
-        <error line="32" column="56" source="standard:class-signature" />
+        <error line="9" column="100" source="standard:max-line-length" />
+        <error line="11" column="23" source="standard:argument-list-wrapping" />
+        <error line="11" column="32" source="standard:argument-list-wrapping" />
+        <error line="11" column="42" source="standard:binary-expression-wrapping" />
+        <error line="11" column="42" source="standard:argument-list-wrapping" />
+        <error line="11" column="98" source="standard:binary-expression-wrapping" />
+        <error line="11" column="101" source="standard:max-line-length" />
+        <error line="11" column="104" source="standard:argument-list-wrapping" />
+        <error line="11" column="105" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/domain/capture/ImageSaver.kt">
         <error line="176" column="45" source="standard:curly-spacing" />
