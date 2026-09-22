@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,7 +19,6 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
-import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
@@ -76,7 +76,6 @@ class ViewfinderViewModel @Inject constructor(
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
-    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     ViewfinderScreenModel {
 
@@ -180,6 +179,242 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
+    private fun onRecordingAction(action: RecordingAction) {
+        when (action) {
+            is RecordingAction.RecordingRequested -> startRecording(action.hasAudioPermission)
+            is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
+            is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
+
+            is RecordingAction.RecordingPauseToggled -> {
+                if (state().recording.isActive()) {
+                    recordingDelegate.setPaused(action.paused)
+                }
+            }
+
+            is RecordingAction.RecordingMuteToggled -> {
+                if (state().recording.isActive()) {
+                    recordingDelegate.setMuted(action.muted)
+                }
+            }
+        }
+    }
+
+    private fun onLifecycleAction(action: LifecycleAction) {
+        when (action) {
+            is LifecycleAction.ScreenCreated -> onScreenCreated(action.host)
+            is LifecycleAction.ScreenDestroyed -> onScreenDestroyed()
+            is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
+            is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
+            is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
+            is LifecycleAction.RecordAudioPermissionGranted -> startCamera(forced = true)
+            is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
+            is LifecycleAction.QrResultDismissed -> dismissQrResult()
+        }
+    }
+
+    private fun onSettingsAction(action: SettingsAction) {
+        when (action) {
+            is SettingsAction.ScanAllCodesToggleClicked -> settingsDelegate.toggleScanAllCodes()
+            is SettingsAction.GridToggleClicked -> settingsDelegate.cycleGridType()
+            is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
+            is SettingsAction.GeoTaggingToggled -> setRequireLocation(action.enabled)
+            is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
+            is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
+
+            is SettingsAction.FocusTimeoutSelected -> {
+                settingsDelegate.setFocusTimeout(action.seconds)
+            }
+
+            is SettingsAction.SelfTimerSelected -> {
+                settingsDelegate.setSelfTimerDuration(action.seconds)
+            }
+
+            is SettingsAction.StabilizationToggled -> {
+                settingsDelegate.setEnableEis(action.enabled)
+                startCamera(forced = true)
+            }
+
+            is SettingsAction.FocusLockToggled -> {
+                settingsDelegate.setWaitForFocusLock(action.enabled)
+                startCamera(forced = true)
+            }
+        }
+    }
+
+    private fun onSessionEvent(event: CameraSessionEvent) {
+        when (event) {
+            is CameraSessionEvent.ProviderReady -> startCamera(forced = event.forced)
+            is CameraSessionEvent.FeaturesSelected -> onFeaturesSelected(event)
+            is CameraSessionEvent.ZoomStateLoaded -> cameraDelegate.refreshZoom()
+
+            is CameraSessionEvent.ZoomStateChanged -> {
+                cameraDelegate.refreshZoom()
+                emitEffect(Effect.Panel.ShowZoom)
+            }
+
+            is CameraSessionEvent.CameraProviderUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
+            }
+
+            is CameraSessionEvent.ExtensionsUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.extensions_manager_init_failure))
+            }
+
+            is CameraSessionEvent.QrCodeScanned -> {
+                if (cameraDelegate.showQrResult()) {
+                    emitEffect(Effect.ShowQrResult(event.text))
+                }
+            }
+        }
+    }
+
+    private fun onFeaturesSelected(event: CameraSessionEvent.FeaturesSelected) {
+        // The full request-vs-result picture (including which stabilization feature, if any,
+        // survived) is only ever logged, never shown: the lead wants EIS left silently in its
+        // known state -- 4K keeps priority and stabilization is given up without a notice.
+        Log.i(TAG, "Requested ${event.requested} but got ${event.selected}")
+
+        val droppedQuality = resolveDroppedVideoQuality(
+            lensFacing = event.boundLensFacing,
+            requestedQualityFeature = event.qualityFeature,
+            selected = event.selected,
+        ) ?: return
+
+        emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
+    }
+
+    private fun onCapturedImageEvent(event: CapturedImageEvent) {
+        when (event) {
+            is CapturedImageEvent.Captured -> onPictureCaptured()
+            is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
+            is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
+            is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
+            is CapturedImageEvent.SaveFailed -> onPictureSaveFailed(event)
+            is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
+            is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
+            is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
+            is CapturedImageEvent.PreviewReturned -> emitEffect(Effect.Picture.PreviewReturned)
+            is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
+
+            is CapturedImageEvent.PreviewStoreFailed -> {
+                emitEffect(Effect.Picture.PreviewStoreFailed)
+            }
+
+            is CapturedImageEvent.LocationUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
+            }
+        }
+    }
+
+    private fun onRecordedVideoEvent(event: RecordedVideoEvent) {
+        when (event) {
+            is RecordedVideoEvent.OutputUnavailable -> onRecordingOutputUnavailable()
+            is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
+            is RecordedVideoEvent.Abandoned -> onRecordingStopped()
+            is RecordedVideoEvent.Started -> recordingDelegate.startRecording()
+            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
+
+            is RecordedVideoEvent.Progressed -> {
+                recordingDelegate.setRecordedDuration(event.duration)
+            }
+
+            is RecordedVideoEvent.LocationUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
+            }
+
+            is RecordedVideoEvent.SaveFailed -> {
+                emitEffect(Effect.ShowMessage(R.string.unable_to_save_video))
+            }
+
+            is RecordedVideoEvent.Saved -> {
+                emitEffect(Effect.Recording.Saved(uri = event.uri, item = event.item))
+            }
+        }
+    }
+
+    private fun switchMode(mode: CameraMode) {
+        if (!modeDelegate.select(mode)) return
+
+        startCamera(forced = true)
+
+        // A mode can change with no touch involved, so the strip follows the camera and not the
+        // other way round - currentMode, because an extension that fails to bind falls back to
+        // another mode from inside startCamera(). Left until after that rebind, which blocks the
+        // main thread for long enough to swallow the animation whole.
+        if (entryPoint.showsCameraModeTabs) {
+            emitEffect(Effect.GoToModeTab(state().mode))
+        }
+    }
+
+    private fun switchLens() {
+        val lensFacing = cameraDelegate.lensFacing.opposite()
+        val isSwitched = cameraDelegate.switchLensFacing(
+            lensFacing = lensFacing,
+            extensionMode = state().mode.extensionMode,
+        )
+
+        when {
+            isSwitched -> startCamera(forced = true)
+            else -> emitEffect(Effect.ShowMessage(lensUnavailableMessage(lensFacing)))
+        }
+    }
+
+    @StringRes
+    private fun lensUnavailableMessage(lensFacing: LensFacing): Int {
+        return when (lensFacing) {
+            LensFacing.BACK -> R.string.rear_camera_unavailable
+            LensFacing.FRONT -> R.string.front_camera_unavailable
+        }
+    }
+
+    private fun toggleFlashMode() {
+        val state = state()
+
+        when {
+            state.requiresVideoModeOnly -> {
+                emitEffect(Effect.ShowMessage(R.string.flash_switch_unsupported))
+            }
+
+            state.session.isFlashAvailable -> {
+                val next = when (state.flashMode) {
+                    FlashMode.OFF -> FlashMode.ON
+                    FlashMode.ON -> FlashMode.AUTO
+                    FlashMode.AUTO -> FlashMode.OFF
+                }
+
+                setFlashMode(next)
+            }
+
+            else -> {
+                emitEffect(Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode))
+            }
+        }
+    }
+
+    private fun setFlashMode(value: FlashMode) {
+        settingsDelegate.setFlashMode(value)
+        cameraDelegate.applyFlashMode(value)
+    }
+
+    private fun toggleAspectRatio() {
+        val next = when (state().aspectRatio()) {
+            AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
+            AspectRatio.RATIO_4_3 -> AspectRatio.RATIO_16_9
+        }
+
+        settingsDelegate.setAspectRatio(next)
+
+        startCamera(forced = true)
+    }
+
+    private fun onVideoQualitySelected(quality: VideoQuality) {
+        if (quality == state().modeSettings.videoQuality) return
+
+        settingsDelegate.setVideoQuality(quality)
+
+        startCamera(forced = true)
+    }
+
     private fun takePicture() {
         val state = state()
 
@@ -203,6 +438,101 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
+    private fun onPictureCaptured() {
+        captureDelegate.startPictureSave()
+
+        emitEffect(Effect.Picture.Captured)
+        emitEffect(Effect.FlashPreview(state().selfIlluminate()))
+    }
+
+    private fun onPictureThumbnailReady(thumbnail: Bitmap) {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(Effect.Picture.ThumbnailReady(thumbnail = thumbnail))
+    }
+
+    private fun onPictureCaptureFailed(event: CapturedImageEvent.CaptureFailed) {
+        Log.e(TAG, "unable to capture a picture", event.cause)
+
+        captureDelegate.finishPictureSave()
+
+        emitEffect(
+            Effect.Picture.CaptureFailed(
+                errorCode = event.errorCode,
+                details = detailsOf(event.cause),
+            ),
+        )
+    }
+
+    private fun onPictureSaveFailed(event: CapturedImageEvent.SaveFailed) {
+        Log.e(TAG, "unable to save a picture", event.cause)
+
+        captureDelegate.finishPictureSave()
+
+        emitEffect(
+            Effect.Picture.SaveFailed(
+                stage = event.cause.place.name,
+                details = detailsOf(event.cause),
+                alreadyReported = event.alreadyReported,
+            ),
+        )
+    }
+
+    private fun detailsOf(exception: Throwable): PictureFailureDetails {
+        return PictureFailureDetails(
+            name = exception.javaClass.name,
+            stackTrace = exception.printStackTraceToString(),
+        )
+    }
+
+    private fun onPreviewCaptured(bitmap: Bitmap) {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(Effect.Picture.PreviewCaptured(bitmap = bitmap))
+        emitEffect(Effect.ShowMessage(R.string.image_captured_successfully))
+    }
+
+    private fun onPreviewFailed() {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(Effect.Picture.PreviewFailed)
+    }
+
+    private fun onStorageLocationNotFound() {
+        applicationScope.launch(mainDispatcher) {
+            revertToMediaStoreLocation()
+            emitEffect(Effect.ShowStorageLocationNotFound)
+        }
+    }
+
+    private fun startSelfTimer() {
+        cancelSelfTimer()
+
+        emitEffect(Effect.SelfTimer.Started)
+        captureDelegate.setSelfTimerRunning(true)
+
+        val seconds = state().settings.selfTimerDurationSeconds
+        selfTimer = viewModelScope.launch(mainDispatcher) {
+            captureDelegate.selfTimerCountdown(seconds).collect { secondsLeft ->
+                emitEffect(Effect.SelfTimer.Ticked(secondsLeft))
+            }
+
+            captureDelegate.setSelfTimerRunning(false)
+            emitEffect(Effect.SelfTimer.Finished)
+        }
+    }
+
+    private fun cancelSelfTimer() {
+        // Cancelling puts back the controls the countdown hid. Doing that when no countdown is up
+        // would resurrect the ones the current mode hid for its own reasons: QR mode hides
+        // thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
+        if (selfTimer?.isActive != true) return
+
+        selfTimer?.cancel()
+        captureDelegate.setSelfTimerRunning(false)
+        emitEffect(Effect.SelfTimer.Cancelled)
+    }
+
     private fun startRecording(hasAudioPermission: Boolean) {
         val state = state()
 
@@ -220,35 +550,8 @@ class ViewfinderViewModel @Inject constructor(
 
         recordingDelegate.prepareRecording(
             includeLocation = state.requireLocation,
-            includeAudio = state.settings.includeAudio && hasAudioPermission,
+            includeAudio = state.settings.includeAudio,
         )
-    }
-
-    private fun onRecordedVideoEvent(event: RecordedVideoEvent) {
-        when (event) {
-            is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
-            is RecordedVideoEvent.Abandoned -> onRecordingStopped()
-            is RecordedVideoEvent.Started -> recordingDelegate.startRecording()
-            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
-
-            is RecordedVideoEvent.SaveFailed -> {
-                emitEffect(Effect.ShowMessage(R.string.unable_to_save_video))
-            }
-
-            is RecordedVideoEvent.Progressed -> {
-                recordingDelegate.setRecordedDuration(event.duration)
-            }
-
-            is RecordedVideoEvent.LocationUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
-            }
-
-            is RecordedVideoEvent.OutputUnavailable -> onRecordingOutputUnavailable()
-
-            is RecordedVideoEvent.Saved -> {
-                emitEffect(Effect.Recording.Saved(uri = event.uri, item = event.item))
-            }
-        }
     }
 
     private fun onRecordingOutputUnavailable() {
@@ -295,277 +598,6 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
-    private fun onCapturedImageEvent(event: CapturedImageEvent) {
-        when (event) {
-            is CapturedImageEvent.Captured -> onPictureCaptured()
-            is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
-            is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
-            is CapturedImageEvent.PreviewReturned -> emitEffect(Effect.Picture.PreviewReturned)
-            is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
-            is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
-            is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
-            is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
-            is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
-            is CapturedImageEvent.Failed -> onPictureSaveFailed(event)
-
-            is CapturedImageEvent.PreviewStoreFailed -> {
-                emitEffect(Effect.Picture.PreviewStoreFailed)
-            }
-
-            is CapturedImageEvent.LocationUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
-            }
-        }
-    }
-
-    private fun onRecordingAction(action: RecordingAction) {
-        when (action) {
-            is RecordingAction.RecordingRequested -> startRecording(action.hasAudioPermission)
-            is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
-            is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
-
-            is RecordingAction.RecordingPauseToggled -> {
-                if (state().recording.isActive()) {
-                    recordingDelegate.setPaused(action.paused)
-                }
-            }
-
-            is RecordingAction.RecordingMuteToggled -> {
-                if (state().recording.isActive()) {
-                    recordingDelegate.setMuted(action.muted)
-                }
-            }
-        }
-    }
-
-    private fun onLifecycleAction(action: LifecycleAction) {
-        when (action) {
-            is LifecycleAction.ScreenCreated -> onScreenCreated(action.host)
-            is LifecycleAction.ScreenDestroyed -> onScreenDestroyed()
-            is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
-            is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
-            is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
-            is LifecycleAction.RecordAudioPermissionGranted -> startCamera(forced = true)
-            is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
-            is LifecycleAction.QrResultDismissed -> dismissQrResult()
-        }
-    }
-
-    private fun onSettingsAction(action: SettingsAction) {
-        when (action) {
-            is SettingsAction.ScanAllCodesToggleClicked -> {
-                settingsDelegate.toggleScanAllCodes()
-            }
-
-            is SettingsAction.GridToggleClicked -> {
-                settingsDelegate.cycleGridType()
-            }
-
-            is SettingsAction.AudioToggled -> {
-                settingsDelegate.setIncludeAudio(action.enabled)
-            }
-
-            is SettingsAction.GeoTaggingToggled -> {
-                setRequireLocation(action.enabled)
-            }
-
-            is SettingsAction.SelfIlluminationToggled -> {
-                setSelfIllumination(action.enabled)
-            }
-
-            is SettingsAction.StabilizationToggled -> {
-                settingsDelegate.setEnableEis(action.enabled)
-                startCamera(forced = true)
-            }
-
-            is SettingsAction.FocusLockToggled -> {
-                settingsDelegate.setWaitForFocusLock(action.enabled)
-                startCamera(forced = true)
-            }
-
-            is SettingsAction.FocusTimeoutSelected -> {
-                settingsDelegate.setFocusTimeout(action.seconds)
-            }
-
-            is SettingsAction.SelfTimerSelected -> {
-                settingsDelegate.setSelfTimerDuration(action.seconds)
-            }
-
-            is SettingsAction.VideoQualitySelected -> {
-                onVideoQualitySelected(action.quality)
-            }
-        }
-    }
-
-    private fun switchMode(mode: CameraMode) {
-        if (!modeDelegate.select(mode)) return
-
-        startCamera(forced = true)
-
-        // A mode can change with no touch involved, so the strip follows the camera and not the
-        // other way round - currentMode, because an extension that fails to bind falls back to
-        // another mode from inside startCamera(). Left until after that rebind, which blocks the
-        // main thread for long enough to swallow the animation whole.
-        if (entryPoint.showsCameraModeTabs) {
-            emitEffect(Effect.GoToModeTab(state().mode))
-        }
-    }
-
-    private fun switchLens() {
-        val lensFacing = cameraDelegate.lensFacing.opposite()
-        val isSwitched = cameraDelegate.switchLensFacing(
-            lensFacing = lensFacing,
-            extensionMode = state().mode.extensionMode,
-        )
-
-        when {
-            isSwitched -> startCamera(forced = true)
-            else -> emitEffect(Effect.ShowMessage(lensUnavailableMessage(lensFacing)))
-        }
-    }
-
-    private fun lensUnavailableMessage(lensFacing: LensFacing): Int {
-        return when (lensFacing) {
-            LensFacing.BACK -> R.string.rear_camera_unavailable
-            LensFacing.FRONT -> R.string.front_camera_unavailable
-        }
-    }
-
-    private fun toggleFlashMode() {
-        val currentState = state()
-
-        when {
-            currentState.requiresVideoModeOnly -> {
-                emitEffect(Effect.ShowMessage(R.string.flash_switch_unsupported))
-            }
-
-            currentState.session.isFlashAvailable -> {
-                val next = when (currentState.flashMode) {
-                    FlashMode.OFF -> FlashMode.ON
-                    FlashMode.ON -> FlashMode.AUTO
-                    FlashMode.AUTO -> FlashMode.OFF
-                }
-
-                setFlashMode(next)
-            }
-
-            else -> {
-                emitEffect(Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode))
-            }
-        }
-    }
-
-    private fun setFlashMode(value: FlashMode) {
-        settingsDelegate.setFlashMode(value)
-        cameraDelegate.applyFlashMode(value)
-    }
-
-    private fun toggleAspectRatio() {
-        val next = when (state().aspectRatio()) {
-            AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
-            AspectRatio.RATIO_4_3 -> AspectRatio.RATIO_16_9
-        }
-
-        settingsDelegate.setAspectRatio(next)
-
-        startCamera(forced = true)
-    }
-
-    private fun onPictureCaptured() {
-        captureDelegate.startPictureSave()
-
-        emitEffect(Effect.Picture.Captured)
-        emitEffect(Effect.FlashPreview(state().selfIlluminate()))
-    }
-
-    private fun onPreviewCaptured(bitmap: Bitmap) {
-        captureDelegate.finishPictureSave()
-
-        emitEffect(Effect.Picture.PreviewCaptured(bitmap = bitmap))
-        emitEffect(Effect.ShowMessage(R.string.image_captured_successfully))
-    }
-
-    private fun onPreviewFailed() {
-        captureDelegate.finishPictureSave()
-
-        emitEffect(Effect.Picture.PreviewFailed)
-    }
-
-    private fun onPictureThumbnailReady(thumbnail: Bitmap) {
-        captureDelegate.finishPictureSave()
-
-        emitEffect(Effect.Picture.ThumbnailReady(thumbnail = thumbnail))
-    }
-
-    private fun onPictureCaptureFailed(event: CapturedImageEvent.CaptureFailed) {
-        Log.e(TAG, "unable to capture a picture", event.cause)
-
-        captureDelegate.finishPictureSave()
-
-        emitEffect(
-            Effect.Picture.CaptureFailed(
-                errorCode = event.errorCode,
-                details = detailsOf(event.cause),
-            ),
-        )
-    }
-
-    private fun onPictureSaveFailed(event: CapturedImageEvent.Failed) {
-        Log.e(TAG, "unable to save a picture", event.cause)
-
-        captureDelegate.finishPictureSave()
-
-        emitEffect(
-            Effect.Picture.SaveFailed(
-                stage = event.cause.place.name,
-                details = detailsOf(event.cause),
-                alreadyReported = event.alreadyReported,
-            ),
-        )
-    }
-
-    private fun startSelfTimer() {
-        cancelSelfTimer()
-
-        emitEffect(Effect.SelfTimer.Started)
-        captureDelegate.setSelfTimerRunning(true)
-
-        val seconds = state().settings.selfTimerDurationSeconds
-        selfTimer = viewModelScope.launch(mainDispatcher) {
-            captureDelegate.selfTimerCountdown(seconds).collect { secondsLeft ->
-                emitEffect(Effect.SelfTimer.Ticked(secondsLeft))
-            }
-
-            captureDelegate.setSelfTimerRunning(false)
-            emitEffect(Effect.SelfTimer.Finished)
-        }
-    }
-
-    private fun cancelSelfTimer() {
-        // Cancelling puts back the controls the countdown hid. Doing that when no countdown is up
-        // would resurrect the ones the current mode hid for its own reasons: QR mode hides
-        // thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
-        if (selfTimer?.isActive != true) return
-
-        selfTimer?.cancel()
-        captureDelegate.setSelfTimerRunning(false)
-        emitEffect(Effect.SelfTimer.Cancelled)
-    }
-
-    private fun detailsOf(exception: Throwable): PictureFailureDetails {
-        return PictureFailureDetails(
-            name = exception.javaClass.name,
-            stackTrace = exception.printStackTraceToString(),
-        )
-    }
-
-    private fun onStorageLocationNotFound() {
-        applicationScope.launch(defaultDispatcher) {
-            revertToMediaStoreLocation()
-            emitEffect(Effect.ShowStorageLocationNotFound)
-        }
-    }
-
     private fun onScreenCreated(host: ViewfinderHost) {
         cameraDelegate.onScreenCreated(host)
         captureDelegate.onScreenCreated(host)
@@ -577,6 +609,16 @@ class ViewfinderViewModel @Inject constructor(
         cameraDelegate.onScreenDestroyed()
         captureDelegate.onScreenDestroyed()
         recordingDelegate.onScreenDestroyed()
+    }
+
+    private fun initializeCamera(forced: Boolean) {
+        when {
+            cameraDelegate.isProviderReady -> startCamera(forced = forced)
+            else -> cameraDelegate.initialize(
+                forced = forced,
+                extensionMode = state().mode.extensionMode,
+            )
+        }
     }
 
     private fun applyModeSettings() {
@@ -614,16 +656,6 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.ApplySelfIllumination(state().selfIlluminate()))
     }
 
-    private fun initializeCamera(forced: Boolean) {
-        when {
-            cameraDelegate.isProviderReady -> startCamera(forced = forced)
-            else -> cameraDelegate.initialize(
-                forced = forced,
-                extensionMode = state().mode.extensionMode,
-            )
-        }
-    }
-
     private fun dismissCapturedPreview() {
         captureDelegate.dismissCapturedPreview()
 
@@ -634,64 +666,6 @@ class ViewfinderViewModel @Inject constructor(
         cameraDelegate.dismissQrResult()
 
         startCamera(forced = true)
-    }
-
-    private fun onVideoQualitySelected(quality: VideoQuality) {
-        if (quality == state().modeSettings.videoQuality) return
-
-        settingsDelegate.setVideoQuality(quality)
-
-        startCamera(forced = true)
-    }
-
-    private fun onSessionEvent(event: CameraSessionEvent) {
-        when (event) {
-            is CameraSessionEvent.ZoomStateLoaded -> {
-                cameraDelegate.refreshZoom()
-            }
-
-            is CameraSessionEvent.ZoomStateChanged -> {
-                cameraDelegate.refreshZoom()
-                emitEffect(Effect.Panel.ShowZoom)
-            }
-
-            is CameraSessionEvent.CameraProviderUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
-            }
-
-            is CameraSessionEvent.ExtensionsUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.extensions_manager_init_failure))
-            }
-
-            is CameraSessionEvent.ProviderReady -> {
-                startCamera(forced = event.forced)
-            }
-
-            is CameraSessionEvent.QrCodeScanned -> {
-                if (cameraDelegate.showQrResult()) {
-                    emitEffect(Effect.ShowQrResult(event.text))
-                }
-            }
-
-            is CameraSessionEvent.FeaturesSelected -> {
-                onFeaturesSelected(event)
-            }
-        }
-    }
-
-    private fun onFeaturesSelected(event: CameraSessionEvent.FeaturesSelected) {
-        // The full request-vs-result picture (including which stabilization feature, if any,
-        // survived) is only ever logged, never shown: the lead wants EIS left silently in its
-        // known state -- 4K keeps priority and stabilization is given up without a notice.
-        Log.i(TAG, "Requested ${event.requested} but got ${event.selected}")
-
-        val droppedQuality = resolveDroppedVideoQuality(
-            lensFacing = event.boundLensFacing,
-            requestedQualityFeature = event.qualityFeature,
-            selected = event.selected,
-        ) ?: return
-
-        emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
     }
 
     private fun startCamera(forced: Boolean) {
@@ -730,14 +704,10 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onBindOutcome(outcome: BindOutcome) {
         when (outcome) {
-            BindOutcome.FAILED -> emitEffect(
-                Effect.ShowMessage(R.string.bind_failure),
-            )
+            BindOutcome.FAILED -> emitEffect(Effect.ShowMessage(R.string.bind_failure))
 
             BindOutcome.EXTENSION_UNUSABLE -> {
-                emitEffect(
-                    Effect.ShowMessage(R.string.extension_mode_unavailable),
-                )
+                emitEffect(Effect.ShowMessage(R.string.extension_mode_unavailable))
 
                 // The bind never completed: currentMode still names the mode that was just
                 // disabled and nothing is rendering into the preview. Refreshing the tabs

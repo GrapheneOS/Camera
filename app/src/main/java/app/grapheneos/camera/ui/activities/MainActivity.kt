@@ -104,9 +104,12 @@ import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChromeImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -713,10 +716,14 @@ open class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
-        val sessionHandler = ViewfinderEffectHandler(
+        val renderer = ViewfinderViewRenderer(
+            activity = this,
+        )
+        val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
             clipboardManager = clipboardManager,
             notificationManager = notificationManager,
+            onAction = viewfinder::onAction,
         )
         viewfinder.onAction(
             LifecycleAction.ScreenCreated(
@@ -726,7 +733,7 @@ open class MainActivity : AppCompatActivity() {
                         surfaceProvider = previewView.surfaceProvider,
                         meteringPointFactory = previewView.meteringPointFactory,
                     ),
-                    chrome = sessionHandler,
+                    chrome = ViewfinderChromeImpl(activity = this),
                     previewFrames = previewFrames,
                 ),
             ),
@@ -739,7 +746,7 @@ open class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.uiState.collect { state ->
-                    sessionHandler.render(state)
+                    renderer.render(state)
                 }
             }
         }
@@ -747,7 +754,7 @@ open class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.effects.collect { effect ->
-                    sessionHandler.handle(effect)
+                    effectHandler.handle(effect)
                 }
             }
         }

@@ -963,7 +963,7 @@ class ViewfinderViewModelTest {
             val effects = collectEffects(viewModel)
 
             captureEvents.emit(
-                CapturedImageEvent.Failed(
+                CapturedImageEvent.SaveFailed(
                     cause = ImageSaverException(ImageSaverException.Place.FILE_WRITE),
                     alreadyReported = true,
                 ),
@@ -1081,7 +1081,6 @@ class ViewfinderViewModelTest {
             cameraBindSettingsMapper = mockk(relaxed = true),
             applicationScope = applicationScope,
             mainDispatcher = mainDispatcherRule.testDispatcher,
-            defaultDispatcher = mainDispatcherRule.testDispatcher,
         )
 
         val boundStateHolder = slot<ViewfinderStateHolder>()
