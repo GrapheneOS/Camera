@@ -105,32 +105,32 @@ open class CaptureActivity : MainActivity() {
 
         session.cameraProvider?.unbindAll()
 
+        // The captured photo covers the preview until the camera streams again, so a retake does
+        // not flash the empty preview the unbind leaves behind. It is taken down from there.
         mainOverlay.setImageBitmap(bitmap)
         mainOverlay.visibility = View.VISIBLE
-
         settingsIcon.visibility = View.INVISIBLE
-
-        flipCameraContent.visibility = View.INVISIBLE
-        retakeIcon.visibility = View.VISIBLE
-
-        captureButton.visibility = View.INVISIBLE
-        confirmButton.visibility = View.VISIBLE
-
-        previewView.visibility = View.INVISIBLE
     }
 
     private fun hidePreview() {
         viewfinder.onAction(LifecycleAction.CapturedPreviewDismissed)
 
         settingsIcon.visibility = View.VISIBLE
+    }
 
-        flipCameraContent.visibility = View.VISIBLE
-        retakeIcon.visibility = View.INVISIBLE
-
-        captureButton.visibility = View.VISIBLE
-        confirmButton.visibility = View.INVISIBLE
-
-        previewView.visibility = View.VISIBLE
+    fun renderCapturedPreview(visible: Boolean) {
+        flipCameraContent.visibility = when {
+            visible -> View.INVISIBLE
+            else -> View.VISIBLE
+        }
+        retakeIcon.visibility = when {
+            visible -> View.VISIBLE
+            else -> View.INVISIBLE
+        }
+        confirmButton.visibility = when {
+            visible -> View.VISIBLE
+            else -> View.INVISIBLE
+        }
     }
 
     private fun confirmImage() {

@@ -73,6 +73,18 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun aShownCapturedPreview_takesTheCameraPreviewAndShutterOffTheScreen() {
+        val shown = map(capture = ViewfinderCaptureState(isCapturedPreviewShown = true))
+
+        assertFalse(shown.cameraPreviewVisible)
+        assertFalse(shown.captureButton.visible)
+        assertTrue(shown.capturedPreviewVisible)
+
+        assertTrue(map().cameraPreviewVisible)
+        assertTrue(map().captureButton.visible)
+    }
+
+    @Test
     fun recordingTimer_showsTheRecordedDuration() {
         assertEquals("00:00", map().recordingTimerText)
         assertEquals(

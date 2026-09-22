@@ -46,6 +46,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
         return chrome.copy(
             captureButton = chrome.captureButton.copy(
+                visible = !state.capture.isCapturedPreviewShown,
                 enabled = !state.capture.isTakingPicture,
                 recording = state.recording.phase != RecordingPhase.IDLE,
             ),
@@ -56,6 +57,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 settings.includeAudio,
             keepScreenOn = state.recording.phase != RecordingPhase.IDLE,
             recordingTimerText = formatVideoDuration(state.recording.duration.inWholeSeconds),
+            cameraPreviewVisible = !state.capture.isCapturedPreviewShown,
             modeTabsVisible = modeTabsVisible(state),
             thumbnailLoaderVisible = state.capture.isSavingPicture,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
