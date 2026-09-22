@@ -1,9 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
+import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
@@ -36,6 +39,7 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderCaptureDelegateTest {
 
     private val captureImage = mockk<CaptureImage>()
+    private val capturePreviewImage = mockk<CapturePreviewImage>()
     private val capturedItemRepository = mockk<CapturedItemRepository>()
     private val chrome = mockk<ViewfinderChrome>()
 
@@ -110,6 +114,34 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun takePreviewPicture_handsTheBitmapBackWithoutSavingIt() {
+        runTest {
+            val bitmap = createBitmap(1, 1)
+            coEvery { capturePreviewImage() } returns CapturePreviewResult.Captured(bitmap)
+
+            val delegate = createDelegate(scope = backgroundScope)
+            val events = collectEvents(delegate)
+            delegate.takePreviewPicture()
+
+            assertEquals(listOf(CapturedImageEvent.PreviewCaptured(bitmap)), events)
+        }
+    }
+
+    @Test
+    fun takePreviewPicture_withoutABoundCamera_saysNothing() {
+        runTest {
+            coEvery { capturePreviewImage() } returns CapturePreviewResult.Unavailable
+
+            val delegate = createDelegate(scope = backgroundScope)
+            val events = collectEvents(delegate)
+
+            delegate.takePreviewPicture()
+
+            assertTrue(events.isEmpty())
+        }
+    }
+
+    @Test
     fun takePicture_marksTheCaptureAndReportsWhatTheUseCaseEmits() {
         runTest {
             val delegate = createDelegate(scope = backgroundScope)
@@ -169,6 +201,7 @@ class ViewfinderCaptureDelegateTest {
 
         val delegate = ViewfinderCaptureDelegateImpl(
             captureImage = captureImage,
+            capturePreviewImage = capturePreviewImage,
             capturedItemRepository = capturedItemRepository,
             mainDispatcher = UnconfinedTestDispatcher(),
         )
