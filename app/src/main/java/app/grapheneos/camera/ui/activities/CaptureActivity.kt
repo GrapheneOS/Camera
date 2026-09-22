@@ -11,19 +11,13 @@ import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.core.graphics.scale
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
-import androidx.core.graphics.scale
 
 open class CaptureActivity : MainActivity() {
-
-    companion object {
-        private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
-        private const val INLINE_DATA = "inline-data"
-        private const val INLINE_DATA_EXTRA = "data"
-    }
 
     lateinit var outputUri: Uri
 
@@ -56,14 +50,12 @@ open class CaptureActivity : MainActivity() {
 
         // Enable the capture button after a while
         Handler(Looper.getMainLooper()).postDelayed({
-
             captureButton.animate()
                 .alpha(1f)
                 .setDuration(300)
                 .withEndAction {
                     captureButton.isEnabled = true
                 }
-
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
         // Remove the margin so that that the previewView can take some more space
@@ -96,8 +88,6 @@ open class CaptureActivity : MainActivity() {
         confirmButton.setOnClickListener {
             confirmImage()
         }
-
-        // Display the activity
     }
 
     fun showPreview() {
@@ -160,16 +150,22 @@ open class CaptureActivity : MainActivity() {
     }
 
     private fun resizeImage(image: Bitmap): Bitmap {
-
         val width = image.width
         val height = image.height
 
         val scaleWidth = width / 10
         val scaleHeight = height / 10
 
-        if (image.byteCount <= 1000000)
+        if (image.byteCount <= 1000000) {
             return image
+        }
 
         return image.scale(scaleWidth, scaleHeight, false)
+    }
+
+    private companion object {
+        private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
+        private const val INLINE_DATA = "inline-data"
+        private const val INLINE_DATA_EXTRA = "data"
     }
 }

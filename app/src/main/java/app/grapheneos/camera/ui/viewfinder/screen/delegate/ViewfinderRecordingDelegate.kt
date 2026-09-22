@@ -43,13 +43,14 @@ interface ViewfinderRecordingDelegate {
     fun requestRecording()
     fun prepareRecording(includeLocation: Boolean, includeAudio: Boolean)
     fun startPreparedRecording()
-    fun requestStop()
 
     fun startRecording()
-    fun markStopped()
     fun setRecordedDuration(duration: Duration)
     fun setPaused(paused: Boolean)
     fun setMuted(muted: Boolean)
+
+    fun requestStop()
+    fun markStopped()
 
     fun saveRecording()
     fun discardRecording()
@@ -110,9 +111,9 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
 
             // A stop that arrives while the output is still being created finds nothing to stop,
             // so the start queued behind it has to be abandoned here instead.
-            if (stateHolder.state.value.recording.phase == RecordingPhase.IDLE) {
+            if (!stateHolder.state.value.recording.isActive()) {
                 closeOutput(output)
-                discard(output)
+                discardOutput(output)
                 return@launch
             }
 
@@ -152,6 +153,26 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         closeOutput(pending.output)
     }
 
+    override fun startRecording() {
+        update { it.copy(phase = RecordingPhase.RECORDING) }
+    }
+
+    override fun setRecordedDuration(duration: Duration) {
+        update { it.copy(duration = duration) }
+    }
+
+    // Not tied to the recording phase: the user may have paused before the recording actually
+    // started.
+    override fun setPaused(paused: Boolean) {
+        update { it.copy(isPaused = paused) }
+        recordingSession.setPaused(paused)
+    }
+
+    override fun setMuted(muted: Boolean) {
+        update { it.copy(isMuted = muted) }
+        recordingSession.setMuted(muted)
+    }
+
     override fun requestStop() {
         val pending = pendingRecording
 
@@ -169,28 +190,8 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         }
     }
 
-    override fun startRecording() {
-        update { it.copy(phase = RecordingPhase.RECORDING) }
-    }
-
     override fun markStopped() {
         update { ViewfinderRecordingState() }
-    }
-
-    override fun setRecordedDuration(duration: Duration) {
-        update { it.copy(duration = duration) }
-    }
-
-    // Not tied to the recording phase: the user may have paused before the recording actually
-    // started.
-    override fun setPaused(paused: Boolean) {
-        update { it.copy(isPaused = paused) }
-        recordingSession.setPaused(paused)
-    }
-
-    override fun setMuted(muted: Boolean) {
-        update { it.copy(isMuted = muted) }
-        recordingSession.setMuted(muted)
     }
 
     override fun saveRecording() {
@@ -215,25 +216,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         val pending = pendingRecording ?: return
         pendingRecording = null
 
-        discard(pending.output)
-    }
-
-    private fun onRecordingEvent(event: RecordingEvent) {
-        when (event) {
-            is RecordingEvent.Started -> updates.trySend(RecordingUpdate.Started)
-
-            is RecordingEvent.Progressed -> {
-                updates.trySend(
-                    RecordingUpdate.Progressed(
-                        duration = event.recordedDurationNanos.nanoseconds,
-                    ),
-                )
-            }
-
-            is RecordingEvent.Finalized -> {
-                updates.trySend(RecordingUpdate.Finished(outcome = event.outcome))
-            }
-        }
+        discardOutput(pending.output)
     }
 
     private fun location(includeLocation: Boolean): Location? {
@@ -249,6 +232,26 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         return location
     }
 
+    private fun onRecordingEvent(event: RecordingEvent) {
+        when (event) {
+            is RecordingEvent.Started -> {
+                updates.trySend(RecordingUpdate.Started)
+            }
+
+            is RecordingEvent.Progressed -> {
+                updates.trySend(
+                    RecordingUpdate.Progressed(
+                        duration = event.recordedDurationNanos.nanoseconds,
+                    ),
+                )
+            }
+
+            is RecordingEvent.Finalized -> {
+                updates.trySend(RecordingUpdate.Finished(outcome = event.outcome))
+            }
+        }
+    }
+
     // The Recording didn't exist yet when the mute/pause setters ran.
     private fun applyPendingControls() {
         val recording = stateHolder.state.value.recording
@@ -256,6 +259,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         if (recording.isMuted) {
             recordingSession.setMuted(true)
         }
+
         if (recording.isPaused) {
             recordingSession.setPaused(true)
         }
@@ -268,7 +272,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         }
     }
 
-    private fun discard(output: RecordingOutput) {
+    private fun discardOutput(output: RecordingOutput) {
         applicationScope.launch(mainDispatcher) {
             discardRecording.invoke(output)
         }

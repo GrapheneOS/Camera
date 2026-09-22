@@ -5,6 +5,7 @@ import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
 import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
+import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.ImageSaverException.Place
@@ -114,24 +115,27 @@ class ImageSaverTest {
         dispatcher: CoroutineDispatcher,
     ): ImageSaver {
         return ImageSaver(
-            scope = scope,
-            mainDispatcher = dispatcher,
-            storeCapturedImage = storeCapturedImage,
-            exifMapper = exifMapper,
-            jpegExtractor = jpegExtractor,
-            jpegQuality = JPEG_QUALITY,
-            storageLocation = STORAGE_LOCATION,
-            imageFileFormat = IMAGE_FILE_FORMAT,
-            imageCaptureMetadata = CaptureMetadata(
+            request = CaptureImageRequest(
+                storageLocation = STORAGE_LOCATION,
+                includeLocation = false,
+                saveAsPreviewed = false,
+                removeExif = false,
+                targetThumbnailWidth = 1,
+                targetThumbnailHeight = 1,
+            ),
+            metadata = CaptureMetadata(
                 reversedHorizontal = false,
                 location = null,
             ),
-            removeExifAfterCapture = false,
-            targetThumbnailWidth = 1,
-            targetThumbnailHeight = 1,
-            pipeline = inlinePipeline(scope, dispatcher),
+            jpegQuality = JPEG_QUALITY,
             needsThumbnail = { false },
             onEvent = { events += it },
+            storeCapturedImage = storeCapturedImage,
+            exifMapper = exifMapper,
+            jpegExtractor = jpegExtractor,
+            pipeline = inlinePipeline(scope, dispatcher),
+            scope = scope,
+            mainDispatcher = dispatcher,
         )
     }
 
@@ -163,7 +167,6 @@ class ImageSaverTest {
     private companion object {
         const val JPEG_QUALITY = 90
         const val STORAGE_LOCATION = "MediaStore"
-        const val IMAGE_FILE_FORMAT = ".jpg"
 
         val JPEG_BYTES = ByteArray(1)
 

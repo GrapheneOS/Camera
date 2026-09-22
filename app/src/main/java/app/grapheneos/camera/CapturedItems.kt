@@ -49,10 +49,10 @@ class CapturedItem(
      * as the Storage Access Framework never does. Null if the name carries no usable timestamp.
      */
     fun captureTime(): Long? {
-        // ImageSaver appends milliseconds to the name and VideoCapturer does not. Both name in
-        // whatever the default time zone was at capture, which nothing records, so the name is read
-        // back in the current one: the wall-clock digits survive a change of zone, the instant does
-        // not. Callers must not present this as a zoned timestamp.
+        // ImageSaver appends milliseconds to the name and CreateRecordingOutput does not. Both
+        // name in whatever the default time zone was at capture, which nothing records, so the name
+        // is read back in the current one: the wall-clock digits survive a change of zone, the
+        // instant does not. Callers must not present this as a zoned timestamp.
         return parseDateString("yyyyMMdd_HHmmss_SSS") ?: parseDateString("yyyyMMdd_HHmmss")
     }
 
