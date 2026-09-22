@@ -15,8 +15,6 @@ class VideoCaptureActivity : CaptureActivity() {
 
     private var savedUri: Uri? = null
 
-    private var previewPending = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -51,24 +49,9 @@ class VideoCaptureActivity : CaptureActivity() {
     }
 
     fun afterRecording(savedUri: Uri?) {
-
         this.savedUri = savedUri
 
-        if (!isStarted) {
-            previewPending = true
-            return
-        }
-
         showRecordingPreview()
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        if (previewPending) {
-            previewPending = false
-            showRecordingPreview()
-        }
     }
 
     private fun showRecordingPreview() {
