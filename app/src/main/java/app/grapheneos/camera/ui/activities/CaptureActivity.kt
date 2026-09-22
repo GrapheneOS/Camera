@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Bitmap.CompressFormat
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -16,14 +15,14 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
-import java.io.ByteArrayOutputStream
-import java.lang.Exception
 import androidx.core.graphics.scale
 
 open class CaptureActivity : MainActivity() {
 
     companion object {
         private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
+        private const val INLINE_DATA = "inline-data"
+        private const val INLINE_DATA_EXTRA = "data"
     }
 
     lateinit var outputUri: Uri
@@ -147,48 +146,28 @@ open class CaptureActivity : MainActivity() {
     }
 
     private fun confirmImage() {
-
-        val resultIntent = Intent("inline-data")
-
-        val bitmap = bitmap
-        if (bitmap == null) {
-            setResult(RESULT_CANCELED)
-            finish()
-            return
+        when (val bitmap = bitmap) {
+            null -> finishWithResult(stored = false)
+            else -> viewfinder.onAction(CaptureAction.CapturedPreviewConfirmed(bitmap = bitmap))
         }
+    }
 
-        if (::outputUri.isInitialized) {
-            val bos = ByteArrayOutputStream()
-
-            val cf: CompressFormat =
-                if (outputUri.path?.endsWith(".png") == true) {
-                    CompressFormat.PNG
-                } else {
-                    CompressFormat.JPEG
-                }
-
-            bitmap.compress(cf, 100, bos)
-            val bitmapData: ByteArray = bos.toByteArray()
-
-            var result = RESULT_CANCELED
-
-            try {
-                contentResolver.openOutputStream(outputUri)?.use {
-                    it.write(bitmapData)
-                }
-                result = RESULT_OK
-            } catch (e: Exception) {
-                showMessage(getString(R.string.unable_to_save_image))
-            }
-
-            setResult(result)
-        } else {
-            val resized = resizeImage(bitmap)
-            this.bitmap = resized
-            resultIntent.putExtra("data", resized)
-            setResult(RESULT_OK, resultIntent)
+    fun finishWithResult(stored: Boolean) {
+        val result = when {
+            stored -> RESULT_OK
+            else -> RESULT_CANCELED
         }
+        setResult(result)
+        finish()
+    }
 
+    fun returnCapturedBitmap() {
+        val resized = resizeImage(requireNotNull(bitmap))
+        val intent = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, resized)
+
+        this.bitmap = resized
+
+        setResult(RESULT_OK, intent)
         finish()
     }
 

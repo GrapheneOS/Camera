@@ -177,6 +177,10 @@ class ViewfinderViewModel @Inject constructor(
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
+
+            is CaptureAction.CapturedPreviewConfirmed -> {
+                captureDelegate.confirmPreviewPicture(action.bitmap)
+            }
         }
     }
 
@@ -300,11 +304,17 @@ class ViewfinderViewModel @Inject constructor(
             is CapturedImageEvent.Captured -> onPictureCaptured()
             is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
             is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
+            is CapturedImageEvent.PreviewReturned -> emitEffect(Effect.Picture.PreviewReturned)
+            is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
             is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
             is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
             is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
             is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
             is CapturedImageEvent.Failed -> onPictureSaveFailed(event)
+
+            is CapturedImageEvent.PreviewStoreFailed -> {
+                emitEffect(Effect.Picture.PreviewStoreFailed)
+            }
 
             is CapturedImageEvent.LocationUnavailable -> {
                 emitEffect(Effect.ShowMessage(R.string.location_unavailable))
