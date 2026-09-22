@@ -45,7 +45,6 @@ class RecordingOutputTest {
             val output = requireNotNull(
                 createRecordingOutput(
                     storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
-                    dateString = DATE_STRING,
                     foreignUri = null,
                 ),
             )
@@ -56,7 +55,7 @@ class RecordingOutputTest {
             coVerify(exactly = 1) {
                 repository.createVideo(
                     storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
-                    fileName = "VID_$DATE_STRING.mp4",
+                    fileName = "VID_${output.dateString}.mp4",
                     mimeType = "video/mp4",
                 )
             }
@@ -69,7 +68,6 @@ class RecordingOutputTest {
             val output = requireNotNull(
                 createRecordingOutput(
                     storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
-                    dateString = DATE_STRING,
                     foreignUri = foreignUri,
                 ),
             )
@@ -89,7 +87,6 @@ class RecordingOutputTest {
 
             val output = createRecordingOutput(
                 storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
-                dateString = DATE_STRING,
                 foreignUri = null,
             )
 
@@ -127,6 +124,7 @@ class RecordingOutputTest {
     ): RecordingOutput {
         return RecordingOutput(
             uri = ownUri,
+            dateString = DATE_STRING,
             fileDescriptor = fileDescriptor,
             isOwnFile = isOwnFile,
             isPendingMediaStoreUri = isPendingMediaStoreUri,

@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 
@@ -37,6 +38,8 @@ open class TunePlayer(
     context: Context,
     private val soundsEnabled: () -> Boolean,
 ) {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     // Set on the sound thread once loaded. The main thread only hands them back there to play.
     @Volatile
@@ -83,7 +86,7 @@ open class TunePlayer(
         play(shutterPlayer)
     }
 
-    open fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
+    open fun playVRStartSound(onPlayed: Runnable) {
         val player = vRecPlayer
         if (shouldNotPlayTune() || player == null) {
             onPlayed.run()
@@ -98,7 +101,7 @@ open class TunePlayer(
                     delivered = true
                     player.setOnCompletionListener(null)
                     player.setOnErrorListener(null)
-                    handler.postDelayed(onPlayed, 10)
+                    mainHandler.postDelayed(onPlayed, SOUND_TO_START_DELAY_MS)
                 }
             }
             player.setOnCompletionListener(deliverOnce)
@@ -133,5 +136,7 @@ open class TunePlayer(
         @VisibleForTesting
         @Volatile
         var newMediaPlayer: () -> MediaPlayer = ::MediaPlayer
+
+        private const val SOUND_TO_START_DELAY_MS = 10L
     }
 }

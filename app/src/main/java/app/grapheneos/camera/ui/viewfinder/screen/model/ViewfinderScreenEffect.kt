@@ -1,18 +1,13 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.annotation.StringRes
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 
 sealed interface ViewfinderScreenEffect {
-
-    data object ShowZoomPanel : ViewfinderScreenEffect
-
-    data object HideZoomPanel : ViewfinderScreenEffect
-
-    data object HideExposurePanel : ViewfinderScreenEffect
 
     data object ShowStorageLocationNotFound : ViewfinderScreenEffect
 
@@ -66,6 +61,39 @@ sealed interface ViewfinderScreenEffect {
             val details: PictureFailureDetails,
             val alreadyReported: Boolean,
         ) : Picture
+    }
+
+    sealed interface Panel : ViewfinderScreenEffect {
+
+        data object ShowZoom : Panel
+
+        data object HideZoom : Panel
+
+        data object HideExposure : Panel
+    }
+
+    sealed interface Recording : ViewfinderScreenEffect {
+
+        data object PlayStartSound : Recording
+
+        data object PlayStopSound : Recording
+
+        data object RequestAudioPermission : Recording
+
+        data object Stopped : Recording
+
+        data class Saved(
+            val uri: Uri,
+            val item: CapturedItem?,
+        ) : Recording
+
+        data class SaveFailed(
+            val errorCode: Int,
+        ) : Recording
+
+        data class Interrupted(
+            val errorCode: Int,
+        ) : Recording
     }
 
     sealed interface SelfTimer : ViewfinderScreenEffect {

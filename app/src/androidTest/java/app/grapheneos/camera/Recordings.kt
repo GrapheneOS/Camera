@@ -17,8 +17,8 @@ import io.mockk.mockk
 /** Starts the recording as soon as it is asked to, skipping the sound. */
 fun immediateTunePlayer(): TunePlayer {
     return mockk(relaxed = true) {
-        every { playVRStartSound(handler = any(), onPlayed = any()) } answers {
-            secondArg<Runnable>().run()
+        every { playVRStartSound(onPlayed = any()) } answers {
+            firstArg<Runnable>().run()
         }
     }
 }

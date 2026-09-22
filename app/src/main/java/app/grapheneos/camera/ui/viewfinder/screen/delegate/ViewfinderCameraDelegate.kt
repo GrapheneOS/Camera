@@ -25,6 +25,7 @@ interface ViewfinderCameraDelegate {
     val lensFacing: LensFacing
     val isProviderReady: Boolean
     val isCameraReady: Boolean
+    val canRecord: Boolean
     val sessionEvents: Flow<CameraSessionEvent>
 
     fun bind(
@@ -82,6 +83,11 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     override val isCameraReady: Boolean
         get() {
             return session.camera != null
+        }
+
+    override val canRecord: Boolean
+        get() {
+            return session.camera != null && session.videoCapture != null
         }
 
     override val sessionEvents: Flow<CameraSessionEvent>
