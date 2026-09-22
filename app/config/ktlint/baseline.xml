@@ -358,8 +358,8 @@
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="59" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="66" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="164" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="172" column="13" source="standard:multiline-if-else" />
+        <error line="163" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="171" column="13" source="standard:multiline-if-else" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/InAppGallery.kt">
         <error line="124" column="1" source="standard:no-empty-first-line-in-method-block" />
