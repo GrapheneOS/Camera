@@ -200,7 +200,7 @@ internal class ImageSaver @AssistedInject constructor(
 
     private fun handleError(exception: ImageSaverException) {
         emitOnMainThread(
-            CapturedImageEvent.Failed(
+            CapturedImageEvent.SaveFailed(
                 cause = exception,
                 alreadyReported = isStorageLocationReported,
             ),
