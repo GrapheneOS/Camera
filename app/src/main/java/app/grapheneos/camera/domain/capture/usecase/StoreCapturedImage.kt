@@ -40,26 +40,10 @@ internal class StoreCapturedImageImpl @Inject constructor(
                 jpegBytes = jpegBytes,
             )
 
-            is CaptureOutputResult.Failure -> notCreated(
+            is CaptureOutputResult.Failure -> createFailure(
                 storageLocation = storageLocation,
                 cause = created.cause,
             )
-        }
-    }
-
-    private fun notCreated(
-        storageLocation: String,
-        cause: Exception,
-    ): StoreCapturedImageResult {
-        return when (storageLocation) {
-            CapturedItemRepository.MEDIA_STORE_LOCATION -> {
-                StoreCapturedImageResult.Failed(
-                    stage = Stage.FILE_CREATION,
-                    cause = cause,
-                )
-            }
-
-            else -> StoreCapturedImageResult.StorageLocationNotFound(cause = cause)
         }
     }
 
@@ -82,6 +66,22 @@ internal class StoreCapturedImageImpl @Inject constructor(
                 stage = Stage.FILE_WRITE_COMPLETION,
                 cause = published.cause,
             )
+        }
+    }
+
+    private fun createFailure(
+        storageLocation: String,
+        cause: Exception,
+    ): StoreCapturedImageResult {
+        return when (storageLocation) {
+            CapturedItemRepository.MEDIA_STORE_LOCATION -> {
+                StoreCapturedImageResult.Failed(
+                    stage = Stage.FILE_CREATION,
+                    cause = cause,
+                )
+            }
+
+            else -> StoreCapturedImageResult.StorageLocationNotFound(cause = cause)
         }
     }
 }

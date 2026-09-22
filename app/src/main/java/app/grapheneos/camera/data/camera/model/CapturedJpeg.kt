@@ -1,10 +1,15 @@
 package app.grapheneos.camera.data.camera.model
 
-import android.graphics.Rect
-
 class CapturedJpeg(
     val jpegBytes: ByteArray,
-    val cropRect: Rect?,
+    val cropRect: CapturedJpegCropRect?,
     val orientationDegrees: Int,
     val shouldUseExifOrientation: Boolean,
+)
+
+data class CapturedJpegCropRect(
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int,
 )
