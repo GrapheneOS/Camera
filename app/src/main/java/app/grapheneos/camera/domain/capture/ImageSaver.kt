@@ -4,7 +4,6 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
-import androidx.annotation.Px
 import androidx.camera.core.ImageProxy
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
@@ -12,7 +11,10 @@ import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
 import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.di.core.ApplicationScope
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
+import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
@@ -21,6 +23,9 @@ import app.grapheneos.camera.domain.capture.model.ImageSaverException.Place
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.util.ImageResizer
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.time.ZonedDateTime
@@ -42,24 +47,25 @@ writes and reads it back from storage multiple times
 open a Uri during the thumbnail generation
 - ImageProxy isn't held open for the whole duration of storage IO, it's closed as soon as possible
  */
-class ImageSaver(
-    val scope: CoroutineScope,
-    val mainDispatcher: CoroutineDispatcher,
-    val storeCapturedImage: StoreCapturedImage,
-    val exifMapper: CapturedImageExifMapper,
-    val jpegExtractor: JpegExtractor,
-    val jpegQuality: Int,
-    val storageLocation: String,
-    val imageFileFormat: String,
-    val imageCaptureMetadata: CaptureMetadata,
-    val removeExifAfterCapture: Boolean,
-    @Px val targetThumbnailWidth: Int,
-    @Px val targetThumbnailHeight: Int,
-    val pipeline: CapturedImagePipeline,
-    val needsThumbnail: () -> Boolean,
-    val onEvent: (CapturedImageEvent) -> Unit,
+internal class ImageSaver @AssistedInject constructor(
+    @Assisted private val request: CaptureImageRequest,
+    @Assisted private val metadata: CaptureMetadata,
+    @Assisted private val jpegQuality: Int,
+    @Assisted private val needsThumbnail: () -> Boolean,
+    @Assisted private val onEvent: (CapturedImageEvent) -> Unit,
+    private val storeCapturedImage: StoreCapturedImage,
+    private val exifMapper: CapturedImageExifMapper,
+    private val jpegExtractor: JpegExtractor,
+    private val pipeline: CapturedImagePipeline,
+    @ApplicationScope private val scope: CoroutineScope,
+    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) {
-    val captureTime: ZonedDateTime = ZonedDateTime.now()
+
+    private val captureTime: ZonedDateTime = ZonedDateTime.now()
+
+    private var capturedJpeg: CapturedJpeg? = null
+
+    private var isStorageLocationReported = false
 
     fun onCaptureSuccess(image: ImageProxy) {
         onEvent(CapturedImageEvent.Captured)
@@ -81,22 +87,21 @@ class ImageSaver(
     }
 
     private suspend fun saveImage() {
-        try {
-            saveImageInner()
+        val processedJpegBytes = try {
+            processAndStore()
         } catch (e: ImageSaverException) {
             handleError(e)
             return
         }
 
         if (needsThumbnail()) {
-            pipeline.enqueueThumbnail(this::generateThumbnail)
+            pipeline.enqueueThumbnail {
+                generateThumbnail(processedJpegBytes)
+            }
         }
     }
 
-    private var capturedJpeg: CapturedJpeg? = null
-    private lateinit var processedJpegBytes: ByteArray
-
-    private suspend fun saveImageInner() {
+    private suspend fun processAndStore(): ByteArray {
         val jpeg = requireNotNull(capturedJpeg)
         val jpegBytes = when (jpeg.cropRect) {
             null -> jpeg.jpegBytes
@@ -108,13 +113,13 @@ class ImageSaver(
             }
         }
 
-        processedJpegBytes = processExif(jpeg, jpegBytes)
+        val processedJpegBytes = processExif(jpeg, jpegBytes)
 
         val startOfWriting = timestamp()
 
         val result = storeCapturedImage(
             jpegBytes = processedJpegBytes,
-            storageLocation = storageLocation,
+            storageLocation = request.storageLocation,
             fileName = fileName(),
             mimeType = mimeType(),
         )
@@ -126,22 +131,8 @@ class ImageSaver(
 
         val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
         emitOnMainThread(CapturedImageEvent.Saved(item = capturedItem))
-    }
 
-    private fun storedUri(result: StoreCapturedImageResult): Uri {
-        return when (result) {
-            is StoreCapturedImageResult.Stored -> result.uri
-
-            is StoreCapturedImageResult.StorageLocationNotFound -> {
-                emitOnMainThread(CapturedImageEvent.StorageLocationNotFound)
-                skipErrorDialog = true
-                throw ImageSaverException(Place.FILE_CREATION, result.cause)
-            }
-
-            is StoreCapturedImageResult.Failed -> {
-                throw ImageSaverException(placeOf(result.stage), result.cause)
-            }
-        }
+        return processedJpegBytes
     }
 
     private fun processExif(
@@ -158,8 +149,8 @@ class ImageSaver(
                     isCropped = jpeg.cropRect != null,
                     orientationDegrees = jpeg.orientationDegrees,
                     shouldUseExifOrientation = jpeg.shouldUseExifOrientation,
-                    metadata = imageCaptureMetadata,
-                    removeExif = removeExifAfterCapture,
+                    metadata = metadata,
+                    removeExif = request.removeExif,
                     captureTime = captureTime,
                 ),
             )
@@ -175,12 +166,28 @@ class ImageSaver(
         return processed
     }
 
-    private fun generateThumbnail() {
+    private fun storedUri(result: StoreCapturedImageResult): Uri {
+        return when (result) {
+            is StoreCapturedImageResult.Stored -> result.uri
+
+            is StoreCapturedImageResult.StorageLocationNotFound -> {
+                emitOnMainThread(CapturedImageEvent.StorageLocationNotFound)
+                isStorageLocationReported = true
+                throw ImageSaverException(Place.FILE_CREATION, result.cause)
+            }
+
+            is StoreCapturedImageResult.Failed -> {
+                throw ImageSaverException(placeOf(result.stage), result.cause)
+            }
+        }
+    }
+
+    private fun generateThumbnail(processedJpegBytes: ByteArray) {
         val source = ImageDecoder.createSource(ByteBuffer.wrap(processedJpegBytes))
         val bitmap = try {
             ImageDecoder.decodeBitmap(
                 source,
-                ImageResizer(targetThumbnailWidth, targetThumbnailHeight),
+                ImageResizer(request.targetThumbnailWidth, request.targetThumbnailHeight),
             )
         } catch (e: IOException) {
             // reading from a ByteBuffer should never cause an IOException
@@ -189,39 +196,11 @@ class ImageSaver(
         emitOnMainThread(CapturedImageEvent.ThumbnailReady(thumbnail = bitmap))
     }
 
-    private fun saveToMediaStore(): Boolean {
-        return storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION
-    }
-
-    // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous
-    // one
-    private fun dateString(): String {
-        return DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
-    }
-
-    private fun fileName(): String {
-        return IMAGE_NAME_PREFIX + dateString() + imageFileFormat
-    }
-
-    private fun mimeType(): String {
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(imageFileFormat) ?: "image/*"
-    }
-
-    private fun placeOf(stage: StoreCapturedImageResult.Stage): Place {
-        return when (stage) {
-            StoreCapturedImageResult.Stage.FILE_CREATION -> Place.FILE_CREATION
-            StoreCapturedImageResult.Stage.FILE_WRITE -> Place.FILE_WRITE
-            StoreCapturedImageResult.Stage.FILE_WRITE_COMPLETION -> Place.FILE_WRITE_COMPLETION
-        }
-    }
-
-    private var skipErrorDialog = false
-
     private fun handleError(exception: ImageSaverException) {
         emitOnMainThread(
             CapturedImageEvent.Failed(
                 cause = exception,
-                alreadyReported = skipErrorDialog,
+                alreadyReported = isStorageLocationReported,
             ),
         )
     }
@@ -232,9 +211,30 @@ class ImageSaver(
         }
     }
 
-    companion object {
-        private const val TAG = "ImageSaver"
-        private const val LOG_DURATION = false
+    private fun fileName(): String {
+        return IMAGE_NAME_PREFIX + dateString() + IMAGE_FILE_FORMAT
+    }
+
+    // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous
+    // one
+    private fun dateString(): String {
+        return DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
+    }
+
+    private fun mimeType(): String {
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(IMAGE_FILE_FORMAT) ?: "image/*"
+    }
+
+    private fun placeOf(stage: StoreCapturedImageResult.Stage): Place {
+        return when (stage) {
+            StoreCapturedImageResult.Stage.FILE_CREATION -> Place.FILE_CREATION
+            StoreCapturedImageResult.Stage.FILE_WRITE -> Place.FILE_WRITE
+            StoreCapturedImageResult.Stage.FILE_WRITE_COMPLETION -> Place.FILE_WRITE_COMPLETION
+        }
+    }
+
+    private fun saveToMediaStore(): Boolean {
+        return request.storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION
     }
 
     private fun timestamp(): Long {
@@ -251,5 +251,23 @@ class ImageSaver(
             val durationStr = if (us < 10_000) "$us us" else "${us / 1000} ms"
             Log.d(TAG, "${lazyMessage()}: $durationStr")
         }
+    }
+
+    @AssistedFactory
+    interface Factory {
+
+        fun create(
+            request: CaptureImageRequest,
+            metadata: CaptureMetadata,
+            jpegQuality: Int,
+            needsThumbnail: () -> Boolean,
+            onEvent: (CapturedImageEvent) -> Unit,
+        ): ImageSaver
+    }
+
+    private companion object {
+        private const val TAG = "ImageSaver"
+        private const val LOG_DURATION = false
+        private const val IMAGE_FILE_FORMAT = ".jpg"
     }
 }

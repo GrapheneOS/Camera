@@ -34,18 +34,17 @@ interface ViewfinderCaptureDelegate {
     fun onScreenDestroyed()
 
     fun takePicture()
-    fun takePreviewPicture()
-    fun confirmPreviewPicture(bitmap: Bitmap)
     fun cancelPictureCapture()
-
     fun startPictureSave()
     fun finishPictureSave()
 
+    fun takePreviewPicture()
+    fun showCapturedPreview()
+    fun confirmPreviewPicture(bitmap: Bitmap)
+    fun dismissCapturedPreview()
+
     fun setSelfTimerRunning(running: Boolean)
     fun selfTimerCountdown(seconds: Int): Flow<Int>
-
-    fun showCapturedPreview()
-    fun dismissCapturedPreview()
 }
 
 internal class ViewfinderCaptureDelegateImpl @Inject constructor(
@@ -67,12 +66,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val events = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
     override val captureEvents: Flow<CapturedImageEvent> = events.receiveAsFlow()
 
-    // Cancelling does not stop the request CameraX is already serving, so its failure
-    // still arrives and has to be kept quiet.
-    private class PendingCapture {
-        var isCancelled = false
-    }
-
     override fun bind(stateHolder: ViewfinderStateHolder) {
         if (isBound) return
         isBound = true
@@ -86,7 +79,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     override fun onScreenDestroyed() {
         host = null
-        stateHolder.update { it.copy(capture = ViewfinderCaptureState()) }
+        updateCapture { ViewfinderCaptureState() }
     }
 
     override fun takePicture() {
@@ -121,6 +114,21 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
+    override fun cancelPictureCapture() {
+        val pending = pendingCapture ?: return
+
+        pending.isCancelled = true
+        finish(pending)
+    }
+
+    override fun startPictureSave() {
+        updateCapture { it.copy(isSavingPicture = true) }
+    }
+
+    override fun finishPictureSave() {
+        updateCapture { it.copy(isSavingPicture = false) }
+    }
+
     override fun takePreviewPicture() {
         startPictureSave()
 
@@ -136,6 +144,10 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
             update?.let { events.trySend(it) }
         }
+    }
+
+    override fun showCapturedPreview() {
+        updateCapture { it.copy(isCapturedPreviewShown = true) }
     }
 
     override fun confirmPreviewPicture(bitmap: Bitmap) {
@@ -159,11 +171,21 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
-    override fun cancelPictureCapture() {
-        val pending = pendingCapture ?: return
+    override fun dismissCapturedPreview() {
+        updateCapture { it.copy(isCapturedPreviewShown = false) }
+    }
 
-        pending.isCancelled = true
-        finish(pending)
+    override fun setSelfTimerRunning(running: Boolean) {
+        updateCapture { it.copy(isSelfTimerRunning = running) }
+    }
+
+    override fun selfTimerCountdown(seconds: Int): Flow<Int> {
+        return flow {
+            for (secondsLeft in seconds downTo 1) {
+                emit(secondsLeft)
+                delay(SELF_TIMER_TICK)
+            }
+        }
     }
 
     private fun onCapturedImageEvent(
@@ -171,7 +193,9 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         event: CapturedImageEvent,
     ) {
         when (event) {
-            is CapturedImageEvent.Captured -> finish(pending)
+            is CapturedImageEvent.Captured -> {
+                finish(pending)
+            }
 
             is CapturedImageEvent.CaptureFailed -> {
                 finish(pending)
@@ -196,37 +220,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         updateCapture { it.copy(isTakingPicture = false) }
     }
 
-    override fun startPictureSave() {
-        updateCapture { it.copy(isSavingPicture = true) }
-    }
-
-    override fun finishPictureSave() {
-        updateCapture { it.copy(isSavingPicture = false) }
-    }
-
-    override fun setSelfTimerRunning(running: Boolean) {
-        updateCapture { it.copy(isSelfTimerRunning = running) }
-    }
-
-    override fun selfTimerCountdown(seconds: Int): Flow<Int> {
-        return flow {
-            for (secondsLeft in seconds downTo 1) {
-                emit(secondsLeft)
-                delay(SELF_TIMER_TICK)
-            }
-        }
-    }
-
-    override fun showCapturedPreview() {
-        updateCapture { it.copy(isCapturedPreviewShown = true) }
-    }
-
-    override fun dismissCapturedPreview() {
-        updateCapture { it.copy(isCapturedPreviewShown = false) }
-    }
-
     private fun updateCapture(transform: (ViewfinderCaptureState) -> ViewfinderCaptureState) {
         stateHolder.update { it.copy(capture = transform(it.capture)) }
+    }
+
+    // Cancelling does not stop the request CameraX is already serving, so its failure
+    // still arrives and has to be kept quiet.
+    private class PendingCapture {
+        var isCancelled = false
     }
 
     private companion object {

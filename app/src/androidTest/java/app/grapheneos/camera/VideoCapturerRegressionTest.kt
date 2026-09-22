@@ -20,19 +20,26 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import io.mockk.CapturingSlot
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import kotlin.math.abs
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -40,12 +47,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.math.abs
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.runTest
 
 @RunWith(AndroidJUnit4::class)
 class VideoCapturerRegressionTest {
@@ -96,13 +97,13 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.tunePlayer = doubleFiringTunePlayer()
-                activity.videoCapturer.startRecording()
+                activity.requestRecording()
             }
 
-            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+            waitUntil(scenario, "recording is running") { isRecording(it) }
 
-            scenario.onActivity { it.videoCapturer.stopRecording() }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            scenario.onActivity { stopRecording(it) }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
         }
     }
 
@@ -118,14 +119,14 @@ class VideoCapturerRegressionTest {
             val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
-                activity.videoCapturer.startRecording()
-                assertTrue(activity.videoCapturer.isRecording)
+                activity.requestRecording()
+                assertTrue(isRecording(activity))
             }
 
             scenario.onActivity { activity ->
-                activity.videoCapturer.stopRecording()
+                stopRecording(activity)
                 deferred.captured.run()
-                assertFalse(activity.videoCapturer.isRecording)
+                assertFalse(isRecording(activity))
             }
 
             assertEquals(pendingBefore, pendingVideoCount())
@@ -133,11 +134,11 @@ class VideoCapturerRegressionTest {
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
                 activity.tunePlayer = immediateTunePlayer()
-                activity.videoCapturer.startRecording()
+                activity.requestRecording()
             }
-            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
-            scenario.onActivity { it.videoCapturer.stopRecording() }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            waitUntil(scenario, "recording is running") { isRecording(it) }
+            scenario.onActivity { stopRecording(it) }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
         }
     }
 
@@ -148,8 +149,8 @@ class VideoCapturerRegressionTest {
             val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
-                activity.videoCapturer.startRecording()
-                activity.videoCapturer.isPaused = true
+                activity.requestRecording()
+                setPaused(activity, paused = true)
                 deferred.captured.run()
             }
 
@@ -158,15 +159,15 @@ class VideoCapturerRegressionTest {
             Thread.sleep(3000)
 
             scenario.onActivity { activity ->
-                assertTrue(activity.videoCapturer.isRecording)
+                assertTrue(isRecording(activity))
                 assertEquals(
                     activity.getString(R.string.start_value_timer),
                     activity.timerView.text.toString(),
                 )
-                activity.videoCapturer.isPaused = false
-                activity.videoCapturer.stopRecording()
+                setPaused(activity, paused = false)
+                stopRecording(activity)
             }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
         }
     }
 
@@ -183,15 +184,15 @@ class VideoCapturerRegressionTest {
             val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
-                activity.videoCapturer.startRecording()
-                activity.videoCapturer.isPaused = true
+                activity.requestRecording()
+                setPaused(activity, paused = true)
                 deferred.captured.run()
             }
             // Let the recorder reach paused-recording, so that stopping it finalizes with
             // ERROR_NO_VALID_DATA rather than racing the start
             Thread.sleep(300)
-            scenario.onActivity { it.videoCapturer.stopRecording() }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            scenario.onActivity { stopRecording(it) }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
 
             assertEquals(pendingBefore, pendingVideoCount())
         }
@@ -214,7 +215,7 @@ class VideoCapturerRegressionTest {
                 val selector = StateListDrawable().apply { addState(StateSet.WILD_CARD, shape) }
                 activity.captureButton.setImageDrawable(LayerDrawable(arrayOf(selector)))
                 activity.tunePlayer = immediateTunePlayer()
-                activity.videoCapturer.startRecording()
+                activity.requestRecording()
             }
 
             // The animation reaching the nested shape proves the unwrapping worked.
@@ -222,8 +223,8 @@ class VideoCapturerRegressionTest {
                 abs(shape.cornerRadius - dp8) < 0.5f
             }
 
-            scenario.onActivity { it.videoCapturer.stopRecording() }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            scenario.onActivity { stopRecording(it) }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
             waitUntil(scenario, "corner radius animated back") {
                 abs(shape.cornerRadius - dp16) < 0.5f
             }
@@ -237,14 +238,14 @@ class VideoCapturerRegressionTest {
             scenario.onActivity { activity ->
                 activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
                 activity.tunePlayer = immediateTunePlayer()
-                activity.videoCapturer.startRecording()
+                activity.requestRecording()
             }
             waitUntil(scenario, "recording UI is shown") {
                 it.timerView.visibility == View.VISIBLE
             }
 
-            scenario.onActivity { it.videoCapturer.stopRecording() }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            scenario.onActivity { stopRecording(it) }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
         }
     }
 
@@ -304,9 +305,9 @@ class VideoCapturerRegressionTest {
             try {
                 scenario.onActivity { activity ->
                     activity.tunePlayer = immediateTunePlayer()
-                    activity.videoCapturer.startRecording()
+                    activity.requestRecording()
                 }
-                waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+                waitUntil(scenario, "recording is running") { isRecording(it) }
 
                 var mode: CameraMode? = null
                 var stillRecording = false
@@ -321,7 +322,7 @@ class VideoCapturerRegressionTest {
 
                     flingRight(activity)
                     mode = activity.viewfinder.uiState.value.mode
-                    stillRecording = activity.videoCapturer.isRecording
+                    stillRecording = isRecording(activity)
                 }
 
                 assertEquals(CameraMode.VIDEO, mode)
@@ -344,14 +345,14 @@ class VideoCapturerRegressionTest {
         recordingTest({ ActivityScenario.launch<VideoCaptureActivity>(intent) }) { scenario ->
             scenario.onActivity { activity ->
                 activity.tunePlayer = immediateTunePlayer()
-                activity.videoCapturer.startRecording()
+                activity.requestRecording()
             }
-            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+            waitUntil(scenario, "recording is running") { isRecording(it) }
 
             // Stops the activity, which stops the recording; the finalize event that used to crash
             // lands afterwards, on the main thread of a stopped activity.
             scenario.moveToState(Lifecycle.State.CREATED)
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
 
             scenario.moveToState(Lifecycle.State.RESUMED)
 
@@ -389,8 +390,8 @@ class VideoCapturerRegressionTest {
             try {
                 scenario.onActivity { activity ->
                     activity.tunePlayer = manualTunePlayer(deferred)
-                    activity.videoCapturer.startRecording()
-                    assertTrue(activity.videoCapturer.isRecording)
+                    activity.requestRecording()
+                    assertTrue(isRecording(activity))
 
                     val cameraTab = activity.tabLayout.getTabForMode(CameraMode.CAMERA)
                     assertNotNull("no CAMERA tab to tap", cameraTab)
@@ -405,9 +406,9 @@ class VideoCapturerRegressionTest {
                 // Abandon the queued start rather than record for real: the damage is done or not
                 // by now, and a cancelled start leaves nothing behind to clean up.
                 scenario.onActivity { activity ->
-                    activity.videoCapturer.stopRecording()
+                    stopRecording(activity)
                     deferred.captured.run()
-                    assertFalse(activity.videoCapturer.isRecording)
+                    assertFalse(isRecording(activity))
                 }
 
                 assertEquals(CameraMode.VIDEO, mode)
@@ -416,6 +417,18 @@ class VideoCapturerRegressionTest {
                 stopAndDeleteRecording(scenario, capturedBefore)
             }
         }
+    }
+
+    private fun isRecording(activity: MainActivity): Boolean {
+        return activity.viewfinder.uiState.value.isRecordingActive
+    }
+
+    private fun stopRecording(activity: MainActivity) {
+        activity.viewfinder.onAction(RecordingAction.RecordingStopRequested)
+    }
+
+    private fun setPaused(activity: MainActivity, paused: Boolean) {
+        activity.viewfinder.onAction(RecordingAction.RecordingPauseToggled(paused = paused))
     }
 
     private fun recordingTest(body: (ActivityScenario<VideoOnlyActivity>) -> Unit) {
@@ -451,9 +464,9 @@ class VideoCapturerRegressionTest {
         scenario: ActivityScenario<A>,
         capturedBefore: Uri?,
     ) {
-        runCatching { scenario.onActivity { it.videoCapturer.stopRecording() } }
+        runCatching { scenario.onActivity { stopRecording(it) } }
         runCatching {
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
         }
         runCatching { deleteNewCapture(scenario, capturedBefore) }
     }

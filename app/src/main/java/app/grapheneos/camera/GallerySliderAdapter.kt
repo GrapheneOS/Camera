@@ -8,13 +8,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.databinding.GallerySlideBinding
 import app.grapheneos.camera.ui.ZoomableImageView
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.fragment.GallerySlide
 import app.grapheneos.camera.util.executeIfAlive
+import app.grapheneos.camera.util.getVideoThumbnail
 import kotlin.math.max
 
 class GallerySliderAdapter(
