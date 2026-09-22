@@ -121,11 +121,10 @@ internal class CameraSessionImpl @Inject constructor(
     private val snapshotProbeCache: SnapshotProbeCache,
 ) : CameraSession {
 
-    private val sessionEvents = MutableSharedFlow<CameraSessionEvent>(
+    private val _events = MutableSharedFlow<CameraSessionEvent>(
         extraBufferCapacity = EVENT_BUFFER_CAPACITY,
     )
-
-    override val events: Flow<CameraSessionEvent> = sessionEvents.asSharedFlow()
+    override val events: Flow<CameraSessionEvent> = _events.asSharedFlow()
 
     override var cameraProvider: ProcessCameraProvider? = null
 
@@ -224,7 +223,7 @@ internal class CameraSessionImpl @Inject constructor(
         zoomState = it
         isZoomStateLoaded = true
 
-        event?.let(sessionEvents::tryEmit)
+        event?.let(_events::tryEmit)
     }
 
     private val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
@@ -283,7 +282,7 @@ internal class CameraSessionImpl @Inject constructor(
 
         cameraProviderSource.acquireProvider(context) { provider ->
             when (provider) {
-                null -> sessionEvents.tryEmit(CameraSessionEvent.CameraProviderUnavailable)
+                null -> _events.tryEmit(CameraSessionEvent.CameraProviderUnavailable)
                 else -> onCameraProviderReady(provider, forced, extensionMode)
             }
         }
@@ -315,11 +314,11 @@ internal class CameraSessionImpl @Inject constructor(
             provider,
         ) { manager ->
             when (manager) {
-                null -> sessionEvents.tryEmit(CameraSessionEvent.ExtensionsUnavailable)
+                null -> _events.tryEmit(CameraSessionEvent.ExtensionsUnavailable)
                 else -> extensionsManager = manager
             }
 
-            sessionEvents.tryEmit(CameraSessionEvent.ProviderReady(forced = forced))
+            _events.tryEmit(CameraSessionEvent.ProviderReady(forced = forced))
         }
     }
 
@@ -542,7 +541,7 @@ internal class CameraSessionImpl @Inject constructor(
             val analyzer = QrCodeAnalyzer(
                 barcodeFormats = settings.barcodeFormats,
                 onCodeScanned = { text ->
-                    sessionEvents.tryEmit(CameraSessionEvent.QrCodeScanned(text))
+                    _events.tryEmit(CameraSessionEvent.QrCodeScanned(text))
                 },
             )
             val strategy = ResolutionStrategy(
@@ -656,7 +655,7 @@ internal class CameraSessionImpl @Inject constructor(
                 sessionConfig.setFeatureSelectionListener(
                     mainExecutor
                 ) { selected ->
-                    sessionEvents.tryEmit(
+                    _events.tryEmit(
                         CameraSessionEvent.FeaturesSelected(
                             boundLensFacing = boundLensFacing,
                             requested = requested,

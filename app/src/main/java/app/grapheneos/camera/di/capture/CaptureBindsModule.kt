@@ -12,6 +12,8 @@ import app.grapheneos.camera.domain.capture.usecase.DiscardRecording
 import app.grapheneos.camera.domain.capture.usecase.DiscardRecordingImpl
 import app.grapheneos.camera.domain.capture.usecase.PublishRecording
 import app.grapheneos.camera.domain.capture.usecase.PublishRecordingImpl
+import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocation
+import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocationImpl
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImageImpl
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
@@ -50,6 +52,12 @@ internal abstract class CaptureBindsModule {
     abstract fun bindDiscardRecording(
         impl: DiscardRecordingImpl,
     ): DiscardRecording
+
+    @Binds
+    @Reusable
+    abstract fun bindResolveCaptureLocation(
+        impl: ResolveCaptureLocationImpl,
+    ): ResolveCaptureLocation
 
     @Binds
     @Reusable
