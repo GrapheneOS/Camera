@@ -1,6 +1,7 @@
 package app.grapheneos.camera.domain.capture.mapper
 
 import androidxc.camera.core.impl.utils.Exif
+import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
 import app.grapheneos.camera.fixExif
@@ -9,7 +10,6 @@ import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 interface CapturedImageExifMapper {
-
     fun map(input: CapturedImageExif): ByteArray
 }
 
@@ -27,9 +27,9 @@ internal class CapturedImageExifMapperImpl @Inject constructor() : CapturedImage
             uncropped.copyToCroppedImage(exif)
         }
 
-        // Overwrite the original orientation if the quirk exists.
-        if (!input.shouldUseExifOrientation) {
-            exif.rotate(input.orientationDegrees)
+        when {
+            input.shouldUseExifOrientation -> keepExifOrientation(exif.exifInterface)
+            else -> exif.rotate(input.orientationDegrees)
         }
 
         if (input.metadata.reversedHorizontal) {
@@ -42,11 +42,9 @@ internal class CapturedImageExifMapperImpl @Inject constructor() : CapturedImage
 
         val exifInterface = exif.exifInterface
 
-        if (input.removeExif) {
-            // TODO improve clearExif() by moving it into ExifInterface
-            exifInterface.clearExif()
-        } else {
-            exifInterface.fixExif(input.captureTime)
+        when {
+            input.removeExif -> exifInterface.clearExif()
+            else -> exifInterface.fixExif(input.captureTime)
         }
 
         // location metadata setting intentionally ignores the "clear EXIF after capture" setting
@@ -58,6 +56,20 @@ internal class CapturedImageExifMapperImpl @Inject constructor() : CapturedImage
         exifInterface.saveAttributes(ByteArrayInputStream(input.jpegBytes), output)
 
         return output.toByteArray()
+    }
+
+    private fun keepExifOrientation(exifInterface: ExifInterface) {
+        val orientation = exifInterface.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_UNDEFINED,
+        )
+
+        if (orientation == ExifInterface.ORIENTATION_UNDEFINED) {
+            exifInterface.setAttribute(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL.toString(),
+            )
+        }
     }
 
     private companion object {

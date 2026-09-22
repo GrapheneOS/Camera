@@ -19,18 +19,18 @@ internal class SystemServicesProvidesModule {
 
     @Provides
     @Reusable
-    fun provideClipboardManager(
-        @ApplicationContext context: Context,
-    ): ClipboardManager {
-        return context.getSystemService(ClipboardManager::class.java)
-    }
-
-    @Provides
-    @Reusable
     fun provideContentResolver(
         @ApplicationContext context: Context,
     ): ContentResolver {
         return context.contentResolver
+    }
+
+    @Provides
+    @Reusable
+    fun provideClipboardManager(
+        @ApplicationContext context: Context,
+    ): ClipboardManager {
+        return context.getSystemService(ClipboardManager::class.java)
     }
 
     @Provides

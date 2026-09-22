@@ -29,8 +29,9 @@ internal class CreateRecordingOutputImpl @Inject constructor(
     ): RecordingOutput? {
         val dateString = SimpleDateFormat(DATE_FORMAT, Locale.US).format(Date())
         val uri = foreignUri ?: createVideo(storageLocation, dateString)
-        val fileDescriptor = uri
-            ?.let { captureOutputRepository.openForWriting(it).valueOrNull() }
+        val fileDescriptor = uri?.let { outputUri ->
+            captureOutputRepository.openForWriting(outputUri).valueOrNull()
+        }
 
         return when {
             uri == null || fileDescriptor == null -> null

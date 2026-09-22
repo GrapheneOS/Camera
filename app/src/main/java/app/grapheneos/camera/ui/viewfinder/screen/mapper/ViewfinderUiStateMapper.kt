@@ -6,7 +6,6 @@ import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -28,6 +27,8 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         val settings = state.settings
         val isVideoMode = state.isVideoMode()
         val inPhotoMode = state.isInPhotoMode()
+        val isRecordingActive = state.recording.isActive()
+        val isRecording = state.recording.isRecording()
 
         val chrome = when {
             state.isQrMode() -> qrState(
@@ -48,14 +49,13 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             captureButton = chrome.captureButton.copy(
                 visible = !state.capture.isCapturedPreviewShown,
                 enabled = !state.capture.isTakingPicture,
-                recording = state.recording.phase != RecordingPhase.IDLE,
+                recording = isRecordingActive,
             ),
-            isRecordingActive = state.recording.phase != RecordingPhase.IDLE,
+            isRecordingActive = isRecordingActive,
             isRecordingPaused = state.recording.isPaused,
             isRecordingMuted = state.recording.isMuted,
-            muteToggleVisible = state.recording.phase == RecordingPhase.RECORDING &&
-                settings.includeAudio,
-            keepScreenOn = state.recording.phase != RecordingPhase.IDLE,
+            muteToggleVisible = isRecording && settings.includeAudio,
+            keepScreenOn = isRecordingActive,
             recordingTimerText = formatVideoDuration(state.recording.duration.inWholeSeconds),
             cameraPreviewVisible = !state.capture.isCapturedPreviewShown,
             modeTabsVisible = modeTabsVisible(state),
@@ -146,7 +146,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             qrScanTogglesVisible = false,
             thirdOptionVisible = thirdOptionVisible(state) && !isSelfTimerRunning,
             cancelButtonVisible = !isSelfTimerRunning,
-            // TODO: hide it during a recording once the recording has its own indicator
             micMutedIconVisible = isVideoMode && !settings.includeAudio,
             captureButton = CaptureButtonUiState(
                 icon = when {
@@ -178,7 +177,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         chrome: ViewfinderUiState,
         recording: ViewfinderRecordingState,
     ): ViewfinderUiState {
-        if (recording.phase != RecordingPhase.RECORDING) return chrome
+        if (!recording.isRecording()) return chrome
 
         return chrome.copy(
             cancelButtonVisible = false,
@@ -200,7 +199,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
     private fun modeTabsVisible(state: ViewfinderState): Boolean {
         return state.showsCameraModeTabs &&
-            state.recording.phase != RecordingPhase.RECORDING &&
+            !state.recording.isRecording() &&
             !state.capture.isSelfTimerRunning
     }
 
@@ -214,7 +213,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 state.requiresVideoModeOnly && state.capture.isCapturedPreviewShown
             }
 
-            state.requiresVideoModeOnly -> state.recording.phase != RecordingPhase.RECORDING
+            state.requiresVideoModeOnly -> !state.recording.isRecording()
 
             else -> true
         }

@@ -22,7 +22,8 @@ internal class CapturePreviewImageImpl @Inject constructor(
         val imageCapture = cameraSession.imageCapture ?: return CapturePreviewResult.Unavailable
 
         return try {
-            CapturePreviewResult.Captured(bitmap = imageCapture.takePicture().use(::rotated))
+            val bitmap = imageCapture.takePicture().use(::rotated)
+            CapturePreviewResult.Captured(bitmap = bitmap)
         } catch (exception: ImageCaptureException) {
             Log.e(TAG, "unable to capture a picture to hand back", exception)
             CapturePreviewResult.Failed
