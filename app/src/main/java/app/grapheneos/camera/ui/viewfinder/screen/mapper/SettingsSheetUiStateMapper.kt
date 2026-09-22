@@ -22,7 +22,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
         val session = state.session
         val isVideoMode = state.isVideoMode()
         val aspectRatio = state.aspectRatio()
-        val isRecording = state.capture.recordingPhase != RecordingPhase.IDLE
+        val isRecording = state.recording.phase != RecordingPhase.IDLE
 
         val flash = flashOf(
             flashMode = state.flashMode,

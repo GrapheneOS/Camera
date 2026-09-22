@@ -7,10 +7,8 @@ import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import javax.inject.Inject
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -29,13 +27,6 @@ interface ViewfinderCaptureDelegate {
     fun bind(scope: CoroutineScope, stateHolder: ViewfinderStateHolder)
     fun onScreenCreated(host: ViewfinderHost)
     fun onScreenDestroyed()
-
-    fun requestRecording()
-    fun startRecording()
-    fun setRecordedDuration(duration: Duration)
-    fun setRecordingPaused(paused: Boolean)
-    fun setRecordingMuted(muted: Boolean)
-    fun stopRecording()
 
     fun takePicture()
     fun cancelPictureCapture()
@@ -153,46 +144,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private fun finish(pending: PendingCapture) {
         if (pendingCapture === pending) {
             pendingCapture = null
-        }
-    }
-
-    override fun requestRecording() {
-        // Don't leak paused/muted state from the previous recording into this one.
-        updateCapture {
-            it.copy(
-                recordingPhase = RecordingPhase.STARTING,
-                recordedDuration = Duration.ZERO,
-                isRecordingPaused = false,
-                isRecordingMuted = false,
-            )
-        }
-    }
-
-    override fun startRecording() {
-        updateCapture { it.copy(recordingPhase = RecordingPhase.RECORDING) }
-    }
-
-    override fun setRecordedDuration(duration: Duration) {
-        updateCapture { it.copy(recordedDuration = duration) }
-    }
-
-    // Not tied to the recording phase: the user may have paused before the recording actually
-    // started.
-    override fun setRecordingPaused(paused: Boolean) {
-        updateCapture { it.copy(isRecordingPaused = paused) }
-    }
-
-    override fun setRecordingMuted(muted: Boolean) {
-        updateCapture { it.copy(isRecordingMuted = muted) }
-    }
-
-    override fun stopRecording() {
-        updateCapture {
-            it.copy(
-                recordingPhase = RecordingPhase.IDLE,
-                isRecordingPaused = false,
-                isRecordingMuted = false,
-            )
         }
     }
 

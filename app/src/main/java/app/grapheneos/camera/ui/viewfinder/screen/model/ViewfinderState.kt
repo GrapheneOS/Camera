@@ -21,6 +21,7 @@ data class ViewfinderState(
     val session: ViewfinderSessionState = ViewfinderSessionState(),
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+    val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
 ) {
 
     fun isQrMode(): Boolean {

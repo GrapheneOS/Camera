@@ -26,6 +26,7 @@ import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
@@ -65,6 +66,7 @@ class ViewfinderViewModel @Inject constructor(
     private val modeDelegate: ViewfinderModeDelegate,
     private val cameraDelegate: ViewfinderCameraDelegate,
     private val captureDelegate: ViewfinderCaptureDelegate,
+    private val recordingDelegate: ViewfinderRecordingDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val locationRepository: LocationRepository,
@@ -94,6 +96,7 @@ class ViewfinderViewModel @Inject constructor(
 
     init {
         modeDelegate.bind(stateHolder)
+        recordingDelegate.bind(stateHolder)
         cameraDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
@@ -203,20 +206,20 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onRecordingAction(action: RecordingAction) {
         when (action) {
-            is RecordingAction.RecordingRequested -> captureDelegate.requestRecording()
-            is RecordingAction.RecordingStarted -> captureDelegate.startRecording()
-            is RecordingAction.RecordingStopped -> captureDelegate.stopRecording()
+            is RecordingAction.RecordingRequested -> recordingDelegate.requestRecording()
+            is RecordingAction.RecordingStarted -> recordingDelegate.startRecording()
+            is RecordingAction.RecordingStopped -> recordingDelegate.stopRecording()
 
             is RecordingAction.RecordingProgressed -> {
-                captureDelegate.setRecordedDuration(action.duration)
+                recordingDelegate.setRecordedDuration(action.duration)
             }
 
             is RecordingAction.RecordingPauseToggled -> {
-                captureDelegate.setRecordingPaused(action.paused)
+                recordingDelegate.setPaused(action.paused)
             }
 
             is RecordingAction.RecordingMuteToggled -> {
-                captureDelegate.setRecordingMuted(action.muted)
+                recordingDelegate.setMuted(action.muted)
             }
         }
     }
@@ -445,6 +448,7 @@ class ViewfinderViewModel @Inject constructor(
         selfTimer?.cancel()
         cameraDelegate.onScreenDestroyed()
         captureDelegate.onScreenDestroyed()
+        recordingDelegate.onScreenDestroyed()
     }
 
     private fun applyModeSettings() {

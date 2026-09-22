@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
@@ -39,6 +40,7 @@ class ViewfinderUiStateMapperTest {
         settings: CameraSettings = CameraSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
         capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
     ): ViewfinderUiState {
         return mapper.map(
             ViewfinderState(
@@ -49,6 +51,7 @@ class ViewfinderUiStateMapperTest {
                 settings = settings,
                 session = session,
                 capture = capture,
+                recording = recording,
             ),
         )
     }
@@ -57,14 +60,14 @@ class ViewfinderUiStateMapperTest {
     fun captureButton_marksTheRecordingItStopsWhileItIsUnderway() {
         assertFalse(map().captureButton.recording)
         assertTrue(
-            map(capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING))
+            map(recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING))
                 .captureButton.recording,
         )
         assertEquals(
             R.string.stop_recording,
             map(
                 mode = CameraMode.VIDEO,
-                capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+                recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
             ).captureButton.description,
         )
     }
@@ -74,7 +77,7 @@ class ViewfinderUiStateMapperTest {
         assertEquals("00:00", map().recordingTimerText)
         assertEquals(
             "01:05",
-            map(capture = ViewfinderCaptureState(recordedDuration = 65.seconds))
+            map(recording = ViewfinderRecordingState(duration = 65.seconds))
                 .recordingTimerText,
         )
     }
@@ -84,7 +87,7 @@ class ViewfinderUiStateMapperTest {
         assertTrue(map().modeTabsVisible)
         assertFalse(map(showsCameraModeTabs = false).modeTabsVisible)
         assertFalse(
-            map(capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING))
+            map(recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING))
                 .modeTabsVisible,
         )
         assertFalse(
@@ -264,7 +267,7 @@ class ViewfinderUiStateMapperTest {
         val state = map(
             mode = CameraMode.VIDEO,
             settings = CameraSettings(gridType = GridType.GOLDEN_RATIO),
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
         assertFalse(state.cancelButtonVisible)
@@ -279,7 +282,7 @@ class ViewfinderUiStateMapperTest {
     fun startingRecording_isActiveButKeepsTheIdleControls() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
         )
 
         assertTrue(state.isRecordingActive)
@@ -291,7 +294,7 @@ class ViewfinderUiStateMapperTest {
     fun recording_isActive() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
         assertTrue(state.isRecordingActive)
@@ -302,10 +305,7 @@ class ViewfinderUiStateMapperTest {
         val state = map(
             mode = CameraMode.VIDEO,
             settings = CameraSettings(includeAudio = true),
-            capture = ViewfinderCaptureState(
-                recordingPhase = RecordingPhase.RECORDING,
-                isRecordingMuted = true,
-            ),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING, isMuted = true),
         )
 
         assertTrue(state.muteToggleVisible)
@@ -317,7 +317,7 @@ class ViewfinderUiStateMapperTest {
         val state = map(
             mode = CameraMode.VIDEO,
             settings = CameraSettings(includeAudio = false),
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
         assertFalse(state.muteToggleVisible)
@@ -328,7 +328,7 @@ class ViewfinderUiStateMapperTest {
         val state = map(
             mode = CameraMode.VIDEO,
             settings = CameraSettings(includeAudio = true),
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
         )
 
         assertFalse(state.muteToggleVisible)
@@ -338,7 +338,7 @@ class ViewfinderUiStateMapperTest {
     fun recording_turnsTheGalleryButtonIntoAShutterAndShowsTheTimer() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
         assertEquals(R.drawable.camera_shutter, state.thirdCircleIcon)
@@ -351,7 +351,7 @@ class ViewfinderUiStateMapperTest {
     fun startingRecording_keepsTheScreenOnBeforeTheChromeChanges() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
         )
 
         assertTrue(state.keepScreenOn)
@@ -378,10 +378,7 @@ class ViewfinderUiStateMapperTest {
     fun pausedRecording_offersToResume() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(
-                recordingPhase = RecordingPhase.RECORDING,
-                isRecordingPaused = true,
-            ),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING, isPaused = true),
         )
 
         assertEquals(R.drawable.play, state.flipCameraIcon)
@@ -392,7 +389,7 @@ class ViewfinderUiStateMapperTest {
     fun aPauseWithoutARecording_leavesTheLensSwitch() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(isRecordingPaused = true),
+            recording = ViewfinderRecordingState(isPaused = true),
         )
 
         assertEquals(R.drawable.flip_camera, state.flipCameraIcon)
@@ -418,7 +415,7 @@ class ViewfinderUiStateMapperTest {
         val recording = map(
             isCaptureSession = true,
             requiresVideoModeOnly = true,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
         val reviewing = map(
             isCaptureSession = true,
@@ -438,7 +435,7 @@ class ViewfinderUiStateMapperTest {
         val idle = map(requiresVideoModeOnly = true)
         val recording = map(
             requiresVideoModeOnly = true,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
         assertTrue(idle.thirdOptionVisible)

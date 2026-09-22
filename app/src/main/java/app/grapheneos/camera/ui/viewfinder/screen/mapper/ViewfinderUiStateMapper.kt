@@ -8,6 +8,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
@@ -39,22 +40,22 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                     state = state,
                     isVideoMode = isVideoMode,
                 ),
-                capture = state.capture,
+                recording = state.recording,
             )
         }
 
         return chrome.copy(
             captureButton = chrome.captureButton.copy(
                 enabled = !state.capture.isTakingPicture,
-                recording = state.capture.recordingPhase != RecordingPhase.IDLE,
+                recording = state.recording.phase != RecordingPhase.IDLE,
             ),
-            isRecordingActive = state.capture.recordingPhase != RecordingPhase.IDLE,
-            isRecordingPaused = state.capture.isRecordingPaused,
-            isRecordingMuted = state.capture.isRecordingMuted,
-            muteToggleVisible = state.capture.recordingPhase == RecordingPhase.RECORDING &&
+            isRecordingActive = state.recording.phase != RecordingPhase.IDLE,
+            isRecordingPaused = state.recording.isPaused,
+            isRecordingMuted = state.recording.isMuted,
+            muteToggleVisible = state.recording.phase == RecordingPhase.RECORDING &&
                 settings.includeAudio,
-            keepScreenOn = state.capture.recordingPhase != RecordingPhase.IDLE,
-            recordingTimerText = formatVideoDuration(state.capture.recordedDuration.inWholeSeconds),
+            keepScreenOn = state.recording.phase != RecordingPhase.IDLE,
+            recordingTimerText = formatVideoDuration(state.recording.duration.inWholeSeconds),
             modeTabsVisible = modeTabsVisible(state),
             thumbnailLoaderVisible = state.capture.isSavingPicture,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
@@ -173,9 +174,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
     private fun withRecording(
         chrome: ViewfinderUiState,
-        capture: ViewfinderCaptureState,
+        recording: ViewfinderRecordingState,
     ): ViewfinderUiState {
-        if (capture.recordingPhase != RecordingPhase.RECORDING) return chrome
+        if (recording.phase != RecordingPhase.RECORDING) return chrome
 
         return chrome.copy(
             cancelButtonVisible = false,
@@ -185,11 +186,11 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             thirdCircleDescription = R.string.capture,
             captureButton = chrome.captureButton.copy(description = R.string.stop_recording),
             flipCameraIcon = when {
-                capture.isRecordingPaused -> R.drawable.play
+                recording.isPaused -> R.drawable.play
                 else -> R.drawable.pause
             },
             flipCameraDescription = when {
-                capture.isRecordingPaused -> R.string.resume_recording
+                recording.isPaused -> R.string.resume_recording
                 else -> R.string.pause_recording
             },
         )
@@ -197,7 +198,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
     private fun modeTabsVisible(state: ViewfinderState): Boolean {
         return state.showsCameraModeTabs &&
-            state.capture.recordingPhase != RecordingPhase.RECORDING &&
+            state.recording.phase != RecordingPhase.RECORDING &&
             !state.capture.isSelfTimerRunning
     }
 
@@ -211,7 +212,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 state.requiresVideoModeOnly && state.capture.isCapturedPreviewShown
             }
 
-            state.requiresVideoModeOnly -> state.capture.recordingPhase != RecordingPhase.RECORDING
+            state.requiresVideoModeOnly -> state.recording.phase != RecordingPhase.RECORDING
 
             else -> true
         }
