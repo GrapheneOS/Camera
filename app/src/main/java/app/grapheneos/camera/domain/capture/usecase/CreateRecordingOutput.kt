@@ -6,13 +6,15 @@ import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.RecordingOutput
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 interface CreateRecordingOutput {
 
     suspend operator fun invoke(
         storageLocation: String,
-        dateString: String,
         foreignUri: Uri?,
     ): RecordingOutput?
 }
@@ -23,9 +25,9 @@ internal class CreateRecordingOutputImpl @Inject constructor(
 
     override suspend fun invoke(
         storageLocation: String,
-        dateString: String,
         foreignUri: Uri?,
     ): RecordingOutput? {
+        val dateString = SimpleDateFormat(DATE_FORMAT, Locale.US).format(Date())
         val uri = foreignUri ?: createVideo(storageLocation, dateString)
         val fileDescriptor = uri
             ?.let { captureOutputRepository.openForWriting(it).valueOrNull() }
@@ -35,6 +37,7 @@ internal class CreateRecordingOutputImpl @Inject constructor(
 
             else -> RecordingOutput(
                 uri = uri,
+                dateString = dateString,
                 fileDescriptor = fileDescriptor,
                 isOwnFile = foreignUri == null,
                 isPendingMediaStoreUri = foreignUri == null &&
@@ -59,6 +62,7 @@ internal class CreateRecordingOutputImpl @Inject constructor(
     }
 
     private companion object {
+        private const val DATE_FORMAT = "yyyyMMdd_HHmmss"
         private const val VIDEO_FILE_FORMAT = ".mp4"
         private const val DEFAULT_VIDEO_MIME_TYPE = "video/mp4"
     }

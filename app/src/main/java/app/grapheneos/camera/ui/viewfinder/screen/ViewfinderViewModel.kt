@@ -10,6 +10,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -31,6 +32,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUpdate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -96,7 +99,6 @@ class ViewfinderViewModel @Inject constructor(
 
     init {
         modeDelegate.bind(stateHolder)
-        recordingDelegate.bind(stateHolder)
         cameraDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
@@ -109,6 +111,7 @@ class ViewfinderViewModel @Inject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
+        recordingDelegate.bind(stateHolder)
 
         viewModelScope.launch(mainDispatcher) {
             cameraDelegate.sessionEvents.collect { event ->
@@ -119,6 +122,12 @@ class ViewfinderViewModel @Inject constructor(
         viewModelScope.launch(mainDispatcher) {
             captureDelegate.captureEvents.collect { event ->
                 onCapturedImageEvent(event)
+            }
+        }
+
+        viewModelScope.launch(mainDispatcher) {
+            recordingDelegate.recordingUpdates.collect { update ->
+                onRecordingUpdate(update)
             }
         }
     }
@@ -189,6 +198,98 @@ class ViewfinderViewModel @Inject constructor(
         }
     }
 
+    private fun startRecording(hasAudioPermission: Boolean) {
+        val state = state()
+
+        if (!cameraDelegate.canRecord || state.recording.phase != RecordingPhase.IDLE) {
+            return
+        }
+
+        recordingDelegate.requestRecording()
+
+        if (state.settings.includeAudio && !hasAudioPermission) {
+            emitEffect(Effect.Recording.RequestAudioPermission)
+            recordingDelegate.markStopped()
+            return
+        }
+
+        recordingDelegate.prepareRecording(
+            includeLocation = state.requireLocation,
+            includeAudio = state.settings.includeAudio && hasAudioPermission,
+        )
+    }
+
+    private fun onRecordingUpdate(update: RecordingUpdate) {
+        when (update) {
+            is RecordingUpdate.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
+            is RecordingUpdate.Abandoned -> onRecordingStopped()
+            is RecordingUpdate.Started -> recordingDelegate.startRecording()
+            is RecordingUpdate.Finished -> onRecordingFinished(update.outcome)
+
+            is RecordingUpdate.SaveFailed -> {
+                emitEffect(Effect.ShowMessage(R.string.unable_to_save_video))
+            }
+
+            is RecordingUpdate.Progressed -> {
+                recordingDelegate.setRecordedDuration(update.duration)
+            }
+
+            is RecordingUpdate.LocationUnavailable -> {
+                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
+            }
+
+            is RecordingUpdate.OutputUnavailable -> onRecordingOutputUnavailable()
+
+            is RecordingUpdate.Saved -> {
+                emitEffect(Effect.Recording.Saved(uri = update.uri, item = update.item))
+            }
+        }
+    }
+
+    private fun onRecordingOutputUnavailable() {
+        if (!entryPoint.isCaptureSession) {
+            onStorageLocationNotFound()
+        }
+
+        emitEffect(Effect.ShowMessage(R.string.unable_to_access_output_file))
+        recordingDelegate.markStopped()
+    }
+
+    private fun onRecordingStopped() {
+        recordingDelegate.markStopped()
+
+        emitEffect(Effect.Recording.Stopped)
+    }
+
+    private fun onRecordingFinished(outcome: RecordingOutcome) {
+        onRecordingStopped()
+
+        emitEffect(Effect.Recording.PlayStopSound)
+
+        when (outcome) {
+            is RecordingOutcome.Saved -> recordingDelegate.saveRecording()
+
+            is RecordingOutcome.NothingPlayableWritten -> {
+                recordingDelegate.discardRecording()
+                emitEffect(Effect.ShowMessage(R.string.recording_too_short_to_be_saved))
+            }
+
+            is RecordingOutcome.Failed -> {
+                recordingDelegate.discardRecording()
+                emitEffect(Effect.Recording.SaveFailed(errorCode = outcome.errorCode))
+            }
+
+            is RecordingOutcome.Interrupted -> {
+                emitEffect(Effect.Recording.Interrupted(errorCode = outcome.errorCode))
+
+                when {
+                    outcome.hasContent -> recordingDelegate.saveRecording()
+                    else -> recordingDelegate.discardRecording()
+                }
+            }
+        }
+    }
+
     private fun onCapturedImageEvent(event: CapturedImageEvent) {
         when (event) {
             is CapturedImageEvent.Captured -> onPictureCaptured()
@@ -206,13 +307,9 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onRecordingAction(action: RecordingAction) {
         when (action) {
-            is RecordingAction.RecordingRequested -> recordingDelegate.requestRecording()
-            is RecordingAction.RecordingStarted -> recordingDelegate.startRecording()
-            is RecordingAction.RecordingStopped -> recordingDelegate.stopRecording()
-
-            is RecordingAction.RecordingProgressed -> {
-                recordingDelegate.setRecordedDuration(action.duration)
-            }
+            is RecordingAction.RecordingRequested -> startRecording(action.hasAudioPermission)
+            is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
+            is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
 
             is RecordingAction.RecordingPauseToggled -> {
                 recordingDelegate.setPaused(action.paused)
@@ -442,6 +539,7 @@ class ViewfinderViewModel @Inject constructor(
     private fun onScreenCreated(host: ViewfinderHost) {
         cameraDelegate.onScreenCreated(host)
         captureDelegate.onScreenCreated(host)
+        recordingDelegate.onScreenCreated(host)
     }
 
     private fun onScreenDestroyed() {
@@ -524,7 +622,7 @@ class ViewfinderViewModel @Inject constructor(
 
             is CameraSessionEvent.ZoomStateChanged -> {
                 cameraDelegate.refreshZoom()
-                emitEffect(Effect.ShowZoomPanel)
+                emitEffect(Effect.Panel.ShowZoom)
             }
 
             is CameraSessionEvent.CameraProviderUnavailable -> {
@@ -571,7 +669,7 @@ class ViewfinderViewModel @Inject constructor(
 
         captureDelegate.cancelPictureCapture()
 
-        emitEffect(Effect.HideExposurePanel)
+        emitEffect(Effect.Panel.HideExposure)
 
         slotCurrentMode()
 
@@ -622,7 +720,7 @@ class ViewfinderViewModel @Inject constructor(
 
             BindOutcome.BOUND -> {
                 cameraDelegate.announceBind()
-                emitEffect(Effect.HideZoomPanel)
+                emitEffect(Effect.Panel.HideZoom)
             }
         }
     }
