@@ -118,6 +118,9 @@ internal class ViewfinderEffectHandler(
             is Effect.Picture.Captured -> activity.tunePlayer.playShutterSound()
             is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)
             is Effect.Picture.PreviewFailed -> showCapturedPreviewFailure()
+            is Effect.Picture.PreviewReturned -> captureActivity()?.returnCapturedBitmap()
+            is Effect.Picture.PreviewStored -> finishCapture(stored = true)
+            is Effect.Picture.PreviewStoreFailed -> finishCapture(stored = false)
             is Effect.Picture.Saved -> onPictureSaved(effect.item)
             is Effect.Picture.CaptureFailed -> showCaptureFailure(effect)
             is Effect.Picture.SaveFailed -> showSaveFailure(effect)
@@ -129,10 +132,22 @@ internal class ViewfinderEffectHandler(
     }
 
     private fun showCapturedPreview(bitmap: Bitmap) {
-        val captureActivity = activity as? CaptureActivity ?: return
+        val captureActivity = captureActivity() ?: return
 
         captureActivity.bitmap = bitmap
         captureActivity.showPreview()
+    }
+
+    private fun finishCapture(stored: Boolean) {
+        if (!stored) {
+            activity.showMessage(R.string.unable_to_save_image)
+        }
+
+        captureActivity()?.finishWithResult(stored)
+    }
+
+    private fun captureActivity(): CaptureActivity? {
+        return activity as? CaptureActivity
     }
 
     private fun showCapturedPreviewFailure() {

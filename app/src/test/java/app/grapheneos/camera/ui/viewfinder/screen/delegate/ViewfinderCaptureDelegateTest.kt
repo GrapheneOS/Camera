@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import android.net.Uri
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -7,6 +8,7 @@ import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
@@ -15,6 +17,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -40,6 +43,7 @@ class ViewfinderCaptureDelegateTest {
 
     private val captureImage = mockk<CaptureImage>()
     private val capturePreviewImage = mockk<CapturePreviewImage>()
+    private val storeCapturedPreview = mockk<StoreCapturedPreview>()
     private val capturedItemRepository = mockk<CapturedItemRepository>()
     private val chrome = mockk<ViewfinderChrome>()
 
@@ -142,6 +146,37 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun confirmPreviewPicture_withAFileToWriteInto_storesTheBitmapThere() {
+        runTest {
+            val bitmap = createBitmap(1, 1)
+            every { chrome.foreignOutputUri() } returns FOREIGN_URI
+            coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns true
+
+            val delegate = createDelegate(scope = backgroundScope)
+            val events = collectEvents(delegate)
+
+            delegate.confirmPreviewPicture(bitmap)
+
+            assertEquals(listOf(CapturedImageEvent.PreviewStored), events)
+        }
+    }
+
+    @Test
+    fun confirmPreviewPicture_withoutAFile_handsTheBitmapBackInline() {
+        runTest {
+            every { chrome.foreignOutputUri() } returns null
+
+            val delegate = createDelegate(scope = backgroundScope)
+            val events = collectEvents(delegate)
+
+            delegate.confirmPreviewPicture(createBitmap(1, 1))
+
+            assertEquals(listOf(CapturedImageEvent.PreviewReturned), events)
+            coVerify(exactly = 0) { storeCapturedPreview(uri = any(), bitmap = any()) }
+        }
+    }
+
+    @Test
     fun takePicture_marksTheCaptureAndReportsWhatTheUseCaseEmits() {
         runTest {
             val delegate = createDelegate(scope = backgroundScope)
@@ -202,6 +237,7 @@ class ViewfinderCaptureDelegateTest {
         val delegate = ViewfinderCaptureDelegateImpl(
             captureImage = captureImage,
             capturePreviewImage = capturePreviewImage,
+            storeCapturedPreview = storeCapturedPreview,
             capturedItemRepository = capturedItemRepository,
             mainDispatcher = UnconfinedTestDispatcher(),
         )
@@ -220,5 +256,7 @@ class ViewfinderCaptureDelegateTest {
 
     private companion object {
         const val STORAGE_LOCATION = "MediaStore"
+
+        val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
     }
 }
