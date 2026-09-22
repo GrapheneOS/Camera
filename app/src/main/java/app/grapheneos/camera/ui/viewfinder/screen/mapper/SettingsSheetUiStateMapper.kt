@@ -6,7 +6,6 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.GridType
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
@@ -22,7 +21,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
         val session = state.session
         val isVideoMode = state.isVideoMode()
         val aspectRatio = state.aspectRatio()
-        val isRecording = state.recording.phase == RecordingPhase.RECORDING
+        val isRecording = state.recording.isRecording()
 
         val flash = flashOf(
             flashMode = state.flashMode,

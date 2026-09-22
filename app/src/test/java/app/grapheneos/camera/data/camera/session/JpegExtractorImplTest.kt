@@ -1,8 +1,8 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.graphics.BitmapFactory
-import android.graphics.Rect
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
+import app.grapheneos.camera.data.camera.model.CapturedJpegCropRect
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,7 +18,14 @@ class JpegExtractorImplTest {
     @Test
     fun crop_encodesAJpegOfTheCropRectSize() {
         val cropped = extractor.crop(
-            jpeg = capturedJpeg(cropRect = Rect(2, 4, 12, 10)),
+            jpeg = capturedJpeg(
+                cropRect = CapturedJpegCropRect(
+                    left = 2,
+                    top = 4,
+                    right = 12,
+                    bottom = 10,
+                ),
+            ),
             jpegQuality = JPEG_QUALITY,
         )
 
@@ -31,7 +38,14 @@ class JpegExtractorImplTest {
     @Test
     fun crop_toTheWholeImage_keepsItsSize() {
         val cropped = extractor.crop(
-            jpeg = capturedJpeg(cropRect = Rect(0, 0, FIXTURE_SIZE, FIXTURE_SIZE)),
+            jpeg = capturedJpeg(
+                cropRect = CapturedJpegCropRect(
+                    left = 0,
+                    top = 0,
+                    right = FIXTURE_SIZE,
+                    bottom = FIXTURE_SIZE,
+                ),
+            ),
             jpegQuality = JPEG_QUALITY,
         )
 
@@ -40,7 +54,7 @@ class JpegExtractorImplTest {
         assertEquals(FIXTURE_SIZE, bounds.outHeight)
     }
 
-    private fun capturedJpeg(cropRect: Rect): CapturedJpeg {
+    private fun capturedJpeg(cropRect: CapturedJpegCropRect): CapturedJpeg {
         return CapturedJpeg(
             jpegBytes = fixtureBytes(),
             cropRect = cropRect,
