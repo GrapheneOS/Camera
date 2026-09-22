@@ -7,7 +7,6 @@ import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -17,8 +16,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.io.IOException
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -48,80 +45,6 @@ class ViewfinderCaptureDelegateTest {
         initial = ViewfinderState(mode = CameraMode.VIDEO, requiresVideoModeOnly = false),
         render = { ViewfinderUiState() },
     )
-
-    @Test
-    fun aPauseBeforeTheRecordingStarts_survivesTheStart() {
-        val delegate = createDelegate()
-
-        delegate.setRecordingPaused(paused = true)
-        delegate.startRecording()
-
-        assertEquals(
-            ViewfinderCaptureState(
-                recordingPhase = RecordingPhase.RECORDING,
-                isRecordingPaused = true,
-            ),
-            capture(),
-        )
-    }
-
-    @Test
-    fun recording_goesFromRequestedToStartedToStopped() {
-        val delegate = createDelegate()
-
-        delegate.requestRecording()
-        assertEquals(RecordingPhase.STARTING, capture().recordingPhase)
-
-        delegate.startRecording()
-        assertEquals(RecordingPhase.RECORDING, capture().recordingPhase)
-
-        delegate.stopRecording()
-        assertEquals(RecordingPhase.IDLE, capture().recordingPhase)
-    }
-
-    @Test
-    fun stopRecording_beforeItStarted_returnsToIdle() {
-        val delegate = createDelegate()
-
-        delegate.requestRecording()
-        delegate.stopRecording()
-
-        assertEquals(RecordingPhase.IDLE, capture().recordingPhase)
-    }
-
-    @Test
-    fun requestRecording_doesNotCarryOverThePreviousPauseOrMute() {
-        val delegate = createDelegate()
-
-        delegate.setRecordingPaused(paused = true)
-        delegate.setRecordingMuted(muted = true)
-        delegate.requestRecording()
-
-        assertFalse(capture().isRecordingPaused)
-        assertFalse(capture().isRecordingMuted)
-    }
-
-    @Test
-    fun stopRecording_forgetsTheMute() {
-        val delegate = createDelegate()
-
-        delegate.startRecording()
-        delegate.setRecordingMuted(muted = true)
-        delegate.stopRecording()
-
-        assertFalse(capture().isRecordingMuted)
-    }
-
-    @Test
-    fun stopRecording_forgetsThePause() {
-        val delegate = createDelegate()
-
-        delegate.startRecording()
-        delegate.setRecordingPaused(paused = true)
-        delegate.stopRecording()
-
-        assertEquals(ViewfinderCaptureState(), capture())
-    }
 
     @Test
     fun pictureSave_isInProgressUntilFinished() {
@@ -180,24 +103,10 @@ class ViewfinderCaptureDelegateTest {
     fun onScreenDestroyed_forgetsWhatTheScreenWasShowing() {
         val delegate = createDelegate()
 
-        delegate.startRecording()
         delegate.showCapturedPreview()
         delegate.onScreenDestroyed()
 
         assertEquals(ViewfinderCaptureState(), capture())
-    }
-
-    @Test
-    fun aNewRecording_startsFromZeroAfterTheLastOne() {
-        val delegate = createDelegate()
-
-        delegate.requestRecording()
-        delegate.startRecording()
-        delegate.setRecordedDuration(42.seconds)
-        delegate.stopRecording()
-        delegate.requestRecording()
-
-        assertEquals(Duration.ZERO, capture().recordedDuration)
     }
 
     @Test

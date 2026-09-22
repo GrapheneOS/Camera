@@ -25,6 +25,7 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -72,6 +73,7 @@ class ViewfinderViewModelTest {
     private val modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true)
     private val cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true)
     private val captureDelegate = mockk<ViewfinderCaptureDelegate>(relaxed = true)
+    private val recordingDelegate = mockk<ViewfinderRecordingDelegate>(relaxed = true)
     private val locationRepository = mockk<LocationRepository>(relaxed = true)
 
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
@@ -580,11 +582,11 @@ class ViewfinderViewModelTest {
             viewModel.onAction(RecordingAction.RecordingStopped)
 
             verifyOrder {
-                captureDelegate.requestRecording()
-                captureDelegate.startRecording()
-                captureDelegate.setRecordingPaused(paused = true)
-                captureDelegate.setRecordingMuted(muted = true)
-                captureDelegate.stopRecording()
+                recordingDelegate.requestRecording()
+                recordingDelegate.startRecording()
+                recordingDelegate.setPaused(paused = true)
+                recordingDelegate.setMuted(muted = true)
+                recordingDelegate.stopRecording()
             }
         }
     }
@@ -840,6 +842,7 @@ class ViewfinderViewModelTest {
             modeDelegate = modeDelegate,
             cameraDelegate = cameraDelegate,
             captureDelegate = captureDelegate,
+            recordingDelegate = recordingDelegate,
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             locationRepository = locationRepository,
