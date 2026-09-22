@@ -28,6 +28,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDele
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUpdate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -629,6 +630,9 @@ class ViewfinderViewModelTest {
     fun recordingActions_reachTheRecordingDelegate() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
+            }
 
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
             viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
@@ -641,6 +645,19 @@ class ViewfinderViewModelTest {
                 recordingDelegate.startPreparedRecording()
                 recordingDelegate.requestStop()
             }
+        }
+    }
+
+    @Test
+    fun pauseAndMute_outsideARecording_areIgnored() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
+            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
+
+            verify(exactly = 0) { recordingDelegate.setPaused(paused = any()) }
+            verify(exactly = 0) { recordingDelegate.setMuted(muted = any()) }
         }
     }
 

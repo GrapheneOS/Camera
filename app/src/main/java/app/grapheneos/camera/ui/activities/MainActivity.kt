@@ -75,8 +75,6 @@ import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
-import app.grapheneos.camera.capturer.VideoCapturer
-import app.grapheneos.camera.capturer.getVideoThumbnail
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -112,9 +110,11 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.executeIfAlive
+import app.grapheneos.camera.util.getVideoThumbnail
 import app.grapheneos.camera.util.resolveActivity
 import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.color.DynamicColors
@@ -178,8 +178,6 @@ open class MainActivity : AppCompatActivity() {
     open fun takePicture() {
         viewfinder.onAction(CaptureAction.ShutterClicked)
     }
-
-    lateinit var videoCapturer: VideoCapturer
 
     @set:VisibleForTesting
     lateinit var tunePlayer: TunePlayer
@@ -325,7 +323,7 @@ open class MainActivity : AppCompatActivity() {
             return@registerForActivityResult
         }
         showAudioPermissionDeniedDialog {
-            videoCapturer.startRecording()
+            requestRecording()
         }
     }
 
@@ -523,6 +521,14 @@ open class MainActivity : AppCompatActivity() {
 
             startActivity(it)
         }
+    }
+
+    internal fun requestRecording() {
+        viewfinder.onAction(
+            RecordingAction.RecordingRequested(
+                hasAudioPermission = hasPermission(Manifest.permission.RECORD_AUDIO),
+            ),
+        )
     }
 
     private fun hasPermission(permission: String): Boolean {
@@ -729,7 +735,6 @@ open class MainActivity : AppCompatActivity() {
             context = this,
             soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
         )
-        videoCapturer = VideoCapturer(this)
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -818,7 +823,11 @@ open class MainActivity : AppCompatActivity() {
             }
 
             if (viewfinder.uiState.value.isRecordingActive) {
-                videoCapturer.isPaused = !videoCapturer.isPaused
+                viewfinder.onAction(
+                    RecordingAction.RecordingPauseToggled(
+                        paused = !viewfinder.uiState.value.isRecordingPaused,
+                    ),
+                )
                 return@setOnClickListener
             }
 
@@ -873,9 +882,9 @@ open class MainActivity : AppCompatActivity() {
 
             if (viewfinder.uiState.value.isVideoMode) {
                 if (viewfinder.uiState.value.isRecordingActive) {
-                    videoCapturer.stopRecording()
+                    viewfinder.onAction(RecordingAction.RecordingStopRequested)
                 } else {
-                    videoCapturer.startRecording()
+                    requestRecording()
                 }
             } else if (viewfinder.uiState.value.isQrMode) {
                 viewfinder.onAction(CameraAction.TorchToggleClicked)
@@ -1039,11 +1048,11 @@ open class MainActivity : AppCompatActivity() {
         settingsDialog.loadInitialState()
 
         muteToggle.setOnClickListener {
-            if (videoCapturer.isMuted) {
-                videoCapturer.unmuteRecording()
+            if (viewfinder.uiState.value.isRecordingMuted) {
+                viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = false))
                 showMessage(R.string.video_audio_recording_unmuted)
             } else {
-                videoCapturer.muteRecording()
+                viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = true))
                 showMessage(R.string.video_audio_recording_muted)
             }
         }
@@ -1527,9 +1536,9 @@ open class MainActivity : AppCompatActivity() {
     override fun onStop() {
         isStarted = false
         // Stop explicitly rather than letting the unbind tear the recording down for us.
-        if (this::videoCapturer.isInitialized && viewfinder.uiState.value.isRecordingActive) {
+        if (viewfinder.uiState.value.isRecordingActive) {
             previewFrames.holdCurrentFrame()
-            videoCapturer.stopRecording()
+            viewfinder.onAction(RecordingAction.RecordingStopRequested)
         }
         super.onStop()
     }
@@ -1585,7 +1594,7 @@ open class MainActivity : AppCompatActivity() {
     private fun restartRecordingIfPermissionsWasUnavailable() {
         if (shouldRestartRecording) {
             shouldRestartRecording = false
-            videoCapturer.startRecording()
+            requestRecording()
         }
     }
 

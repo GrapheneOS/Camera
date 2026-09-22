@@ -146,7 +146,7 @@ class StalledMediaProviderRegressionTest {
     @Test
     fun startingARecording_whileMediaProviderStalls_leavesTheMainThreadFree() {
         stalledRecordingTest { scenario, camera, mediaProvider ->
-            onMainThread { camera.videoCapturer.startRecording() }
+            onMainThread { camera.requestRecording() }
             assertTrue(
                 "The recording never asked for its output",
                 mediaProvider.insertStall.awaitCall()
@@ -167,8 +167,8 @@ class StalledMediaProviderRegressionTest {
             val capturedBefore = lastCapturedUri(scenario)
             mediaProvider.recover()
             recordASecond(scenario)
-            scenario.onActivity { it.videoCapturer.stopRecording() }
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            scenario.onActivity { stopRecording(it) }
+            waitUntil(scenario, "recording is finalized") { !isRecording(it) }
             awaitOutputSettled(scenario)
             assertNotEquals(
                 "The recording was not saved",
@@ -188,7 +188,7 @@ class StalledMediaProviderRegressionTest {
         stalledRecordingTest { scenario, camera, mediaProvider ->
             val pendingBefore = pendingVideoCount()
 
-            onMainThread { camera.videoCapturer.startRecording() }
+            onMainThread { camera.requestRecording() }
             assertTrue(
                 "The recording never asked for its output",
                 mediaProvider.insertStall.awaitCall()
@@ -199,9 +199,9 @@ class StalledMediaProviderRegressionTest {
             )
 
             scenario.onActivity {
-                it.videoCapturer.stopRecording()
-                assertFalse("The stop did not take", it.videoCapturer.isRecording)
-                it.videoCapturer.startRecording()
+                stopRecording(it)
+                assertFalse("The stop did not take", isRecording(it))
+                it.requestRecording()
             }
 
             mediaProvider.recover()
@@ -219,7 +219,7 @@ class StalledMediaProviderRegressionTest {
         stalledRecordingTest { scenario, camera, mediaProvider ->
             val pendingBefore = pendingVideoCount()
 
-            onMainThread { camera.videoCapturer.startRecording() }
+            onMainThread { camera.requestRecording() }
             assertTrue(
                 "The recording never asked for its output",
                 mediaProvider.insertStall.awaitCall()
@@ -237,7 +237,7 @@ class StalledMediaProviderRegressionTest {
                 pendingVideoCount() == pendingBefore
             }
             scenario.onActivity {
-                assertFalse("A recording started", it.videoCapturer.isRecording)
+                assertFalse("A recording started", isRecording(it))
             }
 
             // Closing from a stopped state waits out the whole activity lifecycle timeout: the
@@ -257,10 +257,10 @@ class StalledMediaProviderRegressionTest {
         stalledRecordingTest { scenario, camera, mediaProvider ->
             val capturedBefore = lastCapturedUri(scenario)
             mediaProvider.answerOutputCreation()
-            scenario.onActivity { it.videoCapturer.startRecording() }
+            scenario.onActivity { it.requestRecording() }
             recordASecond(scenario)
 
-            onMainThread { camera.videoCapturer.stopRecording() }
+            onMainThread { stopRecording(camera) }
             assertTrue("The recording was never saved", mediaProvider.updateStall.awaitCall())
             assertTrue(
                 "Saving the recording held the main thread while MediaProvider was stalled",
@@ -288,10 +288,10 @@ class StalledMediaProviderRegressionTest {
         stalledRecordingTest { scenario, camera, mediaProvider ->
             val capturedBefore = lastCapturedUri(scenario)
             mediaProvider.answerOutputCreation()
-            scenario.onActivity { it.videoCapturer.startRecording() }
+            scenario.onActivity { it.requestRecording() }
             recordASecond(scenario)
 
-            onMainThread { camera.videoCapturer.stopRecording() }
+            onMainThread { stopRecording(camera) }
             assertTrue("The recording was never saved", mediaProvider.updateStall.awaitCall())
             mediaProvider.refuseUpdates = true
             mediaProvider.updateStall.answer()
@@ -322,12 +322,12 @@ class StalledMediaProviderRegressionTest {
 
         stalledRecordingTest(launch) { scenario, camera, mediaProvider ->
             mediaProvider.answerOutputCreation()
-            scenario.onActivity { it.videoCapturer.startRecording() }
+            scenario.onActivity { it.requestRecording() }
             recordASecond(scenario)
 
-            onMainThread { camera.videoCapturer.stopRecording() }
+            onMainThread { stopRecording(camera) }
             assertTrue("The recording was never saved", mediaProvider.updateStall.awaitCall())
-            onMainThread { camera.videoCapturer.startRecording() }
+            onMainThread { camera.requestRecording() }
             mediaProvider.updateStall.answer()
             awaitOutputSettled(scenario)
 
@@ -336,7 +336,7 @@ class StalledMediaProviderRegressionTest {
             assertFalse("The saved recording was shown over the new one", previewShown)
             recordASecond(scenario)
             var recording = false
-            scenario.onActivity { recording = it.videoCapturer.isRecording }
+            scenario.onActivity { recording = isRecording(it) }
             assertTrue("The new recording was cut short", recording)
         }
     }

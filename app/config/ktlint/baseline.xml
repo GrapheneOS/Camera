@@ -73,9 +73,8 @@
         <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="src/androidTest/java/app/grapheneos/camera/VideoCapturerRegressionTest.kt">
-        <error line="3" column="1" source="standard:import-ordering" />
-        <error line="362" column="31" source="standard:argument-list-wrapping" />
-        <error line="505" column="1" source="standard:indent" />
+        <error line="363" column="31" source="standard:argument-list-wrapping" />
+        <error line="518" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/AutoFinishOnSleep.kt">
         <error line="12" column="25" source="standard:class-signature" />
@@ -354,13 +353,6 @@
         <error line="339" column="13" source="standard:mixed-condition-operators" />
         <error line="342" column="11" source="standard:multiline-if-else" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/activities/CaptureActivity.kt">
-        <error line="3" column="1" source="standard:import-ordering" />
-        <error line="59" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="66" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="163" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="171" column="13" source="standard:multiline-if-else" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/InAppGallery.kt">
         <error line="124" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="136" column="19" source="standard:wrapping" />
@@ -378,9 +370,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="903" column="100" source="standard:max-line-length" />
-        <error line="1054" column="100" source="standard:max-line-length" />
-        <error line="1404" column="17" source="standard:chain-wrapping" />
+        <error line="912" column="100" source="standard:max-line-length" />
+        <error line="1063" column="100" source="standard:max-line-length" />
+        <error line="1413" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />
@@ -399,10 +391,6 @@
     <file name="src/main/java/app/grapheneos/camera/ui/activities/SecureMainActivity.kt">
         <error line="7" column="33" source="standard:class-signature" />
         <error line="7" column="49" source="standard:class-signature" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/activities/VideoCaptureActivity.kt">
-        <error line="48" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="78" column="1" source="standard:final-newline" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/VideoPlayer.kt">
         <error line="27" column="1" source="standard:no-consecutive-blank-lines" />
@@ -449,12 +437,12 @@
         <error line="12" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/Utils.kt">
-        <error line="23" column="44" source="standard:no-semi" />
-        <error line="81" column="66" source="standard:argument-list-wrapping" />
-        <error line="81" column="71" source="standard:argument-list-wrapping" />
-        <error line="81" column="101" source="standard:max-line-length" />
-        <error line="81" column="107" source="standard:argument-list-wrapping" />
-        <error line="81" column="110" source="standard:argument-list-wrapping" />
-        <error line="81" column="111" source="standard:argument-list-wrapping" />
+        <error line="25" column="44" source="standard:no-semi" />
+        <error line="83" column="66" source="standard:argument-list-wrapping" />
+        <error line="83" column="71" source="standard:argument-list-wrapping" />
+        <error line="83" column="101" source="standard:max-line-length" />
+        <error line="83" column="107" source="standard:argument-list-wrapping" />
+        <error line="83" column="110" source="standard:argument-list-wrapping" />
+        <error line="83" column="111" source="standard:argument-list-wrapping" />
     </file>
 </baseline>

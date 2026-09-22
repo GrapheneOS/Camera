@@ -11,6 +11,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import io.mockk.every
 import io.mockk.mockk
 
@@ -21,6 +22,14 @@ fun immediateTunePlayer(): TunePlayer {
             firstArg<Runnable>().run()
         }
     }
+}
+
+fun isRecording(activity: MainActivity): Boolean {
+    return activity.viewfinder.uiState.value.isRecordingActive
+}
+
+fun stopRecording(activity: MainActivity) {
+    activity.viewfinder.onAction(RecordingAction.RecordingStopRequested)
 }
 
 /** Pending entries are how in-flight and orphaned outputs appear in MediaStore. */
@@ -70,9 +79,9 @@ fun <A : MainActivity> stopAndDeleteRecording(
     scenario: ActivityScenario<A>,
     capturedBefore: Uri?,
 ) {
-    runCatching { scenario.onActivity { it.videoCapturer.stopRecording() } }
+    runCatching { scenario.onActivity { stopRecording(it) } }
     runCatching {
-        waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+        waitUntil(scenario, "recording is finalized") { !isRecording(it) }
     }
     runCatching { awaitOutputSettled(scenario) }
     runCatching { deleteNewCapture(scenario, capturedBefore) }

@@ -12,8 +12,10 @@ import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import app.grapheneos.camera.getOptimalLocation
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -100,11 +102,9 @@ internal class LocationRepositoryImpl @Inject constructor(
 
     override fun currentLocation(): Location? {
         val fix = location ?: return null
-        val ageMs = TimeUnit.NANOSECONDS.toMillis(
-            SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos,
-        )
+        val age = (SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos).nanoseconds
 
-        if (ageMs > MAX_LOCATION_AGE) {
+        if (age > MAX_LOCATION_AGE) {
             location = null
         }
 
@@ -113,8 +113,11 @@ internal class LocationRepositoryImpl @Inject constructor(
 
     @RequiresPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
     override fun startUpdates(reattach: Boolean) {
+        if (isUpdating && !reattach) {
+            return
+        }
+
         if (isUpdating) {
-            if (!reattach) return
             pauseUpdates()
         }
 
@@ -130,7 +133,7 @@ internal class LocationRepositoryImpl @Inject constructor(
         currentProviders.forEach { provider ->
             locationManager.requestLocationUpdates(
                 provider,
-                UPDATE_INTERVAL_MS,
+                UPDATE_INTERVAL.inWholeMilliseconds,
                 0f,
                 locationListener,
             )
@@ -154,7 +157,7 @@ internal class LocationRepositoryImpl @Inject constructor(
 
     private companion object {
         // Must stay above the ~10 min throttle the OS applies to coarse-only apps.
-        private const val MAX_LOCATION_AGE = 15 * 60 * 1000L
-        private const val UPDATE_INTERVAL_MS = 2000L
+        private val MAX_LOCATION_AGE = 15.minutes
+        private val UPDATE_INTERVAL = 2.seconds
     }
 }
