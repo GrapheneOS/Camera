@@ -63,8 +63,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private var host: ViewfinderHost? = null
     private var pendingCapture: PendingCapture? = null
 
-    private val events = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
-    override val captureEvents: Flow<CapturedImageEvent> = events.receiveAsFlow()
+    private val _captureEvents = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
+    override val captureEvents: Flow<CapturedImageEvent> = _captureEvents.receiveAsFlow()
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
         if (isBound) return
@@ -142,7 +142,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 }
             }
 
-            update?.let { events.trySend(it) }
+            update?.let { _captureEvents.trySend(it) }
         }
     }
 
@@ -154,7 +154,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         val uri = host?.chrome?.foreignOutputUri()
 
         if (uri == null) {
-            events.trySend(CapturedImageEvent.PreviewReturned)
+            _captureEvents.trySend(CapturedImageEvent.PreviewReturned)
             return
         }
 
@@ -167,7 +167,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 else -> CapturedImageEvent.PreviewStoreFailed
             }
 
-            events.trySend(event)
+            _captureEvents.trySend(event)
         }
     }
 
@@ -208,7 +208,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             else -> Unit
         }
 
-        events.trySend(event)
+        _captureEvents.trySend(event)
     }
 
     private fun finish(pending: PendingCapture) {

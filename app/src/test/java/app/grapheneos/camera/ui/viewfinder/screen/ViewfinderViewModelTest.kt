@@ -20,6 +20,7 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.ImageSaverException
+import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
@@ -29,7 +30,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUpdate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -82,7 +82,7 @@ class ViewfinderViewModelTest {
 
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
     private val captureEvents = MutableSharedFlow<CapturedImageEvent>()
-    private val recordingUpdates = MutableSharedFlow<RecordingUpdate>()
+    private val recordingEvents = MutableSharedFlow<RecordedVideoEvent>()
 
     private val reverted = CompletableDeferred<Unit>()
 
@@ -99,7 +99,7 @@ class ViewfinderViewModelTest {
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
         every { cameraDelegate.sessionEvents } returns sessionEvents
         every { captureDelegate.captureEvents } returns captureEvents
-        every { recordingDelegate.recordingUpdates } returns recordingUpdates
+        every { recordingDelegate.recordingEvents } returns recordingEvents
     }
 
     @Test
@@ -662,14 +662,14 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun recordingUpdates_soundTheStartAndDriveTheState() {
+    fun recordingEvents_soundTheStartAndDriveTheState() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            recordingUpdates.emit(RecordingUpdate.ReadyToStart)
-            recordingUpdates.emit(RecordingUpdate.Started)
-            recordingUpdates.emit(RecordingUpdate.Progressed(duration = 5.seconds))
+            recordingEvents.emit(RecordedVideoEvent.ReadyToStart)
+            recordingEvents.emit(RecordedVideoEvent.Started)
+            recordingEvents.emit(RecordedVideoEvent.Progressed(duration = 5.seconds))
 
             verifyOrder {
                 recordingDelegate.startRecording()
@@ -685,7 +685,7 @@ class ViewfinderViewModelTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            recordingUpdates.emit(RecordingUpdate.Abandoned)
+            recordingEvents.emit(RecordedVideoEvent.Abandoned)
 
             verify(exactly = 1) { recordingDelegate.markStopped() }
             assertEquals(listOf(ViewfinderScreenEffect.Recording.Stopped), effects)
@@ -698,7 +698,7 @@ class ViewfinderViewModelTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            recordingUpdates.emit(RecordingUpdate.Finished(outcome = RecordingOutcome.Saved))
+            recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
 
             verifyOrder {
                 recordingDelegate.markStopped()
@@ -720,8 +720,8 @@ class ViewfinderViewModelTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            recordingUpdates.emit(
-                RecordingUpdate.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
+            recordingEvents.emit(
+                RecordedVideoEvent.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
             )
 
             verify(exactly = 1) { recordingDelegate.discardRecording() }
@@ -738,15 +738,15 @@ class ViewfinderViewModelTest {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            recordingUpdates.emit(
-                RecordingUpdate.Finished(
+            recordingEvents.emit(
+                RecordedVideoEvent.Finished(
                     outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = true),
                 ),
             )
             verify(exactly = 1) { recordingDelegate.saveRecording() }
 
-            recordingUpdates.emit(
-                RecordingUpdate.Finished(
+            recordingEvents.emit(
+                RecordedVideoEvent.Finished(
                     outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = false),
                 ),
             )
@@ -760,7 +760,7 @@ class ViewfinderViewModelTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            recordingUpdates.emit(RecordingUpdate.OutputUnavailable)
+            recordingEvents.emit(RecordedVideoEvent.OutputUnavailable)
 
             verify(exactly = 1) { recordingDelegate.markStopped() }
             assertTrue(

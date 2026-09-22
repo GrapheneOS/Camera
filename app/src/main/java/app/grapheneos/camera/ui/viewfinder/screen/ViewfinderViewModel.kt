@@ -22,6 +22,7 @@ import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
+import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
@@ -32,7 +33,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUpdate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -91,8 +91,8 @@ class ViewfinderViewModel @Inject constructor(
     )
     override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
 
-    private val screenEffects = Channel<Effect>(capacity = Channel.BUFFERED)
-    override val effects: Flow<Effect> = screenEffects.receiveAsFlow()
+    private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
+    override val effects: Flow<Effect> = _effects.receiveAsFlow()
 
     private var selfTimer: Job? = null
 
@@ -122,8 +122,8 @@ class ViewfinderViewModel @Inject constructor(
         }
 
         viewModelScope.launch(mainDispatcher) {
-            recordingDelegate.recordingUpdates.collect { update ->
-                onRecordingUpdate(update)
+            recordingDelegate.recordingEvents.collect { event ->
+                onRecordedVideoEvent(event)
             }
         }
     }
@@ -224,29 +224,29 @@ class ViewfinderViewModel @Inject constructor(
         )
     }
 
-    private fun onRecordingUpdate(update: RecordingUpdate) {
-        when (update) {
-            is RecordingUpdate.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
-            is RecordingUpdate.Abandoned -> onRecordingStopped()
-            is RecordingUpdate.Started -> recordingDelegate.startRecording()
-            is RecordingUpdate.Finished -> onRecordingFinished(update.outcome)
+    private fun onRecordedVideoEvent(event: RecordedVideoEvent) {
+        when (event) {
+            is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
+            is RecordedVideoEvent.Abandoned -> onRecordingStopped()
+            is RecordedVideoEvent.Started -> recordingDelegate.startRecording()
+            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
 
-            is RecordingUpdate.SaveFailed -> {
+            is RecordedVideoEvent.SaveFailed -> {
                 emitEffect(Effect.ShowMessage(R.string.unable_to_save_video))
             }
 
-            is RecordingUpdate.Progressed -> {
-                recordingDelegate.setRecordedDuration(update.duration)
+            is RecordedVideoEvent.Progressed -> {
+                recordingDelegate.setRecordedDuration(event.duration)
             }
 
-            is RecordingUpdate.LocationUnavailable -> {
+            is RecordedVideoEvent.LocationUnavailable -> {
                 emitEffect(Effect.ShowMessage(R.string.location_unavailable))
             }
 
-            is RecordingUpdate.OutputUnavailable -> onRecordingOutputUnavailable()
+            is RecordedVideoEvent.OutputUnavailable -> onRecordingOutputUnavailable()
 
-            is RecordingUpdate.Saved -> {
-                emitEffect(Effect.Recording.Saved(uri = update.uri, item = update.item))
+            is RecordedVideoEvent.Saved -> {
+                emitEffect(Effect.Recording.Saved(uri = event.uri, item = event.item))
             }
         }
     }
@@ -765,7 +765,7 @@ class ViewfinderViewModel @Inject constructor(
     }
 
     private fun emitEffect(effect: Effect) {
-        screenEffects.trySend(effect)
+        _effects.trySend(effect)
     }
 
     private fun state(): ViewfinderState {

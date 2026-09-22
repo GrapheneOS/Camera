@@ -5,9 +5,9 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.takePicture
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.domain.capture.ImageSaver
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
+import app.grapheneos.camera.domain.capture.model.CaptureLocation
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import javax.inject.Inject
@@ -23,7 +23,7 @@ interface CaptureImage {
 
 internal class CaptureImageImpl @Inject constructor(
     private val cameraSession: CameraSession,
-    private val locationRepository: LocationRepository,
+    private val resolveCaptureLocation: ResolveCaptureLocation,
     private val imageSaverFactory: ImageSaver.Factory,
 ) : CaptureImage {
 
@@ -63,19 +63,18 @@ internal class CaptureImageImpl @Inject constructor(
         imageSaver.onCaptureSuccess(image)
     }
 
-    private fun location(
+    private suspend fun location(
         request: CaptureImageRequest,
         onEvent: (CapturedImageEvent) -> Unit,
     ): Location? {
-        if (!request.includeLocation) {
-            return null
-        }
+        return when (val result = resolveCaptureLocation(request.includeLocation)) {
+            is CaptureLocation.Found -> result.location
+            is CaptureLocation.NotRequested -> null
 
-        val location = locationRepository.currentLocation()
-        if (location == null) {
-            onEvent(CapturedImageEvent.LocationUnavailable)
+            is CaptureLocation.Unavailable -> {
+                onEvent(CapturedImageEvent.LocationUnavailable)
+                null
+            }
         }
-
-        return location
     }
 }
