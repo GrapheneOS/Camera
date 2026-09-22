@@ -256,6 +256,8 @@ internal class ViewfinderEffectHandler(
         activity.timerView.text = state.recordingTimerText
         activity.tabLayout.visibility = visibleOrInvisible(state.modeTabsVisible)
         activity.previewView.keepScreenOn = state.keepScreenOn
+        activity.previewView.visibility = visibleOrInvisible(state.cameraPreviewVisible)
+        captureActivity()?.renderCapturedPreview(state.capturedPreviewVisible)
 
         activity.captureButton.render(state.captureButton)
         activity.setFlipCameraIcon(

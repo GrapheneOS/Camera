@@ -23,6 +23,11 @@ class CaptureButton @JvmOverloads constructor(
         val previous = rendered
         rendered = state
 
+        visibility = when {
+            state.visible -> VISIBLE
+            else -> INVISIBLE
+        }
+
         setBackgroundResource(state.background)
 
         // The drawable must stay the same one the recording's corner-radius animation is holding
