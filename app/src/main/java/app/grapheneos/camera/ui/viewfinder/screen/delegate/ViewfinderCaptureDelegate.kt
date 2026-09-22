@@ -3,8 +3,10 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
+import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
+import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
@@ -29,6 +31,7 @@ interface ViewfinderCaptureDelegate {
     fun onScreenDestroyed()
 
     fun takePicture()
+    fun takePreviewPicture()
     fun cancelPictureCapture()
 
     fun startPictureSave()
@@ -43,6 +46,7 @@ interface ViewfinderCaptureDelegate {
 
 internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val captureImage: CaptureImage,
+    private val capturePreviewImage: CapturePreviewImage,
     private val capturedItemRepository: CapturedItemRepository,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
@@ -53,7 +57,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private var isBound = false
 
     private var host: ViewfinderHost? = null
-
     private var pendingCapture: PendingCapture? = null
 
     private val events = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
@@ -110,6 +113,23 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                     onCapturedImageEvent(pending, event)
                 },
             )
+        }
+    }
+
+    override fun takePreviewPicture() {
+        startPictureSave()
+
+        scope.launch(mainDispatcher) {
+            val update = when (val result = capturePreviewImage()) {
+                is CapturePreviewResult.Unavailable -> null
+                is CapturePreviewResult.Failed -> CapturedImageEvent.PreviewFailed
+
+                is CapturePreviewResult.Captured -> {
+                    CapturedImageEvent.PreviewCaptured(bitmap = result.bitmap)
+                }
+            }
+
+            update?.let { events.trySend(it) }
         }
     }
 
