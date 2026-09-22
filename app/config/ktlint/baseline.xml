@@ -284,8 +284,6 @@
         <error line="247" column="101" source="standard:max-line-length" />
         <error line="247" column="107" source="standard:argument-list-wrapping" />
         <error line="247" column="108" source="standard:argument-list-wrapping" />
-        <error line="464" column="1" source="standard:indent" />
-        <error line="465" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ktx/SystemSettingsObserver.kt">
         <error line="16" column="37" source="standard:trailing-comma-on-declaration-site" />
