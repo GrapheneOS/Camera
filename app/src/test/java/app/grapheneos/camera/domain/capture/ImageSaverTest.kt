@@ -73,7 +73,7 @@ class ImageSaverTest {
 
             captureImage()
 
-            val failed = events.filterIsInstance<CapturedImageEvent.Failed>().single()
+            val failed = events.filterIsInstance<CapturedImageEvent.SaveFailed>().single()
             assertEquals(Place.IMAGE_EXTRACTION, failed.cause.place)
             assertFalse(failed.alreadyReported)
         }
@@ -87,13 +87,13 @@ class ImageSaverTest {
 
             captureImage()
 
-            val failed = events.filterIsInstance<CapturedImageEvent.Failed>().single()
+            val failed = events.filterIsInstance<CapturedImageEvent.SaveFailed>().single()
             assertEquals(Place.FILE_CREATION, failed.cause.place)
             assertEquals(
                 listOf(
                     CapturedImageEvent.Captured,
                     CapturedImageEvent.StorageLocationNotFound,
-                    CapturedImageEvent.Failed(cause = failed.cause, alreadyReported = true),
+                    CapturedImageEvent.SaveFailed(cause = failed.cause, alreadyReported = true),
                 ),
                 events,
             )

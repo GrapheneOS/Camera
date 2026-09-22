@@ -36,7 +36,7 @@ sealed interface CapturedImageEvent {
         val thumbnail: Bitmap,
     ) : CapturedImageEvent
 
-    data class Failed(
+    data class SaveFailed(
         val cause: ImageSaverException,
         val alreadyReported: Boolean,
     ) : CapturedImageEvent
