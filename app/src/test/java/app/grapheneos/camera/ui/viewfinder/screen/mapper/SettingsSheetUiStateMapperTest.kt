@@ -12,6 +12,7 @@ import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import org.junit.Assert.assertEquals
@@ -36,6 +37,7 @@ class SettingsSheetUiStateMapperTest {
         modeSettings: ModeSettings = ModeSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
         capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
     ): SettingsSheetUiState {
         return mapper.map(
             ViewfinderState(
@@ -47,6 +49,7 @@ class SettingsSheetUiStateMapperTest {
                 modeSettings = modeSettings,
                 session = session,
                 capture = capture,
+                recording = recording,
             ),
         )
     }
@@ -59,7 +62,7 @@ class SettingsSheetUiStateMapperTest {
     fun recording_locksTheSettingsItWasStartedWith() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.RECORDING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
         assertFalse(state.includeAudioSettingEnabled)
@@ -72,7 +75,7 @@ class SettingsSheetUiStateMapperTest {
     fun noRecording_leavesTheSettingsChangeable() {
         val state = map(
             mode = CameraMode.VIDEO,
-            capture = ViewfinderCaptureState(recordingPhase = RecordingPhase.STARTING),
+            recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
         )
 
         assertTrue(state.includeAudioSettingEnabled)
