@@ -372,11 +372,10 @@
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/CaptureActivity.kt">
         <error line="3" column="1" source="standard:import-ordering" />
-        <error line="60" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="67" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="150" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="196" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="204" column="13" source="standard:multiline-if-else" />
+        <error line="59" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="66" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="177" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="185" column="13" source="standard:multiline-if-else" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/InAppGallery.kt">
         <error line="124" column="1" source="standard:no-empty-first-line-in-method-block" />
@@ -395,9 +394,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="931" column="100" source="standard:max-line-length" />
-        <error line="1082" column="100" source="standard:max-line-length" />
-        <error line="1432" column="17" source="standard:chain-wrapping" />
+        <error line="915" column="100" source="standard:max-line-length" />
+        <error line="1066" column="100" source="standard:max-line-length" />
+        <error line="1416" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

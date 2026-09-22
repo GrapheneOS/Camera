@@ -14,6 +14,8 @@ import app.grapheneos.camera.domain.capture.usecase.PublishRecording
 import app.grapheneos.camera.domain.capture.usecase.PublishRecordingImpl
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImageImpl
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreviewImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -48,6 +50,12 @@ internal abstract class CaptureBindsModule {
     abstract fun bindDiscardRecording(
         impl: DiscardRecordingImpl,
     ): DiscardRecording
+
+    @Binds
+    @Reusable
+    abstract fun bindStoreCapturedPreview(
+        impl: StoreCapturedPreviewImpl,
+    ): StoreCapturedPreview
 
     @Binds
     @Reusable

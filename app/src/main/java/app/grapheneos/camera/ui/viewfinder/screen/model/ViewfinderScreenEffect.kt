@@ -45,6 +45,12 @@ sealed interface ViewfinderScreenEffect {
 
         data object PreviewFailed : Picture
 
+        data object PreviewReturned : Picture
+
+        data object PreviewStored : Picture
+
+        data object PreviewStoreFailed : Picture
+
         data class PreviewCaptured(
             val bitmap: Bitmap,
         ) : Picture
