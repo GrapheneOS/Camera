@@ -194,6 +194,11 @@ class ViewfinderViewModel @Inject constructor(
 
             state.capture.isTakingPicture -> Unit
 
+            state.isCaptureSession -> {
+                emitEffect(Effect.ShowMessage(R.string.capturing_image))
+                captureDelegate.takePreviewPicture()
+            }
+
             else -> captureDelegate.takePicture()
         }
     }
@@ -293,6 +298,8 @@ class ViewfinderViewModel @Inject constructor(
     private fun onCapturedImageEvent(event: CapturedImageEvent) {
         when (event) {
             is CapturedImageEvent.Captured -> onPictureCaptured()
+            is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
+            is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
             is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
             is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
             is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
@@ -459,6 +466,19 @@ class ViewfinderViewModel @Inject constructor(
 
         emitEffect(Effect.Picture.Captured)
         emitEffect(Effect.FlashPreview(state().selfIlluminate()))
+    }
+
+    private fun onPreviewCaptured(bitmap: Bitmap) {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(Effect.Picture.PreviewCaptured(bitmap = bitmap))
+        emitEffect(Effect.ShowMessage(R.string.image_captured_successfully))
+    }
+
+    private fun onPreviewFailed() {
+        captureDelegate.finishPictureSave()
+
+        emitEffect(Effect.Picture.PreviewFailed)
     }
 
     private fun onPictureThumbnailReady(thumbnail: Bitmap) {

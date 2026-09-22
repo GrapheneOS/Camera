@@ -3,8 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -14,17 +12,12 @@ import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
 import android.widget.ImageView
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.core.content.ContextCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
 import java.io.ByteArrayOutputStream
 import java.lang.Exception
-import java.nio.ByteBuffer
 import androidx.core.graphics.scale
 
 open class CaptureActivity : MainActivity() {
@@ -120,41 +113,7 @@ open class CaptureActivity : MainActivity() {
         // Display the activity
     }
 
-    override fun takePicture() {
-
-        showMessage(
-            getString(R.string.capturing_image)
-        )
-
-        previewLoader.visibility = View.VISIBLE
-        session.imageCapture?.takePicture(
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageCapturedCallback() {
-                override fun onCaptureSuccess(image: ImageProxy) {
-                    super.onCaptureSuccess(image)
-                    bitmap = imageProxyToBitmap(image, image.imageInfo.rotationDegrees.toFloat())
-                    showPreview()
-                    previewLoader.visibility = View.GONE
-                    showMessage(getString(R.string.image_captured_successfully))
-
-                    image.close()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    super.onError(exception)
-                    exception.printStackTrace()
-                    showMessage(
-                        getString(R.string.unable_to_capture_image)
-                    )
-
-                    finishActivity(RESULT_CANCELED)
-                }
-            }
-
-        )
-    }
-
-    protected fun showPreview() {
+    fun showPreview() {
         viewfinder.onAction(CaptureAction.CapturedPreviewShown)
 
         session.cameraProvider?.unbindAll()
@@ -233,14 +192,6 @@ open class CaptureActivity : MainActivity() {
         finish()
     }
 
-    private fun imageProxyToBitmap(image: ImageProxy, rotation: Float): Bitmap {
-        val planeProxy = image.planes[0]
-        val buffer: ByteBuffer = planeProxy.buffer
-        val bytes = ByteArray(buffer.remaining())
-        buffer.get(bytes)
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size).rotate(rotation)
-    }
-
     private fun resizeImage(image: Bitmap): Bitmap {
 
         val width = image.width
@@ -253,10 +204,5 @@ open class CaptureActivity : MainActivity() {
             return image
 
         return image.scale(scaleWidth, scaleHeight, false)
-    }
-
-    private fun Bitmap.rotate(degrees: Float): Bitmap {
-        val matrix = Matrix().apply { postRotate(degrees) }
-        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 }

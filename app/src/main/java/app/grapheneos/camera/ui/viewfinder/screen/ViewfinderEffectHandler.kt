@@ -5,18 +5,21 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ktx.applyPreviewRatio
+import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -113,6 +116,8 @@ internal class ViewfinderEffectHandler(
     private fun handlePicture(effect: Effect.Picture) {
         when (effect) {
             is Effect.Picture.Captured -> activity.tunePlayer.playShutterSound()
+            is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)
+            is Effect.Picture.PreviewFailed -> showCapturedPreviewFailure()
             is Effect.Picture.Saved -> onPictureSaved(effect.item)
             is Effect.Picture.CaptureFailed -> showCaptureFailure(effect)
             is Effect.Picture.SaveFailed -> showSaveFailure(effect)
@@ -121,6 +126,18 @@ internal class ViewfinderEffectHandler(
                 activity.imagePreview.setImageBitmap(effect.thumbnail)
             }
         }
+    }
+
+    private fun showCapturedPreview(bitmap: Bitmap) {
+        val captureActivity = activity as? CaptureActivity ?: return
+
+        captureActivity.bitmap = bitmap
+        captureActivity.showPreview()
+    }
+
+    private fun showCapturedPreviewFailure() {
+        activity.showMessage(R.string.unable_to_capture_image)
+        activity.finishActivity(AppCompatActivity.RESULT_CANCELED)
     }
 
     private fun onPictureSaved(item: CapturedItem) {

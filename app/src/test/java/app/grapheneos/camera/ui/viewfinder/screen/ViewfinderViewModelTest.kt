@@ -768,6 +768,57 @@ class ViewfinderViewModelTest {
     }
 
     @Test
+    fun shutterClicked_inACaptureSession_takesAPictureToHandBack() {
+        runTest {
+            every { cameraDelegate.isCameraReady } returns true
+
+            val viewModel = createViewModel(
+                applicationScope = backgroundScope,
+                entryPoint = ENTRY_POINT.copy(isCaptureSession = true),
+            )
+            stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
+
+            viewModel.onAction(CaptureAction.ShutterClicked)
+
+            verify(exactly = 1) { captureDelegate.takePreviewPicture() }
+            verify(exactly = 0) { captureDelegate.takePicture() }
+        }
+    }
+
+    @Test
+    fun previewCaptured_showsItAndStopsTheLoader() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            val bitmap = createBitmap(1, 1)
+
+            captureEvents.emit(CapturedImageEvent.PreviewCaptured(bitmap = bitmap))
+
+            verify(exactly = 1) { captureDelegate.finishPictureSave() }
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.Picture.PreviewCaptured(bitmap),
+                    ViewfinderScreenEffect.ShowMessage(R.string.image_captured_successfully),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun previewFailed_reportsItAndStopsTheLoader() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            captureEvents.emit(CapturedImageEvent.PreviewFailed)
+
+            verify(exactly = 1) { captureDelegate.finishPictureSave() }
+            assertEquals(listOf(ViewfinderScreenEffect.Picture.PreviewFailed), effects)
+        }
+    }
+
+    @Test
     fun shutterClicked_whileTheCameraCannotCapture_saysSoAndTakesNothing() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
