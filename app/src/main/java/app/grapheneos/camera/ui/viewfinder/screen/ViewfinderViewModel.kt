@@ -103,10 +103,7 @@ class ViewfinderViewModel @Inject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
-        captureDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
+        captureDelegate.bind(stateHolder)
         settingsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,

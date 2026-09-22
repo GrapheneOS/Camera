@@ -257,10 +257,11 @@ class ViewfinderCaptureDelegateTest {
             capturePreviewImage = capturePreviewImage,
             storeCapturedPreview = storeCapturedPreview,
             capturedItemRepository = capturedItemRepository,
+            applicationScope = scope,
             mainDispatcher = UnconfinedTestDispatcher(),
         )
 
-        delegate.bind(scope = scope, stateHolder = stateHolder)
+        delegate.bind(stateHolder)
         delegate.onScreenCreated(
             ViewfinderHost(
                 previewTarget = mockk(relaxed = true),

@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.graphics.Bitmap
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
 import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
@@ -28,7 +29,7 @@ interface ViewfinderCaptureDelegate {
 
     val captureEvents: Flow<CapturedImageEvent>
 
-    fun bind(scope: CoroutineScope, stateHolder: ViewfinderStateHolder)
+    fun bind(stateHolder: ViewfinderStateHolder)
     fun onScreenCreated(host: ViewfinderHost)
     fun onScreenDestroyed()
 
@@ -52,11 +53,11 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val capturePreviewImage: CapturePreviewImage,
     private val storeCapturedPreview: StoreCapturedPreview,
     private val capturedItemRepository: CapturedItemRepository,
+    @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
-    private lateinit var scope: CoroutineScope
 
     private var isBound = false
 
@@ -72,14 +73,10 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         var isCancelled = false
     }
 
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    ) {
+    override fun bind(stateHolder: ViewfinderStateHolder) {
         if (isBound) return
         isBound = true
 
-        this.scope = scope
         this.stateHolder = stateHolder
     }
 
@@ -102,7 +99,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
         updateCapture { it.copy(isTakingPicture = true) }
 
-        scope.launch(mainDispatcher) {
+        applicationScope.launch(mainDispatcher) {
             try {
                 captureImage(
                     request = CaptureImageRequest(
@@ -127,7 +124,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     override fun takePreviewPicture() {
         startPictureSave()
 
-        scope.launch(mainDispatcher) {
+        applicationScope.launch(mainDispatcher) {
             val update = when (val result = capturePreviewImage()) {
                 is CapturePreviewResult.Unavailable -> null
                 is CapturePreviewResult.Failed -> CapturedImageEvent.PreviewFailed
@@ -149,7 +146,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
             return
         }
 
-        scope.launch(mainDispatcher) {
+        applicationScope.launch(mainDispatcher) {
             val event = when {
                 storeCapturedPreview(uri = uri, bitmap = bitmap) -> {
                     CapturedImageEvent.PreviewStored
