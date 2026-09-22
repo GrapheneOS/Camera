@@ -167,22 +167,6 @@
         <error line="11" column="104" source="standard:argument-list-wrapping" />
         <error line="11" column="105" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/domain/capture/ImageSaver.kt">
-        <error line="176" column="45" source="standard:curly-spacing" />
-        <error line="176" column="62" source="standard:curly-spacing" />
-        <error line="184" column="39" source="standard:argument-list-wrapping" />
-        <error line="184" column="47" source="standard:argument-list-wrapping" />
-        <error line="184" column="60" source="standard:argument-list-wrapping" />
-        <error line="184" column="82" source="standard:argument-list-wrapping" />
-        <error line="184" column="101" source="standard:max-line-length" />
-        <error line="184" column="103" source="standard:argument-list-wrapping" />
-        <error line="184" column="104" source="standard:argument-list-wrapping" />
-        <error line="202" column="30" source="standard:binary-expression-wrapping" />
-        <error line="202" column="82" source="standard:argument-list-wrapping" />
-        <error line="202" column="97" source="standard:argument-list-wrapping" />
-        <error line="202" column="99" source="standard:binary-expression-wrapping" />
-        <error line="202" column="100" source="standard:max-line-length" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/domain/capture/model/ImageSaverException.kt">
         <error line="3" column="27" source="standard:class-signature" />
         <error line="3" column="45" source="standard:class-signature" />
