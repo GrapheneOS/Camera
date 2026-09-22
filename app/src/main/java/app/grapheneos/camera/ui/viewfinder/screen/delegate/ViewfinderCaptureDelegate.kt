@@ -103,20 +103,24 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         updateCapture { it.copy(isTakingPicture = true) }
 
         scope.launch(mainDispatcher) {
-            captureImage(
-                request = CaptureImageRequest(
-                    storageLocation = capturedItemRepository.storageLocation.first(),
-                    includeLocation = state.requireLocation,
-                    saveAsPreviewed = state.settings.saveImageAsPreviewed,
-                    removeExif = state.settings.removeExifAfterCapture,
-                    targetThumbnailWidth = thumbnailSize.width,
-                    targetThumbnailHeight = thumbnailSize.height,
-                ),
-                needsThumbnail = { host != null },
-                onEvent = { event ->
-                    onCapturedImageEvent(pending, event)
-                },
-            )
+            try {
+                captureImage(
+                    request = CaptureImageRequest(
+                        storageLocation = capturedItemRepository.storageLocation.first(),
+                        includeLocation = state.requireLocation,
+                        saveAsPreviewed = state.settings.saveImageAsPreviewed,
+                        removeExif = state.settings.removeExifAfterCapture,
+                        targetThumbnailWidth = thumbnailSize.width,
+                        targetThumbnailHeight = thumbnailSize.height,
+                    ),
+                    needsThumbnail = { host != null },
+                    onEvent = { event ->
+                        onCapturedImageEvent(pending, event)
+                    },
+                )
+            } finally {
+                finish(pending)
+            }
         }
     }
 
@@ -187,9 +191,12 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     }
 
     private fun finish(pending: PendingCapture) {
-        if (pendingCapture === pending) {
-            pendingCapture = null
+        if (pendingCapture !== pending) {
+            return
         }
+
+        pendingCapture = null
+        updateCapture { it.copy(isTakingPicture = false) }
     }
 
     override fun startPictureSave() {

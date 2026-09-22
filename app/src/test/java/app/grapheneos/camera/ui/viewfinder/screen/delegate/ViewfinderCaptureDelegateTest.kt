@@ -22,6 +22,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -48,6 +49,7 @@ class ViewfinderCaptureDelegateTest {
     private val chrome = mockk<ViewfinderChrome>()
 
     private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
+    private val captureFinished = CompletableDeferred<Unit>()
 
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = CameraMode.VIDEO, requiresVideoModeOnly = false),
@@ -193,6 +195,20 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun takePicture_thatEndsWithoutAnyEvent_stillReleasesTheShutter() {
+        runTest {
+            val delegate = createDelegate(scope = backgroundScope)
+
+            delegate.takePicture()
+            assertTrue(capture().isTakingPicture)
+
+            captureFinished.complete(Unit)
+
+            assertFalse(capture().isTakingPicture)
+        }
+    }
+
+    @Test
     fun cancelPictureCapture_keepsTheFailureItCausesQuiet() {
         runTest {
             val delegate = createDelegate(scope = backgroundScope)
@@ -230,7 +246,9 @@ class ViewfinderCaptureDelegateTest {
     private fun createDelegate(
         scope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher()),
     ): ViewfinderCaptureDelegate {
-        coEvery { captureImage(any(), any(), capture(onCaptureEvent)) } returns Unit
+        coEvery { captureImage(any(), any(), capture(onCaptureEvent)) } coAnswers {
+            captureFinished.await()
+        }
         every { capturedItemRepository.storageLocation } returns flowOf(STORAGE_LOCATION)
         every { chrome.thumbnailSize() } returns ThumbnailSize(width = 1, height = 1)
 
