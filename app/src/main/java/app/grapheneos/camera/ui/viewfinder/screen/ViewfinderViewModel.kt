@@ -32,7 +32,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUpdate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -207,7 +206,7 @@ class ViewfinderViewModel @Inject constructor(
     private fun startRecording(hasAudioPermission: Boolean) {
         val state = state()
 
-        if (!cameraDelegate.canRecord || state.recording.phase != RecordingPhase.IDLE) {
+        if (!cameraDelegate.canRecord || state.recording.isActive()) {
             return
         }
 
@@ -326,11 +325,15 @@ class ViewfinderViewModel @Inject constructor(
             is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
 
             is RecordingAction.RecordingPauseToggled -> {
-                recordingDelegate.setPaused(action.paused)
+                if (state().recording.isActive()) {
+                    recordingDelegate.setPaused(action.paused)
+                }
             }
 
             is RecordingAction.RecordingMuteToggled -> {
-                recordingDelegate.setMuted(action.muted)
+                if (state().recording.isActive()) {
+                    recordingDelegate.setMuted(action.muted)
+                }
             }
         }
     }
