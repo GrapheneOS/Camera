@@ -89,18 +89,6 @@ open class CaptureActivity : MainActivity() {
         // also the only screen where it should be reachable by accessibility services.
         cancelButtonView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
 
-        captureButton.setOnClickListener {
-            if (selfTimerSeconds == 0) {
-                takePicture()
-            } else {
-                if (cdTimer.isRunning) {
-                    cdTimer.cancelTimer()
-                } else {
-                    cdTimer.startTimer()
-                }
-            }
-        }
-
         retakeIcon.setOnClickListener {
             hidePreview()
         }
