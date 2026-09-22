@@ -378,9 +378,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="915" column="100" source="standard:max-line-length" />
-        <error line="1066" column="100" source="standard:max-line-length" />
-        <error line="1416" column="17" source="standard:chain-wrapping" />
+        <error line="903" column="100" source="standard:max-line-length" />
+        <error line="1054" column="100" source="standard:max-line-length" />
+        <error line="1404" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />
