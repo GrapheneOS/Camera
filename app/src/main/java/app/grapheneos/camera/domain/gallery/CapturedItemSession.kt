@@ -4,7 +4,6 @@ import android.util.Log
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
-import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
@@ -36,7 +35,6 @@ internal class CapturedItemSessionImpl @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
-    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : CapturedItemSession {
 
     override var lastCapturedItem: CapturedItem? = runBlocking { restoredCapture() }
@@ -97,7 +95,7 @@ internal class CapturedItemSessionImpl @Inject constructor(
     override fun recordCapturedItem(item: CapturedItem) {
         lastCapturedItem = visibleCaptureMapper.map(item)
 
-        applicationScope.launch(defaultDispatcher) {
+        applicationScope.launch(mainDispatcher) {
             try {
                 capturedItemRepository.saveLastCapturedItem(item)
             } catch (e: IOException) {

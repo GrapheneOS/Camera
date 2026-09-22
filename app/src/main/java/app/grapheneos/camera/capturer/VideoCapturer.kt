@@ -79,7 +79,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 } else {
                     recording?.resume()
                 }
-                viewfinder.onAction(CaptureAction.RecordingPauseToggled(paused = value))
+                reportRecordingState(CaptureAction.RecordingPauseToggled(paused = value))
             }
             field = value
         }
@@ -423,7 +423,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         animateCaptureButtonCorners(dp16, dp8)
 
-        viewfinder.onAction(CaptureAction.RecordingStarted)
+        reportRecordingState(CaptureAction.RecordingStarted)
 
         // While recording, the gallery button turns into a shutter for stills
         mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
@@ -472,7 +472,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         isRecording = false
 
-        viewfinder.onAction(CaptureAction.RecordingStopped)
+        reportRecordingState(CaptureAction.RecordingStopped)
 
         mActivity.forceUpdateOrientationSensor()
     }
@@ -500,6 +500,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording?.stop()
         recording?.close()
         recording = null
+    }
+
+    private fun reportRecordingState(action: CaptureAction) {
+        if (mActivity.isDestroyed) {
+            return
+        }
+
+        viewfinder.onAction(action)
     }
 
     // Off the main thread for the same reason the output is created there
@@ -559,8 +567,8 @@ fun deleteStalePendingRecordings(
     maxAge: Long = STALE_PENDING_RECORDING_AGE,
 ) {
     val selection = "${MediaColumns.IS_PENDING} = 1" +
-            " AND ${MediaColumns.DISPLAY_NAME} LIKE ?" +
-            " AND ${MediaColumns.DATE_ADDED} < ?"
+        " AND ${MediaColumns.DISPLAY_NAME} LIKE ?" +
+        " AND ${MediaColumns.DATE_ADDED} < ?"
     val cutoffSeconds = (System.currentTimeMillis() - maxAge) / 1000L
     val args = arrayOf("$VIDEO_NAME_PREFIX%", cutoffSeconds.toString())
 
