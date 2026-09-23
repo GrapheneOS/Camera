@@ -3,8 +3,10 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.net.Uri
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
@@ -28,7 +30,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+            viewModel.onAction(RecordingAction.RecordingRequested)
 
             verifyOrder {
                 recordingDelegate.requestRecording()
@@ -48,8 +50,9 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
+            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = false))
+            viewModel.onAction(RecordingAction.RecordingRequested)
 
             verify(exactly = 0) {
                 recordingDelegate.prepareRecording(
@@ -60,9 +63,43 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             }
             verify(exactly = 1) { recordingDelegate.markStopped() }
             assertEquals(
-                listOf(ViewfinderScreenEffect.Recording.RequestAudioPermission),
+                listOf(
+                    ViewfinderScreenEffect.Permission.Request(
+                        permission = AppPermission.MICROPHONE,
+                        explainsFirst = false,
+                    ),
+                ),
                 effects,
             )
+        }
+    }
+
+    @Test
+    fun previewStreamingStarted_withARetryPending_records() {
+        runTest {
+            every { cameraDelegate.canRecord } returns true
+            every { recordingDelegate.takeRetry() } returns true
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 1) { recordingDelegate.requestRecording() }
+        }
+    }
+
+    @Test
+    fun recordWithoutAudioClicked_turnsAudioOffAndRecords() {
+        runTest {
+            every { cameraDelegate.canRecord } returns true
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(RecordingAction.RecordWithoutAudioClicked)
+
+            verifyOrder {
+                permissionDelegate.dismissDialog()
+                settingsDelegate.setIncludeAudio(false)
+                recordingDelegate.requestRecording()
+            }
         }
     }
 
@@ -73,7 +110,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+            viewModel.onAction(RecordingAction.RecordingRequested)
 
             verify(exactly = 0) { recordingDelegate.requestRecording() }
         }

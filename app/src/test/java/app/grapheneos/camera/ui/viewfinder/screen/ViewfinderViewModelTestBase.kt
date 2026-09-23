@@ -13,6 +13,7 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -40,6 +41,7 @@ open class ViewfinderViewModelTestBase {
     protected val cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true)
     protected val captureDelegate = mockk<ViewfinderCaptureDelegate>(relaxed = true)
     protected val recordingDelegate = mockk<ViewfinderRecordingDelegate>(relaxed = true)
+    protected val permissionDelegate = mockk<ViewfinderPermissionDelegate>(relaxed = true)
     protected val locationRepository = mockk<LocationRepository>(relaxed = true)
 
     protected val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
@@ -77,6 +79,7 @@ open class ViewfinderViewModelTestBase {
             cameraDelegate = cameraDelegate,
             captureDelegate = captureDelegate,
             recordingDelegate = recordingDelegate,
+            permissionDelegate = permissionDelegate,
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             locationRepository = locationRepository,

@@ -55,6 +55,29 @@ class ViewfinderStateTest {
     }
 
     @Test
+    fun isReviewingRecordedVideo_inAVideoCaptureSession_coversTheSaveBeforeThePreview() {
+        val session = state(requiresVideoModeOnly = true).copy(isCaptureSession = true)
+
+        assertFalse(session.isReviewingRecordedVideo())
+        assertTrue(
+            session.copy(capture = ViewfinderCaptureState(isSavingRecording = true))
+                .isReviewingRecordedVideo(),
+        )
+        assertTrue(
+            session.copy(capture = ViewfinderCaptureState(isCapturedPreviewShown = true))
+                .isReviewingRecordedVideo(),
+        )
+    }
+
+    @Test
+    fun isReviewingRecordedVideo_outsideACaptureSession_neverHolds() {
+        val saving = state(requiresVideoModeOnly = true)
+            .copy(capture = ViewfinderCaptureState(isSavingRecording = true))
+
+        assertFalse(saving.isReviewingRecordedVideo())
+    }
+
+    @Test
     fun selfIlluminate_needsTheSettingAndTheFrontLens() {
         val enabled = ModeSettings(selfIllumination = true)
         val front = ViewfinderSessionState(lensFacing = LensFacing.FRONT)

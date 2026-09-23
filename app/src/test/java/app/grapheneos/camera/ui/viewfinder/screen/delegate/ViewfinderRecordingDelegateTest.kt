@@ -139,6 +139,18 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
+    fun retry_isTakenOnlyOnce() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.retryOnceStreaming()
+
+            assertTrue(delegate.takeRetry())
+            assertFalse(delegate.takeRetry())
+        }
+    }
+
+    @Test
     fun startPreparedRecording_passesOnThePauseAndMuteSetBeforeTheStart() {
         runTest {
             val delegate = createDelegate()
