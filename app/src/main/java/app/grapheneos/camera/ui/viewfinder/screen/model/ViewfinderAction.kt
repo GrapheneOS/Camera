@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 
 sealed interface ViewfinderAction {
@@ -70,9 +71,9 @@ sealed interface ViewfinderAction {
 
         data object StartSoundPlayed : RecordingAction
 
-        data class RecordingRequested(
-            val hasAudioPermission: Boolean,
-        ) : RecordingAction
+        data object RecordingRequested : RecordingAction
+
+        data object RecordWithoutAudioClicked : RecordingAction
 
         data class RecordingPauseToggled(
             val paused: Boolean,
@@ -85,8 +86,6 @@ sealed interface ViewfinderAction {
 
     sealed interface LifecycleAction : ViewfinderAction {
 
-        data object CameraPermissionGranted : LifecycleAction
-
         data object ScreenStarted : LifecycleAction
 
         data object ScreenStopped : LifecycleAction
@@ -94,8 +93,6 @@ sealed interface ViewfinderAction {
         data object ScreenResumed : LifecycleAction
 
         data object PreviewStreamingStarted : LifecycleAction
-
-        data object RecordAudioPermissionGranted : LifecycleAction
 
         data object QrResultDismissed : LifecycleAction
 
@@ -106,6 +103,23 @@ sealed interface ViewfinderAction {
         data class ScreenCreated(
             val host: ViewfinderHost,
         ) : LifecycleAction
+    }
+
+    sealed interface PermissionAction : ViewfinderAction {
+
+        data object SettingsClicked : PermissionAction
+
+        data class RequestAnswered(
+            val permission: AppPermission,
+        ) : PermissionAction
+
+        data class RationaleRequired(
+            val permission: AppPermission,
+        ) : PermissionAction
+
+        data class DialogDismissed(
+            val permission: AppPermission,
+        ) : PermissionAction
     }
 
     sealed interface SettingsAction : ViewfinderAction {

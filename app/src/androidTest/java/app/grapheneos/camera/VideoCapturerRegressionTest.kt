@@ -105,7 +105,7 @@ class VideoCapturerRegressionTest {
         recordingTest { scenario ->
             scenario.onActivity { activity ->
                 activity.tunePlayer = doubleFiringTunePlayer()
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
 
             waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
@@ -127,7 +127,7 @@ class VideoCapturerRegressionTest {
             val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
                 assertTrue(isRecording(activity))
             }
             waitForStartSound(scenario, deferred)
@@ -145,7 +145,7 @@ class VideoCapturerRegressionTest {
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
                 activity.tunePlayer = immediateTunePlayer()
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
             waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
             scenario.onActivity { stopRecording(it) }
@@ -160,7 +160,7 @@ class VideoCapturerRegressionTest {
             val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
             waitForStartSound(scenario, deferred)
             scenario.onActivity { activity ->
@@ -198,7 +198,7 @@ class VideoCapturerRegressionTest {
             val deferred = slot<Runnable>()
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
             waitForStartSound(scenario, deferred)
             scenario.onActivity { activity ->
@@ -234,7 +234,7 @@ class VideoCapturerRegressionTest {
                 val selector = StateListDrawable().apply { addState(StateSet.WILD_CARD, shape) }
                 activity.captureButton.setImageDrawable(LayerDrawable(arrayOf(selector)))
                 activity.tunePlayer = immediateTunePlayer()
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
 
             // The animation reaching the nested shape proves the unwrapping worked.
@@ -257,7 +257,7 @@ class VideoCapturerRegressionTest {
             scenario.onActivity { activity ->
                 activity.captureButton.setImageDrawable(ColorDrawable(Color.RED))
                 activity.tunePlayer = immediateTunePlayer()
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
             waitUntil(scenario, "recording UI is shown") {
                 it.timerView.visibility == View.VISIBLE
@@ -324,7 +324,7 @@ class VideoCapturerRegressionTest {
             try {
                 scenario.onActivity { activity ->
                     activity.tunePlayer = immediateTunePlayer()
-                    activity.requestRecording()
+                    activity.viewfinder.onAction(RecordingAction.RecordingRequested)
                 }
                 waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
 
@@ -364,7 +364,7 @@ class VideoCapturerRegressionTest {
         recordingTest({ ActivityScenario.launch<VideoCaptureActivity>(intent) }) { scenario ->
             scenario.onActivity { activity ->
                 activity.tunePlayer = immediateTunePlayer()
-                activity.requestRecording()
+                activity.viewfinder.onAction(RecordingAction.RecordingRequested)
             }
             waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
             // A recording that wrote nothing is thrown away, and leaves no preview to defer
@@ -410,7 +410,7 @@ class VideoCapturerRegressionTest {
             try {
                 scenario.onActivity { activity ->
                     activity.tunePlayer = manualTunePlayer(deferred)
-                    activity.requestRecording()
+                    activity.viewfinder.onAction(RecordingAction.RecordingRequested)
                     assertTrue(isRecording(activity))
 
                     val cameraTab = activity.tabLayout.getTabForMode(CameraMode.CAMERA)

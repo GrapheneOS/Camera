@@ -26,7 +26,7 @@ class VideoCaptureActivity : CaptureActivity() {
             if (viewfinder.uiState.value.isRecordingActive) {
                 viewfinder.onAction(RecordingAction.RecordingStopRequested)
             } else {
-                requestRecording()
+                viewfinder.onAction(RecordingAction.RecordingRequested)
             }
         }
 

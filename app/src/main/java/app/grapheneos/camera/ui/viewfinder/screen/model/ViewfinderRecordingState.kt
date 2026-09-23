@@ -7,6 +7,7 @@ data class ViewfinderRecordingState(
     val duration: Duration = Duration.ZERO,
     val isPaused: Boolean = false,
     val isMuted: Boolean = false,
+    val retriesOnceStreaming: Boolean = false,
 ) {
 
     fun isActive(): Boolean {

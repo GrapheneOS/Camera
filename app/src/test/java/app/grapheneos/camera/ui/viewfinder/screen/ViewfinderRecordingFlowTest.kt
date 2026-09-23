@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
+import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.CameraSession
@@ -28,12 +29,15 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMappe
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -76,6 +80,8 @@ class ViewfinderRecordingFlowTest {
         every { camera } returns mockk()
         every { videoCapture } returns mockk()
         every { events } returns emptyFlow()
+        every { isActive } returns true
+        every { bind(any()) } returns BindOutcome.BOUND
     }
 
     private val capturedItemRepository = mockk<CapturedItemRepository>(relaxed = true) {
@@ -87,6 +93,13 @@ class ViewfinderRecordingFlowTest {
         every { modeSettings(any()) } returns ModeSettings()
     }
 
+    private val host = ViewfinderHost(
+        previewTarget = mockk(relaxed = true),
+        chrome = mockk(relaxed = true),
+        previewFrames = mockk(relaxed = true),
+        thumbnailSize = ThumbnailSize(width = 1, height = 1),
+    )
+
     @Test
     fun aStopBeforeTheOutputIsCreated_startsNothingAndThrowsTheOutputAway() {
         runTest {
@@ -94,7 +107,7 @@ class ViewfinderRecordingFlowTest {
             val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+            viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
             outputCreated.complete(Unit)
 
@@ -111,7 +124,7 @@ class ViewfinderRecordingFlowTest {
             val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+            viewModel.onAction(RecordingAction.RecordingRequested)
             assertTrue(ViewfinderScreenEffect.Recording.PlayStartSound in effects)
 
             viewModel.onAction(RecordingAction.RecordingStopRequested)
@@ -128,7 +141,7 @@ class ViewfinderRecordingFlowTest {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+            viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
             viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
             viewModel.onAction(RecordingAction.StartSoundPlayed)
@@ -140,7 +153,7 @@ class ViewfinderRecordingFlowTest {
     }
 
     @Test
-    fun aCaptureSessionRecording_isBeingSavedUntilItCanBeReviewed() {
+    fun aCaptureSessionRecording_keepsTheCameraUnboundUntilItCanBeReviewed() {
         runTest {
             outputPublished = CompletableDeferred()
             val viewModel = createViewModel(
@@ -151,22 +164,25 @@ class ViewfinderRecordingFlowTest {
                 ),
             )
             val effects = collectEffects(viewModel)
+            viewModel.onAction(LifecycleAction.ScreenCreated(host))
 
-            viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = true))
+            viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.StartSoundPlayed)
             recordingSession.emit(RecordingEvent.Started)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
             recordingSession.emit(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
 
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+
             assertEquals(1, recordingSession.stopCount)
-            assertFalse(viewModel.uiState.value.isRecordingActive)
-            assertTrue(viewModel.uiState.value.isRecordingBeingSaved)
             assertFalse(effects.any { it is ViewfinderScreenEffect.Recording.Saved })
+            verify(exactly = 0) { cameraSession.bind(any()) }
 
             outputPublished.complete(Unit)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            assertFalse(viewModel.uiState.value.isRecordingBeingSaved)
             assertTrue(effects.any { it is ViewfinderScreenEffect.Recording.Saved })
+            verify(exactly = 1) { cameraSession.bind(any()) }
         }
     }
 
@@ -209,6 +225,7 @@ class ViewfinderRecordingFlowTest {
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
             ),
+            permissionDelegate = mockk(relaxed = true),
             recordingDelegate = ViewfinderRecordingDelegateImpl(
                 videoRecorder = videoRecorder,
                 capturedItemRepository = capturedItemRepository,

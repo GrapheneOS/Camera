@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
@@ -22,6 +23,8 @@ data class ViewfinderState(
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
     val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
+    val missingPermissions: Set<AppPermission> = emptySet(),
+    val permissionDialog: AppPermission? = null,
 ) {
 
     fun isQrMode(): Boolean {
@@ -51,6 +54,12 @@ data class ViewfinderState(
                 it.name in settings.enabledBarcodeFormats
             }
         }
+    }
+
+    fun isReviewingRecordedVideo(): Boolean {
+        val isAwaitingReview = capture.isCapturedPreviewShown || capture.isSavingRecording
+
+        return isCaptureSession && requiresVideoModeOnly && isAwaitingReview
     }
 
     fun selfIlluminate(): Boolean {

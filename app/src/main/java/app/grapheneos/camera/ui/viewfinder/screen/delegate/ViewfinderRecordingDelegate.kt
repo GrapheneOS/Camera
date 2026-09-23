@@ -40,6 +40,9 @@ interface ViewfinderRecordingDelegate {
 
     fun requestStop()
     fun markStopped()
+
+    fun retryOnceStreaming()
+    fun takeRetry(): Boolean
 }
 
 internal class ViewfinderRecordingDelegateImpl @Inject constructor(
@@ -123,6 +126,18 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
 
     override fun markStopped() {
         update { ViewfinderRecordingState() }
+    }
+
+    override fun retryOnceStreaming() {
+        update { it.copy(retriesOnceStreaming = true) }
+    }
+
+    override fun takeRetry(): Boolean {
+        val retries = stateHolder.state.value.recording.retriesOnceStreaming
+
+        update { it.copy(retriesOnceStreaming = false) }
+
+        return retries
     }
 
     private fun update(transform: (ViewfinderRecordingState) -> ViewfinderRecordingState) {

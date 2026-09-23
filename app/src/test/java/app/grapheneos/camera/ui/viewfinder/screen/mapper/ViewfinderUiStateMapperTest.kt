@@ -243,14 +243,6 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun isRecordingBeingSaved_followsTheRecordingSave() {
-        val saving = map(capture = ViewfinderCaptureState(isSavingRecording = true))
-
-        assertTrue(saving.isRecordingBeingSaved)
-        assertFalse(map().isRecordingBeingSaved)
-    }
-
-    @Test
     fun recording_keepsItsControlsWhenASettingChanges() {
         val state = map(
             mode = CameraMode.VIDEO,

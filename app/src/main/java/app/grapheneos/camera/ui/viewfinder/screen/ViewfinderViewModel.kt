@@ -18,6 +18,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.location.repository.LocationRepository
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
@@ -29,6 +30,7 @@ import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
@@ -38,6 +40,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
@@ -73,6 +76,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val cameraDelegate: ViewfinderCameraDelegate,
     private val captureDelegate: ViewfinderCaptureDelegate,
     private val recordingDelegate: ViewfinderRecordingDelegate,
+    private val permissionDelegate: ViewfinderPermissionDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val locationRepository: LocationRepository,
@@ -111,6 +115,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             stateHolder = stateHolder,
         )
         recordingDelegate.bind(stateHolder)
+        permissionDelegate.bind(stateHolder)
 
         viewModelScope.launch(mainDispatcher) {
             cameraDelegate.sessionEvents.collect { event ->
@@ -138,6 +143,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is RecordingAction -> onRecordingAction(action)
             is LifecycleAction -> onLifecycleAction(action)
             is SettingsAction -> onSettingsAction(action)
+            is PermissionAction -> onPermissionAction(action)
         }
     }
 
@@ -188,7 +194,8 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onRecordingAction(action: RecordingAction) {
         when (action) {
-            is RecordingAction.RecordingRequested -> startRecording(action.hasAudioPermission)
+            is RecordingAction.RecordingRequested -> startRecording()
+            is RecordingAction.RecordWithoutAudioClicked -> recordWithoutAudio()
             is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
             is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
 
@@ -210,12 +217,10 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is LifecycleAction.ScreenCreated -> onScreenCreated(action.host)
             is LifecycleAction.ScreenDestroyed -> onScreenDestroyed()
-            is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
+            is LifecycleAction.PreviewStreamingStarted -> onPreviewStreamingStarted()
             is LifecycleAction.ScreenStarted -> captureDelegate.onScreenStarted()
             is LifecycleAction.ScreenStopped -> captureDelegate.onScreenStopped()
-            is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
-            is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
-            is LifecycleAction.RecordAudioPermissionGranted -> startCamera(forced = true)
+            is LifecycleAction.ScreenResumed -> onScreenResumed()
             is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
             is LifecycleAction.QrResultDismissed -> dismissQrResult()
         }
@@ -246,6 +251,18 @@ class ViewfinderViewModel @AssistedInject constructor(
             is SettingsAction.FocusLockToggled -> {
                 settingsDelegate.setWaitForFocusLock(action.enabled)
                 startCamera(forced = true)
+            }
+        }
+    }
+
+    private fun onPermissionAction(action: PermissionAction) {
+        when (action) {
+            is PermissionAction.RequestAnswered -> onPermissionRequestAnswered(action.permission)
+            is PermissionAction.SettingsClicked -> openAppSettings()
+            is PermissionAction.RationaleRequired -> showPermissionDialog(action.permission)
+
+            is PermissionAction.DialogDismissed -> {
+                onPermissionDialogDismissed(action.permission)
             }
         }
     }
@@ -548,7 +565,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         emitEffect(Effect.SelfTimer.Cancelled)
     }
 
-    private fun startRecording(hasAudioPermission: Boolean) {
+    private fun startRecording() {
         val state = state()
 
         if (!cameraDelegate.canRecord || state.recording.isActive()) {
@@ -557,8 +574,13 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         recordingDelegate.requestRecording()
 
-        if (state.settings.includeAudio && !hasAudioPermission) {
-            emitEffect(Effect.Recording.RequestAudioPermission)
+        if (state.settings.includeAudio && AppPermission.MICROPHONE in state.missingPermissions) {
+            emitEffect(
+                Effect.Permission.Request(
+                    permission = AppPermission.MICROPHONE,
+                    explainsFirst = false,
+                ),
+            )
             recordingDelegate.markStopped()
             return
         }
@@ -568,6 +590,26 @@ class ViewfinderViewModel @AssistedInject constructor(
             includeAudio = state.settings.includeAudio,
             outputUri = outputUri,
         )
+    }
+
+    private fun onMicrophonePermissionAnswered() {
+        when {
+            AppPermission.MICROPHONE in state().missingPermissions -> {
+                showPermissionDialog(AppPermission.MICROPHONE)
+            }
+
+            else -> {
+                recordingDelegate.retryOnceStreaming()
+                startCamera(forced = true)
+            }
+        }
+    }
+
+    private fun recordWithoutAudio() {
+        permissionDelegate.dismissDialog()
+        settingsDelegate.setIncludeAudio(false)
+
+        startRecording()
     }
 
     private fun onRecordingOutputUnavailable() {
@@ -619,6 +661,78 @@ class ViewfinderViewModel @AssistedInject constructor(
         cameraDelegate.onScreenDestroyed()
         captureDelegate.onScreenDestroyed()
         recordingDelegate.onScreenDestroyed()
+        permissionDelegate.dismissDialog()
+    }
+
+    private fun onScreenResumed() {
+        refreshPermissions()
+
+        val state = state()
+
+        when {
+            AppPermission.CAMERA in state.missingPermissions -> {
+                emitEffect(
+                    Effect.Permission.Request(
+                        permission = AppPermission.CAMERA,
+                        explainsFirst = true,
+                    ),
+                )
+            }
+
+            else -> {
+                val keepsBoundCamera = state.session.isQrResultShown ||
+                    state.isReviewingRecordedVideo()
+
+                initializeCamera(forced = !keepsBoundCamera)
+            }
+        }
+    }
+
+    private fun onPermissionRequestAnswered(permission: AppPermission) {
+        refreshPermissions()
+
+        when (permission) {
+            AppPermission.CAMERA -> Unit
+            AppPermission.MICROPHONE -> onMicrophonePermissionAnswered()
+        }
+    }
+
+    private fun refreshPermissions() {
+        permissionDelegate.refresh()
+
+        val state = state()
+        val dialog = state.permissionDialog
+
+        if (dialog != null && dialog !in state.missingPermissions) {
+            permissionDelegate.dismissDialog()
+            emitEffect(Effect.Permission.DismissDialog)
+        }
+    }
+
+    private fun showPermissionDialog(permission: AppPermission) {
+        if (state().permissionDialog == permission) return
+
+        permissionDelegate.showDialog(permission)
+        emitEffect(Effect.Permission.ShowDialog(permission))
+    }
+
+    private fun openAppSettings() {
+        permissionDelegate.dismissDialog()
+
+        emitEffect(Effect.Permission.OpenSettings)
+    }
+
+    private fun onPermissionDialogDismissed(permission: AppPermission) {
+        if (state().permissionDialog != permission) return
+
+        permissionDelegate.dismissDialog()
+
+        // The dialog could have either been dismissed by clicking on the
+        // background or by clicking the cancel button. So in those cases,
+        // the app should exit as the app depends on the camera permission.
+        if (permission == AppPermission.CAMERA) {
+            emitEffect(Effect.CloseScreen)
+        }
     }
 
     private fun initializeCamera(forced: Boolean) {
@@ -628,6 +742,14 @@ class ViewfinderViewModel @AssistedInject constructor(
                 forced = forced,
                 extensionMode = state().mode.extensionMode,
             )
+        }
+    }
+
+    private fun onPreviewStreamingStarted() {
+        applyModeSettings()
+
+        if (recordingDelegate.takeRetry()) {
+            startRecording()
         }
     }
 
