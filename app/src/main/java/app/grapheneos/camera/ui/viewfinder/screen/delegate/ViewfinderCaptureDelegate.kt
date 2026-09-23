@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -49,7 +50,7 @@ interface ViewfinderCaptureDelegate {
 
     fun takePreviewPicture()
     fun showCapturedPreview()
-    fun confirmPreviewPicture(bitmap: Bitmap)
+    fun confirmPreviewPicture(bitmap: Bitmap, outputUri: Uri?)
     fun dismissCapturedPreview()
 
     fun setSelfTimerRunning(running: Boolean)
@@ -102,9 +103,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     }
 
     override fun takePicture() {
-        val chrome = host?.chrome ?: return
+        val thumbnailSize = host?.thumbnailSize ?: return
         val state = stateHolder.state.value
-        val thumbnailSize = chrome.thumbnailSize()
         val pending = PendingCapture()
 
         pendingCapture = pending
@@ -181,17 +181,18 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         updateCapture { it.copy(isCapturedPreviewShown = true) }
     }
 
-    override fun confirmPreviewPicture(bitmap: Bitmap) {
-        val uri = host?.chrome?.foreignOutputUri()
-
-        if (uri == null) {
+    override fun confirmPreviewPicture(
+        bitmap: Bitmap,
+        outputUri: Uri?,
+    ) {
+        if (outputUri == null) {
             _captureEvents.trySend(CapturedImageEvent.PreviewReturned)
             return
         }
 
         applicationScope.launch(mainDispatcher) {
             val event = when {
-                storeCapturedPreview(uri = uri, bitmap = bitmap) -> {
+                storeCapturedPreview(uri = outputUri, bitmap = bitmap) -> {
                     CapturedImageEvent.PreviewStored
                 }
 

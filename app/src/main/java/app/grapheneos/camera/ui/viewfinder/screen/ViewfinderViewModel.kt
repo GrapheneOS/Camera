@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.StringRes
@@ -43,8 +44,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect a
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.util.printStackTraceToString
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -61,8 +64,9 @@ interface ViewfinderScreenModel {
     fun onAction(action: ViewfinderAction)
 }
 
-@HiltViewModel
-class ViewfinderViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = ViewfinderViewModel.Factory::class)
+class ViewfinderViewModel @AssistedInject constructor(
+    @Assisted private val outputUri: Uri?,
     private val entryPoint: CameraEntryPoint,
     private val settingsDelegate: ViewfinderSettingsDelegate,
     private val modeDelegate: ViewfinderModeDelegate,
@@ -171,10 +175,13 @@ class ViewfinderViewModel @Inject constructor(
             is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
-            is CaptureAction.CapturedPreviewShown -> captureDelegate.showCapturedPreview()
+            is CaptureAction.CapturedPreviewShown -> showCapturedPreview()
 
             is CaptureAction.CapturedPreviewConfirmed -> {
-                captureDelegate.confirmPreviewPicture(action.bitmap)
+                captureDelegate.confirmPreviewPicture(
+                    bitmap = action.bitmap,
+                    outputUri = outputUri,
+                )
             }
         }
     }
@@ -501,6 +508,11 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.Picture.PreviewFailed)
     }
 
+    private fun showCapturedPreview() {
+        captureDelegate.showCapturedPreview()
+        cameraDelegate.unbindCamera()
+    }
+
     private fun onStorageLocationNotFound() {
         applicationScope.launch(mainDispatcher) {
             revertToMediaStoreLocation()
@@ -554,6 +566,7 @@ class ViewfinderViewModel @Inject constructor(
         recordingDelegate.prepareRecording(
             includeLocation = state.requireLocation,
             includeAudio = state.settings.includeAudio,
+            outputUri = outputUri,
         )
     }
 
@@ -599,7 +612,6 @@ class ViewfinderViewModel @Inject constructor(
     private fun onScreenCreated(host: ViewfinderHost) {
         cameraDelegate.onScreenCreated(host)
         captureDelegate.onScreenCreated(host)
-        recordingDelegate.onScreenCreated(host)
     }
 
     private fun onScreenDestroyed() {
@@ -738,6 +750,11 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun state(): ViewfinderState {
         return stateHolder.state.value
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(outputUri: Uri?): ViewfinderViewModel
     }
 
     companion object {

@@ -32,7 +32,11 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
             verifyOrder {
                 recordingDelegate.requestRecording()
-                recordingDelegate.prepareRecording(includeLocation = false, includeAudio = true)
+                recordingDelegate.prepareRecording(
+                    includeLocation = false,
+                    includeAudio = true,
+                    outputUri = null,
+                )
             }
         }
     }
@@ -48,7 +52,11 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(RecordingAction.RecordingRequested(hasAudioPermission = false))
 
             verify(exactly = 0) {
-                recordingDelegate.prepareRecording(includeLocation = any(), includeAudio = any())
+                recordingDelegate.prepareRecording(
+                    includeLocation = any(),
+                    includeAudio = any(),
+                    outputUri = any(),
+                )
             }
             verify(exactly = 1) { recordingDelegate.markStopped() }
             assertEquals(

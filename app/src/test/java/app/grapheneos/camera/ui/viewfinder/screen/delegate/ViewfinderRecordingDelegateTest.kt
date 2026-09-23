@@ -5,8 +5,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import io.mockk.coVerify
@@ -32,7 +30,6 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderRecordingDelegateTest {
 
     private val videoRecorder = mockk<VideoRecorder>(relaxed = true)
-    private val chrome = mockk<ViewfinderChrome>(relaxed = true)
 
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.VIDEO)
 
@@ -114,12 +111,14 @@ class ViewfinderRecordingDelegateTest {
     @Test
     fun prepareRecording_handsTheRecorderWhereToWriteAndWhetherItIsStillWanted() {
         runTest {
-            every { chrome.foreignOutputUri() } returns FOREIGN_URI
-
             val isStillWanted = slot<() -> Boolean>()
             val delegate = createDelegate()
             delegate.requestRecording()
-            delegate.prepareRecording(includeLocation = true, includeAudio = false)
+            delegate.prepareRecording(
+                includeLocation = true,
+                includeAudio = false,
+                outputUri = FOREIGN_URI,
+            )
 
             coVerify(exactly = 1) {
                 videoRecorder.prepare(
@@ -168,13 +167,6 @@ class ViewfinderRecordingDelegateTest {
         )
 
         delegate.bind(stateHolder)
-        delegate.onScreenCreated(
-            ViewfinderHost(
-                previewTarget = mockk(relaxed = true),
-                chrome = chrome,
-                previewFrames = mockk(relaxed = true),
-            ),
-        )
 
         return delegate
     }

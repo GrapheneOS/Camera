@@ -19,8 +19,6 @@ import app.grapheneos.camera.util.getParcelableExtra
 
 open class CaptureActivity : MainActivity() {
 
-    lateinit var outputUri: Uri
-
     var bitmap: Bitmap? = null
 
     private lateinit var retakeIcon: ImageView
@@ -28,9 +26,10 @@ open class CaptureActivity : MainActivity() {
     private lateinit var flipCameraContent: ImageView
     lateinit var confirmButton: ImageButton
 
-    fun isOutputUriAvailable(): Boolean {
-        return ::outputUri.isInitialized
-    }
+    override val outputUri: Uri?
+        get() {
+            return getParcelableExtra(intent, MediaStore.EXTRA_OUTPUT)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,10 +38,6 @@ open class CaptureActivity : MainActivity() {
         flipCameraContent = findViewById(R.id.flip_camera_icon_content)
 
         confirmButton = findViewById(R.id.confirm_button)
-
-        getParcelableExtra<Uri>(intent, MediaStore.EXTRA_OUTPUT)?.let {
-            outputUri = it
-        }
 
         // Disable capture button for a while (to avoid picture capture)
         captureButton.isEnabled = false
@@ -92,8 +87,6 @@ open class CaptureActivity : MainActivity() {
 
     fun showPreview() {
         viewfinder.onAction(CaptureAction.CapturedPreviewShown)
-
-        session.cameraProvider?.unbindAll()
 
         // The captured photo covers the preview until the camera streams again, so a retake does
         // not flash the empty preview the unbind leaves behind. It is taken down from there.

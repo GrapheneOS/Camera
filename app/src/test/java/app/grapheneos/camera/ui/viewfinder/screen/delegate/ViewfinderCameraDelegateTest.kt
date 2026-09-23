@@ -15,6 +15,7 @@ import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import com.google.zxing.BarcodeFormat
 import io.mockk.every
 import io.mockk.mockk
@@ -48,6 +49,7 @@ class ViewfinderCameraDelegateTest {
         previewTarget = mockk(relaxed = true),
         chrome = chrome,
         previewFrames = previewFrames,
+        thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
     private val session = mockk<CameraSession>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()

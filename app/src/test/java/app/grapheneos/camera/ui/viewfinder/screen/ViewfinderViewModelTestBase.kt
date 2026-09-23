@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.net.Uri
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.repository.LocationRepository
@@ -66,8 +67,10 @@ open class ViewfinderViewModelTestBase {
     protected fun createViewModel(
         applicationScope: CoroutineScope,
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
+        outputUri: Uri? = null,
     ): ViewfinderViewModel {
         val viewModel = ViewfinderViewModel(
+            outputUri = outputUri,
             entryPoint = entryPoint,
             settingsDelegate = settingsDelegate,
             modeDelegate = modeDelegate,
