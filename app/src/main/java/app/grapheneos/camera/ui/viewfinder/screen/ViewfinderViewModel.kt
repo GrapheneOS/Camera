@@ -374,8 +374,12 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onSessionEvent(event: CameraSessionEvent) {
         when (event) {
+            is CameraSessionEvent.ZoomStateLoaded -> {
+                cameraDelegate.refreshZoom()
+            }
+
             is CameraSessionEvent.ZoomStateChanged -> {
-                cameraDelegate.onZoomStateChanged()
+                cameraDelegate.refreshZoom()
                 emitEffect(Effect.ShowZoomPanel)
             }
 
