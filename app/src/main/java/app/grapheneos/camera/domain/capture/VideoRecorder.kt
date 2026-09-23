@@ -5,6 +5,7 @@ import android.util.Log
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.data.camera.model.RecordingEvent
+import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.model.RecordingRequest
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.di.core.ApplicationScope
@@ -31,17 +32,15 @@ interface VideoRecorder {
 
     val events: Flow<RecordedVideoEvent>
 
-    suspend fun prepare(request: RecordVideoRequest, isStillWanted: () -> Boolean)
+    suspend fun prepare(
+        request: RecordVideoRequest,
+        isStillWanted: () -> Boolean,
+    )
 
     fun start(muted: Boolean, paused: Boolean)
-
     fun setPaused(paused: Boolean)
     fun setMuted(muted: Boolean)
-
     fun stop()
-
-    fun save()
-    fun discard()
 }
 
 internal class VideoRecorderImpl @Inject constructor(
@@ -106,7 +105,12 @@ internal class VideoRecorderImpl @Inject constructor(
                 location = pending.location,
                 includeAudio = pending.includeAudio,
             ),
-            onEvent = ::onRecordingEvent,
+            onEvent = { event ->
+                onRecordingEvent(
+                    recording = pending,
+                    event = event,
+                )
+            },
         )
 
         // The Recording didn't exist yet when the mute/pause setters ran.
@@ -139,38 +143,14 @@ internal class VideoRecorderImpl @Inject constructor(
 
             // The start is still queued behind the sound that announces it.
             !pending.isStarted -> {
+                pendingRecording = null
                 closeOutput(pending.output)
-                discard()
+                discardOutput(pending.output)
                 _events.trySend(RecordedVideoEvent.Abandoned)
             }
 
             else -> recordingSession.stop()
         }
-    }
-
-    override fun save() {
-        val pending = pendingRecording ?: return
-        pendingRecording = null
-
-        applicationScope.launch(mainDispatcher) {
-            if (!publishRecording(pending.output)) {
-                _events.trySend(RecordedVideoEvent.SaveFailed)
-            }
-
-            _events.trySend(
-                RecordedVideoEvent.Saved(
-                    uri = pending.output.uri,
-                    item = capturedItem(pending.output),
-                ),
-            )
-        }
-    }
-
-    override fun discard() {
-        val pending = pendingRecording ?: return
-        pendingRecording = null
-
-        discardOutput(pending.output)
     }
 
     private suspend fun location(includeLocation: Boolean): Location? {
@@ -185,29 +165,86 @@ internal class VideoRecorderImpl @Inject constructor(
         }
     }
 
-    private fun onRecordingEvent(event: RecordingEvent) {
-        when (event) {
+    private fun onRecordingEvent(
+        recording: PendingRecording,
+        event: RecordingEvent,
+    ) {
+        if (recording === pendingRecording) {
+            _events.trySend(recordedVideoEvent(event))
+        }
+
+        if (event is RecordingEvent.Finalized) {
+            finish(
+                recording = recording,
+                outcome = event.outcome,
+            )
+        }
+    }
+
+    private fun recordedVideoEvent(event: RecordingEvent): RecordedVideoEvent {
+        return when (event) {
             is RecordingEvent.Started -> {
-                _events.trySend(RecordedVideoEvent.Started)
+                RecordedVideoEvent.Started
             }
 
             is RecordingEvent.Progressed -> {
-                _events.trySend(
-                    RecordedVideoEvent.Progressed(
-                        duration = event.recordedDurationNanos.nanoseconds,
-                    ),
-                )
+                RecordedVideoEvent.Progressed(duration = event.recordedDurationNanos.nanoseconds)
             }
 
             is RecordingEvent.Finalized -> {
-                _events.trySend(RecordedVideoEvent.Finished(outcome = event.outcome))
+                RecordedVideoEvent.Finished(outcome = event.outcome)
             }
+        }
+    }
+
+    private fun finish(
+        recording: PendingRecording,
+        outcome: RecordingOutcome,
+    ) {
+        if (recording === pendingRecording) {
+            pendingRecording = null
+        }
+
+        when {
+            keepsContent(outcome) -> save(recording.output)
+            else -> discardOutput(recording.output)
+        }
+    }
+
+    private fun keepsContent(outcome: RecordingOutcome): Boolean {
+        return when (outcome) {
+            is RecordingOutcome.Saved -> true
+            is RecordingOutcome.Interrupted -> outcome.hasContent
+            is RecordingOutcome.NothingPlayableWritten -> false
+            is RecordingOutcome.Failed -> false
+        }
+    }
+
+    private fun save(output: RecordingOutput) {
+        applicationScope.launch(mainDispatcher) {
+            if (!publishRecording(output)) {
+                _events.trySend(RecordedVideoEvent.SaveFailed)
+            }
+
+            _events.trySend(
+                RecordedVideoEvent.Saved(
+                    uri = output.uri,
+                    item = capturedItem(output),
+                ),
+            )
         }
     }
 
     private fun capturedItem(output: RecordingOutput): CapturedItem? {
         return when {
-            output.isOwnFile -> CapturedItem(ITEM_TYPE_VIDEO, output.dateString, output.uri)
+            output.isOwnFile -> {
+                CapturedItem(
+                    type = ITEM_TYPE_VIDEO,
+                    dateString = output.dateString,
+                    uri = output.uri
+                )
+            }
+
             else -> null
         }
     }
