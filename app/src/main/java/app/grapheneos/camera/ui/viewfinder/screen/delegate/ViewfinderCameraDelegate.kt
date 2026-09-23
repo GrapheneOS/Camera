@@ -41,6 +41,7 @@ interface ViewfinderCameraDelegate {
     fun selectLens(isQrMode: Boolean, extensionMode: ExtensionMode?): ViewfinderBindTarget?
     fun bindCamera(settings: CameraBindSettings): BindOutcome
     fun announceBind()
+    fun unbindCamera()
 
     fun switchLensFacing(lensFacing: LensFacing, extensionMode: ExtensionMode?): Boolean
     fun applyFlashMode(value: FlashMode)
@@ -193,6 +194,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                 ),
             )
         }
+    }
+
+    override fun unbindCamera() {
+        session.unbind()
     }
 
     override fun switchLensFacing(

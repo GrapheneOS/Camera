@@ -47,12 +47,32 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun capturedPreviewShown_isRecorded() {
+    fun capturedPreviewShown_isRecordedAndReleasesTheCamera() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             viewModel.onAction(CaptureAction.CapturedPreviewShown)
 
-            verify(exactly = 1) { captureDelegate.showCapturedPreview() }
+            verifyOrder {
+                captureDelegate.showCapturedPreview()
+                cameraDelegate.unbindCamera()
+            }
+        }
+    }
+
+    @Test
+    fun capturedPreviewConfirmed_writesWhereTheCallerAsked() {
+        runTest {
+            val viewModel = createViewModel(
+                applicationScope = backgroundScope,
+                outputUri = OUTPUT_URI,
+            )
+            val bitmap = createBitmap(1, 1)
+
+            viewModel.onAction(CaptureAction.CapturedPreviewConfirmed(bitmap))
+
+            verify(exactly = 1) {
+                captureDelegate.confirmPreviewPicture(bitmap = bitmap, outputUri = OUTPUT_URI)
+            }
         }
     }
 
@@ -350,5 +370,6 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
         const val SAVE_FAILURE_STAGE = "FILE_WRITE"
 
         val THUMBNAIL: Bitmap = createBitmap(1, 1)
+        val OUTPUT_URI: Uri = Uri.parse("content://com.example.app/images/1")
     }
 }

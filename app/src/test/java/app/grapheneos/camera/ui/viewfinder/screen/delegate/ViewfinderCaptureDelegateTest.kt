@@ -14,7 +14,6 @@ import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
 import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
@@ -51,7 +50,6 @@ class ViewfinderCaptureDelegateTest {
     private val storeCapturedPreview = mockk<StoreCapturedPreview>()
     private val capturedItemRepository = mockk<CapturedItemRepository>()
     private val notifyPictureSaveFailed = mockk<NotifyPictureSaveFailed>(relaxed = true)
-    private val chrome = mockk<ViewfinderChrome>()
 
     private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
     private val captureFinished = CompletableDeferred<Unit>()
@@ -174,13 +172,12 @@ class ViewfinderCaptureDelegateTest {
     fun confirmPreviewPicture_withAFileToWriteInto_storesTheBitmapThere() {
         runTest {
             val bitmap = createBitmap(1, 1)
-            every { chrome.foreignOutputUri() } returns FOREIGN_URI
             coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns true
 
             val delegate = createDelegate()
             val events = collectEvents(delegate)
 
-            delegate.confirmPreviewPicture(bitmap)
+            delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = FOREIGN_URI)
 
             assertEquals(listOf(CapturedImageEvent.PreviewStored), events)
         }
@@ -189,12 +186,10 @@ class ViewfinderCaptureDelegateTest {
     @Test
     fun confirmPreviewPicture_withoutAFile_handsTheBitmapBackInline() {
         runTest {
-            every { chrome.foreignOutputUri() } returns null
-
             val delegate = createDelegate()
             val events = collectEvents(delegate)
 
-            delegate.confirmPreviewPicture(createBitmap(1, 1))
+            delegate.confirmPreviewPicture(bitmap = createBitmap(1, 1), outputUri = null)
 
             assertEquals(listOf(CapturedImageEvent.PreviewReturned), events)
             coVerify(exactly = 0) { storeCapturedPreview(uri = any(), bitmap = any()) }
@@ -354,7 +349,6 @@ class ViewfinderCaptureDelegateTest {
         }
         every { capturedItemRepository.storageLocation } returns flowOf(STORAGE_LOCATION)
         coEvery { capturedItemRepository.saveLastCapturedItem(any()) } just runs
-        every { chrome.thumbnailSize() } returns ThumbnailSize(width = 1, height = 1)
 
         val delegate = ViewfinderCaptureDelegateImpl(
             captureImage = captureImage,
@@ -370,8 +364,9 @@ class ViewfinderCaptureDelegateTest {
         delegate.onScreenCreated(
             ViewfinderHost(
                 previewTarget = mockk(relaxed = true),
-                chrome = chrome,
+                chrome = mockk(relaxed = true),
                 previewFrames = mockk(relaxed = true),
+                thumbnailSize = ThumbnailSize(width = 1, height = 1),
             ),
         )
 
