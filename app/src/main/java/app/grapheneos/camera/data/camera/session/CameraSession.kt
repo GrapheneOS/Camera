@@ -212,11 +212,19 @@ internal class CameraSessionImpl @Inject constructor(
 
     private var zoomStateSource: LiveData<ZoomState>? = null
 
+    private var isZoomStateLoaded = false
+
     private val zoomStateObserver = Observer<ZoomState> {
-        zoomState = it
-        if (it.linearZoom != 0f || it.zoomRatio != 1f) {
-            sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
+        val event = when {
+            !isZoomStateLoaded -> CameraSessionEvent.ZoomStateLoaded
+            it.zoomRatio != zoomState?.zoomRatio -> CameraSessionEvent.ZoomStateChanged
+            else -> null
         }
+
+        zoomState = it
+        isZoomStateLoaded = true
+
+        event?.let(sessionEvents::tryEmit)
     }
 
     private val mainExecutor: Executor = ContextCompat.getMainExecutor(context)
@@ -261,6 +269,7 @@ internal class CameraSessionImpl @Inject constructor(
         zoomStateSource?.removeObserver(zoomStateObserver)
         zoomStateSource = null
         zoomState = null
+        isZoomStateLoaded = false
         camera = null
         preview = null
         imageCapture = null
@@ -906,9 +915,10 @@ internal class CameraSessionImpl @Inject constructor(
         zoomStateSource?.removeObserver(zoomStateObserver)
         zoomStateSource = null
         zoomState = null
+        isZoomStateLoaded = false
         // Reading the new one is what costs ~100 ms behind an extension, and nothing before the
-        // next message needs it: the bar below draws a freshly bound camera's 1.0x either way, and
-        // every other reader is a gesture.
+        // next message needs it: the bar is drawn once ZoomStateLoaded arrives, and every other
+        // reader is a gesture.
         handler.removeCallbacks(attachZoomState)
         handler.post(attachZoomState)
     }

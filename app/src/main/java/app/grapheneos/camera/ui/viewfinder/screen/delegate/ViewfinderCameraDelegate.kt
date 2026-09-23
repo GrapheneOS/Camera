@@ -49,7 +49,7 @@ interface ViewfinderCameraDelegate {
     fun setExposureCompensation(compensationIndex: Int)
     fun focusAt(x: Float, y: Float, autoCancelSeconds: Long)
     fun cancelFocus()
-    fun onZoomStateChanged()
+    fun refreshZoom()
     fun refreshVideoQualities()
     fun showQrResult(): Boolean
     fun dismissQrResult()
@@ -267,7 +267,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         session.cancelFocusAndMetering()
     }
 
-    override fun onZoomStateChanged() {
+    override fun refreshZoom() {
         stateHolder.update {
             it.copy(session = it.session.copy(zoom = session.zoom))
         }

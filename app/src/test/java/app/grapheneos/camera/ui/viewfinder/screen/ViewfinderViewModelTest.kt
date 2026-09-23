@@ -145,8 +145,21 @@ class ViewfinderViewModelTest {
 
             sessionEvents.emit(CameraSessionEvent.ZoomStateChanged)
 
-            verify(exactly = 1) { cameraDelegate.onZoomStateChanged() }
+            verify(exactly = 1) { cameraDelegate.refreshZoom() }
             assertEquals(listOf(ViewfinderScreenEffect.ShowZoomPanel), effects)
+        }
+    }
+
+    @Test
+    fun zoomStateLoaded_publishesTheZoomWithoutShowingItsPanel() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            sessionEvents.emit(CameraSessionEvent.ZoomStateLoaded)
+
+            verify(exactly = 1) { cameraDelegate.refreshZoom() }
+            assertTrue(effects.isEmpty())
         }
     }
 
