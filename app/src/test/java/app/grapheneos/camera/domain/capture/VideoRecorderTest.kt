@@ -1,6 +1,8 @@
 package app.grapheneos.camera.domain.capture
 
 import android.net.Uri
+import app.grapheneos.camera.data.camera.model.RecordingEvent
+import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
@@ -12,7 +14,9 @@ import app.grapheneos.camera.domain.capture.usecase.PublishRecording
 import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocation
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,6 +44,14 @@ class VideoRecorderTest {
     private val output = RecordingOutput(
         uri = Uri.EMPTY,
         dateString = "20260922_120000",
+        fileDescriptor = mockk(relaxed = true),
+        isOwnFile = true,
+        isPendingMediaStoreUri = false,
+    )
+
+    private val nextOutput = RecordingOutput(
+        uri = Uri.parse("content://media/external/video/media/2"),
+        dateString = "20260922_120100",
         fileDescriptor = mockk(relaxed = true),
         isOwnFile = true,
         isPendingMediaStoreUri = false,
@@ -153,13 +165,13 @@ class VideoRecorderTest {
     }
 
     @Test
-    fun save_handsBackTheRecordingForTheGallery() {
+    fun finalized_handsBackTheRecordingForTheGallery() {
         runTest {
             val recorder = createRecorder(scope = backgroundScope)
             val events = collectEvents(recorder)
-            recorder.prepare(REQUEST, isStillWanted = { true })
+            val onEvent = startRecording(recorder)
 
-            recorder.save()
+            onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
 
             val saved = events.filterIsInstance<RecordedVideoEvent.Saved>().single()
             assertEquals(output.uri, saved.item?.uri)
@@ -167,22 +179,102 @@ class VideoRecorderTest {
     }
 
     @Test
-    fun save_thatCannotPublish_saysSoButKeepsTheRecording() {
+    fun finalized_thatCannotPublish_saysSoButKeepsTheRecording() {
         runTest {
             coEvery { publishRecording(any()) } returns false
 
             val recorder = createRecorder(scope = backgroundScope)
             val events = collectEvents(recorder)
-            recorder.prepare(REQUEST, isStillWanted = { true })
+            val onEvent = startRecording(recorder)
 
-            recorder.save()
+            onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
 
             assertTrue(RecordedVideoEvent.SaveFailed in events)
             assertTrue(events.any { it is RecordedVideoEvent.Saved })
         }
     }
 
-    private fun TestScope.collectEvents(recorder: VideoRecorder): List<RecordedVideoEvent> {
+    @Test
+    fun finalized_withNothingPlayable_throwsTheOutputAway() {
+        runTest {
+            val recorder = createRecorder(scope = backgroundScope)
+            val onEvent = startRecording(recorder)
+
+            onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten))
+
+            coVerify(exactly = 1) { discardRecording(output) }
+            coVerify(exactly = 0) { publishRecording(any()) }
+        }
+    }
+
+    @Test
+    fun finalized_afterAnInterruption_keepsWhatWasWritten() {
+        runTest {
+            val recorder = createRecorder(scope = backgroundScope)
+            val onEvent = startRecording(recorder)
+
+            onEvent(
+                RecordingEvent.Finalized(
+                    outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = true),
+                ),
+            )
+
+            coVerify(exactly = 1) { publishRecording(output) }
+        }
+    }
+
+    @Test
+    fun finalized_afterAnInterruptionBeforeAnythingWasWritten_throwsTheOutputAway() {
+        runTest {
+            val recorder = createRecorder(scope = backgroundScope)
+            val onEvent = startRecording(recorder)
+
+            onEvent(
+                RecordingEvent.Finalized(
+                    outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = false),
+                ),
+            )
+
+            coVerify(exactly = 1) { discardRecording(output) }
+        }
+    }
+
+    @Test
+    fun finalized_afterTheNextRecordingWasPrepared_savesItWithoutReportingIt() {
+        runTest {
+            coEvery { createRecordingOutput(any(), any()) } returnsMany listOf(output, nextOutput)
+
+            val recorder = createRecorder(scope = backgroundScope)
+            val events = collectEvents(recorder)
+            val onEvent = startRecording(recorder)
+            recorder.stop()
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            events.clear()
+
+            onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
+
+            coVerify(exactly = 1) { publishRecording(output) }
+            coVerify(exactly = 0) { publishRecording(nextOutput) }
+            assertTrue(events.none { it is RecordedVideoEvent.Finished })
+            assertTrue(events.any { it is RecordedVideoEvent.Saved })
+
+            recorder.start(muted = false, paused = false)
+
+            verify(exactly = 2) { recordingSession.start(any(), any()) }
+        }
+    }
+
+    private suspend fun startRecording(recorder: VideoRecorder): (RecordingEvent) -> Unit {
+        val onEvent = slot<(RecordingEvent) -> Unit>()
+        every { recordingSession.start(any(), capture(onEvent)) } returns true
+
+        recorder.prepare(REQUEST, isStillWanted = { true })
+        recorder.start(muted = false, paused = false)
+
+        return onEvent.captured
+    }
+
+    private fun TestScope.collectEvents(recorder: VideoRecorder): MutableList<RecordedVideoEvent> {
         val events = mutableListOf<RecordedVideoEvent>()
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
