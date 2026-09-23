@@ -693,17 +693,14 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun aFinishedRecording_isSavedAndAnnounced() {
+    fun aFinishedRecording_isAnnounced() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
             recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
 
-            verifyOrder {
-                recordingDelegate.markStopped()
-                recordingDelegate.saveRecording()
-            }
+            verify(exactly = 1) { recordingDelegate.markStopped() }
             assertEquals(
                 listOf(
                     ViewfinderScreenEffect.Recording.Stopped,
@@ -715,7 +712,7 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun aRecordingTooShortToPlay_isThrownAwayWithAMessage() {
+    fun aRecordingTooShortToPlay_saysSo() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
@@ -724,7 +721,6 @@ class ViewfinderViewModelTest {
                 RecordedVideoEvent.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
             )
 
-            verify(exactly = 1) { recordingDelegate.discardRecording() }
             assertTrue(
                 ViewfinderScreenEffect.ShowMessage(
                     R.string.recording_too_short_to_be_saved,
@@ -734,23 +730,18 @@ class ViewfinderViewModelTest {
     }
 
     @Test
-    fun anInterruptedRecording_keepsOnlyWhatItManagedToWrite() {
+    fun anInterruptedRecording_saysSo() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
 
             recordingEvents.emit(
                 RecordedVideoEvent.Finished(
                     outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = true),
                 ),
             )
-            verify(exactly = 1) { recordingDelegate.saveRecording() }
 
-            recordingEvents.emit(
-                RecordedVideoEvent.Finished(
-                    outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = false),
-                ),
-            )
-            verify(exactly = 1) { recordingDelegate.discardRecording() }
+            assertTrue(ViewfinderScreenEffect.Recording.Interrupted(errorCode = 7) in effects)
         }
     }
 

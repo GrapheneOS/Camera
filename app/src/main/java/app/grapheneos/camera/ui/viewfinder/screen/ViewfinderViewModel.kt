@@ -575,25 +575,18 @@ class ViewfinderViewModel @Inject constructor(
         emitEffect(Effect.Recording.PlayStopSound)
 
         when (outcome) {
-            is RecordingOutcome.Saved -> recordingDelegate.saveRecording()
+            is RecordingOutcome.Saved -> Unit
 
             is RecordingOutcome.NothingPlayableWritten -> {
-                recordingDelegate.discardRecording()
                 emitEffect(Effect.ShowMessage(R.string.recording_too_short_to_be_saved))
             }
 
             is RecordingOutcome.Failed -> {
-                recordingDelegate.discardRecording()
                 emitEffect(Effect.Recording.SaveFailed(errorCode = outcome.errorCode))
             }
 
             is RecordingOutcome.Interrupted -> {
                 emitEffect(Effect.Recording.Interrupted(errorCode = outcome.errorCode))
-
-                when {
-                    outcome.hasContent -> recordingDelegate.saveRecording()
-                    else -> recordingDelegate.discardRecording()
-                }
             }
         }
     }
