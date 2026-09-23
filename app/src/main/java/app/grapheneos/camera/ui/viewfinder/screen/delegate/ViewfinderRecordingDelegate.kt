@@ -1,12 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import android.net.Uri
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
@@ -23,11 +23,14 @@ interface ViewfinderRecordingDelegate {
     val recordingEvents: Flow<RecordedVideoEvent>
 
     fun bind(stateHolder: ViewfinderStateHolder)
-    fun onScreenCreated(host: ViewfinderHost)
     fun onScreenDestroyed()
 
     fun requestRecording()
-    fun prepareRecording(includeLocation: Boolean, includeAudio: Boolean)
+    fun prepareRecording(
+        includeLocation: Boolean,
+        includeAudio: Boolean,
+        outputUri: Uri?,
+    )
     fun startPreparedRecording()
 
     fun startRecording()
@@ -50,8 +53,6 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
 
     private var isBound = false
 
-    private var host: ViewfinderHost? = null
-
     override val recordingEvents: Flow<RecordedVideoEvent> = videoRecorder.events
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
@@ -61,12 +62,7 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         this.stateHolder = stateHolder
     }
 
-    override fun onScreenCreated(host: ViewfinderHost) {
-        this.host = host
-    }
-
     override fun onScreenDestroyed() {
-        host = null
         update { ViewfinderRecordingState() }
     }
 
@@ -74,12 +70,16 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         update { ViewfinderRecordingState(phase = RecordingPhase.STARTING) }
     }
 
-    override fun prepareRecording(includeLocation: Boolean, includeAudio: Boolean) {
+    override fun prepareRecording(
+        includeLocation: Boolean,
+        includeAudio: Boolean,
+        outputUri: Uri?,
+    ) {
         applicationScope.launch(mainDispatcher) {
             videoRecorder.prepare(
                 request = RecordVideoRequest(
                     storageLocation = capturedItemRepository.storageLocation.first(),
-                    foreignUri = host?.chrome?.foreignOutputUri(),
+                    foreignUri = outputUri,
                     includeLocation = includeLocation,
                     includeAudio = includeAudio,
                 ),

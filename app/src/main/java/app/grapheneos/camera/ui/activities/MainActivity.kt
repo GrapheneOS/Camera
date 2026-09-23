@@ -109,6 +109,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
+import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -126,6 +127,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.lifecycle.withCreationCallback
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -672,6 +674,11 @@ open class MainActivity : AppCompatActivity() {
             return cameraEntryPoint.requiresVideoModeOnly
         }
 
+    protected open val outputUri: Uri?
+        get() {
+            return null
+        }
+
     private fun selectBarcodeFormatToggles() {
         val toggles = mapOf(
             BarcodeFormat.QR_CODE to qrToggle,
@@ -729,6 +736,10 @@ open class MainActivity : AppCompatActivity() {
                     ),
                     chrome = ViewfinderChromeImpl(activity = this),
                     previewFrames = previewFrames,
+                    thumbnailSize = ThumbnailSize(
+                        width = imagePreview.layoutParams.width,
+                        height = imagePreview.layoutParams.height,
+                    ),
                 ),
             ),
         )
@@ -1303,9 +1314,11 @@ open class MainActivity : AppCompatActivity() {
             putAll(ViewfinderViewModel.arguments(cameraEntryPoint))
         }
 
-        return MutableCreationExtras(defaults).apply {
-            set(DEFAULT_ARGS_KEY, arguments)
-        }
+        return MutableCreationExtras(defaults)
+            .apply { set(DEFAULT_ARGS_KEY, arguments) }
+            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
+                factory.create(outputUri = outputUri)
+            }
     }
 
     fun showMessage(@StringRes message: Int) {
