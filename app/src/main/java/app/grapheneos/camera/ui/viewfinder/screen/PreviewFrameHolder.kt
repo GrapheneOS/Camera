@@ -13,21 +13,25 @@ import androidx.core.graphics.createBitmap
 
 interface PreviewFrameHolder {
 
+    val lastFrame: Bitmap?
+
     /**
      * Called right before the camera is unbound, which empties the preview. It does not wait for a
      * copy already under way: that copy stands in for the preview once it arrives.
      */
     fun holdCurrentFrame()
+
+    fun prefetch()
+
+    fun clear()
+
+    fun release()
 }
 
 internal class PreviewFrameHolderImpl(
     private val previewView: PreviewView,
     private val onLateFrame: () -> Unit,
 ) : PreviewFrameHolder {
-
-    @Volatile
-    var lastFrame: Bitmap? = null
-        private set
 
     private val lock = Any()
 
@@ -41,6 +45,10 @@ internal class PreviewFrameHolderImpl(
     private var frameCopyThread: HandlerThread? = null
 
     private var loggedMissingSurfaceView = false
+
+    @Volatile
+    override var lastFrame: Bitmap? = null
+        private set
 
     override fun holdCurrentFrame() {
         synchronized(lock) {
@@ -61,7 +69,7 @@ internal class PreviewFrameHolderImpl(
     // caller on a GPU readback for about a tenth of a second, and startCamera() reads it at the
     // point where it can least afford to block; the same pixels copied asynchronously cost the main
     // thread nothing, as long as the copy is started early enough.
-    fun prefetch() {
+    override fun prefetch() {
         if (synchronized(lock) { frameCopyPending || hasFreshPrefetch() }) return
 
         val surfaceView = copyableSurfaceView() ?: return
@@ -78,7 +86,7 @@ internal class PreviewFrameHolderImpl(
         )
     }
 
-    fun clear() {
+    override fun clear() {
         synchronized(lock) {
             lastFrame = null
             framePrefetchedAt = 0
@@ -86,7 +94,7 @@ internal class PreviewFrameHolderImpl(
         }
     }
 
-    fun release() {
+    override fun release() {
         frameCopyThread?.quitSafely()
     }
 

@@ -103,6 +103,7 @@ import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
@@ -276,7 +277,7 @@ open class MainActivity : AppCompatActivity() {
 
     private var audioPermissionDialog: AlertDialog? = null
 
-    internal val previewFrames by lazy {
+    internal val previewFrames: PreviewFrameHolder by lazy {
         PreviewFrameHolderImpl(
             previewView = previewView,
             onLateFrame = ::showLateTransitionFrame,
