@@ -37,9 +37,6 @@ interface ViewfinderRecordingDelegate {
 
     fun requestStop()
     fun markStopped()
-
-    fun saveRecording()
-    fun discardRecording()
 }
 
 internal class ViewfinderRecordingDelegateImpl @Inject constructor(
@@ -126,14 +123,6 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
 
     override fun markStopped() {
         update { ViewfinderRecordingState() }
-    }
-
-    override fun saveRecording() {
-        videoRecorder.save()
-    }
-
-    override fun discardRecording() {
-        videoRecorder.discard()
     }
 
     private fun update(transform: (ViewfinderRecordingState) -> ViewfinderRecordingState) {
