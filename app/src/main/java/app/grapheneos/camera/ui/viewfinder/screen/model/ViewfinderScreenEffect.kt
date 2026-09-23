@@ -6,10 +6,13 @@ import androidx.annotation.StringRes
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.permission.model.AppPermission
 
 sealed interface ViewfinderScreenEffect {
 
     data object ShowStorageLocationNotFound : ViewfinderScreenEffect
+
+    data object CloseScreen : ViewfinderScreenEffect
 
     data class SetLocationUpdates(
         val enabled: Boolean,
@@ -88,8 +91,6 @@ sealed interface ViewfinderScreenEffect {
 
         data object PlayStartSound : Recording
 
-        data object RequestAudioPermission : Recording
-
         data object Stopped : Recording
 
         data class Saved(
@@ -104,6 +105,22 @@ sealed interface ViewfinderScreenEffect {
         data class Interrupted(
             val errorCode: Int,
         ) : Recording
+    }
+
+    sealed interface Permission : ViewfinderScreenEffect {
+
+        data object DismissDialog : Permission
+
+        data object OpenSettings : Permission
+
+        data class Request(
+            val permission: AppPermission,
+            val explainsFirst: Boolean,
+        ) : Permission
+
+        data class ShowDialog(
+            val permission: AppPermission,
+        ) : Permission
     }
 
     sealed interface SelfTimer : ViewfinderScreenEffect {

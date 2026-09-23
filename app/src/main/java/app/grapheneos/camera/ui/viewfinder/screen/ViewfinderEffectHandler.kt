@@ -2,25 +2,34 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
+import android.provider.Settings
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
+import app.grapheneos.camera.ui.showCameraPermissionDialog
+import app.grapheneos.camera.ui.showMicrophonePermissionDialog
 import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 
@@ -34,11 +43,22 @@ internal class ViewfinderEffectHandlerImpl(
     private val onAction: (ViewfinderAction) -> Unit,
 ) : ViewfinderEffectHandler {
 
+    private val permissionRequests = AppPermission.entries.associateWith { permission ->
+        activity.registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) {
+            onAction(PermissionAction.RequestAnswered(permission))
+        }
+    }
+
+    private var permissionDialog: AlertDialog? = null
+
     override fun handle(effect: Effect) {
         when (effect) {
             is Effect.ShowMessage -> activity.showMessage(effect.message)
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
             is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFoundDialog(activity)
+            is Effect.CloseScreen -> activity.finish()
             is Effect.ShowQrResult -> activity.showQrResult(effect.text)
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
@@ -48,6 +68,7 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.SelfTimer -> handleSelfTimer(effect)
             is Effect.Picture -> handlePicture(effect)
             is Effect.Recording -> handleRecording(effect)
+            is Effect.Permission -> handlePermission(effect)
         }
     }
 
@@ -221,10 +242,6 @@ internal class ViewfinderEffectHandlerImpl(
                 }
             }
 
-            is Effect.Recording.RequestAudioPermission -> {
-                activity.restartRecordingWithMicPermission()
-            }
-
             is Effect.Recording.SaveFailed -> {
                 activity.showMessage(
                     activity.getString(R.string.unable_to_save_video_verbose, effect.errorCode),
@@ -256,6 +273,62 @@ internal class ViewfinderEffectHandlerImpl(
         if (activity is SecureMainActivity) {
             activity.capturedItems.add(item)
         }
+    }
+
+    private fun handlePermission(effect: Effect.Permission) {
+        when (effect) {
+            is Effect.Permission.Request -> requestPermission(effect)
+            is Effect.Permission.ShowDialog -> showPermissionDialog(effect.permission)
+            is Effect.Permission.DismissDialog -> permissionDialog?.dismiss()
+            is Effect.Permission.OpenSettings -> openAppSettings()
+        }
+    }
+
+    private fun requestPermission(effect: Effect.Permission.Request) {
+        val permission = effect.permission
+        val needsRationale = effect.explainsFirst &&
+            permission.manifestNames.all { activity.shouldShowRequestPermissionRationale(it) }
+
+        when {
+            needsRationale -> {
+                onAction(PermissionAction.RationaleRequired(permission))
+            }
+
+            else -> {
+                permissionRequests
+                    .getValue(permission)
+                    .launch(permission.manifestNames.toTypedArray())
+            }
+        }
+    }
+
+    private fun showPermissionDialog(permission: AppPermission) {
+        val onSettingsClicked = { onAction(PermissionAction.SettingsClicked) }
+        val onDismissed = { onAction(PermissionAction.DialogDismissed(permission)) }
+
+        permissionDialog = when (permission) {
+            AppPermission.CAMERA -> showCameraPermissionDialog(
+                activity = activity,
+                onSettingsClicked = onSettingsClicked,
+                onDismissed = onDismissed,
+            )
+
+            AppPermission.MICROPHONE -> showMicrophonePermissionDialog(
+                activity = activity,
+                onSettingsClicked = onSettingsClicked,
+                onRecordWithoutAudioClicked = {
+                    onAction(RecordingAction.RecordWithoutAudioClicked)
+                },
+                onDismissed = onDismissed,
+            )
+        }
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData(Uri.fromParts("package", activity.packageName, null))
+
+        activity.startActivity(intent)
     }
 
     private fun captureActivity(): CaptureActivity? {

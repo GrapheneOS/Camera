@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -48,7 +47,6 @@ import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
@@ -130,7 +128,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -278,14 +275,6 @@ open class MainActivity : AppCompatActivity() {
     val micOffIcon: ImageView
         get() = binding.micOff
 
-    private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
-
-    // Hold a reference to the manual permission dialog to avoid re-creating it if it
-    // is already visible and to dismiss it if the permission gets granted.
-    private var cameraPermissionDialog: AlertDialog? = null
-
-    private var audioPermissionDialog: AlertDialog? = null
-
     internal val previewFrames: PreviewFrameHolder by lazy {
         PreviewFrameHolderImpl(
             previewView = previewView,
@@ -303,8 +292,6 @@ open class MainActivity : AppCompatActivity() {
 
     private var bottomNavigationBarPadding: Int = 0
 
-    private var shouldRestartRecording = false
-
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
 
     private lateinit var snackBar: Snackbar
@@ -315,68 +302,8 @@ open class MainActivity : AppCompatActivity() {
         binding.focusRing.visibility = View.INVISIBLE
     }
 
-    private val restartRecordingWithAudioPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            shouldRestartRecording = true
-            viewfinder.onAction(LifecycleAction.RecordAudioPermissionGranted)
-            return@registerForActivityResult
-        }
-        showAudioPermissionDeniedDialog {
-            requestRecording()
-        }
-    }
-
-    // Used to request permission from the user
-    private val requestPermissionLauncher = registerForActivityResult(
-        RequestMultiplePermissions()
-    ) { permissions: Map<String, Boolean> ->
-        if (permissions.containsKey(Manifest.permission.RECORD_AUDIO)) {
-            if (hasPermission(Manifest.permission.RECORD_AUDIO)) {
-                Log.i(TAG, "Permission granted for recording audio.")
-            } else {
-                Log.i(TAG, "Permission denied for recording audio.")
-                showAudioPermissionDeniedDialog()
-            }
-        }
-        if (permissions.containsKey(Manifest.permission.CAMERA)) {
-            if (hasCameraPermission()) {
-                Log.i(TAG, "Permission granted for camera.")
-            } else {
-                Log.i(TAG, "Permission denied for camera.")
-            }
-        }
-    }
-
     fun onDeviceAngleChange(xDegrees: Float, zDegrees: Float) {
         orientationHandler.onDeviceAngleChange(xDegrees, zDegrees)
-    }
-
-    private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {
-        val builder = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.audio_permission_dialog_title)
-            .setMessage(R.string.audio_permission_dialog_message)
-
-        // Open the settings menu for the current app
-        builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            val uri = Uri.fromParts(
-                "package",
-                packageName,
-                null
-            )
-            intent.data = uri
-            startActivity(intent)
-        }
-        builder.setNegativeButton(R.string.cancel, null)
-
-        builder.setNeutralButton(R.string.disable_audio) { _: DialogInterface?, _: Int ->
-            viewfinder.onAction(SettingsAction.AudioToggled(enabled = false))
-            onDisableAudio()
-        }
-
-        audioPermissionDialog = builder.showIgnoringShortEdgeMode()
     }
 
     // The blurred still that stands in for the preview whenever the camera is not streaming.
@@ -524,88 +451,9 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    internal fun requestRecording() {
-        viewfinder.onAction(
-            RecordingAction.RecordingRequested(
-                hasAudioPermission = hasPermission(Manifest.permission.RECORD_AUDIO),
-            ),
-        )
-    }
-
     private fun hasPermission(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(this, permission) ==
             PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun hasCameraPermission(): Boolean {
-        return hasPermission(Manifest.permission.CAMERA)
-    }
-
-    private fun checkPermissions() {
-        Log.i(TAG, "Checking camera status...")
-
-        // Check if the app has access to the user's camera
-        when {
-            hasCameraPermission() -> {
-                // If the user has manually granted the permission, dismiss the dialog.
-                if (cameraPermissionDialog != null &&
-                    cameraPermissionDialog!!.isShowing
-                ) {
-                    cameraPermissionDialog!!.cancel()
-                }
-                Log.i(TAG, "Permission granted.")
-
-                // Setup the camera since the permission is available
-                viewfinder.onAction(LifecycleAction.CameraPermissionGranted)
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
-                Log.i(TAG, "The user has default denied camera permission.")
-
-                // Don't build and show a new dialog if it's already visible
-                if (cameraPermissionDialog != null && cameraPermissionDialog!!.isShowing) return
-                val builder = MaterialAlertDialogBuilder(this)
-                    .setTitle(R.string.camera_permission_dialog_title)
-                    .setMessage(R.string.camera_permission_dialog_message)
-                val positiveClicked = AtomicBoolean(false)
-
-                // Open the settings menu for the current app
-                builder.setPositiveButton(R.string.settings) { _: DialogInterface?, _: Int ->
-                    positiveClicked.set(true)
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    val uri = Uri.fromParts(
-                        "package",
-                        packageName,
-                        null
-                    )
-                    intent.data = uri
-                    startActivity(intent)
-                }
-                builder.setNegativeButton(R.string.cancel, null)
-                builder.setOnDismissListener {
-                    // The dialog could have either been dismissed by clicking on the
-                    // background or by clicking the cancel button. So in those cases,
-                    // the app should exit as the app depends on the camera permission.
-                    if (!positiveClicked.get()) {
-                        finish()
-                    }
-                }
-                cameraPermissionDialog = builder.showIgnoringShortEdgeMode()
-            }
-
-            // Request for the permission (Android will actually popup the permission
-            // dialog in this case)
-            else -> {
-                Log.i(TAG, "Requesting permission from user...")
-
-                requestPermissionLauncher.launch(cameraPermission)
-            }
-        }
-
-        audioPermissionDialog?.let { dialog ->
-            if (hasPermission(Manifest.permission.RECORD_AUDIO) && dialog.isShowing) {
-                dialog.dismiss()
-            }
-        }
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -647,25 +495,12 @@ open class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         orientationHandler.resumeOrientationSensor()
-        // Check camera permission again if the user switches back to the app (maybe
-        // after enabling/disabling the camera permission in Settings)
-        // Will also be called by Android Lifecycle when the app starts up
-        checkPermissions()
+        viewfinder.onAction(LifecycleAction.ScreenResumed)
 
         updateThumbnail()
 
         if (viewfinder.uiState.value.settingsSheet.geoTagging) {
             requestLocation()
-        }
-
-        val uiState = viewfinder.uiState.value
-        val reviewsRecording = this is VideoCaptureActivity &&
-            (uiState.capturedPreviewVisible || uiState.isRecordingBeingSaved)
-
-        when {
-            reviewsRecording || uiState.qrResultVisible -> Unit
-            hasCameraPermission() -> viewfinder.onAction(LifecycleAction.ScreenResumed)
-            else -> Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
         }
     }
 
@@ -794,8 +629,6 @@ open class MainActivity : AppCompatActivity() {
             if (state == StreamState.STREAMING) {
                 hidePreviewTransition()
                 viewfinder.onAction(LifecycleAction.PreviewStreamingStarted)
-
-                restartRecordingIfPermissionsWasUnavailable()
             } else {
                 showPreviewTransition()
             }
@@ -896,7 +729,7 @@ open class MainActivity : AppCompatActivity() {
                 if (viewfinder.uiState.value.isRecordingActive) {
                     viewfinder.onAction(RecordingAction.RecordingStopRequested)
                 } else {
-                    requestRecording()
+                    viewfinder.onAction(RecordingAction.RecordingRequested)
                 }
             } else if (viewfinder.uiState.value.isQrMode) {
                 viewfinder.onAction(CameraAction.TorchToggleClicked)
@@ -1161,10 +994,6 @@ open class MainActivity : AppCompatActivity() {
         val state = viewfinder.uiState.value
         cbText.text = state.selfTimerBadge
         cbText.visibility = if (state.selfTimerBadgeVisible) View.VISIBLE else View.INVISIBLE
-    }
-
-    fun restartRecordingWithMicPermission() {
-        restartRecordingWithAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
 
     private fun shareLatestMedia() {
@@ -1604,13 +1433,6 @@ open class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
-    }
-
-    private fun restartRecordingIfPermissionsWasUnavailable() {
-        if (shouldRestartRecording) {
-            shouldRestartRecording = false
-            requestRecording()
         }
     }
 
