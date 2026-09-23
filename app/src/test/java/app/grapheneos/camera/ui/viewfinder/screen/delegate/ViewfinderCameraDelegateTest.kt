@@ -245,11 +245,11 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun onZoomStateChanged_publishesTheZoom() {
+    fun refreshZoom_publishesTheZoom() {
         every { session.zoom } returns ZOOM
 
         val delegate = createAttachedDelegate()
-        delegate.onZoomStateChanged()
+        delegate.refreshZoom()
 
         assertEquals(ZOOM, stateHolder.state.value.session.zoom)
     }
