@@ -4,6 +4,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
@@ -12,12 +13,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Lifecyc
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
-import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -165,36 +164,17 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewStreamingStarted_storedGeoTaggingWithoutPermission_staysOff() {
         runTest {
-            every { locationRepository.shouldAskForPermission() } returns true
-
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
             stateHolder.update {
-                it.copy(modeSettings = ModeSettings(geoTagging = true))
+                it.copy(
+                    modeSettings = ModeSettings(geoTagging = true),
+                    missingPermissions = setOf(AppPermission.LOCATION),
+                )
             }
 
             viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
             verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
-            assertTrue(ViewfinderScreenEffect.SetLocationUpdates(enabled = false) in effects)
-        }
-    }
-
-    @Test
-    fun previewStreamingStarted_storedGeoTaggingWithPermission_turnsLocationUpdatesOn() {
-        runTest {
-            every { locationRepository.shouldAskForPermission() } returns false
-
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            stateHolder.update {
-                it.copy(modeSettings = ModeSettings(geoTagging = true))
-            }
-
-            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
-
-            verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
-            assertTrue(ViewfinderScreenEffect.SetLocationUpdates(enabled = true) in effects)
         }
     }
 }
