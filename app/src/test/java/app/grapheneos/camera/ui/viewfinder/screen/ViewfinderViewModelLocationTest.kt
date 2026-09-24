@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
@@ -36,21 +35,17 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     fun geoTaggingToggledOn_withoutPermission_asksForIt() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
 
             viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
 
             verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Permission.Request(
-                        permission = AppPermission.LOCATION,
-                        explainsFirst = true,
-                    ),
-                ),
-                effects,
-            )
+            verify(exactly = 1) {
+                permissionDelegate.request(
+                    permission = AppPermission.LOCATION,
+                    explainsFirst = true,
+                )
+            }
         }
     }
 
@@ -58,12 +53,11 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     fun geoTaggingToggledOn_withPermission_asksForNothing() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
 
             viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
 
             verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
-            assertTrue(effects.isEmpty())
+            verify(exactly = 0) { permissionDelegate.request(any(), any()) }
         }
     }
 
@@ -113,39 +107,6 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(PermissionAction.SettingsClicked)
 
             verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
-        }
-    }
-
-    @Test
-    fun locationProvidersDisabled_saysSo() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            locationProvidersDisabled.emit(Unit)
-
-            assertEquals(
-                listOf(ViewfinderScreenEffect.ShowLocationDisabled(offersSettings = true)),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun locationProvidersDisabled_inALockscreenSession_offersNoSettings() {
-        runTest {
-            val viewModel = createViewModel(
-                applicationScope = backgroundScope,
-                entryPoint = cameraEntryPoint(isSecureSession = true),
-            )
-            val effects = collectEffects(viewModel)
-
-            locationProvidersDisabled.emit(Unit)
-
-            assertEquals(
-                listOf(ViewfinderScreenEffect.ShowLocationDisabled(offersSettings = false)),
-                effects,
-            )
         }
     }
 

@@ -4,7 +4,10 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.model.LocationAvailability
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.clearMocks
@@ -72,8 +75,7 @@ class ViewfinderLocationDelegateTest {
     fun disabledProviders_areReportedEachTimeTheyGoOff() {
         runTest {
             val delegate = createDelegate()
-            val reports = mutableListOf<Unit>()
-            backgroundScope.launch { delegate.providersDisabledEvents.collect { reports += it } }
+            val effects = collectEffects(stateHolder)
             stateHolder.update { it.copy(requireLocation = true) }
             startTracking(delegate)
 
@@ -81,7 +83,24 @@ class ViewfinderLocationDelegateTest {
             availability.emit(LocationAvailability.AVAILABLE)
             availability.emit(LocationAvailability.PROVIDERS_DISABLED)
 
-            assertEquals(2, reports.size)
+            assertEquals(
+                List(2) { Effect.ShowLocationDisabled(offersSettings = true) },
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun disabledProviders_inALockscreenSession_offerNoSettings() {
+        runTest {
+            val delegate = createDelegate(isSecureSession = true)
+            val effects = collectEffects(stateHolder)
+            stateHolder.update { it.copy(requireLocation = true) }
+            startTracking(delegate)
+
+            availability.emit(LocationAvailability.PROVIDERS_DISABLED)
+
+            assertEquals(listOf(Effect.ShowLocationDisabled(offersSettings = false)), effects)
         }
     }
 
@@ -106,13 +125,23 @@ class ViewfinderLocationDelegateTest {
         return backgroundScope.launch { delegate.trackLocation() }
     }
 
-    private fun TestScope.createDelegate(): ViewfinderLocationDelegate {
+    private fun TestScope.createDelegate(
+        isSecureSession: Boolean = false,
+    ): ViewfinderLocationDelegate {
         every { locationRepository.updates() } returns availability
             .onStart { collectors++ }
             .onCompletion { collectors-- }
 
         val delegate = ViewfinderLocationDelegateImpl(
             locationRepository = locationRepository,
+            entryPoint = CameraEntryPoint(
+                isSecureSession = isSecureSession,
+                isCaptureSession = false,
+                isVideoOnlySession = false,
+                requiresVideoModeOnly = false,
+                allowsQrScanning = true,
+                showsCameraModeTabs = true,
+            ),
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
         delegate.bind(

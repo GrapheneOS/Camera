@@ -5,24 +5,21 @@ import app.grapheneos.camera.data.location.model.LocationAvailability
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 interface ViewfinderLocationDelegate {
-
-    val providersDisabledEvents: Flow<Unit>
 
     fun bind(
         scope: CoroutineScope,
@@ -34,15 +31,13 @@ interface ViewfinderLocationDelegate {
 
 internal class ViewfinderLocationDelegateImpl @Inject constructor(
     private val locationRepository: LocationRepository,
+    private val entryPoint: CameraEntryPoint,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderLocationDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
     private var isBound = false
-
-    private val _providersDisabledEvents = Channel<Unit>(capacity = Channel.BUFFERED)
-    override val providersDisabledEvents: Flow<Unit> = _providersDisabledEvents.receiveAsFlow()
 
     override fun bind(
         scope: CoroutineScope,
@@ -81,6 +76,10 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
     private suspend fun reportDisabledProviders() {
         locationRepository.updates()
             .filter { availability -> availability == LocationAvailability.PROVIDERS_DISABLED }
-            .collect { _providersDisabledEvents.send(Unit) }
+            .collect {
+                stateHolder.postEffect(
+                    Effect.ShowLocationDisabled(offersSettings = !entryPoint.isSecureSession),
+                )
+            }
     }
 }

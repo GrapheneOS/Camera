@@ -28,6 +28,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -233,17 +234,14 @@ class ViewfinderRecordingFlowTest {
             ),
             resolveDroppedVideoQuality = mockk(relaxed = true),
             revertToMediaStoreLocation = mockk(relaxed = true),
-            orientationDelegate = mockk(relaxed = true) {
-                every { levelReachedEvents } returns emptyFlow()
-            },
-            locationDelegate = mockk(relaxed = true) {
-                every { providersDisabledEvents } returns emptyFlow()
-            },
+            orientationDelegate = mockk(relaxed = true),
+            locationDelegate = mockk(relaxed = true),
             uiStateMapper = ViewfinderUiStateMapperImpl(
                 settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
                 captureUiStateMapper = CaptureUiStateMapperImpl(),
             ),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
+            swipeEffectMapper = SwipeEffectMapperImpl(),
             applicationScope = backgroundScope,
             mainDispatcher = mainDispatcher,
         )

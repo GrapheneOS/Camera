@@ -6,8 +6,10 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
@@ -85,24 +87,24 @@ class ViewfinderOrientationDelegateTest {
     @Test
     fun levelReached_isAnnouncedOnceTheDeviceStaysLevel() {
         runTest {
-            val delegate = startTracking()
-            val announcements = collectAnnouncements(delegate)
+            startTracking()
+            val effects = collectEffects(stateHolder)
             motion.emit(motionOf(tilt = 2))
             motion.emit(motionOf(tilt = 0))
 
             advanceTimeBy(LEVEL_HOLD - 1.milliseconds)
-            assertEquals(0, announcements.size)
+            assertEquals(0, hapticCount(effects))
 
             advanceTimeBy(2.milliseconds)
-            assertEquals(1, announcements.size)
+            assertEquals(1, hapticCount(effects))
         }
     }
 
     @Test
     fun levelReached_isNotAnnouncedAgainUntilTheDeviceTiltsAway() {
         runTest {
-            val delegate = startTracking()
-            val announcements = collectAnnouncements(delegate)
+            startTracking()
+            val effects = collectEffects(stateHolder)
             motion.emit(motionOf(tilt = 2))
             motion.emit(motionOf(tilt = 0))
             advanceTimeBy(LEVEL_HOLD + 1.milliseconds)
@@ -110,26 +112,21 @@ class ViewfinderOrientationDelegateTest {
             motion.emit(motionOf(tilt = 2))
             motion.emit(motionOf(tilt = 0))
             advanceTimeBy(LEVEL_HOLD + 1.milliseconds)
-            assertEquals(1, announcements.size)
+            assertEquals(1, hapticCount(effects))
 
             motion.emit(motionOf(tilt = 6))
             motion.emit(motionOf(tilt = 0))
             advanceTimeBy(LEVEL_HOLD + 1.milliseconds)
-            assertEquals(2, announcements.size)
+            assertEquals(2, hapticCount(effects))
         }
+    }
+
+    private fun hapticCount(effects: List<Effect>): Int {
+        return effects.count { effect -> effect == Effect.PlayLevelHaptic }
     }
 
     private fun state(): ViewfinderState {
         return stateHolder.state.value
-    }
-
-    private fun TestScope.collectAnnouncements(
-        delegate: ViewfinderOrientationDelegate,
-    ): List<Unit> {
-        val announcements = mutableListOf<Unit>()
-        backgroundScope.launch { delegate.levelReachedEvents.collect { announcements += it } }
-
-        return announcements
     }
 
     private fun TestScope.startTracking(): ViewfinderOrientationDelegate {
