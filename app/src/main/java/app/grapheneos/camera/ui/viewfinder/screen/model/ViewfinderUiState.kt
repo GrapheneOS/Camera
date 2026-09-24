@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
+import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import app.grapheneos.camera.R
@@ -27,6 +28,7 @@ data class ViewfinderUiState(
     @DrawableRes val thirdCircleIcon: Int = R.drawable.option_circle,
     @StringRes val thirdCircleDescription: Int = R.string.open_gallery,
     val thumbnailLoaderVisible: Boolean = false,
+    val thumbnail: Bitmap? = null,
     val captureButton: CaptureButtonUiState = CaptureButtonUiState(),
     @DrawableRes val flipCameraIcon: Int = R.drawable.flip_camera,
     @StringRes val flipCameraDescription: Int = R.string.flip_camera,

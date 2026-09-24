@@ -2,13 +2,8 @@ package app.grapheneos.camera.ui.activities
 
 import android.animation.Animator
 import android.annotation.SuppressLint
-import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.graphics.Point
 import android.graphics.Rect
 import android.net.Uri
@@ -18,8 +13,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Vibrator
 import android.provider.Settings
-import android.text.util.Linkify
-import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -30,7 +23,6 @@ import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -45,8 +37,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.graphics.scale
-import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -59,20 +49,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
-import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ktx.applyPreviewRatio
-import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CaptureButton
 import app.grapheneos.camera.ui.CountDownTimerUI
@@ -82,7 +67,6 @@ import app.grapheneos.camera.ui.QRToggle
 import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
-import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
@@ -98,23 +82,15 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
-import app.grapheneos.camera.util.ImageResizer
-import app.grapheneos.camera.util.executeIfAlive
-import app.grapheneos.camera.util.getVideoThumbnail
-import app.grapheneos.camera.util.resolveActivity
 import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.color.DynamicColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.zxing.BarcodeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.withCreationCallback
-import java.nio.charset.StandardCharsets
-import java.util.concurrent.Executors
 import javax.inject.Inject
-import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -132,19 +108,16 @@ open class MainActivity : AppCompatActivity() {
     lateinit var barcodeFormats: BarcodeFormats
 
     @Inject
-    lateinit var capturedItemSession: CapturedItemSession
-
-    val viewfinder: ViewfinderViewModel by viewModels(
-        extrasProducer = { viewfinderCreationExtras() },
-    )
-
-    @Inject
     lateinit var clipboardManager: ClipboardManager
 
     @Inject
     lateinit var vibrator: Vibrator
 
     internal lateinit var binding: ActivityMainBinding
+
+    val viewfinder: ViewfinderViewModel by viewModels(
+        extrasProducer = { viewfinderCreationExtras() },
+    )
 
     internal val gestureHandler by lazy {
         ViewfinderGestureHandler(
@@ -265,8 +238,6 @@ open class MainActivity : AppCompatActivity() {
     private var transitionShown = false
 
     private var bottomNavigationBarPadding: Int = 0
-
-    val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
 
     private lateinit var snackBar: Snackbar
 
@@ -415,37 +386,6 @@ open class MainActivity : AppCompatActivity() {
         flipCameraCircle.startAnimation(rotate)
     }
 
-    fun openGallery() {
-        check(this !is CaptureActivity)
-
-        Intent(this, InAppGallery::class.java).let {
-            if (this is SecureMainActivity) {
-                it.putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
-
-                val list = capturedItems
-                if (list.isEmpty()) {
-                    showMessage(R.string.no_image)
-                    return
-                }
-                it.putParcelableArrayListExtra(
-                    InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
-                    list
-                )
-            } else {
-                it.putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, requiresVideoModeOnly)
-            }
-
-            if (isThumbnailLoaded) { // indicates that last captured item is accessible
-                it.putExtra(
-                    InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM,
-                    capturedItemSession.lastCapturedItem,
-                )
-            }
-
-            startActivity(it)
-        }
-    }
-
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -479,14 +419,7 @@ open class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viewfinder.onAction(LifecycleAction.ScreenResumed)
-
-        updateThumbnail()
     }
-
-    val requiresVideoModeOnly: Boolean
-        get() {
-            return cameraEntryPoint.requiresVideoModeOnly
-        }
 
     protected open val outputUri: Uri?
         get() {
@@ -589,12 +522,6 @@ open class MainActivity : AppCompatActivity() {
                     effectHandler.handle(effect)
                 }
             }
-        }
-
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            capturedItemSession.prepare()
-
-            updateThumbnail()
         }
 
         previewView.scaleType = PreviewView.ScaleType.FIT_START
@@ -894,146 +821,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun shareLatestMedia() {
-        if (this is SecureActivity) {
-            showMessage(R.string.sharing_not_allowed)
-            return
-        }
-
-        val item = capturedItemSession.lastCapturedItem
-        if (item == null) {
-            showMessage(R.string.please_wait_for_image_to_get_captured_before_sharing)
-            return
-        }
-
-        shareCapturedItem(this, item)?.let { showMessage(it) }
-    }
-
-    open fun bytesToHex(bytes: ByteArray): String {
-        if (bytes.isEmpty()) return "" // outLen will be wrong for empty inputs
-
-        // Represent bytes as a grid of hex digits:
-        // Add a space between every byte
-        // Double space every 4 bytes (unless end or newline)
-        // Add a newline every 8 bytes (unless end)
-
-        var outLen = bytes.size * 3 - 1 // 2 hex digits + 1 space/newline per byte (except last)
-        outLen += bytes.size / 8 // One double space per row except the last incomplete row
-        if (bytes.size % 8 > 4) {
-            outLen += 1 // One double space for the last incomplete row, if it has >4 columns
-        }
-
-        val hexChars = CharArray(outLen)
-        var j = 0 // Output index
-
-        for (i in bytes.indices) {
-            val byte = bytes[i].toInt() and 0xFF
-            hexChars[j++] = hexArray[byte ushr 4]
-            hexChars[j++] = hexArray[byte and 0x0F]
-
-            if (i == bytes.lastIndex) break // No trailing whitespace
-            if (i % 8 == 7) {
-                hexChars[j++] = '\n'
-            } else {
-                hexChars[j++] = ' '
-                if (i % 4 == 3) hexChars[j++] = ' '
-            }
-        }
-
-        return String(hexChars)
-    }
-
-    fun showQrResult(rawText: String) {
-        val hString = bytesToHex(
-            rawText.toByteArray(StandardCharsets.UTF_8)
-        )
-
-        val builder = MaterialAlertDialogBuilder(this)
-        val dialogBinding = ScanResultDialogBinding.inflate(layoutInflater)
-        builder.setView(dialogBinding.root)
-
-        val tabLayout: TabLayout = dialogBinding.encodingTabs
-        val textView = dialogBinding.scanResultText
-
-        val intentView = Intent(Intent.ACTION_VIEW, rawText.toUri())
-
-        if (packageManager.resolveActivity(intentView, 0L) != null) {
-            dialogBinding.openWith.setOnClickListener {
-                val chooser = Intent.createChooser(intentView, getString(R.string.open_with))
-                startActivity(chooser)
-            }
-        } else {
-            dialogBinding.openWith.visibility = View.GONE
-        }
-
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                when (tab?.text.toString()) {
-                    "Binary" -> {
-                        textView.autoLinkMask = 0
-                        textView.text = hString
-                    }
-
-                    "UTF-8" -> {
-                        textView.autoLinkMask =
-                            Linkify.WEB_URLS or Linkify.PHONE_NUMBERS or Linkify.EMAIL_ADDRESSES
-                        textView.text = rawText
-                    }
-                }
-            }
-
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-        })
-
-        tabLayout.addTab(
-            tabLayout.newTab().apply {
-                text = "UTF-8"
-            }
-        )
-
-        tabLayout.addTab(
-            tabLayout.newTab().apply {
-                text = "Binary"
-            }
-        )
-
-        val ctc: ImageButton = dialogBinding.copyQrText
-        ctc.setOnClickListener {
-            val clipboardManager = getSystemService(
-                Context.CLIPBOARD_SERVICE
-            ) as ClipboardManager
-            val clipData = ClipData.newPlainText(
-                "text",
-                textView.text
-            )
-            clipboardManager.setPrimaryClip(clipData)
-
-            showMessage(getString(R.string.copied_text_to_clipboard))
-        }
-
-        val sButton: ImageButton = dialogBinding.shareQrText
-        sButton.setOnClickListener {
-            val sIntent = Intent(Intent.ACTION_SEND)
-            sIntent.type = "text/plain"
-            sIntent.putExtra(Intent.EXTRA_TEXT, textView.text.toString())
-            startActivity(
-                Intent.createChooser(
-                    sIntent,
-                    getString(R.string.share_text_via)
-                )
-            )
-        }
-
-        builder.setOnDismissListener {
-            viewfinder.onAction(LifecycleAction.QrResultDismissed)
-        }
-
-        builder.showIgnoringShortEdgeMode()
-    }
-
     private fun viewfinderCreationExtras(): CreationExtras {
         val defaults = defaultViewModelCreationExtras
         val arguments = Bundle().apply {
@@ -1143,22 +930,16 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        thumbnailLoaderExecutor.shutdownNow()
         previewFrames.release()
         viewfinder.onAction(LifecycleAction.ScreenDestroyed)
-        capturedItemSession.close()
     }
-
-    @Volatile var isStarted = false
 
     override fun onStart() {
         super.onStart()
-        isStarted = true
         viewfinder.onAction(LifecycleAction.ScreenStarted)
     }
 
     override fun onStop() {
-        isStarted = false
         viewfinder.onAction(LifecycleAction.ScreenStopped)
         // Stop explicitly rather than letting the unbind tear the recording down for us.
         if (viewfinder.uiState.value.isRecordingActive) {
@@ -1168,58 +949,7 @@ open class MainActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    var isThumbnailLoaded = false
-
-    fun updateThumbnail() {
-        val item = capturedItemSession.lastCapturedItem
-        val preview = imagePreview
-        preview.setImageBitmap(null)
-        isThumbnailLoaded = false
-
-        if (item == null) {
-            return
-        }
-
-        val ctx = applicationContext
-
-        thumbnailLoaderExecutor.executeIfAlive {
-            var bitmap: Bitmap? = null
-            try {
-                val side = preview.layoutParams.width
-
-                if (item.type == ITEM_TYPE_VIDEO) {
-                    val origBitmap = getVideoThumbnail(ctx, item.uri)
-                    origBitmap?.let {
-                        val w = it.width.toDouble()
-                        val h = it.height.toDouble()
-                        val ratio = max(w / side, h / side)
-
-                        bitmap = it.scale((w / ratio).toInt(), (h / ratio).toInt())
-                        origBitmap.recycle()
-                    }
-                } else if (item.type == ITEM_TYPE_IMAGE) {
-                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
-                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to update preview", e)
-            }
-
-            if (bitmap != null) {
-                mainExecutor.execute {
-                    if (isStarted && capturedItemSession.lastCapturedItem == item) {
-                        preview.setImageBitmap(bitmap)
-                        isThumbnailLoaded = true
-                    }
-                }
-            }
-        }
-    }
-
-    companion object {
-        private const val TAG = "GOCam"
-        private const val LENS_SWITCH_ANIMATION_DURATION = 400L
-
-        private val hexArray = "0123456789ABCDEF".toCharArray()
+    private companion object {
+        const val LENS_SWITCH_ANIMATION_DURATION = 400L
     }
 }

@@ -3,22 +3,29 @@ package app.grapheneos.camera.data.media.repository
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.net.Uri
 import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.CapturedItems
+import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.di.core.IoDispatcher
+import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.getVideoThumbnail
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlin.math.max
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -40,6 +47,13 @@ interface CapturedItemRepository {
     suspend fun migrateStoredCaptures(): CapturedItem?
 
     suspend fun capturedItems(): List<CapturedItem>
+
+    /** Decodes [item] to fit within the given size, or returns null when it can't be read. */
+    suspend fun loadThumbnail(
+        item: CapturedItem,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap?
 
     companion object {
         const val MEDIA_STORE_LOCATION = ""
@@ -300,7 +314,12 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         var fileName: String? = null
 
         try {
-            context.contentResolver.query(uri, arrayOf(columnName), null, null)?.use {
+            context.contentResolver.query(
+                uri,
+                arrayOf(columnName),
+                null,
+                null,
+            )?.use {
                 if (it.moveToFirst()) {
                     fileName = it.getString(0)
                 }
@@ -314,6 +333,56 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return fileName?.let { name ->
             CapturedItems.parseCapturedItem(name, uri)
         }
+    }
+
+    override suspend fun loadThumbnail(
+        item: CapturedItem,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap? {
+        return withContext(ioDispatcher) {
+            try {
+                when (item.type) {
+                    ITEM_TYPE_VIDEO -> {
+                        getVideoThumbnail(context, item.uri)?.let { frame ->
+                            scaleToFit(
+                                frame = frame,
+                                targetWidth = targetWidth,
+                                targetHeight = targetHeight,
+                            )
+                        }
+                    }
+
+                    else -> {
+                        ImageDecoder.decodeBitmap(
+                            ImageDecoder.createSource(context.contentResolver, item.uri),
+                            ImageResizer(targetWidth, targetHeight),
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(CapturedItems.TAG, "unable to load the thumbnail of ${item.uri}", e)
+                null
+            }
+        }
+    }
+
+    private fun scaleToFit(
+        frame: Bitmap,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap {
+        val width = frame.width.toDouble()
+        val height = frame.height.toDouble()
+        val ratio = max(width / targetWidth, height / targetHeight)
+
+        val scaled = frame.scale(
+            width = (width / ratio).toInt(),
+            height = (height / ratio).toInt(),
+        )
+        frame.recycle()
+
+        return scaled
     }
 
     companion object {
