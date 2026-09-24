@@ -512,6 +512,11 @@ class ViewfinderUiStateMapperTest {
         assertNull(state.sensorOrientationDegrees)
     }
 
+    @Test
+    fun screenWake_keepsTheScreenOnWithoutARecording() {
+        assertTrue(map(keepsScreenAwake = true).keepScreenOn)
+    }
+
     private fun map(
         mode: CameraMode = CameraMode.CAMERA,
         requiresVideoModeOnly: Boolean = false,
@@ -521,6 +526,7 @@ class ViewfinderUiStateMapperTest {
         session: ViewfinderSessionState = ViewfinderSessionState(),
         capture: ViewfinderCaptureState = ViewfinderCaptureState(),
         recording: ViewfinderRecordingState = ViewfinderRecordingState(),
+        keepsScreenAwake: Boolean = false,
     ): ViewfinderUiState {
         return mapper.map(
             ViewfinderState(
@@ -532,6 +538,7 @@ class ViewfinderUiStateMapperTest {
                 session = session,
                 capture = capture,
                 recording = recording,
+                keepsScreenAwake = keepsScreenAwake,
             ),
         )
     }

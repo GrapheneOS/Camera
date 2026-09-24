@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -49,6 +50,7 @@ open class ViewfinderViewModelTestBase {
     protected val permissionDelegate = mockk<ViewfinderPermissionDelegate>(relaxed = true)
     protected val locationDelegate = mockk<ViewfinderLocationDelegate>(relaxed = true)
     protected val orientationDelegate = mockk<ViewfinderOrientationDelegate>(relaxed = true)
+    protected val screenWakeDelegate = mockk<ViewfinderScreenWakeDelegate>(relaxed = true)
 
     protected val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
     protected val captureEvents = MutableSharedFlow<CapturedImageEvent>()
@@ -90,6 +92,7 @@ open class ViewfinderViewModelTestBase {
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             locationDelegate = locationDelegate,
             orientationDelegate = orientationDelegate,
+            screenWakeDelegate = screenWakeDelegate,
             uiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),
             swipeEffectMapper = SwipeEffectMapperImpl(),

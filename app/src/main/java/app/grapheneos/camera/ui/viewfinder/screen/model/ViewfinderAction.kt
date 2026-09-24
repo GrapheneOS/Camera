@@ -106,6 +106,8 @@ sealed interface ViewfinderAction {
 
         data object ScreenPaused : LifecycleAction
 
+        data object ScreenInteracted : LifecycleAction
+
         data object PreviewStreamingStarted : LifecycleAction
 
         data object QrResultDismissed : LifecycleAction

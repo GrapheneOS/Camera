@@ -3,11 +3,9 @@ package app.grapheneos.camera
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureActivity
 
 class ActivityLifeCycleHelper(
-    private val onResumedActivityChanged: (activity: MainActivity?) -> Unit,
     private val onSecureActivityCreated: () -> Unit,
     private val onSecureActivityDestroyed: (isChangingConfigurations: Boolean) -> Unit,
 ) : Application.ActivityLifecycleCallbacks {
@@ -20,17 +18,9 @@ class ActivityLifeCycleHelper(
 
     override fun onActivityStarted(activity: Activity) {}
 
-    override fun onActivityResumed(activity: Activity) {
-        if (activity is MainActivity) {
-            onResumedActivityChanged(activity)
-        }
-    }
+    override fun onActivityResumed(activity: Activity) {}
 
-    override fun onActivityPaused(activity: Activity) {
-        if (activity is MainActivity) {
-            onResumedActivityChanged(null)
-        }
-    }
+    override fun onActivityPaused(activity: Activity) {}
 
     override fun onActivityStopped(activity: Activity) {}
 
