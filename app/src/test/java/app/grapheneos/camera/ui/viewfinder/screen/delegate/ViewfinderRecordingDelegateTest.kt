@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.net.Uri
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.testutil.viewfinderStateHolder
@@ -161,6 +162,19 @@ class ViewfinderRecordingDelegateTest {
             delegate.startPreparedRecording()
 
             verify(exactly = 1) { videoRecorder.start(muted = true, paused = true) }
+        }
+    }
+
+    @Test
+    fun requestRecording_locksTheOrientationItStartsIn() {
+        runTest {
+            val delegate = createDelegate()
+            stateHolder.update { it.copy(deviceOrientation = DeviceOrientation.DEGREES_270) }
+
+            delegate.requestRecording()
+            stateHolder.update { it.copy(deviceOrientation = DeviceOrientation.DEGREES_0) }
+
+            assertEquals(DeviceOrientation.DEGREES_270, recording().orientationAtStart)
         }
     }
 

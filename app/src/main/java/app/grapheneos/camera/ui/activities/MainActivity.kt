@@ -16,15 +16,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.provider.Settings
 import android.text.util.Linkify
 import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -74,9 +71,7 @@ import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
-import app.grapheneos.camera.ktx.SystemSettingsObserver
 import app.grapheneos.camera.ktx.applyPreviewRatio
-import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.ui.BottomTabLayout
 import app.grapheneos.camera.ui.CaptureButton
@@ -90,7 +85,6 @@ import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showIgnoringShortEdgeMode
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
-import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
@@ -124,6 +118,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.os.Vibrator as VibratorManager
 
 @AndroidEntryPoint
 open class MainActivity : AppCompatActivity() {
@@ -147,13 +142,15 @@ open class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var clipboardManager: ClipboardManager
 
+    @Inject
+    lateinit var vibratorManager: VibratorManager
+
     private val application: App
         get() = applicationContext as App
 
     internal lateinit var binding: ActivityMainBinding
 
     internal val gestureHandler by lazy { ViewfinderGestureHandler(this) }
-    internal val orientationHandler by lazy { ViewfinderOrientationHandler(this) }
 
     val gestureDetector: GestureDetector
         get() = gestureHandler.gestureDetector
@@ -285,10 +282,6 @@ open class MainActivity : AppCompatActivity() {
 
     private val focusRingCallback: Runnable = Runnable {
         binding.focusRing.visibility = View.INVISIBLE
-    }
-
-    fun onDeviceAngleChange(xDegrees: Float, zDegrees: Float) {
-        orientationHandler.onDeviceAngleChange(xDegrees, zDegrees)
     }
 
     // The blurred still that stands in for the preview whenever the camera is not streaming.
@@ -474,7 +467,6 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        orientationHandler.resumeOrientationSensor()
         viewfinder.onAction(LifecycleAction.ScreenResumed)
 
         updateThumbnail()
@@ -509,7 +501,6 @@ open class MainActivity : AppCompatActivity() {
         // Leaving a mode switch waiting on an animation that will never finish would strand the
         // strip on a mode the camera never entered.
         tabLayout.settleNow()
-        orientationHandler.pauseOrientationSensor()
 
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
@@ -533,6 +524,7 @@ open class MainActivity : AppCompatActivity() {
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
             clipboardManager = clipboardManager,
+            vibratorManager = vibratorManager,
             onAction = viewfinder::onAction,
         )
         viewfinder.onAction(
@@ -551,6 +543,9 @@ open class MainActivity : AppCompatActivity() {
                 ),
             ),
         )
+
+        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
+
         tunePlayer = TunePlayer(
             context = this,
             soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
@@ -560,6 +555,14 @@ open class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.uiState.collect { state ->
                     renderer.render(state)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.levelUiState.collect { level ->
+                    renderer.renderLevel(level)
                 }
             }
         }
@@ -820,9 +823,6 @@ open class MainActivity : AppCompatActivity() {
         val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
         settingsDialog = SettingsDialog(this, themedContext)
 
-        SystemSettingsObserver(lifecycle, Settings.System.ACCELEROMETER_ROTATION, this) {
-            forceUpdateOrientationSensor()
-        }
 
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
@@ -1184,11 +1184,7 @@ open class MainActivity : AppCompatActivity() {
         // The activity declares configChanges for orientation, so nothing else refreshes
         // rotation-dependent state.
         // The preview follows the window; the capture use cases follow the sensor.
-        viewfinder.onAction(
-            CameraAction.DisplayRotationChanged(
-                rotation = previewView.display?.rotation ?: Surface.ROTATION_0,
-            ),
-        )
+        viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
         val state = viewfinder.uiState.value
         state.sensorOrientationDegrees?.let {
@@ -1197,50 +1193,24 @@ open class MainActivity : AppCompatActivity() {
                 sensorOrientationDegrees = it,
             )
         }
-
-        rootView.post { sensorNotifier?.notifyListeners() }
     }
 
-    fun forceUpdateOrientationSensor() {
-        sensorNotifier?.notifyListeners(true)
-    }
+    private fun displayRotation(): Int {
 
-    val sensorNotifier: SensorOrientationChangeNotifier?
-        get() {
-            return SensorOrientationChangeNotifier.getInstance(this)
+        @Suppress("DEPRECATION")
+        val defaultDisplayRotation = windowManager.defaultDisplay.rotation
+
+        return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                display?.rotation ?: defaultDisplayRotation
+            }
+
+            else -> defaultDisplayRotation
         }
-
-    fun getRotation(): Int {
-        val rotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            display?.rotation
-                ?:
-                @Suppress("DEPRECATION")
-                windowManager.defaultDisplay.rotation
-        } else {
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.rotation
-        }
-
-        return when (rotation) {
-            Surface.ROTATION_90 -> 270
-            Surface.ROTATION_180 -> 180
-            Surface.ROTATION_270 -> 90
-            else -> 0
-        }
-    }
-
-    internal val dp32 by lazy {
-        32 * resources.displayMetrics.density
-    }
-
-    internal fun vibrateDevice() {
-        val vibrator = getSystemService(Vibrator::class.java)
-        vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         previewFrames.release()
         viewfinder.onAction(LifecycleAction.ScreenDestroyed)

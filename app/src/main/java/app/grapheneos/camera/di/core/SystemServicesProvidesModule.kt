@@ -7,6 +7,7 @@ import android.content.Context
 import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
 import android.location.LocationManager
+import android.os.Vibrator
 import dagger.Module
 import dagger.Provides
 import dagger.Reusable
@@ -64,5 +65,13 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): SensorManager {
         return context.getSystemService(SensorManager::class.java)
+    }
+
+    @Provides
+    @Reusable
+    fun provideVibrator(
+        @ApplicationContext context: Context,
+    ): Vibrator {
+        return context.getSystemService(Vibrator::class.java)
     }
 }
