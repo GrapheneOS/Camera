@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.showCameraPermissionDialog
 import app.grapheneos.camera.ui.showLocationPermissionDialog
 import app.grapheneos.camera.ui.showMicrophonePermissionDialog
+import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
@@ -44,7 +45,7 @@ internal interface ViewfinderEffectHandler {
 internal class ViewfinderEffectHandlerImpl(
     private val activity: MainActivity,
     private val clipboardManager: ClipboardManager,
-    private val vibratorManager: Vibrator,
+    private val vibrator: Vibrator,
     private val onAction: (ViewfinderAction) -> Unit,
 ) : ViewfinderEffectHandler {
 
@@ -65,6 +66,11 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFoundDialog(activity)
             is Effect.CloseScreen -> activity.finish()
             is Effect.PlayLevelHaptic -> playLevelHaptic()
+            is Effect.OpenSettingsSheet -> openSettingsSheet()
+            is Effect.CloseSettingsSheet -> activity.settingsDialog.slideDialogUp()
+            is Effect.ShowQrFormats -> showQrFormats()
+            is Effect.SelectAdjacentModeTab -> selectAdjacentModeTab(effect.offset)
+            is Effect.ShowFocus -> showFocus(effect)
             is Effect.ShowLocationDisabled -> showLocationDisabled(effect.offersSettings)
             is Effect.OpenLocationSettings -> openLocationSettings()
             is Effect.ShowQrResult -> activity.showQrResult(effect.text)
@@ -360,7 +366,41 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun playLevelHaptic() {
-        vibratorManager.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+        vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+    }
+
+    private fun openSettingsSheet() {
+        if (activity.settingsDialog.isShowing || !activity.settingsIcon.isEnabled) return
+
+        activity.settingsDialog.show()
+    }
+
+    private fun showQrFormats() {
+        if (activity.settingsDialog.isShowing) return
+
+        showMoreQrFormatOptions(
+            activity = activity,
+            barcodeFormats = activity.barcodeFormats,
+        )
+    }
+
+    private fun selectAdjacentModeTab(offset: Int) {
+        if (activity.settingsDialog.isShowing) return
+
+        val tabLayout = activity.tabLayout
+
+        tabLayout.getTabAt(tabLayout.selectedTabPosition + offset)?.let(activity::finalizeMode)
+    }
+
+    private fun showFocus(effect: Effect.ShowFocus) {
+        activity.animateFocusRing(effect.x, effect.y)
+
+        if (effect.playsSound) {
+            activity.tunePlayer.playFocusStartSound()
+        }
+
+        activity.exposureBar.showPanel()
+        activity.zoomBar.showPanel()
     }
 
     private fun captureActivity(): CaptureActivity? {

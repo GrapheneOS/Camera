@@ -25,7 +25,10 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import org.junit.Before
@@ -101,6 +104,13 @@ open class ViewfinderViewModelTestBase {
         stateHolder = boundStateHolder.captured
 
         return viewModel
+    }
+
+    protected fun endlessSelfTimer(): Flow<Int> {
+        return flow {
+            emit(3)
+            awaitCancellation()
+        }
     }
 
     protected fun TestScope.collectEffects(

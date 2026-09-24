@@ -1,26 +1,25 @@
 package app.grapheneos.camera.ui.viewfinder
 
-import android.util.Log
+import android.content.Context
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
-import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.VideoOnlyActivity
-import app.grapheneos.camera.ui.showMoreQrFormatOptions
+import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import kotlin.math.abs
 
 internal class ViewfinderGestureHandler(
-    private val activity: MainActivity,
+    context: Context,
+    private val onAction: (ViewfinderAction) -> Unit,
 ) : View.OnTouchListener,
     ScaleGestureDetector.OnScaleGestureListener,
-    GestureDetector.OnGestureListener,
-    GestureDetector.OnDoubleTapListener {
+    GestureDetector.SimpleOnGestureListener() {
 
-    val gestureDetector = GestureDetector(activity, this)
+    val gestureDetector = GestureDetector(context, this)
 
-    private val scaleGestureDetector = ScaleGestureDetector(activity, this)
+    private val scaleGestureDetector = ScaleGestureDetector(context, this)
 
     private var isZooming = false
 
@@ -42,23 +41,7 @@ internal class ViewfinderGestureHandler(
             return true
         }
 
-        if (activity.viewfinder.uiState.value.isQrMode) {
-            return false
-        }
-
-        val x = event.x
-        val y = event.y
-
-        activity.animateFocusRing(x, y)
-
-        if (!activity.viewfinder.uiState.value.isVideoMode) {
-            activity.tunePlayer.playFocusStartSound()
-        }
-
-        activity.viewfinder.onAction(CameraAction.PreviewTapped(x = x, y = y))
-
-        activity.exposureBar.showPanel()
-        activity.zoomBar.showPanel()
+        onAction(CameraAction.PreviewTapped(x = event.x, y = event.y))
 
         return v.performClick()
     }
@@ -66,9 +49,7 @@ internal class ViewfinderGestureHandler(
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
 
-        activity.viewfinder.onAction(
-            CameraAction.PreviewPinched(scaleFactor = detector.scaleFactor),
-        )
+        onAction(CameraAction.PreviewPinched(scaleFactor = detector.scaleFactor))
 
         return true
     }
@@ -79,158 +60,55 @@ internal class ViewfinderGestureHandler(
 
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
 
-    override fun onDown(e: MotionEvent): Boolean {
-        return false
-    }
-
-    override fun onShowPress(e: MotionEvent) {}
-
-    override fun onSingleTapUp(e: MotionEvent): Boolean {
-        return false
-    }
-
-    override fun onScroll(
-        e1: MotionEvent?,
-        e2: MotionEvent,
-        distanceX: Float,
-        distanceY: Float,
-    ): Boolean {
-        return false
-    }
-
-    override fun onLongPress(e: MotionEvent) {}
-
     override fun onFling(
         e1: MotionEvent?,
         e2: MotionEvent,
         velocityX: Float,
         velocityY: Float,
     ): Boolean {
-        e1 ?: return false
+        val start = e1 ?: return false
 
-        val diffX = e2.x - e1.x
-        val diffY = e2.y - e1.y
+        val direction = swipeDirection(
+            distanceX = e2.x - start.x,
+            distanceY = e2.y - start.y,
+            velocityX = velocityX,
+            velocityY = velocityY,
+        )
 
-        return try {
-            when {
-                abs(diffX) > abs(diffY) -> onHorizontalFling(diffX, velocityX)
-                else -> onVerticalFling(diffY, velocityY)
-            }
-        } catch (exception: Exception) {
-            exception.printStackTrace()
-            false
-        }
-    }
+        if (direction == null || isZooming) return false
 
-    private fun onHorizontalFling(distance: Float, velocity: Float): Boolean {
-        if (!isSwipe(distance, velocity)) return false
-
-        when {
-            distance > 0 -> onSwipeRight()
-            else -> onSwipeLeft()
-        }
+        wasSwiping = true
+        onAction(CameraAction.PreviewSwiped(direction = direction))
 
         return true
     }
 
-    private fun onVerticalFling(distance: Float, velocity: Float): Boolean {
-        if (!isSwipe(distance, velocity)) return false
+    private fun swipeDirection(
+        distanceX: Float,
+        distanceY: Float,
+        velocityX: Float,
+        velocityY: Float,
+    ): SwipeDirection? {
+        val isHorizontal = abs(distanceX) > abs(distanceY)
 
-        when {
-            distance > 0 -> onSwipeBottom()
-            else -> onSwipeTop()
+        return when {
+            isHorizontal && !isSwipe(distanceX, velocityX) -> null
+            isHorizontal && distanceX > 0 -> SwipeDirection.RIGHT
+            isHorizontal -> SwipeDirection.LEFT
+            !isSwipe(distanceY, velocityY) -> null
+            distanceY > 0 -> SwipeDirection.DOWN
+            else -> SwipeDirection.UP
         }
-
-        return true
     }
 
-    private fun isSwipe(distance: Float, velocity: Float): Boolean {
+    private fun isSwipe(
+        distance: Float,
+        velocity: Float,
+    ): Boolean {
         return abs(distance) > SWIPE_THRESHOLD && abs(velocity) > SWIPE_VELOCITY_THRESHOLD
     }
 
-    private fun isSwipeBlocked(): Boolean {
-        return isZooming ||
-            activity.cdTimer.isRunning ||
-            activity.viewfinder.uiState.value.isRecordingActive
-    }
-
-    private fun onSwipeBottom() {
-        if (isZooming || activity.cdTimer.isRunning) return
-
-        wasSwiping = true
-
-        if (activity.settingsDialog.isShowing) return
-
-        when {
-            !activity.viewfinder.uiState.value.isQrMode -> {
-                if (activity.settingsIcon.isEnabled) {
-                    activity.settingsIcon.performClick()
-                }
-            }
-
-            !activity.viewfinder.uiState.value.scanAllCodes -> {
-                showMoreQrFormatOptions(
-                    activity = activity,
-                    barcodeFormats = activity.barcodeFormats,
-                )
-            }
-        }
-    }
-
-    private fun onSwipeRight() {
-        if (isSwipeBlocked()) return
-
-        if (activity is VideoOnlyActivity) return
-
-        wasSwiping = true
-
-        if (activity.settingsDialog.isShowing) return
-
-        val i = activity.tabLayout.selectedTabPosition - 1
-
-        Log.i(TAG, "onSwipeRight $i")
-
-        activity.tabLayout.getTabAt(i)?.let {
-            activity.finalizeMode(it)
-        }
-    }
-
-    private fun onSwipeTop() {
-        if (isSwipeBlocked()) return
-
-        wasSwiping = true
-        activity.settingsDialog.slideDialogUp()
-    }
-
-    private fun onSwipeLeft() {
-        if (isSwipeBlocked()) return
-
-        if (activity is VideoOnlyActivity) return
-
-        wasSwiping = true
-
-        if (activity.settingsDialog.isShowing) return
-
-        val i = activity.tabLayout.selectedTabPosition + 1
-        activity.tabLayout.getTabAt(i)?.let {
-            activity.finalizeMode(it)
-        }
-    }
-
-    override fun onSingleTapConfirmed(p0: MotionEvent): Boolean {
-        return false
-    }
-
-    override fun onDoubleTap(p0: MotionEvent): Boolean {
-        return false
-    }
-
-    override fun onDoubleTapEvent(p0: MotionEvent): Boolean {
-        return false
-    }
-
     private companion object {
-        private const val TAG = "ViewfinderGesture"
         private const val SWIPE_THRESHOLD = 100
         private const val SWIPE_VELOCITY_THRESHOLD = 100
     }
