@@ -16,6 +16,22 @@ sealed interface ViewfinderScreenEffect {
 
     data object PlayLevelHaptic : ViewfinderScreenEffect
 
+    data object OpenSettingsSheet : ViewfinderScreenEffect
+
+    data object CloseSettingsSheet : ViewfinderScreenEffect
+
+    data object ShowQrFormats : ViewfinderScreenEffect
+
+    data class SelectAdjacentModeTab(
+        val offset: Int,
+    ) : ViewfinderScreenEffect
+
+    data class ShowFocus(
+        val x: Float,
+        val y: Float,
+        val playsSound: Boolean,
+    ) : ViewfinderScreenEffect
+
     data object OpenLocationSettings : ViewfinderScreenEffect
 
     data class ShowLocationDisabled(

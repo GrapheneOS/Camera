@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Vibrator
 import android.provider.Settings
 import android.text.util.Linkify
 import android.util.Log
@@ -118,7 +119,6 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import android.os.Vibrator as VibratorManager
 
 @AndroidEntryPoint
 open class MainActivity : AppCompatActivity() {
@@ -143,14 +143,19 @@ open class MainActivity : AppCompatActivity() {
     lateinit var clipboardManager: ClipboardManager
 
     @Inject
-    lateinit var vibratorManager: VibratorManager
+    lateinit var vibrator: Vibrator
 
     private val application: App
         get() = applicationContext as App
 
     internal lateinit var binding: ActivityMainBinding
 
-    internal val gestureHandler by lazy { ViewfinderGestureHandler(this) }
+    internal val gestureHandler by lazy {
+        ViewfinderGestureHandler(
+            context = this,
+            onAction = viewfinder::onAction,
+        )
+    }
 
     val gestureDetector: GestureDetector
         get() = gestureHandler.gestureDetector
@@ -266,11 +271,6 @@ open class MainActivity : AppCompatActivity() {
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
-
-    val selfTimerSeconds: Int
-        get() {
-            return viewfinder.uiState.value.settingsSheet.selfTimerSeconds
-        }
 
     private var bottomNavigationBarPadding: Int = 0
 
@@ -430,21 +430,16 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        // there are no camera controls in qr mode
-        if (viewfinder.uiState.value.isQrMode) {
-            return super.onKeyUp(keyCode, event)
-        }
-
         when (keyCode) {
             KeyEvent.KEYCODE_VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_CAMERA,
             -> {
-                captureButton.performClick()
+                resetAutoSleep()
+                tabLayout.settleNow()
+                viewfinder.onAction(CaptureAction.CaptureKeyPressed)
             }
             KeyEvent.KEYCODE_FOCUS -> {
-                // cancel any manual focus
-                // CameraX will start the continuous autofocus (if supported) automatically
                 viewfinder.onAction(CameraAction.FocusKeyPressed)
             }
             KeyEvent.KEYCODE_ZOOM_IN -> {
@@ -524,7 +519,7 @@ open class MainActivity : AppCompatActivity() {
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
             clipboardManager = clipboardManager,
-            vibratorManager = vibratorManager,
+            vibrator = vibrator,
             onAction = viewfinder::onAction,
         )
         viewfinder.onAction(
@@ -693,25 +688,7 @@ open class MainActivity : AppCompatActivity() {
             // would otherwise capture in the mode being left behind.
             tabLayout.settleNow()
 
-            if (viewfinder.uiState.value.isVideoMode) {
-                if (viewfinder.uiState.value.isRecordingActive) {
-                    viewfinder.onAction(RecordingAction.RecordingStopRequested)
-                } else {
-                    viewfinder.onAction(RecordingAction.RecordingRequested)
-                }
-            } else if (viewfinder.uiState.value.isQrMode) {
-                viewfinder.onAction(CameraAction.TorchToggleClicked)
-            } else {
-                if (selfTimerSeconds == 0) {
-                    takePicture()
-                } else {
-                    if (cdTimer.isRunning) {
-                        cdTimer.cancelTimer()
-                    } else {
-                        cdTimer.startTimer()
-                    }
-                }
-            }
+            viewfinder.onAction(CaptureAction.CaptureButtonClicked)
         }
 
         zoomBar.setMainActivity(this)

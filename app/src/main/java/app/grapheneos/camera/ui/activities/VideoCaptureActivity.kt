@@ -7,7 +7,6 @@ import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -21,14 +20,6 @@ class VideoCaptureActivity : CaptureActivity() {
 
         whiteOptionCircle = findViewById(R.id.white_option_circle)
         playPreview = findViewById(R.id.play_preview)
-
-        captureButton.setOnClickListener {
-            if (viewfinder.uiState.value.isRecordingActive) {
-                viewfinder.onAction(RecordingAction.RecordingStopRequested)
-            } else {
-                viewfinder.onAction(RecordingAction.RecordingRequested)
-            }
-        }
 
         playPreview.setOnClickListener {
             val i = Intent(

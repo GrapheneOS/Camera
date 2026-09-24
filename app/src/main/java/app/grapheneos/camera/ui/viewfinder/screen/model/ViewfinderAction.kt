@@ -33,6 +33,10 @@ sealed interface ViewfinderAction {
             val scaleFactor: Float,
         ) : CameraAction
 
+        data class PreviewSwiped(
+            val direction: SwipeDirection,
+        ) : CameraAction
+
         data class ZoomSliderDragged(
             val linearZoom: Float,
         ) : CameraAction
@@ -53,6 +57,10 @@ sealed interface ViewfinderAction {
     sealed interface CaptureAction : ViewfinderAction {
 
         data object ShutterClicked : CaptureAction
+
+        data object CaptureButtonClicked : CaptureAction
+
+        data object CaptureKeyPressed : CaptureAction
 
         data object PictureCaptureCancelled : CaptureAction
 

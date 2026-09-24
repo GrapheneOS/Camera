@@ -38,6 +38,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMappe
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
+import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -181,10 +182,11 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
             is CameraAction.TorchToggleClicked -> cameraDelegate.toggleTorch()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
-            is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
-            is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
-            is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
+            is CameraAction.ZoomInKeyPressed -> onZoomKeyPressed(ZOOM_KEY_STEP)
+            is CameraAction.ZoomOutKeyPressed -> onZoomKeyPressed(-ZOOM_KEY_STEP)
+            is CameraAction.FocusKeyPressed -> onFocusKeyPressed()
             is CameraAction.PreviewPinched -> cameraDelegate.scaleZoom(action.scaleFactor)
+            is CameraAction.PreviewSwiped -> onPreviewSwiped(action.direction)
             is CameraAction.ZoomSliderDragged -> cameraDelegate.setLinearZoom(action.linearZoom)
 
             is CameraAction.ExposureSliderDragged -> {
@@ -192,10 +194,9 @@ class ViewfinderViewModel @AssistedInject constructor(
             }
 
             is CameraAction.PreviewTapped -> {
-                cameraDelegate.focusAt(
+                onPreviewTapped(
                     x = action.x,
                     y = action.y,
-                    autoCancelSeconds = state().settings.focusTimeoutSeconds,
                 )
             }
 
@@ -208,6 +209,8 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onCaptureAction(action: CaptureAction) {
         when (action) {
             is CaptureAction.ShutterClicked -> takePicture()
+            is CaptureAction.CaptureButtonClicked -> onCaptureButtonClicked()
+            is CaptureAction.CaptureKeyPressed -> onCaptureKeyPressed()
             is CaptureAction.PictureCaptureCancelled -> captureDelegate.cancelPictureCapture()
             is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
@@ -397,6 +400,77 @@ class ViewfinderViewModel @AssistedInject constructor(
         orientationDelegate.setDisplayRotation(rotation)
     }
 
+    private fun onZoomKeyPressed(step: Float) {
+        if (state().isQrMode()) return
+
+        cameraDelegate.stepZoom(step)
+    }
+
+    private fun onFocusKeyPressed() {
+        if (state().isQrMode()) return
+
+        // cancel any manual focus
+        // CameraX will start the continuous autofocus (if supported) automatically
+        cameraDelegate.cancelFocus()
+    }
+
+    private fun onPreviewTapped(
+        x: Float,
+        y: Float,
+    ) {
+        val state = state()
+
+        if (state.isQrMode()) return
+
+        cameraDelegate.focusAt(
+            x = x,
+            y = y,
+            autoCancelSeconds = state.settings.focusTimeoutSeconds,
+        )
+        emitEffect(
+            Effect.ShowFocus(
+                x = x,
+                y = y,
+                playsSound = !state.isVideoMode(),
+            ),
+        )
+    }
+
+    private fun onPreviewSwiped(direction: SwipeDirection) {
+        val state = state()
+
+        if (state.capture.isSelfTimerRunning) return
+
+        when (direction) {
+            SwipeDirection.DOWN -> openSettingsSheet(state)
+            SwipeDirection.UP -> closeSettingsSheet(state)
+            SwipeDirection.LEFT -> selectAdjacentMode(state = state, offset = 1)
+            SwipeDirection.RIGHT -> selectAdjacentMode(state = state, offset = -1)
+        }
+    }
+
+    private fun openSettingsSheet(state: ViewfinderState) {
+        when {
+            !state.isQrMode() -> emitEffect(Effect.OpenSettingsSheet)
+            !state.settings.scanAllCodes -> emitEffect(Effect.ShowQrFormats)
+        }
+    }
+
+    private fun closeSettingsSheet(state: ViewfinderState) {
+        if (state.recording.isActive()) return
+
+        emitEffect(Effect.CloseSettingsSheet)
+    }
+
+    private fun selectAdjacentMode(
+        state: ViewfinderState,
+        offset: Int,
+    ) {
+        if (state.recording.isActive() || !state.showsCameraModeTabs) return
+
+        emitEffect(Effect.SelectAdjacentModeTab(offset = offset))
+    }
+
     private fun switchMode(mode: CameraMode) {
         if (!modeDelegate.select(mode)) return
 
@@ -478,6 +552,31 @@ class ViewfinderViewModel @AssistedInject constructor(
         settingsDelegate.setVideoQuality(quality)
 
         startCamera(forced = true)
+    }
+
+    private fun onCaptureButtonClicked() {
+        val state = state()
+
+        when {
+            state.isVideoMode() -> toggleRecording(state)
+            state.isQrMode() -> cameraDelegate.toggleTorch()
+            state.settings.selfTimerDurationSeconds == 0 -> takePicture()
+            state.capture.isSelfTimerRunning -> cancelSelfTimer()
+            else -> startSelfTimer()
+        }
+    }
+
+    private fun onCaptureKeyPressed() {
+        if (state().isQrMode()) return
+
+        onCaptureButtonClicked()
+    }
+
+    private fun toggleRecording(state: ViewfinderState) {
+        when {
+            state.recording.isActive() -> recordingDelegate.requestStop()
+            else -> startRecording()
+        }
     }
 
     private fun takePicture() {
