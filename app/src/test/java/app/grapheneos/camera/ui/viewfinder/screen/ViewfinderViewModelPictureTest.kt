@@ -17,9 +17,6 @@ import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import java.io.IOException
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -355,13 +352,6 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
                 ),
                 effects,
             )
-        }
-    }
-
-    private fun endlessSelfTimer(): Flow<Int> {
-        return flow {
-            emit(3)
-            awaitCancellation()
         }
     }
 
