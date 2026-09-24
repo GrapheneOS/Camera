@@ -181,7 +181,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onCameraAction(action: CameraAction) {
         when (action) {
             is CameraAction.ModeSelected -> switchMode(action.mode)
-            is CameraAction.LensSwitchClicked -> switchLens()
+            is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
             is CameraAction.TorchToggleClicked -> cameraDelegate.toggleTorch()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
@@ -214,7 +214,8 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.ShutterClicked -> takePicture()
             is CaptureAction.CaptureButtonClicked -> onCaptureButtonClicked()
             is CaptureAction.CaptureKeyPressed -> onCaptureKeyPressed()
-            is CaptureAction.PictureCaptureCancelled -> captureDelegate.cancelPictureCapture()
+            is CaptureAction.ThirdCircleClicked -> onThirdCircleClicked()
+            is CaptureAction.ThirdCircleLongClicked -> onThirdCircleLongClicked()
             is CaptureAction.SelfTimerStartClicked -> captureDelegate.startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> captureDelegate.cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
@@ -235,18 +236,8 @@ class ViewfinderViewModel @AssistedInject constructor(
             is RecordingAction.RecordWithoutAudioClicked -> recordWithoutAudio()
             is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
             is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
-
-            is RecordingAction.RecordingPauseToggled -> {
-                if (state().recording.isActive()) {
-                    recordingDelegate.setPaused(action.paused)
-                }
-            }
-
-            is RecordingAction.RecordingMuteToggled -> {
-                if (state().recording.isActive()) {
-                    recordingDelegate.setMuted(action.muted)
-                }
-            }
+            is RecordingAction.MuteToggleClicked -> toggleRecordingMute()
+            is RecordingAction.RecordingPauseToggled -> setRecordingPaused(action.paused)
         }
     }
 
@@ -267,7 +258,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
-            is SettingsAction.ScanAllCodesToggleClicked -> settingsDelegate.toggleScanAllCodes()
+            is SettingsAction.SettingsIconClicked -> onSettingsIconClicked()
             is SettingsAction.GridToggleClicked -> settingsDelegate.cycleGridType()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
             is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
@@ -466,6 +457,20 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
+    private fun onFlipCameraClicked() {
+        val state = state()
+
+        when {
+            state.isQrMode() -> settingsDelegate.toggleScanAllCodes()
+            state.recording.isActive() -> setRecordingPaused(!state.recording.isPaused)
+
+            else -> {
+                emitEffect(Effect.AnimateLensSwitch)
+                switchLens()
+            }
+        }
+    }
+
     private fun switchLens() {
         val lensFacing = cameraDelegate.lensFacing.opposite()
         val isSwitched = cameraDelegate.switchLensFacing(
@@ -553,6 +558,20 @@ class ViewfinderViewModel @AssistedInject constructor(
         if (state().isQrMode()) return
 
         onCaptureButtonClicked()
+    }
+
+    private fun onThirdCircleClicked() {
+        when {
+            state().recording.isActive() -> takePicture()
+            else -> emitEffect(Effect.OpenGallery)
+        }
+    }
+
+    private fun onThirdCircleLongClicked() {
+        when {
+            state().recording.isActive() -> takePicture()
+            else -> emitEffect(Effect.ShareLatestMedia)
+        }
     }
 
     private fun toggleRecording(state: ViewfinderState) {
@@ -702,6 +721,29 @@ class ViewfinderViewModel @AssistedInject constructor(
         startRecording()
     }
 
+    private fun toggleRecordingMute() {
+        val recording = state().recording
+        if (!recording.isActive()) return
+
+        val muted = !recording.isMuted
+        recordingDelegate.setMuted(muted)
+
+        emitEffect(
+            Effect.ShowMessage(
+                when {
+                    muted -> R.string.video_audio_recording_muted
+                    else -> R.string.video_audio_recording_unmuted
+                },
+            ),
+        )
+    }
+
+    private fun setRecordingPaused(paused: Boolean) {
+        if (state().recording.isActive()) {
+            recordingDelegate.setPaused(paused)
+        }
+    }
+
     private fun onRecordingOutputUnavailable() {
         if (!entryPoint.isCaptureSession) {
             onStorageLocationNotFound()
@@ -780,6 +822,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onScreenPaused() {
+        if (!state().isQrMode()) {
+            captureDelegate.cancelPictureCapture()
+        }
+
         resumedWork?.cancel()
     }
 
@@ -858,6 +904,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         settingsDelegate.setGeoTagging(geoTagging)
 
         setSelfIllumination(slotted.modeSettings.selfIllumination)
+    }
+
+    private fun onSettingsIconClicked() {
+        if (!state().isQrMode()) {
+            emitEffect(Effect.OpenSettingsSheet)
+        }
     }
 
     private fun toggleGeoTagging(enabled: Boolean) {

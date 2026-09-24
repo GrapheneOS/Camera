@@ -13,9 +13,9 @@ import kotlin.math.abs
 internal class ViewfinderGestureHandler(
     context: Context,
     private val onAction: (ViewfinderAction) -> Unit,
-) : View.OnTouchListener,
-    ScaleGestureDetector.OnScaleGestureListener,
-    GestureDetector.SimpleOnGestureListener() {
+) : GestureDetector.SimpleOnGestureListener(),
+    View.OnTouchListener,
+    ScaleGestureDetector.OnScaleGestureListener {
 
     val gestureDetector = GestureDetector(context, this)
 
