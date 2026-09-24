@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.permission.model.AppPermission
@@ -205,8 +207,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 captureDelegate.finishRecordingSave()
             }
 
-            val saved = ViewfinderScreenEffect.Recording.Saved(uri = Uri.EMPTY, item = null)
-            assertTrue(saved in effects)
+            assertTrue(ViewfinderScreenEffect.Recording.Saved(uri = Uri.EMPTY) in effects)
         }
     }
 
@@ -271,6 +272,23 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                     R.string.unable_to_access_output_file,
                 ) in effects,
             )
+        }
+    }
+
+    @Test
+    fun recordingSaved_recordsTheItemAndHandsTheRecordingOver() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            val item = CapturedItem(ITEM_TYPE_VIDEO, "20260920_120000_000", Uri.EMPTY)
+
+            recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = item))
+
+            verifyOrder {
+                galleryDelegate.recordCapturedItem(item)
+                galleryDelegate.refreshThumbnail()
+            }
+            assertEquals(listOf(ViewfinderScreenEffect.Recording.Saved(uri = Uri.EMPTY)), effects)
         }
     }
 }

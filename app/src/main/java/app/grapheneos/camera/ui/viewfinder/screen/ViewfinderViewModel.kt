@@ -28,6 +28,7 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
@@ -90,6 +91,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val locationDelegate: ViewfinderLocationDelegate,
     private val orientationDelegate: ViewfinderOrientationDelegate,
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
+    private val galleryDelegate: ViewfinderGalleryDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
@@ -144,6 +146,10 @@ class ViewfinderViewModel @AssistedInject constructor(
             stateHolder = stateHolder,
         )
         captureDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
+        galleryDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
@@ -352,7 +358,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
             is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
             is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
-            is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
+            is CapturedImageEvent.Saved -> galleryDelegate.recordCapturedItem(event.item)
             is CapturedImageEvent.PreviewReturned -> emitEffect(Effect.Picture.PreviewReturned)
             is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
 
@@ -387,8 +393,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             }
 
             is RecordedVideoEvent.Saved -> {
-                captureDelegate.finishRecordingSave()
-                emitEffect(Effect.Recording.Saved(uri = event.uri, item = event.item))
+                onRecordingSaved(event)
             }
         }
     }
@@ -561,16 +566,22 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onThirdCircleClicked() {
+        val state = state()
+
         when {
-            state().recording.isActive() -> takePicture()
-            else -> emitEffect(Effect.OpenGallery)
+            state.recording.isActive() -> takePicture()
+            state.isCaptureSession -> Unit
+            else -> galleryDelegate.openGallery()
         }
     }
 
     private fun onThirdCircleLongClicked() {
+        val state = state()
+
         when {
-            state().recording.isActive() -> takePicture()
-            else -> emitEffect(Effect.ShareLatestMedia)
+            state.recording.isActive() -> takePicture()
+            state.isCaptureSession -> Unit
+            else -> galleryDelegate.shareLastCapturedItem()
         }
     }
 
@@ -614,7 +625,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPictureThumbnailReady(thumbnail: Bitmap) {
         captureDelegate.finishPictureSave()
 
-        emitEffect(Effect.Picture.ThumbnailReady(thumbnail = thumbnail))
+        galleryDelegate.showThumbnail(thumbnail)
     }
 
     private fun onPictureCaptureFailed(event: CapturedImageEvent.CaptureFailed) {
@@ -777,20 +788,35 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
+    private fun onRecordingSaved(event: RecordedVideoEvent.Saved) {
+        captureDelegate.finishRecordingSave()
+
+        event.item?.let { item ->
+            galleryDelegate.recordCapturedItem(item)
+            galleryDelegate.refreshThumbnail()
+        }
+
+        emitEffect(Effect.Recording.Saved(uri = event.uri))
+    }
+
     private fun onScreenCreated(host: ViewfinderHost) {
         cameraDelegate.onScreenCreated(host)
         captureDelegate.onScreenCreated(host)
+        galleryDelegate.onScreenCreated(host)
     }
 
     private fun onScreenDestroyed() {
         cameraDelegate.onScreenDestroyed()
         captureDelegate.onScreenDestroyed()
+        galleryDelegate.onScreenDestroyed()
         recordingDelegate.onScreenDestroyed()
         permissionDelegate.dismissDialog()
     }
 
     private fun onScreenResumed() {
         permissionDelegate.refresh()
+        galleryDelegate.refreshThumbnail()
+
         startResumedWork()
 
         val state = state()

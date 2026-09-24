@@ -341,8 +341,8 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="675" column="100" source="standard:max-line-length" />
-        <error line="816" column="100" source="standard:max-line-length" />
+        <error line="602" column="100" source="standard:max-line-length" />
+        <error line="743" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />
@@ -359,8 +359,8 @@
         <error line="3" column="50" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/SecureMainActivity.kt">
-        <error line="7" column="33" source="standard:class-signature" />
-        <error line="7" column="49" source="standard:class-signature" />
+        <error line="6" column="33" source="standard:class-signature" />
+        <error line="6" column="49" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/VideoPlayer.kt">
         <error line="27" column="1" source="standard:no-consecutive-blank-lines" />

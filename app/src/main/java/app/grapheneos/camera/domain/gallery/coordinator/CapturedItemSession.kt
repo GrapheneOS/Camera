@@ -3,63 +3,33 @@ package app.grapheneos.camera.domain.gallery.coordinator
 import android.util.Log
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
 import java.io.IOException
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 interface CapturedItemSession {
 
     val lastCapturedItem: CapturedItem?
 
-    val storageLocation: String
-
     suspend fun prepare()
 
-    fun recordCapturedItem(item: CapturedItem)
+    /** Follows the stored last captured item until the caller is cancelled. */
+    suspend fun trackLastCapturedItem()
 
-    fun close()
+    fun recordCapturedItem(item: CapturedItem)
 }
 
 internal class CapturedItemSessionImpl @Inject constructor(
     private val capturedItemRepository: CapturedItemRepository,
     private val visibleCaptureMapper: VisibleCaptureMapper,
     private val entryPoint: CameraEntryPoint,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : CapturedItemSession {
 
     override var lastCapturedItem: CapturedItem? = runBlocking { restoredCapture() }
         private set
-
-    override var storageLocation: String = runBlocking {
-        capturedItemRepository.storageLocation.first()
-    }
-        private set
-
-    private val scope = CoroutineScope(mainDispatcher)
-
-    init {
-        scope.launch {
-            capturedItemRepository.storageLocation.collect {
-                storageLocation = it
-            }
-        }
-
-        if (!entryPoint.isSecureSession) {
-            scope.launch {
-                capturedItemRepository.lastCapturedItem.collect {
-                    lastCapturedItem = visibleCaptureMapper.map(it)
-                }
-            }
-        }
-    }
 
     private suspend fun restoredCapture(): CapturedItem? {
         if (entryPoint.isSecureSession) {
@@ -92,12 +62,18 @@ internal class CapturedItemSessionImpl @Inject constructor(
         }
     }
 
-    override fun recordCapturedItem(item: CapturedItem) {
-        lastCapturedItem = visibleCaptureMapper.map(item)
+    override suspend fun trackLastCapturedItem() {
+        if (entryPoint.isSecureSession) {
+            return
+        }
+
+        capturedItemRepository.lastCapturedItem.collect { item ->
+            lastCapturedItem = visibleCaptureMapper.map(item)
+        }
     }
 
-    override fun close() {
-        scope.cancel()
+    override fun recordCapturedItem(item: CapturedItem) {
+        lastCapturedItem = visibleCaptureMapper.map(item)
     }
 
     private companion object {

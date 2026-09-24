@@ -194,31 +194,14 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun saved_handsTheItemOver() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            val item = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
-
-            captureEvents.emit(CapturedImageEvent.Saved(item = item))
-
-            assertEquals(listOf(ViewfinderScreenEffect.Picture.Saved(item)), effects)
-        }
-    }
-
-    @Test
     fun thumbnailReady_showsItAndFinishesTheSave() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
+            createViewModel(applicationScope = backgroundScope)
 
             captureEvents.emit(CapturedImageEvent.ThumbnailReady(thumbnail = THUMBNAIL))
 
             verify(exactly = 1) { captureDelegate.finishPictureSave() }
-            assertEquals(
-                listOf(ViewfinderScreenEffect.Picture.ThumbnailReady(THUMBNAIL)),
-                effects,
-            )
+            verify(exactly = 1) { galleryDelegate.showThumbnail(THUMBNAIL) }
         }
     }
 
@@ -274,6 +257,18 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
             val failure = effects.single() as ViewfinderScreenEffect.Picture.SaveFailed
             assertEquals(SAVE_FAILURE_STAGE, failure.stage)
             assertTrue(failure.alreadyReported)
+        }
+    }
+
+    @Test
+    fun saved_recordsTheItem() {
+        runTest {
+            createViewModel(applicationScope = backgroundScope)
+            val item = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
+
+            captureEvents.emit(CapturedImageEvent.Saved(item = item))
+
+            verify(exactly = 1) { galleryDelegate.recordCapturedItem(item) }
         }
     }
 

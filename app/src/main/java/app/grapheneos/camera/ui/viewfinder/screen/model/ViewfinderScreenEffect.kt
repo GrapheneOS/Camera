@@ -24,9 +24,19 @@ sealed interface ViewfinderScreenEffect {
 
     data object AnimateLensSwitch : ViewfinderScreenEffect
 
-    data object OpenGallery : ViewfinderScreenEffect
+    data class OpenGallery(
+        val lastCapturedItem: CapturedItem?,
+        val videoOnly: Boolean,
+    ) : ViewfinderScreenEffect
 
-    data object ShareLatestMedia : ViewfinderScreenEffect
+    data class OpenSecureGallery(
+        val capturedItems: List<CapturedItem>,
+        val lastCapturedItem: CapturedItem?,
+    ) : ViewfinderScreenEffect
+
+    data class ShareCapturedItem(
+        val item: CapturedItem,
+    ) : ViewfinderScreenEffect
 
     data class SelectAdjacentModeTab(
         val offset: Int,
@@ -84,14 +94,6 @@ sealed interface ViewfinderScreenEffect {
             val bitmap: Bitmap,
         ) : Picture
 
-        data class Saved(
-            val item: CapturedItem,
-        ) : Picture
-
-        data class ThumbnailReady(
-            val thumbnail: Bitmap,
-        ) : Picture
-
         data class CaptureFailed(
             val errorCode: Int,
             val details: PictureFailureDetails,
@@ -119,7 +121,6 @@ sealed interface ViewfinderScreenEffect {
 
         data class Saved(
             val uri: Uri,
-            val item: CapturedItem?,
         ) : Recording
 
         data class SaveFailed(
