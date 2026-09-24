@@ -320,26 +320,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         }
     }
 
-    @Test
-    fun screenResumed_tracksOrientationAndLocationUntilPaused() {
-        runTest {
-            val tracking = mutableSetOf<String>()
-            coEvery { orientationDelegate.trackOrientation() } coAnswers {
-                trackUntilCancelled(tracking, name = "orientation")
-            }
-            coEvery { locationDelegate.trackLocation() } coAnswers {
-                trackUntilCancelled(tracking, name = "location")
-            }
-
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            viewModel.onAction(LifecycleAction.ScreenResumed)
-            assertEquals(setOf("orientation", "location"), tracking)
-
-            viewModel.onAction(LifecycleAction.ScreenPaused)
-            assertTrue(tracking.isEmpty())
-        }
-    }
-
     private suspend fun trackUntilCancelled(
         tracking: MutableSet<String>,
         name: String,
@@ -386,6 +366,40 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
 
             verify(exactly = 1) { permissionDelegate.onDialogDismissed(AppPermission.CAMERA) }
+        }
+    }
+
+    @Test
+    fun screenResumed_tracksOrientationAndLocationAndKeepsTheScreenAwakeUntilPaused() {
+        runTest {
+            val tracking = mutableSetOf<String>()
+            coEvery { orientationDelegate.trackOrientation() } coAnswers {
+                trackUntilCancelled(tracking, name = "orientation")
+            }
+            coEvery { locationDelegate.trackLocation() } coAnswers {
+                trackUntilCancelled(tracking, name = "location")
+            }
+            coEvery { screenWakeDelegate.keepScreenAwake() } coAnswers {
+                trackUntilCancelled(tracking, name = "screen wake")
+            }
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            assertEquals(setOf("orientation", "location", "screen wake"), tracking)
+
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+            assertTrue(tracking.isEmpty())
+        }
+    }
+
+    @Test
+    fun screenInteracted_extendsTheScreenWake() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(LifecycleAction.ScreenInteracted)
+
+            verify(exactly = 1) { screenWakeDelegate.onScreenInteracted() }
         }
     }
 

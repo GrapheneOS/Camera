@@ -33,6 +33,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegat
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
@@ -83,6 +84,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val permissionDelegate: ViewfinderPermissionDelegate,
     private val locationDelegate: ViewfinderLocationDelegate,
     private val orientationDelegate: ViewfinderOrientationDelegate,
+    private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
@@ -115,6 +117,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         recordingDelegate.bind(stateHolder)
         permissionDelegate.bind(stateHolder)
         orientationDelegate.bind(stateHolder)
+        screenWakeDelegate.bind(stateHolder)
 
         cameraDelegate.bind(
             scope = viewModelScope,
@@ -244,6 +247,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is LifecycleAction.ScreenStopped -> captureDelegate.onScreenStopped()
             is LifecycleAction.ScreenResumed -> onScreenResumed()
             is LifecycleAction.ScreenPaused -> onScreenPaused()
+            is LifecycleAction.ScreenInteracted -> screenWakeDelegate.onScreenInteracted()
             is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
             is LifecycleAction.QrResultDismissed -> dismissQrResult()
         }
@@ -759,6 +763,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         resumedWork = viewModelScope.launch(mainDispatcher) {
             launch(mainDispatcher) { orientationDelegate.trackOrientation() }
             launch(mainDispatcher) { locationDelegate.trackLocation() }
+            launch(mainDispatcher) { screenWakeDelegate.keepScreenAwake() }
         }
     }
 

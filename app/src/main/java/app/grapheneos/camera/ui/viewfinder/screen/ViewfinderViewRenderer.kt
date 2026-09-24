@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
@@ -25,6 +26,7 @@ internal class ViewfinderViewRenderer(
     private var renderedSensorOrientationDegrees: Int? = null
     private var renderedIconRotation: Float? = null
     private var renderedLevelFrameRotation: Float? = null
+    private var renderedKeepScreenOn = false
 
     fun render(state: ViewfinderUiState) {
         activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
@@ -39,7 +41,6 @@ internal class ViewfinderViewRenderer(
         activity.timerView.visibility = visibleOrGone(state.recordingTimerVisible)
         activity.timerView.text = state.recordingTimerText
 
-        activity.previewView.keepScreenOn = state.keepScreenOn
         activity.previewView.visibility = visibleOrInvisible(state.cameraPreviewVisible)
         (activity as? CaptureActivity)?.renderCapturedPreview(state.capturedPreviewVisible)
 
@@ -63,6 +64,7 @@ internal class ViewfinderViewRenderer(
         activity.zoomBar.render(state.zoom)
         activity.exposureBar.render(state.exposure)
 
+        renderKeepScreenOn(state.keepScreenOn)
         renderThumbnailLoader(state.thumbnailLoaderVisible)
         renderModeTabs(state)
         renderBoundPreview(state)
@@ -74,6 +76,16 @@ internal class ViewfinderViewRenderer(
 
         renderTilt(level.tiltDegrees)
         renderHorizon(level.horizonDegrees)
+    }
+
+    private fun renderKeepScreenOn(keepScreenOn: Boolean) {
+        if (keepScreenOn == renderedKeepScreenOn) return
+        renderedKeepScreenOn = keepScreenOn
+
+        when {
+            keepScreenOn -> activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            else -> activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     private fun renderThumbnailLoader(visible: Boolean) {

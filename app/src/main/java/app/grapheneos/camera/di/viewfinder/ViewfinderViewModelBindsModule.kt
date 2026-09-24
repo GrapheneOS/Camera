@@ -14,6 +14,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionD
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegateImpl
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegateImpl
 import dagger.Binds
@@ -73,4 +75,10 @@ internal abstract class ViewfinderViewModelBindsModule {
     abstract fun bindViewfinderOrientationDelegate(
         impl: ViewfinderOrientationDelegateImpl,
     ): ViewfinderOrientationDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindViewfinderScreenWakeDelegate(
+        impl: ViewfinderScreenWakeDelegateImpl,
+    ): ViewfinderScreenWakeDelegate
 }

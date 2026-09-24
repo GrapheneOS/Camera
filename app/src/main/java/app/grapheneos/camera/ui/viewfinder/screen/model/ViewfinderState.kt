@@ -30,6 +30,7 @@ data class ViewfinderState(
     val deviceOrientation: DeviceOrientation? = null,
     val displayRotation: Int = Surface.ROTATION_0,
     val autoRotateEnabled: Boolean = false,
+    val keepsScreenAwake: Boolean = false,
 ) {
 
     fun isQrMode(): Boolean {
