@@ -1,103 +1,77 @@
 package app.grapheneos.camera.data.location.repository
 
 import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
+import android.os.Looper
 import android.os.SystemClock
 import androidx.annotation.RequiresPermission
-import androidx.core.content.ContextCompat
+import app.grapheneos.camera.data.location.model.LocationAvailability
+import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.getOptimalLocation
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 
 interface LocationRepository {
 
-    val providersDisabled: Flow<Unit>
-
-    fun shouldAskForPermission(): Boolean
-
-    fun isLocationEnabled(): Boolean
-
-    fun isAnyProviderEnabled(): Boolean
+    @RequiresPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+    fun updates(): Flow<LocationAvailability>
 
     fun currentLocation(): Location?
 
-    @RequiresPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
-    fun startUpdates(reattach: Boolean)
-
-    fun pauseUpdates()
-
-    fun stopUpdates()
+    fun forgetLocation()
 }
 
 internal class LocationRepositoryImpl @Inject constructor(
     private val locationManager: LocationManager,
-    @ApplicationContext private val context: Context,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : LocationRepository {
 
-    private val _providersDisabled = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    override val providersDisabled: Flow<Unit> = _providersDisabled.asSharedFlow()
-
+    @Volatile
     private var location: Location? = null
-    private var isUpdating = false
 
-    private val locationListener = object : LocationListener {
-        override fun onLocationChanged(changedLocation: Location) {
-            location = getOptimalLocation(listOf(location, changedLocation))
-        }
+    @RequiresPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+    override fun updates(): Flow<LocationAvailability> {
+        return callbackFlow {
+            val listener = object : LocationListener {
+                override fun onLocationChanged(changedLocation: Location) {
+                    keepBestLocation(listOf(changedLocation))
+                }
 
-        override fun onLocationChanged(locations: MutableList<Location>) {
-            location = getOptimalLocation(locations + location)
-        }
+                override fun onLocationChanged(locations: MutableList<Location>) {
+                    keepBestLocation(locations)
+                }
 
-        override fun onProviderDisabled(provider: String) {
-            if (!isAnyProviderEnabled()) {
-                _providersDisabled.tryEmit(Unit)
-            }
-        }
+                override fun onProviderDisabled(provider: String) {
+                    trySend(availability())
+                }
 
-        override fun onProviderEnabled(provider: String) {
-            // Still abstract on API 29, so the override stays even with nothing to do.
-        }
-    }
-
-    private val providers: List<String>
-        get() {
-            val hasFusedProvider = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                locationManager.hasProvider(LocationManager.FUSED_PROVIDER)
-
-            return when {
-                hasFusedProvider -> listOf(LocationManager.FUSED_PROVIDER)
-                else -> locationManager.allProviders.filter {
-                    it == LocationManager.GPS_PROVIDER ||
-                        it == LocationManager.NETWORK_PROVIDER ||
-                        it == LocationManager.PASSIVE_PROVIDER
+                @RequiresPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                override fun onProviderEnabled(provider: String) {
+                    register(this)
+                    trySend(availability())
                 }
             }
+
+            register(listener)
+            trySend(availability())
+
+            awaitClose {
+                locationManager.removeUpdates(listener)
+            }
         }
-
-    override fun shouldAskForPermission(): Boolean {
-        return !isGranted(Manifest.permission.ACCESS_FINE_LOCATION) &&
-            !isGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
-    }
-
-    override fun isLocationEnabled(): Boolean {
-        return locationManager.isLocationEnabled
-    }
-
-    override fun isAnyProviderEnabled(): Boolean {
-        return locationManager.isLocationEnabled &&
-            locationManager.allProviders.any { locationManager.isProviderEnabled(it) }
+            .distinctUntilChanged()
+            .flowOn(ioDispatcher)
     }
 
     override fun currentLocation(): Location? {
@@ -111,53 +85,68 @@ internal class LocationRepositoryImpl @Inject constructor(
         return location
     }
 
+    override fun forgetLocation() {
+        location = null
+    }
+
     @RequiresPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
-    override fun startUpdates(reattach: Boolean) {
-        if (isUpdating && !reattach) {
-            return
+    private fun register(listener: LocationListener) {
+        locationManager.removeUpdates(listener)
+
+        val providers = trackedProviders()
+        val lastKnownLocations = providers.map { provider ->
+            locationManager.getLastKnownLocation(provider)
         }
 
-        if (isUpdating) {
-            pauseUpdates()
-        }
+        keepBestLocation(lastKnownLocations)
 
-        isUpdating = true
-
-        val currentProviders = providers
-        val lastKnownLocations = currentProviders.map {
-            locationManager.getLastKnownLocation(it)
-        }
-
-        location = getOptimalLocation(lastKnownLocations + location)
-
-        currentProviders.forEach { provider ->
+        providers.forEach { provider ->
             locationManager.requestLocationUpdates(
                 provider,
                 UPDATE_INTERVAL.inWholeMilliseconds,
-                0f,
-                locationListener,
+                MIN_UPDATE_DISTANCE_METERS,
+                listener,
+                Looper.getMainLooper(),
             )
         }
     }
 
-    override fun pauseUpdates() {
-        isUpdating = false
-        locationManager.removeUpdates(locationListener)
+    private fun trackedProviders(): List<String> {
+        return when {
+            hasFusedProvider() -> listOf(LocationManager.FUSED_PROVIDER)
+            else -> locationManager.allProviders.filter { it in FALLBACK_PROVIDERS }
+        }
     }
 
-    override fun stopUpdates() {
-        pauseUpdates()
-        location = null
+    private fun hasFusedProvider(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            locationManager.hasProvider(LocationManager.FUSED_PROVIDER)
     }
 
-    private fun isGranted(permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(context, permission) ==
-            PackageManager.PERMISSION_GRANTED
+    private fun keepBestLocation(candidates: List<Location?>) {
+        location = getOptimalLocation(candidates + location)
+    }
+
+    private fun availability(): LocationAvailability {
+        val isAnyProviderEnabled = locationManager.isLocationEnabled &&
+            locationManager.allProviders.any(locationManager::isProviderEnabled)
+
+        return when {
+            isAnyProviderEnabled -> LocationAvailability.AVAILABLE
+            else -> LocationAvailability.PROVIDERS_DISABLED
+        }
     }
 
     private companion object {
         // Must stay above the ~10 min throttle the OS applies to coarse-only apps.
         private val MAX_LOCATION_AGE = 15.minutes
         private val UPDATE_INTERVAL = 2.seconds
+        private const val MIN_UPDATE_DISTANCE_METERS = 0f
+
+        private val FALLBACK_PROVIDERS = setOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER,
+        )
     }
 }

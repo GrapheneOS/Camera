@@ -5,18 +5,15 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-fun showMicrophonePermissionDialog(
+fun showLocationPermissionDialog(
     activity: MainActivity,
     onSettingsClicked: (() -> Unit)?,
-    onRecordWithoutAudioClicked: () -> Unit,
     onDismissed: () -> Unit,
 ): AlertDialog {
     return MaterialAlertDialogBuilder(activity)
-        .setTitle(R.string.audio_permission_dialog_title)
-        .setMessage(R.string.audio_permission_dialog_message)
+        .setTitle(R.string.location_permission_dialog_title)
+        .setMessage(R.string.location_permission_dialog_message)
         .setSettingsButton(onSettingsClicked)
-        .setNegativeButton(R.string.cancel, null)
-        .setNeutralButton(R.string.disable_audio) { _, _ -> onRecordWithoutAudioClicked() }
         .setOnDismissListener { onDismissed() }
         .showIgnoringShortEdgeMode()
 }

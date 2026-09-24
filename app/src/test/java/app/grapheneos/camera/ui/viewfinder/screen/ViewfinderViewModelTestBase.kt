@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.net.Uri
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -12,6 +11,7 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
@@ -42,7 +42,8 @@ open class ViewfinderViewModelTestBase {
     protected val captureDelegate = mockk<ViewfinderCaptureDelegate>(relaxed = true)
     protected val recordingDelegate = mockk<ViewfinderRecordingDelegate>(relaxed = true)
     protected val permissionDelegate = mockk<ViewfinderPermissionDelegate>(relaxed = true)
-    protected val locationRepository = mockk<LocationRepository>(relaxed = true)
+    protected val locationDelegate = mockk<ViewfinderLocationDelegate>(relaxed = true)
+    protected val locationProvidersDisabled = MutableSharedFlow<Unit>()
 
     protected val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
     protected val captureEvents = MutableSharedFlow<CapturedImageEvent>()
@@ -64,6 +65,7 @@ open class ViewfinderViewModelTestBase {
         every { cameraDelegate.sessionEvents } returns sessionEvents
         every { captureDelegate.captureEvents } returns captureEvents
         every { recordingDelegate.recordingEvents } returns recordingEvents
+        every { locationDelegate.providersDisabledEvents } returns locationProvidersDisabled
     }
 
     protected fun createViewModel(
@@ -82,7 +84,7 @@ open class ViewfinderViewModelTestBase {
             permissionDelegate = permissionDelegate,
             resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
-            locationRepository = locationRepository,
+            locationDelegate = locationDelegate,
             uiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),
             applicationScope = applicationScope,

@@ -1,13 +1,11 @@
 package app.grapheneos.camera.ui.activities
 
-import android.Manifest
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -41,8 +39,6 @@ import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -51,8 +47,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
@@ -75,7 +69,6 @@ import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
@@ -145,9 +138,6 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var barcodeFormats: BarcodeFormats
-
-    @Inject
-    lateinit var locationRepository: LocationRepository
 
     @Inject
     lateinit var capturedItemSession: CapturedItemSession
@@ -451,11 +441,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun hasPermission(permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(this, permission) ==
-            PackageManager.PERMISSION_GRANTED
-    }
-
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         // there are no camera controls in qr mode
         if (viewfinder.uiState.value.isQrMode) {
@@ -498,10 +483,6 @@ open class MainActivity : AppCompatActivity() {
         viewfinder.onAction(LifecycleAction.ScreenResumed)
 
         updateThumbnail()
-
-        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
-            requestLocation()
-        }
     }
 
     val requiresVideoModeOnly: Boolean
@@ -541,9 +522,7 @@ open class MainActivity : AppCompatActivity() {
         if (!viewfinder.uiState.value.isQrMode) {
             viewfinder.onAction(CaptureAction.PictureCaptureCancelled)
         }
-        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
-            locationRepository.pauseUpdates()
-        }
+        viewfinder.onAction(LifecycleAction.ScreenPaused)
         previewFrames.clear()
     }
 
@@ -595,14 +574,6 @@ open class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.effects.collect { effect ->
                     effectHandler.handle(effect)
-                }
-            }
-        }
-
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                locationRepository.providersDisabled.collect {
-                    indicateLocationProvidedIsDisabled()
                 }
             }
         }
@@ -1213,15 +1184,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun indicateLocationProvidedIsDisabled() {
-        showMessage(
-            getString(R.string.location_is_disabled),
-            if (this !is SecureMainActivity) getString(R.string.enable) else null
-        ) {
-            enableLocationLauncher.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-        }
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
@@ -1286,83 +1248,6 @@ open class MainActivity : AppCompatActivity() {
         previewFrames.release()
         viewfinder.onAction(LifecycleAction.ScreenDestroyed)
         capturedItemSession.close()
-    }
-
-    fun onRequireLocationChanged(required: Boolean) {
-        if (required) {
-            requestLocation()
-        } else {
-            locationRepository.stopUpdates()
-        }
-    }
-
-    private val enableLocationLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
-        // The snackbar that leads here outlives a mode switch, so geo-tagging can be off for the
-        // mode this returns to
-        if (viewfinder.uiState.value.settingsSheet.geoTagging) {
-            requestLocation(locationRepository.isAnyProviderEnabled())
-        }
-    }
-
-    // Used to request permission from the user
-    private val locationPermissionLauncher = registerForActivityResult(
-        RequestMultiplePermissions()
-    ) {
-        if (!locationRepository.shouldAskForPermission()) {
-            requestLocation()
-        } else {
-            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun requestLocation(reAttach: Boolean = false) {
-        when {
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) && ActivityCompat.shouldShowRequestPermissionRationale(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) -> {
-                MaterialAlertDialogBuilder(this).let {
-                    it.setTitle(R.string.location_permission_dialog_title)
-                    it.setMessage(R.string.location_permission_dialog_message)
-
-                    if (this !is SecureActivity) {
-                        it.setPositiveButton(R.string.settings) { _, _ ->
-                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                            intent.data = Uri.fromParts("package", packageName, null)
-                            this.startActivity(intent)
-                        }
-                    }
-
-                    it.setOnDismissListener {
-                        if (!hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                            viewfinder.onAction(SettingsAction.GeoTaggingToggled(enabled = false))
-                        }
-                    }
-                }.showIgnoringShortEdgeMode()
-            }
-
-            hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) ||
-                hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) -> {
-                if (!locationRepository.isLocationEnabled()) {
-                    indicateLocationProvidedIsDisabled()
-                }
-                locationRepository.startUpdates(reattach = reAttach)
-            }
-            else -> {
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    )
-                )
-            }
-        }
     }
 
     private fun resetAutoSleep() {

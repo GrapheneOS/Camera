@@ -99,7 +99,12 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
 
             verify(exactly = 1) { permissionDelegate.showDialog(AppPermission.CAMERA) }
             assertEquals(
-                listOf(ViewfinderScreenEffect.Permission.ShowDialog(AppPermission.CAMERA)),
+                listOf(
+                    ViewfinderScreenEffect.Permission.ShowDialog(
+                        permission = AppPermission.CAMERA,
+                        offersSettings = true,
+                    ),
+                ),
                 effects,
             )
         }
@@ -213,7 +218,12 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
             verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
             verify(exactly = 1) { permissionDelegate.showDialog(AppPermission.MICROPHONE) }
             assertEquals(
-                listOf(ViewfinderScreenEffect.Permission.ShowDialog(AppPermission.MICROPHONE)),
+                listOf(
+                    ViewfinderScreenEffect.Permission.ShowDialog(
+                        permission = AppPermission.MICROPHONE,
+                        offersSettings = true,
+                    ),
+                ),
                 effects,
             )
         }
