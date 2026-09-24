@@ -35,6 +35,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionD
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
@@ -57,10 +58,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 interface ViewfinderScreenModel {
@@ -88,6 +87,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
+    private val swipeEffectMapper: SwipeEffectMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
@@ -102,20 +102,16 @@ class ViewfinderViewModel @AssistedInject constructor(
         ),
         render = uiStateMapper::map,
     )
-    override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
 
+    override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
     override val levelUiState: StateFlow<LevelUiState> = orientationDelegate.levelUiState
 
-    private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
-    override val effects: Flow<Effect> = _effects.receiveAsFlow()
-
-    private var selfTimer: Job? = null
+    override val effects: Flow<Effect> = stateHolder.effects
 
     private var resumedWork: Job? = null
 
     init {
         modeDelegate.bind(stateHolder)
-        captureDelegate.bind(stateHolder)
         recordingDelegate.bind(stateHolder)
         permissionDelegate.bind(stateHolder)
         orientationDelegate.bind(stateHolder)
@@ -129,6 +125,10 @@ class ViewfinderViewModel @AssistedInject constructor(
             stateHolder = stateHolder,
         )
         locationDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
+        captureDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
@@ -148,18 +148,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         viewModelScope.launch(mainDispatcher) {
             recordingDelegate.recordingEvents.collect { event ->
                 onRecordedVideoEvent(event)
-            }
-        }
-
-        viewModelScope.launch(mainDispatcher) {
-            locationDelegate.providersDisabledEvents.collect {
-                onLocationProvidersDisabled()
-            }
-        }
-
-        viewModelScope.launch(mainDispatcher) {
-            orientationDelegate.levelReachedEvents.collect {
-                emitEffect(Effect.PlayLevelHaptic)
             }
         }
     }
@@ -212,8 +200,8 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.CaptureButtonClicked -> onCaptureButtonClicked()
             is CaptureAction.CaptureKeyPressed -> onCaptureKeyPressed()
             is CaptureAction.PictureCaptureCancelled -> captureDelegate.cancelPictureCapture()
-            is CaptureAction.SelfTimerStartClicked -> startSelfTimer()
-            is CaptureAction.SelfTimerCancelClicked -> cancelSelfTimer()
+            is CaptureAction.SelfTimerStartClicked -> captureDelegate.startSelfTimer()
+            is CaptureAction.SelfTimerCancelClicked -> captureDelegate.cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> showCapturedPreview()
 
@@ -267,9 +255,9 @@ class ViewfinderViewModel @AssistedInject constructor(
             is SettingsAction.GridToggleClicked -> settingsDelegate.cycleGridType()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
             is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
-            is SettingsAction.EnableLocationClicked -> emitEffect(Effect.OpenLocationSettings)
             is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
+            is SettingsAction.EnableLocationClicked -> emitEffect(Effect.OpenLocationSettings)
 
             is SettingsAction.FocusTimeoutSelected -> {
                 settingsDelegate.setFocusTimeout(action.seconds)
@@ -295,7 +283,10 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is PermissionAction.RequestAnswered -> onPermissionRequestAnswered(action.permission)
             is PermissionAction.SettingsClicked -> openAppSettings()
-            is PermissionAction.RationaleRequired -> showPermissionDialog(action.permission)
+
+            is PermissionAction.RationaleRequired -> {
+                permissionDelegate.showDialog(action.permission)
+            }
 
             is PermissionAction.DialogDismissed -> {
                 onPermissionDialogDismissed(action.permission)
@@ -349,12 +340,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (event) {
             is CapturedImageEvent.Captured -> onPictureCaptured()
             is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
-            is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
             is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
             is CapturedImageEvent.SaveFailed -> onPictureSaveFailed(event)
             is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
             is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
             is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
+            is CapturedImageEvent.Saved -> emitEffect(Effect.Picture.Saved(item = event.item))
             is CapturedImageEvent.PreviewReturned -> emitEffect(Effect.Picture.PreviewReturned)
             is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
 
@@ -371,10 +362,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onRecordedVideoEvent(event: RecordedVideoEvent) {
         when (event) {
             is RecordedVideoEvent.OutputUnavailable -> onRecordingOutputUnavailable()
-            is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
             is RecordedVideoEvent.Abandoned -> recordingDelegate.markStopped()
             is RecordedVideoEvent.Started -> recordingDelegate.startRecording()
             is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
+            is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
 
             is RecordedVideoEvent.Progressed -> {
                 recordingDelegate.setRecordedDuration(event.duration)
@@ -437,38 +428,12 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onPreviewSwiped(direction: SwipeDirection) {
-        val state = state()
+        val effect = swipeEffectMapper.map(
+            direction = direction,
+            state = state(),
+        )
 
-        if (state.capture.isSelfTimerRunning) return
-
-        when (direction) {
-            SwipeDirection.DOWN -> openSettingsSheet(state)
-            SwipeDirection.UP -> closeSettingsSheet(state)
-            SwipeDirection.LEFT -> selectAdjacentMode(state = state, offset = 1)
-            SwipeDirection.RIGHT -> selectAdjacentMode(state = state, offset = -1)
-        }
-    }
-
-    private fun openSettingsSheet(state: ViewfinderState) {
-        when {
-            !state.isQrMode() -> emitEffect(Effect.OpenSettingsSheet)
-            !state.settings.scanAllCodes -> emitEffect(Effect.ShowQrFormats)
-        }
-    }
-
-    private fun closeSettingsSheet(state: ViewfinderState) {
-        if (state.recording.isActive()) return
-
-        emitEffect(Effect.CloseSettingsSheet)
-    }
-
-    private fun selectAdjacentMode(
-        state: ViewfinderState,
-        offset: Int,
-    ) {
-        if (state.recording.isActive() || !state.showsCameraModeTabs) return
-
-        emitEffect(Effect.SelectAdjacentModeTab(offset = offset))
+        effect?.let(::emitEffect)
     }
 
     private fun switchMode(mode: CameraMode) {
@@ -525,7 +490,9 @@ class ViewfinderViewModel @AssistedInject constructor(
             }
 
             else -> {
-                emitEffect(Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode))
+                emitEffect(
+                    Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode),
+                )
             }
         }
     }
@@ -561,8 +528,8 @@ class ViewfinderViewModel @AssistedInject constructor(
             state.isVideoMode() -> toggleRecording(state)
             state.isQrMode() -> cameraDelegate.toggleTorch()
             state.settings.selfTimerDurationSeconds == 0 -> takePicture()
-            state.capture.isSelfTimerRunning -> cancelSelfTimer()
-            else -> startSelfTimer()
+            state.capture.isSelfTimerRunning -> captureDelegate.cancelSelfTimer()
+            else -> captureDelegate.startSelfTimer()
         }
     }
 
@@ -674,34 +641,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun startSelfTimer() {
-        cancelSelfTimer()
-
-        emitEffect(Effect.SelfTimer.Started)
-        captureDelegate.setSelfTimerRunning(true)
-
-        val seconds = state().settings.selfTimerDurationSeconds
-        selfTimer = viewModelScope.launch(mainDispatcher) {
-            captureDelegate.selfTimerCountdown(seconds).collect { secondsLeft ->
-                emitEffect(Effect.SelfTimer.Ticked(secondsLeft))
-            }
-
-            captureDelegate.setSelfTimerRunning(false)
-            emitEffect(Effect.SelfTimer.Finished)
-        }
-    }
-
-    private fun cancelSelfTimer() {
-        // Cancelling puts back the controls the countdown hid. Doing that when no countdown is up
-        // would resurrect the ones the current mode hid for its own reasons: QR mode hides
-        // thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
-        if (selfTimer?.isActive != true) return
-
-        selfTimer?.cancel()
-        captureDelegate.setSelfTimerRunning(false)
-        emitEffect(Effect.SelfTimer.Cancelled)
-    }
-
     private fun startRecording() {
         val state = state()
 
@@ -712,11 +651,9 @@ class ViewfinderViewModel @AssistedInject constructor(
         recordingDelegate.requestRecording()
 
         if (state.settings.includeAudio && AppPermission.MICROPHONE in state.missingPermissions) {
-            emitEffect(
-                Effect.Permission.Request(
-                    permission = AppPermission.MICROPHONE,
-                    explainsFirst = false,
-                ),
+            permissionDelegate.request(
+                permission = AppPermission.MICROPHONE,
+                explainsFirst = false,
             )
             recordingDelegate.markStopped()
             return
@@ -732,7 +669,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onMicrophonePermissionAnswered() {
         when {
             AppPermission.MICROPHONE in state().missingPermissions -> {
-                showPermissionDialog(AppPermission.MICROPHONE)
+                permissionDelegate.showDialog(AppPermission.MICROPHONE)
             }
 
             else -> {
@@ -788,7 +725,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onScreenDestroyed() {
-        selfTimer?.cancel()
         cameraDelegate.onScreenDestroyed()
         captureDelegate.onScreenDestroyed()
         recordingDelegate.onScreenDestroyed()
@@ -796,18 +732,16 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onScreenResumed() {
-        refreshPermissions()
+        permissionDelegate.refresh()
         startResumedWork()
 
         val state = state()
 
         when {
             AppPermission.CAMERA in state.missingPermissions -> {
-                emitEffect(
-                    Effect.Permission.Request(
-                        permission = AppPermission.CAMERA,
-                        explainsFirst = true,
-                    ),
+                permissionDelegate.request(
+                    permission = AppPermission.CAMERA,
+                    explainsFirst = true,
                 )
             }
 
@@ -820,10 +754,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun onScreenPaused() {
-        resumedWork?.cancel()
-    }
-
     private fun startResumedWork() {
         resumedWork?.cancel()
         resumedWork = viewModelScope.launch(mainDispatcher) {
@@ -832,8 +762,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
+    private fun onScreenPaused() {
+        resumedWork?.cancel()
+    }
+
     private fun onPermissionRequestAnswered(permission: AppPermission) {
-        refreshPermissions()
+        permissionDelegate.refresh()
 
         when (permission) {
             AppPermission.CAMERA -> Unit
@@ -848,36 +782,10 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun refreshPermissions() {
-        permissionDelegate.refresh()
-
-        val state = state()
-        val dialog = state.permissionDialog
-
-        if (dialog != null && dialog !in state.missingPermissions) {
-            permissionDelegate.dismissDialog()
-            emitEffect(Effect.Permission.DismissDialog)
-        }
-    }
-
-    private fun showPermissionDialog(permission: AppPermission) {
-        if (state().permissionDialog == permission) return
-
-        permissionDelegate.showDialog(permission)
-        emitEffect(
-            Effect.Permission.ShowDialog(
-                permission = permission,
-                offersSettings = !entryPoint.isSecureSession,
-            ),
-        )
-    }
-
     private fun openAppSettings() {
         val permission = state().permissionDialog
 
-        permissionDelegate.dismissDialog()
-
-        emitEffect(Effect.Permission.OpenSettings)
+        permissionDelegate.openSettings()
 
         if (permission == AppPermission.LOCATION) {
             settingsDelegate.setGeoTagging(false)
@@ -887,15 +795,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPermissionDialogDismissed(permission: AppPermission) {
         if (state().permissionDialog != permission) return
 
-        permissionDelegate.dismissDialog()
+        permissionDelegate.onDialogDismissed(permission)
 
-        when (permission) {
-            // The dialog could have either been dismissed by clicking on the
-            // background or by clicking the cancel button. So in those cases,
-            // the app should exit as the app depends on the camera permission.
-            AppPermission.CAMERA -> emitEffect(Effect.CloseScreen)
-            AppPermission.MICROPHONE -> Unit
-            AppPermission.LOCATION -> settingsDelegate.setGeoTagging(false)
+        if (permission == AppPermission.LOCATION) {
+            settingsDelegate.setGeoTagging(false)
         }
     }
 
@@ -940,19 +843,13 @@ class ViewfinderViewModel @AssistedInject constructor(
         setSelfIllumination(slotted.modeSettings.selfIllumination)
     }
 
-    private fun onLocationProvidersDisabled() {
-        emitEffect(Effect.ShowLocationDisabled(offersSettings = !entryPoint.isSecureSession))
-    }
-
     private fun toggleGeoTagging(enabled: Boolean) {
         settingsDelegate.setGeoTagging(enabled)
 
         if (enabled && AppPermission.LOCATION in state().missingPermissions) {
-            emitEffect(
-                Effect.Permission.Request(
-                    permission = AppPermission.LOCATION,
-                    explainsFirst = true,
-                ),
+            permissionDelegate.request(
+                permission = AppPermission.LOCATION,
+                explainsFirst = true,
             )
         }
     }
@@ -1041,12 +938,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         )
     }
 
-    private fun emitEffect(effect: Effect) {
-        _effects.trySend(effect)
-    }
-
     private fun state(): ViewfinderState {
         return stateHolder.state.value
+    }
+
+    private fun emitEffect(effect: Effect) {
+        stateHolder.postEffect(effect)
     }
 
     @AssistedFactory

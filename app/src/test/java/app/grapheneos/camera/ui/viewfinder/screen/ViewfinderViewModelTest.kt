@@ -7,10 +7,12 @@ import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.coEvery
@@ -352,18 +354,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun levelReached_playsAHaptic() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            levelReached.emit(Unit)
-
-            assertEquals(listOf(ViewfinderScreenEffect.PlayLevelHaptic), effects)
-        }
-    }
-
-    @Test
     fun displayRotationChanged_turnsThePreviewAndTheIcons() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
@@ -372,6 +362,30 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
 
             verify(exactly = 1) { cameraDelegate.setPreviewRotation(Surface.ROTATION_90) }
             verify(exactly = 1) { orientationDelegate.setDisplayRotation(Surface.ROTATION_90) }
+        }
+    }
+
+    @Test
+    fun settingsClicked_opensTheSettings() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(PermissionAction.SettingsClicked)
+
+            verify(exactly = 1) { permissionDelegate.openSettings() }
+            verify(exactly = 0) { settingsDelegate.setGeoTagging(any()) }
+        }
+    }
+
+    @Test
+    fun dialogDismissed_whileItIsUp_isHandedToTheDelegate() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update { it.copy(permissionDialog = AppPermission.CAMERA) }
+
+            viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
+
+            verify(exactly = 1) { permissionDelegate.onDialogDismissed(AppPermission.CAMERA) }
         }
     }
 
