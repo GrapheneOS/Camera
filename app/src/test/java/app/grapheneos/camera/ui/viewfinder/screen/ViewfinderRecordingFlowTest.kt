@@ -234,7 +234,9 @@ class ViewfinderRecordingFlowTest {
             ),
             resolveDroppedVideoQuality = mockk(relaxed = true),
             revertToMediaStoreLocation = mockk(relaxed = true),
-            locationRepository = mockk(relaxed = true),
+            locationDelegate = mockk(relaxed = true) {
+                every { providersDisabledEvents } returns emptyFlow()
+            },
             uiStateMapper = ViewfinderUiStateMapperImpl(
                 settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
                 captureUiStateMapper = CaptureUiStateMapperImpl(),

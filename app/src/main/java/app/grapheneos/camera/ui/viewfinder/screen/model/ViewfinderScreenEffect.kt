@@ -14,8 +14,10 @@ sealed interface ViewfinderScreenEffect {
 
     data object CloseScreen : ViewfinderScreenEffect
 
-    data class SetLocationUpdates(
-        val enabled: Boolean,
+    data object OpenLocationSettings : ViewfinderScreenEffect
+
+    data class ShowLocationDisabled(
+        val offersSettings: Boolean,
     ) : ViewfinderScreenEffect
 
     data class ShowMessage(
@@ -120,6 +122,7 @@ sealed interface ViewfinderScreenEffect {
 
         data class ShowDialog(
             val permission: AppPermission,
+            val offersSettings: Boolean,
         ) : Permission
     }
 

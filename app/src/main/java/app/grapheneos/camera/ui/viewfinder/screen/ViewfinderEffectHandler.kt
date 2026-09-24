@@ -23,6 +23,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.showCameraPermissionDialog
+import app.grapheneos.camera.ui.showLocationPermissionDialog
 import app.grapheneos.camera.ui.showMicrophonePermissionDialog
 import app.grapheneos.camera.ui.showPictureFailureDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
@@ -31,6 +32,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 
 internal interface ViewfinderEffectHandler {
@@ -59,11 +61,12 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
             is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFoundDialog(activity)
             is Effect.CloseScreen -> activity.finish()
+            is Effect.ShowLocationDisabled -> showLocationDisabled(effect.offersSettings)
+            is Effect.OpenLocationSettings -> openLocationSettings()
             is Effect.ShowQrResult -> activity.showQrResult(effect.text)
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
-            is Effect.SetLocationUpdates -> setLocationUpdates(effect.enabled)
             is Effect.Panel -> handlePanel(effect)
             is Effect.SelfTimer -> handleSelfTimer(effect)
             is Effect.Picture -> handlePicture(effect)
@@ -129,10 +132,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun applySelfIllumination(enabled: Boolean) {
         activity.settingsDialog.selfIllumination(enabled)
-    }
-
-    private fun setLocationUpdates(enabled: Boolean) {
-        activity.onRequireLocationChanged(required = enabled)
     }
 
     private fun handlePanel(effect: Effect.Panel) {
@@ -278,7 +277,7 @@ internal class ViewfinderEffectHandlerImpl(
     private fun handlePermission(effect: Effect.Permission) {
         when (effect) {
             is Effect.Permission.Request -> requestPermission(effect)
-            is Effect.Permission.ShowDialog -> showPermissionDialog(effect.permission)
+            is Effect.Permission.ShowDialog -> showPermissionDialog(effect)
             is Effect.Permission.DismissDialog -> permissionDialog?.dismiss()
             is Effect.Permission.OpenSettings -> openAppSettings()
         }
@@ -302,8 +301,10 @@ internal class ViewfinderEffectHandlerImpl(
         }
     }
 
-    private fun showPermissionDialog(permission: AppPermission) {
+    private fun showPermissionDialog(effect: Effect.Permission.ShowDialog) {
+        val permission = effect.permission
         val onSettingsClicked = { onAction(PermissionAction.SettingsClicked) }
+            .takeIf { effect.offersSettings }
         val onDismissed = { onAction(PermissionAction.DialogDismissed(permission)) }
 
         permissionDialog = when (permission) {
@@ -321,6 +322,12 @@ internal class ViewfinderEffectHandlerImpl(
                 },
                 onDismissed = onDismissed,
             )
+
+            AppPermission.LOCATION -> showLocationPermissionDialog(
+                activity = activity,
+                onSettingsClicked = onSettingsClicked,
+                onDismissed = onDismissed,
+            )
         }
     }
 
@@ -329,6 +336,24 @@ internal class ViewfinderEffectHandlerImpl(
             .setData(Uri.fromParts("package", activity.packageName, null))
 
         activity.startActivity(intent)
+    }
+
+    private fun showLocationDisabled(offersSettings: Boolean) {
+        val action = when {
+            offersSettings -> activity.getString(R.string.enable)
+            else -> null
+        }
+
+        activity.showMessage(
+            msg = activity.getString(R.string.location_is_disabled),
+            action = action,
+        ) {
+            onAction(SettingsAction.EnableLocationClicked)
+        }
+    }
+
+    private fun openLocationSettings() {
+        activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
     }
 
     private fun captureActivity(): CaptureActivity? {

@@ -92,6 +92,8 @@ sealed interface ViewfinderAction {
 
         data object ScreenResumed : LifecycleAction
 
+        data object ScreenPaused : LifecycleAction
+
         data object PreviewStreamingStarted : LifecycleAction
 
         data object QrResultDismissed : LifecycleAction
@@ -127,6 +129,8 @@ sealed interface ViewfinderAction {
         data object ScanAllCodesToggleClicked : SettingsAction
 
         data object GridToggleClicked : SettingsAction
+
+        data object EnableLocationClicked : SettingsAction
 
         data class AudioToggled(
             val enabled: Boolean,

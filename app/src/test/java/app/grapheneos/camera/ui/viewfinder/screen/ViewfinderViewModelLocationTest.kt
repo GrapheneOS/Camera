@@ -1,0 +1,179 @@
+package app.grapheneos.camera.ui.viewfinder.screen
+
+import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import io.mockk.verify
+import io.mockk.verifyOrder
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
+
+    @Test
+    fun previewStreamingStarted_storedGeoTaggingWithPermission_keepsItOn() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(modeSettings = ModeSettings(geoTagging = true))
+            }
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
+        }
+    }
+
+    @Test
+    fun geoTaggingToggledOn_withoutPermission_asksForIt() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
+
+            viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.Permission.Request(
+                        permission = AppPermission.LOCATION,
+                        explainsFirst = true,
+                    ),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun geoTaggingToggledOn_withPermission_asksForNothing() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(true) }
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun locationPermissionAnswered_withARefusal_turnsGeoTaggingOff() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
+
+            viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.LOCATION))
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
+        }
+    }
+
+    @Test
+    fun locationPermissionAnswered_withAGrant_keepsGeoTaggingOn() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.LOCATION))
+
+            verify(exactly = 0) { settingsDelegate.setGeoTagging(any()) }
+        }
+    }
+
+    @Test
+    fun locationDialogDismissed_turnsGeoTaggingOff() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            stateHolder.update { it.copy(permissionDialog = AppPermission.LOCATION) }
+
+            viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.LOCATION))
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun settingsClicked_onTheLocationDialog_turnsGeoTaggingOff() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update { it.copy(permissionDialog = AppPermission.LOCATION) }
+
+            viewModel.onAction(PermissionAction.SettingsClicked)
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
+        }
+    }
+
+    @Test
+    fun locationProvidersDisabled_saysSo() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            locationProvidersDisabled.emit(Unit)
+
+            assertEquals(
+                listOf(ViewfinderScreenEffect.ShowLocationDisabled(offersSettings = true)),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun locationProvidersDisabled_inALockscreenSession_offersNoSettings() {
+        runTest {
+            val viewModel = createViewModel(
+                applicationScope = backgroundScope,
+                entryPoint = cameraEntryPoint(isSecureSession = true),
+            )
+            val effects = collectEffects(viewModel)
+
+            locationProvidersDisabled.emit(Unit)
+
+            assertEquals(
+                listOf(ViewfinderScreenEffect.ShowLocationDisabled(offersSettings = false)),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun enableLocationClicked_opensTheLocationSettings() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(SettingsAction.EnableLocationClicked)
+
+            assertEquals(listOf(ViewfinderScreenEffect.OpenLocationSettings), effects)
+        }
+    }
+
+    @Test
+    fun screenResumedAndPaused_tellTheLocationWhetherTheScreenIsUp() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+
+            verifyOrder {
+                locationDelegate.setScreenResumed(true)
+                locationDelegate.setScreenResumed(false)
+            }
+        }
+    }
+}

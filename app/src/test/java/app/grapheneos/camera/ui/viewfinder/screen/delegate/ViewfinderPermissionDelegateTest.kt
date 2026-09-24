@@ -32,7 +32,10 @@ class ViewfinderPermissionDelegateTest {
 
         createDelegate().refresh()
 
-        assertEquals(setOf(AppPermission.MICROPHONE), state().missingPermissions)
+        assertEquals(
+            setOf(AppPermission.MICROPHONE, AppPermission.LOCATION),
+            state().missingPermissions,
+        )
     }
 
     @Test

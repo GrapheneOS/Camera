@@ -17,7 +17,6 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
@@ -29,6 +28,7 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
@@ -77,9 +77,9 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val captureDelegate: ViewfinderCaptureDelegate,
     private val recordingDelegate: ViewfinderRecordingDelegate,
     private val permissionDelegate: ViewfinderPermissionDelegate,
+    private val locationDelegate: ViewfinderLocationDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
-    private val locationRepository: LocationRepository,
     private val uiStateMapper: ViewfinderUiStateMapper,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
@@ -116,6 +116,10 @@ class ViewfinderViewModel @AssistedInject constructor(
         )
         recordingDelegate.bind(stateHolder)
         permissionDelegate.bind(stateHolder)
+        locationDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
 
         viewModelScope.launch(mainDispatcher) {
             cameraDelegate.sessionEvents.collect { event ->
@@ -132,6 +136,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         viewModelScope.launch(mainDispatcher) {
             recordingDelegate.recordingEvents.collect { event ->
                 onRecordedVideoEvent(event)
+            }
+        }
+
+        viewModelScope.launch(mainDispatcher) {
+            locationDelegate.providersDisabledEvents.collect {
+                onLocationProvidersDisabled()
             }
         }
     }
@@ -221,6 +231,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is LifecycleAction.ScreenStarted -> captureDelegate.onScreenStarted()
             is LifecycleAction.ScreenStopped -> captureDelegate.onScreenStopped()
             is LifecycleAction.ScreenResumed -> onScreenResumed()
+            is LifecycleAction.ScreenPaused -> onScreenPaused()
             is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
             is LifecycleAction.QrResultDismissed -> dismissQrResult()
         }
@@ -231,7 +242,8 @@ class ViewfinderViewModel @AssistedInject constructor(
             is SettingsAction.ScanAllCodesToggleClicked -> settingsDelegate.toggleScanAllCodes()
             is SettingsAction.GridToggleClicked -> settingsDelegate.cycleGridType()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
-            is SettingsAction.GeoTaggingToggled -> setRequireLocation(action.enabled)
+            is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
+            is SettingsAction.EnableLocationClicked -> emitEffect(Effect.OpenLocationSettings)
             is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
 
@@ -667,6 +679,8 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onScreenResumed() {
         refreshPermissions()
 
+        locationDelegate.setScreenResumed(true)
+
         val state = state()
 
         when {
@@ -688,12 +702,23 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
+    private fun onScreenPaused() {
+        locationDelegate.setScreenResumed(false)
+    }
+
     private fun onPermissionRequestAnswered(permission: AppPermission) {
         refreshPermissions()
 
         when (permission) {
             AppPermission.CAMERA -> Unit
             AppPermission.MICROPHONE -> onMicrophonePermissionAnswered()
+            AppPermission.LOCATION -> onLocationPermissionAnswered()
+        }
+    }
+
+    private fun onLocationPermissionAnswered() {
+        if (AppPermission.LOCATION in state().missingPermissions) {
+            settingsDelegate.setGeoTagging(false)
         }
     }
 
@@ -713,13 +738,24 @@ class ViewfinderViewModel @AssistedInject constructor(
         if (state().permissionDialog == permission) return
 
         permissionDelegate.showDialog(permission)
-        emitEffect(Effect.Permission.ShowDialog(permission))
+        emitEffect(
+            Effect.Permission.ShowDialog(
+                permission = permission,
+                offersSettings = !entryPoint.isSecureSession,
+            ),
+        )
     }
 
     private fun openAppSettings() {
+        val permission = state().permissionDialog
+
         permissionDelegate.dismissDialog()
 
         emitEffect(Effect.Permission.OpenSettings)
+
+        if (permission == AppPermission.LOCATION) {
+            settingsDelegate.setGeoTagging(false)
+        }
     }
 
     private fun onPermissionDialogDismissed(permission: AppPermission) {
@@ -727,11 +763,13 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         permissionDelegate.dismissDialog()
 
-        // The dialog could have either been dismissed by clicking on the
-        // background or by clicking the cancel button. So in those cases,
-        // the app should exit as the app depends on the camera permission.
-        if (permission == AppPermission.CAMERA) {
-            emitEffect(Effect.CloseScreen)
+        when (permission) {
+            // The dialog could have either been dismissed by clicking on the
+            // background or by clicking the cancel button. So in those cases,
+            // the app should exit as the app depends on the camera permission.
+            AppPermission.CAMERA -> emitEffect(Effect.CloseScreen)
+            AppPermission.MICROPHONE -> Unit
+            AppPermission.LOCATION -> settingsDelegate.setGeoTagging(false)
         }
     }
 
@@ -768,18 +806,29 @@ class ViewfinderViewModel @AssistedInject constructor(
         // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
         // startup that the user never asked for. Coercing it here settles the stale value through
         // the setter, and leaves every dialog in the app originating from an explicit toggle.
-        setRequireLocation(
-            enabled = slotted.modeSettings.geoTagging &&
-                !locationRepository.shouldAskForPermission(),
-        )
+        val geoTagging = slotted.modeSettings.geoTagging &&
+            AppPermission.LOCATION !in slotted.missingPermissions
+
+        settingsDelegate.setGeoTagging(geoTagging)
 
         setSelfIllumination(slotted.modeSettings.selfIllumination)
     }
 
-    private fun setRequireLocation(enabled: Boolean) {
+    private fun onLocationProvidersDisabled() {
+        emitEffect(Effect.ShowLocationDisabled(offersSettings = !entryPoint.isSecureSession))
+    }
+
+    private fun toggleGeoTagging(enabled: Boolean) {
         settingsDelegate.setGeoTagging(enabled)
 
-        emitEffect(Effect.SetLocationUpdates(enabled = enabled))
+        if (enabled && AppPermission.LOCATION in state().missingPermissions) {
+            emitEffect(
+                Effect.Permission.Request(
+                    permission = AppPermission.LOCATION,
+                    explainsFirst = true,
+                ),
+            )
+        }
     }
 
     private fun setSelfIllumination(enabled: Boolean) {
