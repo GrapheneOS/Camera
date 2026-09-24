@@ -59,7 +59,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
-import app.grapheneos.camera.App
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -144,9 +143,6 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var vibrator: Vibrator
-
-    private val application: App
-        get() = applicationContext as App
 
     internal lateinit var binding: ActivityMainBinding
 
@@ -336,6 +332,11 @@ open class MainActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        viewfinder.onAction(LifecycleAction.ScreenInteracted)
+    }
+
     fun animateFocusRing(x: Float, y: Float) {
         // Move the focus ring so that its center is at the tap location (x, y)
         val width = binding.focusRing.width.toFloat()
@@ -435,7 +436,6 @@ open class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_CAMERA,
             -> {
-                resetAutoSleep()
                 tabLayout.settleNow()
                 viewfinder.onAction(CaptureAction.CaptureKeyPressed)
             }
@@ -624,7 +624,6 @@ open class MainActivity : AppCompatActivity() {
             true
         }
         flipCameraCircle.setOnClickListener {
-            resetAutoSleep()
             if (viewfinder.uiState.value.isQrMode) {
                 viewfinder.onAction(SettingsAction.ScanAllCodesToggleClicked)
                 return@setOnClickListener
@@ -662,7 +661,6 @@ open class MainActivity : AppCompatActivity() {
         }
 
         binding.thirdCircle.setOnClickListener {
-            resetAutoSleep()
             if (viewfinder.uiState.value.isRecordingActive) {
                 takePicture()
             } else {
@@ -682,8 +680,6 @@ open class MainActivity : AppCompatActivity() {
         }
 
         captureButton.setOnClickListener {
-            resetAutoSleep()
-
             // A mode the strip is still settling into has not reached the camera yet, and this
             // would otherwise capture in the mode being left behind.
             tabLayout.settleNow()
@@ -926,8 +922,6 @@ open class MainActivity : AppCompatActivity() {
                     hidePreviewTransition()
                 }
             }
-
-            resetAutoSleep()
         }
     }
 
@@ -1192,10 +1186,6 @@ open class MainActivity : AppCompatActivity() {
         previewFrames.release()
         viewfinder.onAction(LifecycleAction.ScreenDestroyed)
         capturedItemSession.close()
-    }
-
-    private fun resetAutoSleep() {
-        application.resetPreventScreenFromSleeping()
     }
 
     @Volatile var isStarted = false
