@@ -364,7 +364,6 @@ class ViewfinderCaptureDelegateTest {
         delegate.onScreenCreated(
             ViewfinderHost(
                 previewTarget = mockk(relaxed = true),
-                chrome = mockk(relaxed = true),
                 previewFrames = mockk(relaxed = true),
                 thumbnailSize = ThumbnailSize(width = 1, height = 1),
             ),

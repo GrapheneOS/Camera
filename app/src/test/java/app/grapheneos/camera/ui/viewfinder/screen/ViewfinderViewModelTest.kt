@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.view.Surface
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
@@ -12,11 +13,13 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -312,6 +315,50 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CameraAction.TorchToggleClicked)
 
             verify(exactly = 1) { cameraDelegate.toggleTorch() }
+        }
+    }
+
+    @Test
+    fun screenResumed_tracksOrientationAndLocationUntilPaused() {
+        runTest {
+            val tracking = mutableSetOf<String>()
+            coEvery { orientationDelegate.trackOrientation() } coAnswers {
+                trackUntilCancelled(tracking, name = "orientation")
+            }
+            coEvery { locationDelegate.trackLocation() } coAnswers {
+                trackUntilCancelled(tracking, name = "location")
+            }
+
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            assertEquals(setOf("orientation", "location"), tracking)
+
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+            assertTrue(tracking.isEmpty())
+        }
+    }
+
+    @Test
+    fun displayRotationChanged_turnsThePreview() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(CameraAction.DisplayRotationChanged(rotation = Surface.ROTATION_90))
+
+            verify(exactly = 1) { cameraDelegate.setPreviewRotation(Surface.ROTATION_90) }
+        }
+    }
+
+    private suspend fun trackUntilCancelled(
+        tracking: MutableSet<String>,
+        name: String,
+    ) {
+        tracking += name
+
+        try {
+            awaitCancellation()
+        } finally {
+            tracking -= name
         }
     }
 

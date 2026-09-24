@@ -8,6 +8,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDel
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegateImpl
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
@@ -50,9 +52,9 @@ internal abstract class ViewfinderViewModelBindsModule {
 
     @Binds
     @ViewModelScoped
-    abstract fun bindViewfinderLocationDelegate(
-        impl: ViewfinderLocationDelegateImpl,
-    ): ViewfinderLocationDelegate
+    abstract fun bindViewfinderRecordingDelegate(
+        impl: ViewfinderRecordingDelegateImpl,
+    ): ViewfinderRecordingDelegate
 
     @Binds
     @ViewModelScoped
@@ -62,7 +64,13 @@ internal abstract class ViewfinderViewModelBindsModule {
 
     @Binds
     @ViewModelScoped
-    abstract fun bindViewfinderRecordingDelegate(
-        impl: ViewfinderRecordingDelegateImpl,
-    ): ViewfinderRecordingDelegate
+    abstract fun bindViewfinderLocationDelegate(
+        impl: ViewfinderLocationDelegateImpl,
+    ): ViewfinderLocationDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindViewfinderOrientationDelegate(
+        impl: ViewfinderOrientationDelegateImpl,
+    ): ViewfinderOrientationDelegate
 }

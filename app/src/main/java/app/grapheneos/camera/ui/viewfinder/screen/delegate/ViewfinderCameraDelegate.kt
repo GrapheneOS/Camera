@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
 interface ViewfinderCameraDelegate {
@@ -44,6 +45,7 @@ interface ViewfinderCameraDelegate {
     fun unbindCamera()
 
     fun switchLensFacing(lensFacing: LensFacing, extensionMode: ExtensionMode?): Boolean
+    fun setPreviewRotation(rotation: Int)
     fun applyFlashMode(value: FlashMode)
     fun toggleTorch()
     fun stepZoom(step: Float)
@@ -107,9 +109,16 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
         scope.launch(mainDispatcher) {
             stateHolder.state
-                .map { it.barcodeFormats() }
+                .map { state -> state.barcodeFormats() }
                 .distinctUntilChanged()
-                .collect { session.setBarcodeFormats(it) }
+                .collect { barcodeFormats -> session.setBarcodeFormats(barcodeFormats) }
+        }
+
+        scope.launch(mainDispatcher) {
+            stateHolder.state
+                .mapNotNull { state -> state.deviceOrientation }
+                .distinctUntilChanged()
+                .collect { orientation -> session.setCaptureOrientation(orientation) }
         }
     }
 
@@ -172,8 +181,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun bindCamera(settings: CameraBindSettings): BindOutcome {
-        host?.chrome?.forceUpdateOrientationSensor()
-
         val outcome = session.bind(settings)
 
         refreshSessionState(isVideoMode = settings.isVideoMode)
@@ -214,6 +221,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
 
         return isSupported
+    }
+
+    override fun setPreviewRotation(rotation: Int) {
+        session.setPreviewRotation(rotation)
     }
 
     override fun applyFlashMode(value: FlashMode) {

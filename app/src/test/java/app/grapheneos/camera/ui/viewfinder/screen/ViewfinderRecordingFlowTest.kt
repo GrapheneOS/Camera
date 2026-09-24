@@ -95,7 +95,6 @@ class ViewfinderRecordingFlowTest {
 
     private val host = ViewfinderHost(
         previewTarget = mockk(relaxed = true),
-        chrome = mockk(relaxed = true),
         previewFrames = mockk(relaxed = true),
         thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
@@ -234,6 +233,7 @@ class ViewfinderRecordingFlowTest {
             ),
             resolveDroppedVideoQuality = mockk(relaxed = true),
             revertToMediaStoreLocation = mockk(relaxed = true),
+            orientationDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true) {
                 every { providersDisabledEvents } returns emptyFlow()
             },

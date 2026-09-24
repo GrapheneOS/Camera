@@ -44,6 +44,10 @@ sealed interface ViewfinderAction {
         data class ModeSelected(
             val mode: CameraMode,
         ) : CameraAction
+
+        data class DisplayRotationChanged(
+            val rotation: Int,
+        ) : CameraAction
     }
 
     sealed interface CaptureAction : ViewfinderAction {
