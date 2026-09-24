@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
-import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
@@ -11,7 +10,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.util.formatVideoDuration
 import javax.inject.Inject
 
@@ -77,7 +75,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
                 else -> 0f
             },
             levelFrameRotationDegrees = deviceRotation,
-            zoom = zoomState(state.session.zoom),
             exposure = exposureState(state.session.exposure),
             settingsSheet = settingsSheetUiStateMapper.map(state),
             capture = captureUiStateMapper.map(state),
@@ -99,16 +96,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             Surface.ROTATION_180 -> 180
             Surface.ROTATION_270 -> 90
             else -> 0
-        }
-    }
-
-    private fun zoomState(zoom: CameraZoom?): ZoomUiState {
-        return when (zoom) {
-            null -> ZoomUiState()
-            else -> ZoomUiState(
-                zoomRatio = zoom.zoomRatio,
-                linearZoom = zoom.linearZoom,
-            )
         }
     }
 

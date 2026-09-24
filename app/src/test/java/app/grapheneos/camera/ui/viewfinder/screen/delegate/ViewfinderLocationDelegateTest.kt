@@ -9,7 +9,6 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -40,7 +39,6 @@ class ViewfinderLocationDelegateTest {
 
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-        render = { ViewfinderUiState() },
     )
 
     @Test
