@@ -109,12 +109,10 @@ class SelfTimerRegressionTest {
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
 
                 activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
-                activity.updateSelfTimerBadge()
                 assertEquals(View.VISIBLE, activity.cbText.visibility)
                 assertEquals("5s", activity.cbText.text.toString())
 
                 activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 0))
-                activity.updateSelfTimerBadge()
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
                 assertEquals("", activity.cbText.text.toString())
             }
@@ -134,7 +132,6 @@ class SelfTimerRegressionTest {
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
                 activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
-                activity.updateSelfTimerBadge()
 
                 activity.captureButton.performClick()
 
@@ -162,7 +159,6 @@ class SelfTimerRegressionTest {
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
                 activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
-                activity.updateSelfTimerBadge()
                 val shutterDescription = activity.captureButton.contentDescription
 
                 activity.captureButton.performClick()
@@ -192,7 +188,6 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
-                activity.updateSelfTimerBadge()
 
                 assertTrue(activity.viewfinder.uiState.value.isVideoMode)
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)

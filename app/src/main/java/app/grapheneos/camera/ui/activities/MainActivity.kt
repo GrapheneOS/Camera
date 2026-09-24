@@ -156,10 +156,6 @@ open class MainActivity : AppCompatActivity() {
     val gestureDetector: GestureDetector
         get() = gestureHandler.gestureDetector
 
-    open fun takePicture() {
-        viewfinder.onAction(CaptureAction.ShutterClicked)
-    }
-
     @set:VisibleForTesting
     lateinit var tunePlayer: TunePlayer
 
@@ -399,7 +395,27 @@ open class MainActivity : AppCompatActivity() {
         return duration != 0f && transition != 0f
     }
 
-    private fun openGallery() {
+    fun animateLensSwitch() {
+        val rotation = when {
+            binding.flipCameraIcon.rotation < 180 -> 180f
+            else -> 360f
+        }
+
+        val rotate = RotateAnimation(
+            0f,
+            rotation,
+            Animation.RELATIVE_TO_SELF,
+            0.5f,
+            Animation.RELATIVE_TO_SELF,
+            0.5f,
+        )
+        rotate.duration = LENS_SWITCH_ANIMATION_DURATION
+        rotate.interpolator = LinearInterpolator()
+
+        flipCameraCircle.startAnimation(rotate)
+    }
+
+    fun openGallery() {
         check(this !is CaptureActivity)
 
         Intent(this, InAppGallery::class.java).let {
@@ -500,9 +516,6 @@ open class MainActivity : AppCompatActivity() {
         // The countdown would otherwise keep ticking while the app is in the background and fire a
         // capture into a camera that has already been unbound.
         cdTimer.cancelTimer()
-        if (!viewfinder.uiState.value.isQrMode) {
-            viewfinder.onAction(CaptureAction.PictureCaptureCancelled)
-        }
         viewfinder.onAction(LifecycleAction.ScreenPaused)
         previewFrames.clear()
     }
@@ -632,58 +645,15 @@ open class MainActivity : AppCompatActivity() {
             true
         }
         flipCameraCircle.setOnClickListener {
-            if (viewfinder.uiState.value.isQrMode) {
-                viewfinder.onAction(SettingsAction.ScanAllCodesToggleClicked)
-                return@setOnClickListener
-            }
-
-            if (viewfinder.uiState.value.isRecordingActive) {
-                viewfinder.onAction(
-                    RecordingAction.RecordingPauseToggled(
-                        paused = !viewfinder.uiState.value.isRecordingPaused,
-                    ),
-                )
-                return@setOnClickListener
-            }
-
-            val flipCameraIcon: ImageView = binding.flipCameraIcon
-            val rotation: Float = if (flipCameraIcon.rotation < 180) {
-                180f
-            } else {
-                360f
-            }
-
-            val rotate = RotateAnimation(
-                0F,
-                rotation,
-                Animation.RELATIVE_TO_SELF,
-                0.5f,
-                Animation.RELATIVE_TO_SELF,
-                0.5f
-            )
-            rotate.duration = 400
-            rotate.interpolator = LinearInterpolator()
-
-            it.startAnimation(rotate)
-            viewfinder.onAction(CameraAction.LensSwitchClicked)
+            viewfinder.onAction(CameraAction.FlipCameraClicked)
         }
 
         binding.thirdCircle.setOnClickListener {
-            if (viewfinder.uiState.value.isRecordingActive) {
-                takePicture()
-            } else {
-                openGallery()
-                Log.i(TAG, "Attempting to open gallery...")
-            }
+            viewfinder.onAction(CaptureAction.ThirdCircleClicked)
         }
 
         binding.thirdCircle.setOnLongClickListener {
-            if (viewfinder.uiState.value.isRecordingActive) {
-                takePicture()
-            } else {
-                shareLatestMedia()
-            }
-
+            viewfinder.onAction(CaptureAction.ThirdCircleLongClicked)
             return@setOnLongClickListener true
         }
 
@@ -699,9 +669,7 @@ open class MainActivity : AppCompatActivity() {
         exposureBar.setMainActivity(this)
 
         settingsIcon.setOnClickListener {
-            if (!viewfinder.uiState.value.isQrMode) {
-                settingsDialog.show()
-            }
+            viewfinder.onAction(SettingsAction.SettingsIconClicked)
         }
 
         settingsIcon.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
@@ -804,7 +772,6 @@ open class MainActivity : AppCompatActivity() {
         val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
         settingsDialog = SettingsDialog(this, themedContext)
 
-
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
@@ -839,13 +806,7 @@ open class MainActivity : AppCompatActivity() {
         settingsDialog.loadInitialState()
 
         muteToggle.setOnClickListener {
-            if (viewfinder.uiState.value.isRecordingMuted) {
-                viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = false))
-                showMessage(R.string.video_audio_recording_unmuted)
-            } else {
-                viewfinder.onAction(RecordingAction.RecordingMuteToggled(muted = true))
-                showMessage(R.string.video_audio_recording_muted)
-            }
+            viewfinder.onAction(RecordingAction.MuteToggleClicked)
         }
     }
 
@@ -933,14 +894,7 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Shows the pending self-timer duration on the capture button, where it applies at all. */
-    fun updateSelfTimerBadge() {
-        val state = viewfinder.uiState.value
-        cbText.text = state.selfTimerBadge
-        cbText.visibility = if (state.selfTimerBadgeVisible) View.VISIBLE else View.INVISIBLE
-    }
-
-    private fun shareLatestMedia() {
+    fun shareLatestMedia() {
         if (this is SecureActivity) {
             showMessage(R.string.sharing_not_allowed)
             return
@@ -1175,7 +1129,6 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun displayRotation(): Int {
-
         @Suppress("DEPRECATION")
         val defaultDisplayRotation = windowManager.defaultDisplay.rotation
 
@@ -1265,6 +1218,7 @@ open class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "GOCam"
+        private const val LENS_SWITCH_ANIMATION_DURATION = 400L
 
         private val hexArray = "0123456789ABCDEF".toCharArray()
     }

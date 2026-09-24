@@ -10,7 +10,7 @@ sealed interface ViewfinderAction {
 
     sealed interface CameraAction : ViewfinderAction {
 
-        data object LensSwitchClicked : CameraAction
+        data object FlipCameraClicked : CameraAction
 
         data object FlashToggleClicked : CameraAction
 
@@ -62,7 +62,9 @@ sealed interface ViewfinderAction {
 
         data object CaptureKeyPressed : CaptureAction
 
-        data object PictureCaptureCancelled : CaptureAction
+        data object ThirdCircleClicked : CaptureAction
+
+        data object ThirdCircleLongClicked : CaptureAction
 
         data object SelfTimerStartClicked : CaptureAction
 
@@ -87,12 +89,10 @@ sealed interface ViewfinderAction {
 
         data object RecordWithoutAudioClicked : RecordingAction
 
+        data object MuteToggleClicked : RecordingAction
+
         data class RecordingPauseToggled(
             val paused: Boolean,
-        ) : RecordingAction
-
-        data class RecordingMuteToggled(
-            val muted: Boolean,
         ) : RecordingAction
     }
 
@@ -140,7 +140,7 @@ sealed interface ViewfinderAction {
 
     sealed interface SettingsAction : ViewfinderAction {
 
-        data object ScanAllCodesToggleClicked : SettingsAction
+        data object SettingsIconClicked : SettingsAction
 
         data object GridToggleClicked : SettingsAction
 

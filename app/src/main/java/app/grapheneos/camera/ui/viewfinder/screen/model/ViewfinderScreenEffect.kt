@@ -22,6 +22,12 @@ sealed interface ViewfinderScreenEffect {
 
     data object ShowQrFormats : ViewfinderScreenEffect
 
+    data object AnimateLensSwitch : ViewfinderScreenEffect
+
+    data object OpenGallery : ViewfinderScreenEffect
+
+    data object ShareLatestMedia : ViewfinderScreenEffect
+
     data class SelectAdjacentModeTab(
         val offset: Int,
     ) : ViewfinderScreenEffect

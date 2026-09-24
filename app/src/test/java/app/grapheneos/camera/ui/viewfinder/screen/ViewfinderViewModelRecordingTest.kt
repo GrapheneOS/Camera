@@ -121,7 +121,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             }
 
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
+            viewModel.onAction(RecordingAction.MuteToggleClicked)
             viewModel.onAction(RecordingAction.StartSoundPlayed)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
 
@@ -140,7 +140,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
+            viewModel.onAction(RecordingAction.MuteToggleClicked)
 
             verify(exactly = 0) { recordingDelegate.setPaused(paused = any()) }
             verify(exactly = 0) { recordingDelegate.setMuted(muted = any()) }

@@ -144,7 +144,7 @@ class ViewfinderRecordingFlowTest {
 
             viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-            viewModel.onAction(RecordingAction.RecordingMuteToggled(muted = true))
+            viewModel.onAction(RecordingAction.MuteToggleClicked)
             viewModel.onAction(RecordingAction.StartSoundPlayed)
 
             assertEquals(1, recordingSession.startCount)

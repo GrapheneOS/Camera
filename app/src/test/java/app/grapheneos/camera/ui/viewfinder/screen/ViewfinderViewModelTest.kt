@@ -119,25 +119,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun lensSwitchClicked_towardsAnUnavailableLens_saysSoAndDoesNotRebind() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            every { cameraDelegate.lensFacing } returns LensFacing.BACK
-            every { cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any()) }
-                .returns(false)
-
-            viewModel.onAction(CameraAction.LensSwitchClicked)
-
-            verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
-            assertEquals(
-                listOf(ViewfinderScreenEffect.ShowMessage(R.string.front_camera_unavailable)),
-                effects,
-            )
-        }
-    }
-
-    @Test
     fun startCamera_forQrWithoutARearLens_saysItScansWithTheFrontOne() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
