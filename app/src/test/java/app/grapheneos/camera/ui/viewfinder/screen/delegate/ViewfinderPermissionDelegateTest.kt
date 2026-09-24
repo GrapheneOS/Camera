@@ -8,7 +8,6 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -26,7 +25,6 @@ class ViewfinderPermissionDelegateTest {
 
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-        render = { ViewfinderUiState() },
     )
 
     private val granted = mutableSetOf<AppPermission>()

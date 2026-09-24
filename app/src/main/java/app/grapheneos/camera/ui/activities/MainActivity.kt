@@ -556,6 +556,14 @@ open class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.zoomUiState.collect { zoom ->
+                    renderer.renderZoom(zoom)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.levelUiState.collect { level ->
                     renderer.renderLevel(level)
                 }

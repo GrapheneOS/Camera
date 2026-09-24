@@ -2,41 +2,53 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderStateHolderTest {
 
-    private val rendered = mutableListOf<ViewfinderState>()
-
     private val stateHolder = ViewfinderStateHolder(
         initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-        render = { state ->
-            rendered += state
-            ViewfinderUiState(mode = state.mode)
-        },
     )
 
     @Test
-    fun uiState_beforeAnyUpdate_isTheLoadingState() {
-        assertEquals(ViewfinderUiState(), stateHolder.uiState.value)
-        assertTrue(rendered.isEmpty())
+    fun derive_startsFromTheCurrentState() {
+        val mode = stateHolder.derive { state -> state.mode }
+
+        assertEquals(CameraMode.CAMERA, mode.value)
     }
 
     @Test
-    fun update_rendersTheStateItWroteBeforeReturning() {
-        stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
+    fun update_rederivesTheStateItWroteBeforeReturning() {
+        val mode = stateHolder.derive { state -> state.mode }
+
+        stateHolder.update { state -> state.copy(mode = CameraMode.VIDEO) }
 
         assertEquals(CameraMode.VIDEO, stateHolder.state.value.mode)
-        assertEquals(CameraMode.VIDEO, stateHolder.uiState.value.mode)
-        assertEquals(
-            listOf(ViewfinderState(mode = CameraMode.VIDEO, requiresVideoModeOnly = false)),
-            rendered,
-        )
+        assertEquals(CameraMode.VIDEO, mode.value)
+    }
+
+    @Test
+    fun update_ofAnotherPartOfTheState_doesNotEmitTheDerivation() {
+        runTest {
+            val modes = mutableListOf<CameraMode>()
+            val mode = stateHolder.derive { state -> state.mode }
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                mode.collect { mode -> modes += mode }
+            }
+
+            stateHolder.update { state -> state.copy(keepsScreenAwake = true) }
+            stateHolder.update { state -> state.copy(mode = CameraMode.VIDEO) }
+
+            assertEquals(listOf(CameraMode.CAMERA, CameraMode.VIDEO), modes)
+        }
     }
 }

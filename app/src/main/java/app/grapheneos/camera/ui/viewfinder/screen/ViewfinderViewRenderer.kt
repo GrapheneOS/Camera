@@ -14,6 +14,7 @@ import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import kotlin.math.abs
 
 internal class ViewfinderViewRenderer(
@@ -61,7 +62,6 @@ internal class ViewfinderViewRenderer(
         activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
 
         activity.settingsDialog.render(state.settingsSheet)
-        activity.zoomBar.render(state.zoom)
         activity.exposureBar.render(state.exposure)
 
         renderKeepScreenOn(state.keepScreenOn)
@@ -69,6 +69,10 @@ internal class ViewfinderViewRenderer(
         renderModeTabs(state)
         renderBoundPreview(state)
         renderRotation(state)
+    }
+
+    fun renderZoom(zoom: ZoomUiState) {
+        activity.zoomBar.render(zoom)
     }
 
     fun renderLevel(level: LevelUiState) {

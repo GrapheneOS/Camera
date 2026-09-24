@@ -45,7 +45,6 @@ data class ViewfinderUiState(
     val sensorOrientationDegrees: Int? = null,
     val iconRotationDegrees: Float = 0f,
     val levelFrameRotationDegrees: Float = 0f,
-    val zoom: ZoomUiState = ZoomUiState(),
     val exposure: ExposureUiState? = null,
     val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
     val capture: CaptureUiState = CaptureUiState(),
