@@ -4,6 +4,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -268,19 +269,15 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun thirdCircle_outsideARecording_opensTheGalleryOrSharesTheLatestItem() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
 
             viewModel.onAction(CaptureAction.ThirdCircleClicked)
             viewModel.onAction(CaptureAction.ThirdCircleLongClicked)
 
             verify(exactly = 0) { captureDelegate.takePicture() }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.OpenGallery,
-                    ViewfinderScreenEffect.ShareLatestMedia,
-                ),
-                effects,
-            )
+            verifyOrder {
+                galleryDelegate.openGallery()
+                galleryDelegate.shareLastCapturedItem()
+            }
         }
     }
 
@@ -308,6 +305,21 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(LifecycleAction.ScreenPaused)
 
             verify(exactly = 1) { captureDelegate.cancelPictureCapture() }
+        }
+    }
+
+    @Test
+    fun thirdCircle_inACaptureSession_leavesTheGalleryShut() {
+        runTest {
+            val viewModel = createViewModel(
+                applicationScope = backgroundScope,
+                entryPoint = cameraEntryPoint(isCaptureSession = true),
+            )
+            viewModel.onAction(CaptureAction.ThirdCircleClicked)
+            viewModel.onAction(CaptureAction.ThirdCircleLongClicked)
+
+            verify(exactly = 0) { galleryDelegate.openGallery() }
+            verify(exactly = 0) { galleryDelegate.shareLastCapturedItem() }
         }
     }
 }

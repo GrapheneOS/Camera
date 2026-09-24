@@ -550,14 +550,19 @@ class VideoCapturerRegressionTest {
 
     private fun <A : MainActivity> lastCapturedUri(scenario: ActivityScenario<A>): Uri? {
         var uri: Uri? = null
-        scenario.onActivity { uri = it.capturedItemSession.lastCapturedItem?.uri }
+        scenario.onActivity { uri = storedLastCapturedItem(it)?.uri }
         return uri
     }
 
     /** Keeps test runs from accumulating videos on the device. */
     private fun <A : MainActivity> deleteNewCapture(scenario: ActivityScenario<A>, previous: Uri?) {
+        runCatching {
+            waitUntil(scenario, "the new capture is stored", timeoutMs = 2_000) {
+                storedLastCapturedItem(it)?.uri != previous
+            }
+        }
         scenario.onActivity { activity ->
-            val item = activity.capturedItemSession.lastCapturedItem ?: return@onActivity
+            val item = storedLastCapturedItem(activity) ?: return@onActivity
             if (item.uri != previous) {
                 try {
                     activity.contentResolver.delete(item.uri, null, null)

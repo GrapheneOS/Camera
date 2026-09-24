@@ -24,6 +24,7 @@ data class ViewfinderState(
     val session: ViewfinderSessionState = ViewfinderSessionState(),
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+    val gallery: ViewfinderGalleryState = ViewfinderGalleryState(),
     val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
     val missingPermissions: Set<AppPermission> = emptySet(),
     val permissionDialog: AppPermission? = null,

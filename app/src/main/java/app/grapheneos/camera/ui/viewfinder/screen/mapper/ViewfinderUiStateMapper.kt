@@ -59,6 +59,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             cameraPreviewVisible = !state.capture.isCapturedPreviewShown,
             modeTabsVisible = modeTabsVisible(state),
             thumbnailLoaderVisible = state.capture.isSavingPicture,
+            thumbnail = state.gallery.thumbnail,
             capturedPreviewVisible = state.capture.isCapturedPreviewShown,
             qrResultVisible = state.session.isQrResultShown,
             gridType = settings.gridType,

@@ -11,6 +11,7 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
@@ -51,6 +52,7 @@ open class ViewfinderViewModelTestBase {
     protected val locationDelegate = mockk<ViewfinderLocationDelegate>(relaxed = true)
     protected val orientationDelegate = mockk<ViewfinderOrientationDelegate>(relaxed = true)
     protected val screenWakeDelegate = mockk<ViewfinderScreenWakeDelegate>(relaxed = true)
+    protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
 
     protected val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
     protected val captureEvents = MutableSharedFlow<CapturedImageEvent>()
@@ -93,6 +95,7 @@ open class ViewfinderViewModelTestBase {
             locationDelegate = locationDelegate,
             orientationDelegate = orientationDelegate,
             screenWakeDelegate = screenWakeDelegate,
+            galleryDelegate = galleryDelegate,
             uiStateMapper = mockk(relaxed = true),
             zoomUiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),

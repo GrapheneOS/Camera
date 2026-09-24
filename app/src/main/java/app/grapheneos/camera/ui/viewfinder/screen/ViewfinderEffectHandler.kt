@@ -20,19 +20,22 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.ui.activities.CaptureActivity
+import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.showCameraPermissionDialog
 import app.grapheneos.camera.ui.showLocationPermissionDialog
 import app.grapheneos.camera.ui.showMicrophonePermissionDialog
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.showPictureFailureDialog
+import app.grapheneos.camera.ui.showQrResultDialog
 import app.grapheneos.camera.ui.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
@@ -70,13 +73,14 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.CloseSettingsSheet -> activity.settingsDialog.slideDialogUp()
             is Effect.ShowQrFormats -> showQrFormats()
             is Effect.AnimateLensSwitch -> activity.animateLensSwitch()
-            is Effect.OpenGallery -> activity.openGallery()
-            is Effect.ShareLatestMedia -> activity.shareLatestMedia()
+            is Effect.OpenGallery -> openGallery(effect)
+            is Effect.OpenSecureGallery -> openSecureGallery(effect)
+            is Effect.ShareCapturedItem -> share(effect.item)
             is Effect.SelectAdjacentModeTab -> selectAdjacentModeTab(effect.offset)
             is Effect.ShowFocus -> showFocus(effect)
             is Effect.ShowLocationDisabled -> showLocationDisabled(effect.offersSettings)
             is Effect.OpenLocationSettings -> openLocationSettings()
-            is Effect.ShowQrResult -> activity.showQrResult(effect.text)
+            is Effect.ShowQrResult -> showQrResult(effect.text)
             is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
             is Effect.GoToModeTab -> goToModeTab(effect.mode)
             is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
@@ -171,7 +175,6 @@ internal class ViewfinderEffectHandlerImpl(
     private fun handlePicture(effect: Effect.Picture) {
         when (effect) {
             is Effect.Picture.Captured -> activity.tunePlayer.playShutterSound()
-            is Effect.Picture.Saved -> recordCapturedItem(effect.item)
             is Effect.Picture.CaptureFailed -> showCaptureFailure(effect)
             is Effect.Picture.SaveFailed -> showSaveFailure(effect)
             is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)
@@ -179,10 +182,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Picture.PreviewReturned -> captureActivity()?.returnCapturedBitmap()
             is Effect.Picture.PreviewStored -> finishCapture(stored = true)
             is Effect.Picture.PreviewStoreFailed -> finishCapture(stored = false)
-
-            is Effect.Picture.ThumbnailReady -> {
-                activity.imagePreview.setImageBitmap(effect.thumbnail)
-            }
         }
     }
 
@@ -268,21 +267,8 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun onRecordingSaved(effect: Effect.Recording.Saved) {
-        effect.item?.let { item ->
-            recordCapturedItem(item)
-            activity.updateThumbnail()
-        }
-
         if (activity is VideoCaptureActivity) {
             activity.afterRecording(effect.uri)
-        }
-    }
-
-    private fun recordCapturedItem(item: CapturedItem) {
-        activity.capturedItemSession.recordCapturedItem(item)
-
-        if (activity is SecureMainActivity) {
-            activity.capturedItems.add(item)
         }
     }
 
@@ -362,6 +348,61 @@ internal class ViewfinderEffectHandlerImpl(
         ) {
             onAction(SettingsAction.EnableLocationClicked)
         }
+    }
+
+    private fun openGallery(effect: Effect.OpenGallery) {
+        val intent = Intent(activity, InAppGallery::class.java)
+            .putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, effect.videoOnly)
+
+        startGallery(
+            intent = intent,
+            lastCapturedItem = effect.lastCapturedItem,
+        )
+    }
+
+    private fun openSecureGallery(effect: Effect.OpenSecureGallery) {
+        val intent = Intent(activity, InAppGallery::class.java)
+            .putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
+            .putParcelableArrayListExtra(
+                InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
+                ArrayList(effect.capturedItems),
+            )
+
+        startGallery(
+            intent = intent,
+            lastCapturedItem = effect.lastCapturedItem,
+        )
+    }
+
+    private fun startGallery(
+        intent: Intent,
+        lastCapturedItem: CapturedItem?,
+    ) {
+        lastCapturedItem?.let { item ->
+            intent.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, item)
+        }
+
+        activity.startActivity(intent)
+    }
+
+    private fun share(item: CapturedItem) {
+        shareCapturedItem(activity, item)?.let { message ->
+            activity.showMessage(message)
+        }
+    }
+
+    private fun showQrResult(text: String) {
+        showQrResultDialog(
+            activity = activity,
+            rawText = text,
+            onCopyText = { copiedText ->
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("text", copiedText))
+                activity.showMessage(R.string.copied_text_to_clipboard)
+            },
+            onDismissed = {
+                onAction(LifecycleAction.QrResultDismissed)
+            },
+        )
     }
 
     private fun openLocationSettings() {

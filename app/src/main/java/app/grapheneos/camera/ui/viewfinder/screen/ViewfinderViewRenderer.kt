@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -28,6 +29,7 @@ internal class ViewfinderViewRenderer(
     private var renderedIconRotation: Float? = null
     private var renderedLevelFrameRotation: Float? = null
     private var renderedKeepScreenOn = false
+    private var renderedThumbnail: Bitmap? = null
 
     fun render(state: ViewfinderUiState) {
         activity.qrOverlay.visibility = visibleOrInvisible(state.qrOverlayVisible)
@@ -66,6 +68,7 @@ internal class ViewfinderViewRenderer(
 
         renderKeepScreenOn(state.keepScreenOn)
         renderThumbnailLoader(state.thumbnailLoaderVisible)
+        renderThumbnail(state.thumbnail)
         renderModeTabs(state)
         renderBoundPreview(state)
         renderRotation(state)
@@ -97,6 +100,13 @@ internal class ViewfinderViewRenderer(
         renderedThumbnailLoaderVisible = visible
 
         activity.previewLoader.visibility = visibleOrGone(visible)
+    }
+
+    private fun renderThumbnail(thumbnail: Bitmap?) {
+        if (thumbnail === renderedThumbnail) return
+        renderedThumbnail = thumbnail
+
+        activity.imagePreview.setImageBitmap(thumbnail)
     }
 
     private fun renderModeTabs(state: ViewfinderUiState) {

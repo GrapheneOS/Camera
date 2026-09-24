@@ -384,6 +384,17 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         }
     }
 
+    @Test
+    fun screenResumed_refreshesTheThumbnail() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+
+            verify(exactly = 1) { galleryDelegate.refreshThumbnail() }
+        }
+    }
+
     private companion object {
         const val FOCUS_TIMEOUT_SECONDS = 3L
         const val QR_TEXT = "https://grapheneos.org"
