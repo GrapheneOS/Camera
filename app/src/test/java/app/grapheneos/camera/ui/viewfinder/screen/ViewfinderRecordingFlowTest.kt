@@ -30,6 +30,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImp
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
@@ -241,6 +242,7 @@ class ViewfinderRecordingFlowTest {
                 settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
                 captureUiStateMapper = CaptureUiStateMapperImpl(),
             ),
+            zoomUiStateMapper = ZoomUiStateMapperImpl(),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
             swipeEffectMapper = SwipeEffectMapperImpl(),
             applicationScope = backgroundScope,

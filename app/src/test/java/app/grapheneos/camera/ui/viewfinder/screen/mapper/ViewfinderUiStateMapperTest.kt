@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
-import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
@@ -16,7 +15,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -483,12 +481,6 @@ class ViewfinderUiStateMapperTest {
                 isZslSupported = true,
                 sensorOrientationDegrees = 270,
                 availableModes = modes,
-                zoom = CameraZoom(
-                    zoomRatio = 2f,
-                    linearZoom = 0.5f,
-                    minZoomRatio = 1f,
-                    maxZoomRatio = 10f,
-                ),
                 exposure = CameraExposure(
                     compensationIndex = 3,
                     compensationRange = -12..12,
@@ -499,15 +491,13 @@ class ViewfinderUiStateMapperTest {
         assertTrue(state.zslSupported)
         assertEquals(270, state.sensorOrientationDegrees)
         assertEquals(modes, state.availableModes)
-        assertEquals(ZoomUiState(zoomRatio = 2f, linearZoom = 0.5f), state.zoom)
         assertEquals(ExposureUiState(min = -12, max = 12, progress = 3), state.exposure)
     }
 
     @Test
-    fun cameraState_beforeTheCameraIsBound_showsNoZoomAndNoExposure() {
+    fun cameraState_beforeTheCameraIsBound_showsNoExposure() {
         val state = map()
 
-        assertEquals(ZoomUiState(), state.zoom)
         assertNull(state.exposure)
         assertNull(state.sensorOrientationDegrees)
     }

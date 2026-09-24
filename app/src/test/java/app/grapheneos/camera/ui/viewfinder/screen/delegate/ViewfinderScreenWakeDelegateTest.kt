@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,7 +27,6 @@ class ViewfinderScreenWakeDelegateTest {
             mode = CameraMode.CAMERA,
             requiresVideoModeOnly = false,
         ),
-        render = { ViewfinderUiState() },
     )
 
     private val delegate = ViewfinderScreenWakeDelegateImpl()

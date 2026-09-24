@@ -94,6 +94,7 @@ open class ViewfinderViewModelTestBase {
             orientationDelegate = orientationDelegate,
             screenWakeDelegate = screenWakeDelegate,
             uiStateMapper = mockk(relaxed = true),
+            zoomUiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),
             swipeEffectMapper = SwipeEffectMapperImpl(),
             applicationScope = applicationScope,

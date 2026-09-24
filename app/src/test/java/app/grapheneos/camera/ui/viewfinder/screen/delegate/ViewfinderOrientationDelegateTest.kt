@@ -11,7 +11,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.every
 import io.mockk.mockk
 import kotlin.time.Duration.Companion.milliseconds
@@ -45,7 +44,6 @@ class ViewfinderOrientationDelegateTest {
             requiresVideoModeOnly = false,
             settings = CameraSettings(gyroscopeSuggestions = true),
         ),
-        render = { ViewfinderUiState() },
     )
 
     @Test

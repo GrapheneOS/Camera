@@ -38,6 +38,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
@@ -51,6 +52,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Setting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
 import app.grapheneos.camera.util.printStackTraceToString
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -64,7 +66,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 interface ViewfinderScreenModel {
+
     val uiState: StateFlow<ViewfinderUiState>
+
+    val zoomUiState: StateFlow<ZoomUiState>
     val levelUiState: StateFlow<LevelUiState>
 
     val effects: Flow<Effect>
@@ -87,9 +92,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
-    private val uiStateMapper: ViewfinderUiStateMapper,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val swipeEffectMapper: SwipeEffectMapper,
+    uiStateMapper: ViewfinderUiStateMapper,
+    zoomUiStateMapper: ZoomUiStateMapper,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
@@ -102,10 +108,16 @@ class ViewfinderViewModel @AssistedInject constructor(
             isCaptureSession = entryPoint.isCaptureSession,
             showsCameraModeTabs = entryPoint.showsCameraModeTabs,
         ),
-        render = uiStateMapper::map,
     )
 
-    override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
+    override val uiState: StateFlow<ViewfinderUiState> = stateHolder.derive { state ->
+        uiStateMapper.map(state)
+    }
+
+    override val zoomUiState: StateFlow<ZoomUiState> = stateHolder.derive { state ->
+        zoomUiStateMapper.map(state)
+    }
+
     override val levelUiState: StateFlow<LevelUiState> = orientationDelegate.levelUiState
 
     override val effects: Flow<Effect> = stateHolder.effects
