@@ -338,17 +338,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         }
     }
 
-    @Test
-    fun displayRotationChanged_turnsThePreview() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-
-            viewModel.onAction(CameraAction.DisplayRotationChanged(rotation = Surface.ROTATION_90))
-
-            verify(exactly = 1) { cameraDelegate.setPreviewRotation(Surface.ROTATION_90) }
-        }
-    }
-
     private suspend fun trackUntilCancelled(
         tracking: MutableSet<String>,
         name: String,
@@ -359,6 +348,30 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             awaitCancellation()
         } finally {
             tracking -= name
+        }
+    }
+
+    @Test
+    fun levelReached_playsAHaptic() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            levelReached.emit(Unit)
+
+            assertEquals(listOf(ViewfinderScreenEffect.PlayLevelHaptic), effects)
+        }
+    }
+
+    @Test
+    fun displayRotationChanged_turnsThePreviewAndTheIcons() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(CameraAction.DisplayRotationChanged(rotation = Surface.ROTATION_90))
+
+            verify(exactly = 1) { cameraDelegate.setPreviewRotation(Surface.ROTATION_90) }
+            verify(exactly = 1) { orientationDelegate.setDisplayRotation(Surface.ROTATION_90) }
         }
     }
 

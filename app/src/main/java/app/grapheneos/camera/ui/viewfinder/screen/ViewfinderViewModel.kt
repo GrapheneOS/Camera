@@ -36,6 +36,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -63,6 +64,8 @@ import kotlinx.coroutines.launch
 
 interface ViewfinderScreenModel {
     val uiState: StateFlow<ViewfinderUiState>
+    val levelUiState: StateFlow<LevelUiState>
+
     val effects: Flow<Effect>
 
     fun onAction(action: ViewfinderAction)
@@ -99,6 +102,8 @@ class ViewfinderViewModel @AssistedInject constructor(
         render = uiStateMapper::map,
     )
     override val uiState: StateFlow<ViewfinderUiState> = stateHolder.uiState
+
+    override val levelUiState: StateFlow<LevelUiState> = orientationDelegate.levelUiState
 
     private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
     override val effects: Flow<Effect> = _effects.receiveAsFlow()
@@ -150,6 +155,12 @@ class ViewfinderViewModel @AssistedInject constructor(
                 onLocationProvidersDisabled()
             }
         }
+
+        viewModelScope.launch(mainDispatcher) {
+            orientationDelegate.levelReachedEvents.collect {
+                emitEffect(Effect.PlayLevelHaptic)
+            }
+        }
     }
 
     override fun onAction(action: ViewfinderAction) {
@@ -189,7 +200,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             }
 
             is CameraAction.DisplayRotationChanged -> {
-                cameraDelegate.setPreviewRotation(action.rotation)
+                onDisplayRotationChanged(action.rotation)
             }
         }
     }
@@ -358,7 +369,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (event) {
             is RecordedVideoEvent.OutputUnavailable -> onRecordingOutputUnavailable()
             is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
-            is RecordedVideoEvent.Abandoned -> onRecordingStopped()
+            is RecordedVideoEvent.Abandoned -> recordingDelegate.markStopped()
             is RecordedVideoEvent.Started -> recordingDelegate.startRecording()
             is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
 
@@ -379,6 +390,11 @@ class ViewfinderViewModel @AssistedInject constructor(
                 emitEffect(Effect.Recording.Saved(uri = event.uri, item = event.item))
             }
         }
+    }
+
+    private fun onDisplayRotationChanged(rotation: Int) {
+        cameraDelegate.setPreviewRotation(rotation)
+        orientationDelegate.setDisplayRotation(rotation)
     }
 
     private fun switchMode(mode: CameraMode) {
@@ -643,14 +659,8 @@ class ViewfinderViewModel @AssistedInject constructor(
         recordingDelegate.markStopped()
     }
 
-    private fun onRecordingStopped() {
-        recordingDelegate.markStopped()
-
-        emitEffect(Effect.Recording.Stopped)
-    }
-
     private fun onRecordingFinished(outcome: RecordingOutcome) {
-        onRecordingStopped()
+        recordingDelegate.markStopped()
 
         if (outcome.keepsContent()) {
             captureDelegate.startRecordingSave()

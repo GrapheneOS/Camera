@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
+import android.view.Surface
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -27,6 +28,8 @@ data class ViewfinderState(
     val missingPermissions: Set<AppPermission> = emptySet(),
     val permissionDialog: AppPermission? = null,
     val deviceOrientation: DeviceOrientation? = null,
+    val displayRotation: Int = Surface.ROTATION_0,
+    val autoRotateEnabled: Boolean = false,
 ) {
 
     fun isQrMode(): Boolean {
@@ -62,6 +65,10 @@ data class ViewfinderState(
         val isAwaitingReview = capture.isCapturedPreviewShown || capture.isSavingRecording
 
         return isCaptureSession && requiresVideoModeOnly && isAwaitingReview
+    }
+
+    fun showsLevel(): Boolean {
+        return settings.gyroscopeSuggestions && isInPhotoMode()
     }
 
     fun selfIlluminate(): Boolean {

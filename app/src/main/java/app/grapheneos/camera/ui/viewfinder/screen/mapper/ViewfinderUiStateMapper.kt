@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
@@ -26,9 +27,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
     override fun map(state: ViewfinderState): ViewfinderUiState {
         val settings = state.settings
         val isVideoMode = state.isVideoMode()
-        val inPhotoMode = state.isInPhotoMode()
         val isRecordingActive = state.recording.isActive()
         val isRecording = state.recording.isRecording()
+        val deviceRotation = deviceRotationDegrees(state)
 
         val chrome = when {
             state.isQrMode() -> qrState(
@@ -67,17 +68,38 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             aspectRatio = state.aspectRatio(),
             isQrMode = state.isQrMode(),
             isVideoMode = isVideoMode,
-            inPhotoMode = inPhotoMode,
             scanAllCodes = settings.scanAllCodes,
-            gyroscopeSuggestionsVisible = inPhotoMode && settings.gyroscopeSuggestions,
             availableModes = state.session.availableModes,
             zslSupported = state.session.isZslSupported,
             sensorOrientationDegrees = state.session.sensorOrientationDegrees,
+            iconRotationDegrees = when {
+                state.autoRotateEnabled -> deviceRotation
+                else -> 0f
+            },
+            levelFrameRotationDegrees = deviceRotation,
             zoom = zoomState(state.session.zoom),
             exposure = exposureState(state.session.exposure),
             settingsSheet = settingsSheetUiStateMapper.map(state),
             capture = captureUiStateMapper.map(state),
         )
+    }
+
+    private fun deviceRotationDegrees(state: ViewfinderState): Float {
+        val orientation = state.recording.orientationAtStart
+            ?: state.deviceOrientation
+            ?: return 0f
+        val displayDegrees = displayDegrees(state.displayRotation)
+
+        return (displayDegrees - orientation.degrees).mod(FULL_TURN_DEGREES).toFloat()
+    }
+
+    private fun displayDegrees(displayRotation: Int): Int {
+        return when (displayRotation) {
+            Surface.ROTATION_90 -> 270
+            Surface.ROTATION_180 -> 180
+            Surface.ROTATION_270 -> 90
+            else -> 0
+        }
     }
 
     private fun zoomState(zoom: CameraZoom?): ZoomUiState {
@@ -217,5 +239,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
 
             else -> true
         }
+    }
+
+    private companion object {
+        private const val FULL_TURN_DEGREES = 360
     }
 }

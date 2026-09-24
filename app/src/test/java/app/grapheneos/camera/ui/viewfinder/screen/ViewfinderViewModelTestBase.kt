@@ -46,6 +46,7 @@ open class ViewfinderViewModelTestBase {
     protected val locationDelegate = mockk<ViewfinderLocationDelegate>(relaxed = true)
     protected val orientationDelegate = mockk<ViewfinderOrientationDelegate>(relaxed = true)
     protected val locationProvidersDisabled = MutableSharedFlow<Unit>()
+    protected val levelReached = MutableSharedFlow<Unit>()
 
     protected val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
     protected val captureEvents = MutableSharedFlow<CapturedImageEvent>()
@@ -68,6 +69,7 @@ open class ViewfinderViewModelTestBase {
         every { captureDelegate.captureEvents } returns captureEvents
         every { recordingDelegate.recordingEvents } returns recordingEvents
         every { locationDelegate.providersDisabledEvents } returns locationProvidersDisabled
+        every { orientationDelegate.levelReachedEvents } returns levelReached
     }
 
     protected fun createViewModel(

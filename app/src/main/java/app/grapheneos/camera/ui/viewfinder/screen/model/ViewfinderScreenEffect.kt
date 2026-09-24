@@ -14,6 +14,8 @@ sealed interface ViewfinderScreenEffect {
 
     data object CloseScreen : ViewfinderScreenEffect
 
+    data object PlayLevelHaptic : ViewfinderScreenEffect
+
     data object OpenLocationSettings : ViewfinderScreenEffect
 
     data class ShowLocationDisabled(
@@ -92,8 +94,6 @@ sealed interface ViewfinderScreenEffect {
     sealed interface Recording : ViewfinderScreenEffect {
 
         data object PlayStartSound : Recording
-
-        data object Stopped : Recording
 
         data class Saved(
             val uri: Uri,

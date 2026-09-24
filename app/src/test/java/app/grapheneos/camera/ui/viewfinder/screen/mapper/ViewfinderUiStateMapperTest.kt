@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
+import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
@@ -126,11 +128,65 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
+    fun icons_turnAgainstTheDeviceRelativeToTheDisplay() {
+        val state = mapper.map(
+            ViewfinderState(
+                mode = CameraMode.CAMERA,
+                requiresVideoModeOnly = false,
+                deviceOrientation = DeviceOrientation.DEGREES_90,
+                displayRotation = Surface.ROTATION_90,
+                autoRotateEnabled = true,
+            ),
+        )
+
+        assertEquals(180f, state.iconRotationDegrees)
+        assertEquals(180f, state.levelFrameRotationDegrees)
+    }
+
+    @Test
+    fun icons_withoutAutoRotate_stayUprightWhileTheLevelFrameStillTurns() {
+        val state = mapper.map(
+            ViewfinderState(
+                mode = CameraMode.CAMERA,
+                requiresVideoModeOnly = false,
+                deviceOrientation = DeviceOrientation.DEGREES_90,
+                autoRotateEnabled = false,
+            ),
+        )
+
+        assertEquals(0f, state.iconRotationDegrees)
+        assertEquals(270f, state.levelFrameRotationDegrees)
+    }
+
+    @Test
+    fun icons_duringARecording_keepTheOrientationItStartedIn() {
+        val state = mapper.map(
+            ViewfinderState(
+                mode = CameraMode.VIDEO,
+                requiresVideoModeOnly = false,
+                deviceOrientation = DeviceOrientation.DEGREES_90,
+                autoRotateEnabled = true,
+                recording = ViewfinderRecordingState(
+                    phase = RecordingPhase.RECORDING,
+                    orientationAtStart = DeviceOrientation.DEGREES_0,
+                ),
+            ),
+        )
+
+        assertEquals(0f, state.iconRotationDegrees)
+    }
+
+    @Test
+    fun icons_beforeTheSensorHasSpoken_stayUpright() {
+        assertEquals(0f, map().iconRotationDegrees)
+        assertEquals(0f, map().levelFrameRotationDegrees)
+    }
+
+    @Test
     fun videoOnlyEntryPoint_recordsWhicheverModeIsSelected() {
         val state = map(mode = CameraMode.CAMERA, requiresVideoModeOnly = true)
 
         assertTrue(state.isVideoMode)
-        assertFalse(state.inPhotoMode)
         assertEquals(R.drawable.recording, state.captureButton.icon)
         assertEquals(AspectRatio.RATIO_16_9, state.aspectRatio)
     }
