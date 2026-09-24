@@ -51,6 +51,7 @@ import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -73,10 +74,8 @@ interface CameraSession {
     var lensFacing: LensFacing
 
     val camera: Camera?
-    val preview: Preview?
     val imageCapture: ImageCapture?
     val videoCapture: VideoCapture<Recorder>?
-    val iAnalyzer: ImageAnalysis?
 
     val extensionsAvailable: Boolean
     val isFlashAvailable: Boolean
@@ -95,6 +94,8 @@ interface CameraSession {
     fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit)
     fun supportedVideoQualities(): List<VideoQuality>
     fun canApplyVideoStabilization(): Boolean
+    fun setCaptureOrientation(orientation: DeviceOrientation)
+    fun setPreviewRotation(rotation: Int)
     fun setFlashMode(flashMode: FlashMode)
     fun toggleTorchState()
     fun setZoomRatio(zoomRatio: Float)
@@ -147,15 +148,17 @@ internal class CameraSessionImpl @Inject constructor(
 
     override var camera: Camera? = null
 
-    override var preview: Preview? = null
-
     override var imageCapture: ImageCapture? = null
 
     override var videoCapture: VideoCapture<Recorder>? = null
 
-    override var iAnalyzer: ImageAnalysis? = null
+    private var preview: Preview? = null
 
+    private var iAnalyzer: ImageAnalysis? = null
     private var qrAnalyzer: QrCodeAnalyzer? = null
+
+    private var captureRotation: Int? = null
+    private var previewRotation: Int? = null
 
     override val extensionsAvailable: Boolean
         get() {
@@ -523,8 +526,8 @@ internal class CameraSessionImpl @Inject constructor(
             includesVideoCapture = !settings.isQrMode && settings.isVideoMode,
             includesImageCapture = !settings.isQrMode && !settings.requiresVideoModeOnly,
             aspectRatio = settings.aspectRatio,
-            imageCaptureTargetRotation = imageCapture?.targetRotation ?: displayRotation(),
-            previewTargetRotation = preview?.targetRotation ?: displayRotation(),
+            imageCaptureTargetRotation = captureRotation ?: displayRotation(),
+            previewTargetRotation = previewRotation ?: displayRotation(),
             flashMode = settings.flashMode,
             photoQuality = settings.photoQuality,
             waitForFocusLock = settings.waitForFocusLock,
@@ -638,6 +641,8 @@ internal class CameraSessionImpl @Inject constructor(
                 imageCapture = null
             }
         }
+
+        applyCaptureRotation()
 
         try {
             val sessionConfig = SessionConfig(
@@ -868,6 +873,25 @@ internal class CameraSessionImpl @Inject constructor(
         }
 
         return provider.getCameraInfo(cameraSelector)
+    }
+
+    override fun setCaptureOrientation(orientation: DeviceOrientation) {
+        captureRotation = cameraXConstantsMapper.map(orientation)
+
+        applyCaptureRotation()
+    }
+
+    override fun setPreviewRotation(rotation: Int) {
+        previewRotation = rotation
+        preview?.targetRotation = rotation
+    }
+
+    private fun applyCaptureRotation() {
+        val rotation = captureRotation ?: return
+
+        imageCapture?.targetRotation = rotation
+        videoCapture?.targetRotation = rotation
+        iAnalyzer?.targetRotation = rotation
     }
 
     override fun setFlashMode(flashMode: FlashMode) {

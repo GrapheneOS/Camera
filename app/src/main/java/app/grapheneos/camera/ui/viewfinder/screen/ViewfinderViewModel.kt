@@ -30,6 +30,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
@@ -78,6 +79,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val recordingDelegate: ViewfinderRecordingDelegate,
     private val permissionDelegate: ViewfinderPermissionDelegate,
     private val locationDelegate: ViewfinderLocationDelegate,
+    private val orientationDelegate: ViewfinderOrientationDelegate,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: ViewfinderUiStateMapper,
@@ -103,19 +105,23 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private var selfTimer: Job? = null
 
+    private var resumedWork: Job? = null
+
     init {
         modeDelegate.bind(stateHolder)
+        captureDelegate.bind(stateHolder)
+        recordingDelegate.bind(stateHolder)
+        permissionDelegate.bind(stateHolder)
+        orientationDelegate.bind(stateHolder)
+
         cameraDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
-        captureDelegate.bind(stateHolder)
         settingsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
-        recordingDelegate.bind(stateHolder)
-        permissionDelegate.bind(stateHolder)
         locationDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
@@ -180,6 +186,10 @@ class ViewfinderViewModel @AssistedInject constructor(
                     y = action.y,
                     autoCancelSeconds = state().settings.focusTimeoutSeconds,
                 )
+            }
+
+            is CameraAction.DisplayRotationChanged -> {
+                cameraDelegate.setPreviewRotation(action.rotation)
             }
         }
     }
@@ -678,8 +688,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onScreenResumed() {
         refreshPermissions()
-
-        locationDelegate.setScreenResumed(true)
+        startResumedWork()
 
         val state = state()
 
@@ -703,7 +712,15 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onScreenPaused() {
-        locationDelegate.setScreenResumed(false)
+        resumedWork?.cancel()
+    }
+
+    private fun startResumedWork() {
+        resumedWork?.cancel()
+        resumedWork = viewModelScope.launch(mainDispatcher) {
+            launch(mainDispatcher) { orientationDelegate.trackOrientation() }
+            launch(mainDispatcher) { locationDelegate.trackLocation() }
+        }
     }
 
     private fun onPermissionRequestAnswered(permission: AppPermission) {

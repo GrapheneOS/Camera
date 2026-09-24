@@ -316,7 +316,7 @@ class VideoCapturerRegressionTest {
                 it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
             }
             waitUntil(scenario, "video use case is bound") {
-                it.session.videoCapture != null
+                cameraSession(it).videoCapture != null
             }
 
             val capturedBefore = lastCapturedUri(scenario)
@@ -392,14 +392,14 @@ class VideoCapturerRegressionTest {
     @Test
     fun tappingAModeTabDuringTheDeferredStart_leavesTheModeAlone() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.session.camera != null }
+            waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
             waitUntil(scenario, "mode tabs are built") { it.tabLayout.tabCount > 0 }
 
             scenario.onActivity {
                 it.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.VIDEO))
             }
             waitUntil(scenario, "video use case is bound") {
-                it.session.videoCapture != null
+                cameraSession(it).videoCapture != null
             }
 
             val deferred = slot<Runnable>()
@@ -471,7 +471,7 @@ class VideoCapturerRegressionTest {
     ) {
         launch().use { scenario ->
             waitUntil(scenario, "video use case is bound") {
-                it.session.camera != null && it.session.videoCapture != null
+                cameraSession(it).camera != null && cameraSession(it).videoCapture != null
             }
             val capturedBefore = lastCapturedUri(scenario)
             try {

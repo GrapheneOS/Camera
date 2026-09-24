@@ -1,11 +1,9 @@
 package app.grapheneos.camera.ui.viewfinder
 
-import android.annotation.SuppressLint
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
-import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
@@ -52,19 +50,7 @@ internal class ViewfinderOrientationHandler(
         }
     }
 
-    @SuppressLint("RestrictedApi")
     override fun onOrientationChange(orientation: Int) {
-        val targetRotation = when (orientation) {
-            in 45..134 -> Surface.ROTATION_270
-            in 135..224 -> Surface.ROTATION_180
-            in 225..314 -> Surface.ROTATION_90
-            else -> Surface.ROTATION_0
-        }
-
-        activity.session.imageCapture?.targetRotation = targetRotation
-        activity.session.videoCapture?.targetRotation = targetRotation
-        activity.session.iAnalyzer?.targetRotation = targetRotation
-
         if (activity.viewfinder.uiState.value.isRecordingActive) return
 
         var iconRotation = (360f - ((orientation - activity.getRotation() + 360) % 360)) % 360
