@@ -70,7 +70,12 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
     }
 
     override fun requestRecording() {
-        update { ViewfinderRecordingState(phase = RecordingPhase.STARTING) }
+        update {
+            ViewfinderRecordingState(
+                phase = RecordingPhase.STARTING,
+                orientationAtStart = stateHolder.state.value.deviceOrientation,
+            )
+        }
     }
 
     override fun prepareRecording(

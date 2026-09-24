@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import kotlin.time.Duration
 
 data class ViewfinderRecordingState(
@@ -8,6 +9,7 @@ data class ViewfinderRecordingState(
     val isPaused: Boolean = false,
     val isMuted: Boolean = false,
     val retriesOnceStreaming: Boolean = false,
+    val orientationAtStart: DeviceOrientation? = null,
 ) {
 
     fun isActive(): Boolean {

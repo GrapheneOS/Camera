@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
 import android.view.View
 import android.view.animation.AlphaAnimation
@@ -42,6 +44,7 @@ internal interface ViewfinderEffectHandler {
 internal class ViewfinderEffectHandlerImpl(
     private val activity: MainActivity,
     private val clipboardManager: ClipboardManager,
+    private val vibratorManager: Vibrator,
     private val onAction: (ViewfinderAction) -> Unit,
 ) : ViewfinderEffectHandler {
 
@@ -61,6 +64,7 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
             is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFoundDialog(activity)
             is Effect.CloseScreen -> activity.finish()
+            is Effect.PlayLevelHaptic -> playLevelHaptic()
             is Effect.ShowLocationDisabled -> showLocationDisabled(effect.offersSettings)
             is Effect.OpenLocationSettings -> openLocationSettings()
             is Effect.ShowQrResult -> activity.showQrResult(effect.text)
@@ -232,7 +236,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handleRecording(effect: Effect.Recording) {
         when (effect) {
-            is Effect.Recording.Stopped -> activity.forceUpdateOrientationSensor()
             is Effect.Recording.Saved -> onRecordingSaved(effect)
 
             is Effect.Recording.PlayStartSound -> {
@@ -354,6 +357,10 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun openLocationSettings() {
         activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+    }
+
+    private fun playLevelHaptic() {
+        vibratorManager.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
     }
 
     private fun captureActivity(): CaptureActivity? {
