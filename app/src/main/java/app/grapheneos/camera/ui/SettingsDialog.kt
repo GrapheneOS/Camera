@@ -539,7 +539,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         // Common rather than per-mode: a mode's preferences are not slotted until the camera
         // starts, which happens after this dialog is built.
         viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = duration))
-        mActivity.updateSelfTimerBadge()
     }
 
     private fun restoreTimerDuration() {
