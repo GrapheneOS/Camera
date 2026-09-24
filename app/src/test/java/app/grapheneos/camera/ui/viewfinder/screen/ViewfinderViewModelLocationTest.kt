@@ -8,7 +8,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Permiss
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.verify
-import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -159,21 +158,6 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(SettingsAction.EnableLocationClicked)
 
             assertEquals(listOf(ViewfinderScreenEffect.OpenLocationSettings), effects)
-        }
-    }
-
-    @Test
-    fun screenResumedAndPaused_tellTheLocationWhetherTheScreenIsUp() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-
-            viewModel.onAction(LifecycleAction.ScreenResumed)
-            viewModel.onAction(LifecycleAction.ScreenPaused)
-
-            verifyOrder {
-                locationDelegate.setScreenResumed(true)
-                locationDelegate.setScreenResumed(false)
-            }
         }
     }
 }

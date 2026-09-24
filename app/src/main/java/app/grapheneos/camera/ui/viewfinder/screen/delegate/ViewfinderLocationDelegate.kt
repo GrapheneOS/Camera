@@ -12,9 +12,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNot
@@ -31,7 +29,7 @@ interface ViewfinderLocationDelegate {
         stateHolder: ViewfinderStateHolder,
     )
 
-    fun setScreenResumed(resumed: Boolean)
+    suspend fun trackLocation()
 }
 
 internal class ViewfinderLocationDelegateImpl @Inject constructor(
@@ -39,9 +37,9 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderLocationDelegate {
 
-    private var isBound = false
+    private lateinit var stateHolder: ViewfinderStateHolder
 
-    private val isScreenResumed = MutableStateFlow(false)
+    private var isBound = false
 
     private val _providersDisabledEvents = Channel<Unit>(capacity = Channel.BUFFERED)
     override val providersDisabledEvents: Flow<Unit> = _providersDisabledEvents.receiveAsFlow()
@@ -53,23 +51,7 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
         if (isBound) return
         isBound = true
 
-        scope.launch(mainDispatcher) {
-            combine(
-                stateHolder.state,
-                isScreenResumed,
-            ) { state, screenResumed ->
-                tracksLocation(
-                    state = state,
-                    isScreenResumed = screenResumed,
-                )
-            }
-                .distinctUntilChanged()
-                .collectLatest { tracks ->
-                    if (tracks) {
-                        trackLocation()
-                    }
-                }
-        }
+        this.stateHolder = stateHolder
 
         scope.launch(mainDispatcher) {
             stateHolder.state
@@ -80,23 +62,25 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
         }
     }
 
-    override fun setScreenResumed(resumed: Boolean) {
-        isScreenResumed.value = resumed
+    override suspend fun trackLocation() {
+        stateHolder.state
+            .map { state -> tracksLocation(state) }
+            .distinctUntilChanged()
+            .collectLatest { tracks ->
+                if (tracks) {
+                    reportDisabledProviders()
+                }
+            }
+    }
+
+    private fun tracksLocation(state: ViewfinderState): Boolean {
+        return state.requireLocation && AppPermission.LOCATION !in state.missingPermissions
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun trackLocation() {
+    private suspend fun reportDisabledProviders() {
         locationRepository.updates()
             .filter { availability -> availability == LocationAvailability.PROVIDERS_DISABLED }
             .collect { _providersDisabledEvents.send(Unit) }
-    }
-
-    private fun tracksLocation(
-        state: ViewfinderState,
-        isScreenResumed: Boolean,
-    ): Boolean {
-        return state.requireLocation &&
-            isScreenResumed &&
-            AppPermission.LOCATION !in state.missingPermissions
     }
 }

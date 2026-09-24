@@ -67,7 +67,6 @@ import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.TunePlayer
 import app.grapheneos.camera.data.camera.model.PreviewTarget
-import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
@@ -94,7 +93,6 @@ import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.ViewfinderOrientationHandler
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChromeImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
@@ -145,9 +143,6 @@ open class MainActivity : AppCompatActivity() {
     val viewfinder: ViewfinderViewModel by viewModels(
         extrasProducer = { viewfinderCreationExtras() },
     )
-
-    @Inject
-    lateinit var session: CameraSession
 
     @Inject
     lateinit var clipboardManager: ClipboardManager
@@ -548,7 +543,6 @@ open class MainActivity : AppCompatActivity() {
                         surfaceProvider = previewView.surfaceProvider,
                         meteringPointFactory = previewView.meteringPointFactory,
                     ),
-                    chrome = ViewfinderChromeImpl(activity = this),
                     previewFrames = previewFrames,
                     thumbnailSize = ThumbnailSize(
                         width = imagePreview.layoutParams.width,
@@ -1189,10 +1183,13 @@ open class MainActivity : AppCompatActivity() {
 
         // The activity declares configChanges for orientation, so nothing else refreshes
         // rotation-dependent state.
-        // The preview follows the window; the capture use cases follow the sensor and are updated
-        // by onOrientationChange.
-        session.preview?.targetRotation =
-            previewView.display?.rotation ?: Surface.ROTATION_0
+        // The preview follows the window; the capture use cases follow the sensor.
+        viewfinder.onAction(
+            CameraAction.DisplayRotationChanged(
+                rotation = previewView.display?.rotation ?: Surface.ROTATION_0,
+            ),
+        )
+
         val state = viewfinder.uiState.value
         state.sensorOrientationDegrees?.let {
             previewView.applyPreviewRatio(

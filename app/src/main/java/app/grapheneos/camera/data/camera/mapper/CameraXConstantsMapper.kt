@@ -1,10 +1,12 @@
 package app.grapheneos.camera.data.camera.mapper
 
+import android.view.Surface
 import androidx.camera.core.AspectRatio as CameraXAspectRatio
 import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode as CameraXExtensionMode
 import androidx.camera.video.Quality
 import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -21,6 +23,8 @@ interface CameraXConstantsMapper {
     fun map(videoQuality: VideoQuality): Quality
 
     fun map(quality: Quality): VideoQuality?
+
+    fun map(orientation: DeviceOrientation): Int
 }
 
 internal class CameraXConstantsMapperImpl @Inject constructor() : CameraXConstantsMapper {
@@ -68,6 +72,15 @@ internal class CameraXConstantsMapperImpl @Inject constructor() : CameraXConstan
             Quality.HD -> VideoQuality.HD
             Quality.SD -> VideoQuality.SD
             else -> null
+        }
+    }
+
+    override fun map(orientation: DeviceOrientation): Int {
+        return when (orientation) {
+            DeviceOrientation.DEGREES_0 -> Surface.ROTATION_0
+            DeviceOrientation.DEGREES_90 -> Surface.ROTATION_270
+            DeviceOrientation.DEGREES_180 -> Surface.ROTATION_180
+            DeviceOrientation.DEGREES_270 -> Surface.ROTATION_90
         }
     }
 }

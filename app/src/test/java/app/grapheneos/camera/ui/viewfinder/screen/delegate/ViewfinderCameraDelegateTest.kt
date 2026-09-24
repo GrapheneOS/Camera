@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import android.view.Surface
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -13,7 +15,6 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import com.google.zxing.BarcodeFormat
@@ -42,12 +43,10 @@ class ViewfinderCameraDelegateTest {
 
     private val scope = TestScope(mainDispatcherRule.testDispatcher)
 
-    private val chrome = mockk<ViewfinderChrome>(relaxed = true)
     private val previewFrames = mockk<PreviewFrameHolder>(relaxed = true)
 
     private val host = ViewfinderHost(
         previewTarget = mockk(relaxed = true),
-        chrome = chrome,
         previewFrames = previewFrames,
         thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
@@ -368,6 +367,23 @@ class ViewfinderCameraDelegateTest {
         delegate.showQrResult()
 
         verify(exactly = 2) { session.unbind() }
+    }
+
+    @Test
+    fun deviceOrientation_reachesTheSessionOncePerChange() {
+        createAttachedDelegate()
+
+        stateHolder.update { it.copy(deviceOrientation = DeviceOrientation.DEGREES_90) }
+        stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
+
+        verify(exactly = 1) { session.setCaptureOrientation(DeviceOrientation.DEGREES_90) }
+    }
+
+    @Test
+    fun previewRotation_reachesTheSession() {
+        createAttachedDelegate().setPreviewRotation(Surface.ROTATION_270)
+
+        verify(exactly = 1) { session.setPreviewRotation(Surface.ROTATION_270) }
     }
 
     @Test

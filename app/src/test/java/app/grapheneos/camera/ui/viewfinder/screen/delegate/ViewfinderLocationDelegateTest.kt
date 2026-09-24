@@ -12,6 +12,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -40,33 +41,28 @@ class ViewfinderLocationDelegateTest {
     )
 
     @Test
-    fun location_isTrackedWhileRequiredResumedAndPermitted() {
+    fun location_isTrackedWhileRequiredAndPermitted() {
         runTest {
             val delegate = createDelegate()
-
-            stateHolder.update { it.copy(requireLocation = true) }
+            startTracking(delegate)
             assertEquals(0, collectors)
 
-            delegate.setScreenResumed(true)
+            stateHolder.update { it.copy(requireLocation = true) }
             assertEquals(1, collectors)
 
-            delegate.setScreenResumed(false)
+            stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
             assertEquals(0, collectors)
         }
     }
 
     @Test
-    fun location_isNotTrackedWithoutThePermission() {
+    fun location_stopsBeingTrackedWhenTrackingIsCancelled() {
         runTest {
             val delegate = createDelegate()
-            stateHolder.update {
-                it.copy(
-                    requireLocation = true,
-                    missingPermissions = setOf(AppPermission.LOCATION),
-                )
-            }
+            stateHolder.update { it.copy(requireLocation = true) }
 
-            delegate.setScreenResumed(true)
+            val tracking = startTracking(delegate)
+            tracking.cancel()
 
             assertEquals(0, collectors)
         }
@@ -79,7 +75,7 @@ class ViewfinderLocationDelegateTest {
             val reports = mutableListOf<Unit>()
             backgroundScope.launch { delegate.providersDisabledEvents.collect { reports += it } }
             stateHolder.update { it.copy(requireLocation = true) }
-            delegate.setScreenResumed(true)
+            startTracking(delegate)
 
             availability.emit(LocationAvailability.PROVIDERS_DISABLED)
             availability.emit(LocationAvailability.AVAILABLE)
@@ -90,19 +86,24 @@ class ViewfinderLocationDelegateTest {
     }
 
     @Test
-    fun location_isForgottenWhenGeoTaggingTurnsOffButNotOnPause() {
+    fun location_isForgottenWhenGeoTaggingTurnsOffButNotWhenTrackingStops() {
         runTest {
             val delegate = createDelegate()
             stateHolder.update { it.copy(requireLocation = true) }
-            delegate.setScreenResumed(true)
+
+            val tracking = startTracking(delegate)
             clearMocks(locationRepository, answers = false)
 
-            delegate.setScreenResumed(false)
+            tracking.cancel()
             verify(exactly = 0) { locationRepository.forgetLocation() }
 
             stateHolder.update { it.copy(requireLocation = false) }
             verify(exactly = 1) { locationRepository.forgetLocation() }
         }
+    }
+
+    private fun TestScope.startTracking(delegate: ViewfinderLocationDelegate): Job {
+        return backgroundScope.launch { delegate.trackLocation() }
     }
 
     private fun TestScope.createDelegate(): ViewfinderLocationDelegate {

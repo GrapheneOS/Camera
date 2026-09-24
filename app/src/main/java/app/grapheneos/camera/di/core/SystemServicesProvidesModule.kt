@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
+import android.hardware.SensorManager
 import android.hardware.display.DisplayManager
 import android.location.LocationManager
 import dagger.Module
@@ -55,5 +56,13 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): NotificationManager {
         return context.getSystemService(NotificationManager::class.java)
+    }
+
+    @Provides
+    @Reusable
+    fun provideSensorManager(
+        @ApplicationContext context: Context,
+    ): SensorManager {
+        return context.getSystemService(SensorManager::class.java)
     }
 }
