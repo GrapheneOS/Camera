@@ -49,7 +49,6 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             every { cameraDelegate.canRecord } returns true
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
 
             viewModel.onAction(RecordingAction.RecordingRequested)
@@ -62,15 +61,12 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 )
             }
             verify(exactly = 1) { recordingDelegate.markStopped() }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Permission.Request(
-                        permission = AppPermission.MICROPHONE,
-                        explainsFirst = false,
-                    ),
-                ),
-                effects,
-            )
+            verify(exactly = 1) {
+                permissionDelegate.request(
+                    permission = AppPermission.MICROPHONE,
+                    explainsFirst = false,
+                )
+            }
         }
     }
 

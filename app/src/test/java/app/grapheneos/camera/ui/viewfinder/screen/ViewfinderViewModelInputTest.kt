@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -10,6 +9,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -118,10 +118,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun captureButtonClicked_withASelfTimer_startsAndCancelsTheCountdown() {
         runTest {
-            every { captureDelegate.selfTimerCountdown(any()) } returns endlessSelfTimer()
-
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
             stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
@@ -131,8 +128,10 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
 
             verify(exactly = 0) { captureDelegate.takePicture() }
-            assertEquals(ViewfinderScreenEffect.SelfTimer.Started, effects.first())
-            assertEquals(ViewfinderScreenEffect.SelfTimer.Cancelled, effects.last())
+            verifyOrder {
+                captureDelegate.startSelfTimer()
+                captureDelegate.cancelSelfTimer()
+            }
         }
     }
 
@@ -152,89 +151,6 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
                 ),
                 effects,
             )
-        }
-    }
-
-    @Test
-    fun previewSwiped_upAndDownCloseAndOpenTheSettings() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.DOWN))
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.UP))
-
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.OpenSettingsSheet,
-                    ViewfinderScreenEffect.CloseSettingsSheet,
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun previewSwipedDown_inQrMode_offersTheFormatsUnlessAllAreScanned() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
-
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.DOWN))
-            stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.DOWN))
-
-            assertEquals(listOf(ViewfinderScreenEffect.ShowQrFormats), effects)
-        }
-    }
-
-    @Test
-    fun previewSwiped_whileRecording_stillOpensTheSettingsButKeepsTheMode() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            stateHolder.update {
-                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
-            }
-
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.LEFT))
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.UP))
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.DOWN))
-
-            assertEquals(listOf(ViewfinderScreenEffect.OpenSettingsSheet), effects)
-        }
-    }
-
-    @Test
-    fun previewSwiped_duringTheSelfTimer_doesNothing() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            stateHolder.update {
-                it.copy(capture = it.capture.copy(isSelfTimerRunning = true))
-            }
-
-            SwipeDirection.entries.forEach { direction ->
-                viewModel.onAction(CameraAction.PreviewSwiped(direction))
-            }
-
-            assertTrue(effects.isEmpty())
-        }
-    }
-
-    @Test
-    fun previewSwipedSideways_withoutModeTabs_doesNothing() {
-        runTest {
-            val viewModel = createViewModel(
-                applicationScope = backgroundScope,
-                entryPoint = cameraEntryPoint(showsCameraModeTabs = false),
-            )
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.LEFT))
-
-            assertTrue(effects.isEmpty())
         }
     }
 }

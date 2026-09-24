@@ -6,7 +6,6 @@ import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.ImageSaverException
 import app.grapheneos.camera.testutil.cameraEntryPoint
@@ -17,7 +16,6 @@ import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import java.io.IOException
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -276,82 +274,6 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
             val failure = effects.single() as ViewfinderScreenEffect.Picture.SaveFailed
             assertEquals(SAVE_FAILURE_STAGE, failure.stage)
             assertTrue(failure.alreadyReported)
-        }
-    }
-
-    @Test
-    fun selfTimerStartClicked_countsDownTheStoredDurationAndReportsTheEnd() {
-        runTest {
-            val storedSeconds = CameraSettings().selfTimerDurationSeconds
-            every {
-                captureDelegate.selfTimerCountdown(seconds = storedSeconds)
-            } returns flowOf(2, 1)
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CaptureAction.SelfTimerStartClicked)
-
-            verifyOrder {
-                captureDelegate.setSelfTimerRunning(true)
-                captureDelegate.setSelfTimerRunning(false)
-            }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.SelfTimer.Started,
-                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 2),
-                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 1),
-                    ViewfinderScreenEffect.SelfTimer.Finished,
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun selfTimerCancelClicked_putsTheControlsBackOnlyWhileACountdownIsUp() {
-        runTest {
-            every { captureDelegate.selfTimerCountdown(any()) } returns endlessSelfTimer()
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CaptureAction.SelfTimerStartClicked)
-            viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
-            viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
-
-            verifyOrder {
-                captureDelegate.setSelfTimerRunning(true)
-                captureDelegate.setSelfTimerRunning(false)
-            }
-            verify(exactly = 1) { captureDelegate.setSelfTimerRunning(false) }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.SelfTimer.Started,
-                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 3),
-                    ViewfinderScreenEffect.SelfTimer.Cancelled,
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun screenDestroyed_dropsTheCountdownWithoutPuttingTheControlsBack() {
-        runTest {
-            every { captureDelegate.selfTimerCountdown(any()) } returns endlessSelfTimer()
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CaptureAction.SelfTimerStartClicked)
-            viewModel.onAction(LifecycleAction.ScreenDestroyed)
-            viewModel.onAction(CaptureAction.SelfTimerCancelClicked)
-
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.SelfTimer.Started,
-                    ViewfinderScreenEffect.SelfTimer.Ticked(secondsLeft = 3),
-                ),
-                effects,
-            )
         }
     }
 

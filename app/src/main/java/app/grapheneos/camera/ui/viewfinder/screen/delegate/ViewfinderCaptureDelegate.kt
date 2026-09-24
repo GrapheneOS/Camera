@@ -17,11 +17,13 @@ import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +36,11 @@ interface ViewfinderCaptureDelegate {
 
     val captureEvents: Flow<CapturedImageEvent>
 
-    fun bind(stateHolder: ViewfinderStateHolder)
+    fun bind(
+        scope: CoroutineScope,
+        stateHolder: ViewfinderStateHolder,
+    )
+
     fun onScreenCreated(host: ViewfinderHost)
     fun onScreenStarted()
     fun onScreenStopped()
@@ -53,8 +59,8 @@ interface ViewfinderCaptureDelegate {
     fun confirmPreviewPicture(bitmap: Bitmap, outputUri: Uri?)
     fun dismissCapturedPreview()
 
-    fun setSelfTimerRunning(running: Boolean)
-    fun selfTimerCountdown(seconds: Int): Flow<Int>
+    fun startSelfTimer()
+    fun cancelSelfTimer()
 }
 
 internal class ViewfinderCaptureDelegateImpl @Inject constructor(
@@ -67,6 +73,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
 
+    private lateinit var scope: CoroutineScope
+
     private lateinit var stateHolder: ViewfinderStateHolder
 
     private var isBound = false
@@ -74,14 +82,19 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private var host: ViewfinderHost? = null
     private var isScreenStarted = false
     private var pendingCapture: PendingCapture? = null
+    private var selfTimer: Job? = null
 
     private val _captureEvents = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
     override val captureEvents: Flow<CapturedImageEvent> = _captureEvents.receiveAsFlow()
 
-    override fun bind(stateHolder: ViewfinderStateHolder) {
+    override fun bind(
+        scope: CoroutineScope,
+        stateHolder: ViewfinderStateHolder,
+    ) {
         if (isBound) return
         isBound = true
 
+        this.scope = scope
         this.stateHolder = stateHolder
     }
 
@@ -98,6 +111,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     }
 
     override fun onScreenDestroyed() {
+        selfTimer?.cancel()
         host = null
         updateCapture { ViewfinderCaptureState() }
     }
@@ -207,11 +221,39 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         updateCapture { it.copy(isCapturedPreviewShown = false) }
     }
 
-    override fun setSelfTimerRunning(running: Boolean) {
+    override fun startSelfTimer() {
+        cancelSelfTimer()
+
+        stateHolder.postEffect(Effect.SelfTimer.Started)
+        setSelfTimerRunning(true)
+
+        val seconds = stateHolder.state.value.settings.selfTimerDurationSeconds
+        selfTimer = scope.launch(mainDispatcher) {
+            selfTimerCountdown(seconds).collect { secondsLeft ->
+                stateHolder.postEffect(Effect.SelfTimer.Ticked(secondsLeft))
+            }
+
+            setSelfTimerRunning(false)
+            stateHolder.postEffect(Effect.SelfTimer.Finished)
+        }
+    }
+
+    override fun cancelSelfTimer() {
+        // Cancelling puts back the controls the countdown hid. Doing that when no countdown is up
+        // would resurrect the ones the current mode hid for its own reasons: QR mode hides
+        // thirdOption and cancelButtonView, and the badge stays hidden with no timer set.
+        if (selfTimer?.isActive != true) return
+
+        selfTimer?.cancel()
+        setSelfTimerRunning(false)
+        stateHolder.postEffect(Effect.SelfTimer.Cancelled)
+    }
+
+    private fun setSelfTimerRunning(running: Boolean) {
         updateCapture { it.copy(isSelfTimerRunning = running) }
     }
 
-    override fun selfTimerCountdown(seconds: Int): Flow<Int> {
+    private fun selfTimerCountdown(seconds: Int): Flow<Int> {
         return flow {
             for (secondsLeft in seconds downTo 1) {
                 emit(secondsLeft)

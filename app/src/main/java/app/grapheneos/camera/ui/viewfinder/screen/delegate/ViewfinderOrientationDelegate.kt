@@ -6,14 +6,13 @@ import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,16 +21,15 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 interface ViewfinderOrientationDelegate {
 
     val levelUiState: StateFlow<LevelUiState>
-    val levelReachedEvents: Flow<Unit>
 
     fun bind(stateHolder: ViewfinderStateHolder)
+
     fun setDisplayRotation(rotation: Int)
 
     suspend fun trackOrientation()
@@ -49,9 +47,6 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
 
     private val _levelUiState = MutableStateFlow(LevelUiState())
     override val levelUiState: StateFlow<LevelUiState> = _levelUiState.asStateFlow()
-
-    private val _levelReachedEvents = Channel<Unit>(capacity = Channel.BUFFERED)
-    override val levelReachedEvents: Flow<Unit> = _levelReachedEvents.receiveAsFlow()
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
         if (isBound) return
@@ -131,7 +126,7 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
                         isAnnounced = false
                         delay(LEVEL_HOLD)
                         isAnnounced = true
-                        _levelReachedEvents.send(Unit)
+                        stateHolder.postEffect(Effect.PlayLevelHaptic)
                     }
 
                     !isLevel && hasTiltedAway -> {

@@ -8,6 +8,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import dagger.Binds
@@ -49,4 +51,10 @@ internal abstract class ViewfinderBindsModule {
     abstract fun bindLevelUiStateMapper(
         impl: LevelUiStateMapperImpl,
     ): LevelUiStateMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindSwipeEffectMapper(
+        impl: SwipeEffectMapperImpl,
+    ): SwipeEffectMapper
 }
