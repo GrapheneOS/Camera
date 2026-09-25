@@ -327,6 +327,7 @@ class ViewfinderViewModel @Inject constructor(
             }
 
             is RecordedVideoEvent.Saved -> {
+                captureDelegate.finishRecordingSave()
                 emitEffect(Effect.Recording.Saved(uri = event.uri, item = event.item))
             }
         }
@@ -571,6 +572,10 @@ class ViewfinderViewModel @Inject constructor(
 
     private fun onRecordingFinished(outcome: RecordingOutcome) {
         onRecordingStopped()
+
+        if (outcome.keepsContent()) {
+            captureDelegate.startRecordingSave()
+        }
 
         emitEffect(Effect.Recording.PlayStopSound)
 

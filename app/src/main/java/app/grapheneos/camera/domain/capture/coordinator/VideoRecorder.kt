@@ -55,8 +55,6 @@ internal class VideoRecorderImpl @Inject constructor(
 
     private var pendingRecording: PendingRecording? = null
 
-    // Moved on by a stop that arrives while the output is still being created, which abandons the
-    // start waiting on it
     private var preparation = 0
     private var isPreparing = false
 
@@ -81,13 +79,8 @@ internal class VideoRecorderImpl @Inject constructor(
             isPreparing = false
         }
 
-        val isAbandoned = !isCurrent || !isStillWanted()
-
         when {
-            isAbandoned -> output?.let {
-                closeOutput(it)
-                discardOutput(it)
-            }
+            !isCurrent || !isStillWanted() -> output?.let { discard(it) }
 
             output == null -> _events.trySend(RecordedVideoEvent.OutputUnavailable)
 
@@ -97,13 +90,15 @@ internal class VideoRecorderImpl @Inject constructor(
                     location = location,
                     includeAudio = request.includeAudio,
                 )
-
                 _events.trySend(RecordedVideoEvent.ReadyToStart)
             }
         }
     }
 
-    override fun start(muted: Boolean, paused: Boolean) {
+    override fun start(
+        muted: Boolean,
+        paused: Boolean,
+    ) {
         val pending = pendingRecording ?: return
 
         // The sound callback may fire more than once; a second start() throws.
@@ -158,25 +153,12 @@ internal class VideoRecorderImpl @Inject constructor(
             // The start is still queued behind the sound that announces it.
             !pending.isStarted -> {
                 pendingRecording = null
-                closeOutput(pending.output)
-                discardOutput(pending.output)
+                discard(pending.output)
                 _events.trySend(RecordedVideoEvent.Abandoned)
             }
 
             else -> recordingSession.stop()
         }
-    }
-
-    // The output is still being created, so the stop takes now and the output is discarded once
-    // it arrives
-    private fun abandonPreparation() {
-        if (!isPreparing) {
-            return
-        }
-
-        preparation++
-        isPreparing = false
-        _events.trySend(RecordedVideoEvent.Abandoned)
     }
 
     private suspend fun location(includeLocation: Boolean): Location? {
@@ -232,24 +214,23 @@ internal class VideoRecorderImpl @Inject constructor(
         }
 
         when {
-            keepsContent(outcome) -> save(recording.output)
+            outcome.keepsContent() -> save(recording.output)
             else -> discardOutput(recording.output)
         }
     }
 
-    private fun keepsContent(outcome: RecordingOutcome): Boolean {
-        return when (outcome) {
-            is RecordingOutcome.Saved -> true
-            is RecordingOutcome.Interrupted -> outcome.hasContent
-            is RecordingOutcome.NothingPlayableWritten -> false
-            is RecordingOutcome.Failed -> false
+    private fun abandonPreparation() {
+        if (!isPreparing) {
+            return
         }
+
+        preparation++
+        isPreparing = false
+        _events.trySend(RecordedVideoEvent.Abandoned)
     }
 
     private fun save(output: RecordingOutput) {
         applicationScope.launch(mainDispatcher) {
-            // A video MediaProvider never made visible is not saved, so it must not show as
-            // captured
             if (!publishRecording(output)) {
                 _events.trySend(RecordedVideoEvent.SaveFailed)
                 return@launch
@@ -282,6 +263,11 @@ internal class VideoRecorderImpl @Inject constructor(
         applicationScope.launch(mainDispatcher) {
             discardRecording(output)
         }
+    }
+
+    private fun discard(output: RecordingOutput) {
+        closeOutput(output)
+        discardOutput(output)
     }
 
     private fun closeOutput(output: RecordingOutput) {

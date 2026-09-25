@@ -660,15 +660,14 @@ open class MainActivity : AppCompatActivity() {
             requestLocation()
         }
 
-        // If the preview of video capture activity isn't showing
-        if (!(this is VideoCaptureActivity && viewfinder.uiState.value.capturedPreviewVisible)) {
-            if (!viewfinder.uiState.value.qrResultVisible) {
-                if (hasCameraPermission()) {
-                    viewfinder.onAction(LifecycleAction.ScreenResumed)
-                } else {
-                    Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
-                }
-            }
+        val uiState = viewfinder.uiState.value
+        val reviewsRecording = this is VideoCaptureActivity &&
+            (uiState.capturedPreviewVisible || uiState.isRecordingBeingSaved)
+
+        when {
+            reviewsRecording || uiState.qrResultVisible -> Unit
+            hasCameraPermission() -> viewfinder.onAction(LifecycleAction.ScreenResumed)
+            else -> Log.i(TAG, "Leaving the camera uninitialized until the permission is granted.")
         }
     }
 

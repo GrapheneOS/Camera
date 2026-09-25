@@ -73,8 +73,8 @@
         <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="src/androidTest/java/app/grapheneos/camera/VideoCapturerRegressionTest.kt">
-        <error line="364" column="31" source="standard:argument-list-wrapping" />
-        <error line="519" column="1" source="standard:indent" />
+        <error line="382" column="31" source="standard:argument-list-wrapping" />
+        <error line="544" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/AutoFinishOnSleep.kt">
         <error line="12" column="25" source="standard:class-signature" />
@@ -370,9 +370,9 @@
         <error line="666" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="920" column="100" source="standard:max-line-length" />
-        <error line="1071" column="100" source="standard:max-line-length" />
-        <error line="1421" column="17" source="standard:chain-wrapping" />
+        <error line="919" column="100" source="standard:max-line-length" />
+        <error line="1070" column="100" source="standard:max-line-length" />
+        <error line="1420" column="17" source="standard:chain-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

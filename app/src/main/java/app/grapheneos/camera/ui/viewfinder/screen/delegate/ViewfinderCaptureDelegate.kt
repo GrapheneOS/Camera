@@ -38,6 +38,9 @@ interface ViewfinderCaptureDelegate {
     fun startPictureSave()
     fun finishPictureSave()
 
+    fun startRecordingSave()
+    fun finishRecordingSave()
+
     fun takePreviewPicture()
     fun showCapturedPreview()
     fun confirmPreviewPicture(bitmap: Bitmap)
@@ -94,20 +97,24 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
         applicationScope.launch(mainDispatcher) {
             try {
-                captureImage(
-                    request = CaptureImageRequest(
-                        storageLocation = capturedItemRepository.storageLocation.first(),
-                        includeLocation = state.requireLocation,
-                        saveAsPreviewed = state.settings.saveImageAsPreviewed,
-                        removeExif = state.settings.removeExifAfterCapture,
-                        targetThumbnailWidth = thumbnailSize.width,
-                        targetThumbnailHeight = thumbnailSize.height,
-                    ),
-                    needsThumbnail = { host != null },
-                    onEvent = { event ->
-                        onCapturedImageEvent(pending, event)
-                    },
-                )
+                val storageLocation = capturedItemRepository.storageLocation.first()
+
+                if (!pending.isCancelled) {
+                    captureImage(
+                        request = CaptureImageRequest(
+                            storageLocation = storageLocation,
+                            includeLocation = state.requireLocation,
+                            saveAsPreviewed = state.settings.saveImageAsPreviewed,
+                            removeExif = state.settings.removeExifAfterCapture,
+                            targetThumbnailWidth = thumbnailSize.width,
+                            targetThumbnailHeight = thumbnailSize.height,
+                        ),
+                        needsThumbnail = { host != null },
+                        onEvent = { event ->
+                            onCapturedImageEvent(pending, event)
+                        },
+                    )
+                }
             } finally {
                 finish(pending)
             }
@@ -127,6 +134,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     override fun finishPictureSave() {
         updateCapture { it.copy(isSavingPicture = false) }
+    }
+
+    override fun startRecordingSave() {
+        updateCapture { it.copy(isSavingRecording = true) }
+    }
+
+    override fun finishRecordingSave() {
+        updateCapture { it.copy(isSavingRecording = false) }
     }
 
     override fun takePreviewPicture() {
