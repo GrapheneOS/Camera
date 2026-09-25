@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.hardware.SensorManager
-import android.hardware.display.DisplayManager
 import android.location.LocationManager
 import android.os.Build
 import android.os.Vibrator
@@ -35,14 +34,6 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): ClipboardManager {
         return context.getSystemService(ClipboardManager::class.java)
-    }
-
-    @Provides
-    @Reusable
-    fun provideDisplayManager(
-        @ApplicationContext context: Context,
-    ): DisplayManager {
-        return context.getSystemService(DisplayManager::class.java)
     }
 
     @Provides
