@@ -74,6 +74,8 @@ sealed interface ViewfinderAction {
 
         data object CapturedPreviewShown : CaptureAction
 
+        data object CapturedPreviewDismissed : CaptureAction
+
         data class CapturedPreviewConfirmed(
             val bitmap: Bitmap,
         ) : CaptureAction
@@ -111,8 +113,6 @@ sealed interface ViewfinderAction {
         data object PreviewStreamingStarted : LifecycleAction
 
         data object QrResultDismissed : LifecycleAction
-
-        data object CapturedPreviewDismissed : LifecycleAction
 
         data object ScreenDestroyed : LifecycleAction
 
