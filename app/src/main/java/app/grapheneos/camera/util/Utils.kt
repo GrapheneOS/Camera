@@ -82,10 +82,12 @@ fun storageLocationToUiString(ctx: Context, sl: String): String {
     try {
         val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
 
-        val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-        ctx.contentResolver.query(docUri, projection, null, null)?.use {
+        val column = DocumentsContract.Document.COLUMN_DISPLAY_NAME
+        ctx.contentResolver.query(docUri, arrayOf(column), null, null)?.use {
             if (it.moveToFirst()) {
-                return it.getString(0)
+                it.getStringOrNull(column)?.let { name ->
+                    return name
+                }
             }
         }
     } catch (ignored: Exception) {}
