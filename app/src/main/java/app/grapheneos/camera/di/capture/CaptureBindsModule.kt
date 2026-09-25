@@ -1,7 +1,7 @@
 package app.grapheneos.camera.di.capture
 
-import app.grapheneos.camera.domain.capture.CapturedImagePipeline
-import app.grapheneos.camera.domain.capture.CapturedImagePipelineImpl
+import app.grapheneos.camera.domain.capture.coordinator.CapturedImagePipeline
+import app.grapheneos.camera.domain.capture.coordinator.CapturedImagePipelineImpl
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapperImpl
 import app.grapheneos.camera.domain.capture.usecase.CreateRecordingOutput

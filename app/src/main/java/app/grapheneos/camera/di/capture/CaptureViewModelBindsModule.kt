@@ -1,7 +1,7 @@
 package app.grapheneos.camera.di.capture
 
-import app.grapheneos.camera.domain.capture.VideoRecorder
-import app.grapheneos.camera.domain.capture.VideoRecorderImpl
+import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
+import app.grapheneos.camera.domain.capture.coordinator.VideoRecorderImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

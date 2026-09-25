@@ -22,10 +22,6 @@ class CameraEntryPointProvidesModuleTest {
 
     private val module = CameraEntryPointProvidesModule()
 
-    private fun <T : Activity> entryPointFor(type: Class<T>): CameraEntryPoint {
-        return module.provideCameraEntryPoint(Robolectric.buildActivity(type).get())
-    }
-
     @Test
     fun theMainEntryPoint_offersEverything() {
         assertEquals(
@@ -87,5 +83,9 @@ class CameraEntryPointProvidesModuleTest {
         assertTrue(entryPoint.isVideoOnlySession)
         assertTrue(entryPoint.requiresVideoModeOnly)
         assertFalse(entryPoint.showsCameraModeTabs)
+    }
+
+    private fun <T : Activity> entryPointFor(type: Class<T>): CameraEntryPoint {
+        return module.provideCameraEntryPoint(Robolectric.buildActivity(type).get())
     }
 }

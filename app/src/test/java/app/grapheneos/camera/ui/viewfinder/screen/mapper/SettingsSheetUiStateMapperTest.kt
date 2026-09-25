@@ -28,36 +28,6 @@ class SettingsSheetUiStateMapperTest {
 
     private val mapper: SettingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl()
 
-    private fun map(
-        mode: CameraMode = CameraMode.CAMERA,
-        requiresVideoModeOnly: Boolean = false,
-        flashMode: FlashMode = FlashMode.OFF,
-        requireLocation: Boolean = false,
-        settings: CameraSettings = CameraSettings(),
-        modeSettings: ModeSettings = ModeSettings(),
-        session: ViewfinderSessionState = ViewfinderSessionState(),
-        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
-        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
-    ): SettingsSheetUiState {
-        return mapper.map(
-            ViewfinderState(
-                mode = mode,
-                requiresVideoModeOnly = requiresVideoModeOnly,
-                flashMode = flashMode,
-                requireLocation = requireLocation,
-                settings = settings,
-                modeSettings = modeSettings,
-                session = session,
-                capture = capture,
-                recording = recording,
-            ),
-        )
-    }
-
-    private fun sessionWithFlash(): ViewfinderSessionState {
-        return ViewfinderSessionState(isFlashAvailable = true)
-    }
-
     @Test
     fun recording_locksTheSettingsItWasStartedWith() {
         val state = map(
@@ -72,7 +42,7 @@ class SettingsSheetUiStateMapperTest {
     }
 
     @Test
-    fun startingRecording_locksTheSettingsWhileItsOutputIsCreated() {
+    fun aRecordingStillStarting_locksTheSettingsWhileItsOutputIsCreated() {
         val state = map(
             mode = CameraMode.VIDEO,
             recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
@@ -251,6 +221,36 @@ class SettingsSheetUiStateMapperTest {
 
         assertTrue(state.torchAvailable)
         assertTrue(state.torchOn)
+    }
+
+    private fun map(
+        mode: CameraMode = CameraMode.CAMERA,
+        requiresVideoModeOnly: Boolean = false,
+        flashMode: FlashMode = FlashMode.OFF,
+        requireLocation: Boolean = false,
+        settings: CameraSettings = CameraSettings(),
+        modeSettings: ModeSettings = ModeSettings(),
+        session: ViewfinderSessionState = ViewfinderSessionState(),
+        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
+    ): SettingsSheetUiState {
+        return mapper.map(
+            ViewfinderState(
+                mode = mode,
+                requiresVideoModeOnly = requiresVideoModeOnly,
+                flashMode = flashMode,
+                requireLocation = requireLocation,
+                settings = settings,
+                modeSettings = modeSettings,
+                session = session,
+                capture = capture,
+                recording = recording,
+            ),
+        )
+    }
+
+    private fun sessionWithFlash(): ViewfinderSessionState {
+        return ViewfinderSessionState(isFlashAvailable = true)
     }
 
     private companion object {

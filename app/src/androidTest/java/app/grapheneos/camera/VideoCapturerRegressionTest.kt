@@ -36,7 +36,8 @@ import kotlin.math.abs
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -463,10 +464,10 @@ class VideoCapturerRegressionTest {
     private val targetContext
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private suspend fun deleteStalePendingVideos(olderThan: Duration) {
+    private suspend fun TestScope.deleteStalePendingVideos(olderThan: Duration) {
         val repository = CaptureOutputRepositoryImpl(
             contentResolver = targetContext.contentResolver,
-            ioDispatcher = Dispatchers.IO,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
         )
 
         repository.deleteStalePendingVideos(olderThan = olderThan)
