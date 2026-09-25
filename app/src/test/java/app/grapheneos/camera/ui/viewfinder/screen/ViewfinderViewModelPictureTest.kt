@@ -32,7 +32,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
             every { cameraDelegate.canBeginBind(forced = true) } returns true
 
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            viewModel.onAction(LifecycleAction.CapturedPreviewDismissed)
+            viewModel.onAction(CaptureAction.CapturedPreviewDismissed)
 
             verifyOrder {
                 captureDelegate.dismissCapturedPreview()
@@ -119,6 +119,19 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
                 ),
                 effects,
             )
+        }
+    }
+
+    @Test
+    fun previewReturned_handsTheConfirmedBitmapBack() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+            val bitmap = createBitmap(1, 1)
+
+            captureEvents.emit(CapturedImageEvent.PreviewReturned(bitmap = bitmap))
+
+            assertEquals(listOf(ViewfinderScreenEffect.Picture.PreviewReturned(bitmap)), effects)
         }
     }
 

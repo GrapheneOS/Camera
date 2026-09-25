@@ -7,6 +7,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
+import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
@@ -196,8 +197,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     @Test
     fun aRecordingThatKeepsItsContent_isSavingUntilItIsSaved() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
+            createViewModel(applicationScope = backgroundScope)
 
             recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
             recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
@@ -206,8 +206,6 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 captureDelegate.startRecordingSave()
                 captureDelegate.finishRecordingSave()
             }
-
-            assertTrue(ViewfinderScreenEffect.Recording.Saved(uri = Uri.EMPTY) in effects)
         }
     }
 
@@ -276,7 +274,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun recordingSaved_recordsTheItemAndHandsTheRecordingOver() {
+    fun recordingSaved_recordsTheItem() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
@@ -292,7 +290,29 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 galleryDelegate.recordCapturedItem(item)
                 galleryDelegate.refreshThumbnail()
             }
-            assertEquals(listOf(ViewfinderScreenEffect.Recording.Saved(uri = Uri.EMPTY)), effects)
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun recordingSaved_inACaptureSession_showsItForReview() {
+        runTest {
+            val viewModel = createViewModel(
+                applicationScope = backgroundScope,
+                entryPoint = cameraEntryPoint(
+                    isCaptureSession = true,
+                    requiresVideoModeOnly = true,
+                    showsCameraModeTabs = false,
+                ),
+            )
+            val effects = collectEffects(viewModel)
+
+            recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
+
+            assertEquals(
+                listOf(ViewfinderScreenEffect.Recording.ShowForReview(uri = Uri.EMPTY)),
+                effects,
+            )
         }
     }
 }

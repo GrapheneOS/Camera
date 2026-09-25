@@ -200,7 +200,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         outputUri: Uri?,
     ) {
         if (outputUri == null) {
-            _captureEvents.trySend(CapturedImageEvent.PreviewReturned)
+            _captureEvents.trySend(CapturedImageEvent.PreviewReturned(bitmap = bitmap))
             return
         }
 

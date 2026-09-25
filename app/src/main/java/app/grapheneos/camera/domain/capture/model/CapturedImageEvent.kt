@@ -11,13 +11,15 @@ sealed interface CapturedImageEvent {
 
     data object PreviewFailed : CapturedImageEvent
 
-    data object PreviewReturned : CapturedImageEvent
-
     data object PreviewStored : CapturedImageEvent
 
     data object PreviewStoreFailed : CapturedImageEvent
 
     data object StorageLocationNotFound : CapturedImageEvent
+
+    data class PreviewReturned(
+        val bitmap: Bitmap,
+    ) : CapturedImageEvent
 
     data class CaptureFailed(
         val errorCode: Int,

@@ -14,7 +14,6 @@ import android.widget.ImageView
 import androidx.core.graphics.scale
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
 
 open class CaptureActivity : MainActivity() {
@@ -96,7 +95,7 @@ open class CaptureActivity : MainActivity() {
     }
 
     private fun hidePreview() {
-        viewfinder.onAction(LifecycleAction.CapturedPreviewDismissed)
+        viewfinder.onAction(CaptureAction.CapturedPreviewDismissed)
 
         settingsIcon.visibility = View.VISIBLE
     }
@@ -132,8 +131,8 @@ open class CaptureActivity : MainActivity() {
         finish()
     }
 
-    fun returnCapturedBitmap() {
-        val resized = resizeImage(requireNotNull(bitmap))
+    fun returnCapturedBitmap(bitmap: Bitmap) {
+        val resized = resizeImage(bitmap)
         val intent = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, resized)
 
         this.bitmap = resized

@@ -179,9 +179,12 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Picture.SaveFailed -> showSaveFailure(effect)
             is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)
             is Effect.Picture.PreviewFailed -> showCapturedPreviewFailure()
-            is Effect.Picture.PreviewReturned -> captureActivity()?.returnCapturedBitmap()
             is Effect.Picture.PreviewStored -> finishCapture(stored = true)
             is Effect.Picture.PreviewStoreFailed -> finishCapture(stored = false)
+
+            is Effect.Picture.PreviewReturned -> {
+                captureActivity()?.returnCapturedBitmap(effect.bitmap)
+            }
         }
     }
 
@@ -244,7 +247,7 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handleRecording(effect: Effect.Recording) {
         when (effect) {
-            is Effect.Recording.Saved -> onRecordingSaved(effect)
+            is Effect.Recording.ShowForReview -> videoCaptureActivity()?.afterRecording(effect.uri)
 
             is Effect.Recording.PlayStartSound -> {
                 activity.tunePlayer.playVRStartSound {
@@ -263,12 +266,6 @@ internal class ViewfinderEffectHandlerImpl(
                     activity.getString(R.string.error_during_recording, effect.errorCode),
                 )
             }
-        }
-    }
-
-    private fun onRecordingSaved(effect: Effect.Recording.Saved) {
-        if (activity is VideoCaptureActivity) {
-            activity.afterRecording(effect.uri)
         }
     }
 
@@ -449,6 +446,10 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun captureActivity(): CaptureActivity? {
         return activity as? CaptureActivity
+    }
+
+    private fun videoCaptureActivity(): VideoCaptureActivity? {
+        return activity as? VideoCaptureActivity
     }
 
     private companion object {

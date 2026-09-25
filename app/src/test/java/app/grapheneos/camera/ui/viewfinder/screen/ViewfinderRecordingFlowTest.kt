@@ -176,13 +176,13 @@ class ViewfinderRecordingFlowTest {
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
             assertEquals(1, recordingSession.stopCount)
-            assertFalse(effects.any { it is ViewfinderScreenEffect.Recording.Saved })
+            assertFalse(effects.any { it is ViewfinderScreenEffect.Recording.ShowForReview })
             verify(exactly = 0) { cameraSession.bind(any()) }
 
             outputPublished.complete(Unit)
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
-            assertTrue(effects.any { it is ViewfinderScreenEffect.Recording.Saved })
+            assertTrue(effects.any { it is ViewfinderScreenEffect.Recording.ShowForReview })
             verify(exactly = 1) { cameraSession.bind(any()) }
         }
     }

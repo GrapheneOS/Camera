@@ -84,11 +84,13 @@ sealed interface ViewfinderScreenEffect {
 
         data object PreviewFailed : Picture
 
-        data object PreviewReturned : Picture
-
         data object PreviewStored : Picture
 
         data object PreviewStoreFailed : Picture
+
+        data class PreviewReturned(
+            val bitmap: Bitmap,
+        ) : Picture
 
         data class PreviewCaptured(
             val bitmap: Bitmap,
@@ -119,7 +121,7 @@ sealed interface ViewfinderScreenEffect {
 
         data object PlayStartSound : Recording
 
-        data class Saved(
+        data class ShowForReview(
             val uri: Uri,
         ) : Recording
 

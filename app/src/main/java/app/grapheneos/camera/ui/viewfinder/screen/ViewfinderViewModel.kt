@@ -226,6 +226,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.SelfTimerCancelClicked -> captureDelegate.cancelSelfTimer()
             is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> showCapturedPreview()
+            is CaptureAction.CapturedPreviewDismissed -> dismissCapturedPreview()
 
             is CaptureAction.CapturedPreviewConfirmed -> {
                 captureDelegate.confirmPreviewPicture(
@@ -257,7 +258,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             is LifecycleAction.ScreenResumed -> onScreenResumed()
             is LifecycleAction.ScreenPaused -> onScreenPaused()
             is LifecycleAction.ScreenInteracted -> screenWakeDelegate.onScreenInteracted()
-            is LifecycleAction.CapturedPreviewDismissed -> dismissCapturedPreview()
             is LifecycleAction.QrResultDismissed -> dismissQrResult()
         }
     }
@@ -359,8 +359,11 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
             is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
             is CapturedImageEvent.Saved -> galleryDelegate.recordCapturedItem(event.item)
-            is CapturedImageEvent.PreviewReturned -> emitEffect(Effect.Picture.PreviewReturned)
             is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
+
+            is CapturedImageEvent.PreviewReturned -> {
+                emitEffect(Effect.Picture.PreviewReturned(bitmap = event.bitmap))
+            }
 
             is CapturedImageEvent.PreviewStoreFailed -> {
                 emitEffect(Effect.Picture.PreviewStoreFailed)
@@ -680,6 +683,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         cameraDelegate.unbindCamera()
     }
 
+    private fun dismissCapturedPreview() {
+        captureDelegate.dismissCapturedPreview()
+
+        startCamera(forced = true)
+    }
+
     private fun onStorageLocationNotFound() {
         applicationScope.launch(mainDispatcher) {
             revertToMediaStoreLocation()
@@ -796,7 +805,9 @@ class ViewfinderViewModel @AssistedInject constructor(
             galleryDelegate.refreshThumbnail()
         }
 
-        emitEffect(Effect.Recording.Saved(uri = event.uri))
+        if (state().isCaptureSession) {
+            emitEffect(Effect.Recording.ShowForReview(uri = event.uri))
+        }
     }
 
     private fun onScreenCreated(host: ViewfinderHost) {
@@ -953,12 +964,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         settingsDelegate.setSelfIllumination(enabled)
 
         emitEffect(Effect.ApplySelfIllumination(state().selfIlluminate()))
-    }
-
-    private fun dismissCapturedPreview() {
-        captureDelegate.dismissCapturedPreview()
-
-        startCamera(forced = true)
     }
 
     private fun dismissQrResult() {
