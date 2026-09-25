@@ -160,12 +160,13 @@ class ViewfinderCaptureDelegateTest {
     @Test
     fun confirmPreviewPicture_withoutAFile_handsTheBitmapBackInline() {
         runTest {
+            val bitmap = createBitmap(1, 1)
             val delegate = createDelegate()
             val events = collectEvents(delegate)
 
-            delegate.confirmPreviewPicture(bitmap = createBitmap(1, 1), outputUri = null)
+            delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = null)
 
-            assertEquals(listOf(CapturedImageEvent.PreviewReturned), events)
+            assertEquals(listOf(CapturedImageEvent.PreviewReturned(bitmap = bitmap)), events)
             coVerify(exactly = 0) { storeCapturedPreview(uri = any(), bitmap = any()) }
         }
     }
