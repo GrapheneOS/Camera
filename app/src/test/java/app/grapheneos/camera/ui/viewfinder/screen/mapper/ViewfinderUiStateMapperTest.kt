@@ -32,30 +32,6 @@ class ViewfinderUiStateMapperTest {
         captureUiStateMapper = CaptureUiStateMapperImpl(),
     )
 
-    private fun map(
-        mode: CameraMode = CameraMode.CAMERA,
-        requiresVideoModeOnly: Boolean = false,
-        isCaptureSession: Boolean = false,
-        showsCameraModeTabs: Boolean = true,
-        settings: CameraSettings = CameraSettings(),
-        session: ViewfinderSessionState = ViewfinderSessionState(),
-        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
-        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
-    ): ViewfinderUiState {
-        return mapper.map(
-            ViewfinderState(
-                mode = mode,
-                requiresVideoModeOnly = requiresVideoModeOnly,
-                isCaptureSession = isCaptureSession,
-                showsCameraModeTabs = showsCameraModeTabs,
-                settings = settings,
-                session = session,
-                capture = capture,
-                recording = recording,
-            ),
-        )
-    }
-
     @Test
     fun captureButton_marksTheRecordingItStopsWhileItIsUnderway() {
         assertFalse(map().captureButton.recording)
@@ -224,14 +200,10 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun takingAPicture_disablesTheShutter() {
-        val state = map(capture = ViewfinderCaptureState(isTakingPicture = true))
+    fun captureButton_isDisabledOnlyWhileAPictureIsTaken() {
+        val taking = map(capture = ViewfinderCaptureState(isTakingPicture = true))
 
-        assertFalse(state.captureButton.enabled)
-    }
-
-    @Test
-    fun noPictureInProgress_leavesTheShutterEnabled() {
+        assertFalse(taking.captureButton.enabled)
         assertTrue(map().captureButton.enabled)
     }
 
@@ -263,14 +235,10 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun savingAPicture_showsTheThumbnailLoader() {
-        val state = map(capture = ViewfinderCaptureState(isSavingPicture = true))
+    fun thumbnailLoader_isShownOnlyWhileAPictureIsSaved() {
+        val saving = map(capture = ViewfinderCaptureState(isSavingPicture = true))
 
-        assertTrue(state.thumbnailLoaderVisible)
-    }
-
-    @Test
-    fun noPictureBeingSaved_hidesTheThumbnailLoader() {
+        assertTrue(saving.thumbnailLoaderVisible)
         assertFalse(map().thumbnailLoaderVisible)
     }
 
@@ -303,13 +271,14 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun recording_isActive() {
-        val state = map(
+    fun isRecordingActive_holdsOnlyWhileARecordingIsUnderway() {
+        val recording = map(
             mode = CameraMode.VIDEO,
             recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
-        assertTrue(state.isRecordingActive)
+        assertTrue(recording.isRecordingActive)
+        assertFalse(map(mode = CameraMode.VIDEO).isRecordingActive)
     }
 
     @Test
@@ -382,11 +351,6 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun noRecording_isNotActive() {
-        assertFalse(map(mode = CameraMode.VIDEO).isRecordingActive)
-    }
-
-    @Test
     fun pausedRecording_offersToResume() {
         val state = map(
             mode = CameraMode.VIDEO,
@@ -454,10 +418,6 @@ class ViewfinderUiStateMapperTest {
         assertFalse(recording.thirdOptionVisible)
     }
 
-    private companion object {
-        const val SOME_SECONDS = 3
-    }
-
     @Test
     fun cameraState_isPublishedForTheViews() {
         val modes = setOf(CameraMode.CAMERA, CameraMode.VIDEO)
@@ -494,5 +454,33 @@ class ViewfinderUiStateMapperTest {
         assertEquals(ZoomUiState(), state.zoom)
         assertNull(state.exposure)
         assertNull(state.sensorOrientationDegrees)
+    }
+
+    private fun map(
+        mode: CameraMode = CameraMode.CAMERA,
+        requiresVideoModeOnly: Boolean = false,
+        isCaptureSession: Boolean = false,
+        showsCameraModeTabs: Boolean = true,
+        settings: CameraSettings = CameraSettings(),
+        session: ViewfinderSessionState = ViewfinderSessionState(),
+        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
+    ): ViewfinderUiState {
+        return mapper.map(
+            ViewfinderState(
+                mode = mode,
+                requiresVideoModeOnly = requiresVideoModeOnly,
+                isCaptureSession = isCaptureSession,
+                showsCameraModeTabs = showsCameraModeTabs,
+                settings = settings,
+                session = session,
+                capture = capture,
+                recording = recording,
+            ),
+        )
+    }
+
+    private companion object {
+        const val SOME_SECONDS = 3
     }
 }
