@@ -22,6 +22,7 @@ import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.getVideoThumbnail
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -321,7 +322,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                 null,
             )?.use {
                 if (it.moveToFirst()) {
-                    fileName = it.getString(0)
+                    fileName = it.getStringOrNull(columnName)
                 }
             }
         } catch (e: Exception) {

@@ -73,7 +73,6 @@
         <error line="37" column="1" source="standard:indent" />
     </file>
     <file name="src/androidTest/java/app/grapheneos/camera/VideoCapturerRegressionTest.kt">
-        <error line="382" column="31" source="standard:argument-list-wrapping" />
         <error line="544" column="1" source="standard:indent" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/AutoFinishOnSleep.kt">
@@ -325,20 +324,20 @@
         <error line="342" column="11" source="standard:multiline-if-else" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/InAppGallery.kt">
-        <error line="124" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="136" column="19" source="standard:wrapping" />
-        <error line="136" column="20" source="standard:argument-list-wrapping" />
-        <error line="180" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="253" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="328" column="1" source="standard:indent" />
-        <error line="329" column="1" source="standard:indent" />
-        <error line="330" column="1" source="standard:indent" />
-        <error line="419" column="56" source="standard:argument-list-wrapping" />
-        <error line="468" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="529" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="534" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="555" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="666" column="21" source="standard:argument-list-wrapping" />
+        <error line="125" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="137" column="19" source="standard:wrapping" />
+        <error line="137" column="20" source="standard:argument-list-wrapping" />
+        <error line="181" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="254" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="317" column="1" source="standard:indent" />
+        <error line="318" column="1" source="standard:indent" />
+        <error line="319" column="1" source="standard:indent" />
+        <error line="408" column="56" source="standard:argument-list-wrapping" />
+        <error line="457" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="518" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="523" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="544" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="655" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="602" column="100" source="standard:max-line-length" />

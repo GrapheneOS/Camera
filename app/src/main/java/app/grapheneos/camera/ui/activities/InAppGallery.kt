@@ -4,7 +4,6 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.database.Cursor
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -48,8 +47,10 @@ import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.editCapturedItem
 import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.util.formatVideoDuration
+import app.grapheneos.camera.util.getLongOrNull
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
+import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -254,18 +255,6 @@ class InAppGallery : AppCompatActivity() {
     }
 
     /**
-     * A provider is free to ignore the projection it was handed and answer with its own columns
-     * -- the DocumentsProvider contract explicitly allows it -- so reading by position can hand
-     * back an unrelated column, e.g. a document id that then renders as a 1970 date. Look the
-     * column up by name instead and treat "absent" the same as "not set".
-     */
-    private fun Cursor.optionalLong(column: String): Long? =
-        getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
-
-    private fun Cursor.optionalString(column: String): String? =
-        getColumnIndex(column).takeIf { it >= 0 && !isNull(it) }?.let { getString(it) }
-
-    /**
      * Best-effort creation and modification timestamps, in milliseconds, for media whose Exif
      * has been stripped. MediaStore and the Storage Access Framework disagree both on the column
      * names and on the unit, and each provider rejects the columns it does not know, so the two
@@ -280,9 +269,9 @@ class InAppGallery : AppCompatActivity() {
             contentResolver.query(uri, projection, null, null)?.use {
                 if (it.moveToFirst()) {
                     // Seconds since the epoch, and 0 stands for "not set"
-                    created = it.optionalLong(MediaColumns.DATE_ADDED)
+                    created = it.getLongOrNull(MediaColumns.DATE_ADDED)
                         ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
-                    modified = it.optionalLong(MediaColumns.DATE_MODIFIED)
+                    modified = it.getLongOrNull(MediaColumns.DATE_MODIFIED)
                         ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
                 }
             }
@@ -296,7 +285,7 @@ class InAppGallery : AppCompatActivity() {
                 contentResolver.query(uri, projection, null, null)?.use {
                     if (it.moveToFirst()) {
                         // Already in milliseconds here
-                        modified = it.optionalLong(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
+                        modified = it.getLongOrNull(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
                             ?.takeIf { millis -> millis > 0 }
                     }
                 }
@@ -358,9 +347,9 @@ class InAppGallery : AppCompatActivity() {
 
             contentResolver.query(curItem.uri, projection, null, null)?.use {
                 if (it.moveToFirst()) {
-                    relativePath = it.optionalString(MediaColumns.RELATIVE_PATH)
-                    fileName = it.optionalString(OpenableColumns.DISPLAY_NAME)
-                    size = it.optionalLong(OpenableColumns.SIZE)
+                    relativePath = it.getStringOrNull(MediaColumns.RELATIVE_PATH)
+                    fileName = it.getStringOrNull(OpenableColumns.DISPLAY_NAME)
+                    size = it.getLongOrNull(OpenableColumns.SIZE)
                 }
             }
 
