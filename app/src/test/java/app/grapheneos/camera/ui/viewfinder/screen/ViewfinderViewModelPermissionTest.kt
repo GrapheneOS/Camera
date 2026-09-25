@@ -58,7 +58,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
                 it.copy(
                     isCaptureSession = true,
                     requiresVideoModeOnly = true,
-                    capture = it.capture.copy(isSavingRecording = true),
+                    recording = it.recording.copy(isSaving = true),
                 )
             }
 

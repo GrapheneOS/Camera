@@ -60,7 +60,7 @@ class ViewfinderStateTest {
 
         assertFalse(session.isReviewingRecordedVideo())
         assertTrue(
-            session.copy(capture = ViewfinderCaptureState(isSavingRecording = true))
+            session.copy(recording = ViewfinderRecordingState(isSaving = true))
                 .isReviewingRecordedVideo(),
         )
         assertTrue(
@@ -72,7 +72,7 @@ class ViewfinderStateTest {
     @Test
     fun isReviewingRecordedVideo_outsideACaptureSession_neverHolds() {
         val saving = state(requiresVideoModeOnly = true)
-            .copy(capture = ViewfinderCaptureState(isSavingRecording = true))
+            .copy(recording = ViewfinderRecordingState(isSaving = true))
 
         assertFalse(saving.isReviewingRecordedVideo())
     }

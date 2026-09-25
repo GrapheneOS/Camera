@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
@@ -16,8 +17,11 @@ import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.util.printStackTraceToString
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -34,7 +38,7 @@ import kotlinx.coroutines.launch
 
 interface ViewfinderCaptureDelegate {
 
-    val captureEvents: Flow<CapturedImageEvent>
+    val captureEvents: Flow<ViewfinderCaptureEvent>
 
     fun bind(
         scope: CoroutineScope,
@@ -48,11 +52,6 @@ interface ViewfinderCaptureDelegate {
 
     fun takePicture()
     fun cancelPictureCapture()
-    fun startPictureSave()
-    fun finishPictureSave()
-
-    fun startRecordingSave()
-    fun finishRecordingSave()
 
     fun takePreviewPicture()
     fun showCapturedPreview()
@@ -84,8 +83,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private var pendingCapture: PendingCapture? = null
     private var selfTimer: Job? = null
 
-    private val _captureEvents = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
-    override val captureEvents: Flow<CapturedImageEvent> = _captureEvents.receiveAsFlow()
+    private val _captureEvents = Channel<ViewfinderCaptureEvent>(capacity = Channel.BUFFERED)
+    override val captureEvents: Flow<ViewfinderCaptureEvent> = _captureEvents.receiveAsFlow()
 
     override fun bind(
         scope: CoroutineScope,
@@ -141,7 +140,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                         ),
                         needsThumbnail = { host != null },
                         onEvent = { event ->
-                            onCapturedImageEvent(pending, event)
+                            onPendingCaptureEvent(pending, event)
                         },
                     )
                 }
@@ -158,22 +157,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         finish(pending)
     }
 
-    override fun startPictureSave() {
-        updateCapture { it.copy(isSavingPicture = true) }
-    }
-
-    override fun finishPictureSave() {
-        updateCapture { it.copy(isSavingPicture = false) }
-    }
-
-    override fun startRecordingSave() {
-        updateCapture { it.copy(isSavingRecording = true) }
-    }
-
-    override fun finishRecordingSave() {
-        updateCapture { it.copy(isSavingRecording = false) }
-    }
-
     override fun takePreviewPicture() {
         startPictureSave()
 
@@ -187,7 +170,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 }
             }
 
-            update?.let { _captureEvents.trySend(it) }
+            update?.let(::onCapturedImageEvent)
         }
     }
 
@@ -200,7 +183,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         outputUri: Uri?,
     ) {
         if (outputUri == null) {
-            _captureEvents.trySend(CapturedImageEvent.PreviewReturned(bitmap = bitmap))
+            onCapturedImageEvent(CapturedImageEvent.PreviewReturned(bitmap = bitmap))
             return
         }
 
@@ -213,7 +196,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 else -> CapturedImageEvent.PreviewStoreFailed
             }
 
-            _captureEvents.trySend(event)
+            onCapturedImageEvent(event)
         }
     }
 
@@ -224,17 +207,17 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     override fun startSelfTimer() {
         cancelSelfTimer()
 
-        stateHolder.postEffect(Effect.SelfTimer.Started)
+        postEffect(Effect.SelfTimer.Started)
         setSelfTimerRunning(true)
 
         val seconds = stateHolder.state.value.settings.selfTimerDurationSeconds
         selfTimer = scope.launch(mainDispatcher) {
             selfTimerCountdown(seconds).collect { secondsLeft ->
-                stateHolder.postEffect(Effect.SelfTimer.Ticked(secondsLeft))
+                postEffect(Effect.SelfTimer.Ticked(secondsLeft))
             }
 
             setSelfTimerRunning(false)
-            stateHolder.postEffect(Effect.SelfTimer.Finished)
+            postEffect(Effect.SelfTimer.Finished)
         }
     }
 
@@ -246,7 +229,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
         selfTimer?.cancel()
         setSelfTimerRunning(false)
-        stateHolder.postEffect(Effect.SelfTimer.Cancelled)
+        postEffect(Effect.SelfTimer.Cancelled)
     }
 
     private fun setSelfTimerRunning(running: Boolean) {
@@ -262,45 +245,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
-    private fun onCapturedImageEvent(
-        pending: PendingCapture,
-        event: CapturedImageEvent,
-    ) {
-        when (event) {
-            is CapturedImageEvent.Captured -> {
-                finish(pending)
-                _captureEvents.trySend(event)
-            }
-
-            is CapturedImageEvent.CaptureFailed -> {
-                finish(pending)
-                onPictureCaptureFailed(pending, event)
-            }
-
-            is CapturedImageEvent.Saved -> {
-                storeLastCapturedItem(event.item)
-                _captureEvents.trySend(event)
-            }
-
-            is CapturedImageEvent.SaveFailed if !isScreenStarted -> {
-                onPictureSaveFailedOffScreen(event)
-            }
-
-            else -> _captureEvents.trySend(event)
-        }
-    }
-
-    private fun onPictureCaptureFailed(
-        pending: PendingCapture,
-        event: CapturedImageEvent.CaptureFailed,
-    ) {
-        when {
-            pending.isCancelled -> Unit
-            isScreenStarted -> _captureEvents.trySend(event)
-            else -> Log.e(TAG, "unable to capture a picture", event.cause)
-        }
-    }
-
     private fun storeLastCapturedItem(item: CapturedItem) {
         applicationScope.launch(mainDispatcher) {
             try {
@@ -311,14 +255,27 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         }
     }
 
-    private fun onPictureSaveFailedOffScreen(event: CapturedImageEvent.SaveFailed) {
-        Log.e(TAG, "unable to save a picture", event.cause)
+    private fun onPendingCaptureEvent(
+        pending: PendingCapture,
+        event: CapturedImageEvent,
+    ) {
+        when (event) {
+            is CapturedImageEvent.Captured -> {
+                finish(pending)
+            }
 
-        finishPictureSave()
+            is CapturedImageEvent.CaptureFailed -> {
+                finish(pending)
 
-        applicationScope.launch(mainDispatcher) {
-            notifyPictureSaveFailed()
+                if (pending.isCancelled) {
+                    return
+                }
+            }
+
+            else -> Unit
         }
+
+        onCapturedImageEvent(event)
     }
 
     private fun finish(pending: PendingCapture) {
@@ -328,6 +285,123 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
         pendingCapture = null
         updateCapture { it.copy(isTakingPicture = false) }
+    }
+
+    private fun onCapturedImageEvent(event: CapturedImageEvent) {
+        when (event) {
+            is CapturedImageEvent.Captured -> onPictureCaptured()
+            is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
+            is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
+            is CapturedImageEvent.SaveFailed -> onPictureSaveFailed(event)
+            is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
+            is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
+            is CapturedImageEvent.PreviewStored -> postEffect(Effect.Picture.PreviewStored)
+
+            is CapturedImageEvent.PreviewStoreFailed -> {
+                postEffect(Effect.Picture.PreviewStoreFailed)
+            }
+
+            is CapturedImageEvent.StorageLocationNotFound -> {
+                _captureEvents.trySend(ViewfinderCaptureEvent.StorageLocationNotFound)
+            }
+
+            is CapturedImageEvent.Saved -> {
+                storeLastCapturedItem(event.item)
+                _captureEvents.trySend(ViewfinderCaptureEvent.Saved(event.item))
+            }
+
+            is CapturedImageEvent.PreviewReturned -> {
+                postEffect(Effect.Picture.PreviewReturned(bitmap = event.bitmap))
+            }
+
+            is CapturedImageEvent.LocationUnavailable -> {
+                postEffect(Effect.ShowMessage(R.string.location_unavailable))
+            }
+        }
+    }
+
+    private fun onPictureCaptured() {
+        startPictureSave()
+
+        postEffect(Effect.Picture.Captured)
+        postEffect(Effect.FlashPreview(stateHolder.state.value.selfIlluminate()))
+    }
+
+    private fun onPictureThumbnailReady(thumbnail: Bitmap) {
+        finishPictureSave()
+
+        _captureEvents.trySend(ViewfinderCaptureEvent.ThumbnailReady(thumbnail))
+    }
+
+    private fun onPictureCaptureFailed(event: CapturedImageEvent.CaptureFailed) {
+        Log.e(TAG, "unable to capture a picture", event.cause)
+
+        finishPictureSave()
+
+        if (!isScreenStarted) return
+
+        postEffect(
+            Effect.Picture.CaptureFailed(
+                errorCode = event.errorCode,
+                details = detailsOf(event.cause),
+            ),
+        )
+    }
+
+    private fun onPictureSaveFailed(event: CapturedImageEvent.SaveFailed) {
+        Log.e(TAG, "unable to save a picture", event.cause)
+
+        finishPictureSave()
+
+        when {
+            isScreenStarted -> {
+                postEffect(
+                    Effect.Picture.SaveFailed(
+                        stage = event.cause.place.name,
+                        details = detailsOf(event.cause),
+                        alreadyReported = event.alreadyReported,
+                    ),
+                )
+            }
+
+            else -> {
+                applicationScope.launch(mainDispatcher) {
+                    notifyPictureSaveFailed()
+                }
+            }
+        }
+    }
+
+    private fun detailsOf(exception: Throwable): PictureFailureDetails {
+        return PictureFailureDetails(
+            name = exception.javaClass.name,
+            stackTrace = exception.printStackTraceToString(),
+        )
+    }
+
+    private fun onPreviewCaptured(bitmap: Bitmap) {
+        finishPictureSave()
+
+        postEffect(Effect.Picture.PreviewCaptured(bitmap = bitmap))
+        postEffect(Effect.ShowMessage(R.string.image_captured_successfully))
+    }
+
+    private fun onPreviewFailed() {
+        finishPictureSave()
+
+        postEffect(Effect.Picture.PreviewFailed)
+    }
+
+    private fun startPictureSave() {
+        updateCapture { it.copy(isSavingPicture = true) }
+    }
+
+    private fun finishPictureSave() {
+        updateCapture { it.copy(isSavingPicture = false) }
+    }
+
+    private fun postEffect(effect: Effect) {
+        stateHolder.postEffect(effect)
     }
 
     private fun updateCapture(transform: (ViewfinderCaptureState) -> ViewfinderCaptureState) {
@@ -341,7 +415,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     }
 
     private companion object {
-        private const val TAG = "ViewfinderCaptureDelegate"
+        private const val TAG = "ViewfinderCapture"
 
         private val SELF_TIMER_TICK = 1.seconds
     }

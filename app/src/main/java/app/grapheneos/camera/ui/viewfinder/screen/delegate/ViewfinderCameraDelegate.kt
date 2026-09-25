@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import android.util.Log
+import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
@@ -9,25 +11,32 @@ import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
+import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 interface ViewfinderCameraDelegate {
+
+    val cameraEvents: Flow<ViewfinderCameraEvent>
+
     val lensFacing: LensFacing
     val isProviderReady: Boolean
     val isCameraReady: Boolean
     val canRecord: Boolean
-    val sessionEvents: Flow<CameraSessionEvent>
 
     fun bind(
         scope: CoroutineScope,
@@ -54,9 +63,7 @@ interface ViewfinderCameraDelegate {
     fun setExposureCompensation(compensationIndex: Int)
     fun focusAt(x: Float, y: Float, autoCancelSeconds: Long)
     fun cancelFocus()
-    fun refreshZoom()
     fun refreshVideoQualities()
-    fun showQrResult(): Boolean
     fun dismissQrResult()
 }
 
@@ -64,6 +71,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val session: CameraSession,
     private val entryPoint: CameraEntryPoint,
     private val resolveAvailableModes: ResolveAvailableModes,
+    private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCameraDelegate {
 
@@ -72,6 +80,9 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private var isBound = false
 
     private var host: ViewfinderHost? = null
+
+    private val _cameraEvents = Channel<ViewfinderCameraEvent>(capacity = Channel.BUFFERED)
+    override val cameraEvents: Flow<ViewfinderCameraEvent> = _cameraEvents.receiveAsFlow()
 
     override val lensFacing: LensFacing
         get() {
@@ -93,11 +104,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             return session.camera != null && session.videoCapture != null
         }
 
-    override val sessionEvents: Flow<CameraSessionEvent>
-        get() {
-            return session.events
-        }
-
     override fun bind(
         scope: CoroutineScope,
         stateHolder: ViewfinderStateHolder,
@@ -106,6 +112,12 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         isBound = true
 
         this.stateHolder = stateHolder
+
+        scope.launch(mainDispatcher) {
+            session.events.collect { event ->
+                onSessionEvent(event)
+            }
+        }
 
         scope.launch(mainDispatcher) {
             stateHolder.state
@@ -293,12 +305,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         session.cancelFocusAndMetering()
     }
 
-    override fun refreshZoom() {
-        stateHolder.update {
-            it.copy(session = it.session.copy(zoom = session.zoom))
-        }
-    }
-
     override fun refreshVideoQualities() {
         val videoQualities = session.supportedVideoQualities()
 
@@ -307,18 +313,64 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
     }
 
-    override fun showQrResult(): Boolean {
-        if (stateHolder.state.value.session.isQrResultShown) return false
+    override fun dismissQrResult() {
+        stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = false)) }
+    }
+
+    private fun onSessionEvent(event: CameraSessionEvent) {
+        when (event) {
+            is CameraSessionEvent.ZoomStateLoaded -> refreshZoom()
+            is CameraSessionEvent.FeaturesSelected -> onFeaturesSelected(event)
+            is CameraSessionEvent.QrCodeScanned -> showQrResult(event.text)
+
+            is CameraSessionEvent.ProviderReady -> {
+                _cameraEvents.trySend(ViewfinderCameraEvent.ProviderReady(forced = event.forced))
+            }
+
+            is CameraSessionEvent.ZoomStateChanged -> {
+                refreshZoom()
+                postEffect(Effect.Panel.ShowZoom)
+            }
+
+            is CameraSessionEvent.CameraProviderUnavailable -> {
+                postEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
+            }
+
+            is CameraSessionEvent.ExtensionsUnavailable -> {
+                postEffect(Effect.ShowMessage(R.string.extensions_manager_init_failure))
+            }
+        }
+    }
+
+    private fun onFeaturesSelected(event: CameraSessionEvent.FeaturesSelected) {
+        // The full request-vs-result picture (including which stabilization feature, if any,
+        // survived) is only ever logged, never shown: the lead wants EIS left silently in its
+        // known state -- 4K keeps priority and stabilization is given up without a notice.
+        Log.i(TAG, "Requested ${event.requested} but got ${event.selected}")
+
+        val droppedQuality = resolveDroppedVideoQuality(
+            lensFacing = event.boundLensFacing,
+            requestedQualityFeature = event.qualityFeature,
+            selected = event.selected,
+        ) ?: return
+
+        postEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
+    }
+
+    private fun refreshZoom() {
+        stateHolder.update {
+            it.copy(session = it.session.copy(zoom = session.zoom))
+        }
+    }
+
+    private fun showQrResult(text: String) {
+        if (stateHolder.state.value.session.isQrResultShown) return
 
         session.unbind()
 
         stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = true)) }
 
-        return true
-    }
-
-    override fun dismissQrResult() {
-        stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = false)) }
+        postEffect(Effect.ShowQrResult(text))
     }
 
     private fun refreshSessionState(isVideoMode: Boolean) {
@@ -370,5 +422,13 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         stateHolder.update {
             it.copy(session = it.session.copy(availableModes = availableModes))
         }
+    }
+
+    private fun postEffect(effect: Effect) {
+        stateHolder.postEffect(effect)
+    }
+
+    private companion object {
+        private const val TAG = "ViewfinderCamera"
     }
 }
