@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.net.Uri
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
@@ -152,6 +153,38 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
                 ),
                 effects,
             )
+        }
+    }
+
+    @Test
+    fun aRecordingThatKeepsItsContent_isSavingUntilItIsSaved() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val effects = collectEffects(viewModel)
+
+            recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
+            recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
+
+            verifyOrder {
+                captureDelegate.startRecordingSave()
+                captureDelegate.finishRecordingSave()
+            }
+
+            val saved = ViewfinderScreenEffect.Recording.Saved(uri = Uri.EMPTY, item = null)
+            assertTrue(saved in effects)
+        }
+    }
+
+    @Test
+    fun aRecordingThatIsThrownAway_isNeverSaving() {
+        runTest {
+            createViewModel(applicationScope = backgroundScope)
+
+            recordingEvents.emit(
+                RecordedVideoEvent.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
+            )
+
+            verify(exactly = 0) { captureDelegate.startRecordingSave() }
         }
     }
 

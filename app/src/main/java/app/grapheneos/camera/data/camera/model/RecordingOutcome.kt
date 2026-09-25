@@ -14,4 +14,13 @@ sealed interface RecordingOutcome {
         val errorCode: Int,
         val hasContent: Boolean,
     ) : RecordingOutcome
+
+    fun keepsContent(): Boolean {
+        return when (this) {
+            is Saved -> true
+            is Interrupted -> hasContent
+            is NothingPlayableWritten -> false
+            is Failed -> false
+        }
+    }
 }
