@@ -54,6 +54,7 @@ internal class VideoRecorderImpl @Inject constructor(
 ) : VideoRecorder {
 
     private var pendingRecording: PendingRecording? = null
+    private var isStopRequested = false
 
     private val _events = Channel<RecordedVideoEvent>(capacity = Channel.BUFFERED)
     override val events: Flow<RecordedVideoEvent> = _events.receiveAsFlow()
@@ -62,6 +63,8 @@ internal class VideoRecorderImpl @Inject constructor(
         request: RecordVideoRequest,
         isStillWanted: () -> Boolean,
     ) {
+        isStopRequested = false
+
         val output = createRecordingOutput(
             storageLocation = request.storageLocation,
             foreignUri = request.foreignUri,
@@ -72,24 +75,35 @@ internal class VideoRecorderImpl @Inject constructor(
             return
         }
 
-        // A stop that arrives while the output is still being created finds nothing to stop,
-        // so the start queued behind it has to be abandoned here instead.
-        if (!isStillWanted()) {
-            closeOutput(output)
-            discardOutput(output)
-            return
+        val location = location(request.includeLocation)
+
+        // A stop that arrives while the output is created or the location looked up finds nothing
+        // to stop, so the start queued behind it has to be abandoned here instead.
+        when {
+            isStopRequested -> {
+                discard(output)
+                _events.trySend(RecordedVideoEvent.Abandoned)
+            }
+
+            !isStillWanted() -> {
+                discard(output)
+            }
+
+            else -> {
+                pendingRecording = PendingRecording(
+                    output = output,
+                    location = location,
+                    includeAudio = request.includeAudio,
+                )
+                _events.trySend(RecordedVideoEvent.ReadyToStart)
+            }
         }
-
-        pendingRecording = PendingRecording(
-            output = output,
-            location = location(request.includeLocation),
-            includeAudio = request.includeAudio,
-        )
-
-        _events.trySend(RecordedVideoEvent.ReadyToStart)
     }
 
-    override fun start(muted: Boolean, paused: Boolean) {
+    override fun start(
+        muted: Boolean,
+        paused: Boolean,
+    ) {
         val pending = pendingRecording ?: return
 
         // The sound callback may fire more than once; a second start() throws.
@@ -139,13 +153,12 @@ internal class VideoRecorderImpl @Inject constructor(
         val pending = pendingRecording
 
         when {
-            pending == null -> Unit
+            pending == null -> isStopRequested = true
 
             // The start is still queued behind the sound that announces it.
             !pending.isStarted -> {
                 pendingRecording = null
-                closeOutput(pending.output)
-                discardOutput(pending.output)
+                discard(pending.output)
                 _events.trySend(RecordedVideoEvent.Abandoned)
             }
 
@@ -206,17 +219,8 @@ internal class VideoRecorderImpl @Inject constructor(
         }
 
         when {
-            keepsContent(outcome) -> save(recording.output)
+            outcome.keepsContent() -> save(recording.output)
             else -> discardOutput(recording.output)
-        }
-    }
-
-    private fun keepsContent(outcome: RecordingOutcome): Boolean {
-        return when (outcome) {
-            is RecordingOutcome.Saved -> true
-            is RecordingOutcome.Interrupted -> outcome.hasContent
-            is RecordingOutcome.NothingPlayableWritten -> false
-            is RecordingOutcome.Failed -> false
         }
     }
 
@@ -253,6 +257,11 @@ internal class VideoRecorderImpl @Inject constructor(
         applicationScope.launch(mainDispatcher) {
             discardRecording(output)
         }
+    }
+
+    private fun discard(output: RecordingOutput) {
+        closeOutput(output)
+        discardOutput(output)
     }
 
     private fun closeOutput(output: RecordingOutput) {

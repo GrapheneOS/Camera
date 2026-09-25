@@ -13,6 +13,7 @@ data class ViewfinderUiState(
     val thirdOptionVisible: Boolean = true,
     val cancelButtonVisible: Boolean = true,
     val capturedPreviewVisible: Boolean = false,
+    val isRecordingBeingSaved: Boolean = false,
     val cameraPreviewVisible: Boolean = true,
     val qrResultVisible: Boolean = false,
     val micMutedIconVisible: Boolean = false,

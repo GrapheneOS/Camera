@@ -22,6 +22,7 @@ import io.mockk.slot
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -60,6 +61,19 @@ class ViewfinderCaptureDelegateTest {
 
             delegate.finishPictureSave()
             assertFalse(capture().isSavingPicture)
+        }
+    }
+
+    @Test
+    fun recordingSave_isInProgressUntilFinished() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.startRecordingSave()
+            assertTrue(capture().isSavingRecording)
+
+            delegate.finishRecordingSave()
+            assertFalse(capture().isSavingRecording)
         }
     }
 
@@ -224,6 +238,25 @@ class ViewfinderCaptureDelegateTest {
 
             assertFalse(capture().isTakingPicture)
             assertTrue(events.isEmpty())
+        }
+    }
+
+    @Test
+    fun cancelPictureCapture_beforeTheRequestIsMade_takesNoPicture() {
+        runTest {
+            val storageLocationRead = CompletableDeferred<Unit>()
+            val delegate = createDelegate()
+            every { capturedItemRepository.storageLocation } returns flow {
+                storageLocationRead.await()
+                emit(STORAGE_LOCATION)
+            }
+
+            delegate.takePicture()
+            delegate.cancelPictureCapture()
+            storageLocationRead.complete(Unit)
+
+            coVerify(exactly = 0) { captureImage(any(), any(), any()) }
+            assertFalse(capture().isTakingPicture)
         }
     }
 
