@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.location
+package app.grapheneos.camera.data.location.repository
 
 import android.location.LocationListener
 import android.location.LocationManager
@@ -11,6 +11,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -28,11 +29,6 @@ class LocationRepositoryTest {
     private val listener = slot<LocationListener>()
 
     private var locationEnabled = true
-
-    private val repository = LocationRepositoryImpl(
-        locationManager = locationManager,
-        ioDispatcher = UnconfinedTestDispatcher(),
-    )
 
     @Before
     fun setUp() {
@@ -54,11 +50,13 @@ class LocationRepositoryTest {
 
     @Test
     fun updates_reportWhetherAnyProviderIsEnabled() {
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             locationEnabled = false
 
             val reported = mutableListOf<LocationAvailability>()
-            backgroundScope.launch { repository.updates().collect { reported += it } }
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                repository().updates().collect { reported += it }
+            }
 
             locationEnabled = true
             listener.captured.onProviderEnabled(LocationManager.GPS_PROVIDER)
@@ -72,8 +70,10 @@ class LocationRepositoryTest {
 
     @Test
     fun updates_askAgainForTheProvidersOnceOneIsEnabled() {
-        runTest(UnconfinedTestDispatcher()) {
-            backgroundScope.launch { repository.updates().collect {} }
+        runTest {
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                repository().updates().collect {}
+            }
 
             listener.captured.onProviderEnabled(LocationManager.GPS_PROVIDER)
 
@@ -91,12 +91,21 @@ class LocationRepositoryTest {
 
     @Test
     fun updates_stopWhenNoLongerCollected() {
-        runTest(UnconfinedTestDispatcher()) {
-            val collection = backgroundScope.launch { repository.updates().collect {} }
+        runTest {
+            val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                repository().updates().collect {}
+            }
 
             collection.cancel()
 
             verify { locationManager.removeUpdates(listener.captured) }
         }
+    }
+
+    private fun TestScope.repository(): LocationRepositoryImpl {
+        return LocationRepositoryImpl(
+            locationManager = locationManager,
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler),
+        )
     }
 }

@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
-fun TestScope.collectEffects(
+internal fun TestScope.collectEffects(
     stateHolder: ViewfinderStateHolder,
 ): MutableList<ViewfinderScreenEffect> {
     val effects = mutableListOf<ViewfinderScreenEffect>()

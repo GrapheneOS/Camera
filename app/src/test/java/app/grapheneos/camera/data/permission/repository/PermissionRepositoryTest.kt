@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.permission
+package app.grapheneos.camera.data.permission.repository
 
 import android.Manifest
 import android.app.Application

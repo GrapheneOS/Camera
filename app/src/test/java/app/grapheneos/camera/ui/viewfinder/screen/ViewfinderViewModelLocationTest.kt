@@ -18,6 +18,23 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
 
     @Test
+    fun previewStreamingStarted_storedGeoTaggingWithoutPermission_staysOff() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+            stateHolder.update {
+                it.copy(
+                    modeSettings = ModeSettings(geoTagging = true),
+                    missingPermissions = setOf(AppPermission.LOCATION),
+                )
+            }
+
+            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
+
+            verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
+        }
+    }
+
+    @Test
     fun previewStreamingStarted_storedGeoTaggingWithPermission_keepsItOn() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
