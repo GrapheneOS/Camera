@@ -280,7 +280,11 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
-            val item = CapturedItem(ITEM_TYPE_VIDEO, "20260920_120000_000", Uri.EMPTY)
+            val item = CapturedItem(
+                type = ITEM_TYPE_VIDEO,
+                dateString = "20260920_120000_000",
+                uri = Uri.EMPTY,
+            )
 
             recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = item))
 

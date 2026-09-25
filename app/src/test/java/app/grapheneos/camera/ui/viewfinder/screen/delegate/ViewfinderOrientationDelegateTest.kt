@@ -7,7 +7,7 @@ import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.testutil.collectEffects
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -38,12 +38,9 @@ class ViewfinderOrientationDelegateTest {
 
     private val autoRotate = MutableSharedFlow<Boolean>()
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(
-            mode = CameraMode.CAMERA,
-            requiresVideoModeOnly = false,
-            settings = CameraSettings(gyroscopeSuggestions = true),
-        ),
+    private val stateHolder = viewfinderStateHolder(
+        mode = CameraMode.CAMERA,
+        settings = CameraSettings(gyroscopeSuggestions = true),
     )
 
     @Test

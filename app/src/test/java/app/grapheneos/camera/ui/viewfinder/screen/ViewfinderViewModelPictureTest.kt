@@ -264,7 +264,11 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     fun saved_recordsTheItem() {
         runTest {
             createViewModel(applicationScope = backgroundScope)
-            val item = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
+            val item = CapturedItem(
+                type = ITEM_TYPE_IMAGE,
+                dateString = "20260920_120000_000",
+                uri = Uri.EMPTY,
+            )
 
             captureEvents.emit(CapturedImageEvent.Saved(item = item))
 

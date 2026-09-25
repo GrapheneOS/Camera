@@ -3,9 +3,9 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
-import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import io.mockk.every
@@ -23,9 +23,7 @@ class ViewfinderPermissionDelegateTest {
 
     private val permissionRepository = mockk<PermissionRepository>()
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-    )
+    private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     private val granted = mutableSetOf<AppPermission>()
 
@@ -194,14 +192,7 @@ class ViewfinderPermissionDelegateTest {
 
         val delegate = ViewfinderPermissionDelegateImpl(
             permissionRepository = permissionRepository,
-            entryPoint = CameraEntryPoint(
-                isSecureSession = isSecureSession,
-                isCaptureSession = false,
-                isVideoOnlySession = false,
-                requiresVideoModeOnly = false,
-                allowsQrScanning = true,
-                showsCameraModeTabs = true,
-            ),
+            entryPoint = cameraEntryPoint(isSecureSession = isSecureSession),
         )
         delegate.bind(stateHolder)
 
