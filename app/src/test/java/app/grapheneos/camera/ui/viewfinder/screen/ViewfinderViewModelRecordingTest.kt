@@ -3,21 +3,17 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.net.Uri
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
-import app.grapheneos.camera.R
-import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -151,168 +147,47 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun recordingEvents_soundTheStartAndDriveTheState() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(RecordedVideoEvent.ReadyToStart)
-            recordingEvents.emit(RecordedVideoEvent.Started)
-            recordingEvents.emit(RecordedVideoEvent.Progressed(duration = 5.seconds))
-
-            verifyOrder {
-                recordingDelegate.startRecording()
-                recordingDelegate.setRecordedDuration(5.seconds)
-            }
-            assertEquals(listOf(ViewfinderScreenEffect.Recording.PlayStartSound), effects)
-        }
-    }
-
-    @Test
-    fun anAbandonedRecording_stopsWithoutTheStopSound() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(RecordedVideoEvent.Abandoned)
-
-            verify(exactly = 1) { recordingDelegate.markStopped() }
-            assertTrue(effects.isEmpty())
-        }
-    }
-
-    @Test
-    fun aFinishedRecording_isAnnounced() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
-
-            verify(exactly = 1) { recordingDelegate.markStopped() }
-            assertTrue(effects.isEmpty())
-        }
-    }
-
-    @Test
-    fun aRecordingThatKeepsItsContent_isSavingUntilItIsSaved() {
+    fun anUnusableOutput_revertsTheStorageLocation() {
         runTest {
             createViewModel(applicationScope = backgroundScope)
 
-            recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
-            recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
+            recordingEvents.emit(ViewfinderRecordingEvent.OutputUnavailable)
+            reverted.complete(Unit)
 
-            verifyOrder {
-                captureDelegate.startRecordingSave()
-                captureDelegate.finishRecordingSave()
-            }
+            assertTrue(revertFinished)
         }
     }
 
     @Test
-    fun aRecordingThatIsThrownAway_isNeverSaving() {
+    fun anUnusableOutput_inACaptureSession_leavesTheStorageLocationAlone() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
-
-            recordingEvents.emit(
-                RecordedVideoEvent.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
+            createViewModel(
+                applicationScope = backgroundScope,
+                entryPoint = cameraEntryPoint(isCaptureSession = true),
             )
 
-            verify(exactly = 0) { captureDelegate.startRecordingSave() }
-        }
-    }
+            recordingEvents.emit(ViewfinderRecordingEvent.OutputUnavailable)
 
-    @Test
-    fun aRecordingTooShortToPlay_saysSo() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(
-                RecordedVideoEvent.Finished(outcome = RecordingOutcome.NothingPlayableWritten),
-            )
-
-            assertTrue(
-                ViewfinderScreenEffect.ShowMessage(
-                    R.string.recording_too_short_to_be_saved,
-                ) in effects,
-            )
-        }
-    }
-
-    @Test
-    fun anInterruptedRecording_saysSo() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(
-                RecordedVideoEvent.Finished(
-                    outcome = RecordingOutcome.Interrupted(errorCode = 7, hasContent = true),
-                ),
-            )
-
-            assertTrue(ViewfinderScreenEffect.Recording.Interrupted(errorCode = 7) in effects)
-        }
-    }
-
-    @Test
-    fun anUnusableOutput_revertsTheStorageLocationAndStops() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(RecordedVideoEvent.OutputUnavailable)
-
-            verify(exactly = 1) { recordingDelegate.markStopped() }
-            assertTrue(
-                ViewfinderScreenEffect.ShowMessage(
-                    R.string.unable_to_access_output_file,
-                ) in effects,
-            )
+            coVerify(exactly = 0) { revertToMediaStoreLocation() }
         }
     }
 
     @Test
     fun recordingSaved_recordsTheItem() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
+            createViewModel(applicationScope = backgroundScope)
             val item = CapturedItem(
                 type = ITEM_TYPE_VIDEO,
                 dateString = "20260920_120000_000",
                 uri = Uri.EMPTY,
             )
 
-            recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = item))
+            recordingEvents.emit(ViewfinderRecordingEvent.Saved(item = item))
 
             verifyOrder {
                 galleryDelegate.recordCapturedItem(item)
                 galleryDelegate.refreshThumbnail()
             }
-            assertTrue(effects.isEmpty())
-        }
-    }
-
-    @Test
-    fun recordingSaved_inACaptureSession_showsItForReview() {
-        runTest {
-            val viewModel = createViewModel(
-                applicationScope = backgroundScope,
-                entryPoint = cameraEntryPoint(
-                    isCaptureSession = true,
-                    requiresVideoModeOnly = true,
-                    showsCameraModeTabs = false,
-                ),
-            )
-            val effects = collectEffects(viewModel)
-
-            recordingEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
-
-            assertEquals(
-                listOf(ViewfinderScreenEffect.Recording.ShowForReview(uri = Uri.EMPTY)),
-                effects,
-            )
         }
     }
 }

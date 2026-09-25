@@ -6,16 +6,14 @@ import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.R
-import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
-import app.grapheneos.camera.domain.capture.model.ImageSaverException
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
-import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -103,52 +101,6 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewCaptured_showsItAndStopsTheLoader() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            val bitmap = createBitmap(1, 1)
-
-            captureEvents.emit(CapturedImageEvent.PreviewCaptured(bitmap = bitmap))
-
-            verify(exactly = 1) { captureDelegate.finishPictureSave() }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Picture.PreviewCaptured(bitmap),
-                    ViewfinderScreenEffect.ShowMessage(R.string.image_captured_successfully),
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun previewReturned_handsTheConfirmedBitmapBack() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            val bitmap = createBitmap(1, 1)
-
-            captureEvents.emit(CapturedImageEvent.PreviewReturned(bitmap = bitmap))
-
-            assertEquals(listOf(ViewfinderScreenEffect.Picture.PreviewReturned(bitmap)), effects)
-        }
-    }
-
-    @Test
-    fun previewFailed_reportsItAndStopsTheLoader() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            captureEvents.emit(CapturedImageEvent.PreviewFailed)
-
-            verify(exactly = 1) { captureDelegate.finishPictureSave() }
-            assertEquals(listOf(ViewfinderScreenEffect.Picture.PreviewFailed), effects)
-        }
-    }
-
-    @Test
     fun shutterClicked_whileTheCameraCannotCapture_saysSoAndTakesNothing() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
@@ -188,88 +140,13 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun captured_startsSavingItAndSoundsTheShutterBeforeFlashingThePreview() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            captureEvents.emit(CapturedImageEvent.Captured)
-
-            verify(exactly = 1) { captureDelegate.startPictureSave() }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Picture.Captured,
-                    ViewfinderScreenEffect.FlashPreview(selfIlluminate = false),
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun thumbnailReady_showsItAndFinishesTheSave() {
+    fun thumbnailReady_showsIt() {
         runTest {
             createViewModel(applicationScope = backgroundScope)
 
-            captureEvents.emit(CapturedImageEvent.ThumbnailReady(thumbnail = THUMBNAIL))
+            captureEvents.emit(ViewfinderCaptureEvent.ThumbnailReady(thumbnail = THUMBNAIL))
 
-            verify(exactly = 1) { captureDelegate.finishPictureSave() }
             verify(exactly = 1) { galleryDelegate.showThumbnail(THUMBNAIL) }
-        }
-    }
-
-    @Test
-    fun locationUnavailable_saysSo() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            captureEvents.emit(CapturedImageEvent.LocationUnavailable)
-
-            assertEquals(
-                listOf(ViewfinderScreenEffect.ShowMessage(R.string.location_unavailable)),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun captureFailed_reportsTheFailureAndEndsBothStages() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            val cause = IOException("no camera")
-
-            captureEvents.emit(
-                CapturedImageEvent.CaptureFailed(errorCode = CAPTURE_ERROR_CODE, cause = cause),
-            )
-
-            verify(exactly = 1) { captureDelegate.finishPictureSave() }
-
-            val failure = effects.single() as ViewfinderScreenEffect.Picture.CaptureFailed
-            assertEquals(CAPTURE_ERROR_CODE, failure.errorCode)
-            assertEquals(cause.javaClass.name, failure.details.name)
-        }
-    }
-
-    @Test
-    fun saveFailed_reportsTheStageThatFailed() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            captureEvents.emit(
-                CapturedImageEvent.SaveFailed(
-                    cause = ImageSaverException(ImageSaverException.Place.FILE_WRITE),
-                    alreadyReported = true,
-                ),
-            )
-
-            verify(exactly = 1) { captureDelegate.finishPictureSave() }
-
-            val failure = effects.single() as ViewfinderScreenEffect.Picture.SaveFailed
-            assertEquals(SAVE_FAILURE_STAGE, failure.stage)
-            assertTrue(failure.alreadyReported)
         }
     }
 
@@ -283,16 +160,40 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
                 uri = Uri.EMPTY,
             )
 
-            captureEvents.emit(CapturedImageEvent.Saved(item = item))
+            captureEvents.emit(ViewfinderCaptureEvent.Saved(item = item))
 
             verify(exactly = 1) { galleryDelegate.recordCapturedItem(item) }
         }
     }
 
-    private companion object {
-        const val CAPTURE_ERROR_CODE = 2
-        const val SAVE_FAILURE_STAGE = "FILE_WRITE"
+    @Test
+    fun storageLocationNotFound_whileSaving_revertsTheLocation() {
+        runTest {
+            createViewModel(applicationScope = backgroundScope)
 
+            captureEvents.emit(ViewfinderCaptureEvent.StorageLocationNotFound)
+            reverted.complete(Unit)
+
+            assertTrue(revertFinished)
+        }
+    }
+
+    @Test
+    fun screenStartedAndStopped_reachTheCapture() {
+        runTest {
+            val viewModel = createViewModel(applicationScope = backgroundScope)
+
+            viewModel.onAction(LifecycleAction.ScreenStarted)
+            viewModel.onAction(LifecycleAction.ScreenStopped)
+
+            verifyOrder {
+                captureDelegate.onScreenStarted()
+                captureDelegate.onScreenStopped()
+            }
+        }
+    }
+
+    private companion object {
         val THUMBNAIL: Bitmap = createBitmap(1, 1)
         val OUTPUT_URI: Uri = Uri.parse("content://com.example.app/images/1")
     }

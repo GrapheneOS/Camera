@@ -1,18 +1,14 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
-import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
-import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -21,9 +17,6 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
-import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
-import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
-import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
@@ -41,7 +34,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -50,11 +42,13 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Lifecyc
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
-import app.grapheneos.camera.util.printStackTraceToString
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -92,7 +86,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val orientationDelegate: ViewfinderOrientationDelegate,
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val galleryDelegate: ViewfinderGalleryDelegate,
-    private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val swipeEffectMapper: SwipeEffectMapper,
@@ -128,7 +121,6 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     init {
         modeDelegate.bind(stateHolder)
-        recordingDelegate.bind(stateHolder)
         permissionDelegate.bind(stateHolder)
         orientationDelegate.bind(stateHolder)
         screenWakeDelegate.bind(stateHolder)
@@ -149,26 +141,30 @@ class ViewfinderViewModel @AssistedInject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
+        recordingDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
         galleryDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
 
         viewModelScope.launch(mainDispatcher) {
-            cameraDelegate.sessionEvents.collect { event ->
-                onSessionEvent(event)
+            cameraDelegate.cameraEvents.collect { event ->
+                onCameraEvent(event)
             }
         }
 
         viewModelScope.launch(mainDispatcher) {
             captureDelegate.captureEvents.collect { event ->
-                onCapturedImageEvent(event)
+                onCaptureEvent(event)
             }
         }
 
         viewModelScope.launch(mainDispatcher) {
             recordingDelegate.recordingEvents.collect { event ->
-                onRecordedVideoEvent(event)
+                onRecordingEvent(event)
             }
         }
     }
@@ -307,96 +303,30 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun onSessionEvent(event: CameraSessionEvent) {
+    private fun onCameraEvent(event: ViewfinderCameraEvent) {
         when (event) {
-            is CameraSessionEvent.ProviderReady -> startCamera(forced = event.forced)
-            is CameraSessionEvent.FeaturesSelected -> onFeaturesSelected(event)
-            is CameraSessionEvent.ZoomStateLoaded -> cameraDelegate.refreshZoom()
+            is ViewfinderCameraEvent.ProviderReady -> startCamera(forced = event.forced)
+        }
+    }
 
-            is CameraSessionEvent.ZoomStateChanged -> {
-                cameraDelegate.refreshZoom()
-                emitEffect(Effect.Panel.ShowZoom)
-            }
+    private fun onCaptureEvent(event: ViewfinderCaptureEvent) {
+        when (event) {
+            is ViewfinderCaptureEvent.StorageLocationNotFound -> onStorageLocationNotFound()
+            is ViewfinderCaptureEvent.Saved -> galleryDelegate.recordCapturedItem(event.item)
 
-            is CameraSessionEvent.CameraProviderUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.camera_provider_init_failure))
-            }
-
-            is CameraSessionEvent.ExtensionsUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.extensions_manager_init_failure))
-            }
-
-            is CameraSessionEvent.QrCodeScanned -> {
-                if (cameraDelegate.showQrResult()) {
-                    emitEffect(Effect.ShowQrResult(event.text))
-                }
+            is ViewfinderCaptureEvent.ThumbnailReady -> {
+                galleryDelegate.showThumbnail(event.thumbnail)
             }
         }
     }
 
-    private fun onFeaturesSelected(event: CameraSessionEvent.FeaturesSelected) {
-        // The full request-vs-result picture (including which stabilization feature, if any,
-        // survived) is only ever logged, never shown: the lead wants EIS left silently in its
-        // known state -- 4K keeps priority and stabilization is given up without a notice.
-        Log.i(TAG, "Requested ${event.requested} but got ${event.selected}")
-
-        val droppedQuality = resolveDroppedVideoQuality(
-            lensFacing = event.boundLensFacing,
-            requestedQualityFeature = event.qualityFeature,
-            selected = event.selected,
-        ) ?: return
-
-        emitEffect(Effect.ShowVideoQualityUnsupported(droppedQuality))
-    }
-
-    private fun onCapturedImageEvent(event: CapturedImageEvent) {
+    private fun onRecordingEvent(event: ViewfinderRecordingEvent) {
         when (event) {
-            is CapturedImageEvent.Captured -> onPictureCaptured()
-            is CapturedImageEvent.ThumbnailReady -> onPictureThumbnailReady(event.thumbnail)
-            is CapturedImageEvent.CaptureFailed -> onPictureCaptureFailed(event)
-            is CapturedImageEvent.SaveFailed -> onPictureSaveFailed(event)
-            is CapturedImageEvent.StorageLocationNotFound -> onStorageLocationNotFound()
-            is CapturedImageEvent.PreviewCaptured -> onPreviewCaptured(event.bitmap)
-            is CapturedImageEvent.PreviewFailed -> onPreviewFailed()
-            is CapturedImageEvent.Saved -> galleryDelegate.recordCapturedItem(event.item)
-            is CapturedImageEvent.PreviewStored -> emitEffect(Effect.Picture.PreviewStored)
+            is ViewfinderRecordingEvent.OutputUnavailable -> onRecordingOutputUnavailable()
 
-            is CapturedImageEvent.PreviewReturned -> {
-                emitEffect(Effect.Picture.PreviewReturned(bitmap = event.bitmap))
-            }
-
-            is CapturedImageEvent.PreviewStoreFailed -> {
-                emitEffect(Effect.Picture.PreviewStoreFailed)
-            }
-
-            is CapturedImageEvent.LocationUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
-            }
-        }
-    }
-
-    private fun onRecordedVideoEvent(event: RecordedVideoEvent) {
-        when (event) {
-            is RecordedVideoEvent.OutputUnavailable -> onRecordingOutputUnavailable()
-            is RecordedVideoEvent.Abandoned -> recordingDelegate.markStopped()
-            is RecordedVideoEvent.Started -> recordingDelegate.startRecording()
-            is RecordedVideoEvent.Finished -> onRecordingFinished(event.outcome)
-            is RecordedVideoEvent.ReadyToStart -> emitEffect(Effect.Recording.PlayStartSound)
-
-            is RecordedVideoEvent.Progressed -> {
-                recordingDelegate.setRecordedDuration(event.duration)
-            }
-
-            is RecordedVideoEvent.LocationUnavailable -> {
-                emitEffect(Effect.ShowMessage(R.string.location_unavailable))
-            }
-
-            is RecordedVideoEvent.SaveFailed -> {
-                emitEffect(Effect.ShowMessage(R.string.unable_to_save_video))
-            }
-
-            is RecordedVideoEvent.Saved -> {
-                onRecordingSaved(event)
+            is ViewfinderRecordingEvent.Saved -> {
+                galleryDelegate.recordCapturedItem(event.item)
+                galleryDelegate.refreshThumbnail()
             }
         }
     }
@@ -618,66 +548,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun onPictureCaptured() {
-        captureDelegate.startPictureSave()
-
-        emitEffect(Effect.Picture.Captured)
-        emitEffect(Effect.FlashPreview(state().selfIlluminate()))
-    }
-
-    private fun onPictureThumbnailReady(thumbnail: Bitmap) {
-        captureDelegate.finishPictureSave()
-
-        galleryDelegate.showThumbnail(thumbnail)
-    }
-
-    private fun onPictureCaptureFailed(event: CapturedImageEvent.CaptureFailed) {
-        Log.e(TAG, "unable to capture a picture", event.cause)
-
-        captureDelegate.finishPictureSave()
-
-        emitEffect(
-            Effect.Picture.CaptureFailed(
-                errorCode = event.errorCode,
-                details = detailsOf(event.cause),
-            ),
-        )
-    }
-
-    private fun onPictureSaveFailed(event: CapturedImageEvent.SaveFailed) {
-        Log.e(TAG, "unable to save a picture", event.cause)
-
-        captureDelegate.finishPictureSave()
-
-        emitEffect(
-            Effect.Picture.SaveFailed(
-                stage = event.cause.place.name,
-                details = detailsOf(event.cause),
-                alreadyReported = event.alreadyReported,
-            ),
-        )
-    }
-
-    private fun detailsOf(exception: Throwable): PictureFailureDetails {
-        return PictureFailureDetails(
-            name = exception.javaClass.name,
-            stackTrace = exception.printStackTraceToString(),
-        )
-    }
-
-    private fun onPreviewCaptured(bitmap: Bitmap) {
-        captureDelegate.finishPictureSave()
-
-        emitEffect(Effect.Picture.PreviewCaptured(bitmap = bitmap))
-        emitEffect(Effect.ShowMessage(R.string.image_captured_successfully))
-    }
-
-    private fun onPreviewFailed() {
-        captureDelegate.finishPictureSave()
-
-        emitEffect(Effect.Picture.PreviewFailed)
-    }
-
     private fun showCapturedPreview() {
         captureDelegate.showCapturedPreview()
         cameraDelegate.unbindCamera()
@@ -767,46 +637,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onRecordingOutputUnavailable() {
         if (!entryPoint.isCaptureSession) {
             onStorageLocationNotFound()
-        }
-
-        emitEffect(Effect.ShowMessage(R.string.unable_to_access_output_file))
-        recordingDelegate.markStopped()
-    }
-
-    private fun onRecordingFinished(outcome: RecordingOutcome) {
-        recordingDelegate.markStopped()
-
-        if (outcome.keepsContent()) {
-            captureDelegate.startRecordingSave()
-        }
-
-        when (outcome) {
-            is RecordingOutcome.Saved -> Unit
-
-            is RecordingOutcome.NothingPlayableWritten -> {
-                emitEffect(Effect.ShowMessage(R.string.recording_too_short_to_be_saved))
-            }
-
-            is RecordingOutcome.Failed -> {
-                emitEffect(Effect.Recording.SaveFailed(errorCode = outcome.errorCode))
-            }
-
-            is RecordingOutcome.Interrupted -> {
-                emitEffect(Effect.Recording.Interrupted(errorCode = outcome.errorCode))
-            }
-        }
-    }
-
-    private fun onRecordingSaved(event: RecordedVideoEvent.Saved) {
-        captureDelegate.finishRecordingSave()
-
-        event.item?.let { item ->
-            galleryDelegate.recordCapturedItem(item)
-            galleryDelegate.refreshThumbnail()
-        }
-
-        if (state().isCaptureSession) {
-            emitEffect(Effect.Recording.ShowForReview(uri = event.uri))
         }
     }
 
@@ -1052,8 +882,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     companion object {
-        private const val TAG = "ViewfinderViewModel"
-
         private const val ZOOM_KEY_STEP = 1f
 
         private const val IS_SECURE_SESSION = "entry_point_is_secure_session"
