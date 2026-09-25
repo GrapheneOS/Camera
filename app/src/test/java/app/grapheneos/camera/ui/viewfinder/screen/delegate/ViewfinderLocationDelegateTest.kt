@@ -4,11 +4,10 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.model.LocationAvailability
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -37,9 +36,7 @@ class ViewfinderLocationDelegateTest {
 
     private var collectors = 0
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-    )
+    private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     @Test
     fun location_isTrackedWhileRequiredAndPermitted() {
@@ -120,7 +117,9 @@ class ViewfinderLocationDelegateTest {
     }
 
     private fun TestScope.startTracking(delegate: ViewfinderLocationDelegate): Job {
-        return backgroundScope.launch { delegate.trackLocation() }
+        return backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            delegate.trackLocation()
+        }
     }
 
     private fun TestScope.createDelegate(
@@ -132,14 +131,7 @@ class ViewfinderLocationDelegateTest {
 
         val delegate = ViewfinderLocationDelegateImpl(
             locationRepository = locationRepository,
-            entryPoint = CameraEntryPoint(
-                isSecureSession = isSecureSession,
-                isCaptureSession = false,
-                isVideoOnlySession = false,
-                requiresVideoModeOnly = false,
-                allowsQrScanning = true,
-                showsCameraModeTabs = true,
-            ),
+            entryPoint = cameraEntryPoint(isSecureSession = isSecureSession),
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
         delegate.bind(

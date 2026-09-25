@@ -1,4 +1,4 @@
-package app.grapheneos.camera.data.orientation
+package app.grapheneos.camera.data.orientation.repository
 
 import android.app.Application
 import android.hardware.Sensor
@@ -42,12 +42,6 @@ class DeviceOrientationRepositoryTest {
 
     private val listener = slot<SensorEventListener>()
 
-    private val repository = DeviceOrientationRepositoryImpl(
-        sensorManager = sensorManager,
-        contentResolver = application.contentResolver,
-        ioDispatcher = UnconfinedTestDispatcher(),
-    )
-
     @Before
     fun setUp() {
         every { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) } returns accelerometer
@@ -57,7 +51,7 @@ class DeviceOrientationRepositoryTest {
 
     @Test
     fun motion_namesEachOfTheFourWaysUp() {
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             val reported = collectMotion()
 
             hold(x = 0f, y = GRAVITY)
@@ -74,7 +68,7 @@ class DeviceOrientationRepositoryTest {
 
     @Test
     fun motion_keepsTheLastOrientationWhileThePhoneLiesFlat() {
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             val reported = collectMotion()
 
             hold(x = 0f, y = GRAVITY)
@@ -86,7 +80,7 @@ class DeviceOrientationRepositoryTest {
 
     @Test
     fun motion_measuresTheTiltAgainstGravity() {
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             val reported = collectMotion()
 
             hold(x = GRAVITY * sin(TILT_RADIANS), y = GRAVITY * cos(TILT_RADIANS))
@@ -98,7 +92,7 @@ class DeviceOrientationRepositoryTest {
 
     @Test
     fun motion_upsideDown_measuresTheTiltTheOtherWay() {
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             val reported = collectMotion()
 
             hold(x = GRAVITY * sin(TILT_RADIANS), y = -GRAVITY * cos(TILT_RADIANS))
@@ -109,8 +103,10 @@ class DeviceOrientationRepositoryTest {
 
     @Test
     fun motion_stopsListeningWhenNoLongerCollected() {
-        runTest(UnconfinedTestDispatcher()) {
-            val collection = backgroundScope.launch { repository.motion().collect {} }
+        runTest {
+            val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                repository().motion().collect {}
+            }
 
             collection.cancel()
 
@@ -120,20 +116,22 @@ class DeviceOrientationRepositoryTest {
 
     @Test
     fun autoRotateEnabled_readsTheSystemSetting() {
-        runTest(UnconfinedTestDispatcher()) {
+        runTest {
             Settings.System.putInt(
                 application.contentResolver,
                 Settings.System.ACCELEROMETER_ROTATION,
                 1,
             )
 
-            assertTrue(repository.autoRotateEnabled().first())
+            assertTrue(repository().autoRotateEnabled().first())
         }
     }
 
     private fun TestScope.collectMotion(): List<DeviceMotion> {
         val reported = mutableListOf<DeviceMotion>()
-        backgroundScope.launch { repository.motion().collect { reported += it } }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            repository().motion().collect { reported += it }
+        }
 
         return reported
     }
@@ -151,6 +149,14 @@ class DeviceOrientationRepositoryTest {
 
             listener.captured.onSensorChanged(event)
         }
+    }
+
+    private fun TestScope.repository(): DeviceOrientationRepositoryImpl {
+        return DeviceOrientationRepositoryImpl(
+            sensorManager = sensorManager,
+            contentResolver = application.contentResolver,
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler),
+        )
     }
 
     private companion object {

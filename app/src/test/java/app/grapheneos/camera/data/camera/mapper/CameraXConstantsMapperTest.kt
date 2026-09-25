@@ -5,7 +5,7 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class CameraXConstantsMapperImplTest {
+class CameraXConstantsMapperTest {
 
     private val mapper = CameraXConstantsMapperImpl()
 

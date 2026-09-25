@@ -10,12 +10,12 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
+import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -46,9 +46,7 @@ class ViewfinderGalleryDelegateTest {
 
     private val loadedItem: CapturingSlot<CapturedItem> = slot()
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-    )
+    private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     @Test
     fun refreshThumbnail_loadsTheLastCapturedItemOnceTheSessionIsPrepared() {
@@ -120,7 +118,7 @@ class ViewfinderGalleryDelegateTest {
             every { capturedItemSession.lastCapturedItem } returns ITEM
             val effects = collectEffects(stateHolder)
             val delegate = createDelegate(
-                entryPoint = ENTRY_POINT.copy(requiresVideoModeOnly = true),
+                entryPoint = cameraEntryPoint(requiresVideoModeOnly = true),
             )
 
             delegate.openGallery()
@@ -141,7 +139,7 @@ class ViewfinderGalleryDelegateTest {
     fun openGallery_inASecureSession_showsOnlyWhatThisSessionCaptured() {
         runTest {
             val effects = collectEffects(stateHolder)
-            val delegate = createDelegate(entryPoint = ENTRY_POINT.copy(isSecureSession = true))
+            val delegate = createDelegate(entryPoint = cameraEntryPoint(isSecureSession = true))
 
             delegate.openGallery()
             delegate.recordCapturedItem(ITEM)
@@ -201,7 +199,7 @@ class ViewfinderGalleryDelegateTest {
         runTest {
             every { capturedItemSession.lastCapturedItem } returns ITEM
             val effects = collectEffects(stateHolder)
-            val delegate = createDelegate(entryPoint = ENTRY_POINT.copy(isSecureSession = true))
+            val delegate = createDelegate(entryPoint = cameraEntryPoint(isSecureSession = true))
 
             delegate.shareLastCapturedItem()
 
@@ -214,7 +212,7 @@ class ViewfinderGalleryDelegateTest {
     }
 
     private fun TestScope.createDelegate(
-        entryPoint: CameraEntryPoint = ENTRY_POINT,
+        entryPoint: CameraEntryPoint = cameraEntryPoint(),
         loadedThumbnail: suspend () -> Bitmap? = { THUMBNAIL },
     ): ViewfinderGalleryDelegate {
         coEvery {
@@ -249,17 +247,13 @@ class ViewfinderGalleryDelegateTest {
     }
 
     private companion object {
-        val ITEM = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
         val THUMBNAIL: Bitmap = createBitmap(1, 1)
         val THUMBNAIL_SIZE = ThumbnailSize(width = 64, height = 64)
 
-        val ENTRY_POINT = CameraEntryPoint(
-            isSecureSession = false,
-            isCaptureSession = false,
-            isVideoOnlySession = false,
-            requiresVideoModeOnly = false,
-            allowsQrScanning = true,
-            showsCameraModeTabs = true,
+        val ITEM = CapturedItem(
+            type = ITEM_TYPE_IMAGE,
+            dateString = "20260920_120000_000",
+            uri = Uri.EMPTY,
         )
     }
 }

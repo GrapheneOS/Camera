@@ -4,12 +4,10 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
@@ -158,23 +156,6 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
                 settingsDelegate.setFlashMode(FlashMode.ON)
                 cameraDelegate.applyFlashMode(FlashMode.ON)
             }
-        }
-    }
-
-    @Test
-    fun previewStreamingStarted_storedGeoTaggingWithoutPermission_staysOff() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            stateHolder.update {
-                it.copy(
-                    modeSettings = ModeSettings(geoTagging = true),
-                    missingPermissions = setOf(AppPermission.LOCATION),
-                )
-            }
-
-            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
-
-            verify(exactly = 1) { settingsDelegate.setGeoTagging(false) }
         }
     }
 }

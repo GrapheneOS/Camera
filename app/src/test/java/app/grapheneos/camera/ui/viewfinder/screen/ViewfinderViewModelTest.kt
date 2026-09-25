@@ -301,19 +301,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         }
     }
 
-    private suspend fun trackUntilCancelled(
-        tracking: MutableSet<String>,
-        name: String,
-    ) {
-        tracking += name
-
-        try {
-            awaitCancellation()
-        } finally {
-            tracking -= name
-        }
-    }
-
     @Test
     fun displayRotationChanged_turnsThePreviewAndTheIcons() {
         runTest {
@@ -392,6 +379,19 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
             verify(exactly = 1) { galleryDelegate.refreshThumbnail() }
+        }
+    }
+
+    private suspend fun trackUntilCancelled(
+        tracking: MutableSet<String>,
+        name: String,
+    ) {
+        tracking += name
+
+        try {
+            awaitCancellation()
+        } finally {
+            tracking -= name
         }
     }
 

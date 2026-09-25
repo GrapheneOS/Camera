@@ -28,6 +28,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import java.io.IOException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
@@ -35,8 +36,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -119,6 +121,7 @@ class ViewfinderCaptureDelegateTest {
 
             val delegate = createDelegate()
             val events = collectEvents(delegate)
+
             delegate.takePreviewPicture()
 
             assertEquals(listOf(CapturedImageEvent.PreviewCaptured(bitmap)), events)
@@ -302,10 +305,14 @@ class ViewfinderCaptureDelegateTest {
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 stateHolder.effects.collect { effect -> timeline += effect to currentTime }
             }
-            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+            }
 
             delegate.startSelfTimer()
-            advanceUntilIdle()
+
+            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            runCurrent()
 
             assertEquals(
                 listOf(
@@ -326,7 +333,9 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
-            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+            }
 
             delegate.startSelfTimer()
             assertTrue(capture().isSelfTimerRunning)
@@ -353,12 +362,16 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
-            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+            }
 
             delegate.startSelfTimer()
             delegate.onScreenDestroyed()
             delegate.cancelSelfTimer()
-            advanceUntilIdle()
+
+            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            runCurrent()
 
             assertEquals(
                 listOf(Effect.SelfTimer.Started, Effect.SelfTimer.Ticked(secondsLeft = 3)),
@@ -420,6 +433,7 @@ class ViewfinderCaptureDelegateTest {
     }
 
     private companion object {
+        const val SELF_TIMER_SECONDS = 3
         const val STORAGE_LOCATION = "MediaStore"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
