@@ -2,12 +2,10 @@ package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Size
-import android.view.Display
 import android.view.Surface
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -110,7 +108,6 @@ interface CameraSession {
 @SuppressLint("UnsafeOptInUsageError")
 internal class CameraSessionImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val displayManager: DisplayManager,
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
@@ -527,7 +524,7 @@ internal class CameraSessionImpl @Inject constructor(
             includesImageCapture = !settings.isQrMode && !settings.requiresVideoModeOnly,
             aspectRatio = settings.aspectRatio,
             imageCaptureTargetRotation = captureRotation ?: displayRotation(),
-            previewTargetRotation = previewRotation ?: displayRotation(),
+            previewTargetRotation = displayRotation(),
             flashMode = settings.flashMode,
             photoQuality = settings.photoQuality,
             waitForFocusLock = settings.waitForFocusLock,
@@ -756,8 +753,10 @@ internal class CameraSessionImpl @Inject constructor(
         }
     }
 
+    // The screen's own rotation, reported by the viewfinder before the first bind. The default
+    // display is not necessarily the one the viewfinder is on.
     private fun displayRotation(): Int {
-        return displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: Surface.ROTATION_0
+        return previewRotation ?: Surface.ROTATION_0
     }
 
     // Refreshing the tabs must not run extension probes on the calling (main) thread: the
