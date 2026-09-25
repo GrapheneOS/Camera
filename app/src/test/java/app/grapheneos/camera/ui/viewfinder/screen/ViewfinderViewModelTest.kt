@@ -7,7 +7,6 @@ import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -163,18 +162,13 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewTapped_focusesThereForTheChosenTimeout() {
+    fun previewTapped_focusesThere() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            stateHolder.update {
-                it.copy(settings = CameraSettings(focusTimeoutSeconds = FOCUS_TIMEOUT_SECONDS))
-            }
 
             viewModel.onAction(CameraAction.PreviewTapped(x = 10f, y = 20f))
 
-            verify(exactly = 1) {
-                cameraDelegate.focusAt(x = 10f, y = 20f, autoCancelSeconds = FOCUS_TIMEOUT_SECONDS)
-            }
+            verify(exactly = 1) { cameraDelegate.focusAt(x = 10f, y = 20f) }
         }
     }
 
@@ -243,8 +237,8 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                     ViewfinderScreenEffect.ShowMessage(R.string.extension_mode_unavailable),
                     ViewfinderScreenEffect.Panel.HideExposure,
                     ViewfinderScreenEffect.Panel.HideZoom,
-                    ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
-                    ViewfinderScreenEffect.GoToModeTab(CameraMode.CAMERA),
+                    ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
+                    ViewfinderScreenEffect.ModeTab.GoTo(CameraMode.CAMERA),
                 ),
                 effects,
             )
@@ -353,9 +347,5 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         } finally {
             tracking -= name
         }
-    }
-
-    private companion object {
-        const val FOCUS_TIMEOUT_SECONDS = 3L
     }
 }

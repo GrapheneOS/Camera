@@ -187,9 +187,9 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.FlashToggleClicked -> toggleFlashMode()
             is CameraAction.TorchToggleClicked -> cameraDelegate.toggleTorch()
             is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
-            is CameraAction.ZoomInKeyPressed -> onZoomKeyPressed(ZOOM_KEY_STEP)
-            is CameraAction.ZoomOutKeyPressed -> onZoomKeyPressed(-ZOOM_KEY_STEP)
-            is CameraAction.FocusKeyPressed -> onFocusKeyPressed()
+            is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
+            is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
+            is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
             is CameraAction.PreviewPinched -> cameraDelegate.scaleZoom(action.scaleFactor)
             is CameraAction.PreviewSwiped -> onPreviewSwiped(action.direction)
             is CameraAction.ZoomSliderDragged -> cameraDelegate.setLinearZoom(action.linearZoom)
@@ -199,7 +199,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             }
 
             is CameraAction.PreviewTapped -> {
-                onPreviewTapped(
+                cameraDelegate.focusAt(
                     x = action.x,
                     y = action.y,
                 )
@@ -239,7 +239,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is RecordingAction.RecordWithoutAudioClicked -> recordWithoutAudio()
             is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
             is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
-            is RecordingAction.MuteToggleClicked -> toggleRecordingMute()
+            is RecordingAction.MuteToggleClicked -> recordingDelegate.toggleMute()
             is RecordingAction.RecordingPauseToggled -> setRecordingPaused(action.paused)
         }
     }
@@ -266,7 +266,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
             is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
-            is SettingsAction.EnableLocationClicked -> emitEffect(Effect.OpenLocationSettings)
+            is SettingsAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
 
             is SettingsAction.FocusTimeoutSelected -> {
                 settingsDelegate.setFocusTimeout(action.seconds)
@@ -336,42 +336,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         orientationDelegate.setDisplayRotation(rotation)
     }
 
-    private fun onZoomKeyPressed(step: Float) {
-        if (state().isQrMode()) return
-
-        cameraDelegate.stepZoom(step)
-    }
-
-    private fun onFocusKeyPressed() {
-        if (state().isQrMode()) return
-
-        // cancel any manual focus
-        // CameraX will start the continuous autofocus (if supported) automatically
-        cameraDelegate.cancelFocus()
-    }
-
-    private fun onPreviewTapped(
-        x: Float,
-        y: Float,
-    ) {
-        val state = state()
-
-        if (state.isQrMode()) return
-
-        cameraDelegate.focusAt(
-            x = x,
-            y = y,
-            autoCancelSeconds = state.settings.focusTimeoutSeconds,
-        )
-        emitEffect(
-            Effect.ShowFocus(
-                x = x,
-                y = y,
-                playsSound = !state.isVideoMode(),
-            ),
-        )
-    }
-
     private fun onPreviewSwiped(direction: SwipeDirection) {
         val effect = swipeEffectMapper.map(
             direction = direction,
@@ -391,7 +355,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (entryPoint.showsCameraModeTabs) {
-            emitEffect(Effect.GoToModeTab(state().mode))
+            emitEffect(Effect.ModeTab.GoTo(state().mode))
         }
     }
 
@@ -611,23 +575,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         startRecording()
     }
 
-    private fun toggleRecordingMute() {
-        val recording = state().recording
-        if (!recording.isActive()) return
-
-        val muted = !recording.isMuted
-        recordingDelegate.setMuted(muted)
-
-        emitEffect(
-            Effect.ShowMessage(
-                when {
-                    muted -> R.string.video_audio_recording_muted
-                    else -> R.string.video_audio_recording_unmuted
-                },
-            ),
-        )
-    }
-
     private fun setRecordingPaused(paused: Boolean) {
         if (state().recording.isActive()) {
             recordingDelegate.setPaused(paused)
@@ -775,7 +722,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onSettingsIconClicked() {
         if (!state().isQrMode()) {
-            emitEffect(Effect.OpenSettingsSheet)
+            emitEffect(Effect.Settings.OpenSheet)
         }
     }
 
@@ -793,7 +740,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun setSelfIllumination(enabled: Boolean) {
         settingsDelegate.setSelfIllumination(enabled)
 
-        emitEffect(Effect.ApplySelfIllumination(state().selfIlluminate()))
+        emitEffect(Effect.Preview.ApplySelfIllumination(state().selfIlluminate()))
     }
 
     private fun dismissQrResult() {

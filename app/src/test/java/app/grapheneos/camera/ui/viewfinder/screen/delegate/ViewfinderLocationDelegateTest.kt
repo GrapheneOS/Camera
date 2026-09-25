@@ -79,7 +79,7 @@ class ViewfinderLocationDelegateTest {
             availability.emit(LocationAvailability.PROVIDERS_DISABLED)
 
             assertEquals(
-                List(2) { Effect.ShowLocationDisabled(offersSettings = true) },
+                List(2) { Effect.Location.ShowDisabled(offersSettings = true) },
                 effects,
             )
         }
@@ -95,7 +95,7 @@ class ViewfinderLocationDelegateTest {
 
             availability.emit(LocationAvailability.PROVIDERS_DISABLED)
 
-            assertEquals(listOf(Effect.ShowLocationDisabled(offersSettings = false)), effects)
+            assertEquals(listOf(Effect.Location.ShowDisabled(offersSettings = false)), effects)
         }
     }
 
