@@ -5,7 +5,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.takePicture
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.domain.capture.ImageSaver
+import app.grapheneos.camera.domain.capture.coordinator.ImageSaver
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata

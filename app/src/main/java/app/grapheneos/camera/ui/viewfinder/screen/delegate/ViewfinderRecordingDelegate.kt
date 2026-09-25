@@ -3,7 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
-import app.grapheneos.camera.domain.capture.VideoRecorder
+import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost

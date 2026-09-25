@@ -83,7 +83,7 @@ import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.databinding.ScanResultDialogBinding
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.domain.gallery.CapturedItemSession
+import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ktx.SystemSettingsObserver
 import app.grapheneos.camera.ktx.applyPreviewRatio

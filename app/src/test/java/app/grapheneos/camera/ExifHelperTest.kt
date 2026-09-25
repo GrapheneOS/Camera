@@ -1,6 +1,8 @@
 package app.grapheneos.camera
 
 import androidxc.exifinterface.media.ExifInterface
+import app.grapheneos.camera.testutil.capturedImageBytes
+import java.io.ByteArrayInputStream
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -51,7 +53,7 @@ class ExifHelperTest {
     }
 
     private fun fixedExif(zone: String): ExifInterface {
-        val exif = ExifInterface(requireNotNull(javaClass.getResourceAsStream(FIXTURE_NAME)))
+        val exif = ExifInterface(ByteArrayInputStream(capturedImageBytes()))
         exif.fixExif(ZonedDateTime.of(CAPTURE_TIME, ZoneId.of(zone)))
         return exif
     }
@@ -61,8 +63,6 @@ class ExifHelperTest {
     }
 
     private companion object {
-        const val FIXTURE_NAME = "/captured_image.jpg"
-
         val CAPTURE_TIME: LocalDateTime = LocalDateTime.of(2026, 1, 15, 9, 5, 30)
     }
 }

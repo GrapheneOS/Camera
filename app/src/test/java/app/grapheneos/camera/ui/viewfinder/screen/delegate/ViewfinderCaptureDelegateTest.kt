@@ -9,13 +9,11 @@ import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -23,7 +21,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -51,20 +48,19 @@ class ViewfinderCaptureDelegateTest {
     private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
     private val captureFinished = CompletableDeferred<Unit>()
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.VIDEO, requiresVideoModeOnly = false),
-        render = { ViewfinderUiState() },
-    )
+    private val stateHolder = viewfinderStateHolder(mode = CameraMode.VIDEO)
 
     @Test
     fun pictureSave_isInProgressUntilFinished() {
-        val delegate = createDelegate()
+        runTest {
+            val delegate = createDelegate()
 
-        delegate.startPictureSave()
-        assertTrue(capture().isSavingPicture)
+            delegate.startPictureSave()
+            assertTrue(capture().isSavingPicture)
 
-        delegate.finishPictureSave()
-        assertFalse(capture().isSavingPicture)
+            delegate.finishPictureSave()
+            assertFalse(capture().isSavingPicture)
+        }
     }
 
     @Test
@@ -89,34 +85,40 @@ class ViewfinderCaptureDelegateTest {
 
     @Test
     fun selfTimer_isRunningUntilStopped() {
-        val delegate = createDelegate()
+        runTest {
+            val delegate = createDelegate()
 
-        delegate.setSelfTimerRunning(true)
-        assertTrue(capture().isSelfTimerRunning)
+            delegate.setSelfTimerRunning(true)
+            assertTrue(capture().isSelfTimerRunning)
 
-        delegate.setSelfTimerRunning(false)
-        assertFalse(capture().isSelfTimerRunning)
+            delegate.setSelfTimerRunning(false)
+            assertFalse(capture().isSelfTimerRunning)
+        }
     }
 
     @Test
     fun capturedPreview_isShownUntilDismissed() {
-        val delegate = createDelegate()
+        runTest {
+            val delegate = createDelegate()
 
-        delegate.showCapturedPreview()
-        assertTrue(capture().isCapturedPreviewShown)
+            delegate.showCapturedPreview()
+            assertTrue(capture().isCapturedPreviewShown)
 
-        delegate.dismissCapturedPreview()
-        assertFalse(capture().isCapturedPreviewShown)
+            delegate.dismissCapturedPreview()
+            assertFalse(capture().isCapturedPreviewShown)
+        }
     }
 
     @Test
     fun onScreenDestroyed_forgetsWhatTheScreenWasShowing() {
-        val delegate = createDelegate()
+        runTest {
+            val delegate = createDelegate()
 
-        delegate.showCapturedPreview()
-        delegate.onScreenDestroyed()
+            delegate.showCapturedPreview()
+            delegate.onScreenDestroyed()
 
-        assertEquals(ViewfinderCaptureState(), capture())
+            assertEquals(ViewfinderCaptureState(), capture())
+        }
     }
 
     @Test
@@ -125,7 +127,7 @@ class ViewfinderCaptureDelegateTest {
             val bitmap = createBitmap(1, 1)
             coEvery { capturePreviewImage() } returns CapturePreviewResult.Captured(bitmap)
 
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
             val events = collectEvents(delegate)
             delegate.takePreviewPicture()
 
@@ -138,7 +140,7 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             coEvery { capturePreviewImage() } returns CapturePreviewResult.Unavailable
 
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
             val events = collectEvents(delegate)
 
             delegate.takePreviewPicture()
@@ -154,7 +156,7 @@ class ViewfinderCaptureDelegateTest {
             every { chrome.foreignOutputUri() } returns FOREIGN_URI
             coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns true
 
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
             val events = collectEvents(delegate)
 
             delegate.confirmPreviewPicture(bitmap)
@@ -168,7 +170,7 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             every { chrome.foreignOutputUri() } returns null
 
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
             val events = collectEvents(delegate)
 
             delegate.confirmPreviewPicture(createBitmap(1, 1))
@@ -181,7 +183,7 @@ class ViewfinderCaptureDelegateTest {
     @Test
     fun takePicture_marksTheCaptureAndReportsWhatTheUseCaseEmits() {
         runTest {
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
             val events = collectEvents(delegate)
 
             delegate.takePicture()
@@ -197,7 +199,7 @@ class ViewfinderCaptureDelegateTest {
     @Test
     fun takePicture_thatEndsWithoutAnyEvent_stillReleasesTheShutter() {
         runTest {
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
 
             delegate.takePicture()
             assertTrue(capture().isTakingPicture)
@@ -211,7 +213,7 @@ class ViewfinderCaptureDelegateTest {
     @Test
     fun cancelPictureCapture_keepsTheFailureItCausesQuiet() {
         runTest {
-            val delegate = createDelegate(scope = backgroundScope)
+            val delegate = createDelegate()
             val events = collectEvents(delegate)
 
             delegate.takePicture()
@@ -234,7 +236,9 @@ class ViewfinderCaptureDelegateTest {
     ): List<CapturedImageEvent> {
         val events = mutableListOf<CapturedImageEvent>()
 
-        backgroundScope.launch { delegate.captureEvents.collect { events += it } }
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            delegate.captureEvents.collect { events += it }
+        }
 
         return events
     }
@@ -243,9 +247,7 @@ class ViewfinderCaptureDelegateTest {
         return stateHolder.state.value.capture
     }
 
-    private fun createDelegate(
-        scope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher()),
-    ): ViewfinderCaptureDelegate {
+    private fun TestScope.createDelegate(): ViewfinderCaptureDelegate {
         coEvery { captureImage(any(), any(), capture(onCaptureEvent)) } coAnswers {
             captureFinished.await()
         }
@@ -257,8 +259,8 @@ class ViewfinderCaptureDelegateTest {
             capturePreviewImage = capturePreviewImage,
             storeCapturedPreview = storeCapturedPreview,
             capturedItemRepository = capturedItemRepository,
-            applicationScope = scope,
-            mainDispatcher = UnconfinedTestDispatcher(),
+            applicationScope = backgroundScope,
+            mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
         delegate.bind(stateHolder)

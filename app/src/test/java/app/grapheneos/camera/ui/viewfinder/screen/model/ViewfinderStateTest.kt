@@ -65,22 +65,6 @@ class ViewfinderStateTest {
         assertFalse(state(session = front).selfIlluminate())
     }
 
-    private fun state(
-        mode: CameraMode = CameraMode.CAMERA,
-        requiresVideoModeOnly: Boolean = false,
-        settings: CameraSettings = CameraSettings(),
-        modeSettings: ModeSettings = ModeSettings(),
-        session: ViewfinderSessionState = ViewfinderSessionState(),
-    ): ViewfinderState {
-        return ViewfinderState(
-            mode = mode,
-            requiresVideoModeOnly = requiresVideoModeOnly,
-            settings = settings,
-            modeSettings = modeSettings,
-            session = session,
-        )
-    }
-
     @Test
     fun barcodeFormats_scanningAllCodes_areEveryFormat() {
         val state = state(
@@ -101,5 +85,21 @@ class ViewfinderStateTest {
         )
 
         assertEquals(setOf(BarcodeFormat.AZTEC, BarcodeFormat.QR_CODE), state.barcodeFormats())
+    }
+
+    private fun state(
+        mode: CameraMode = CameraMode.CAMERA,
+        requiresVideoModeOnly: Boolean = false,
+        settings: CameraSettings = CameraSettings(),
+        modeSettings: ModeSettings = ModeSettings(),
+        session: ViewfinderSessionState = ViewfinderSessionState(),
+    ): ViewfinderState {
+        return ViewfinderState(
+            mode = mode,
+            requiresVideoModeOnly = requiresVideoModeOnly,
+            settings = settings,
+            modeSettings = modeSettings,
+            session = session,
+        )
     }
 }
