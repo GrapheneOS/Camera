@@ -1,16 +1,13 @@
 package app.grapheneos.camera.domain.qr
 
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.testutil.settingsRepositoryOver
 import com.google.zxing.BarcodeFormat
-import io.mockk.every
-import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -20,18 +17,8 @@ class BarcodeFormatsTest {
 
     private val storedSettings = MutableStateFlow(CameraSettings())
 
-    private val settingsRepository = mockk<SettingsRepository>()
+    private val settingsRepository = settingsRepositoryOver(storedSettings)
     private val formats: BarcodeFormats = BarcodeFormatsImpl(settingsRepository)
-
-    @Before
-    fun setUp() {
-        every { settingsRepository.settings } returns storedSettings
-        every { settingsRepository.update(transform = any()) } answers {
-            val transform = firstArg<(CameraSettings) -> CameraSettings>()
-            storedSettings.value = transform(storedSettings.value)
-            storedSettings.value
-        }
-    }
 
     @Test
     fun enabled_isWhatTheRepositoryHolds() {

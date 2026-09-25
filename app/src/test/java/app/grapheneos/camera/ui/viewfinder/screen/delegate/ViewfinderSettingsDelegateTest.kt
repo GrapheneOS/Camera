@@ -6,13 +6,10 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
-import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.testutil.MainDispatcherRule
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.testutil.settingsRepositoryOver
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
@@ -20,7 +17,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,22 +30,9 @@ class ViewfinderSettingsDelegateTest {
 
     private val storedSettings = MutableStateFlow(CameraSettings())
 
-    private val settingsRepository = mockk<SettingsRepository>()
+    private val settingsRepository = settingsRepositoryOver(storedSettings)
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-        render = { ViewfinderUiState() },
-    )
-
-    @Before
-    fun setUp() {
-        every { settingsRepository.settings } returns storedSettings
-        every { settingsRepository.update(transform = any()) } answers {
-            val transform = firstArg<(CameraSettings) -> CameraSettings>()
-            storedSettings.value = transform(storedSettings.value)
-            storedSettings.value
-        }
-    }
+    private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     @Test
     fun bind_startsFromWhatTheRepositoryHolds() {
@@ -66,10 +49,7 @@ class ViewfinderSettingsDelegateTest {
     fun bind_calledAgain_keepsTheFirstStateHolder() {
         runTest {
             val delegate = createDelegate()
-            val otherStateHolder = ViewfinderStateHolder(
-                initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-                render = { ViewfinderUiState() },
-            )
+            val otherStateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
             delegate.bind(
                 scope = backgroundScope,
@@ -94,7 +74,7 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun write_isInTheStateBeforeItReturns() {
+    fun setSelfTimerDuration_isInTheStateBeforeItReturns() {
         runTest {
             every { settingsRepository.update(transform = any()) } answers {
                 firstArg<(CameraSettings) -> CameraSettings>().invoke(storedSettings.value)
