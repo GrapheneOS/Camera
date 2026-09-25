@@ -21,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -97,8 +98,10 @@ class ViewfinderRecordingDelegateTest {
         runTest {
             val delegate = createDelegate()
 
+            delegate.requestRecording()
             delegate.setPaused(paused = true)
-            delegate.setMuted(muted = true)
+            delegate.toggleMute()
+            delegate.markStopped()
             delegate.requestRecording()
 
             assertFalse(recording().isPaused)
@@ -113,7 +116,7 @@ class ViewfinderRecordingDelegateTest {
 
             recorderEvents.emit(RecordedVideoEvent.Started)
             delegate.setPaused(paused = true)
-            delegate.setMuted(muted = true)
+            delegate.toggleMute()
             recorderEvents.emit(RecordedVideoEvent.Progressed(duration = 42.seconds))
             delegate.markStopped()
 
@@ -170,7 +173,7 @@ class ViewfinderRecordingDelegateTest {
 
             delegate.requestRecording()
             delegate.setPaused(paused = true)
-            delegate.setMuted(muted = true)
+            delegate.toggleMute()
             delegate.startPreparedRecording()
 
             verify(exactly = 1) { videoRecorder.start(muted = true, paused = true) }
@@ -187,6 +190,44 @@ class ViewfinderRecordingDelegateTest {
             stateHolder.update { it.copy(deviceOrientation = DeviceOrientation.DEGREES_0) }
 
             assertEquals(DeviceOrientation.DEGREES_270, recording().orientationAtStart)
+        }
+    }
+
+    @Test
+    fun toggleMute_saysWhetherTheRecordingIsMutedNow() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.requestRecording()
+
+            delegate.toggleMute()
+            delegate.toggleMute()
+
+            assertFalse(recording().isMuted)
+            verifyOrder {
+                videoRecorder.setMuted(true)
+                videoRecorder.setMuted(false)
+            }
+            assertEquals(
+                listOf(
+                    Effect.ShowMessage(R.string.video_audio_recording_muted),
+                    Effect.ShowMessage(R.string.video_audio_recording_unmuted),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun toggleMute_outsideARecording_isIgnored() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.toggleMute()
+
+            verify(exactly = 0) { videoRecorder.setMuted(any()) }
+            assertTrue(effects.isEmpty())
         }
     }
 

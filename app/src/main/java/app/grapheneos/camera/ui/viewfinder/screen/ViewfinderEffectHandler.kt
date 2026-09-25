@@ -67,23 +67,15 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.ShowMessage -> activity.showMessage(effect.message)
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
             is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFoundDialog(activity)
-            is Effect.CloseScreen -> activity.finish()
-            is Effect.PlayLevelHaptic -> playLevelHaptic()
-            is Effect.OpenSettingsSheet -> openSettingsSheet()
-            is Effect.CloseSettingsSheet -> activity.settingsDialog.slideDialogUp()
-            is Effect.ShowQrFormats -> showQrFormats()
-            is Effect.AnimateLensSwitch -> activity.animateLensSwitch()
-            is Effect.OpenGallery -> openGallery(effect)
-            is Effect.OpenSecureGallery -> openSecureGallery(effect)
-            is Effect.ShareCapturedItem -> share(effect.item)
-            is Effect.SelectAdjacentModeTab -> selectAdjacentModeTab(effect.offset)
-            is Effect.ShowFocus -> showFocus(effect)
-            is Effect.ShowLocationDisabled -> showLocationDisabled(effect.offersSettings)
-            is Effect.OpenLocationSettings -> openLocationSettings()
             is Effect.ShowQrResult -> showQrResult(effect.text)
-            is Effect.FlashPreview -> flashPreview(effect.selfIlluminate)
-            is Effect.GoToModeTab -> goToModeTab(effect.mode)
-            is Effect.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
+            is Effect.AnimateLensSwitch -> activity.animateLensSwitch()
+            is Effect.PlayLevelHaptic -> playLevelHaptic()
+            is Effect.CloseScreen -> activity.finish()
+            is Effect.Preview -> handlePreview(effect)
+            is Effect.Settings -> handleSettings(effect)
+            is Effect.ModeTab -> handleModeTab(effect)
+            is Effect.Gallery -> handleGallery(effect)
+            is Effect.Location -> handleLocation(effect)
             is Effect.Panel -> handlePanel(effect)
             is Effect.SelfTimer -> handleSelfTimer(effect)
             is Effect.Picture -> handlePicture(effect)
@@ -99,6 +91,43 @@ internal class ViewfinderEffectHandlerImpl(
                 videoQualityTitle(activity, quality),
             ),
         )
+    }
+
+    private fun showQrResult(text: String) {
+        showQrResultDialog(
+            activity = activity,
+            rawText = text,
+            onCopyText = { copiedText ->
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("text", copiedText))
+                activity.showMessage(R.string.copied_text_to_clipboard)
+            },
+            onDismissed = {
+                onAction(LifecycleAction.QrResultDismissed)
+            },
+        )
+    }
+
+    private fun playLevelHaptic() {
+        vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+    }
+
+    private fun handlePreview(effect: Effect.Preview) {
+        when (effect) {
+            is Effect.Preview.ShowFocus -> showFocus(effect)
+            is Effect.Preview.Flash -> flashPreview(effect.selfIlluminate)
+            is Effect.Preview.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
+        }
+    }
+
+    private fun showFocus(effect: Effect.Preview.ShowFocus) {
+        activity.animateFocusRing(effect.x, effect.y)
+
+        if (effect.playsSound) {
+            activity.tunePlayer.playFocusStartSound()
+        }
+
+        activity.exposureBar.showPanel()
+        activity.zoomBar.showPanel()
     }
 
     private fun flashPreview(selfIlluminate: Boolean) {
@@ -141,14 +170,126 @@ internal class ViewfinderEffectHandlerImpl(
         activity.mainOverlay.startAnimation(animation)
     }
 
+    private fun applySelfIllumination(enabled: Boolean) {
+        activity.settingsDialog.selfIllumination(enabled)
+    }
+
+    private fun handleSettings(effect: Effect.Settings) {
+        when (effect) {
+            is Effect.Settings.OpenSheet -> openSettingsSheet()
+            is Effect.Settings.CloseSheet -> activity.settingsDialog.slideDialogUp()
+            is Effect.Settings.ShowQrFormats -> showQrFormats()
+        }
+    }
+
+    private fun openSettingsSheet() {
+        if (activity.settingsDialog.isShowing || !activity.settingsIcon.isEnabled) return
+
+        activity.settingsDialog.show()
+    }
+
+    private fun showQrFormats() {
+        if (activity.settingsDialog.isShowing) return
+
+        showMoreQrFormatOptions(
+            activity = activity,
+            barcodeFormats = activity.barcodeFormats,
+        )
+    }
+
+    private fun handleModeTab(effect: Effect.ModeTab) {
+        when (effect) {
+            is Effect.ModeTab.SelectAdjacent -> selectAdjacentModeTab(effect.offset)
+            is Effect.ModeTab.GoTo -> goToModeTab(effect.mode)
+        }
+    }
+
+    private fun selectAdjacentModeTab(offset: Int) {
+        if (activity.settingsDialog.isShowing) return
+
+        val tabLayout = activity.tabLayout
+
+        tabLayout.getTabAt(tabLayout.selectedTabPosition + offset)?.let(activity::finalizeMode)
+    }
+
     private fun goToModeTab(mode: CameraMode) {
         activity.tabLayout.getTabForMode(mode)?.let { tab ->
             activity.tabLayout.goToTab(tab)
         }
     }
 
-    private fun applySelfIllumination(enabled: Boolean) {
-        activity.settingsDialog.selfIllumination(enabled)
+    private fun handleGallery(effect: Effect.Gallery) {
+        when (effect) {
+            is Effect.Gallery.Open -> openGallery(effect)
+            is Effect.Gallery.OpenSecure -> openSecureGallery(effect)
+            is Effect.Gallery.Share -> share(effect.item)
+        }
+    }
+
+    private fun openGallery(effect: Effect.Gallery.Open) {
+        val intent = Intent(activity, InAppGallery::class.java)
+            .putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, effect.videoOnly)
+
+        startGallery(
+            intent = intent,
+            lastCapturedItem = effect.lastCapturedItem,
+        )
+    }
+
+    private fun openSecureGallery(effect: Effect.Gallery.OpenSecure) {
+        val intent = Intent(activity, InAppGallery::class.java)
+            .putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
+            .putParcelableArrayListExtra(
+                InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
+                ArrayList(effect.capturedItems),
+            )
+
+        startGallery(
+            intent = intent,
+            lastCapturedItem = effect.lastCapturedItem,
+        )
+    }
+
+    private fun startGallery(
+        intent: Intent,
+        lastCapturedItem: CapturedItem?,
+    ) {
+        lastCapturedItem?.let { item ->
+            intent.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, item)
+        }
+
+        activity.startActivity(intent)
+    }
+
+    private fun share(item: CapturedItem) {
+        shareCapturedItem(activity, item)?.let { message ->
+            activity.showMessage(message)
+        }
+    }
+
+    private fun handleLocation(effect: Effect.Location) {
+        when (effect) {
+            is Effect.Location.ShowDisabled -> showLocationDisabled(effect.offersSettings)
+            is Effect.Location.OpenSettings -> openLocationSettings()
+        }
+    }
+
+    private fun showLocationDisabled(offersSettings: Boolean) {
+        val action = when {
+            offersSettings -> activity.getString(R.string.enable)
+            else -> null
+        }
+
+        activity.showMessage(
+            msg = activity.getString(R.string.location_is_disabled),
+            action = action,
+        ) {
+            onAction(SettingsAction.EnableLocationClicked)
+        }
+    }
+
+    private fun openLocationSettings() {
+        activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
     }
 
     private fun handlePanel(effect: Effect.Panel) {
@@ -331,117 +472,6 @@ internal class ViewfinderEffectHandlerImpl(
             .setData(Uri.fromParts("package", activity.packageName, null))
 
         activity.startActivity(intent)
-    }
-
-    private fun showLocationDisabled(offersSettings: Boolean) {
-        val action = when {
-            offersSettings -> activity.getString(R.string.enable)
-            else -> null
-        }
-
-        activity.showMessage(
-            msg = activity.getString(R.string.location_is_disabled),
-            action = action,
-        ) {
-            onAction(SettingsAction.EnableLocationClicked)
-        }
-    }
-
-    private fun openGallery(effect: Effect.OpenGallery) {
-        val intent = Intent(activity, InAppGallery::class.java)
-            .putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, effect.videoOnly)
-
-        startGallery(
-            intent = intent,
-            lastCapturedItem = effect.lastCapturedItem,
-        )
-    }
-
-    private fun openSecureGallery(effect: Effect.OpenSecureGallery) {
-        val intent = Intent(activity, InAppGallery::class.java)
-            .putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
-            .putParcelableArrayListExtra(
-                InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
-                ArrayList(effect.capturedItems),
-            )
-
-        startGallery(
-            intent = intent,
-            lastCapturedItem = effect.lastCapturedItem,
-        )
-    }
-
-    private fun startGallery(
-        intent: Intent,
-        lastCapturedItem: CapturedItem?,
-    ) {
-        lastCapturedItem?.let { item ->
-            intent.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, item)
-        }
-
-        activity.startActivity(intent)
-    }
-
-    private fun share(item: CapturedItem) {
-        shareCapturedItem(activity, item)?.let { message ->
-            activity.showMessage(message)
-        }
-    }
-
-    private fun showQrResult(text: String) {
-        showQrResultDialog(
-            activity = activity,
-            rawText = text,
-            onCopyText = { copiedText ->
-                clipboardManager.setPrimaryClip(ClipData.newPlainText("text", copiedText))
-                activity.showMessage(R.string.copied_text_to_clipboard)
-            },
-            onDismissed = {
-                onAction(LifecycleAction.QrResultDismissed)
-            },
-        )
-    }
-
-    private fun openLocationSettings() {
-        activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-    }
-
-    private fun playLevelHaptic() {
-        vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
-    }
-
-    private fun openSettingsSheet() {
-        if (activity.settingsDialog.isShowing || !activity.settingsIcon.isEnabled) return
-
-        activity.settingsDialog.show()
-    }
-
-    private fun showQrFormats() {
-        if (activity.settingsDialog.isShowing) return
-
-        showMoreQrFormatOptions(
-            activity = activity,
-            barcodeFormats = activity.barcodeFormats,
-        )
-    }
-
-    private fun selectAdjacentModeTab(offset: Int) {
-        if (activity.settingsDialog.isShowing) return
-
-        val tabLayout = activity.tabLayout
-
-        tabLayout.getTabAt(tabLayout.selectedTabPosition + offset)?.let(activity::finalizeMode)
-    }
-
-    private fun showFocus(effect: Effect.ShowFocus) {
-        activity.animateFocusRing(effect.x, effect.y)
-
-        if (effect.playsSound) {
-            activity.tunePlayer.playFocusStartSound()
-        }
-
-        activity.exposureBar.showPanel()
-        activity.zoomBar.showPanel()
     }
 
     private fun captureActivity(): CaptureActivity? {

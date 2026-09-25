@@ -324,7 +324,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         startPictureSave()
 
         postEffect(Effect.Picture.Captured)
-        postEffect(Effect.FlashPreview(stateHolder.state.value.selfIlluminate()))
+        postEffect(Effect.Preview.Flash(stateHolder.state.value.selfIlluminate()))
     }
 
     private fun onPictureThumbnailReady(thumbnail: Bitmap) {
