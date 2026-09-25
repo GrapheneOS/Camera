@@ -66,7 +66,7 @@ class VideoCapturerRegressionTest {
     private fun doubleFiringTunePlayer(): TunePlayer {
         return mockk(relaxed = true) {
             every { playVRStartSound(onPlayed = any()) } answers {
-                val onPlayed = secondArg<Runnable>()
+                val onPlayed = firstArg<Runnable>()
                 onPlayed.run()
                 onPlayed.run()
             }
@@ -77,7 +77,7 @@ class VideoCapturerRegressionTest {
     private fun immediateTunePlayer(): TunePlayer {
         return mockk(relaxed = true) {
             every { playVRStartSound(onPlayed = any()) } answers {
-                secondArg<Runnable>().run()
+                firstArg<Runnable>().run()
             }
         }
     }
@@ -87,6 +87,13 @@ class VideoCapturerRegressionTest {
         return mockk(relaxed = true) {
             every { playVRStartSound(onPlayed = capture(deferred)) } just Runs
         }
+    }
+
+    private fun <A : MainActivity> waitForStartSound(
+        scenario: ActivityScenario<A>,
+        deferred: CapturingSlot<Runnable>,
+    ) {
+        waitUntil(scenario, "the start sound is requested") { deferred.isCaptured }
     }
 
     /**
@@ -101,7 +108,7 @@ class VideoCapturerRegressionTest {
                 activity.requestRecording()
             }
 
-            waitUntil(scenario, "recording is running") { isRecording(it) }
+            waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
 
             scenario.onActivity { stopRecording(it) }
             waitUntil(scenario, "recording is finalized") { !isRecording(it) }
@@ -123,6 +130,7 @@ class VideoCapturerRegressionTest {
                 activity.requestRecording()
                 assertTrue(isRecording(activity))
             }
+            waitForStartSound(scenario, deferred)
 
             scenario.onActivity { activity ->
                 stopRecording(activity)
@@ -130,14 +138,16 @@ class VideoCapturerRegressionTest {
                 assertFalse(isRecording(activity))
             }
 
-            assertEquals(pendingBefore, pendingVideoCount())
+            waitUntil(scenario, "the abandoned output is deleted") {
+                pendingVideoCount() == pendingBefore
+            }
 
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
                 activity.tunePlayer = immediateTunePlayer()
                 activity.requestRecording()
             }
-            waitUntil(scenario, "recording is running") { isRecording(it) }
+            waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
             scenario.onActivity { stopRecording(it) }
             waitUntil(scenario, "recording is finalized") { !isRecording(it) }
         }
@@ -151,6 +161,9 @@ class VideoCapturerRegressionTest {
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
                 activity.requestRecording()
+            }
+            waitForStartSound(scenario, deferred)
+            scenario.onActivity { activity ->
                 setPaused(activity, paused = true)
                 deferred.captured.run()
             }
@@ -186,6 +199,9 @@ class VideoCapturerRegressionTest {
             scenario.onActivity { activity ->
                 activity.tunePlayer = manualTunePlayer(deferred)
                 activity.requestRecording()
+            }
+            waitForStartSound(scenario, deferred)
+            scenario.onActivity { activity ->
                 setPaused(activity, paused = true)
                 deferred.captured.run()
             }
@@ -195,7 +211,9 @@ class VideoCapturerRegressionTest {
             scenario.onActivity { stopRecording(it) }
             waitUntil(scenario, "recording is finalized") { !isRecording(it) }
 
-            assertEquals(pendingBefore, pendingVideoCount())
+            waitUntil(scenario, "the abandoned output is deleted") {
+                pendingVideoCount() == pendingBefore
+            }
         }
     }
 
@@ -308,7 +326,7 @@ class VideoCapturerRegressionTest {
                     activity.tunePlayer = immediateTunePlayer()
                     activity.requestRecording()
                 }
-                waitUntil(scenario, "recording is running") { isRecording(it) }
+                waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
 
                 var mode: CameraMode? = null
                 var stillRecording = false
@@ -348,7 +366,11 @@ class VideoCapturerRegressionTest {
                 activity.tunePlayer = immediateTunePlayer()
                 activity.requestRecording()
             }
-            waitUntil(scenario, "recording is running") { isRecording(it) }
+            waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
+            // A recording that wrote nothing is thrown away, and leaves no preview to defer
+            waitUntil(scenario, "recording has content") {
+                it.viewfinder.uiState.value.recordingTimerText != "00:00"
+            }
 
             // Stops the activity, which stops the recording; the finalize event that used to crash
             // lands afterwards, on the main thread of a stopped activity.
@@ -357,12 +379,9 @@ class VideoCapturerRegressionTest {
 
             scenario.moveToState(Lifecycle.State.RESUMED)
 
-            var confirmVisibility = View.GONE
-            scenario.onActivity { confirmVisibility = it.confirmButton.visibility }
-            assertEquals(
-                "the preview the finalize deferred never arrived",
-                View.VISIBLE, confirmVisibility
-            )
+            waitUntil(scenario, "the preview the finalize deferred arrives") {
+                it.confirmButton.visibility == View.VISIBLE
+            }
         }
     }
 
@@ -404,6 +423,8 @@ class VideoCapturerRegressionTest {
                     highlighted = activity.tabLayout.selectedTab?.tag as CameraMode?
                 }
 
+                waitForStartSound(scenario, deferred)
+
                 // Abandon the queued start rather than record for real: the damage is done or not
                 // by now, and a cancelled start leaves nothing behind to clean up.
                 scenario.onActivity { activity ->
@@ -422,6 +443,10 @@ class VideoCapturerRegressionTest {
 
     private fun isRecording(activity: MainActivity): Boolean {
         return activity.viewfinder.uiState.value.isRecordingActive
+    }
+
+    private fun hasRecordingStarted(activity: MainActivity): Boolean {
+        return activity.viewfinder.uiState.value.recordingTimerVisible
     }
 
     private fun stopRecording(activity: MainActivity) {

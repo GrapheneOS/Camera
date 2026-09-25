@@ -18,6 +18,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -91,6 +92,29 @@ class VideoRecorderTest {
 
             coVerify(exactly = 1) { discardRecording(output) }
             assertTrue(events.isEmpty())
+        }
+    }
+
+    @Test
+    fun stop_whileTheOutputIsCreated_abandonsTheRecording() {
+        runTest {
+            val outputCreated = CompletableDeferred<Unit>()
+            coEvery { createRecordingOutput(any(), any()) } coAnswers {
+                outputCreated.await()
+                output
+            }
+
+            val recorder = createRecorder()
+            val events = collectEvents(recorder)
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                recorder.prepare(REQUEST, isStillWanted = { true })
+            }
+
+            recorder.stop()
+            outputCreated.complete(Unit)
+
+            coVerify(exactly = 1) { discardRecording(output) }
+            assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
         }
     }
 
