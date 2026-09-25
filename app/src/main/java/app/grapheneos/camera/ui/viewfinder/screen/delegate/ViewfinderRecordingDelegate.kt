@@ -43,7 +43,7 @@ interface ViewfinderRecordingDelegate {
     fun startPreparedRecording()
 
     fun setPaused(paused: Boolean)
-    fun setMuted(muted: Boolean)
+    fun toggleMute()
 
     fun requestStop()
     fun markStopped()
@@ -130,9 +130,22 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
         videoRecorder.setPaused(paused)
     }
 
-    override fun setMuted(muted: Boolean) {
+    override fun toggleMute() {
+        val recording = stateHolder.state.value.recording
+        if (!recording.isActive()) return
+
+        val muted = !recording.isMuted
         update { it.copy(isMuted = muted) }
         videoRecorder.setMuted(muted)
+
+        postEffect(
+            Effect.ShowMessage(
+                when {
+                    muted -> R.string.video_audio_recording_muted
+                    else -> R.string.video_audio_recording_unmuted
+                },
+            ),
+        )
     }
 
     override fun requestStop() {

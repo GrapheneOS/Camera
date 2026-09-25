@@ -201,6 +201,51 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
+    fun focusAt_focusesForTheChosenTimeoutAndShowsItWithTheSoundOnlyForPhotos() {
+        val delegate = createAttachedDelegate()
+        stateHolder.update {
+            it.copy(settings = CameraSettings(focusTimeoutSeconds = FOCUS_TIMEOUT_SECONDS))
+        }
+
+        delegate.focusAt(x = 10f, y = 20f)
+        stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
+        delegate.focusAt(x = 10f, y = 20f)
+
+        verify(exactly = 2) {
+            session.startFocusAndMetering(
+                x = 10f,
+                y = 20f,
+                autoCancelSeconds = FOCUS_TIMEOUT_SECONDS,
+            )
+        }
+        assertEquals(
+            listOf(
+                Effect.Preview.ShowFocus(x = 10f, y = 20f, playsSound = true),
+                Effect.Preview.ShowFocus(x = 10f, y = 20f, playsSound = false),
+            ),
+            effects,
+        )
+    }
+
+    @Test
+    fun focusAndZoom_inQrMode_areLeftAlone() {
+        every { session.zoom } returns ZOOM
+        val delegate = createAttachedDelegate()
+        stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+
+        delegate.focusAt(x = 10f, y = 20f)
+        delegate.cancelFocus()
+        delegate.stepZoom(step = 1f)
+
+        verify(exactly = 0) {
+            session.startFocusAndMetering(x = any(), y = any(), autoCancelSeconds = any())
+        }
+        verify(exactly = 0) { session.cancelFocusAndMetering() }
+        verify(exactly = 0) { session.setZoomRatio(any()) }
+        assertTrue(effects.isEmpty())
+    }
+
+    @Test
     fun stepZoom_pastEitherEnd_stopsThere() {
         every { session.zoom } returns ZOOM
 
@@ -522,5 +567,6 @@ class ViewfinderCameraDelegateTest {
 
         const val SENSOR_ORIENTATION = 90
         const val QR_TEXT = "https://grapheneos.org"
+        const val FOCUS_TIMEOUT_SECONDS = 3L
     }
 }

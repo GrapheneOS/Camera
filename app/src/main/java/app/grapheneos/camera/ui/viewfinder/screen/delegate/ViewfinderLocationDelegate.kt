@@ -78,7 +78,7 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
             .filter { availability -> availability == LocationAvailability.PROVIDERS_DISABLED }
             .collect {
                 stateHolder.postEffect(
-                    Effect.ShowLocationDisabled(offersSettings = !entryPoint.isSecureSession),
+                    Effect.Location.ShowDisabled(offersSettings = !entryPoint.isSecureSession),
                 )
             }
     }

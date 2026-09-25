@@ -127,8 +127,8 @@ class ViewfinderGalleryDelegateTest {
 
             assertEquals(
                 listOf(
-                    Effect.OpenGallery(lastCapturedItem = null, videoOnly = true),
-                    Effect.OpenGallery(lastCapturedItem = ITEM, videoOnly = true),
+                    Effect.Gallery.Open(lastCapturedItem = null, videoOnly = true),
+                    Effect.Gallery.Open(lastCapturedItem = ITEM, videoOnly = true),
                 ),
                 effects,
             )
@@ -149,7 +149,10 @@ class ViewfinderGalleryDelegateTest {
             assertEquals(
                 listOf(
                     Effect.ShowMessage(R.string.no_image),
-                    Effect.OpenSecureGallery(capturedItems = listOf(ITEM), lastCapturedItem = null),
+                    Effect.Gallery.OpenSecure(
+                        capturedItems = listOf(ITEM),
+                        lastCapturedItem = null,
+                    ),
                 ),
                 effects,
             )
@@ -187,7 +190,7 @@ class ViewfinderGalleryDelegateTest {
                     Effect.ShowMessage(
                         R.string.please_wait_for_image_to_get_captured_before_sharing,
                     ),
-                    Effect.ShareCapturedItem(ITEM),
+                    Effect.Gallery.Share(ITEM),
                 ),
                 effects,
             )

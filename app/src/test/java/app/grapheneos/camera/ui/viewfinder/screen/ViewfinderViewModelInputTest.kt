@@ -27,52 +27,14 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
 
     @Test
-    fun previewTapped_showsTheFocusWithTheSoundOnlyForPhotos() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CameraAction.PreviewTapped(x = 10f, y = 20f))
-            stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-            viewModel.onAction(CameraAction.PreviewTapped(x = 10f, y = 20f))
-
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.ShowFocus(x = 10f, y = 20f, playsSound = true),
-                    ViewfinderScreenEffect.ShowFocus(x = 10f, y = 20f, playsSound = false),
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun previewTapped_inQrMode_leavesTheFocusAlone() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
-
-            viewModel.onAction(CameraAction.PreviewTapped(x = 10f, y = 20f))
-
-            verify(exactly = 0) { cameraDelegate.focusAt(any(), any(), any()) }
-            assertTrue(effects.isEmpty())
-        }
-    }
-
-    @Test
-    fun keys_inQrMode_doNothing() {
+    fun captureKey_inQrMode_leavesTheTorchAlone() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
 
             viewModel.onAction(CaptureAction.CaptureKeyPressed)
-            viewModel.onAction(CameraAction.ZoomInKeyPressed)
-            viewModel.onAction(CameraAction.FocusKeyPressed)
 
             verify(exactly = 0) { cameraDelegate.toggleTorch() }
-            verify(exactly = 0) { cameraDelegate.stepZoom(any()) }
-            verify(exactly = 0) { cameraDelegate.cancelFocus() }
         }
     }
 
@@ -152,8 +114,8 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
 
             assertEquals(
                 listOf(
-                    ViewfinderScreenEffect.SelectAdjacentModeTab(offset = 1),
-                    ViewfinderScreenEffect.SelectAdjacentModeTab(offset = -1),
+                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = 1),
+                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = -1),
                 ),
                 effects,
             )
@@ -219,28 +181,13 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun muteToggleClicked_saysWhetherTheRecordingIsMutedNow() {
+    fun muteToggleClicked_togglesTheRecordingMute() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            stateHolder.update { state ->
-                state.copy(
-                    recording = state.recording.copy(
-                        phase = RecordingPhase.RECORDING,
-                        isMuted = true,
-                    ),
-                )
-            }
 
             viewModel.onAction(RecordingAction.MuteToggleClicked)
 
-            verify(exactly = 1) { recordingDelegate.setMuted(muted = false) }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.ShowMessage(R.string.video_audio_recording_unmuted),
-                ),
-                effects,
-            )
+            verify(exactly = 1) { recordingDelegate.toggleMute() }
         }
     }
 
@@ -291,7 +238,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             stateHolder.update { state -> state.copy(mode = CameraMode.QR_SCAN) }
             viewModel.onAction(SettingsAction.SettingsIconClicked)
 
-            assertEquals(listOf(ViewfinderScreenEffect.OpenSettingsSheet), effects)
+            assertEquals(listOf(ViewfinderScreenEffect.Settings.OpenSheet), effects)
         }
     }
 

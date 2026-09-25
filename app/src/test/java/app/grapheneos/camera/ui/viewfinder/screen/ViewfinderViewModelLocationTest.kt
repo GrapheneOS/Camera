@@ -135,7 +135,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
 
             viewModel.onAction(SettingsAction.EnableLocationClicked)
 
-            assertEquals(listOf(ViewfinderScreenEffect.OpenLocationSettings), effects)
+            assertEquals(listOf(ViewfinderScreenEffect.Location.OpenSettings), effects)
         }
     }
 }

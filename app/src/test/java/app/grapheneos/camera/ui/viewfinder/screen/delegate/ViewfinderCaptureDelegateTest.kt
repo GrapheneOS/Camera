@@ -195,7 +195,7 @@ class ViewfinderCaptureDelegateTest {
             assertEquals(
                 listOf(
                     Effect.Picture.Captured,
-                    Effect.FlashPreview(selfIlluminate = false),
+                    Effect.Preview.Flash(selfIlluminate = false),
                 ),
                 effects,
             )

@@ -126,7 +126,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
 
             verifyOrder {
                 recordingDelegate.setPaused(paused = true)
-                recordingDelegate.setMuted(muted = true)
+                recordingDelegate.toggleMute()
                 recordingDelegate.startPreparedRecording()
                 recordingDelegate.requestStop()
             }
@@ -134,15 +134,13 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun pauseAndMute_outsideARecording_areIgnored() {
+    fun pause_outsideARecording_isIgnored() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
-            viewModel.onAction(RecordingAction.MuteToggleClicked)
 
             verify(exactly = 0) { recordingDelegate.setPaused(paused = any()) }
-            verify(exactly = 0) { recordingDelegate.setMuted(muted = any()) }
         }
     }
 

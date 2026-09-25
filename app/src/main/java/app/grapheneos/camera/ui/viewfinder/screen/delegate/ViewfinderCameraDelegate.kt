@@ -55,14 +55,18 @@ interface ViewfinderCameraDelegate {
 
     fun switchLensFacing(lensFacing: LensFacing, extensionMode: ExtensionMode?): Boolean
     fun setPreviewRotation(rotation: Int)
+
     fun applyFlashMode(value: FlashMode)
     fun toggleTorch()
+
     fun stepZoom(step: Float)
     fun scaleZoom(scaleFactor: Float)
     fun setLinearZoom(linearZoom: Float)
     fun setExposureCompensation(compensationIndex: Int)
-    fun focusAt(x: Float, y: Float, autoCancelSeconds: Long)
+
+    fun focusAt(x: Float, y: Float)
     fun cancelFocus()
+
     fun refreshVideoQualities()
     fun dismissQrResult()
 }
@@ -255,6 +259,8 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun stepZoom(step: Float) {
+        if (stateHolder.state.value.isQrMode()) return
+
         val zoom = session.zoom ?: return
         val requested = zoom.zoomRatio + step
 
@@ -292,16 +298,30 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     override fun focusAt(
         x: Float,
         y: Float,
-        autoCancelSeconds: Long,
     ) {
+        val state = stateHolder.state.value
+
+        if (state.isQrMode()) return
+
         session.startFocusAndMetering(
             x = x,
             y = y,
-            autoCancelSeconds = autoCancelSeconds,
+            autoCancelSeconds = state.settings.focusTimeoutSeconds,
+        )
+        postEffect(
+            Effect.Preview.ShowFocus(
+                x = x,
+                y = y,
+                playsSound = !state.isVideoMode(),
+            ),
         )
     }
 
     override fun cancelFocus() {
+        if (stateHolder.state.value.isQrMode()) return
+
+        // cancel any manual focus
+        // CameraX will start the continuous autofocus (if supported) automatically
         session.cancelFocusAndMetering()
     }
 

@@ -132,7 +132,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
 
         val effect = when {
             !entryPoint.isSecureSession -> {
-                Effect.OpenGallery(
+                Effect.Gallery.Open(
                     lastCapturedItem = lastCapturedItem,
                     videoOnly = entryPoint.requiresVideoModeOnly,
                 )
@@ -143,7 +143,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
             }
 
             else -> {
-                Effect.OpenSecureGallery(
+                Effect.Gallery.OpenSecure(
                     capturedItems = gallery.secureCapturedItems,
                     lastCapturedItem = lastCapturedItem,
                 )
@@ -166,7 +166,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
             }
 
             else -> {
-                Effect.ShareCapturedItem(item)
+                Effect.Gallery.Share(item)
             }
         }
 

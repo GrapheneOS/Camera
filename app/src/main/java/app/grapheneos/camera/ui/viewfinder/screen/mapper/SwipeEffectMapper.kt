@@ -31,8 +31,8 @@ internal class SwipeEffectMapperImpl @Inject constructor() : SwipeEffectMapper {
 
     private fun openSettingsSheet(state: ViewfinderState): Effect? {
         return when {
-            !state.isQrMode() -> Effect.OpenSettingsSheet
-            !state.settings.scanAllCodes -> Effect.ShowQrFormats
+            !state.isQrMode() -> Effect.Settings.OpenSheet
+            !state.settings.scanAllCodes -> Effect.Settings.ShowQrFormats
             else -> null
         }
     }
@@ -40,7 +40,7 @@ internal class SwipeEffectMapperImpl @Inject constructor() : SwipeEffectMapper {
     private fun closeSettingsSheet(state: ViewfinderState): Effect? {
         return when {
             state.recording.isActive() -> null
-            else -> Effect.CloseSettingsSheet
+            else -> Effect.Settings.CloseSheet
         }
     }
 
@@ -50,7 +50,7 @@ internal class SwipeEffectMapperImpl @Inject constructor() : SwipeEffectMapper {
     ): Effect? {
         return when {
             state.recording.isActive() || !state.showsCameraModeTabs -> null
-            else -> Effect.SelectAdjacentModeTab(offset = offset)
+            else -> Effect.ModeTab.SelectAdjacent(offset = offset)
         }
     }
 }

@@ -68,11 +68,11 @@ import app.grapheneos.camera.ui.SettingsDialog
 import app.grapheneos.camera.ui.seekbar.ExposureBar
 import app.grapheneos.camera.ui.seekbar.ZoomBar
 import app.grapheneos.camera.ui.showMoreQrFormatOptions
-import app.grapheneos.camera.ui.viewfinder.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer

@@ -28,11 +28,11 @@ class SwipeEffectMapperTest {
     @Test
     fun sidewaysSwipes_moveAcrossTheModeTabs() {
         assertEquals(
-            Effect.SelectAdjacentModeTab(offset = 1),
+            Effect.ModeTab.SelectAdjacent(offset = 1),
             mapper.map(direction = SwipeDirection.LEFT, state = photoState),
         )
         assertEquals(
-            Effect.SelectAdjacentModeTab(offset = -1),
+            Effect.ModeTab.SelectAdjacent(offset = -1),
             mapper.map(direction = SwipeDirection.RIGHT, state = photoState),
         )
     }
@@ -40,11 +40,11 @@ class SwipeEffectMapperTest {
     @Test
     fun verticalSwipes_openAndCloseTheSettings() {
         assertEquals(
-            Effect.OpenSettingsSheet,
+            Effect.Settings.OpenSheet,
             mapper.map(direction = SwipeDirection.DOWN, state = photoState),
         )
         assertEquals(
-            Effect.CloseSettingsSheet,
+            Effect.Settings.CloseSheet,
             mapper.map(direction = SwipeDirection.UP, state = photoState),
         )
     }
@@ -55,7 +55,7 @@ class SwipeEffectMapperTest {
         val scanningAll = qrState.copy(settings = CameraSettings(scanAllCodes = true))
 
         assertEquals(
-            Effect.ShowQrFormats,
+            Effect.Settings.ShowQrFormats,
             mapper.map(direction = SwipeDirection.DOWN, state = qrState),
         )
         assertNull(mapper.map(direction = SwipeDirection.DOWN, state = scanningAll))
@@ -70,7 +70,7 @@ class SwipeEffectMapperTest {
         assertNull(mapper.map(direction = SwipeDirection.LEFT, state = recording))
         assertNull(mapper.map(direction = SwipeDirection.UP, state = recording))
         assertEquals(
-            Effect.OpenSettingsSheet,
+            Effect.Settings.OpenSheet,
             mapper.map(direction = SwipeDirection.DOWN, state = recording),
         )
     }
