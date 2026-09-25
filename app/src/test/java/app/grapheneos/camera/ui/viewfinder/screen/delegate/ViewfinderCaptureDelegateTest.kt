@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.core.graphics.createBitmap
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
+import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -18,6 +19,7 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import io.mockk.coEvery
@@ -63,32 +65,6 @@ class ViewfinderCaptureDelegateTest {
     private val stateHolder = viewfinderStateHolder(mode = CameraMode.VIDEO)
 
     @Test
-    fun pictureSave_isInProgressUntilFinished() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.startPictureSave()
-            assertTrue(capture().isSavingPicture)
-
-            delegate.finishPictureSave()
-            assertFalse(capture().isSavingPicture)
-        }
-    }
-
-    @Test
-    fun recordingSave_isInProgressUntilFinished() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.startRecordingSave()
-            assertTrue(capture().isSavingRecording)
-
-            delegate.finishRecordingSave()
-            assertFalse(capture().isSavingRecording)
-        }
-    }
-
-    @Test
     fun capturedPreview_isShownUntilDismissed() {
         runTest {
             val delegate = createDelegate()
@@ -114,17 +90,37 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
-    fun takePreviewPicture_handsTheBitmapBackWithoutSavingIt() {
+    fun takePreviewPicture_showsTheBitmapWithoutSavingIt() {
         runTest {
             val bitmap = createBitmap(1, 1)
             coEvery { capturePreviewImage() } returns CapturePreviewResult.Captured(bitmap)
-
             val delegate = createDelegate()
-            val events = collectEvents(delegate)
+            val effects = collectEffects(stateHolder)
 
             delegate.takePreviewPicture()
 
-            assertEquals(listOf(CapturedImageEvent.PreviewCaptured(bitmap)), events)
+            assertFalse(capture().isSavingPicture)
+            assertEquals(
+                listOf(
+                    Effect.Picture.PreviewCaptured(bitmap),
+                    Effect.ShowMessage(R.string.image_captured_successfully),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun takePreviewPicture_thatFails_reportsIt() {
+        runTest {
+            coEvery { capturePreviewImage() } returns CapturePreviewResult.Failed
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.takePreviewPicture()
+
+            assertFalse(capture().isSavingPicture)
+            assertEquals(listOf(Effect.Picture.PreviewFailed), effects)
         }
     }
 
@@ -132,13 +128,12 @@ class ViewfinderCaptureDelegateTest {
     fun takePreviewPicture_withoutABoundCamera_saysNothing() {
         runTest {
             coEvery { capturePreviewImage() } returns CapturePreviewResult.Unavailable
-
             val delegate = createDelegate()
-            val events = collectEvents(delegate)
+            val effects = collectEffects(stateHolder)
 
             delegate.takePreviewPicture()
 
-            assertTrue(events.isEmpty())
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -147,13 +142,26 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val bitmap = createBitmap(1, 1)
             coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns true
-
             val delegate = createDelegate()
-            val events = collectEvents(delegate)
+            val effects = collectEffects(stateHolder)
 
             delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = FOREIGN_URI)
 
-            assertEquals(listOf(CapturedImageEvent.PreviewStored), events)
+            assertEquals(listOf(Effect.Picture.PreviewStored), effects)
+        }
+    }
+
+    @Test
+    fun confirmPreviewPicture_thatCannotBeStored_saysSo() {
+        runTest {
+            val bitmap = createBitmap(1, 1)
+            coEvery { storeCapturedPreview(uri = FOREIGN_URI, bitmap = bitmap) } returns false
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = FOREIGN_URI)
+
+            assertEquals(listOf(Effect.Picture.PreviewStoreFailed), effects)
         }
     }
 
@@ -162,20 +170,20 @@ class ViewfinderCaptureDelegateTest {
         runTest {
             val bitmap = createBitmap(1, 1)
             val delegate = createDelegate()
-            val events = collectEvents(delegate)
+            val effects = collectEffects(stateHolder)
 
             delegate.confirmPreviewPicture(bitmap = bitmap, outputUri = null)
 
-            assertEquals(listOf(CapturedImageEvent.PreviewReturned(bitmap = bitmap)), events)
+            assertEquals(listOf(Effect.Picture.PreviewReturned(bitmap = bitmap)), effects)
             coVerify(exactly = 0) { storeCapturedPreview(uri = any(), bitmap = any()) }
         }
     }
 
     @Test
-    fun takePicture_marksTheCaptureAndReportsWhatTheUseCaseEmits() {
+    fun captured_releasesTheShutterAndSoundsItBeforeFlashingThePreview() {
         runTest {
             val delegate = createDelegate()
-            val events = collectEvents(delegate)
+            val effects = collectEffects(stateHolder)
 
             delegate.takePicture()
             assertTrue(capture().isTakingPicture)
@@ -183,7 +191,148 @@ class ViewfinderCaptureDelegateTest {
             emitCaptureEvent(CapturedImageEvent.Captured)
 
             assertFalse(capture().isTakingPicture)
-            assertEquals(listOf(CapturedImageEvent.Captured), events)
+            assertTrue(capture().isSavingPicture)
+            assertEquals(
+                listOf(
+                    Effect.Picture.Captured,
+                    Effect.FlashPreview(selfIlluminate = false),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun thumbnailReady_finishesTheSaveAndHandsTheThumbnailOn() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+            val thumbnail = createBitmap(1, 1)
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.Captured)
+            emitCaptureEvent(CapturedImageEvent.ThumbnailReady(thumbnail = thumbnail))
+
+            assertFalse(capture().isSavingPicture)
+            assertEquals(listOf(ViewfinderCaptureEvent.ThumbnailReady(thumbnail)), events)
+        }
+    }
+
+    @Test
+    fun savedAndStorageLocationNotFound_areHandedOn() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.StorageLocationNotFound)
+            emitCaptureEvent(CapturedImageEvent.Saved(item = ITEM))
+
+            assertEquals(
+                listOf(
+                    ViewfinderCaptureEvent.StorageLocationNotFound,
+                    ViewfinderCaptureEvent.Saved(ITEM),
+                ),
+                events,
+            )
+        }
+    }
+
+    @Test
+    fun aSavedPicture_isStoredAsTheLastCaptureWithNobodyListening() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.Saved(item = ITEM))
+
+            coVerify(exactly = 1) { capturedItemRepository.saveLastCapturedItem(ITEM) }
+        }
+    }
+
+    @Test
+    fun locationUnavailable_saysSo() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.LocationUnavailable)
+
+            assertEquals(listOf(Effect.ShowMessage(R.string.location_unavailable)), effects)
+        }
+    }
+
+    @Test
+    fun captureFailed_onScreen_reportsTheFailure() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            val cause = IOException("no camera")
+            delegate.onScreenStarted()
+
+            delegate.takePicture()
+            emitCaptureEvent(
+                CapturedImageEvent.CaptureFailed(errorCode = CAPTURE_ERROR_CODE, cause = cause),
+            )
+
+            assertFalse(capture().isSavingPicture)
+            val failure = effects.single() as Effect.Picture.CaptureFailed
+            assertEquals(CAPTURE_ERROR_CODE, failure.errorCode)
+            assertEquals(cause.javaClass.name, failure.details.name)
+        }
+    }
+
+    @Test
+    fun captureFailed_offScreen_isNotReported() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.onScreenStarted()
+            delegate.onScreenStopped()
+
+            delegate.takePicture()
+            emitCaptureEvent(
+                CapturedImageEvent.CaptureFailed(
+                    errorCode = CAPTURE_ERROR_CODE,
+                    cause = IOException("no camera"),
+                ),
+            )
+
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun saveFailed_onScreen_reportsTheStageThatFailed() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            delegate.onScreenStarted()
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.Captured)
+            emitCaptureEvent(saveFailure(alreadyReported = true))
+
+            assertFalse(capture().isSavingPicture)
+            val failure = effects.last() as Effect.Picture.SaveFailed
+            assertEquals(SAVE_FAILURE_STAGE, failure.stage)
+            assertTrue(failure.alreadyReported)
+            coVerify(exactly = 0) { notifyPictureSaveFailed() }
+        }
+    }
+
+    @Test
+    fun saveFailed_offScreen_postsANotificationInstead() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.takePicture()
+            emitCaptureEvent(saveFailure(alreadyReported = false))
+
+            coVerify(exactly = 1) { notifyPictureSaveFailed() }
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -205,7 +354,8 @@ class ViewfinderCaptureDelegateTest {
     fun cancelPictureCapture_keepsTheFailureItCausesQuiet() {
         runTest {
             val delegate = createDelegate()
-            val events = collectEvents(delegate)
+            val effects = collectEffects(stateHolder)
+            delegate.onScreenStarted()
 
             delegate.takePicture()
             delegate.cancelPictureCapture()
@@ -214,7 +364,7 @@ class ViewfinderCaptureDelegateTest {
             )
 
             assertFalse(capture().isTakingPicture)
-            assertTrue(events.isEmpty())
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -234,67 +384,6 @@ class ViewfinderCaptureDelegateTest {
 
             coVerify(exactly = 0) { captureImage(any(), any(), any()) }
             assertFalse(capture().isTakingPicture)
-        }
-    }
-
-    @Test
-    fun aSavedPicture_isStoredAsTheLastCaptureWithNobodyListening() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.takePicture()
-            emitCaptureEvent(CapturedImageEvent.Saved(item = SAVED_ITEM))
-
-            coVerify(exactly = 1) { capturedItemRepository.saveLastCapturedItem(SAVED_ITEM) }
-        }
-    }
-
-    @Test
-    fun aSaveFailure_onScreen_isReportedWithoutANotification() {
-        runTest {
-            val delegate = createDelegate()
-            val events = collectEvents(delegate)
-            delegate.onScreenStarted()
-
-            delegate.takePicture()
-            emitCaptureEvent(SAVE_FAILED)
-
-            assertEquals(listOf(SAVE_FAILED), events)
-            coVerify(exactly = 0) { notifyPictureSaveFailed() }
-        }
-    }
-
-    @Test
-    fun aSaveFailure_offScreen_isNotifiedInsteadOfReported() {
-        runTest {
-            val delegate = createDelegate()
-            val events = collectEvents(delegate)
-            delegate.onScreenStarted()
-            delegate.onScreenStopped()
-
-            delegate.takePicture()
-            delegate.startPictureSave()
-            emitCaptureEvent(SAVE_FAILED)
-
-            assertTrue(events.isEmpty())
-            assertFalse(capture().isSavingPicture)
-            coVerify(exactly = 1) { notifyPictureSaveFailed() }
-        }
-    }
-
-    @Test
-    fun aCaptureFailure_offScreen_isNotReported() {
-        runTest {
-            val delegate = createDelegate()
-            val events = collectEvents(delegate)
-
-            delegate.takePicture()
-            emitCaptureEvent(
-                CapturedImageEvent.CaptureFailed(errorCode = 1, cause = IOException("failed")),
-            )
-
-            assertFalse(capture().isTakingPicture)
-            assertTrue(events.isEmpty())
         }
     }
 
@@ -385,10 +474,17 @@ class ViewfinderCaptureDelegateTest {
         onCaptureEvent.captured(event)
     }
 
+    private fun saveFailure(alreadyReported: Boolean): CapturedImageEvent {
+        return CapturedImageEvent.SaveFailed(
+            cause = ImageSaverException(ImageSaverException.Place.FILE_WRITE),
+            alreadyReported = alreadyReported,
+        )
+    }
+
     private fun TestScope.collectEvents(
         delegate: ViewfinderCaptureDelegate,
-    ): List<CapturedImageEvent> {
-        val events = mutableListOf<CapturedImageEvent>()
+    ): List<ViewfinderCaptureEvent> {
+        val events = mutableListOf<ViewfinderCaptureEvent>()
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             delegate.captureEvents.collect { events += it }
@@ -436,18 +532,10 @@ class ViewfinderCaptureDelegateTest {
     private companion object {
         const val SELF_TIMER_SECONDS = 3
         const val STORAGE_LOCATION = "MediaStore"
+        const val CAPTURE_ERROR_CODE = 2
+        const val SAVE_FAILURE_STAGE = "FILE_WRITE"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
-
-        val SAVED_ITEM = CapturedItem(
-            type = ITEM_TYPE_IMAGE,
-            dateString = "20260926_120000",
-            uri = Uri.parse("content://media/external/images/media/1"),
-        )
-
-        val SAVE_FAILED = CapturedImageEvent.SaveFailed(
-            cause = ImageSaverException(ImageSaverException.Place.FILE_WRITE),
-            alreadyReported = false,
-        )
+        val ITEM = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
     }
 }

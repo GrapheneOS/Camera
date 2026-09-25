@@ -1,10 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
-import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
-import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
@@ -20,6 +17,9 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.coEvery
 import io.mockk.every
@@ -54,9 +54,9 @@ open class ViewfinderViewModelTestBase {
     protected val screenWakeDelegate = mockk<ViewfinderScreenWakeDelegate>(relaxed = true)
     protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
 
-    protected val sessionEvents = MutableSharedFlow<CameraSessionEvent>()
-    protected val captureEvents = MutableSharedFlow<CapturedImageEvent>()
-    protected val recordingEvents = MutableSharedFlow<RecordedVideoEvent>()
+    protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
+    protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
+    protected val recordingEvents = MutableSharedFlow<ViewfinderRecordingEvent>()
 
     protected val reverted = CompletableDeferred<Unit>()
 
@@ -71,7 +71,7 @@ open class ViewfinderViewModelTestBase {
             revertFinished = true
         }
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
-        every { cameraDelegate.sessionEvents } returns sessionEvents
+        every { cameraDelegate.cameraEvents } returns cameraEvents
         every { captureDelegate.captureEvents } returns captureEvents
         every { recordingDelegate.recordingEvents } returns recordingEvents
     }
@@ -90,7 +90,6 @@ open class ViewfinderViewModelTestBase {
             captureDelegate = captureDelegate,
             recordingDelegate = recordingDelegate,
             permissionDelegate = permissionDelegate,
-            resolveDroppedVideoQuality = mockk(),
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             locationDelegate = locationDelegate,
             orientationDelegate = orientationDelegate,

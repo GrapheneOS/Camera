@@ -40,10 +40,6 @@ class VideoCaptureActivity : CaptureActivity() {
     }
 
     fun afterRecording(savedUri: Uri?) {
-        if (viewfinder.uiState.value.isRecordingActive) {
-            return
-        }
-
         this.savedUri = savedUri
 
         showRecordingPreview()

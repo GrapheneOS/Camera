@@ -4,7 +4,6 @@ import android.view.Surface
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
-import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
@@ -14,6 +13,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -69,7 +69,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     fun providerReady_startsTheBind() {
         runTest {
             createViewModel(applicationScope = backgroundScope)
-            sessionEvents.emit(CameraSessionEvent.ProviderReady(forced = true))
+            cameraEvents.emit(ViewfinderCameraEvent.ProviderReady(forced = true))
 
             verify(exactly = 1) { cameraDelegate.canBeginBind(forced = true) }
         }
@@ -89,32 +89,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 cameraDelegate.onScreenDestroyed()
                 captureDelegate.onScreenDestroyed()
             }
-        }
-    }
-
-    @Test
-    fun zoomStateChanged_publishesTheZoomAndShowsItsPanel() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            sessionEvents.emit(CameraSessionEvent.ZoomStateChanged)
-
-            verify(exactly = 1) { cameraDelegate.refreshZoom() }
-            assertEquals(listOf(ViewfinderScreenEffect.Panel.ShowZoom), effects)
-        }
-    }
-
-    @Test
-    fun zoomStateLoaded_publishesTheZoomWithoutShowingItsPanel() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-
-            sessionEvents.emit(CameraSessionEvent.ZoomStateLoaded)
-
-            verify(exactly = 1) { cameraDelegate.refreshZoom() }
-            assertTrue(effects.isEmpty())
         }
     }
 
@@ -171,20 +145,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             reverted.complete(Unit)
 
             assertTrue(revertFinished)
-        }
-    }
-
-    @Test
-    fun qrCodeScanned_showsTheResultOnlyWhenNoneIsShown() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = collectEffects(viewModel)
-            every { cameraDelegate.showQrResult() } returnsMany listOf(true, false)
-
-            sessionEvents.emit(CameraSessionEvent.QrCodeScanned(text = QR_TEXT))
-            sessionEvents.emit(CameraSessionEvent.QrCodeScanned(text = QR_TEXT))
-
-            assertEquals(listOf(ViewfinderScreenEffect.ShowQrResult(QR_TEXT)), effects)
         }
     }
 
@@ -397,6 +357,5 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
 
     private companion object {
         const val FOCUS_TIMEOUT_SECONDS = 3L
-        const val QR_TEXT = "https://grapheneos.org"
     }
 }
