@@ -1,14 +1,17 @@
 package app.grapheneos.camera.domain.capture.coordinator
 
 import android.net.Uri
+import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
+import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.capture.usecase.CreateRecordingOutput
 import app.grapheneos.camera.domain.capture.usecase.DiscardRecording
+import app.grapheneos.camera.domain.capture.usecase.PlayRecordingStopSound
 import app.grapheneos.camera.domain.capture.usecase.PublishRecording
 import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocation
 import app.grapheneos.camera.testutil.recordingOutput
@@ -40,6 +43,8 @@ class VideoRecorderTest {
     private val publishRecording = mockk<PublishRecording>()
     private val discardRecording = mockk<DiscardRecording>(relaxed = true)
     private val resolveCaptureLocation = mockk<ResolveCaptureLocation>()
+    private val playRecordingStopSound = mockk<PlayRecordingStopSound>(relaxed = true)
+    private val capturedItemRepository = mockk<CapturedItemRepository>(relaxed = true)
 
     private val output = recordingOutput(uri = Uri.EMPTY, dateString = "20260922_120000")
 
@@ -195,6 +200,44 @@ class VideoRecorderTest {
     }
 
     @Test
+    fun finalized_storesTheRecordingAsTheLastCaptureWithNobodyListening() {
+        runTest {
+            val recorder = createRecorder()
+            val onEvent = startRecording(recorder)
+
+            onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.Saved))
+
+            val stored = slot<CapturedItem>()
+            coVerify(exactly = 1) { capturedItemRepository.saveLastCapturedItem(capture(stored)) }
+            assertEquals(output.uri, stored.captured.uri)
+        }
+    }
+
+    @Test
+    fun finalized_playsTheStopSoundWithNobodyListening() {
+        runTest {
+            val recorder = createRecorder()
+            val onEvent = startRecording(recorder)
+
+            onEvent(RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten))
+
+            coVerify(exactly = 1) { playRecordingStopSound() }
+        }
+    }
+
+    @Test
+    fun abandoned_playsNoStopSound() {
+        runTest {
+            val recorder = createRecorder()
+
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            recorder.stop()
+
+            coVerify(exactly = 0) { playRecordingStopSound() }
+        }
+    }
+
+    @Test
     fun finalized_thatCannotPublish_saysSoButKeepsTheRecording() {
         runTest {
             coEvery { publishRecording(any()) } returns false
@@ -307,6 +350,8 @@ class VideoRecorderTest {
             publishRecording = publishRecording,
             discardRecording = discardRecording,
             resolveCaptureLocation = resolveCaptureLocation,
+            playRecordingStopSound = playRecordingStopSound,
+            capturedItemRepository = capturedItemRepository,
             applicationScope = backgroundScope,
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )

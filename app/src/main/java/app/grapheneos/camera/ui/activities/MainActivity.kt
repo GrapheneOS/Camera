@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.Manifest
 import android.animation.Animator
 import android.annotation.SuppressLint
-import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -163,9 +162,6 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var clipboardManager: ClipboardManager
-
-    @Inject
-    lateinit var notificationManager: NotificationManager
 
     private val application: App
         get() = applicationContext as App
@@ -721,7 +717,6 @@ open class MainActivity : AppCompatActivity() {
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
             clipboardManager = clipboardManager,
-            notificationManager = notificationManager,
             onAction = viewfinder::onAction,
         )
         viewfinder.onAction(
@@ -1537,10 +1532,12 @@ open class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         isStarted = true
+        viewfinder.onAction(LifecycleAction.ScreenStarted)
     }
 
     override fun onStop() {
         isStarted = false
+        viewfinder.onAction(LifecycleAction.ScreenStopped)
         // Stop explicitly rather than letting the unbind tear the recording down for us.
         if (viewfinder.uiState.value.isRecordingActive) {
             previewFrames.holdCurrentFrame()

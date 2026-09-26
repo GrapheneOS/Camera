@@ -204,6 +204,8 @@ class ViewfinderViewModel @Inject constructor(
             is LifecycleAction.ScreenCreated -> onScreenCreated(action.host)
             is LifecycleAction.ScreenDestroyed -> onScreenDestroyed()
             is LifecycleAction.PreviewStreamingStarted -> applyModeSettings()
+            is LifecycleAction.ScreenStarted -> captureDelegate.onScreenStarted()
+            is LifecycleAction.ScreenStopped -> captureDelegate.onScreenStopped()
             is LifecycleAction.CameraPermissionGranted -> initializeCamera(forced = false)
             is LifecycleAction.ScreenResumed -> initializeCamera(forced = true)
             is LifecycleAction.RecordAudioPermissionGranted -> startCamera(forced = true)
@@ -576,8 +578,6 @@ class ViewfinderViewModel @Inject constructor(
         if (outcome.keepsContent()) {
             captureDelegate.startRecordingSave()
         }
-
-        emitEffect(Effect.Recording.PlayStopSound)
 
         when (outcome) {
             is RecordingOutcome.Saved -> Unit

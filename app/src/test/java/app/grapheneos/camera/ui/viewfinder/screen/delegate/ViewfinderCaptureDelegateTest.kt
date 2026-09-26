@@ -2,12 +2,16 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.net.Uri
 import androidx.core.graphics.createBitmap
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
+import app.grapheneos.camera.domain.capture.model.ImageSaverException
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
+import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
@@ -17,7 +21,9 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.slot
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -44,6 +50,7 @@ class ViewfinderCaptureDelegateTest {
     private val capturePreviewImage = mockk<CapturePreviewImage>()
     private val storeCapturedPreview = mockk<StoreCapturedPreview>()
     private val capturedItemRepository = mockk<CapturedItemRepository>()
+    private val notifyPictureSaveFailed = mockk<NotifyPictureSaveFailed>(relaxed = true)
     private val chrome = mockk<ViewfinderChrome>()
 
     private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
@@ -260,6 +267,67 @@ class ViewfinderCaptureDelegateTest {
         }
     }
 
+    @Test
+    fun aSavedPicture_isStoredAsTheLastCaptureWithNobodyListening() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.Saved(item = SAVED_ITEM))
+
+            coVerify(exactly = 1) { capturedItemRepository.saveLastCapturedItem(SAVED_ITEM) }
+        }
+    }
+
+    @Test
+    fun aSaveFailure_onScreen_isReportedWithoutANotification() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+            delegate.onScreenStarted()
+
+            delegate.takePicture()
+            emitCaptureEvent(SAVE_FAILED)
+
+            assertEquals(listOf(SAVE_FAILED), events)
+            coVerify(exactly = 0) { notifyPictureSaveFailed() }
+        }
+    }
+
+    @Test
+    fun aSaveFailure_offScreen_isNotifiedInsteadOfReported() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+            delegate.onScreenStarted()
+            delegate.onScreenStopped()
+
+            delegate.takePicture()
+            delegate.startPictureSave()
+            emitCaptureEvent(SAVE_FAILED)
+
+            assertTrue(events.isEmpty())
+            assertFalse(capture().isSavingPicture)
+            coVerify(exactly = 1) { notifyPictureSaveFailed() }
+        }
+    }
+
+    @Test
+    fun aCaptureFailure_offScreen_isNotReported() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+
+            delegate.takePicture()
+            emitCaptureEvent(
+                CapturedImageEvent.CaptureFailed(errorCode = 1, cause = IOException("failed")),
+            )
+
+            assertFalse(capture().isTakingPicture)
+            assertTrue(events.isEmpty())
+        }
+    }
+
     private fun emitCaptureEvent(event: CapturedImageEvent) {
         onCaptureEvent.captured(event)
     }
@@ -285,6 +353,7 @@ class ViewfinderCaptureDelegateTest {
             captureFinished.await()
         }
         every { capturedItemRepository.storageLocation } returns flowOf(STORAGE_LOCATION)
+        coEvery { capturedItemRepository.saveLastCapturedItem(any()) } just runs
         every { chrome.thumbnailSize() } returns ThumbnailSize(width = 1, height = 1)
 
         val delegate = ViewfinderCaptureDelegateImpl(
@@ -292,6 +361,7 @@ class ViewfinderCaptureDelegateTest {
             capturePreviewImage = capturePreviewImage,
             storeCapturedPreview = storeCapturedPreview,
             capturedItemRepository = capturedItemRepository,
+            notifyPictureSaveFailed = notifyPictureSaveFailed,
             applicationScope = backgroundScope,
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -312,5 +382,16 @@ class ViewfinderCaptureDelegateTest {
         const val STORAGE_LOCATION = "MediaStore"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
+
+        val SAVED_ITEM = CapturedItem(
+            type = ITEM_TYPE_IMAGE,
+            dateString = "20260926_120000",
+            uri = Uri.parse("content://media/external/images/media/1"),
+        )
+
+        val SAVE_FAILED = CapturedImageEvent.SaveFailed(
+            cause = ImageSaverException(ImageSaverException.Place.FILE_WRITE),
+            alreadyReported = false,
+        )
     }
 }
