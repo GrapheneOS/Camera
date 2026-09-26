@@ -12,8 +12,10 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
+import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.viewfinderStateHolder
@@ -23,6 +25,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import com.google.zxing.BarcodeFormat
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -60,6 +63,7 @@ class ViewfinderCameraDelegateTest {
     private val session = mockk<CameraSession>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
     private val resolveDroppedVideoQuality = mockk<ResolveDroppedVideoQuality>()
+    private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>(extraBufferCapacity = 8)
     private val effects = mutableListOf<Effect>()
 
@@ -220,11 +224,12 @@ class ViewfinderCameraDelegateTest {
         }
         assertEquals(
             listOf(
-                Effect.Preview.ShowFocus(x = 10f, y = 20f, playsSound = true),
-                Effect.Preview.ShowFocus(x = 10f, y = 20f, playsSound = false),
+                Effect.Preview.ShowFocus(x = 10f, y = 20f),
+                Effect.Preview.ShowFocus(x = 10f, y = 20f),
             ),
             effects,
         )
+        coVerify(exactly = 1) { playCameraSound(CameraSound.FOCUS_START) }
     }
 
     @Test
@@ -536,6 +541,7 @@ class ViewfinderCameraDelegateTest {
             entryPoint = cameraEntryPoint(showsCameraModeTabs = showsCameraModeTabs),
             resolveAvailableModes = resolveAvailableModes,
             resolveDroppedVideoQuality = resolveDroppedVideoQuality,
+            playCameraSound = playCameraSound,
             mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 

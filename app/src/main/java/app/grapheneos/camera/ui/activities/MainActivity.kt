@@ -53,6 +53,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
 import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
@@ -109,6 +110,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var clipboardManager: ClipboardManager
+
+    @Inject
+    lateinit var cameraSoundPlayer: CameraSoundPlayer
 
     @Inject
     lateinit var vibrator: Vibrator
@@ -488,7 +492,7 @@ open class MainActivity : AppCompatActivity() {
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
         tunePlayer = TunePlayer(
-            context = this,
+            cameraSoundPlayer = cameraSoundPlayer,
             soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
         )
 

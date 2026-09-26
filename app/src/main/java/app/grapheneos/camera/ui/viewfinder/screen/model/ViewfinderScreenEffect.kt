@@ -35,7 +35,6 @@ sealed interface ViewfinderScreenEffect {
         data class ShowFocus(
             val x: Float,
             val y: Float,
-            val playsSound: Boolean,
         ) : Preview
 
         data class Flash(
@@ -116,8 +115,6 @@ sealed interface ViewfinderScreenEffect {
     }
 
     sealed interface Picture : ViewfinderScreenEffect {
-
-        data object Captured : Picture
 
         data object PreviewFailed : Picture
 

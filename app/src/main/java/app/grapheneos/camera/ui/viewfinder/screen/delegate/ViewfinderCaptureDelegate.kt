@@ -6,6 +6,7 @@ import android.util.Log
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
@@ -15,6 +16,7 @@ import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
 import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
+import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
@@ -68,6 +70,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val storeCapturedPreview: StoreCapturedPreview,
     private val capturedItemRepository: CapturedItemRepository,
     private val notifyPictureSaveFailed: NotifyPictureSaveFailed,
+    private val playCameraSound: PlayCameraSound,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
@@ -214,6 +217,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         selfTimer = scope.launch(mainDispatcher) {
             selfTimerCountdown(seconds).collect { secondsLeft ->
                 postEffect(Effect.SelfTimer.Ticked(secondsLeft))
+                playCameraSound(tickSound(secondsLeft))
             }
 
             setSelfTimerRunning(false)
@@ -234,6 +238,13 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     private fun setSelfTimerRunning(running: Boolean) {
         updateCapture { it.copy(isSelfTimerRunning = running) }
+    }
+
+    private fun tickSound(secondsLeft: Int): CameraSound {
+        return when (secondsLeft) {
+            1 -> CameraSound.TIMER_FINAL_SECOND
+            else -> CameraSound.TIMER_TICK
+        }
     }
 
     private fun selfTimerCountdown(seconds: Int): Flow<Int> {
@@ -323,7 +334,10 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private fun onPictureCaptured() {
         startPictureSave()
 
-        postEffect(Effect.Picture.Captured)
+        applicationScope.launch(mainDispatcher) {
+            playCameraSound(CameraSound.SHUTTER)
+        }
+
         postEffect(Effect.Preview.Flash(stateHolder.state.value.selfIlluminate()))
     }
 

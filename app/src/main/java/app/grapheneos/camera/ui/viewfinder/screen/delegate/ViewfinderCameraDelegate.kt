@@ -9,10 +9,12 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
@@ -76,8 +78,11 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
+    private val playCameraSound: PlayCameraSound,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCameraDelegate {
+
+    private lateinit var scope: CoroutineScope
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
@@ -115,6 +120,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         if (isBound) return
         isBound = true
 
+        this.scope = scope
         this.stateHolder = stateHolder
 
         scope.launch(mainDispatcher) {
@@ -312,9 +318,14 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
             Effect.Preview.ShowFocus(
                 x = x,
                 y = y,
-                playsSound = !state.isVideoMode(),
             ),
         )
+
+        if (!state.isVideoMode()) {
+            scope.launch(mainDispatcher) {
+                playCameraSound(CameraSound.FOCUS_START)
+            }
+        }
     }
 
     override fun cancelFocus() {

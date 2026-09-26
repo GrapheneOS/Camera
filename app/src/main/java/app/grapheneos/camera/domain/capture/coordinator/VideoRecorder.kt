@@ -9,6 +9,7 @@ import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.model.RecordingRequest
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
@@ -17,9 +18,9 @@ import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.domain.capture.model.RecordingOutput
 import app.grapheneos.camera.domain.capture.usecase.CreateRecordingOutput
 import app.grapheneos.camera.domain.capture.usecase.DiscardRecording
-import app.grapheneos.camera.domain.capture.usecase.PlayRecordingStopSound
 import app.grapheneos.camera.domain.capture.usecase.PublishRecording
 import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocation
+import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.nanoseconds
@@ -51,7 +52,7 @@ internal class VideoRecorderImpl @Inject constructor(
     private val publishRecording: PublishRecording,
     private val discardRecording: DiscardRecording,
     private val resolveCaptureLocation: ResolveCaptureLocation,
-    private val playRecordingStopSound: PlayRecordingStopSound,
+    private val playCameraSound: PlayCameraSound,
     private val capturedItemRepository: CapturedItemRepository,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
@@ -223,7 +224,7 @@ internal class VideoRecorderImpl @Inject constructor(
         }
 
         applicationScope.launch(mainDispatcher) {
-            playRecordingStopSound()
+            playCameraSound(CameraSound.RECORDING_STOP)
         }
 
         when {
