@@ -18,12 +18,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.grapheneos.camera.CapturedItems
-import app.grapheneos.camera.NumInputFilter
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.MoreSettingsBinding
+import app.grapheneos.camera.ui.moresettings.NumInputFilter
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar

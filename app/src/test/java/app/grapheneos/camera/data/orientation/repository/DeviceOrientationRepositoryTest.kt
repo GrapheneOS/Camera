@@ -8,7 +8,6 @@ import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
-import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepositoryImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot

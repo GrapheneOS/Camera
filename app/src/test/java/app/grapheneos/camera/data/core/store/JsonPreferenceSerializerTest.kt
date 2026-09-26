@@ -1,7 +1,6 @@
 package app.grapheneos.camera.data.core.store
 
 import androidx.datastore.core.CorruptionException
-import app.grapheneos.camera.data.core.store.JsonPreferenceSerializer
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable

@@ -8,9 +8,9 @@ import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
 import androidx.annotation.RequiresPermission
+import app.grapheneos.camera.data.location.mapper.OptimalLocationMapper
 import app.grapheneos.camera.data.location.model.LocationAvailability
 import app.grapheneos.camera.di.core.IoDispatcher
-import app.grapheneos.camera.getOptimalLocation
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
@@ -34,6 +34,7 @@ interface LocationRepository {
 
 internal class LocationRepositoryImpl @Inject constructor(
     private val locationManager: LocationManager,
+    private val optimalLocationMapper: OptimalLocationMapper,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : LocationRepository {
 
@@ -124,7 +125,7 @@ internal class LocationRepositoryImpl @Inject constructor(
     }
 
     private fun keepBestLocation(candidates: List<Location?>) {
-        location = getOptimalLocation(candidates + location)
+        location = optimalLocationMapper.map(candidates + location)
     }
 
     private fun availability(): LocationAvailability {

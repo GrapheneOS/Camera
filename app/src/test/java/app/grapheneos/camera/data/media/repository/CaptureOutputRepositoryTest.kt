@@ -12,8 +12,6 @@ import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
-import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
-import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream

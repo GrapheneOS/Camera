@@ -4,8 +4,6 @@ import android.content.Context
 import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.CapturedItems
-import app.grapheneos.camera.data.media.store.StoragePrefs
-import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.testutil.clearLegacyPreferences
 import app.grapheneos.camera.testutil.legacyCommonsFile
 import app.grapheneos.camera.testutil.writeLegacyPreferences

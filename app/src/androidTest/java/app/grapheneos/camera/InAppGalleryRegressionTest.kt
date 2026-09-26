@@ -1,6 +1,5 @@
 package app.grapheneos.camera
 
-import android.app.Activity
 import android.app.Application
 import android.net.Uri
 import androidx.appcompat.widget.PopupMenu
@@ -8,6 +7,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
 import io.mockk.every
 import io.mockk.mockk
 import java.util.concurrent.CountDownLatch
