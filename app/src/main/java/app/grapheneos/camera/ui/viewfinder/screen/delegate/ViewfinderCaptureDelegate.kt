@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.graphics.Bitmap
+import android.util.Log
+import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
@@ -9,10 +11,12 @@ import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
+import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
@@ -31,6 +35,8 @@ interface ViewfinderCaptureDelegate {
 
     fun bind(stateHolder: ViewfinderStateHolder)
     fun onScreenCreated(host: ViewfinderHost)
+    fun onScreenStarted()
+    fun onScreenStopped()
     fun onScreenDestroyed()
 
     fun takePicture()
@@ -55,6 +61,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val capturePreviewImage: CapturePreviewImage,
     private val storeCapturedPreview: StoreCapturedPreview,
     private val capturedItemRepository: CapturedItemRepository,
+    private val notifyPictureSaveFailed: NotifyPictureSaveFailed,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
@@ -64,6 +71,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private var isBound = false
 
     private var host: ViewfinderHost? = null
+    private var isScreenStarted = false
     private var pendingCapture: PendingCapture? = null
 
     private val _captureEvents = Channel<CapturedImageEvent>(capacity = Channel.BUFFERED)
@@ -78,6 +86,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     override fun onScreenCreated(host: ViewfinderHost) {
         this.host = host
+    }
+
+    override fun onScreenStarted() {
+        isScreenStarted = true
+    }
+
+    override fun onScreenStopped() {
+        isScreenStarted = false
     }
 
     override fun onScreenDestroyed() {
@@ -210,20 +226,56 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         when (event) {
             is CapturedImageEvent.Captured -> {
                 finish(pending)
+                _captureEvents.trySend(event)
             }
 
             is CapturedImageEvent.CaptureFailed -> {
                 finish(pending)
-
-                if (pending.isCancelled) {
-                    return
-                }
+                onPictureCaptureFailed(pending, event)
             }
 
-            else -> Unit
-        }
+            is CapturedImageEvent.Saved -> {
+                storeLastCapturedItem(event.item)
+                _captureEvents.trySend(event)
+            }
 
-        _captureEvents.trySend(event)
+            is CapturedImageEvent.SaveFailed if !isScreenStarted -> {
+                onPictureSaveFailedOffScreen(event)
+            }
+
+            else -> _captureEvents.trySend(event)
+        }
+    }
+
+    private fun onPictureCaptureFailed(
+        pending: PendingCapture,
+        event: CapturedImageEvent.CaptureFailed,
+    ) {
+        when {
+            pending.isCancelled -> Unit
+            isScreenStarted -> _captureEvents.trySend(event)
+            else -> Log.e(TAG, "unable to capture a picture", event.cause)
+        }
+    }
+
+    private fun storeLastCapturedItem(item: CapturedItem) {
+        applicationScope.launch(mainDispatcher) {
+            try {
+                capturedItemRepository.saveLastCapturedItem(item)
+            } catch (e: IOException) {
+                Log.e(TAG, "unable to store the last captured item", e)
+            }
+        }
+    }
+
+    private fun onPictureSaveFailedOffScreen(event: CapturedImageEvent.SaveFailed) {
+        Log.e(TAG, "unable to save a picture", event.cause)
+
+        finishPictureSave()
+
+        applicationScope.launch(mainDispatcher) {
+            notifyPictureSaveFailed()
+        }
     }
 
     private fun finish(pending: PendingCapture) {
@@ -246,6 +298,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     }
 
     private companion object {
+        private const val TAG = "ViewfinderCaptureDelegate"
+
         private val SELF_TIMER_TICK = 1.seconds
     }
 }

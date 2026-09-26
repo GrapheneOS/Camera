@@ -180,6 +180,8 @@ class ViewfinderRecordingFlowTest {
             publishRecording = PublishRecordingImpl(captureOutputRepository),
             discardRecording = DiscardRecordingImpl(captureOutputRepository),
             resolveCaptureLocation = ResolveCaptureLocationImpl(mockk(relaxed = true)),
+            playRecordingStopSound = mockk(relaxed = true),
+            capturedItemRepository = capturedItemRepository,
             applicationScope = backgroundScope,
             mainDispatcher = mainDispatcher,
         )
@@ -202,6 +204,7 @@ class ViewfinderRecordingFlowTest {
                 capturePreviewImage = mockk(relaxed = true),
                 storeCapturedPreview = mockk(relaxed = true),
                 capturedItemRepository = capturedItemRepository,
+                notifyPictureSaveFailed = mockk(relaxed = true),
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
             ),

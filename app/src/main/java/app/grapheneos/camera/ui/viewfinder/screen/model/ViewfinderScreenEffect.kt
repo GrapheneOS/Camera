@@ -88,8 +88,6 @@ sealed interface ViewfinderScreenEffect {
 
         data object PlayStartSound : Recording
 
-        data object PlayStopSound : Recording
-
         data object RequestAudioPermission : Recording
 
         data object Stopped : Recording

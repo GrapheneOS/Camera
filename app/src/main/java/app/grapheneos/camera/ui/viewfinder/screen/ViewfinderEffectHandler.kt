@@ -1,8 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.graphics.Bitmap
@@ -34,7 +31,6 @@ internal interface ViewfinderEffectHandler {
 internal class ViewfinderEffectHandlerImpl(
     private val activity: MainActivity,
     private val clipboardManager: ClipboardManager,
-    private val notificationManager: NotificationManager,
     private val onAction: (ViewfinderAction) -> Unit,
 ) : ViewfinderEffectHandler {
 
@@ -158,8 +154,6 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun showCaptureFailure(effect: Effect.Picture.CaptureFailed) {
-        if (!activity.isStarted) return
-
         showPictureFailureDialog(
             activity = activity,
             message = activity.getString(
@@ -174,11 +168,6 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun showSaveFailure(effect: Effect.Picture.SaveFailed) {
-        if (!activity.isStarted) {
-            notifySaveFailure()
-            return
-        }
-
         when {
             effect.alreadyReported -> activity.showMessage(R.string.unable_to_save_image)
 
@@ -199,23 +188,6 @@ internal class ViewfinderEffectHandlerImpl(
     private fun copyFailureDetails(label: String, text: String) {
         clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text))
         activity.showMessage(R.string.copied_text_to_clipboard)
-    }
-
-    private fun notifySaveFailure() {
-        val title = activity.getString(R.string.unable_to_save_image)
-        val channel = NotificationChannel(
-            SAVE_FAILURE_CHANNEL_ID,
-            title,
-            NotificationManager.IMPORTANCE_HIGH,
-        )
-
-        val notification = Notification.Builder(activity, SAVE_FAILURE_CHANNEL_ID).apply {
-            setSmallIcon(R.drawable.info)
-            setContentTitle(title)
-        }.build()
-
-        notificationManager.createNotificationChannel(channel)
-        notificationManager.notify(SAVE_FAILURE_NOTIFICATION_ID, notification)
     }
 
     private fun showCapturedPreview(bitmap: Bitmap) {
@@ -240,7 +212,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handleRecording(effect: Effect.Recording) {
         when (effect) {
-            is Effect.Recording.PlayStopSound -> activity.tunePlayer.playVRStopSound()
             is Effect.Recording.Stopped -> activity.forceUpdateOrientationSensor()
             is Effect.Recording.Saved -> onRecordingSaved(effect)
 
@@ -295,7 +266,5 @@ internal class ViewfinderEffectHandlerImpl(
         private const val PREVIEW_SNAP_DURATION = 200L
         private const val SELF_ILLUMINATION_OVERLAY_DURATION = 200L
         private const val SELF_ILLUMINATION_OVERLAY_ALPHA = 0.8f
-        private const val SAVE_FAILURE_CHANNEL_ID = "image_saver_error"
-        private const val SAVE_FAILURE_NOTIFICATION_ID = 1
     }
 }
