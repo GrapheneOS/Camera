@@ -146,13 +146,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             recordingEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
 
             verify(exactly = 1) { recordingDelegate.markStopped() }
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Recording.Stopped,
-                    ViewfinderScreenEffect.Recording.PlayStopSound,
-                ),
-                effects,
-            )
+            assertEquals(listOf(ViewfinderScreenEffect.Recording.Stopped), effects)
         }
     }
 

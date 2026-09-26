@@ -55,8 +55,6 @@ open class TunePlayer(
 
     @Volatile
     private var vRecPlayer: MediaPlayer? = null
-    @Volatile
-    private var vStopPlayer: MediaPlayer? = null
 
     init {
         prepareMediaPlayer(context, R.raw.image_shot, { player -> shutterPlayer = player })
@@ -67,7 +65,6 @@ open class TunePlayer(
         prepareMediaPlayer(context, R.raw.timer_final_second, { player -> tCPlayer = player })
 
         prepareMediaPlayer(context, R.raw.video_start, { player -> vRecPlayer = player })
-        prepareMediaPlayer(context, R.raw.video_stop, { player -> vStopPlayer = player })
     }
 
     private fun shouldNotPlayTune(): Boolean {
@@ -112,10 +109,6 @@ open class TunePlayer(
             player.seekTo(0)
             player.start()
         }
-    }
-
-    fun playVRStopSound() {
-        play(vStopPlayer)
     }
 
     fun playTimerIncrementSound() {
