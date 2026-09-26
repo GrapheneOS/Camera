@@ -1,7 +1,6 @@
 package app.grapheneos.camera.util
 
 import android.content.Intent
-import android.os.Build
 import android.os.Parcelable
 import androidx.core.content.IntentCompat
 

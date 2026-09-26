@@ -26,6 +26,7 @@ import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import io.mockk.CapturingSlot

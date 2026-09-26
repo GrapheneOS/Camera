@@ -24,7 +24,6 @@ import android.location.Location;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Logger;
-import androidxc.exifinterface.media.ExifInterface;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -42,6 +41,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+
+import androidxc.exifinterface.media.ExifInterface;
 
 /**
  * Utility class for modifying metadata on JPEG files.

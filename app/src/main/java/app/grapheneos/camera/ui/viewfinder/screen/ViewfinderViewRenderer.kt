@@ -10,9 +10,9 @@ import androidx.core.view.updateLayoutParams
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.applyPreviewRatio
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState

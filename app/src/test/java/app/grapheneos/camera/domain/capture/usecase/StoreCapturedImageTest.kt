@@ -6,7 +6,6 @@ import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult.Stage
-import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImageImpl
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

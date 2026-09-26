@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.data.permission.repository.PermissionRepositoryImpl
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

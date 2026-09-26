@@ -10,13 +10,6 @@ import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
-import app.grapheneos.camera.data.settings.store.SettingsPrefs
-import app.grapheneos.camera.data.settings.store.SettingsPrefsMigration
-import app.grapheneos.camera.data.settings.store.StoredAspectRatio
-import app.grapheneos.camera.data.settings.store.StoredCameraSettings
-import app.grapheneos.camera.data.settings.store.StoredFlashMode
-import app.grapheneos.camera.data.settings.store.StoredModeSettings
-import app.grapheneos.camera.data.settings.store.StoredVideoQuality
 import app.grapheneos.camera.testutil.LEGACY_CAPTURE_KEY_NAMES
 import app.grapheneos.camera.testutil.LEGACY_STORAGE_KEY_NAMES
 import app.grapheneos.camera.testutil.clearLegacyPreferences

@@ -2,7 +2,6 @@ package app.grapheneos.camera.domain.capture.mapper
 
 import android.location.Location
 import androidxc.exifinterface.media.ExifInterface
-import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapperImpl
 import app.grapheneos.camera.domain.capture.model.CaptureMetadata
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
 import app.grapheneos.camera.testutil.capturedImageBytes

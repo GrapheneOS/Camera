@@ -5,7 +5,6 @@ import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
 import android.widget.ImageView
-import androidx.annotation.RequiresApi
 
 fun setBlurBitmapCompat(view: ImageView, bitmap: Bitmap, radius: Float = 4f) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -14,5 +13,5 @@ fun setBlurBitmapCompat(view: ImageView, bitmap: Bitmap, radius: Float = 4f) {
         view.setRenderEffect(blurRenderEffect)
         return
     }
-    view.setImageBitmap(app.grapheneos.camera.BlurBitmap[bitmap])
+    view.setImageBitmap(BlurBitmap[bitmap])
 }
