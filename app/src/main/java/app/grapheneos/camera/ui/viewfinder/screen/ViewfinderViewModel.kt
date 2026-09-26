@@ -15,10 +15,8 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
-import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
@@ -54,7 +52,6 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,12 +83,10 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val orientationDelegate: ViewfinderOrientationDelegate,
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val galleryDelegate: ViewfinderGalleryDelegate,
-    private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val swipeEffectMapper: SwipeEffectMapper,
     uiStateMapper: ViewfinderUiStateMapper,
     zoomUiStateMapper: ZoomUiStateMapper,
-    @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     ViewfinderScreenModel {
@@ -212,7 +207,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction.ThirdCircleLongClicked -> onThirdCircleLongClicked()
             is CaptureAction.SelfTimerStartClicked -> captureDelegate.startSelfTimer()
             is CaptureAction.SelfTimerCancelClicked -> captureDelegate.cancelSelfTimer()
-            is CaptureAction.StorageLocationNotFound -> onStorageLocationNotFound()
+            is CaptureAction.StorageLocationNotFound -> galleryDelegate.onStorageLocationNotFound()
             is CaptureAction.CapturedPreviewShown -> showCapturedPreview()
             is CaptureAction.CapturedPreviewDismissed -> dismissCapturedPreview()
 
@@ -317,8 +312,13 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onCaptureEvent(event: ViewfinderCaptureEvent) {
         when (event) {
-            is ViewfinderCaptureEvent.StorageLocationNotFound -> onStorageLocationNotFound()
-            is ViewfinderCaptureEvent.Saved -> galleryDelegate.recordCapturedItem(event.item)
+            is ViewfinderCaptureEvent.Saved -> {
+                galleryDelegate.recordCapturedItem(event.item)
+            }
+
+            is ViewfinderCaptureEvent.StorageLocationNotFound -> {
+                galleryDelegate.onStorageLocationNotFound()
+            }
 
             is ViewfinderCaptureEvent.ThumbnailReady -> {
                 galleryDelegate.showThumbnail(event.thumbnail)
@@ -529,13 +529,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         startCamera(forced = true)
     }
 
-    private fun onStorageLocationNotFound() {
-        applicationScope.launch(mainDispatcher) {
-            revertToMediaStoreLocation()
-            emitEffect(Effect.ShowStorageLocationNotFound)
-        }
-    }
-
     private fun startRecording() {
         val state = state()
 
@@ -589,7 +582,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onRecordingOutputUnavailable() {
         if (!entryPoint.isCaptureSession) {
-            onStorageLocationNotFound()
+            galleryDelegate.onStorageLocationNotFound()
         }
     }
 

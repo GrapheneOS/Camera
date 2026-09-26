@@ -4,9 +4,11 @@ import android.graphics.Bitmap
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
+import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderGalleryState
@@ -37,12 +39,16 @@ interface ViewfinderGalleryDelegate {
     fun openGallery()
 
     fun shareLastCapturedItem()
+
+    fun onStorageLocationNotFound()
 }
 
 internal class ViewfinderGalleryDelegateImpl @Inject constructor(
     private val capturedItemSession: CapturedItemSession,
     private val capturedItemRepository: CapturedItemRepository,
     private val entryPoint: CameraEntryPoint,
+    private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
+    @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderGalleryDelegate {
 
@@ -171,6 +177,13 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
         }
 
         stateHolder.postEffect(effect)
+    }
+
+    override fun onStorageLocationNotFound() {
+        applicationScope.launch(mainDispatcher) {
+            revertToMediaStoreLocation()
+            stateHolder.postEffect(Effect.ShowStorageLocationNotFound)
+        }
     }
 
     private fun updateGallery(transform: (ViewfinderGalleryState) -> ViewfinderGalleryState) {

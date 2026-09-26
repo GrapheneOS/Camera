@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder
+package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.view.Surface
 import androidx.camera.view.PreviewView

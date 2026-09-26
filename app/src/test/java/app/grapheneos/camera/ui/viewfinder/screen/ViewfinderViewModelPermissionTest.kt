@@ -19,7 +19,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isProviderReady } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.CAMERA)) }
 
             viewModel.onAction(LifecycleAction.ScreenResumed)
@@ -39,7 +39,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isProviderReady } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = true)) }
 
             viewModel.onAction(LifecycleAction.ScreenResumed)
@@ -53,7 +53,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isProviderReady } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(
                     isCaptureSession = true,
@@ -71,7 +71,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
     @Test
     fun rationaleRequired_showsThePermissionDialog() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(PermissionAction.RationaleRequired(AppPermission.CAMERA))
 
@@ -82,7 +82,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
     @Test
     fun dialogDismissed_afterTheDialogWasAlreadyClosed_doesNothing() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
 
@@ -95,7 +95,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isProviderReady } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.CAMERA))
 
             verify(exactly = 1) { permissionDelegate.refresh() }
@@ -106,7 +106,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
     @Test
     fun microphonePermissionAnswered_withAGrant_rebindsAndRetriesOnceStreaming() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.MICROPHONE))
 
@@ -122,7 +122,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
     @Test
     fun microphonePermissionAnswered_withARefusal_explainsWhatAudioNeeds() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
 
             viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.MICROPHONE))

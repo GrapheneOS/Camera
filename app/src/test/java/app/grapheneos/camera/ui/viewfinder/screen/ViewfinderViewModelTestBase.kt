@@ -42,7 +42,6 @@ open class ViewfinderViewModelTestBase {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    protected val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation>()
     protected val settingsDelegate = mockk<ViewfinderSettingsDelegate>(relaxed = true)
     protected val modeDelegate = mockk<ViewfinderModeDelegate>(relaxed = true)
     protected val cameraDelegate = mockk<ViewfinderCameraDelegate>(relaxed = true)
@@ -58,18 +57,10 @@ open class ViewfinderViewModelTestBase {
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
     protected val recordingEvents = MutableSharedFlow<ViewfinderRecordingEvent>()
 
-    protected val reverted = CompletableDeferred<Unit>()
-
-    protected var revertFinished = false
-
     protected lateinit var stateHolder: ViewfinderStateHolder
 
     @Before
     fun setUp() {
-        coEvery { revertToMediaStoreLocation() } coAnswers {
-            reverted.await()
-            revertFinished = true
-        }
         every { modeDelegate.defaultMode } returns CameraMode.CAMERA
         every { cameraDelegate.cameraEvents } returns cameraEvents
         every { captureDelegate.captureEvents } returns captureEvents
@@ -77,7 +68,6 @@ open class ViewfinderViewModelTestBase {
     }
 
     protected fun createViewModel(
-        applicationScope: CoroutineScope,
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
         outputUri: Uri? = null,
     ): ViewfinderViewModel {
@@ -90,7 +80,6 @@ open class ViewfinderViewModelTestBase {
             captureDelegate = captureDelegate,
             recordingDelegate = recordingDelegate,
             permissionDelegate = permissionDelegate,
-            revertToMediaStoreLocation = revertToMediaStoreLocation,
             locationDelegate = locationDelegate,
             orientationDelegate = orientationDelegate,
             screenWakeDelegate = screenWakeDelegate,
@@ -99,7 +88,6 @@ open class ViewfinderViewModelTestBase {
             zoomUiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),
             swipeEffectMapper = SwipeEffectMapperImpl(),
-            applicationScope = applicationScope,
             mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 

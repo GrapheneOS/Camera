@@ -27,7 +27,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.canRecord } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(RecordingAction.RecordingRequested)
 
@@ -47,7 +47,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.canRecord } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.MICROPHONE)) }
 
             viewModel.onAction(RecordingAction.RecordingRequested)
@@ -75,7 +75,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             every { cameraDelegate.canRecord } returns true
             every { recordingDelegate.takeRetry() } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
             verify(exactly = 1) { recordingDelegate.requestRecording() }
@@ -87,7 +87,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.canRecord } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(RecordingAction.RecordWithoutAudioClicked)
 
             verifyOrder {
@@ -103,7 +103,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.canRecord } returns false
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(RecordingAction.RecordingRequested)
 
@@ -114,7 +114,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     @Test
     fun recordingActions_reachTheRecordingDelegate() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
             }
@@ -136,7 +136,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     @Test
     fun pause_outsideARecording_isIgnored() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(RecordingAction.RecordingPauseToggled(paused = true))
 
@@ -145,14 +145,13 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun anUnusableOutput_revertsTheStorageLocation() {
+    fun anUnusableOutput_isHandedToTheGallery() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
+            createViewModel()
 
             recordingEvents.emit(ViewfinderRecordingEvent.OutputUnavailable)
-            reverted.complete(Unit)
 
-            assertTrue(revertFinished)
+            verify(exactly = 1) { galleryDelegate.onStorageLocationNotFound() }
         }
     }
 
@@ -160,20 +159,19 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
     fun anUnusableOutput_inACaptureSession_leavesTheStorageLocationAlone() {
         runTest {
             createViewModel(
-                applicationScope = backgroundScope,
                 entryPoint = cameraEntryPoint(isCaptureSession = true),
             )
 
             recordingEvents.emit(ViewfinderRecordingEvent.OutputUnavailable)
 
-            coVerify(exactly = 0) { revertToMediaStoreLocation() }
+            verify(exactly = 0) { galleryDelegate.onStorageLocationNotFound() }
         }
     }
 
     @Test
     fun recordingSaved_recordsTheItem() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
+            createViewModel()
             val item = CapturedItem(
                 type = CapturedItemType.VIDEO,
                 dateString = "20260920_120000_000",

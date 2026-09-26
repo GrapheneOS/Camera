@@ -25,7 +25,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun stabilizationToggled_storesTheSettingBeforeRebinding() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(SettingsAction.StabilizationToggled(enabled = true))
 
@@ -39,7 +39,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun focusLockToggled_storesTheSettingBeforeRebinding() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(SettingsAction.FocusLockToggled(enabled = true))
 
@@ -53,7 +53,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun aspectRatioToggleClicked_storesTheOtherRatioBeforeRebinding() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(settings = CameraSettings(aspectRatio = AspectRatio.RATIO_4_3))
             }
@@ -70,7 +70,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun videoQualitySelected_theOneAlreadyInUse_leavesTheCameraAlone() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(modeSettings = ModeSettings(videoQuality = VideoQuality.UHD))
             }
@@ -85,7 +85,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun videoQualitySelected_anotherOne_storesItBeforeRebinding() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(modeSettings = ModeSettings(videoQuality = VideoQuality.UHD))
             }
@@ -102,7 +102,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun flashToggleClicked_withoutAFlash_saysSoAndStoresNothing() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(CameraAction.FlashToggleClicked)
@@ -121,7 +121,6 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     fun flashToggleClicked_inAVideoOnlyEntryPoint_saysSoEvenWithAFlash() {
         runTest {
             val viewModel = createViewModel(
-                applicationScope = backgroundScope,
                 entryPoint = cameraEntryPoint(requiresVideoModeOnly = true),
             )
             val effects = collectEffects(viewModel)
@@ -142,7 +141,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun flashToggleClicked_withAFlashThatIsOff_turnsItOn() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(
                     session = ViewfinderSessionState(isFlashAvailable = true),

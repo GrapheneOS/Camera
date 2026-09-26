@@ -225,7 +225,6 @@ class ViewfinderRecordingFlowTest {
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
             ),
-            revertToMediaStoreLocation = mockk(relaxed = true),
             orientationDelegate = mockk(relaxed = true),
             screenWakeDelegate = mockk(relaxed = true),
             galleryDelegate = mockk(relaxed = true),
@@ -237,7 +236,6 @@ class ViewfinderRecordingFlowTest {
             zoomUiStateMapper = ZoomUiStateMapperImpl(),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
             swipeEffectMapper = SwipeEffectMapperImpl(),
-            applicationScope = backgroundScope,
             mainDispatcher = mainDispatcher,
         )
     }
