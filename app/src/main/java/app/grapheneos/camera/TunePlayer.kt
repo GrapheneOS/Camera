@@ -29,7 +29,6 @@ open class TunePlayer(
     private lateinit var tCPlayer: MediaPlayer
 
     private lateinit var vRecPlayer: MediaPlayer
-    private lateinit var vStopPlayer: MediaPlayer
 
     init {
         prepareMediaPlayer(context, R.raw.image_shot, { player -> shutterPlayer = player })
@@ -40,7 +39,6 @@ open class TunePlayer(
         prepareMediaPlayer(context, R.raw.timer_final_second, { player -> tCPlayer = player })
 
         prepareMediaPlayer(context, R.raw.video_start, { player -> vRecPlayer = player })
-        prepareMediaPlayer(context, R.raw.video_stop, { player -> vStopPlayer = player })
     }
 
     private fun shouldNotPlayTune(): Boolean {
@@ -76,12 +74,6 @@ open class TunePlayer(
         }
         vRecPlayer.seekTo(0)
         vRecPlayer.start()
-    }
-
-    fun playVRStopSound() {
-        if (shouldNotPlayTune() || !::vStopPlayer.isInitialized) return
-        vStopPlayer.seekTo(0)
-        vStopPlayer.start()
     }
 
     fun playTimerIncrementSound() {

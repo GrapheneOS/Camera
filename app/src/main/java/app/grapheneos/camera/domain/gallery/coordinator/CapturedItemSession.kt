@@ -3,7 +3,6 @@ package app.grapheneos.camera.domain.gallery.coordinator
 import android.util.Log
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
@@ -33,7 +32,6 @@ internal class CapturedItemSessionImpl @Inject constructor(
     private val capturedItemRepository: CapturedItemRepository,
     private val visibleCaptureMapper: VisibleCaptureMapper,
     private val entryPoint: CameraEntryPoint,
-    @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : CapturedItemSession {
 
@@ -85,7 +83,9 @@ internal class CapturedItemSessionImpl @Inject constructor(
 
         // A failed migration leaves the legacy keys for the next launch to retry.
         try {
-            capturedItemRepository.migrateStoredCaptures()?.let { recordCapturedItem(it) }
+            capturedItemRepository.migrateStoredCaptures()?.let {
+                capturedItemRepository.saveLastCapturedItem(it)
+            }
             capturedItemRepository.releaseUntrackedSafTrees()
         } catch (e: IOException) {
             Log.e(TAG, "unable to migrate the stored captures", e)
@@ -94,14 +94,6 @@ internal class CapturedItemSessionImpl @Inject constructor(
 
     override fun recordCapturedItem(item: CapturedItem) {
         lastCapturedItem = visibleCaptureMapper.map(item)
-
-        applicationScope.launch(mainDispatcher) {
-            try {
-                capturedItemRepository.saveLastCapturedItem(item)
-            } catch (e: IOException) {
-                Log.e(TAG, "unable to store the last captured item", e)
-            }
-        }
     }
 
     override fun close() {

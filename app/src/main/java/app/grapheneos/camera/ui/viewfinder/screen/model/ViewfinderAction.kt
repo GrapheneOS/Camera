@@ -87,6 +87,10 @@ sealed interface ViewfinderAction {
 
         data object CameraPermissionGranted : LifecycleAction
 
+        data object ScreenStarted : LifecycleAction
+
+        data object ScreenStopped : LifecycleAction
+
         data object ScreenResumed : LifecycleAction
 
         data object PreviewStreamingStarted : LifecycleAction
