@@ -8,6 +8,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.ImageSaverException
@@ -15,6 +16,7 @@ import app.grapheneos.camera.domain.capture.usecase.CaptureImage
 import app.grapheneos.camera.domain.capture.usecase.CapturePreviewImage
 import app.grapheneos.camera.domain.capture.usecase.NotifyPictureSaveFailed
 import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
+import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
@@ -24,6 +26,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -58,6 +61,7 @@ class ViewfinderCaptureDelegateTest {
     private val storeCapturedPreview = mockk<StoreCapturedPreview>()
     private val capturedItemRepository = mockk<CapturedItemRepository>()
     private val notifyPictureSaveFailed = mockk<NotifyPictureSaveFailed>(relaxed = true)
+    private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
 
     private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
     private val captureFinished = CompletableDeferred<Unit>()
@@ -192,13 +196,8 @@ class ViewfinderCaptureDelegateTest {
 
             assertFalse(capture().isTakingPicture)
             assertTrue(capture().isSavingPicture)
-            assertEquals(
-                listOf(
-                    Effect.Picture.Captured,
-                    Effect.Preview.Flash(selfIlluminate = false),
-                ),
-                effects,
-            )
+            assertEquals(listOf(Effect.Preview.Flash(selfIlluminate = false)), effects)
+            coVerify(exactly = 1) { playCameraSound(CameraSound.SHUTTER) }
         }
     }
 
@@ -414,6 +413,11 @@ class ViewfinderCaptureDelegateTest {
                 ),
                 timeline,
             )
+            coVerifyOrder {
+                playCameraSound(CameraSound.TIMER_TICK)
+                playCameraSound(CameraSound.TIMER_TICK)
+                playCameraSound(CameraSound.TIMER_FINAL_SECOND)
+            }
             assertFalse(capture().isSelfTimerRunning)
         }
     }
@@ -510,6 +514,7 @@ class ViewfinderCaptureDelegateTest {
             storeCapturedPreview = storeCapturedPreview,
             capturedItemRepository = capturedItemRepository,
             notifyPictureSaveFailed = notifyPictureSaveFailed,
+            playCameraSound = playCameraSound,
             applicationScope = backgroundScope,
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
