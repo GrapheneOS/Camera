@@ -24,6 +24,8 @@ import kotlinx.coroutines.launch
 interface ViewfinderCameraDelegate {
     val lensFacing: LensFacing
     val isProviderReady: Boolean
+    val isCameraReady: Boolean
+    val canRecord: Boolean
     val sessionEvents: Flow<CameraSessionEvent>
 
     fun bind(
@@ -35,7 +37,7 @@ interface ViewfinderCameraDelegate {
     fun onScreenDestroyed()
 
     fun initialize(forced: Boolean, extensionMode: ExtensionMode?)
-    fun beginBind(forced: Boolean): Boolean
+    fun canBeginBind(forced: Boolean): Boolean
     fun selectLens(isQrMode: Boolean, extensionMode: ExtensionMode?): ViewfinderBindTarget?
     fun bindCamera(settings: CameraBindSettings): BindOutcome
     fun announceBind()
@@ -76,6 +78,16 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     override val isProviderReady: Boolean
         get() {
             return session.cameraProvider != null
+        }
+
+    override val isCameraReady: Boolean
+        get() {
+            return session.camera != null
+        }
+
+    override val canRecord: Boolean
+        get() {
+            return session.camera != null && session.videoCapture != null
         }
 
     override val sessionEvents: Flow<CameraSessionEvent>
@@ -124,14 +136,12 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         )
     }
 
-    override fun beginBind(forced: Boolean): Boolean {
-        val host = host?.takeIf {
-            session.cameraProvider != null && (forced || session.camera == null)
-        } ?: return false
-
-        host.chrome.cancelPendingCapture()
-
-        return true
+    override fun canBeginBind(forced: Boolean): Boolean {
+        return when {
+            host == null -> false
+            session.cameraProvider == null -> false
+            else -> forced || session.camera == null
+        }
     }
 
     override fun selectLens(

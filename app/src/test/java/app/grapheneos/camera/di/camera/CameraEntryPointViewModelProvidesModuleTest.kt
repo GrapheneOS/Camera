@@ -1,9 +1,10 @@
 package app.grapheneos.camera.di.camera
 
 import androidx.lifecycle.SavedStateHandle
-import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,27 +26,23 @@ class CameraEntryPointViewModelProvidesModuleTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun cameraEntryPoint_missingFromTheArguments_isNotGuessed() {
-        module.provideCameraEntryPoint(SavedStateHandle())
+        assertThrows(IllegalArgumentException::class.java) {
+            module.provideCameraEntryPoint(SavedStateHandle())
+        }
     }
 
     private companion object {
-        val SECURE_ENTRY_POINT = CameraEntryPoint(
+        val SECURE_ENTRY_POINT = cameraEntryPoint(
             isSecureSession = true,
-            isCaptureSession = false,
-            isVideoOnlySession = false,
-            requiresVideoModeOnly = false,
             allowsQrScanning = false,
-            showsCameraModeTabs = true,
         )
 
-        val CAPTURE_ENTRY_POINT = CameraEntryPoint(
-            isSecureSession = false,
+        val CAPTURE_ENTRY_POINT = cameraEntryPoint(
             isCaptureSession = true,
             isVideoOnlySession = true,
             requiresVideoModeOnly = true,
-            allowsQrScanning = true,
             showsCameraModeTabs = false,
         )
     }

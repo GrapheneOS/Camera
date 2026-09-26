@@ -3,13 +3,15 @@ package app.grapheneos.camera.util
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import app.grapheneos.camera.R
-import app.grapheneos.camera.capturer.DEFAULT_MEDIA_STORE_CAPTURE_PATH
-import app.grapheneos.camera.capturer.SAF_URI_HOST_EXTERNAL_STORAGE
+import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
+import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -52,7 +54,7 @@ fun ExecutorService.executeIfAlive(r: Runnable) {
 
 fun storageLocationToUiString(ctx: Context, sl: String): String {
     if (sl == CapturedItemRepository.MEDIA_STORE_LOCATION) {
-        return "${ctx.getString(R.string.main_storage)}/$DEFAULT_MEDIA_STORE_CAPTURE_PATH"
+        return "${ctx.getString(R.string.main_storage)}/$MEDIA_STORE_CAPTURE_PATH"
     }
 
     val uri = Uri.parse(sl)
@@ -97,5 +99,13 @@ fun removePendingFlagFromUri(contentResolver: ContentResolver, uri: Uri) {
     cv.put(MediaStore.MediaColumns.IS_PENDING, 0)
     if (contentResolver.update(uri, cv, null, null) != 1) {
         throw IOException("unable to remove IS_PENDING flag")
+    }
+}
+
+@Throws(Exception::class)
+fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap? {
+    MediaMetadataRetriever().use {
+        it.setDataSource(context, uri)
+        return it.frameAtTime
     }
 }

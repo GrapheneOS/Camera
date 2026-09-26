@@ -113,7 +113,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         moreSettingsButton = binding.moreSettings
         moreSettingsButton.setOnClickListener {
-            if (!mActivity.videoCapturer.isRecording) {
+            if (!mActivity.viewfinder.uiState.value.isRecordingActive) {
                 MoreSettings.start(mActivity)
             } else {
                 mActivity.showMessage(getString(R.string.more_settings_unavailable_during_recording))
@@ -165,7 +165,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         locToggle = binding.locationToggle
         locToggle.setOnClickListener {
-            if (mActivity.videoCapturer.isRecording) {
+            if (mActivity.viewfinder.uiState.value.isRecordingActive) {
                 locToggle.isChecked = !locToggle.isChecked
                 mActivity.showMessage(
                     getString(R.string.toggle_geo_tagging_unsupported_while_recording)
@@ -454,6 +454,11 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         includeAudioToggle.isChecked = state.includeAudio
         enableEISToggle.isChecked = state.stabilizationEnabled
         waitForFocusLockSwitch.isChecked = state.waitForFocusLock
+
+        includeAudioToggle.isEnabled = state.includeAudioSettingEnabled
+        videoQualitySpinner.isEnabled = state.videoQualitySettingEnabled
+        enableEISToggle.isEnabled = state.stabilizationSettingEnabled
+        waitForFocusLockSwitch.isEnabled = state.waitForFocusLockSettingEnabled
 
         aRToggle.isChecked = state.is16by9
         ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))

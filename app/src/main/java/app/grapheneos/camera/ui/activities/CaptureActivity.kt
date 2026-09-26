@@ -2,9 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Bitmap.CompressFormat
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -14,24 +11,13 @@ import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageButton
 import android.widget.ImageView
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.core.content.ContextCompat
+import androidx.core.graphics.scale
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.util.getParcelableExtra
-import java.io.ByteArrayOutputStream
-import java.lang.Exception
-import java.nio.ByteBuffer
-import androidx.core.graphics.scale
 
 open class CaptureActivity : MainActivity() {
-
-    companion object {
-        private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
-    }
 
     lateinit var outputUri: Uri
 
@@ -64,19 +50,13 @@ open class CaptureActivity : MainActivity() {
 
         // Enable the capture button after a while
         Handler(Looper.getMainLooper()).postDelayed({
-
             captureButton.animate()
                 .alpha(1f)
                 .setDuration(300)
                 .withEndAction {
                     captureButton.isEnabled = true
                 }
-
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
-
-        // Redundant now that no tabs get built here (see CameraEntryPoint.showsCameraModeTabs), but
-        // kept so a regression there cannot hand the user a mode switcher mid-capture
-        tabLayout.visibility = View.INVISIBLE
 
         // Remove the margin so that that the previewView can take some more space
         (previewView.layoutParams as MarginLayoutParams).let {
@@ -101,18 +81,6 @@ open class CaptureActivity : MainActivity() {
         // also the only screen where it should be reachable by accessibility services.
         cancelButtonView.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
 
-        captureButton.setOnClickListener {
-            if (selfTimerSeconds == 0) {
-                takePicture()
-            } else {
-                if (cdTimer.isRunning) {
-                    cdTimer.cancelTimer()
-                } else {
-                    cdTimer.startTimer()
-                }
-            }
-        }
-
         retakeIcon.setOnClickListener {
             hidePreview()
         }
@@ -120,147 +88,84 @@ open class CaptureActivity : MainActivity() {
         confirmButton.setOnClickListener {
             confirmImage()
         }
-
-        // Display the activity
     }
 
-    fun takePicture() {
-
-        showMessage(
-            getString(R.string.capturing_image)
-        )
-
-        previewLoader.visibility = View.VISIBLE
-        session.imageCapture?.takePicture(
-            ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageCapturedCallback() {
-                override fun onCaptureSuccess(image: ImageProxy) {
-                    super.onCaptureSuccess(image)
-                    bitmap = imageProxyToBitmap(image, image.imageInfo.rotationDegrees.toFloat())
-                    showPreview()
-                    previewLoader.visibility = View.GONE
-                    showMessage(getString(R.string.image_captured_successfully))
-
-                    image.close()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    super.onError(exception)
-                    exception.printStackTrace()
-                    showMessage(
-                        getString(R.string.unable_to_capture_image)
-                    )
-
-                    finishActivity(RESULT_CANCELED)
-                }
-            }
-
-        )
-    }
-
-    protected fun showPreview() {
+    fun showPreview() {
         viewfinder.onAction(CaptureAction.CapturedPreviewShown)
 
         session.cameraProvider?.unbindAll()
 
+        // The captured photo covers the preview until the camera streams again, so a retake does
+        // not flash the empty preview the unbind leaves behind. It is taken down from there.
         mainOverlay.setImageBitmap(bitmap)
         mainOverlay.visibility = View.VISIBLE
-
         settingsIcon.visibility = View.INVISIBLE
-
-        flipCameraContent.visibility = View.INVISIBLE
-        retakeIcon.visibility = View.VISIBLE
-
-        captureButton.visibility = View.INVISIBLE
-        confirmButton.visibility = View.VISIBLE
-
-        previewView.visibility = View.INVISIBLE
     }
 
     private fun hidePreview() {
         viewfinder.onAction(LifecycleAction.CapturedPreviewDismissed)
 
         settingsIcon.visibility = View.VISIBLE
+    }
 
-        flipCameraContent.visibility = View.VISIBLE
-        retakeIcon.visibility = View.INVISIBLE
-
-        captureButton.visibility = View.VISIBLE
-        confirmButton.visibility = View.INVISIBLE
-
-        previewView.visibility = View.VISIBLE
+    fun renderCapturedPreview(visible: Boolean) {
+        flipCameraContent.visibility = when {
+            visible -> View.INVISIBLE
+            else -> View.VISIBLE
+        }
+        retakeIcon.visibility = when {
+            visible -> View.VISIBLE
+            else -> View.INVISIBLE
+        }
+        confirmButton.visibility = when {
+            visible -> View.VISIBLE
+            else -> View.INVISIBLE
+        }
     }
 
     private fun confirmImage() {
-
-        val resultIntent = Intent("inline-data")
-
-        val bitmap = bitmap
-        if (bitmap == null) {
-            setResult(RESULT_CANCELED)
-            finish()
-            return
+        when (val bitmap = bitmap) {
+            null -> finishWithResult(stored = false)
+            else -> viewfinder.onAction(CaptureAction.CapturedPreviewConfirmed(bitmap = bitmap))
         }
+    }
 
-        if (::outputUri.isInitialized) {
-            val bos = ByteArrayOutputStream()
-
-            val cf: CompressFormat =
-                if (outputUri.path?.endsWith(".png") == true) {
-                    CompressFormat.PNG
-                } else {
-                    CompressFormat.JPEG
-                }
-
-            bitmap.compress(cf, 100, bos)
-            val bitmapData: ByteArray = bos.toByteArray()
-
-            var result = RESULT_CANCELED
-
-            try {
-                contentResolver.openOutputStream(outputUri)?.use {
-                    it.write(bitmapData)
-                }
-                result = RESULT_OK
-            } catch (e: Exception) {
-                showMessage(getString(R.string.unable_to_save_image))
-            }
-
-            setResult(result)
-        } else {
-            val resized = resizeImage(bitmap)
-            this.bitmap = resized
-            resultIntent.putExtra("data", resized)
-            setResult(RESULT_OK, resultIntent)
+    fun finishWithResult(stored: Boolean) {
+        val result = when {
+            stored -> RESULT_OK
+            else -> RESULT_CANCELED
         }
-
+        setResult(result)
         finish()
     }
 
-    private fun imageProxyToBitmap(image: ImageProxy, rotation: Float): Bitmap {
-        val planeProxy = image.planes[0]
-        val buffer: ByteBuffer = planeProxy.buffer
-        val bytes = ByteArray(buffer.remaining())
-        buffer.get(bytes)
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size).rotate(rotation)
+    fun returnCapturedBitmap() {
+        val resized = resizeImage(requireNotNull(bitmap))
+        val intent = Intent(INLINE_DATA).putExtra(INLINE_DATA_EXTRA, resized)
+
+        this.bitmap = resized
+
+        setResult(RESULT_OK, intent)
+        finish()
     }
 
     private fun resizeImage(image: Bitmap): Bitmap {
-
         val width = image.width
         val height = image.height
 
         val scaleWidth = width / 10
         val scaleHeight = height / 10
 
-        if (image.byteCount <= 1000000)
+        if (image.byteCount <= 1000000) {
             return image
+        }
 
         return image.scale(scaleWidth, scaleHeight, false)
     }
 
-    private fun Bitmap.rotate(degrees: Float): Bitmap {
-        val matrix = Matrix().apply { postRotate(degrees) }
-        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    private companion object {
+        private const val CAPTURE_BUTTON_APPEARANCE_DELAY = 1000L
+        private const val INLINE_DATA = "inline-data"
+        private const val INLINE_DATA_EXTRA = "data"
     }
 }

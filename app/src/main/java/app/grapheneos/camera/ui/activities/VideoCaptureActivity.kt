@@ -7,6 +7,7 @@ import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -15,19 +16,17 @@ class VideoCaptureActivity : CaptureActivity() {
 
     private var savedUri: Uri? = null
 
-    private var previewPending = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         whiteOptionCircle = findViewById(R.id.white_option_circle)
         playPreview = findViewById(R.id.play_preview)
 
-        captureButton.setOnClickListener OnClickListener@{
-            if (videoCapturer.isRecording) {
-                videoCapturer.stopRecording()
+        captureButton.setOnClickListener {
+            if (viewfinder.uiState.value.isRecordingActive) {
+                viewfinder.onAction(RecordingAction.RecordingStopRequested)
             } else {
-                videoCapturer.startRecording()
+                requestRecording()
             }
         }
 
@@ -47,28 +46,12 @@ class VideoCaptureActivity : CaptureActivity() {
         confirmButton.setOnClickListener {
             confirmVideo()
         }
-
     }
 
     fun afterRecording(savedUri: Uri?) {
-
         this.savedUri = savedUri
 
-        if (!isStarted) {
-            previewPending = true
-            return
-        }
-
         showRecordingPreview()
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        if (previewPending) {
-            previewPending = false
-            showRecordingPreview()
-        }
     }
 
     private fun showRecordingPreview() {

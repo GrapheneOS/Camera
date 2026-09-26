@@ -18,6 +18,32 @@ class CaptureUiStateMapperTest {
 
     private val mapper: CaptureUiStateMapper = CaptureUiStateMapperImpl()
 
+    @Test
+    fun geoTagging_followsTheSettledValueNotTheStoredOne() {
+        val storedOn = ModeSettings(geoTagging = true)
+
+        assertFalse(map(requireLocation = false, modeSettings = storedOn).geoTagging)
+        assertTrue(map(requireLocation = true).geoTagging)
+    }
+
+    @Test
+    fun storedCaptureSettings_arePassedThrough() {
+        val state = map(
+            settings = CameraSettings(
+                includeAudio = false,
+                enableCameraSounds = false,
+            ),
+        )
+
+        assertEquals(
+            CaptureUiState(
+                includeAudio = false,
+                cameraSounds = false,
+            ),
+            state,
+        )
+    }
+
     private fun map(
         requireLocation: Boolean = false,
         settings: CameraSettings = CameraSettings(),
@@ -33,42 +59,6 @@ class CaptureUiStateMapperTest {
                 modeSettings = modeSettings,
                 session = session,
             ),
-        )
-    }
-
-    @Test
-    fun geoTagging_followsTheSettledValueNotTheStoredOne() {
-        val storedOn = ModeSettings(geoTagging = true)
-
-        assertFalse(map(requireLocation = false, modeSettings = storedOn).geoTagging)
-        assertTrue(map(requireLocation = true).geoTagging)
-    }
-
-    @Test
-    fun canTakePicture_comesFromTheBoundSession() {
-        assertTrue(map(session = ViewfinderSessionState(canTakePicture = true)).canTakePicture)
-        assertFalse(map(session = ViewfinderSessionState(canTakePicture = false)).canTakePicture)
-    }
-
-    @Test
-    fun storedCaptureSettings_arePassedThrough() {
-        val state = map(
-            settings = CameraSettings(
-                saveImageAsPreviewed = false,
-                removeExifAfterCapture = false,
-                includeAudio = false,
-                enableCameraSounds = false,
-            ),
-        )
-
-        assertEquals(
-            CaptureUiState(
-                saveImageAsPreviewed = false,
-                removeExifAfterCapture = false,
-                includeAudio = false,
-                cameraSounds = false,
-            ),
-            state,
         )
     }
 }

@@ -4,6 +4,8 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapperImpl
+import app.grapheneos.camera.data.camera.mapper.RecordingEventMapper
+import app.grapheneos.camera.data.camera.mapper.RecordingEventMapperImpl
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapperImpl
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
@@ -16,6 +18,8 @@ import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolver
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolverImpl
+import app.grapheneos.camera.data.camera.session.JpegExtractor
+import app.grapheneos.camera.data.camera.session.JpegExtractorImpl
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCacheImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
@@ -63,6 +67,12 @@ internal abstract class CameraBindsModule {
 
     @Binds
     @Reusable
+    abstract fun bindRecordingEventMapper(
+        impl: RecordingEventMapperImpl,
+    ): RecordingEventMapper
+
+    @Binds
+    @Reusable
     abstract fun bindVideoQualityFeatureMapper(
         impl: VideoQualityFeatureMapperImpl,
     ): VideoQualityFeatureMapper
@@ -84,6 +94,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindInVideoSnapshotSupportResolver(
         impl: InVideoSnapshotSupportResolverImpl,
     ): InVideoSnapshotSupportResolver
+
+    @Binds
+    @Reusable
+    abstract fun bindJpegExtractor(
+        impl: JpegExtractorImpl,
+    ): JpegExtractor
 
     @Binds
     @Singleton

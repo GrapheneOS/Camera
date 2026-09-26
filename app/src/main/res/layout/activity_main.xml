@@ -275,7 +275,7 @@
                 android:layout_height="84dp"
                 android:layout_gravity="center">
 
-                <ImageButton
+                <app.grapheneos.camera.ui.CaptureButton
                     android:id="@+id/capture_button"
                     android:layout_width="84dp"
                     android:layout_height="84dp"

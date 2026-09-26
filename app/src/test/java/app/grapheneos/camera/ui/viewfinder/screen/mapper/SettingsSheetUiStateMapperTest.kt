@@ -9,7 +9,10 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import org.junit.Assert.assertEquals
@@ -25,30 +28,30 @@ class SettingsSheetUiStateMapperTest {
 
     private val mapper: SettingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl()
 
-    private fun map(
-        mode: CameraMode = CameraMode.CAMERA,
-        requiresVideoModeOnly: Boolean = false,
-        flashMode: FlashMode = FlashMode.OFF,
-        requireLocation: Boolean = false,
-        settings: CameraSettings = CameraSettings(),
-        modeSettings: ModeSettings = ModeSettings(),
-        session: ViewfinderSessionState = ViewfinderSessionState(),
-    ): SettingsSheetUiState {
-        return mapper.map(
-            ViewfinderState(
-                mode = mode,
-                requiresVideoModeOnly = requiresVideoModeOnly,
-                flashMode = flashMode,
-                requireLocation = requireLocation,
-                settings = settings,
-                modeSettings = modeSettings,
-                session = session,
-            ),
+    @Test
+    fun recording_locksTheSettingsItWasStartedWith() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
+
+        assertFalse(state.includeAudioSettingEnabled)
+        assertFalse(state.videoQualitySettingEnabled)
+        assertFalse(state.stabilizationSettingEnabled)
+        assertFalse(state.waitForFocusLockSettingEnabled)
     }
 
-    private fun sessionWithFlash(): ViewfinderSessionState {
-        return ViewfinderSessionState(isFlashAvailable = true)
+    @Test
+    fun aRecordingStillStarting_leavesTheSettingsChangeable() {
+        val state = map(
+            mode = CameraMode.VIDEO,
+            recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
+        )
+
+        assertTrue(state.includeAudioSettingEnabled)
+        assertTrue(state.videoQualitySettingEnabled)
+        assertTrue(state.stabilizationSettingEnabled)
+        assertTrue(state.waitForFocusLockSettingEnabled)
     }
 
     @Test
@@ -208,6 +211,36 @@ class SettingsSheetUiStateMapperTest {
 
         assertTrue(state.torchAvailable)
         assertTrue(state.torchOn)
+    }
+
+    private fun map(
+        mode: CameraMode = CameraMode.CAMERA,
+        requiresVideoModeOnly: Boolean = false,
+        flashMode: FlashMode = FlashMode.OFF,
+        requireLocation: Boolean = false,
+        settings: CameraSettings = CameraSettings(),
+        modeSettings: ModeSettings = ModeSettings(),
+        session: ViewfinderSessionState = ViewfinderSessionState(),
+        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
+        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
+    ): SettingsSheetUiState {
+        return mapper.map(
+            ViewfinderState(
+                mode = mode,
+                requiresVideoModeOnly = requiresVideoModeOnly,
+                flashMode = flashMode,
+                requireLocation = requireLocation,
+                settings = settings,
+                modeSettings = modeSettings,
+                session = session,
+                capture = capture,
+                recording = recording,
+            ),
+        )
+    }
+
+    private fun sessionWithFlash(): ViewfinderSessionState {
+        return ViewfinderSessionState(isFlashAvailable = true)
     }
 
     private companion object {

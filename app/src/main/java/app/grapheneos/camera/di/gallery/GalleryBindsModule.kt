@@ -1,7 +1,7 @@
 package app.grapheneos.camera.di.gallery
 
-import app.grapheneos.camera.domain.gallery.CapturedItemSession
-import app.grapheneos.camera.domain.gallery.CapturedItemSessionImpl
+import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
+import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSessionImpl
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapperImpl
 import dagger.Binds

@@ -16,7 +16,7 @@
     <ID>EmptyFunctionBlock:MainActivity.kt:MainActivity.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener${}</ID>
     <ID>EmptyFunctionBlock:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;${}</ID>
-    <ID>EmptyFunctionBlock:ViewfinderEffectHandler.kt:ViewfinderEffectHandler.&lt;no name provided&gt;${}</ID>
+    <ID>EmptyFunctionBlock:ViewfinderEffectHandler.kt:ViewfinderEffectHandlerImpl.&lt;no name provided&gt;${}</ID>
     <ID>EmptyFunctionBlock:ViewfinderGestureHandler.kt:ViewfinderGestureHandler${}</ID>
     <ID>EmptyFunctionBlock:ZoomableImageView.kt:ZoomableImageView.&lt;no name provided&gt;${}</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val contentResolver = appContext.contentResolver</ID>

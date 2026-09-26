@@ -21,6 +21,7 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
         val session = state.session
         val isVideoMode = state.isVideoMode()
         val aspectRatio = state.aspectRatio()
+        val isRecording = state.recording.isRecording()
 
         val flash = flashOf(
             flashMode = state.flashMode,
@@ -60,6 +61,10 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
                 session.lensFacing == LensFacing.FRONT,
             timerSettingVisible = !isVideoMode,
             waitForFocusLockSettingVisible = !state.requiresVideoModeOnly,
+            includeAudioSettingEnabled = !isRecording,
+            videoQualitySettingEnabled = !isRecording,
+            stabilizationSettingEnabled = !isRecording,
+            waitForFocusLockSettingEnabled = !isRecording,
         )
     }
 

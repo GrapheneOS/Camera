@@ -9,20 +9,20 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
-import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.testutil.MainDispatcherRule
+import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderChrome
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import com.google.zxing.BarcodeFormat
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.TestScope
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -52,10 +52,7 @@ class ViewfinderCameraDelegateTest {
     private val session = mockk<CameraSession>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
 
-    private val stateHolder = ViewfinderStateHolder(
-        initial = ViewfinderState(mode = CameraMode.CAMERA, requiresVideoModeOnly = false),
-        render = { ViewfinderUiState() },
-    )
+    private val stateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
 
     private var lensFacing = LensFacing.BACK
 
@@ -69,23 +66,25 @@ class ViewfinderCameraDelegateTest {
         every { session.isActive } returns true
     }
 
-    @Test
-    fun beginBind_whileAlreadyBoundAndNotForced_leavesTheCameraAlone() {
-        val delegate = createAttachedDelegate()
-        val started = delegate.beginBind(forced = false)
-
-        assertFalse(started)
-        verify(exactly = 0) { chrome.cancelPendingCapture() }
+    @After
+    fun cancelScope() {
+        scope.cancel()
     }
 
     @Test
-    fun beginBind_withoutACameraProvider_leavesTheCameraAloneEvenWhenForced() {
+    fun canBeginBind_whileAlreadyBoundAndNotForced_refusesTheBind() {
+        val delegate = createAttachedDelegate()
+
+        assertFalse(delegate.canBeginBind(forced = false))
+    }
+
+    @Test
+    fun canBeginBind_withoutACameraProvider_refusesTheBindEvenWhenForced() {
         every { session.cameraProvider } returns null
 
         val delegate = createAttachedDelegate()
-        val started = delegate.beginBind(forced = true)
 
-        assertFalse(started)
+        assertFalse(delegate.canBeginBind(forced = true))
     }
 
     @Test
@@ -282,42 +281,6 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun onScreenDestroyed_keepsWhatTheCameraIsDoing() {
-        every { session.lensFacing } returns LensFacing.FRONT
-
-        val delegate = createAttachedDelegate()
-        delegate.bindCamera(mockk(relaxed = true))
-        delegate.applyFlashMode(FlashMode.AUTO)
-        delegate.onScreenDestroyed()
-
-        assertEquals(LensFacing.FRONT, stateHolder.state.value.session.lensFacing)
-        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
-    }
-
-    @Test
-    fun onScreenDestroyed_forgetsTheScreenAndTheResultItWasShowing() {
-        val delegate = createAttachedDelegate()
-        delegate.showQrResult()
-        delegate.onScreenDestroyed()
-
-        verify(exactly = 1) { session.setPreviewTarget(null) }
-        assertFalse(stateHolder.state.value.session.isQrResultShown)
-        assertFalse(delegate.beginBind(forced = true))
-    }
-
-    @Test
-    fun toggleTorch_recordsWhatTheSessionReportsAfterwards() {
-        var torchOn = false
-        every { session.isTorchOn } answers { torchOn }
-        every { session.toggleTorchState() } answers { torchOn = !torchOn }
-
-        val delegate = createAttachedDelegate()
-        delegate.toggleTorch()
-
-        assertTrue(stateHolder.state.value.session.isTorchOn)
-    }
-
-    @Test
     fun bindCamera_outsideVideoMode_doesNotAskWhetherVideoCanBeStabilized() {
         val delegate = createAttachedDelegate()
         delegate.bindCamera(mockk(relaxed = true) { every { isVideoMode } returns false })
@@ -345,6 +308,42 @@ class ViewfinderCameraDelegateTest {
         delegate.bindCamera(mockk(relaxed = true))
 
         assertFalse(stateHolder.state.value.session.isTorchOn)
+    }
+
+    @Test
+    fun onScreenDestroyed_keepsWhatTheCameraIsDoing() {
+        every { session.lensFacing } returns LensFacing.FRONT
+
+        val delegate = createAttachedDelegate()
+        delegate.bindCamera(mockk(relaxed = true))
+        delegate.applyFlashMode(FlashMode.AUTO)
+        delegate.onScreenDestroyed()
+
+        assertEquals(LensFacing.FRONT, stateHolder.state.value.session.lensFacing)
+        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
+    }
+
+    @Test
+    fun onScreenDestroyed_forgetsTheScreenAndTheResultItWasShowing() {
+        val delegate = createAttachedDelegate()
+        delegate.showQrResult()
+        delegate.onScreenDestroyed()
+
+        verify(exactly = 1) { session.setPreviewTarget(null) }
+        assertFalse(stateHolder.state.value.session.isQrResultShown)
+        assertFalse(delegate.canBeginBind(forced = true))
+    }
+
+    @Test
+    fun toggleTorch_recordsWhatTheSessionReportsAfterwards() {
+        var torchOn = false
+        every { session.isTorchOn } answers { torchOn }
+        every { session.toggleTorchState() } answers { torchOn = !torchOn }
+
+        val delegate = createAttachedDelegate()
+        delegate.toggleTorch()
+
+        assertTrue(stateHolder.state.value.session.isTorchOn)
     }
 
     @Test
@@ -392,14 +391,7 @@ class ViewfinderCameraDelegateTest {
     ): ViewfinderCameraDelegate {
         val delegate = ViewfinderCameraDelegateImpl(
             session = session,
-            entryPoint = CameraEntryPoint(
-                isSecureSession = false,
-                isCaptureSession = false,
-                isVideoOnlySession = false,
-                requiresVideoModeOnly = false,
-                allowsQrScanning = true,
-                showsCameraModeTabs = showsCameraModeTabs,
-            ),
+            entryPoint = cameraEntryPoint(showsCameraModeTabs = showsCameraModeTabs),
             resolveAvailableModes = resolveAvailableModes,
             mainDispatcher = mainDispatcherRule.testDispatcher,
         )

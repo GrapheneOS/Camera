@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
+import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
@@ -46,24 +47,49 @@ sealed interface ViewfinderAction {
 
     sealed interface CaptureAction : ViewfinderAction {
 
-        data object PictureCaptured : CaptureAction
+        data object ShutterClicked : CaptureAction
+
+        data object PictureCaptureCancelled : CaptureAction
+
+        data object SelfTimerStartClicked : CaptureAction
+
+        data object SelfTimerCancelClicked : CaptureAction
 
         data object StorageLocationNotFound : CaptureAction
 
-        data object RecordingStarted : CaptureAction
-
-        data object RecordingStopped : CaptureAction
-
         data object CapturedPreviewShown : CaptureAction
+
+        data class CapturedPreviewConfirmed(
+            val bitmap: Bitmap,
+        ) : CaptureAction
+    }
+
+    sealed interface RecordingAction : ViewfinderAction {
+
+        data object RecordingStopRequested : RecordingAction
+
+        data object StartSoundPlayed : RecordingAction
+
+        data class RecordingRequested(
+            val hasAudioPermission: Boolean,
+        ) : RecordingAction
 
         data class RecordingPauseToggled(
             val paused: Boolean,
-        ) : CaptureAction
+        ) : RecordingAction
+
+        data class RecordingMuteToggled(
+            val muted: Boolean,
+        ) : RecordingAction
     }
 
     sealed interface LifecycleAction : ViewfinderAction {
 
         data object CameraPermissionGranted : LifecycleAction
+
+        data object ScreenStarted : LifecycleAction
+
+        data object ScreenStopped : LifecycleAction
 
         data object ScreenResumed : LifecycleAction
 
