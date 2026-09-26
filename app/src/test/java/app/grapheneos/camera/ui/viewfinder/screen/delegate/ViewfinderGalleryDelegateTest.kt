@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
+import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
@@ -25,13 +26,17 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -43,6 +48,17 @@ class ViewfinderGalleryDelegateTest {
     private val capturedItemSession = mockk<CapturedItemSession>(relaxed = true)
 
     private val capturedItemRepository = mockk<CapturedItemRepository>()
+
+    private val reverted = CompletableDeferred<Unit>()
+
+    private var isRevertFinished = false
+
+    private val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation> {
+        coEvery { this@mockk.invoke() } coAnswers {
+            reverted.await()
+            isRevertFinished = true
+        }
+    }
 
     private val loadedItem: CapturingSlot<CapturedItem> = slot()
 
@@ -210,12 +226,43 @@ class ViewfinderGalleryDelegateTest {
         }
     }
 
+    @Test
+    fun storageLocationNotFound_showsTheDialogOnlyOnceTheLocationIsReverted() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            delegate.onStorageLocationNotFound()
+            assertTrue(effects.isEmpty())
+
+            reverted.complete(Unit)
+
+            assertEquals(listOf(Effect.ShowStorageLocationNotFound), effects)
+            coVerify(exactly = 1) { revertToMediaStoreLocation() }
+        }
+    }
+
+    @Test
+    fun storageLocationNotFound_finishesTheRevertEvenWhenTheScreenGoesAway() {
+        runTest {
+            val screenScope = CoroutineScope(backgroundScope.coroutineContext + Job())
+            val delegate = createDelegate(scope = screenScope)
+
+            delegate.onStorageLocationNotFound()
+            screenScope.cancel()
+            reverted.complete(Unit)
+
+            assertTrue(isRevertFinished)
+        }
+    }
+
     private fun thumbnail(): Bitmap? {
         return stateHolder.state.value.gallery.thumbnail
     }
 
     private fun TestScope.createDelegate(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
+        scope: CoroutineScope = backgroundScope,
         loadedThumbnail: suspend () -> Bitmap? = { THUMBNAIL },
     ): ViewfinderGalleryDelegate {
         coEvery {
@@ -231,11 +278,13 @@ class ViewfinderGalleryDelegateTest {
             capturedItemSession = capturedItemSession,
             capturedItemRepository = capturedItemRepository,
             entryPoint = entryPoint,
+            revertToMediaStoreLocation = revertToMediaStoreLocation,
+            applicationScope = backgroundScope,
             mainDispatcher = dispatcher,
         )
 
         delegate.bind(
-            scope = backgroundScope,
+            scope = scope,
             stateHolder = stateHolder,
         )
         delegate.onScreenCreated(

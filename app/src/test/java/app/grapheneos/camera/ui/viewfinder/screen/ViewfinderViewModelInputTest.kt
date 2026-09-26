@@ -29,7 +29,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun captureKey_inQrMode_leavesTheTorchAlone() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
 
             viewModel.onAction(CaptureAction.CaptureKeyPressed)
@@ -41,7 +41,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun captureButtonClicked_inQrMode_togglesTheTorch() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
@@ -55,7 +55,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.canRecord } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
@@ -74,7 +74,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
@@ -86,7 +86,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun captureButtonClicked_withASelfTimer_startsAndCancelsTheCountdown() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
@@ -106,7 +106,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewSwiped_sidewaysMovesAcrossTheModeTabs() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
@@ -125,7 +125,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun flipCameraClicked_towardsAnUnavailableLens_saysSoAndDoesNotRebind() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             every { cameraDelegate.lensFacing } returns LensFacing.BACK
             every { cameraDelegate.switchLensFacing(lensFacing = any(), extensionMode = any()) }
@@ -147,7 +147,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun flipCameraClicked_inQrMode_togglesScanningAllCodes() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             stateHolder.update { state -> state.copy(mode = CameraMode.QR_SCAN) }
 
@@ -164,7 +164,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun flipCameraClicked_whileRecording_pausesTheRecording() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             stateHolder.update { state ->
                 state.copy(recording = state.recording.copy(phase = RecordingPhase.RECORDING))
@@ -183,7 +183,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun muteToggleClicked_togglesTheRecordingMute() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(RecordingAction.MuteToggleClicked)
 
@@ -195,7 +195,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun thirdCircle_whileRecording_takesAPicture() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             stateHolder.update { state ->
                 state.copy(
@@ -215,7 +215,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun thirdCircle_outsideARecording_opensTheGalleryOrSharesTheLatestItem() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(CaptureAction.ThirdCircleClicked)
             viewModel.onAction(CaptureAction.ThirdCircleLongClicked)
@@ -231,7 +231,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun settingsIconClicked_opensTheSheetOutsideQrMode() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(SettingsAction.SettingsIconClicked)
@@ -245,7 +245,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     @Test
     fun screenPaused_cancelsAPictureCaptureOutsideQrMode() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.ScreenPaused)
             stateHolder.update { state -> state.copy(mode = CameraMode.QR_SCAN) }
@@ -259,7 +259,6 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun thirdCircle_inACaptureSession_leavesTheGalleryShut() {
         runTest {
             val viewModel = createViewModel(
-                applicationScope = backgroundScope,
                 entryPoint = cameraEntryPoint(isCaptureSession = true),
             )
             viewModel.onAction(CaptureAction.ThirdCircleClicked)

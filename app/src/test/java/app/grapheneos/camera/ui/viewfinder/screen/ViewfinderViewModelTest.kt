@@ -38,7 +38,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isProviderReady } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
             verify(exactly = 1) { cameraDelegate.canBeginBind(forced = true) }
@@ -51,7 +51,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.isProviderReady } returns false
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(LifecycleAction.ScreenResumed)
 
             verify(exactly = 1) {
@@ -67,7 +67,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun providerReady_startsTheBind() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
+            createViewModel()
             cameraEvents.emit(ViewfinderCameraEvent.ProviderReady(forced = true))
 
             verify(exactly = 1) { cameraDelegate.canBeginBind(forced = true) }
@@ -77,7 +77,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun screenCreated_lendsTheScreenToTheCameraUntilTheScreenIsDestroyed() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val host = mockk<ViewfinderHost>()
 
             viewModel.onAction(LifecycleAction.ScreenCreated(host))
@@ -94,7 +94,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun startCamera_forQrWithoutARearLens_saysItScansWithTheFrontOne() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             every { cameraDelegate.canBeginBind(forced = any()) } returns true
             every { cameraDelegate.selectLens(isQrMode = any(), extensionMode = any()) } returns
@@ -115,42 +115,20 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun storageLocationNotFound_showsTheDialogOnlyOnceTheLocationIsReverted() {
+    fun storageLocationNotFound_isHandedToTheGallery() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-            val effects = mutableListOf<ViewfinderScreenEffect>()
-            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
-                viewModel.effects.collect { effects += it }
-            }
+            val viewModel = createViewModel()
 
             viewModel.onAction(CaptureAction.StorageLocationNotFound)
 
-            assertTrue(effects.isEmpty())
-
-            reverted.complete(Unit)
-
-            assertEquals(listOf(ViewfinderScreenEffect.ShowStorageLocationNotFound), effects)
-            coVerify(exactly = 1) { revertToMediaStoreLocation() }
-        }
-    }
-
-    @Test
-    fun storageLocationNotFound_finishesTheRevertEvenWhenTheScreenGoesAway() {
-        runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
-
-            viewModel.onAction(CaptureAction.StorageLocationNotFound)
-            viewModel.viewModelScope.cancel()
-            reverted.complete(Unit)
-
-            assertTrue(revertFinished)
+            verify(exactly = 1) { galleryDelegate.onStorageLocationNotFound() }
         }
     }
 
     @Test
     fun qrResultDismissed_rebindsOnlyOnceTheResultIsDismissed() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.QrResultDismissed)
 
@@ -164,7 +142,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewTapped_focusesThere() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
 
@@ -175,7 +153,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun zoomKeys_stepTheZoomByOneInEitherDirection() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(CameraAction.ZoomInKeyPressed)
             viewModel.onAction(CameraAction.ZoomOutKeyPressed)
@@ -190,7 +168,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewStreamingStarted_inVideoMode_refreshesTheVideoQualities() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
 
             viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
@@ -202,7 +180,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewStreamingStarted_inPhotoMode_leavesTheVideoQualitiesAlone() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
@@ -213,7 +191,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun bindOutcome_extensionUnusable_fallsBackToTheDefaultModeAndMovesTheTabs() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             every { modeDelegate.select(any()) } answers {
                 val mode = firstArg<CameraMode>()
@@ -248,7 +226,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun torchToggleClicked_togglesTheTorch() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(CameraAction.TorchToggleClicked)
 
             verify(exactly = 1) { cameraDelegate.toggleTorch() }
@@ -258,7 +236,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun displayRotationChanged_turnsThePreviewAndTheIcons() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(CameraAction.DisplayRotationChanged(rotation = Surface.ROTATION_90))
 
@@ -270,7 +248,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun settingsClicked_opensTheSettings() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(PermissionAction.SettingsClicked)
 
@@ -282,7 +260,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun dialogDismissed_whileItIsUp_isHandedToTheDelegate() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(permissionDialog = AppPermission.CAMERA) }
 
             viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
@@ -305,7 +283,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 trackUntilCancelled(tracking, name = "screen wake")
             }
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(LifecycleAction.ScreenResumed)
             assertEquals(setOf("orientation", "location", "screen wake"), tracking)
 
@@ -317,7 +295,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun screenInteracted_extendsTheScreenWake() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.ScreenInteracted)
 
@@ -328,7 +306,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     @Test
     fun screenResumed_refreshesTheThumbnail() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.ScreenResumed)
 

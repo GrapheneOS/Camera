@@ -20,7 +20,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewStreamingStarted_storedGeoTaggingWithoutPermission_staysOff() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(
                     modeSettings = ModeSettings(geoTagging = true),
@@ -37,7 +37,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun previewStreamingStarted_storedGeoTaggingWithPermission_keepsItOn() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(modeSettings = ModeSettings(geoTagging = true))
             }
@@ -51,7 +51,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun geoTaggingToggledOn_withoutPermission_asksForIt() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
 
             viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
@@ -69,7 +69,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun geoTaggingToggledOn_withPermission_asksForNothing() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(SettingsAction.GeoTaggingToggled(enabled = true))
 
@@ -81,7 +81,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun locationPermissionAnswered_withARefusal_turnsGeoTaggingOff() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
 
             viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.LOCATION))
@@ -93,7 +93,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun locationPermissionAnswered_withAGrant_keepsGeoTaggingOn() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(PermissionAction.RequestAnswered(AppPermission.LOCATION))
 
@@ -104,7 +104,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun locationDialogDismissed_turnsGeoTaggingOff() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
             stateHolder.update { it.copy(permissionDialog = AppPermission.LOCATION) }
 
@@ -118,7 +118,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun settingsClicked_onTheLocationDialog_turnsGeoTaggingOff() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(permissionDialog = AppPermission.LOCATION) }
 
             viewModel.onAction(PermissionAction.SettingsClicked)
@@ -130,7 +130,7 @@ class ViewfinderViewModelLocationTest : ViewfinderViewModelTestBase() {
     @Test
     fun enableLocationClicked_opensTheLocationSettings() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(SettingsAction.EnableLocationClicked)

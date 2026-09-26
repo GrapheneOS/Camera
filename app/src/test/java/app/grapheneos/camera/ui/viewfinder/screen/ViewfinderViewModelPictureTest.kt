@@ -29,7 +29,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
         runTest {
             every { cameraDelegate.canBeginBind(forced = true) } returns true
 
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(CaptureAction.CapturedPreviewDismissed)
 
             verifyOrder {
@@ -42,7 +42,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     @Test
     fun capturedPreviewShown_isRecordedAndReleasesTheCamera() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             viewModel.onAction(CaptureAction.CapturedPreviewShown)
 
             verifyOrder {
@@ -56,7 +56,6 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     fun capturedPreviewConfirmed_writesWhereTheCallerAsked() {
         runTest {
             val viewModel = createViewModel(
-                applicationScope = backgroundScope,
                 outputUri = OUTPUT_URI,
             )
             val bitmap = createBitmap(1, 1)
@@ -73,7 +72,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     fun shutterClicked_withTheCameraReady_takesThePicture() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
 
             viewModel.onAction(CaptureAction.ShutterClicked)
@@ -88,7 +87,6 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
             every { cameraDelegate.isCameraReady } returns true
 
             val viewModel = createViewModel(
-                applicationScope = backgroundScope,
                 entryPoint = cameraEntryPoint(isCaptureSession = true),
             )
             stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
@@ -104,7 +102,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     fun shutterClicked_whileTheCameraCannotCapture_saysSoAndTakesNothing() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(CaptureAction.ShutterClicked)
@@ -125,7 +123,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     fun shutterClicked_whileACaptureIsInFlight_takesNothing() {
         runTest {
             every { cameraDelegate.isCameraReady } returns true
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(
                     session = it.session.copy(canTakePicture = true),
@@ -142,7 +140,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     @Test
     fun thumbnailReady_showsIt() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
+            createViewModel()
 
             captureEvents.emit(ViewfinderCaptureEvent.ThumbnailReady(thumbnail = THUMBNAIL))
 
@@ -153,7 +151,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     @Test
     fun saved_recordsTheItem() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
+            createViewModel()
             val item = CapturedItem(
                 type = CapturedItemType.IMAGE,
                 dateString = "20260920_120000_000",
@@ -167,21 +165,20 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun storageLocationNotFound_whileSaving_revertsTheLocation() {
+    fun storageLocationNotFound_whileSaving_isHandedToTheGallery() {
         runTest {
-            createViewModel(applicationScope = backgroundScope)
+            createViewModel()
 
             captureEvents.emit(ViewfinderCaptureEvent.StorageLocationNotFound)
-            reverted.complete(Unit)
 
-            assertTrue(revertFinished)
+            verify(exactly = 1) { galleryDelegate.onStorageLocationNotFound() }
         }
     }
 
     @Test
     fun screenStartedAndStopped_reachTheCapture() {
         runTest {
-            val viewModel = createViewModel(applicationScope = backgroundScope)
+            val viewModel = createViewModel()
 
             viewModel.onAction(LifecycleAction.ScreenStarted)
             viewModel.onAction(LifecycleAction.ScreenStopped)
