@@ -1,7 +1,6 @@
 package app.grapheneos.camera.domain.capture.usecase
 
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
-import app.grapheneos.camera.domain.capture.usecase.DeleteStalePendingRecordingsImpl
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlin.time.Duration.Companion.hours

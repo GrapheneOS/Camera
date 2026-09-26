@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.activities
 
 import android.os.Bundle
-import app.grapheneos.camera.AutoFinishOnSleep
 
 open class SecureMainActivity : MainActivity(), SecureActivity {
 

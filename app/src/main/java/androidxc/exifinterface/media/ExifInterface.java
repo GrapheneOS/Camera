@@ -19,17 +19,16 @@
 // upstream release.
 package androidxc.exifinterface.media;
 
+import static java.lang.annotation.ElementType.TYPE_USE;
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static androidxc.exifinterface.media.ExifInterfaceUtils.closeFileDescriptor;
 import static androidxc.exifinterface.media.ExifInterfaceUtils.closeQuietly;
 import static androidxc.exifinterface.media.ExifInterfaceUtils.convertToLongArray;
 import static androidxc.exifinterface.media.ExifInterfaceUtils.copy;
 import static androidxc.exifinterface.media.ExifInterfaceUtils.parseSubSeconds;
 import static androidxc.exifinterface.media.ExifInterfaceUtils.startsWith;
-
-import static java.lang.annotation.ElementType.TYPE_USE;
-import static java.nio.ByteOrder.BIG_ENDIAN;
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.annotation.SuppressLint;
 import android.content.res.AssetManager;
@@ -47,7 +46,6 @@ import android.util.Pair;
 import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidxc.exifinterface.media.ExifInterfaceUtils.Api23Impl;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -92,6 +90,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
+
+import androidxc.exifinterface.media.ExifInterfaceUtils.Api23Impl;
 
 /**
  * This is a class for reading and writing Exif tags in various image file formats.

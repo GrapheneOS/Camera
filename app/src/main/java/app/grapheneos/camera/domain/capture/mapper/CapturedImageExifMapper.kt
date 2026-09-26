@@ -2,9 +2,9 @@ package app.grapheneos.camera.domain.capture.mapper
 
 import androidxc.camera.core.impl.utils.Exif
 import androidxc.exifinterface.media.ExifInterface
-import app.grapheneos.camera.clearExif
 import app.grapheneos.camera.domain.capture.model.CapturedImageExif
-import app.grapheneos.camera.fixExif
+import app.grapheneos.camera.util.clearExif
+import app.grapheneos.camera.util.fixExif
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject

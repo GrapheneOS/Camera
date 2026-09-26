@@ -5,9 +5,6 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
-import app.grapheneos.camera.data.media.store.MediaPrefs
-import app.grapheneos.camera.data.media.store.MediaPrefsMigration
-import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import app.grapheneos.camera.testutil.LEGACY_ITEM_DATE_STRING
 import app.grapheneos.camera.testutil.LEGACY_ITEM_URI
 import app.grapheneos.camera.testutil.clearLegacyPreferences

@@ -4,7 +4,6 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Looper
 import app.grapheneos.camera.data.location.model.LocationAvailability
-import app.grapheneos.camera.data.location.repository.LocationRepositoryImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -105,6 +104,7 @@ class LocationRepositoryTest {
     private fun TestScope.repository(): LocationRepositoryImpl {
         return LocationRepositoryImpl(
             locationManager = locationManager,
+            optimalLocationMapper = mockk(relaxed = true),
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
     }

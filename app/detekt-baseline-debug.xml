@@ -78,11 +78,11 @@
     <ID>MagicNumber:MainActivity.kt:MainActivity$800</ID>
     <ID>MagicNumber:MainActivity.kt:MainActivity$90</ID>
     <ID>MagicNumber:PackageManagerUtils.kt:33</ID>
-    <ID>MagicNumber:PreviewView.kt:16</ID>
-    <ID>MagicNumber:PreviewView.kt:180</ID>
-    <ID>MagicNumber:PreviewView.kt:3</ID>
-    <ID>MagicNumber:PreviewView.kt:4</ID>
-    <ID>MagicNumber:PreviewView.kt:9</ID>
+    <ID>MagicNumber:PreviewViewExtensions.kt:16</ID>
+    <ID>MagicNumber:PreviewViewExtensions.kt:180</ID>
+    <ID>MagicNumber:PreviewViewExtensions.kt:3</ID>
+    <ID>MagicNumber:PreviewViewExtensions.kt:4</ID>
+    <ID>MagicNumber:PreviewViewExtensions.kt:9</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$180</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$270</ID>
     <ID>MagicNumber:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$5</ID>
@@ -103,8 +103,8 @@
     <ID>MagicNumber:ZoomBar.kt:ZoomBar$90f</ID>
     <ID>MatchingDeclarationName:ImageDecoderUtils.kt:ImageResizer : OnHeaderDecodedListener</ID>
     <ID>NestedBlockDepth:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
-    <ID>NewLineAtEndOfFile:GSlideTransformer.kt:app.grapheneos.camera.GSlideTransformer.kt</ID>
-    <ID>NewLineAtEndOfFile:SettingsFrameLayout.kt:app.grapheneos.camera.ui.SettingsFrameLayout.kt</ID>
+    <ID>NewLineAtEndOfFile:GSlideTransformer.kt:app.grapheneos.camera.ui.gallery.GSlideTransformer.kt</ID>
+    <ID>NewLineAtEndOfFile:SettingsFrameLayout.kt:app.grapheneos.camera.ui.common.view.SettingsFrameLayout.kt</ID>
     <ID>NewLineAtEndOfFile:SystemSettingsObserver.kt:app.grapheneos.camera.ktx.SystemSettingsObserver.kt</ID>
     <ID>NewLineAtEndOfFile:VideoCaptureActivity.kt:app.grapheneos.camera.ui.activities.VideoCaptureActivity.kt</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) { null } else { it } }</ID>

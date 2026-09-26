@@ -1,6 +1,5 @@
 package app.grapheneos.camera.data.core.store
 
-import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import kotlin.concurrent.thread
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking

@@ -3,7 +3,6 @@ package app.grapheneos.camera.domain.capture.usecase
 import android.location.Location
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
-import app.grapheneos.camera.domain.capture.usecase.ResolveCaptureLocationImpl
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

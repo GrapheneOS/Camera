@@ -7,6 +7,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
+import io.mockk.every
+import io.mockk.mockk
 import java.util.concurrent.CountDownLatch
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -26,7 +29,7 @@ class InAppGalleryRegressionTest {
     private val app = InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as Application
     private val scanGate = CountDownLatch(1)
-    private val stall = stalledMediaScan(scanGate)
+    private val stall = stalledMediaScan()
 
     @After
     fun releaseScan() {
@@ -84,6 +87,23 @@ class InAppGalleryRegressionTest {
                 activity.gallerySliderAdapter = GallerySliderAdapter(activity, arrayListOf(item))
                 activity.onPrepareOptionsMenu(menu)
                 assertTrue(menu.findItem(R.id.delete_icon).isVisible)
+            }
+        }
+    }
+
+    /**
+     * Holds the gallery's media scan so gallerySliderAdapter stays null, like on a slow device.
+     */
+    private fun stalledMediaScan(): Application.ActivityLifecycleCallbacks {
+        return mockk(relaxed = true) {
+            every { onActivityPreCreated(ofType<InAppGallery>(), any()) } answers {
+                firstArg<InAppGallery>().asyncLoaderOfCapturedItems.execute {
+                    // Interrupted by shutdownNow() when the activity is destroyed
+                    try {
+                        scanGate.await()
+                    } catch (_: InterruptedException) {
+                    }
+                }
             }
         }
     }

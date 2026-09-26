@@ -7,14 +7,6 @@ import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
-import app.grapheneos.camera.data.settings.store.SettingsPrefs
-import app.grapheneos.camera.data.settings.store.StoredAspectRatio
-import app.grapheneos.camera.data.settings.store.StoredCameraSettings
-import app.grapheneos.camera.data.settings.store.StoredFlashMode
-import app.grapheneos.camera.data.settings.store.StoredGridType
-import app.grapheneos.camera.data.settings.store.StoredModeSettings
-import app.grapheneos.camera.data.settings.store.StoredVideoQuality
-import app.grapheneos.camera.data.settings.store.settingsPrefsSerializer
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

@@ -15,8 +15,6 @@ import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.IMAGE_NAME_PREFIX
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
-import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
-import app.grapheneos.camera.data.media.repository.LockscreenCapturedItemRepository
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem

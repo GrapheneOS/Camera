@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
-import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreviewImpl
 import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.verify
