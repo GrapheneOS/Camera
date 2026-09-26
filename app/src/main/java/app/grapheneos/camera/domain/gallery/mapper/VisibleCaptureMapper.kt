@@ -1,7 +1,7 @@
 package app.grapheneos.camera.domain.gallery.mapper
 
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import javax.inject.Inject
 
@@ -15,7 +15,7 @@ internal class VisibleCaptureMapperImpl @Inject constructor(
 
     override fun map(item: CapturedItem?): CapturedItem? {
         return when {
-            item?.type == ITEM_TYPE_IMAGE && entryPoint.isVideoOnlySession -> null
+            item?.type == CapturedItemType.IMAGE && entryPoint.isVideoOnlySession -> null
             else -> item
         }
     }

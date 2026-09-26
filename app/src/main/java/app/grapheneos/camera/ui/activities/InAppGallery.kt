@@ -36,13 +36,12 @@ import androidx.core.view.get
 import androidx.core.view.size
 import androidx.viewpager2.widget.ViewPager2
 import androidxc.exifinterface.media.ExifInterface
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.mapper.CaptureTimeMapper
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
-import app.grapheneos.camera.editCapturedItem
-import app.grapheneos.camera.shareCapturedItem
 import app.grapheneos.camera.ui.gallery.GSlideTransformer
 import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
 import app.grapheneos.camera.util.formatVideoDuration
@@ -66,6 +65,9 @@ import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class InAppGallery : AppCompatActivity() {
+
+    @Inject
+    lateinit var captureTimeMapper: CaptureTimeMapper
 
     @Inject
     lateinit var capturedItemRepository: CapturedItemRepository
@@ -357,7 +359,7 @@ class InAppGallery : AppCompatActivity() {
                 return
             }
 
-            if (curItem.type == ITEM_TYPE_VIDEO) {
+            if (curItem.type == CapturedItemType.VIDEO) {
                 MediaMetadataRetriever().use { retriever ->
                     retriever.setDataSource(this, curItem.uri)
                     // Not every container carries a creation date, and one that is missing or
@@ -445,7 +447,9 @@ class InAppGallery : AppCompatActivity() {
             // without a zone: after the device travels, the digits are still the time the camera
             // showed at capture, but naming a zone for them would assert the wrong one.
             if (dateAdded == null) {
-                curItem.captureTime()?.let { dateAdded = convertTime(it, showTimeZone = false) }
+                captureTimeMapper.map(curItem)?.let { captureTime ->
+                    dateAdded = convertTime(captureTime, showTimeZone = false)
+                }
             }
         } catch (e: Exception) {
             Log.d("showCurrentMediaDetails", "unable to obtain file details", e)
@@ -481,7 +485,7 @@ class InAppGallery : AppCompatActivity() {
         detailsBuilder.append(getString(R.string.resolution), "\n")
         detailsBuilder.append(resolution?.toString() ?: getString(R.string.not_found_generic))
 
-        if (curItem.type == ITEM_TYPE_VIDEO) {
+        if (curItem.type == CapturedItemType.VIDEO) {
             detailsBuilder.append("\n\n")
 
             detailsBuilder.append(getString(R.string.duration), "\n")
@@ -667,7 +671,7 @@ class InAppGallery : AppCompatActivity() {
 
             unprocessedItems.forEach { item ->
                 if (showVideosOnly) {
-                    if (item.type != ITEM_TYPE_VIDEO) {
+                    if (item.type != CapturedItemType.VIDEO) {
                         return@forEach
                     }
                 }

@@ -3,8 +3,8 @@ package app.grapheneos.camera.testutil
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.store.StoredCapturedItem
 import java.io.File
 
 internal const val LEGACY_COMMON_PREFS_NAME = "commons"
@@ -48,7 +48,7 @@ internal val LEGACY_COMMON_ENTRIES: Map<String, Any> = mapOf(
     "self_timer_duration" to 5,
     "storage_location" to "content://tree/current",
     "wait_for_focus_lock" to false,
-    "last_captured_item_type" to ITEM_TYPE_IMAGE,
+    "last_captured_item_type" to StoredCapturedItem.TYPE_IMAGE,
     "last_captured_item_date_string" to LEGACY_ITEM_DATE_STRING,
     "last_captured_item_uri" to LEGACY_ITEM_URI,
 )

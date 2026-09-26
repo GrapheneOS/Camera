@@ -1,10 +1,10 @@
 package app.grapheneos.camera.domain.capture.coordinator
 
 import android.net.Uri
-import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
+import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.capture.model.CaptureLocation

@@ -2,12 +2,12 @@ package app.grapheneos.camera.domain.capture.coordinator
 
 import android.location.Location
 import android.util.Log
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.model.RecordingRequest
 import app.grapheneos.camera.data.camera.session.VideoRecordingSession
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.ApplicationScope
@@ -264,7 +264,7 @@ internal class VideoRecorderImpl @Inject constructor(
         return when {
             output.isOwnFile -> {
                 CapturedItem(
-                    type = ITEM_TYPE_VIDEO,
+                    type = CapturedItemType.VIDEO,
                     dateString = output.dateString,
                     uri = output.uri
                 )

@@ -1,5 +1,6 @@
 package app.grapheneos.camera
 
+import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.di.media.CapturedItemRepositoryEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
 import dagger.hilt.android.EntryPointAccessors

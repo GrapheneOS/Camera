@@ -3,7 +3,6 @@ package app.grapheneos.camera.data.media.store
 import android.content.Context
 import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
-import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.testutil.clearLegacyPreferences
 import app.grapheneos.camera.testutil.legacyCommonsFile
 import app.grapheneos.camera.testutil.writeLegacyPreferences
@@ -44,7 +43,7 @@ class StoragePrefsMigrationTest {
                 putString(STORAGE_LOCATION, CURRENT_TREE)
                 putString(
                     PREVIOUS_SAF_TREES,
-                    trees.joinToString(separator = CapturedItems.SAF_TREE_SEPARATOR),
+                    trees.joinToString(separator = StoragePrefsMigration.SAF_TREE_SEPARATOR),
                 )
                 putString(LEGACY_MEDIA_URIS, LEGACY_URIS)
             }

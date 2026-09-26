@@ -1,12 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.net.Uri
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
@@ -427,6 +427,6 @@ class ViewfinderRecordingDelegateTest {
         const val STORAGE_LOCATION = "MediaStore"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/videos/1")
-        val ITEM = CapturedItem(ITEM_TYPE_VIDEO, "20260920_120000_000", Uri.EMPTY)
+        val ITEM = CapturedItem(CapturedItemType.VIDEO, "20260920_120000_000", Uri.EMPTY)
     }
 }

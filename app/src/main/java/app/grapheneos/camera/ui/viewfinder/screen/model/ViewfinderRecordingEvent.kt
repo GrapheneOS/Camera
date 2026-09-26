@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItem
 
 sealed interface ViewfinderRecordingEvent {
 

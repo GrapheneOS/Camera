@@ -18,7 +18,12 @@ internal data class StoredCapturedItem(
     val dateString: String,
     @SerialName("uri")
     val uri: String,
-)
+) {
+    companion object {
+        const val TYPE_IMAGE = 0
+        const val TYPE_VIDEO = 1
+    }
+}
 
 internal val mediaPrefsSerializer: Serializer<MediaPrefs> = JsonPreferenceSerializer(
     serializer = MediaPrefs.serializer(),

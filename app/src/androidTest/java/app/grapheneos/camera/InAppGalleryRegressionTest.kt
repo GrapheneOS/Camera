@@ -6,6 +6,8 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
 import io.mockk.every
@@ -80,7 +82,7 @@ class InAppGalleryRegressionTest {
                 assertFalse(menu.findItem(R.id.share_icon).isVisible)
 
                 val item = CapturedItem(
-                    ITEM_TYPE_IMAGE,
+                    CapturedItemType.IMAGE,
                     "20260724_000000",
                     Uri.parse("content://media/external/images/media/0"),
                 )

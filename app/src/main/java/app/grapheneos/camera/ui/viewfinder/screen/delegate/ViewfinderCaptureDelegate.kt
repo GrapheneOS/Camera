@@ -3,8 +3,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
-import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.ApplicationScope

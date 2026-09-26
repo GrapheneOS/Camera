@@ -17,9 +17,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.databinding.MoreSettingsBinding
@@ -71,7 +71,7 @@ open class MoreSettings :
     ) {
         val intent = it.data
         val uri = intent?.data?.let {
-            if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) {
+            if (it.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)) {
                 null
             } else {
                 it
