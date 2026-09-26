@@ -191,17 +191,6 @@ class ViewfinderRecordingFlowTest {
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
     ): ViewfinderViewModel {
         val mainDispatcher = mainDispatcherRule.testDispatcher
-        val videoRecorder = VideoRecorderImpl(
-            recordingSession = recordingSession,
-            createRecordingOutput = CreateRecordingOutputImpl(captureOutputRepository),
-            publishRecording = PublishRecordingImpl(captureOutputRepository),
-            discardRecording = DiscardRecordingImpl(captureOutputRepository),
-            resolveCaptureLocation = ResolveCaptureLocationImpl(mockk(relaxed = true)),
-            playRecordingStopSound = mockk(relaxed = true),
-            capturedItemRepository = capturedItemRepository,
-            applicationScope = backgroundScope,
-            mainDispatcher = mainDispatcher,
-        )
 
         return ViewfinderViewModel(
             outputUri = null,
@@ -216,6 +205,7 @@ class ViewfinderRecordingFlowTest {
                 entryPoint = entryPoint,
                 resolveAvailableModes = mockk(relaxed = true),
                 resolveDroppedVideoQuality = mockk(relaxed = true),
+                playCameraSound = mockk(relaxed = true),
                 mainDispatcher = mainDispatcher,
             ),
             captureDelegate = ViewfinderCaptureDelegateImpl(
@@ -224,12 +214,13 @@ class ViewfinderRecordingFlowTest {
                 storeCapturedPreview = mockk(relaxed = true),
                 capturedItemRepository = capturedItemRepository,
                 notifyPictureSaveFailed = mockk(relaxed = true),
+                playCameraSound = mockk(relaxed = true),
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
             ),
             permissionDelegate = mockk(relaxed = true),
             recordingDelegate = ViewfinderRecordingDelegateImpl(
-                videoRecorder = videoRecorder,
+                videoRecorder = videoRecorder(),
                 capturedItemRepository = capturedItemRepository,
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
@@ -248,6 +239,20 @@ class ViewfinderRecordingFlowTest {
             swipeEffectMapper = SwipeEffectMapperImpl(),
             applicationScope = backgroundScope,
             mainDispatcher = mainDispatcher,
+        )
+    }
+
+    private fun TestScope.videoRecorder(): VideoRecorderImpl {
+        return VideoRecorderImpl(
+            recordingSession = recordingSession,
+            createRecordingOutput = CreateRecordingOutputImpl(captureOutputRepository),
+            publishRecording = PublishRecordingImpl(captureOutputRepository),
+            discardRecording = DiscardRecordingImpl(captureOutputRepository),
+            resolveCaptureLocation = ResolveCaptureLocationImpl(mockk(relaxed = true)),
+            playCameraSound = mockk(relaxed = true),
+            capturedItemRepository = capturedItemRepository,
+            applicationScope = backgroundScope,
+            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 

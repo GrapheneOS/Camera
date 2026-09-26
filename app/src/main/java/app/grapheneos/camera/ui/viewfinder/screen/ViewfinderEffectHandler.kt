@@ -122,11 +122,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun showFocus(effect: Effect.Preview.ShowFocus) {
         activity.animateFocusRing(effect.x, effect.y)
-
-        if (effect.playsSound) {
-            activity.tunePlayer.playFocusStartSound()
-        }
-
         activity.exposureBar.showPanel()
         activity.zoomBar.showPanel()
     }
@@ -316,7 +311,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handlePicture(effect: Effect.Picture) {
         when (effect) {
-            is Effect.Picture.Captured -> activity.tunePlayer.playShutterSound()
             is Effect.Picture.CaptureFailed -> showCaptureFailure(effect)
             is Effect.Picture.SaveFailed -> showSaveFailure(effect)
             is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)

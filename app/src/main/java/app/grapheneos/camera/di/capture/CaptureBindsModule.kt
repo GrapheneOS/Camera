@@ -1,7 +1,5 @@
 package app.grapheneos.camera.di.capture
 
-import app.grapheneos.camera.domain.capture.coordinator.CameraSoundPlayer
-import app.grapheneos.camera.domain.capture.coordinator.CameraSoundPlayerImpl
 import app.grapheneos.camera.domain.capture.coordinator.CapturedImagePipeline
 import app.grapheneos.camera.domain.capture.coordinator.CapturedImagePipelineImpl
 import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapper
@@ -92,10 +90,4 @@ internal abstract class CaptureBindsModule {
     abstract fun bindDeleteStalePendingRecordings(
         impl: DeleteStalePendingRecordingsImpl,
     ): DeleteStalePendingRecordings
-
-    @Binds
-    @Singleton
-    abstract fun bindCameraSoundPlayer(
-        impl: CameraSoundPlayerImpl,
-    ): CameraSoundPlayer
 }

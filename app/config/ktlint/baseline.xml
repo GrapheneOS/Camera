@@ -154,17 +154,6 @@
         <error line="44" column="19" source="standard:property-naming" />
         <error line="45" column="19" source="standard:property-naming" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/TunePlayer.kt">
-        <error line="10" column="100" source="standard:max-line-length" />
-        <error line="12" column="23" source="standard:argument-list-wrapping" />
-        <error line="12" column="32" source="standard:argument-list-wrapping" />
-        <error line="12" column="42" source="standard:binary-expression-wrapping" />
-        <error line="12" column="42" source="standard:argument-list-wrapping" />
-        <error line="12" column="98" source="standard:binary-expression-wrapping" />
-        <error line="12" column="101" source="standard:max-line-length" />
-        <error line="12" column="104" source="standard:argument-list-wrapping" />
-        <error line="12" column="105" source="standard:argument-list-wrapping" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/domain/capture/model/ImageSaverException.kt">
         <error line="3" column="27" source="standard:class-signature" />
         <error line="3" column="45" source="standard:class-signature" />
@@ -181,9 +170,9 @@
         <error line="14" column="23" source="standard:parameter-list-wrapping" />
         <error line="14" column="23" source="standard:class-signature" />
         <error line="14" column="50" source="standard:trailing-comma-on-declaration-site" />
-        <error line="85" column="27" source="standard:property-naming" />
-        <error line="87" column="19" source="standard:property-naming" />
-        <error line="88" column="19" source="standard:property-naming" />
+        <error line="80" column="27" source="standard:property-naming" />
+        <error line="82" column="19" source="standard:property-naming" />
+        <error line="83" column="19" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/common/view/CustomGrid.kt">
         <error line="14" column="22" source="standard:trailing-comma-on-declaration-site" />
@@ -340,8 +329,8 @@
         <error line="654" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="602" column="100" source="standard:max-line-length" />
-        <error line="743" column="100" source="standard:max-line-length" />
+        <error line="606" column="100" source="standard:max-line-length" />
+        <error line="747" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MoreSettings.kt">
         <error line="390" column="101" source="standard:max-line-length" />

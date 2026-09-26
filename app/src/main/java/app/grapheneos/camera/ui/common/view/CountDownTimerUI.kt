@@ -60,11 +60,6 @@ class CountDownTimerUI @JvmOverloads constructor(
         opacityAnimation.start()
 
         text = secondsLeft.toString()
-
-        when (secondsLeft) {
-            1 -> mActivity.tunePlayer.playTimerFinalSSound()
-            else -> mActivity.tunePlayer.playTimerIncrementSound()
-        }
     }
 
     private fun beforeTimeStarts() {
