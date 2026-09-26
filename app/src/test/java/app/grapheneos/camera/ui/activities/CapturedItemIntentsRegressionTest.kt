@@ -1,9 +1,12 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.ui.activities
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.util.getParcelableExtra
 import io.mockk.every
 import io.mockk.mockk
@@ -18,12 +21,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class CapturedItemsRegressionTest {
+class CapturedItemIntentsRegressionTest {
 
     private val activity = mockk<Activity>(relaxed = true)
 
     private val staleItem = CapturedItem(
-        ITEM_TYPE_IMAGE,
+        CapturedItemType.IMAGE,
         "20260724_120000",
         Uri.parse("content://media/external/images/media/987654321"),
     )

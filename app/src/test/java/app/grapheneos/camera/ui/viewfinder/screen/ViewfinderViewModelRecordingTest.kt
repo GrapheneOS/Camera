@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
@@ -175,7 +175,7 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
         runTest {
             createViewModel(applicationScope = backgroundScope)
             val item = CapturedItem(
-                type = ITEM_TYPE_VIDEO,
+                type = CapturedItemType.VIDEO,
                 dateString = "20260920_120000_000",
                 uri = Uri.EMPTY,
             )

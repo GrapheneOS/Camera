@@ -1,7 +1,9 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.data.media.mapper
 
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -18,7 +20,10 @@ import org.junit.runner.RunWith
  * Storage Access Framework.
  */
 @RunWith(AndroidJUnit4::class)
-class CapturedItemsRegressionTest {
+class CaptureTimeMapperRegressionTest {
+
+    private val mapper = CaptureTimeMapperImpl()
+    private val nameMapper = CapturedItemNameMapperImpl()
 
     private val uri = Uri.parse("content://media/external/images/media/0")
 
@@ -41,8 +46,8 @@ class CapturedItemsRegressionTest {
 
     @Test
     fun captureTime_readsTheMillisecondNameImageSaverWrites() {
-        val item = CapturedItem(ITEM_TYPE_IMAGE, "20260724_153012_345", uri)
-        assertEquals(wallClock(2026, 7, 24, 15, 30, 12, 345), item.captureTime())
+        val item = CapturedItem(CapturedItemType.IMAGE, "20260724_153012_345", uri)
+        assertEquals(wallClock(2026, 7, 24, 15, 30, 12, 345), mapper.map(item))
     }
 
     /**
@@ -51,8 +56,8 @@ class CapturedItemsRegressionTest {
      */
     @Test
     fun captureTime_readsTheSecondPrecisionNameVideoCapturerWrites() {
-        val item = CapturedItem(ITEM_TYPE_VIDEO, "20260724_153012", uri)
-        assertEquals(wallClock(2026, 7, 24, 15, 30, 12), item.captureTime())
+        val item = CapturedItem(CapturedItemType.VIDEO, "20260724_153012", uri)
+        assertEquals(wallClock(2026, 7, 24, 15, 30, 12), mapper.map(item))
     }
 
     /** Whatever the device's zone is, what the capturers write has to read back unchanged. */
@@ -61,12 +66,13 @@ class CapturedItemsRegressionTest {
         val captured = Date(wallClock(2026, 2, 29, 23, 59, 59, 999))
 
         val imageName = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(captured)
-        assertEquals(captured.time, CapturedItem(ITEM_TYPE_IMAGE, imageName, uri).captureTime())
+        val imageItem = CapturedItem(CapturedItemType.IMAGE, imageName, uri)
+        assertEquals(captured.time, mapper.map(imageItem))
 
         val videoName = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(captured)
-        val videoItem = CapturedItem(ITEM_TYPE_VIDEO, videoName, uri)
+        val videoItem = CapturedItem(CapturedItemType.VIDEO, videoName, uri)
         // The video name has no milliseconds to give back
-        assertEquals(captured.time / 1000 * 1000, videoItem.captureTime())
+        assertEquals(captured.time / 1000 * 1000, mapper.map(videoItem))
     }
 
     /** A timestamp is only reported when the name really holds one. */
@@ -82,19 +88,20 @@ class CapturedItemsRegressionTest {
         )
 
         for (dateString in dateStrings) {
-            assertNull(dateString, CapturedItem(ITEM_TYPE_IMAGE, dateString, uri).captureTime())
+            val item = CapturedItem(CapturedItemType.IMAGE, dateString, uri)
+            assertNull(dateString, mapper.map(item))
         }
     }
 
     /** The names the item parser accepts off the file system are the ones that have to work. */
     @Test
     fun captureTime_readsTheNamesTheItemParserAccepts() {
-        val image = CapturedItems.parseCapturedItem("IMG_20260724_153012_345.jpg", uri)
+        val image = nameMapper.map("IMG_20260724_153012_345.jpg", uri)
         assertNotNull(image)
-        assertEquals(wallClock(2026, 7, 24, 15, 30, 12, 345), image!!.captureTime())
+        assertEquals(wallClock(2026, 7, 24, 15, 30, 12, 345), mapper.map(image!!))
 
-        val video = CapturedItems.parseCapturedItem("VID_20260724_153012.mp4", uri)
+        val video = nameMapper.map("VID_20260724_153012.mp4", uri)
         assertNotNull(video)
-        assertEquals(wallClock(2026, 7, 24, 15, 30, 12), video!!.captureTime())
+        assertEquals(wallClock(2026, 7, 24, 15, 30, 12), mapper.map(video!!))
     }
 }

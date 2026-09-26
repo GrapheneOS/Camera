@@ -9,8 +9,8 @@ import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
-import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import java.io.File
 import java.io.FileNotFoundException
@@ -168,7 +168,7 @@ class CaptureOutputRepositoryTest {
             val selection = requireNotNull(mediaProvider.deletionSelection)
             val arguments = mediaProvider.deletionArguments
             assertTrue(selection.contains(MediaStore.MediaColumns.IS_PENDING))
-            assertEquals("$VIDEO_NAME_PREFIX%", arguments[0])
+            assertEquals("${CapturedItemType.VIDEO.namePrefix}%", arguments[0])
             assertTrue(arguments[1].toLong() < System.currentTimeMillis() / 1000L)
         }
     }

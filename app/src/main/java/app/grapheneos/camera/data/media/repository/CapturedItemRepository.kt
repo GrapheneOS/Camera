@@ -14,12 +14,14 @@ import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.BuildConfig
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.CapturedItems
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
+import app.grapheneos.camera.data.media.mapper.CapturedItemNameMapper
+import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapper
+import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapper
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
-import app.grapheneos.camera.data.media.store.StoredCapturedItem
+import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.getStringOrNull
@@ -64,29 +66,22 @@ interface CapturedItemRepository {
 internal class CapturedItemRepositoryImpl @Inject constructor(
     private val storagePrefs: DataStore<StoragePrefs>,
     private val mediaPrefs: DataStore<MediaPrefs>,
+    private val capturedItemNameMapper: CapturedItemNameMapper,
+    private val storedCapturedItemMapper: StoredCapturedItemMapper,
+    private val safTreeReleaseFlagsMapper: SafTreeReleaseFlagsMapper,
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
 
     override val lastCapturedItem: Flow<CapturedItem?> = mediaPrefs.data.map { prefs ->
         prefs.lastCapturedItem?.let { stored ->
-            CapturedItem(
-                type = stored.type,
-                dateString = stored.dateString,
-                uri = stored.uri.toUri(),
-            )
+            storedCapturedItemMapper.map(stored)
         }
     }
 
     override suspend fun saveLastCapturedItem(item: CapturedItem) {
         mediaPrefs.updateData {
-            it.copy(
-                lastCapturedItem = StoredCapturedItem(
-                    type = item.type,
-                    dateString = item.dateString,
-                    uri = item.uri.toString(),
-                ),
-            )
+            it.copy(lastCapturedItem = storedCapturedItemMapper.map(item))
         }
     }
 
@@ -107,7 +102,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     trees.remove(previousTree)
                     trees.add(0, previousTree)
 
-                    while (trees.size > CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES) {
+                    while (trees.size > MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES) {
                         // MutableList.removeLast() resolves to an API 35 Java method.
                         trees.removeAt(trees.lastIndex)
                     }
@@ -129,12 +124,13 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
             resolver.persistedUriPermissions.forEach { permission ->
                 val uri = permission.uri
-                val flags = CapturedItems.safTreeFlagsToRelease(
-                    uri,
-                    permission.isReadPermission,
-                    permission.isWritePermission,
-                    tracked,
+                val flags = safTreeReleaseFlagsMapper.map(
+                    uri = uri,
+                    isRead = permission.isReadPermission,
+                    isWrite = permission.isWritePermission,
+                    tracked = tracked,
                 )
+
                 if (flags == 0) {
                     return@forEach
                 }
@@ -143,7 +139,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     resolver.releasePersistableUriPermission(uri, flags)
                 } catch (e: Exception) {
                     if (BuildConfig.DEBUG) {
-                        Log.d(CapturedItems.TAG, "unable to release the grant for $uri", e)
+                        Log.d(TAG, "unable to release the grant for $uri", e)
                     }
                 }
             }
@@ -224,13 +220,13 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     val name = it.getString(nameColumn)
                     val uri = ContentUris.withAppendedId(volumeUri, it.getLong(idColumn))
 
-                    CapturedItems.parseCapturedItem(name, uri)?.let { item ->
+                    capturedItemNameMapper.map(name, uri)?.let { item ->
                         dest.add(item)
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.d(CapturedItems.TAG, "unable to collect MediaStore items, volume $volumeName", e)
+            Log.d(TAG, "unable to collect MediaStore items, volume $volumeName", e)
         }
     }
 
@@ -258,14 +254,14 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     val id = it.getString(idColumn)
                     val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
 
-                    CapturedItems.parseCapturedItem(name, uri)?.let { item ->
+                    capturedItemNameMapper.map(name, uri)?.let { item ->
                         dest.add(item)
                     }
                 }
             }
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) {
-                Log.d(CapturedItems.TAG, "unable to collect SAF items, treeUri $treeUri", e)
+                Log.d(TAG, "unable to collect SAF items, treeUri $treeUri", e)
             }
         }
     }
@@ -293,7 +289,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
             val skip = treeUri == currentTreeUri ||
                 trees.contains(treeUri) ||
-                treeUri.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)
+                treeUri.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)
 
             if (skip) {
                 return@forEach
@@ -327,12 +323,12 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) {
-                Log.d(CapturedItems.TAG, "unable to read the name of $uri", e)
+                Log.d(TAG, "unable to read the name of $uri", e)
             }
         }
 
         return fileName?.let { name ->
-            CapturedItems.parseCapturedItem(name, uri)
+            capturedItemNameMapper.map(name, uri)
         }
     }
 
@@ -345,7 +341,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return withContext(ioDispatcher) {
             try {
                 when (item.type) {
-                    ITEM_TYPE_VIDEO -> {
+                    CapturedItemType.VIDEO -> {
                         getVideoThumbnail(context, item.uri)?.let { frame ->
                             scaleToFit(
                                 frame = frame,
@@ -363,7 +359,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.d(CapturedItems.TAG, "unable to load the thumbnail of ${item.uri}", e)
+                Log.d(TAG, "unable to load the thumbnail of ${item.uri}", e)
                 null
             }
         }
@@ -388,6 +384,10 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     companion object {
+        // Recent storage locations stay tracked so the gallery can still show their contents.
+        const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
+
+        private const val TAG = "CapturedItemRepository"
         private const val LEGACY_MEDIA_URI_SEPARATOR = ";"
     }
 }

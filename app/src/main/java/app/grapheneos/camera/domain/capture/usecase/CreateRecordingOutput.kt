@@ -2,7 +2,7 @@ package app.grapheneos.camera.domain.capture.usecase
 
 import android.net.Uri
 import android.webkit.MimeTypeMap
-import app.grapheneos.camera.VIDEO_NAME_PREFIX
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.RecordingOutput
@@ -57,7 +57,7 @@ internal class CreateRecordingOutputImpl @Inject constructor(
 
         return captureOutputRepository.createVideo(
             storageLocation = storageLocation,
-            fileName = VIDEO_NAME_PREFIX + dateString + VIDEO_FILE_FORMAT,
+            fileName = CapturedItemType.VIDEO.namePrefix + dateString + VIDEO_FILE_FORMAT,
             mimeType = mimeType,
         ).valueOrNull()
     }

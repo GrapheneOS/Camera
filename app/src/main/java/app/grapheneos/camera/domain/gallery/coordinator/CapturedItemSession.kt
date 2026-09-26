@@ -1,7 +1,7 @@
 package app.grapheneos.camera.domain.gallery.coordinator
 
 import android.util.Log
-import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper

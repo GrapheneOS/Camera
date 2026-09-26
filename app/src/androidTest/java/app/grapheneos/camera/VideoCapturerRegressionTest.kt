@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -512,7 +513,8 @@ class VideoCapturerRegressionTest {
 
     private fun insertPendingRecording(): Uri {
         val values = ContentValues().apply {
-            put(MediaColumns.DISPLAY_NAME, "${VIDEO_NAME_PREFIX}20260724_153012_stale.mp4")
+            val prefix = CapturedItemType.VIDEO.namePrefix
+            put(MediaColumns.DISPLAY_NAME, "${prefix}20260724_153012_stale.mp4")
             put(MediaColumns.MIME_TYPE, "video/mp4")
             put(MediaColumns.IS_PENDING, 1)
         }
@@ -542,7 +544,7 @@ class VideoCapturerRegressionTest {
             putString(
                 ContentResolver.QUERY_ARG_SQL_SELECTION,
                 "${MediaColumns.IS_PENDING} = 1" +
-                        " AND ${MediaColumns.DISPLAY_NAME} LIKE '$VIDEO_NAME_PREFIX%'",
+                        " AND ${MediaColumns.DISPLAY_NAME} LIKE '${CapturedItemType.VIDEO.namePrefix}%'",
             )
         }
         return resolver.query(videoCollectionUri, arrayOf(MediaColumns._ID), args, null)

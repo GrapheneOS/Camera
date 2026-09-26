@@ -3,9 +3,9 @@ package app.grapheneos.camera.ui.viewfinder.screen
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.graphics.createBitmap
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -155,7 +155,7 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
         runTest {
             createViewModel(applicationScope = backgroundScope)
             val item = CapturedItem(
-                type = ITEM_TYPE_IMAGE,
+                type = CapturedItemType.IMAGE,
                 dateString = "20260920_120000_000",
                 uri = Uri.EMPTY,
             )

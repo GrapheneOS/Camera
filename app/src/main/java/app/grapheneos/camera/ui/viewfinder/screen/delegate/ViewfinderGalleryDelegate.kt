@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.graphics.Bitmap
-import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
