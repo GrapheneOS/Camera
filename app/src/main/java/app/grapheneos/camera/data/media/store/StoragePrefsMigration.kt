@@ -53,8 +53,9 @@ internal class StoragePrefsMigration(
         }
     }
 
-    private companion object {
-        // This separator belongs to the shipped legacy format.
+    companion object {
+        // This separator belongs to the shipped legacy format. A tree URI containing it is
+        // rejected: the legacy list it was joined into split on it.
         const val SAF_TREE_SEPARATOR = "\u0000"
     }
 }

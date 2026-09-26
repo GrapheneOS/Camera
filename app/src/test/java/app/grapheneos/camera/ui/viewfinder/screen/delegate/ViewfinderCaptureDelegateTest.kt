@@ -2,10 +2,10 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.net.Uri
 import androidx.core.graphics.createBitmap
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.sound.model.CameraSound
@@ -541,6 +541,6 @@ class ViewfinderCaptureDelegateTest {
         const val SAVE_FAILURE_STAGE = "FILE_WRITE"
 
         val FOREIGN_URI: Uri = Uri.parse("content://com.example.app/images/1")
-        val ITEM = CapturedItem(ITEM_TYPE_IMAGE, "20260920_120000_000", Uri.EMPTY)
+        val ITEM = CapturedItem(CapturedItemType.IMAGE, "20260920_120000_000", Uri.EMPTY)
     }
 }

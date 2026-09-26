@@ -10,11 +10,12 @@ import android.provider.DocumentsContract
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.test.core.app.ApplicationProvider
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.CapturedItems
-import app.grapheneos.camera.IMAGE_NAME_PREFIX
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
+import app.grapheneos.camera.data.media.mapper.CapturedItemNameMapperImpl
+import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapperImpl
+import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoredCapturedItem
@@ -74,7 +75,7 @@ class CapturedItemRepositoryTest {
             val reloaded = repository().lastCapturedItem.first()
 
             assertEquals(item(DATE_STRING), reloaded)
-            assertEquals(ITEM_TYPE_IMAGE, reloaded?.type)
+            assertEquals(CapturedItemType.IMAGE, reloaded?.type)
         }
     }
 
@@ -105,7 +106,7 @@ class CapturedItemRepositoryTest {
             assertEquals(item(DATE_STRING), session.lastCapturedItem.first())
             assertEquals(
                 StoredCapturedItem(
-                    type = ITEM_TYPE_IMAGE,
+                    type = StoredCapturedItem.TYPE_IMAGE,
                     dateString = DATE_STRING,
                     uri = item(DATE_STRING).uri.toString(),
                 ),
@@ -150,7 +151,7 @@ class CapturedItemRepositoryTest {
     fun setStorageLocation_beyondTheCap_keepsTheMostRecentPreviousTreesOnly() {
         runTest {
             val repository = repository()
-            val tracked = CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES
+            val tracked = CapturedItemRepositoryImpl.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES
 
             (0..tracked).forEach { index ->
                 repository.setStorageLocation(treeUri("tree$index").toString())
@@ -218,7 +219,7 @@ class CapturedItemRepositoryTest {
     @Test
     fun migrateStoredCaptures_moreLegacyTreesThanTheCap_keepsThemAll() {
         runTest {
-            val cap = CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES
+            val cap = CapturedItemRepositoryImpl.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES
             val trees = (0..cap).map { "tree$it" }
             writeLegacyMediaUris(trees)
 
@@ -246,7 +247,7 @@ class CapturedItemRepositoryTest {
 
             assertEquals(
                 CapturedItem(
-                    type = ITEM_TYPE_IMAGE,
+                    type = CapturedItemType.IMAGE,
                     dateString = DATE_STRING,
                     uri = documentUri("treeA"),
                 ),
@@ -263,6 +264,9 @@ class CapturedItemRepositoryTest {
         return CapturedItemRepositoryImpl(
             storagePrefs = session,
             mediaPrefs = media,
+            capturedItemNameMapper = CapturedItemNameMapperImpl(),
+            storedCapturedItemMapper = StoredCapturedItemMapperImpl(),
+            safTreeReleaseFlagsMapper = SafTreeReleaseFlagsMapperImpl(),
             context = context,
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
@@ -282,7 +286,7 @@ class CapturedItemRepositoryTest {
 
     private fun item(dateString: String): CapturedItem {
         return CapturedItem(
-            type = ITEM_TYPE_IMAGE,
+            type = CapturedItemType.IMAGE,
             dateString = dateString,
             uri = Uri.parse("content://media/external/images/media/1"),
         )
@@ -319,7 +323,7 @@ class CapturedItemRepositoryTest {
             sortOrder: String?,
         ): Cursor {
             val cursor = MatrixCursor(arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-            cursor.addRow(arrayOf("$IMAGE_NAME_PREFIX$DATE_STRING.jpg"))
+            cursor.addRow(arrayOf("${CapturedItemType.IMAGE.namePrefix}$DATE_STRING.jpg"))
             return cursor
         }
 

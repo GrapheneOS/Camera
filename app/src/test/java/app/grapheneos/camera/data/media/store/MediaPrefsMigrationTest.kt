@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.testutil.LEGACY_ITEM_DATE_STRING
 import app.grapheneos.camera.testutil.LEGACY_ITEM_URI
 import app.grapheneos.camera.testutil.clearLegacyPreferences
@@ -50,7 +49,7 @@ class MediaPrefsMigrationTest {
 
             assertEquals(
                 StoredCapturedItem(
-                    type = ITEM_TYPE_IMAGE,
+                    type = StoredCapturedItem.TYPE_IMAGE,
                     dateString = LEGACY_ITEM_DATE_STRING,
                     uri = LEGACY_ITEM_URI,
                 ),
@@ -63,7 +62,7 @@ class MediaPrefsMigrationTest {
     fun migrate_populatedDataStore_isKeptBeforeTheLegacyFile() {
         runTest {
             val current = StoredCapturedItem(
-                type = ITEM_TYPE_IMAGE,
+                type = StoredCapturedItem.TYPE_IMAGE,
                 dateString = CURRENT_DATE_STRING,
                 uri = CURRENT_URI,
             )
@@ -83,7 +82,7 @@ class MediaPrefsMigrationTest {
     fun migrate_anIncompleteLegacyRecord_leavesWhatIsStoredAlone() {
         runTest {
             legacyCommonsFile(context).edit(commit = true) {
-                putInt("last_captured_item_type", ITEM_TYPE_IMAGE)
+                putInt("last_captured_item_type", StoredCapturedItem.TYPE_IMAGE)
             }
 
             val migrated = migration.migrate(MediaPrefs())
@@ -121,7 +120,7 @@ class MediaPrefsMigrationTest {
         uri: String,
     ) {
         preferences.edit(commit = true) {
-            putInt("last_captured_item_type", ITEM_TYPE_IMAGE)
+            putInt("last_captured_item_type", StoredCapturedItem.TYPE_IMAGE)
             putString("last_captured_item_date_string", dateString)
             putString("last_captured_item_uri", uri)
         }

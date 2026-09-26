@@ -8,10 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
-import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.databinding.GallerySlideBinding
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
@@ -66,7 +65,7 @@ class GallerySliderAdapter(
 
         gActivity.asyncImageLoader.executeIfAlive {
             val bitmap: Bitmap? = try {
-                if (item.type == ITEM_TYPE_VIDEO) {
+                if (item.type == CapturedItemType.VIDEO) {
                     getVideoThumbnail(gActivity, item.uri)
                 } else {
                     val source = ImageDecoder.createSource(gActivity.contentResolver, item.uri)
@@ -81,7 +80,7 @@ class GallerySliderAdapter(
                         mediaPreview.visibility = View.VISIBLE
                         mediaPreview.setImageBitmap(bitmap)
 
-                        if (item.type == ITEM_TYPE_VIDEO) {
+                        if (item.type == CapturedItemType.VIDEO) {
                             playButton.visibility = View.VISIBLE
                             // Tapping the preview is what opens the player; the button drawn over
                             // it is only the affordance, so the preview carries the label
@@ -90,7 +89,7 @@ class GallerySliderAdapter(
 
                             mediaPreview.setOnClickListener {
                                 val curItem = getCurrentItem() ?: return@setOnClickListener
-                                if (curItem.type == ITEM_TYPE_VIDEO) {
+                                if (curItem.type == CapturedItemType.VIDEO) {
                                     val intent = Intent(gActivity, VideoPlayer::class.java)
                                     intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
                                     intent.putExtra(
@@ -100,13 +99,13 @@ class GallerySliderAdapter(
                                     gActivity.startActivity(intent)
                                 }
                             }
-                        } else if (item.type == ITEM_TYPE_IMAGE) {
+                        } else if (item.type == CapturedItemType.IMAGE) {
                             mediaPreview.enableZooming()
                         }
                     } else  {
                         mediaPreview.visibility = View.INVISIBLE
 
-                        val resId = if (item.type == ITEM_TYPE_IMAGE) {
+                        val resId = if (item.type == CapturedItemType.IMAGE) {
                             R.string.inaccessible_image
                         } else { R.string.inaccessible_video }
 

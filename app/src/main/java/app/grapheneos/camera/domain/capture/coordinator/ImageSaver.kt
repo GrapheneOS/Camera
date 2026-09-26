@@ -5,11 +5,10 @@ import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.camera.core.ImageProxy
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.IMAGE_NAME_PREFIX
-import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.data.camera.model.CapturedJpeg
 import app.grapheneos.camera.data.camera.session.JpegExtractor
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
@@ -129,7 +128,7 @@ internal class ImageSaver @AssistedInject constructor(
             "image writing (saveToMediaStore: ${saveToMediaStore()})"
         }
 
-        val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
+        val capturedItem = CapturedItem(CapturedItemType.IMAGE, dateString(), uri)
         emitOnMainThread(CapturedImageEvent.Saved(item = capturedItem))
 
         return processedJpegBytes
@@ -212,7 +211,7 @@ internal class ImageSaver @AssistedInject constructor(
     }
 
     private fun fileName(): String {
-        return IMAGE_NAME_PREFIX + dateString() + IMAGE_FILE_FORMAT
+        return CapturedItemType.IMAGE.namePrefix + dateString() + IMAGE_FILE_FORMAT
     }
 
     // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous

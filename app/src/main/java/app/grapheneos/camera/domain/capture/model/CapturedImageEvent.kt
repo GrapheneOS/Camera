@@ -1,7 +1,7 @@
 package app.grapheneos.camera.domain.capture.model
 
 import android.graphics.Bitmap
-import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItem
 
 sealed interface CapturedImageEvent {
 

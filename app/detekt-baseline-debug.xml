@@ -107,7 +107,7 @@
     <ID>NewLineAtEndOfFile:SettingsFrameLayout.kt:app.grapheneos.camera.ui.common.view.SettingsFrameLayout.kt</ID>
     <ID>NewLineAtEndOfFile:SystemSettingsObserver.kt:app.grapheneos.camera.ktx.SystemSettingsObserver.kt</ID>
     <ID>NewLineAtEndOfFile:VideoCaptureActivity.kt:app.grapheneos.camera.ui.activities.VideoCaptureActivity.kt</ID>
-    <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ if (it.toString().contains(CapturedItems.SAF_TREE_SEPARATOR)) { null } else { it } }</ID>
+    <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ if (it.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)) { null } else { it } }</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ it.copy(enableCameraSounds = csSwitch.isChecked) }</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ it.copy(enableZsl = !settings.enableZsl) }</ID>
     <ID>NoNameShadowing:MoreSettings.kt:MoreSettings${ it.copy(gyroscopeSuggestions = gSwitch.isChecked) }</ID>
@@ -128,7 +128,6 @@
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$override fun isLensFacingSupported: Boolean</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$override fun probeUnknownExtensions</ID>
     <ID>ReturnCount:CameraSession.kt:CameraSessionImpl$private fun isExtensionUsable: Boolean</ID>
-    <ID>ReturnCount:CapturedItems.kt:CapturedItems$fun parseCapturedItem: CapturedItem?</ID>
     <ID>ReturnCount:ImageCapturer.kt:ImageCapturer$@SuppressLint("RestrictedApi") fun takePicture</ID>
     <ID>ReturnCount:InAppGallery.kt:InAppGallery$private fun showCurrentMediaDetails</ID>
     <ID>ReturnCount:SensorOrientationChangeNotifier.kt:SensorOrientationChangeNotifier.NotifierSensorEventListener$override fun onSensorChanged</ID>
@@ -140,7 +139,7 @@
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$private fun onSwipeLeft</ID>
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$private fun onSwipeRight</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
-    <ID>SwallowedException:CapturedItems.kt:e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:CapturedItemIntents.kt:e: ActivityNotFoundException</ID>
     <ID>SwallowedException:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
     <ID>SwallowedException:SettingsDialog.kt:SettingsDialog$exception: Exception</ID>
     <ID>SwallowedException:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$exception: Exception</ID>
@@ -164,7 +163,6 @@
     <ID>TopLevelPropertyNaming:ImageCapturer.kt:private const val imageFileFormat = ".jpg"</ID>
     <ID>UnsafeCallOnNullableType:BlurBitmap.kt:BlurBitmap$sentBitmap.config!!</ID>
     <ID>UnsafeCallOnNullableType:BottomTabLayout.kt:BottomTabLayout$getTabAt(it)!!</ID>
-    <ID>UnsafeCallOnNullableType:CapturedItems.kt:CapturedItem.Companion.&lt;no name provided&gt;$source.readString()!!</ID>
     <ID>UnsafeCallOnNullableType:ImageCapturer.kt:ImageCapturer$session.imageCapture!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$DocumentsContract.createDocument(contentResolver, treeDocumentUri, mimeType(), fileName())!!</ID>
     <ID>UnsafeCallOnNullableType:ImageSaver.kt:ImageSaver$contentResolver.openAssetFileDescriptor(uri, "w")!!</ID>

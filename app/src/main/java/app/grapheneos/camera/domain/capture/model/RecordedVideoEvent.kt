@@ -1,8 +1,8 @@
 package app.grapheneos.camera.domain.capture.model
 
 import android.net.Uri
-import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
+import app.grapheneos.camera.data.media.model.CapturedItem
 import kotlin.time.Duration
 
 sealed interface RecordedVideoEvent {

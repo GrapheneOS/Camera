@@ -1,4 +1,4 @@
-package app.grapheneos.camera
+package app.grapheneos.camera.data.media.repository
 
 import android.content.Context
 import android.content.Intent
@@ -8,7 +8,9 @@ import android.provider.MediaStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
-import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
+import app.grapheneos.camera.data.media.mapper.CapturedItemNameMapperImpl
+import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapperImpl
+import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +32,8 @@ class SafTreeGrantsRegressionTest {
 
     private val authority = "com.android.externalstorage.documents"
 
+    private val releaseFlagsMapper = SafTreeReleaseFlagsMapperImpl()
+
     private val readAndWrite =
         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
 
@@ -46,6 +50,9 @@ class SafTreeGrantsRegressionTest {
         return CapturedItemRepositoryImpl(
             storagePrefs = InMemoryDataStore(StoragePrefs()),
             mediaPrefs = InMemoryDataStore(MediaPrefs()),
+            capturedItemNameMapper = CapturedItemNameMapperImpl(),
+            storedCapturedItemMapper = StoredCapturedItemMapperImpl(),
+            safTreeReleaseFlagsMapper = releaseFlagsMapper,
             context = context,
             ioDispatcher = UnconfinedTestDispatcher(),
         )
@@ -60,25 +67,26 @@ class SafTreeGrantsRegressionTest {
     @Test
     fun theTreeThatFallsOffTheTrackedListIsReleased() {
         val session = session()
-        val picked = (0..CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1)
+        val picked = (0..CapturedItemRepositoryImpl.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1)
             .map { tree("dir$it") }
         picked.forEach { pickStorageLocation(session, it) }
 
         val tracked = runBlocking { session.trackedSafTrees() }
-        assertEquals(CapturedItems.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES + 1, tracked.size)
+        val limit = CapturedItemRepositoryImpl.MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES
+        assertEquals(limit + 1, tracked.size)
 
         picked.take(picked.size - tracked.size).forEach {
             assertEquals(
                 it.toString(),
                 readAndWrite,
-                CapturedItems.safTreeFlagsToRelease(it, isRead = true, isWrite = true, tracked),
+                releaseFlagsMapper.map(it, isRead = true, isWrite = true, tracked),
             )
         }
         tracked.forEach {
             assertEquals(
                 it.toString(),
                 0,
-                CapturedItems.safTreeFlagsToRelease(it, isRead = true, isWrite = true, tracked),
+                releaseFlagsMapper.map(it, isRead = true, isWrite = true, tracked),
             )
         }
     }
@@ -94,7 +102,7 @@ class SafTreeGrantsRegressionTest {
         assertEquals(listOf(tree("current"), tree("previous")), tracked)
         assertEquals(
             0,
-            CapturedItems.safTreeFlagsToRelease(
+            releaseFlagsMapper.map(
                 tree("current"),
                 isRead = true,
                 isWrite = true,
@@ -103,7 +111,7 @@ class SafTreeGrantsRegressionTest {
         )
         assertEquals(
             0,
-            CapturedItems.safTreeFlagsToRelease(
+            releaseFlagsMapper.map(
                 tree("previous"),
                 isRead = true,
                 isWrite = true,
@@ -120,13 +128,13 @@ class SafTreeGrantsRegressionTest {
         val document = DocumentsContract.buildDocumentUri(authority, "primary:DCIM/IMG_1.jpg")
         assertEquals(
             0,
-            CapturedItems.safTreeFlagsToRelease(document, isRead = true, isWrite = true, tracked),
+            releaseFlagsMapper.map(document, isRead = true, isWrite = true, tracked),
         )
 
         val mediaStore = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         assertEquals(
             0,
-            CapturedItems.safTreeFlagsToRelease(mediaStore, isRead = true, isWrite = true, tracked),
+            releaseFlagsMapper.map(mediaStore, isRead = true, isWrite = true, tracked),
         )
     }
 
@@ -138,19 +146,19 @@ class SafTreeGrantsRegressionTest {
 
         assertEquals(
             Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            CapturedItems.safTreeFlagsToRelease(untracked, isRead = true, isWrite = false, tracked),
+            releaseFlagsMapper.map(untracked, isRead = true, isWrite = false, tracked),
         )
         assertEquals(
             Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-            CapturedItems.safTreeFlagsToRelease(untracked, isRead = false, isWrite = true, tracked),
+            releaseFlagsMapper.map(untracked, isRead = false, isWrite = true, tracked),
         )
         assertEquals(
             readAndWrite,
-            CapturedItems.safTreeFlagsToRelease(untracked, isRead = true, isWrite = true, tracked),
+            releaseFlagsMapper.map(untracked, isRead = true, isWrite = true, tracked),
         )
         assertEquals(
             0,
-            CapturedItems.safTreeFlagsToRelease(
+            releaseFlagsMapper.map(
                 untracked,
                 isRead = false,
                 isWrite = false,

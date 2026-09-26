@@ -9,8 +9,8 @@ import android.provider.MediaStore
 import android.system.Os
 import android.util.Log
 import androidx.core.net.toUri
-import app.grapheneos.camera.VIDEO_NAME_PREFIX
 import app.grapheneos.camera.data.media.model.CaptureOutputResult
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
 import app.grapheneos.camera.data.media.store.imageCollectionUri
@@ -152,7 +152,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
             " AND ${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?" +
             " AND ${MediaStore.MediaColumns.DATE_ADDED} < ?"
         val cutoffSeconds = (System.currentTimeMillis() - olderThan.inWholeMilliseconds) / 1000L
-        val arguments = arrayOf("$VIDEO_NAME_PREFIX%", cutoffSeconds.toString())
+        val arguments = arrayOf("${CapturedItemType.VIDEO.namePrefix}%", cutoffSeconds.toString())
 
         onStorage {
             // Pending rows are filtered out of every operation unless they are explicitly asked for.

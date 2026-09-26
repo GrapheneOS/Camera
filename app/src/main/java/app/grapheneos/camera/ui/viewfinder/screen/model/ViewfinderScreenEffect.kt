@@ -3,9 +3,9 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.StringRes
-import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.permission.model.AppPermission
 
 sealed interface ViewfinderScreenEffect {
