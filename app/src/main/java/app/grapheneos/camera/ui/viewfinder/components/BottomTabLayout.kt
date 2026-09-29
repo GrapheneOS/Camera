@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.common.view
+package app.grapheneos.camera.ui.viewfinder.components
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint

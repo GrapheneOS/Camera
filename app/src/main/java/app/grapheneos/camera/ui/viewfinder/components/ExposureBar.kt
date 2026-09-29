@@ -1,30 +1,25 @@
-package app.grapheneos.camera.ui.seekbar
+package app.grapheneos.camera.ui.viewfinder.components
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.drawable.BitmapDrawable
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
-import android.view.LayoutInflater
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.appcompat.widget.AppCompatSeekBar
 import androidx.transition.Fade
 import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
-import java.util.Locale
-import kotlin.math.roundToInt
 
-class ZoomBar : AppCompatSeekBar {
+class ExposureBar : AppCompatSeekBar {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(
         context,
@@ -42,14 +37,25 @@ class ZoomBar : AppCompatSeekBar {
         hidePanel()
     }
 
-    @SuppressLint("InflateParams")
-    private var thumbView: View = LayoutInflater.from(context)
-        .inflate(R.layout.zoom_bar_thumb, null, false)
-
     private lateinit var mainActivity: MainActivity
 
     fun setMainActivity(mainActivity: MainActivity) {
         this.mainActivity = mainActivity
+    }
+
+    private var renderedExposure: ExposureUiState? = null
+
+    fun render(exposure: ExposureUiState?) {
+        if (exposure == renderedExposure) return
+        renderedExposure = exposure
+
+        if (exposure == null) return
+
+        max = exposure.max
+        min = exposure.min
+        progress = exposure.progress
+
+        onSizeChanged(width, height, 0, 0)
     }
 
     fun showPanel() {
@@ -69,44 +75,19 @@ class ZoomBar : AppCompatSeekBar {
         } else {
             transition.duration = 0
         }
-        transition.addTarget(R.id.zoom_bar_panel)
+        transition.addTarget(R.id.exposure_bar)
 
         TransitionManager.beginDelayedTransition(
             mainActivity.window.decorView.rootView as ViewGroup, transition
         )
-        mainActivity.zoomBarPanel.visibility = visibility
+
+        mainActivity.exposureBarPanel.visibility = visibility
     }
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(h, w, oldh, oldw)
-    }
-
-    private var renderedZoom: ZoomUiState? = null
-
-    fun render(zoom: ZoomUiState) {
-        if (zoom == renderedZoom) return
-        renderedZoom = zoom
-
-        progress = (zoom.linearZoom * 100).roundToInt()
-
-        val textView: TextView = thumbView.findViewById(R.id.progress) as TextView
-        val text = String.format(Locale.getDefault(), "%.1fx", zoom.zoomRatio)
-
-        textView.text = text
-
-        thumbView.measure(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED)
-        val bitmap = Bitmap.createBitmap(
-            thumbView.measuredWidth,
-            thumbView.measuredHeight,
-            Bitmap.Config.ARGB_8888
-        )
-        val canvas = Canvas(bitmap)
-        thumbView.layout(0, 0, thumbView.measuredWidth, thumbView.measuredHeight)
-        thumbView.draw(canvas)
-        thumb = BitmapDrawable(resources, bitmap)
-        onSizeChanged(width, height, 0, 0)
     }
 
     @Synchronized
@@ -127,18 +108,19 @@ class ZoomBar : AppCompatSeekBar {
             return false
         }
         when (event.action) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
+                progress = max - (max * event.y / (height / 2)).toInt()
 
-            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_DOWN -> {
-
-                var progress = max - (max * event.y / height).toInt()
-
-                if (progress < 1) progress = 1
-                if (progress > 100) progress = 100
+                Log.i("progress", progress.toString())
+                Log.i("max", max.toString())
 
                 mainActivity.viewfinder.onAction(
-                    CameraAction.ZoomSliderDragged(linearZoom = progress / 100f),
+                    CameraAction.ExposureSliderDragged(compensationIndex = progress),
                 )
 
+                showPanel()
+
+                onSizeChanged(width, height, 0, 0)
             }
             MotionEvent.ACTION_CANCEL -> {
             }

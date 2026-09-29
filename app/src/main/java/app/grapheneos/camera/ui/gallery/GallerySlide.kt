@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.fragment
+package app.grapheneos.camera.ui.gallery
 
 import androidx.recyclerview.widget.RecyclerView
 import app.grapheneos.camera.databinding.GallerySlideBinding
