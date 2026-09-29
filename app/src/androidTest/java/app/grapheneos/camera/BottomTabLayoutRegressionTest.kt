@@ -13,7 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.common.view.BottomTabLayout
+import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals

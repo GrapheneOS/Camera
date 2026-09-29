@@ -14,8 +14,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.databinding.GallerySlideBinding
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.VideoPlayer
-import app.grapheneos.camera.ui.common.view.ZoomableImageView
-import app.grapheneos.camera.ui.fragment.GallerySlide
+import app.grapheneos.camera.ui.gallery.components.ZoomableImageView
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.getVideoThumbnail
 import kotlin.math.max

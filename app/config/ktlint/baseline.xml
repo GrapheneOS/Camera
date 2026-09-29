@@ -94,19 +94,19 @@
         <error line="47" column="1" source="standard:final-newline" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/gallery/GallerySliderAdapter.kt">
-        <error line="25" column="39" source="standard:trailing-comma-on-declaration-site" />
-        <error line="74" column="38" source="standard:statement-wrapping" />
-        <error line="74" column="43" source="standard:statement-wrapping" />
-        <error line="96" column="69" source="standard:argument-list-wrapping" />
-        <error line="105" column="28" source="standard:no-multi-spaces" />
-        <error line="110" column="34" source="standard:statement-wrapping" />
-        <error line="110" column="62" source="standard:statement-wrapping" />
-        <error line="150" column="34" source="standard:parameter-list-wrapping" />
-        <error line="150" column="34" source="standard:wrapping" />
-        <error line="151" column="39" source="standard:parameter-list-wrapping" />
-        <error line="151" column="65" source="standard:wrapping" />
-        <error line="151" column="66" source="standard:parameter-list-wrapping" />
-        <error line="151" column="66" source="standard:trailing-comma-on-declaration-site" />
+        <error line="24" column="39" source="standard:trailing-comma-on-declaration-site" />
+        <error line="73" column="38" source="standard:statement-wrapping" />
+        <error line="73" column="43" source="standard:statement-wrapping" />
+        <error line="95" column="69" source="standard:argument-list-wrapping" />
+        <error line="104" column="28" source="standard:no-multi-spaces" />
+        <error line="109" column="34" source="standard:statement-wrapping" />
+        <error line="109" column="62" source="standard:statement-wrapping" />
+        <error line="149" column="34" source="standard:parameter-list-wrapping" />
+        <error line="149" column="34" source="standard:wrapping" />
+        <error line="150" column="39" source="standard:parameter-list-wrapping" />
+        <error line="150" column="65" source="standard:wrapping" />
+        <error line="150" column="66" source="standard:parameter-list-wrapping" />
+        <error line="150" column="66" source="standard:trailing-comma-on-declaration-site" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/moresettings/NumInputFilter.kt">
         <error line="8" column="22" source="standard:class-signature" />
@@ -129,14 +129,14 @@
         <error line="3" column="45" source="standard:class-signature" />
         <error line="3" column="69" source="standard:class-signature" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/BottomTabLayout.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/BottomTabLayout.kt">
         <error line="17" column="1" source="standard:no-consecutive-blank-lines" />
         <error line="19" column="23" source="standard:parameter-list-wrapping" />
         <error line="19" column="23" source="standard:class-signature" />
         <error line="19" column="50" source="standard:trailing-comma-on-declaration-site" />
         <error line="31" column="22" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/CountDownTimerUI.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/CountDownTimerUI.kt">
         <error line="14" column="23" source="standard:parameter-list-wrapping" />
         <error line="14" column="23" source="standard:class-signature" />
         <error line="14" column="50" source="standard:trailing-comma-on-declaration-site" />
@@ -144,7 +144,7 @@
         <error line="82" column="19" source="standard:property-naming" />
         <error line="83" column="19" source="standard:property-naming" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/CustomGrid.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/CustomGrid.kt">
         <error line="14" column="22" source="standard:trailing-comma-on-declaration-site" />
         <error line="43" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="54" column="1" source="standard:no-blank-line-before-rbrace" />
@@ -156,13 +156,13 @@
         <error line="87" column="38" source="standard:argument-list-wrapping" />
         <error line="87" column="58" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/QROverlay.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/QROverlay.kt">
         <error line="14" column="17" source="standard:class-signature" />
         <error line="14" column="35" source="standard:class-signature" />
         <error line="14" column="54" source="standard:class-signature" />
         <error line="65" column="1" source="standard:no-blank-line-before-rbrace" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/QRToggle.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/QRToggle.kt">
         <error line="10" column="23" source="standard:parameter-list-wrapping" />
         <error line="10" column="23" source="standard:class-signature" />
         <error line="10" column="50" source="standard:trailing-comma-on-declaration-site" />
@@ -235,7 +235,7 @@
         <error line="722" column="1" source="standard:no-blank-line-before-rbrace" />
         <error line="743" column="1" source="standard:no-empty-first-line-in-method-block" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/SettingsFrameLayout.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/settings/components/SettingsFrameLayout.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="10" column="23" source="standard:parameter-list-wrapping" />
         <error line="10" column="23" source="standard:class-signature" />
@@ -247,7 +247,7 @@
         <error line="67" column="16" source="standard:mixed-condition-operators" />
         <error line="80" column="1" source="standard:final-newline" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/common/view/ZoomableImageView.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/gallery/components/ZoomableImageView.kt">
         <error line="3" column="1" source="standard:import-ordering" />
         <error line="22" column="23" source="standard:parameter-list-wrapping" />
         <error line="22" column="23" source="standard:class-signature" />
@@ -337,14 +337,14 @@
         <error line="143" column="97" source="standard:argument-list-wrapping" />
         <error line="143" column="101" source="standard:max-line-length" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/fragment/GallerySlide.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/gallery/GallerySlide.kt">
         <error line="6" column="20" source="standard:class-signature" />
         <error line="6" column="52" source="standard:class-signature" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/seekbar/ExposureBar.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/ExposureBar.kt">
         <error line="81" column="66" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/seekbar/ZoomBar.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/ZoomBar.kt">
         <error line="75" column="66" source="standard:argument-list-wrapping" />
         <error line="130" column="1" source="standard:no-empty-first-line-in-method-block" />
         <error line="132" column="1" source="standard:no-empty-first-line-in-method-block" />

@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.common.view
+package app.grapheneos.camera.ui.settings.components
 
 import android.annotation.SuppressLint
 import android.content.Context

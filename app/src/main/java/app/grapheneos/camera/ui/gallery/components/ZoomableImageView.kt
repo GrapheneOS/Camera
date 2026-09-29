@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.common.view
+package app.grapheneos.camera.ui.gallery.components
 
 import android.animation.Animator
 import android.animation.Animator.AnimatorListener
