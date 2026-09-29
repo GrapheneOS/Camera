@@ -1,25 +1,33 @@
 [versions]
-agp = "9.3.1"
+agp = "9.4.1"
 hilt = "2.60.1"
-kotlin = "2.4.10"
-ksp = "2.3.10"
+kotlin = "2.4.20"
+ksp = "2.3.12"
 
-detekt = "2.0.0-alpha.5"
+detekt = "2.0.0-alpha.6"
 ktlint = "1.8.0"
 ktlint-gradle = "14.2.0"
 
-activity = "1.8.0"
-appcompat = "1.7.1"
-camerax = { strictly = "1.6.1" }
+appcompat = "1.8.0"
 constraintlayout = "2.2.2"
-coreKtx = "1.19.0"
-datastore = "1.2.1"
+coreKtx = "1.19.1"
+material = "1.14.0"
+
+activity = "1.13.0"
+composeBom = "2026.09.00"
+
+androidxHilt = "1.4.0"
+lifecycle = "2.11.0"
+
+kotlinxCollectionsImmutable = "0.5.2"
 # Already reached the compile classpath transitively through CameraX. Declared here because the
 # settings layer imports Flow directly, and a transitive dependency is not one to import from.
 kotlinxCoroutines = "1.11.0"
 kotlinxSerialization = "1.11.0"
-lifecycle = "2.6.2"
-material = "1.14.0"
+
+datastore = "1.2.1"
+
+camerax = { strictly = "1.6.2" }
 zxing = "3.5.4"
 
 androidxTestCore = "1.7.0"
@@ -28,29 +36,44 @@ androidxTestRules = "1.7.0"
 androidxTestRunner = "1.7.0"
 junit4 = "4.13.2"
 mockk = "1.14.11"
-robolectric = "4.16.1"
+robolectric = "4.17"
 
 [libraries]
-androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
-androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
-androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
-androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
-hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+
+androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-material = { module = "com.google.android.material:material", version.ref = "material" }
-zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
-androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "camerax" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
-androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "camerax" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
 androidx-test-ext-junit-ktx = { module = "androidx.test.ext:junit-ktx", version.ref = "androidxTestExtJunit" }
@@ -81,6 +104,7 @@ camerax = [
 android-application = { id = "com.android.application", version.ref = "agp" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
