@@ -91,6 +91,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         return (displayDegrees - orientation.degrees).mod(FULL_TURN_DEGREES).toFloat()
     }
 
+    @Suppress("MagicNumber")
     private fun displayDegrees(displayRotation: Int): Int {
         return when (displayRotation) {
             Surface.ROTATION_90 -> 270

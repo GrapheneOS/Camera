@@ -63,6 +63,7 @@ internal class DeviceOrientationRepositoryImpl @Inject constructor(
                     }
                 }
 
+                @Suppress("EmptyFunctionBlock")
                 override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
             }
 

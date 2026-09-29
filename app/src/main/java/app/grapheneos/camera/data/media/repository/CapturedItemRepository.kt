@@ -335,6 +335,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     override suspend fun loadThumbnail(
         item: CapturedItem,
         targetWidth: Int,

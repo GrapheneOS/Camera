@@ -57,8 +57,10 @@ fun showQrResultDialog(
                 }
             }
 
+            @Suppress("EmptyFunctionBlock")
             override fun onTabReselected(tab: TabLayout.Tab?) {}
 
+            @Suppress("EmptyFunctionBlock")
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
         },
     )
@@ -98,6 +100,7 @@ fun showQrResultDialog(
     builder.showIgnoringShortEdgeMode()
 }
 
+@Suppress("MagicNumber")
 private fun bytesToHex(bytes: ByteArray): String {
     if (bytes.isEmpty()) return "" // outLen will be wrong for empty inputs
 

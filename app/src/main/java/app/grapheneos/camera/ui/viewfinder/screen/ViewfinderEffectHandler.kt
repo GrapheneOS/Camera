@@ -62,6 +62,7 @@ internal class ViewfinderEffectHandlerImpl(
 
     private var permissionDialog: AlertDialog? = null
 
+    @Suppress("CyclomaticComplexMethod")
     override fun handle(effect: Effect) {
         when (effect) {
             is Effect.ShowMessage -> activity.showMessage(effect.message)
