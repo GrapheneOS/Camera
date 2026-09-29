@@ -37,7 +37,7 @@ import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.common.videoQualityTitle
-import app.grapheneos.camera.ui.common.view.SettingsFrameLayout
+import app.grapheneos.camera.ui.settings.components.SettingsFrameLayout
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
