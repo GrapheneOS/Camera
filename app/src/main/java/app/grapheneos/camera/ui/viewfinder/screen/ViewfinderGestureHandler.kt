@@ -41,7 +41,7 @@ internal class ViewfinderGestureHandler(
             return true
         }
 
-        onAction(CameraAction.PreviewTapped(x = event.x, y = event.y))
+        onAction(CameraAction.Preview.Tapped(x = event.x, y = event.y))
 
         return v.performClick()
     }
@@ -49,7 +49,7 @@ internal class ViewfinderGestureHandler(
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         isZooming = true
 
-        onAction(CameraAction.PreviewPinched(scaleFactor = detector.scaleFactor))
+        onAction(CameraAction.Preview.Pinched(scaleFactor = detector.scaleFactor))
 
         return true
     }
@@ -66,21 +66,23 @@ internal class ViewfinderGestureHandler(
         velocityX: Float,
         velocityY: Float,
     ): Boolean {
-        val start = e1 ?: return false
+        val direction = when {
+            e1 == null || isZooming -> null
 
-        val direction = swipeDirection(
-            distanceX = e2.x - start.x,
-            distanceY = e2.y - start.y,
-            velocityX = velocityX,
-            velocityY = velocityY,
-        )
+            else -> swipeDirection(
+                distanceX = e2.x - e1.x,
+                distanceY = e2.y - e1.y,
+                velocityX = velocityX,
+                velocityY = velocityY,
+            )
+        }
 
-        if (direction == null || isZooming) return false
+        if (direction != null) {
+            wasSwiping = true
+            onAction(CameraAction.Preview.Swiped(direction = direction))
+        }
 
-        wasSwiping = true
-        onAction(CameraAction.PreviewSwiped(direction = direction))
-
-        return true
+        return direction != null
     }
 
     private fun swipeDirection(

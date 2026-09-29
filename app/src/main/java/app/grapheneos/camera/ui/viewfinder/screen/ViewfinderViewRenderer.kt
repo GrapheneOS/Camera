@@ -169,6 +169,7 @@ internal class ViewfinderViewRenderer(
         )
     }
 
+    @Suppress("MagicNumber")
     private fun rotate(
         view: View,
         degrees: Float,
