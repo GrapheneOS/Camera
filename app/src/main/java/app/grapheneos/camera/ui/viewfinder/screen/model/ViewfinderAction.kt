@@ -24,19 +24,6 @@ sealed interface ViewfinderAction {
 
         data object FocusKeyPressed : CameraAction
 
-        data class PreviewTapped(
-            val x: Float,
-            val y: Float,
-        ) : CameraAction
-
-        data class PreviewPinched(
-            val scaleFactor: Float,
-        ) : CameraAction
-
-        data class PreviewSwiped(
-            val direction: SwipeDirection,
-        ) : CameraAction
-
         data class ZoomSliderDragged(
             val linearZoom: Float,
         ) : CameraAction
@@ -52,6 +39,22 @@ sealed interface ViewfinderAction {
         data class DisplayRotationChanged(
             val rotation: Int,
         ) : CameraAction
+
+        sealed interface Preview : CameraAction {
+
+            data class Tapped(
+                val x: Float,
+                val y: Float,
+            ) : Preview
+
+            data class Pinched(
+                val scaleFactor: Float,
+            ) : Preview
+
+            data class Swiped(
+                val direction: SwipeDirection,
+            ) : Preview
+        }
     }
 
     sealed interface CaptureAction : ViewfinderAction {

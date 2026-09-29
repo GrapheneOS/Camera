@@ -109,8 +109,8 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
             val viewModel = createViewModel(applicationScope = backgroundScope)
             val effects = collectEffects(viewModel)
 
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.LEFT))
-            viewModel.onAction(CameraAction.PreviewSwiped(SwipeDirection.RIGHT))
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
 
             assertEquals(
                 listOf(

@@ -166,7 +166,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel(applicationScope = backgroundScope)
 
-            viewModel.onAction(CameraAction.PreviewTapped(x = 10f, y = 20f))
+            viewModel.onAction(CameraAction.Preview.Tapped(x = 10f, y = 20f))
 
             verify(exactly = 1) { cameraDelegate.focusAt(x = 10f, y = 20f) }
         }

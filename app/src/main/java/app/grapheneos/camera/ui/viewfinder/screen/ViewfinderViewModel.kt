@@ -190,19 +190,11 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
             is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
             is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
-            is CameraAction.PreviewPinched -> cameraDelegate.scaleZoom(action.scaleFactor)
-            is CameraAction.PreviewSwiped -> onPreviewSwiped(action.direction)
+            is CameraAction.Preview -> onPreviewAction(action)
             is CameraAction.ZoomSliderDragged -> cameraDelegate.setLinearZoom(action.linearZoom)
 
             is CameraAction.ExposureSliderDragged -> {
                 cameraDelegate.setExposureCompensation(action.compensationIndex)
-            }
-
-            is CameraAction.PreviewTapped -> {
-                cameraDelegate.focusAt(
-                    x = action.x,
-                    y = action.y,
-                )
             }
 
             is CameraAction.DisplayRotationChanged -> {
@@ -299,6 +291,20 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             is PermissionAction.DialogDismissed -> {
                 onPermissionDialogDismissed(action.permission)
+            }
+        }
+    }
+
+    private fun onPreviewAction(action: CameraAction.Preview) {
+        when (action) {
+            is CameraAction.Preview.Pinched -> cameraDelegate.scaleZoom(action.scaleFactor)
+            is CameraAction.Preview.Swiped -> onPreviewSwiped(action.direction)
+
+            is CameraAction.Preview.Tapped -> {
+                cameraDelegate.focusAt(
+                    x = action.x,
+                    y = action.y,
+                )
             }
         }
     }
