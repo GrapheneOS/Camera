@@ -215,8 +215,14 @@ internal class CameraSessionImpl @Inject constructor(
 
     private val zoomStateObserver = Observer<ZoomState> {
         val event = when {
-            !isZoomStateLoaded -> CameraSessionEvent.ZoomStateLoaded
-            it.zoomRatio != zoomState?.zoomRatio -> CameraSessionEvent.ZoomStateChanged
+            !isZoomStateLoaded -> {
+                CameraSessionEvent.ZoomStateLoaded
+            }
+
+            it.zoomRatio != zoomState?.zoomRatio || it.linearZoom != zoomState?.linearZoom -> {
+                CameraSessionEvent.ZoomStateChanged
+            }
+
             else -> null
         }
 
