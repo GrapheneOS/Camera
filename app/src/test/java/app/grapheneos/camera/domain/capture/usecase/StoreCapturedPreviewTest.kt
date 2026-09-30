@@ -2,7 +2,6 @@ package app.grapheneos.camera.domain.capture.usecase
 
 import android.graphics.Bitmap
 import android.net.Uri
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -19,7 +18,7 @@ import org.robolectric.RobolectricTestRunner
 class StoreCapturedPreviewTest {
 
     private val repository = mockk<CaptureOutputRepository> {
-        coEvery { write(any(), any()) } returns CaptureOutputResult.Success(Unit)
+        coEvery { write(any(), any()) } returns Result.success(Unit)
     }
 
     private val bitmap = mockk<Bitmap>(relaxed = true)
@@ -53,7 +52,7 @@ class StoreCapturedPreviewTest {
     fun invoke_whenTheFileCannotBeWritten_reportsIt() {
         runTest {
             coEvery { repository.write(any(), any()) } returns
-                CaptureOutputResult.Failure(IOException("gone"))
+                Result.failure(IOException("gone"))
 
             val stored = storeCapturedPreview(uri = uri("shot.jpg"), bitmap = bitmap)
 
