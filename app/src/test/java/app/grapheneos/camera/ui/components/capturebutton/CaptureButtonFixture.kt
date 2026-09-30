@@ -12,9 +12,11 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTouchInput
+import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.core.CameraTheme
@@ -30,6 +32,7 @@ internal class CaptureButtonFixture(
     var drag = Offset.Zero
         private set
     val holdEnds = mutableListOf<CaptureButtonHoldEnd>()
+    val holdState = CaptureButtonHoldState()
 
     var isShown by mutableStateOf(true)
     var enabled by mutableStateOf(true)
@@ -38,6 +41,7 @@ internal class CaptureButtonFixture(
     var trigger by mutableStateOf(CaptureButtonTrigger.Release)
     var icon by mutableStateOf<ImageVector?>(null)
     var isHoldEnabled by mutableStateOf(false)
+    var holdTargets by mutableStateOf<List<CaptureButtonTarget>>(emptyList())
 
     fun setContent() {
         composeRule.setContent {
@@ -58,6 +62,8 @@ internal class CaptureButtonFixture(
                         },
                         onHoldDrag = { delta -> drag += delta },
                         onHoldEnd = { end -> holdEnds += end },
+                        holdTargets = holdTargets,
+                        holdState = holdState,
                     )
                 }
             }
