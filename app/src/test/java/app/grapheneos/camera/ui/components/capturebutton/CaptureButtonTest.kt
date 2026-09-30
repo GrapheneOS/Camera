@@ -4,7 +4,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -18,9 +20,14 @@ import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.core.CameraTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -54,6 +61,51 @@ class CaptureButtonTest {
         button().performClick()
 
         assertEquals(3, clicks)
+    }
+
+    @Test
+    fun captureButton_pressTrigger_clicksAsSoonAsPressed() {
+        setCaptureButton(trigger = CaptureButtonTrigger.Press)
+
+        button().performTouchInput { down(center) }
+        assertEquals(1, clicks)
+
+        button().performTouchInput { up() }
+        assertEquals(1, clicks)
+    }
+
+    @Test
+    fun captureButton_releaseTrigger_waitsForTheRelease() {
+        setCaptureButton(trigger = CaptureButtonTrigger.Release)
+
+        button().performTouchInput { down(center) }
+        assertEquals(0, clicks)
+
+        button().performTouchInput { up() }
+        assertEquals(1, clicks)
+    }
+
+    @Test
+    fun captureButton_releasedOutside_doesNotClick() {
+        setCaptureButton()
+
+        button().performTouchInput {
+            down(center)
+            moveTo(Offset(x = -width.toFloat(), y = -height.toFloat()))
+            up()
+        }
+
+        assertEquals(0, clicks)
+    }
+
+    @Test
+    fun captureButton_enterPressed_clicks() {
+        setCaptureButton()
+
+        button().requestFocus()
+        button().performKeyInput { pressKey(Key.Enter) }
+
+        assertEquals(1, clicks)
     }
 
     @Test
@@ -170,6 +222,7 @@ class CaptureButtonTest {
     private fun setCaptureButton(
         enabled: Boolean = true,
         progress: CaptureButtonProgress = CaptureButtonProgress.None,
+        trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
         icon: ImageVector? = null,
     ) {
         composeRule.setContent {
@@ -180,6 +233,7 @@ class CaptureButtonTest {
                     modifier = Modifier.semantics { contentDescription = DESCRIPTION },
                     enabled = enabled,
                     progress = progress,
+                    trigger = trigger,
                     icon = icon,
                 )
             }
