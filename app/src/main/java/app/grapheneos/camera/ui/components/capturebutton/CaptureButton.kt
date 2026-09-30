@@ -5,7 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -31,12 +32,21 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonKeyHandler
+import app.grapheneos.camera.ui.components.capturebutton.gesture.detectCaptureButtonTaps
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 
@@ -66,6 +76,7 @@ internal fun CaptureButton(
     tone: CaptureButtonTone = CaptureButtonTone.Neutral,
     enabled: Boolean = true,
     progress: CaptureButtonProgress = CaptureButtonProgress.None,
+    trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
     icon: ImageVector? = null,
     colors: CaptureButtonColors = CaptureButtonColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
@@ -74,6 +85,12 @@ internal fun CaptureButton(
     val isPressed by resolvedInteractionSource.collectIsPressedAsState()
     val isFocused by resolvedInteractionSource.collectIsFocusedAsState()
     val alpha by animateEnabledAlpha(enabled = enabled)
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentEnabled by rememberUpdatedState(enabled)
+    val currentTrigger by rememberUpdatedState(trigger)
+    val keyHandler = remember(resolvedInteractionSource) {
+        CaptureButtonKeyHandler(interactionSource = resolvedInteractionSource)
+    }
 
     Box(
         modifier = modifier
@@ -81,13 +98,38 @@ internal fun CaptureButton(
             .graphicsLayer {
                 this.alpha = alpha
             }
-            .clickable(
-                interactionSource = resolvedInteractionSource,
-                indication = null,
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                this.onClick(
+                    label = null,
+                    action = {
+                        currentOnClick()
+                        true
+                    },
+                )
+                if (!enabled) {
+                    disabled()
+                }
+            }
+            .onKeyEvent { event ->
+                enabled && keyHandler.onKeyEvent(
+                    event = event,
+                    trigger = trigger,
+                    onClick = onClick,
+                )
+            }
+            .focusable(
                 enabled = enabled,
-                role = Role.Button,
-                onClick = onClick,
-            ),
+                interactionSource = resolvedInteractionSource,
+            )
+            .pointerInput(resolvedInteractionSource) {
+                detectCaptureButtonTaps(
+                    interactionSource = resolvedInteractionSource,
+                    isEnabled = { currentEnabled },
+                    trigger = { currentTrigger },
+                    onClick = { currentOnClick() },
+                )
+            },
         contentAlignment = Alignment.Center,
     ) {
         CaptureButtonFace(
