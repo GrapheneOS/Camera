@@ -86,7 +86,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
 
     override suspend fun openForWriting(uri: Uri): Result<ParcelFileDescriptor> {
         return onStorage {
-            contentResolver.openFileDescriptor(uri, "w")
+            contentResolver.openFileDescriptor(uri, "wt")
                 ?: throw IOException("unable to open $uri")
         }
     }
@@ -96,19 +96,14 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         bytes: ByteArray,
     ): Result<Unit> {
         return onStorage {
-            val outputDescriptor = contentResolver.openAssetFileDescriptor(uri, "w")
+            val descriptor = contentResolver.openFileDescriptor(uri, "wt")
                 ?: throw IOException("unable to open $uri")
 
-            outputDescriptor.use { descriptor ->
-                val fileDescriptor = descriptor.fileDescriptor
+            ParcelFileDescriptor.AutoCloseOutputStream(descriptor).use { outputStream ->
+                outputStream.write(bytes)
 
-                descriptor.createOutputStream().use { outputStream ->
-                    outputStream.write(bytes)
-                    outputStream.flush()
-
-                    if (shouldFsync(uri)) {
-                        Os.fsync(fileDescriptor)
-                    }
+                if (shouldFsync(uri)) {
+                    Os.fsync(descriptor.fileDescriptor)
                 }
             }
         }
