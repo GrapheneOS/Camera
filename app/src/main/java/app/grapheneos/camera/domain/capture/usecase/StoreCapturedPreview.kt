@@ -19,9 +19,9 @@ internal class StoreCapturedPreviewImpl @Inject constructor(
         bitmap: Bitmap,
     ): Boolean {
         val bytes = ByteArrayOutputStream()
-        bitmap.compress(compressFormat(uri), FULL_QUALITY, bytes)
+        val isEncoded = bitmap.compress(compressFormat(uri), FULL_QUALITY, bytes)
 
-        return captureOutputRepository.write(
+        return isEncoded && captureOutputRepository.write(
             uri,
             bytes.toByteArray(),
         ).isSuccess

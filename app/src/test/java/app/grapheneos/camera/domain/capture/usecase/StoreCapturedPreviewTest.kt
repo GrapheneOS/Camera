@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.io.IOException
@@ -21,7 +23,9 @@ class StoreCapturedPreviewTest {
         coEvery { write(any(), any()) } returns Result.success(Unit)
     }
 
-    private val bitmap = mockk<Bitmap>(relaxed = true)
+    private val bitmap = mockk<Bitmap>(relaxed = true) {
+        every { compress(any(), any(), any()) } returns true
+    }
 
     private val storeCapturedPreview = StoreCapturedPreviewImpl(repository)
 
@@ -57,6 +61,18 @@ class StoreCapturedPreviewTest {
             val stored = storeCapturedPreview(uri = uri("shot.jpg"), bitmap = bitmap)
 
             assertFalse(stored)
+        }
+    }
+
+    @Test
+    fun invoke_whenTheBitmapCannotBeEncoded_leavesTheFileAlone() {
+        runTest {
+            every { bitmap.compress(any(), any(), any()) } returns false
+
+            val stored = storeCapturedPreview(uri = uri("shot.jpg"), bitmap = bitmap)
+
+            assertFalse(stored)
+            coVerify(exactly = 0) { repository.write(any(), any()) }
         }
     }
 
