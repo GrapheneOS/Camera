@@ -2,16 +2,17 @@ package app.grapheneos.camera.ui.components.capturebutton.model
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 
 @Immutable
 internal data class CaptureButtonTarget(
     val direction: CaptureButtonDirection,
-    val accessibilityLabel: String,
     val distance: Dp,
+    val icon: ImageVector,
+    val accessibilityLabel: String,
 ) {
 
     internal fun progress(
@@ -26,6 +27,15 @@ internal data class CaptureButtonTarget(
         return (travelled / distancePx).coerceIn(0f, 1f)
     }
 
+    internal fun position(
+        density: Density,
+        layoutDirection: LayoutDirection,
+    ): Offset {
+        val distancePx = with(density) { distance.toPx() }
+
+        return direction.unitVector(layoutDirection = layoutDirection) * distancePx
+    }
+
     internal fun pull(
         offset: Offset,
         density: Density,
@@ -36,8 +46,10 @@ internal data class CaptureButtonTarget(
             density = density,
             layoutDirection = layoutDirection,
         )
-        val distancePx = with(density) { distance.toPx() }
 
-        return direction.unitVector(layoutDirection = layoutDirection) * (progress * distancePx)
+        return position(
+            density = density,
+            layoutDirection = layoutDirection,
+        ) * progress
     }
 }

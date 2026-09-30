@@ -4,16 +4,20 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.capturebutton.TEST_ICON
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CaptureButtonTargetTrackerTest {
 
     private val start = CaptureButtonTarget(
         direction = CaptureButtonDirection.Start,
+        icon = TEST_ICON,
         accessibilityLabel = "Lock",
         distance = 100.dp,
     )
@@ -50,5 +54,29 @@ class CaptureButtonTargetTrackerTest {
     @Test
     fun update_inTheOppositeDirection_armsNothing() {
         assertNull(tracker.update(Offset(x = 200f, y = 0f)))
+    }
+
+    @Test
+    fun leadsToTarget_swipedTowardsTheTarget_isTrue() {
+        assertTrue(tracker.leadsToTarget(offset = Offset(x = -20f, y = 5f), touchSlop = SLOP))
+    }
+
+    @Test
+    fun leadsToTarget_withinTheSlop_isFalse() {
+        assertFalse(tracker.leadsToTarget(offset = Offset(x = -5f, y = 0f), touchSlop = SLOP))
+    }
+
+    @Test
+    fun leadsToTarget_swipedMostlyAcross_isFalse() {
+        assertFalse(tracker.leadsToTarget(offset = Offset(x = -20f, y = 40f), touchSlop = SLOP))
+    }
+
+    @Test
+    fun leadsToTarget_swipedAway_isFalse() {
+        assertFalse(tracker.leadsToTarget(offset = Offset(x = 40f, y = 0f), touchSlop = SLOP))
+    }
+
+    private companion object {
+        private const val SLOP = 10f
     }
 }
