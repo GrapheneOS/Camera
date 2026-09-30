@@ -214,10 +214,8 @@ internal class ImageSaver @AssistedInject constructor(
         return CapturedItemType.IMAGE.namePrefix + dateString() + IMAGE_FILE_FORMAT
     }
 
-    // it's important to include milliseconds (SSS), otherwise new image may overwrite the previous
-    // one
     private fun dateString(): String {
-        return DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US).format(captureTime)
+        return DATE_FORMATTER.format(captureTime)
     }
 
     private fun mimeType(): String {
@@ -268,5 +266,9 @@ internal class ImageSaver @AssistedInject constructor(
         private const val TAG = "ImageSaver"
         private const val LOG_DURATION = false
         private const val IMAGE_FILE_FORMAT = ".jpg"
+
+        // it's important to include milliseconds (SSS), otherwise new image may overwrite the
+        // previous one
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US)
     }
 }
