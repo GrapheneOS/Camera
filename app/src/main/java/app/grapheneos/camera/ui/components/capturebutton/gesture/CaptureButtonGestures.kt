@@ -7,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.positionChange
@@ -49,7 +48,7 @@ private suspend fun AwaitPointerEventScope.trackPress(
             }
 
             listener.isHoldEnabled -> awaitTapOrHold(
-                pointerId = down.id,
+                down = down,
                 listener = listener,
             )
 
@@ -92,7 +91,7 @@ private suspend fun AwaitPointerEventScope.awaitTap(
 }
 
 private suspend fun AwaitPointerEventScope.awaitTapOrHold(
-    pointerId: PointerId,
+    down: PointerInputChange,
     listener: CaptureButtonGestureListener,
 ): Boolean {
     val tap = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
@@ -100,13 +99,13 @@ private suspend fun AwaitPointerEventScope.awaitTapOrHold(
     }
 
     return tap ?: awaitHold(
-        pointerId = pointerId,
+        down = down,
         listener = listener,
     )
 }
 
 private suspend fun AwaitPointerEventScope.awaitHold(
-    pointerId: PointerId,
+    down: PointerInputChange,
     listener: CaptureButtonGestureListener,
 ): Boolean {
     var end: CaptureButtonHoldEnd = CaptureButtonHoldEnd.Cancelled
@@ -115,37 +114,48 @@ private suspend fun AwaitPointerEventScope.awaitHold(
 
     try {
         end = trackHold(
-            pointerId = pointerId,
+            down = down,
             listener = listener,
         )
     } finally {
         listener.onHoldEnd(end)
     }
 
-    return end == CaptureButtonHoldEnd.Released
+    return end != CaptureButtonHoldEnd.Cancelled
 }
 
 private suspend fun AwaitPointerEventScope.trackHold(
-    pointerId: PointerId,
+    down: PointerInputChange,
     listener: CaptureButtonGestureListener,
 ): CaptureButtonHoldEnd {
     val dragFilter = CaptureButtonDragFilter(touchSlop = viewConfiguration.touchSlop)
+    val targetTracker = CaptureButtonTargetTracker(
+        targets = listener.holdTargets,
+        density = this,
+        layoutDirection = listener.layoutDirection,
+    )
     var isHeld = true
 
     while (isHeld) {
-        val change = awaitPointerEvent().changes.firstOrNull { it.id == pointerId }
+        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
 
         if (change != null) {
             val delta = dragFilter.filter(change.positionChange())
+            val offset = change.position - down.position
 
             change.consume()
             isHeld = change.pressed
 
-            if (delta != Offset.Zero) {
-                listener.onHoldDrag(delta)
-            }
+            listener.onHoldMove(
+                delta = delta,
+                offset = offset,
+                armedTarget = targetTracker.update(offset),
+            )
         }
     }
 
-    return CaptureButtonHoldEnd.Released
+    return when (val armedTarget = targetTracker.armedTarget) {
+        null -> CaptureButtonHoldEnd.Released
+        else -> CaptureButtonHoldEnd.Committed(target = armedTarget)
+    }
 }
