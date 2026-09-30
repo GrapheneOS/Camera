@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
+import kotlin.math.abs
 
 internal class CaptureButtonTargetTracker(
     private val targets: List<CaptureButtonTarget>,
@@ -23,6 +24,19 @@ internal class CaptureButtonTargetTracker(
         }
 
         return armedTarget
+    }
+
+    fun leadsToTarget(
+        offset: Offset,
+        touchSlop: Float,
+    ): Boolean {
+        return targets.any { target ->
+            val unitVector = target.direction.unitVector(layoutDirection = layoutDirection)
+            val travelled = offset.x * unitVector.x + offset.y * unitVector.y
+            val across = abs(offset.x * unitVector.y - offset.y * unitVector.x)
+
+            travelled > touchSlop && travelled > across
+        }
     }
 
     private fun progress(

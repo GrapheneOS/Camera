@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.capturebutton.TEST_ICON
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -12,6 +13,7 @@ class CaptureButtonTargetTest {
     private val density = Density(density = 1f)
     private val start = CaptureButtonTarget(
         direction = CaptureButtonDirection.Start,
+        icon = TEST_ICON,
         accessibilityLabel = "Lock",
         distance = 100.dp,
     )

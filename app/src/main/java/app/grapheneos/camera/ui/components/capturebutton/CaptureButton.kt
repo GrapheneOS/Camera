@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
@@ -53,6 +55,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastMaxOfOrNull
+import androidx.compose.ui.util.lerp
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonGestureListener
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonKeyHandler
@@ -60,6 +65,7 @@ import app.grapheneos.camera.ui.components.capturebutton.gesture.detectCaptureBu
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonGestureListener
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
@@ -67,6 +73,7 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
+import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 import kotlinx.coroutines.flow.collectLatest
 
 private val BUTTON_SIZE = 84.dp
@@ -79,9 +86,25 @@ private val PROGRESS_INSET = PROGRESS_PADDING +
     PROGRESS_GAP
 
 private const val PRESSED_SCALE = 1.1f
+private const val HELD_SCALE = 1.15f
 private const val PRESSED_ALPHA = 0.8f
 private const val DISABLED_ALPHA = 0.35f
+private const val FULL_TURN = 360f
 
+private val PREVIEW_TARGET = CaptureButtonTarget(
+    direction = CaptureButtonDirection.Start,
+    distance = 120.dp,
+    icon = PREVIEW_LOCK_ICON,
+    accessibilityLabel = "Lock",
+)
+
+private val LIFT_SPEC = spring<Float>(
+    dampingRatio = 0.5f,
+    stiffness = 500f,
+)
+private val LIFT_COLOR_SPEC = spring<Color>(
+    stiffness = 500f,
+)
 private val MORPH_SPEC = spring<Float>(
     dampingRatio = 0.7f,
     stiffness = 500f,
@@ -102,6 +125,7 @@ internal fun CaptureButton(
     progress: CaptureButtonProgress = CaptureButtonProgress.None,
     trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
     icon: ImageVector? = null,
+    iconRotationDegrees: Float = 0f,
     onHoldStart: (() -> Unit)? = null,
     onHoldDrag: (delta: Offset) -> Unit = {},
     onHoldEnd: (CaptureButtonHoldEnd) -> Unit = {},
@@ -113,10 +137,17 @@ internal fun CaptureButton(
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isPressed by resolvedInteractionSource.collectIsPressedAsState()
     val isFocused by resolvedInteractionSource.collectIsFocusedAsState()
+
     val alpha by animateEnabledAlpha(enabled = enabled)
+    val targetVisibility by animateVisibility(isVisible = holdState.isHeld)
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val iconRotation by animateRotation(degrees = iconRotationDegrees)
+
     val keyHandler = remember(resolvedInteractionSource) {
         CaptureButtonKeyHandler(interactionSource = resolvedInteractionSource)
     }
+
     val gestureListener = rememberCaptureButtonGestureListener(
         enabled = enabled,
         trigger = trigger,
@@ -128,10 +159,22 @@ internal fun CaptureButton(
         onHoldEnd = onHoldEnd,
     )
 
-    val pull by animateHoldPull(
+    val animatedPull by animateHoldPull(
         holdState = holdState,
         targets = holdTargets,
     )
+    val pull = {
+        when {
+            holdState.isHeld -> holdPull(
+                offset = holdState.offset,
+                targets = holdTargets,
+                density = density,
+                layoutDirection = layoutDirection,
+            )
+
+            else -> animatedPull
+        }
+    }
 
     require(trigger == CaptureButtonTrigger.Release || onHoldStart == null) {
         "A press trigger acts before a hold could start"
@@ -181,15 +224,34 @@ internal fun CaptureButton(
             },
         contentAlignment = Alignment.Center,
     ) {
+        holdTargets.forEach { target ->
+            key(target) {
+                CaptureButtonTargetBackground(
+                    target = target,
+                    holdState = holdState,
+                    visibility = { targetVisibility },
+                    color = colors.containerColor,
+                )
+            }
+        }
         CaptureButtonFace(
             core = core,
             isPressed = isPressed,
+            isHeld = holdState.isHeld,
             isFocused = isFocused,
             hasProgress = progress != CaptureButtonProgress.None,
             coreColor = colors.coreColor(tone),
             containerColor = colors.containerColor,
             focusColor = colors.focusColor,
-            pull = { pull },
+            pull = pull,
+            dockProgress = {
+                holdDockProgress(
+                    pull = pull(),
+                    targets = holdTargets,
+                    density = density,
+                    layoutDirection = layoutDirection,
+                )
+            },
             modifier = Modifier.fillMaxSize(),
         )
         CaptureButtonProgressIndicator(
@@ -203,9 +265,22 @@ internal fun CaptureButton(
         CaptureButtonIcon(
             icon = icon,
             isPressed = isPressed,
+            isHeld = holdState.isHeld,
             tint = colors.contentColor(core),
-            pull = { pull },
+            pull = pull,
+            rotation = { iconRotation },
         )
+        holdTargets.forEach { target ->
+            key(target) {
+                CaptureButtonTargetIcon(
+                    target = target,
+                    holdState = holdState,
+                    visibility = { targetVisibility },
+                    rotation = { iconRotation },
+                    tint = colors.contentColor,
+                )
+            }
+        }
     }
 }
 
@@ -213,12 +288,14 @@ internal fun CaptureButton(
 private fun CaptureButtonFace(
     core: CaptureButtonCore,
     isPressed: Boolean,
+    isHeld: Boolean,
     isFocused: Boolean,
     hasProgress: Boolean,
     coreColor: Color,
     containerColor: Color,
     focusColor: Color,
     pull: () -> Offset,
+    dockProgress: () -> Float,
     modifier: Modifier = Modifier,
 ) {
     val sizeFraction by animateFloatAsState(
@@ -231,6 +308,7 @@ private fun CaptureButtonFace(
     )
     val pressedScale by animatePressedScale(
         isPressed = isPressed && !hasProgress,
+        isHeld = isHeld && !hasProgress,
     )
     val progressInsetFraction by animateFloatAsState(
         targetValue = when {
@@ -242,11 +320,17 @@ private fun CaptureButtonFace(
     val animatedCoreColor by animatePressedColor(
         color = coreColor,
         isPressed = isPressed,
+        isHeld = isHeld,
     )
 
     Canvas(modifier = modifier) {
         val progressInset = PROGRESS_INSET.toPx() * progressInsetFraction
-        val maxCoreSize = size.minDimension - progressInset * 2
+        val coreSize = coreSize(
+            sizeFraction = sizeFraction,
+            pressedScale = pressedScale,
+            maxRestingSize = size.minDimension - progressInset * 2,
+            dockProgress = dockProgress(),
+        )
 
         drawCircle(
             color = containerColor,
@@ -257,10 +341,8 @@ private fun CaptureButtonFace(
         ) {
             drawCore(
                 color = animatedCoreColor,
-                sizeFraction = sizeFraction,
-                pressedScale = pressedScale,
+                coreSize = coreSize,
                 cornerFraction = cornerFraction,
-                maxSize = maxCoreSize,
             )
         }
         if (isFocused) {
@@ -273,12 +355,17 @@ private fun CaptureButtonFace(
 private fun CaptureButtonIcon(
     icon: ImageVector?,
     isPressed: Boolean,
+    isHeld: Boolean,
     tint: Color,
     pull: () -> Offset,
+    rotation: () -> Float,
     modifier: Modifier = Modifier,
 ) {
-    val pressedScale by animatePressedScale(isPressed = isPressed)
     val animatedTint by animateColorAsState(targetValue = tint)
+    val pressedScale by animatePressedScale(
+        isPressed = isPressed,
+        isHeld = isHeld,
+    )
 
     Crossfade(
         targetState = icon,
@@ -287,6 +374,7 @@ private fun CaptureButtonIcon(
             scaleY = pressedScale
             translationX = pull().x
             translationY = pull().y
+            rotationZ = rotation()
         },
     ) { targetIcon ->
         if (targetIcon != null) {
@@ -344,21 +432,78 @@ private fun animateHoldPull(
     return pull.asState()
 }
 
+@Composable
+private fun animateVisibility(isVisible: Boolean): State<Float> {
+    return animateFloatAsState(
+        targetValue = when {
+            isVisible -> 1f
+            else -> 0f
+        },
+    )
+}
+
+@Composable
+private fun animateRotation(degrees: Float): State<Float> {
+    val rotation = remember { Animatable(initialValue = degrees) }
+
+    LaunchedEffect(degrees) {
+        rotation.animateTo(
+            targetValue = rotation.value + shortestTurn(
+                from = rotation.value,
+                to = degrees,
+            ),
+            animationSpec = MORPH_SPEC,
+        )
+    }
+
+    return rotation.asState()
+}
+
+private fun shortestTurn(
+    from: Float,
+    to: Float,
+): Float {
+    return ((to - from) % FULL_TURN + FULL_TURN * 1.5f) % FULL_TURN - FULL_TURN / 2
+}
+
 private fun holdPull(
     offset: Offset,
     targets: List<CaptureButtonTarget>,
     density: Density,
     layoutDirection: LayoutDirection,
 ): Offset {
-    val pulls = targets.map { target ->
-        target.pull(
+    var strongestPull = Offset.Zero
+
+    targets.fastForEach { target ->
+        val pull = target.pull(
             offset = offset,
+            density = density,
+            layoutDirection = layoutDirection,
+        )
+
+        if (pull.getDistanceSquared() > strongestPull.getDistanceSquared()) {
+            strongestPull = pull
+        }
+    }
+
+    return strongestPull
+}
+
+private fun holdDockProgress(
+    pull: Offset,
+    targets: List<CaptureButtonTarget>,
+    density: Density,
+    layoutDirection: LayoutDirection,
+): Float {
+    val progress = targets.fastMaxOfOrNull { target ->
+        target.progress(
+            offset = pull,
             density = density,
             layoutDirection = layoutDirection,
         )
     }
 
-    return pulls.maxByOrNull { it.getDistance() } ?: Offset.Zero
+    return progress ?: 0f
 }
 
 private fun holdAccessibilityActions(
@@ -380,13 +525,18 @@ private fun holdAccessibilityActions(
 @Composable
 private fun animatePressedScale(
     isPressed: Boolean,
+    isHeld: Boolean,
 ): State<Float> {
     return animateFloatAsState(
         targetValue = when {
+            isHeld -> HELD_SCALE
             isPressed -> PRESSED_SCALE
             else -> 1f
         },
-        animationSpec = MORPH_SPEC,
+        animationSpec = when {
+            isHeld -> LIFT_SPEC
+            else -> MORPH_SPEC
+        },
     )
 }
 
@@ -394,11 +544,16 @@ private fun animatePressedScale(
 private fun animatePressedColor(
     color: Color,
     isPressed: Boolean,
+    isHeld: Boolean,
 ): State<Color> {
     return animateColorAsState(
         targetValue = when {
-            isPressed -> color.copy(alpha = color.alpha * PRESSED_ALPHA)
+            isPressed && !isHeld -> color.copy(alpha = color.alpha * PRESSED_ALPHA)
             else -> color
+        },
+        animationSpec = when {
+            isHeld -> LIFT_COLOR_SPEC
+            else -> spring()
         },
     )
 }
@@ -415,15 +570,31 @@ private fun animateEnabledAlpha(
     )
 }
 
-private fun DrawScope.drawCore(
-    color: Color,
+private fun DrawScope.coreSize(
     sizeFraction: Float,
     pressedScale: Float,
-    cornerFraction: Float,
-    maxSize: Float,
-) {
-    val coreSize = (size.minDimension * sizeFraction).coerceAtMost(maxSize) * pressedScale
+    maxRestingSize: Float,
+    dockProgress: Float,
+): Float {
+    val restingSize = (size.minDimension * sizeFraction).coerceAtMost(maxRestingSize)
+    val naturalSize = restingSize * pressedScale
+    val dockedSize = dockedCoreSize(
+        progress = dockProgress,
+        density = this,
+    )
 
+    return lerp(
+        start = naturalSize,
+        stop = naturalSize.coerceAtMost(dockedSize),
+        fraction = dockProgress,
+    )
+}
+
+private fun DrawScope.drawCore(
+    color: Color,
+    coreSize: Float,
+    cornerFraction: Float,
+) {
     drawRoundRect(
         color = color,
         topLeft = center - Offset(x = coreSize / 2, y = coreSize / 2),
@@ -518,6 +689,44 @@ private fun CaptureButtonProgressPreview() {
             )
         }
     }
+}
+
+@PreviewLightDark
+@Composable
+private fun CaptureButtonHoldPreview() {
+    CameraPreviewColumn {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(space = 16.dp),
+        ) {
+            PreviewHeldCaptureButton(progress = 0f)
+            PreviewHeldCaptureButton(progress = 0.5f)
+            PreviewHeldCaptureButton(progress = 1f)
+        }
+    }
+}
+
+@Composable
+private fun PreviewHeldCaptureButton(progress: Float) {
+    val travelled = with(LocalDensity.current) { PREVIEW_TARGET.distance.toPx() } * progress
+    val holdState = remember {
+        CaptureButtonHoldState().apply {
+            start()
+            move(
+                offset = Offset(x = -travelled, y = 0f),
+                armedTarget = PREVIEW_TARGET.takeIf { progress >= 1f },
+            )
+        }
+    }
+
+    CaptureButton(
+        onClick = {},
+        core = CaptureButtonCore.Dot,
+        modifier = Modifier.padding(start = PREVIEW_TARGET.distance),
+        tone = CaptureButtonTone.Recording,
+        onHoldStart = {},
+        holdTargets = listOf(PREVIEW_TARGET),
+        holdState = holdState,
+    )
 }
 
 @Composable
