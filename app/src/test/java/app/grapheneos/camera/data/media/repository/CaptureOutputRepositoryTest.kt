@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import java.io.File
@@ -57,7 +56,7 @@ class CaptureOutputRepositoryTest {
             val created = createImage()
             val values = requireNotNull(mediaProvider.inserted)
 
-            assertEquals(CaptureOutputResult.Success(INSERTED_URI), created)
+            assertEquals(Result.success(INSERTED_URI), created)
             assertEquals(FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
             assertEquals(MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
             assertEquals(
@@ -73,7 +72,7 @@ class CaptureOutputRepositoryTest {
         runTest {
             mediaProvider.insertResult = null
 
-            assertTrue(createImage() is CaptureOutputResult.Failure)
+            assertTrue(createImage().isFailure)
         }
     }
 
@@ -87,7 +86,7 @@ class CaptureOutputRepositoryTest {
             )
 
             val values = requireNotNull(mediaProvider.inserted)
-            assertEquals(CaptureOutputResult.Success(INSERTED_URI), created)
+            assertEquals(Result.success(INSERTED_URI), created)
             assertEquals(VIDEO_FILE_NAME, values.getAsString(MediaStore.MediaColumns.DISPLAY_NAME))
             assertEquals(VIDEO_MIME_TYPE, values.getAsString(MediaStore.MediaColumns.MIME_TYPE))
             assertEquals(1, values.getAsInteger(MediaStore.MediaColumns.IS_PENDING))
@@ -101,7 +100,7 @@ class CaptureOutputRepositoryTest {
             mediaProvider.file = file
 
             val descriptor = requireNotNull(
-                repository().openForWriting(INSERTED_URI).valueOrNull(),
+                repository().openForWriting(INSERTED_URI).getOrNull(),
             )
             FileOutputStream(descriptor.fileDescriptor).use { it.write(JPEG_BYTES) }
             descriptor.close()
@@ -113,7 +112,7 @@ class CaptureOutputRepositoryTest {
     @Test
     fun openForWriting_whenTheProviderHasNoFile_reportsTheFailure() {
         runTest {
-            assertTrue(repository().openForWriting(INSERTED_URI) is CaptureOutputResult.Failure)
+            assertTrue(repository().openForWriting(INSERTED_URI).isFailure)
         }
     }
 
@@ -180,11 +179,11 @@ class CaptureOutputRepositoryTest {
 
             val created = createImage()
 
-            assertTrue((created as CaptureOutputResult.Failure).cause is SecurityException)
+            assertTrue(created.exceptionOrNull() is SecurityException)
         }
     }
 
-    private suspend fun TestScope.createImage(): CaptureOutputResult<Uri> {
+    private suspend fun TestScope.createImage(): Result<Uri> {
         return repository().createImage(
             storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
             fileName = FILE_NAME,

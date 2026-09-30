@@ -1,7 +1,6 @@
 package app.grapheneos.camera.domain.capture.usecase
 
 import android.net.Uri
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
@@ -23,9 +22,9 @@ class StoreCapturedImageTest {
     private val uri: Uri = Uri.parse("content://media/external_primary/images/media/1")
 
     private val repository = mockk<CaptureOutputRepository>(relaxed = true) {
-        coEvery { createImage(any(), any(), any()) } returns success(uri)
-        coEvery { write(any(), any()) } returns success(Unit)
-        coEvery { publish(any()) } returns success(Unit)
+        coEvery { createImage(any(), any(), any()) } returns Result.success(uri)
+        coEvery { write(any(), any()) } returns Result.success(Unit)
+        coEvery { publish(any()) } returns Result.success(Unit)
     }
 
     private val storeCapturedImage = StoreCapturedImageImpl(
@@ -94,12 +93,8 @@ class StoreCapturedImageTest {
         }
     }
 
-    private fun <T> success(value: T): CaptureOutputResult<T> {
-        return CaptureOutputResult.Success(value)
-    }
-
-    private fun failure(): CaptureOutputResult<Nothing> {
-        return CaptureOutputResult.Failure(IOException())
+    private fun failure(): Result<Nothing> {
+        return Result.failure(IOException())
     }
 
     private suspend fun store(

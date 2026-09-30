@@ -1,6 +1,5 @@
 package app.grapheneos.camera.domain.capture.usecase
 
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.domain.capture.model.RecordingOutput
 import javax.inject.Inject
@@ -18,6 +17,6 @@ internal class PublishRecordingImpl @Inject constructor(
             return true
         }
 
-        return captureOutputRepository.publish(output.uri) !is CaptureOutputResult.Failure
+        return captureOutputRepository.publish(output.uri).isSuccess
     }
 }

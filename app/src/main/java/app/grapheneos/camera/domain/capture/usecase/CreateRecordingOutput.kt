@@ -30,7 +30,7 @@ internal class CreateRecordingOutputImpl @Inject constructor(
         val dateString = SimpleDateFormat(DATE_FORMAT, Locale.US).format(Date())
         val uri = foreignUri ?: createVideo(storageLocation, dateString)
         val fileDescriptor = uri?.let { outputUri ->
-            captureOutputRepository.openForWriting(outputUri).valueOrNull()
+            captureOutputRepository.openForWriting(outputUri).getOrNull()
         }
 
         return when {
@@ -59,7 +59,7 @@ internal class CreateRecordingOutputImpl @Inject constructor(
             storageLocation = storageLocation,
             fileName = CapturedItemType.VIDEO.namePrefix + dateString + VIDEO_FILE_FORMAT,
             mimeType = mimeType,
-        ).valueOrNull()
+        ).getOrNull()
     }
 
     private companion object {

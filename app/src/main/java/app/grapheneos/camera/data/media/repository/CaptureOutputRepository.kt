@@ -9,7 +9,6 @@ import android.provider.MediaStore
 import android.system.Os
 import android.util.Log
 import androidx.core.net.toUri
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
@@ -30,24 +29,24 @@ interface CaptureOutputRepository {
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): CaptureOutputResult<Uri>
+    ): Result<Uri>
 
     suspend fun createVideo(
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): CaptureOutputResult<Uri>
+    ): Result<Uri>
 
     suspend fun openForWriting(
         uri: Uri,
-    ): CaptureOutputResult<ParcelFileDescriptor>
+    ): Result<ParcelFileDescriptor>
 
     suspend fun write(
         uri: Uri,
         bytes: ByteArray,
-    ): CaptureOutputResult<Unit>
+    ): Result<Unit>
 
-    suspend fun publish(uri: Uri): CaptureOutputResult<Unit>
+    suspend fun publish(uri: Uri): Result<Unit>
 
     suspend fun delete(uri: Uri)
 
@@ -63,7 +62,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): CaptureOutputResult<Uri> {
+    ): Result<Uri> {
         return create(
             collection = imageCollectionUri,
             storageLocation = storageLocation,
@@ -76,7 +75,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): CaptureOutputResult<Uri> {
+    ): Result<Uri> {
         return create(
             collection = videoCollectionUri,
             storageLocation = storageLocation,
@@ -85,7 +84,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun openForWriting(uri: Uri): CaptureOutputResult<ParcelFileDescriptor> {
+    override suspend fun openForWriting(uri: Uri): Result<ParcelFileDescriptor> {
         return onStorage {
             contentResolver.openFileDescriptor(uri, "w")
                 ?: throw IOException("unable to open $uri")
@@ -95,7 +94,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
     override suspend fun write(
         uri: Uri,
         bytes: ByteArray,
-    ): CaptureOutputResult<Unit> {
+    ): Result<Unit> {
         return onStorage {
             val outputDescriptor = contentResolver.openAssetFileDescriptor(uri, "w")
                 ?: throw IOException("unable to open $uri")
@@ -115,9 +114,9 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun publish(uri: Uri): CaptureOutputResult<Unit> {
+    override suspend fun publish(uri: Uri): Result<Unit> {
         if (uri.host != MediaStore.AUTHORITY) {
-            return CaptureOutputResult.Success(Unit)
+            return Result.success(Unit)
         }
 
         return onStorage {
@@ -168,7 +167,7 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         storageLocation: String,
         fileName: String,
         mimeType: String,
-    ): CaptureOutputResult<Uri> {
+    ): Result<Uri> {
         return onStorage {
             val uri = when (storageLocation) {
                 CapturedItemRepository.MEDIA_STORE_LOCATION -> insertPending(
@@ -205,14 +204,14 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private suspend fun <T> onStorage(block: () -> T): CaptureOutputResult<T> {
+    private suspend fun <T> onStorage(block: () -> T): Result<T> {
         return withContext(ioDispatcher) {
             try {
-                CaptureOutputResult.Success(block())
+                Result.success(block())
             } catch (exception: Exception) {
                 Log.w(TAG, "the capture storage refused the request", exception)
 
-                CaptureOutputResult.Failure(exception)
+                Result.failure(exception)
             }
         }
     }

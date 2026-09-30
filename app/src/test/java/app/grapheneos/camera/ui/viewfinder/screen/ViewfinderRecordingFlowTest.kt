@@ -5,7 +5,6 @@ import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -69,12 +68,12 @@ class ViewfinderRecordingFlowTest {
     private val captureOutputRepository = mockk<CaptureOutputRepository>(relaxed = true) {
         coEvery { createVideo(any(), any(), any()) } coAnswers {
             outputCreated.await()
-            CaptureOutputResult.Success(OUTPUT_URI)
+            Result.success(OUTPUT_URI)
         }
-        coEvery { openForWriting(any()) } returns CaptureOutputResult.Success(mockk(relaxed = true))
+        coEvery { openForWriting(any()) } returns Result.success(mockk(relaxed = true))
         coEvery { publish(any()) } coAnswers {
             outputPublished.await()
-            CaptureOutputResult.Success(Unit)
+            Result.success(Unit)
         }
     }
 

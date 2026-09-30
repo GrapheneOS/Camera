@@ -2,7 +2,6 @@ package app.grapheneos.camera.domain.capture.usecase
 
 import android.graphics.Bitmap
 import android.net.Uri
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
@@ -25,7 +24,7 @@ internal class StoreCapturedPreviewImpl @Inject constructor(
         return captureOutputRepository.write(
             uri,
             bytes.toByteArray(),
-        ) !is CaptureOutputResult.Failure
+        ).isSuccess
     }
 
     private fun compressFormat(uri: Uri): Bitmap.CompressFormat {
