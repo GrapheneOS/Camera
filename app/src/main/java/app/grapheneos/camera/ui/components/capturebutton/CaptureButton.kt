@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -32,12 +34,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 
 private val BUTTON_SIZE = 84.dp
 private val ICON_SIZE = 24.dp
 private val FOCUS_RING_WIDTH = 3.dp
+private val PROGRESS_PADDING = 4.dp
+private val PROGRESS_GAP = 4.dp
+private val PROGRESS_INSET = PROGRESS_PADDING +
+    ProgressIndicatorDefaults.CircularStrokeWidth +
+    PROGRESS_GAP
 
 private const val PRESSED_SCALE = 1.1f
 private const val PRESSED_ALPHA = 0.8f
@@ -55,6 +65,7 @@ internal fun CaptureButton(
     modifier: Modifier = Modifier,
     tone: CaptureButtonTone = CaptureButtonTone.Neutral,
     enabled: Boolean = true,
+    progress: CaptureButtonProgress = CaptureButtonProgress.None,
     icon: ImageVector? = null,
     colors: CaptureButtonColors = CaptureButtonColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
@@ -83,10 +94,19 @@ internal fun CaptureButton(
             core = core,
             isPressed = isPressed,
             isFocused = isFocused,
+            hasProgress = progress != CaptureButtonProgress.None,
             coreColor = colors.coreColor(tone),
             containerColor = colors.containerColor,
             focusColor = colors.focusColor,
             modifier = Modifier.fillMaxSize(),
+        )
+        CaptureButtonProgressIndicator(
+            progress = progress,
+            color = colors.progressColor,
+            trackColor = colors.progressTrackColor,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(all = PROGRESS_PADDING),
         )
         CaptureButtonIcon(
             icon = icon,
@@ -101,6 +121,7 @@ private fun CaptureButtonFace(
     core: CaptureButtonCore,
     isPressed: Boolean,
     isFocused: Boolean,
+    hasProgress: Boolean,
     coreColor: Color,
     containerColor: Color,
     focusColor: Color,
@@ -115,7 +136,14 @@ private fun CaptureButtonFace(
         animationSpec = MORPH_SPEC,
     )
     val pressedScale by animatePressedScale(
-        isPressed = isPressed,
+        isPressed = isPressed && !hasProgress,
+    )
+    val progressInsetFraction by animateFloatAsState(
+        targetValue = when {
+            hasProgress -> 1f
+            else -> 0f
+        },
+        animationSpec = MORPH_SPEC,
     )
     val animatedCoreColor by animatePressedColor(
         color = coreColor,
@@ -123,13 +151,18 @@ private fun CaptureButtonFace(
     )
 
     Canvas(modifier = modifier) {
+        val progressInset = PROGRESS_INSET.toPx() * progressInsetFraction
+        val maxCoreSize = size.minDimension - progressInset * 2
+
         drawCircle(
             color = containerColor,
         )
         drawCore(
             color = animatedCoreColor,
-            sizeFraction = sizeFraction * pressedScale,
+            sizeFraction = sizeFraction,
+            pressedScale = pressedScale,
             cornerFraction = cornerFraction,
+            maxSize = maxCoreSize,
         )
         if (isFocused) {
             drawFocusRing(color = focusColor)
@@ -206,9 +239,11 @@ private fun animateEnabledAlpha(
 private fun DrawScope.drawCore(
     color: Color,
     sizeFraction: Float,
+    pressedScale: Float,
     cornerFraction: Float,
+    maxSize: Float,
 ) {
-    val coreSize = size.minDimension * sizeFraction
+    val coreSize = (size.minDimension * sizeFraction).coerceAtMost(maxSize) * pressedScale
 
     drawRoundRect(
         color = color,
@@ -268,11 +303,50 @@ private fun CaptureButtonPreview() {
     }
 }
 
+@PreviewLightDark
+@Composable
+private fun CaptureButtonProgressPreview() {
+    CameraPreviewColumn {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(space = 16.dp),
+        ) {
+            PreviewCaptureButton(
+                core = CaptureButtonCore.Disc,
+                progress = CaptureButtonProgress.Indeterminate,
+            )
+            PreviewCaptureButton(
+                core = CaptureButtonCore.Disc,
+                progress = CaptureButtonProgress.Determinate(
+                    fraction = 0.6f,
+                ),
+            )
+            PreviewCaptureButton(
+                core = CaptureButtonCore.None,
+                progress = CaptureButtonProgress.Segmented(
+                    segments = 10,
+                    filled = 7,
+                ),
+                icon = PREVIEW_CLOSE_ICON,
+            )
+            PreviewCaptureButton(
+                core = CaptureButtonCore.None,
+                progress = CaptureButtonProgress.Segmented(
+                    segments = 3,
+                    filled = 2,
+                ),
+                icon = PREVIEW_CLOSE_ICON,
+            )
+        }
+    }
+}
+
 @Composable
 private fun PreviewCaptureButton(
     core: CaptureButtonCore,
     tone: CaptureButtonTone = CaptureButtonTone.Neutral,
     enabled: Boolean = true,
+    progress: CaptureButtonProgress = CaptureButtonProgress.None,
     icon: ImageVector? = null,
 ) {
     CaptureButton(
@@ -280,6 +354,7 @@ private fun PreviewCaptureButton(
         core = core,
         tone = tone,
         enabled = enabled,
+        progress = progress,
         icon = icon,
     )
 }

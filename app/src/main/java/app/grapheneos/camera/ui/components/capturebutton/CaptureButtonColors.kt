@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.core.cameraColors
 
 @Immutable
@@ -15,6 +17,8 @@ internal data class CaptureButtonColors(
     val contentColor: Color,
     val coreContentColor: Color,
     val focusColor: Color,
+    val progressColor: Color,
+    val progressTrackColor: Color,
 ) {
 
     internal fun coreColor(tone: CaptureButtonTone): Color {
@@ -32,6 +36,7 @@ internal data class CaptureButtonColors(
     }
 
     companion object {
+        private const val PROGRESS_TRACK_ALPHA = 0.3f
 
         @Composable
         @ReadOnlyComposable
@@ -45,6 +50,8 @@ internal data class CaptureButtonColors(
                 contentColor = cameraColors.overlay,
                 coreContentColor = cameraColors.onOverlay,
                 focusColor = cameraColors.overlay,
+                progressColor = cameraColors.overlay,
+                progressTrackColor = cameraColors.overlay.copy(alpha = PROGRESS_TRACK_ALPHA),
             )
         }
     }
