@@ -2,6 +2,9 @@ package app.grapheneos.camera.ui.components.capturebutton
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
@@ -18,9 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -29,27 +35,39 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonGestureListener
+import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonKeyHandler
 import app.grapheneos.camera.ui.components.capturebutton.gesture.detectCaptureButtonGestures
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonGestureListener
+import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
+import kotlinx.coroutines.flow.collectLatest
 
 private val BUTTON_SIZE = 84.dp
 private val ICON_SIZE = 24.dp
@@ -68,6 +86,11 @@ private val MORPH_SPEC = spring<Float>(
     dampingRatio = 0.7f,
     stiffness = 500f,
 )
+private val PULL_SPEC = spring(
+    dampingRatio = 0.7f,
+    stiffness = 500f,
+    visibilityThreshold = Offset.VisibilityThreshold,
+)
 
 @Composable
 internal fun CaptureButton(
@@ -82,6 +105,8 @@ internal fun CaptureButton(
     onHoldStart: (() -> Unit)? = null,
     onHoldDrag: (delta: Offset) -> Unit = {},
     onHoldEnd: (CaptureButtonHoldEnd) -> Unit = {},
+    holdTargets: List<CaptureButtonTarget> = emptyList(),
+    holdState: CaptureButtonHoldState = rememberCaptureButtonHoldState(),
     colors: CaptureButtonColors = CaptureButtonColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
 ) {
@@ -95,10 +120,17 @@ internal fun CaptureButton(
     val gestureListener = rememberCaptureButtonGestureListener(
         enabled = enabled,
         trigger = trigger,
+        holdState = holdState,
+        holdTargets = holdTargets,
         onClick = onClick,
         onHoldStart = onHoldStart,
         onHoldDrag = onHoldDrag,
         onHoldEnd = onHoldEnd,
+    )
+
+    val pull by animateHoldPull(
+        holdState = holdState,
+        targets = holdTargets,
     )
 
     require(trigger == CaptureButtonTrigger.Release || onHoldStart == null) {
@@ -122,6 +154,12 @@ internal fun CaptureButton(
                 )
                 if (!enabled) {
                     disabled()
+                }
+                if (enabled && onHoldStart != null) {
+                    customActions = holdAccessibilityActions(
+                        targets = holdTargets,
+                        listener = gestureListener,
+                    )
                 }
             }
             .onKeyEvent { event ->
@@ -151,6 +189,7 @@ internal fun CaptureButton(
             coreColor = colors.coreColor(tone),
             containerColor = colors.containerColor,
             focusColor = colors.focusColor,
+            pull = { pull },
             modifier = Modifier.fillMaxSize(),
         )
         CaptureButtonProgressIndicator(
@@ -165,6 +204,7 @@ internal fun CaptureButton(
             icon = icon,
             isPressed = isPressed,
             tint = colors.contentColor(core),
+            pull = { pull },
         )
     }
 }
@@ -178,6 +218,7 @@ private fun CaptureButtonFace(
     coreColor: Color,
     containerColor: Color,
     focusColor: Color,
+    pull: () -> Offset,
     modifier: Modifier = Modifier,
 ) {
     val sizeFraction by animateFloatAsState(
@@ -210,13 +251,18 @@ private fun CaptureButtonFace(
         drawCircle(
             color = containerColor,
         )
-        drawCore(
-            color = animatedCoreColor,
-            sizeFraction = sizeFraction,
-            pressedScale = pressedScale,
-            cornerFraction = cornerFraction,
-            maxSize = maxCoreSize,
-        )
+        translate(
+            left = pull().x,
+            top = pull().y,
+        ) {
+            drawCore(
+                color = animatedCoreColor,
+                sizeFraction = sizeFraction,
+                pressedScale = pressedScale,
+                cornerFraction = cornerFraction,
+                maxSize = maxCoreSize,
+            )
+        }
         if (isFocused) {
             drawFocusRing(color = focusColor)
         }
@@ -228,6 +274,7 @@ private fun CaptureButtonIcon(
     icon: ImageVector?,
     isPressed: Boolean,
     tint: Color,
+    pull: () -> Offset,
     modifier: Modifier = Modifier,
 ) {
     val pressedScale by animatePressedScale(isPressed = isPressed)
@@ -238,6 +285,8 @@ private fun CaptureButtonIcon(
         modifier = modifier.graphicsLayer {
             scaleX = pressedScale
             scaleY = pressedScale
+            translationX = pull().x
+            translationY = pull().y
         },
     ) { targetIcon ->
         if (targetIcon != null) {
@@ -248,6 +297,83 @@ private fun CaptureButtonIcon(
                 tint = animatedTint,
             )
         }
+    }
+}
+
+@Composable
+private fun animateHoldPull(
+    holdState: CaptureButtonHoldState,
+    targets: List<CaptureButtonTarget>,
+): State<Offset> {
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val currentTargets by rememberUpdatedState(targets)
+    val pull = remember {
+        Animatable(
+            initialValue = Offset.Zero,
+            typeConverter = Offset.VectorConverter,
+        )
+    }
+
+    LaunchedEffect(
+        holdState,
+        density,
+        layoutDirection,
+    ) {
+        snapshotFlow {
+            holdPull(
+                offset = holdState.offset,
+                targets = currentTargets,
+                density = density,
+                layoutDirection = layoutDirection,
+            )
+        }.collectLatest { target ->
+            when {
+                holdState.isHeld -> pull.snapTo(
+                    targetValue = target,
+                )
+
+                else -> pull.animateTo(
+                    targetValue = target,
+                    animationSpec = PULL_SPEC,
+                )
+            }
+        }
+    }
+
+    return pull.asState()
+}
+
+private fun holdPull(
+    offset: Offset,
+    targets: List<CaptureButtonTarget>,
+    density: Density,
+    layoutDirection: LayoutDirection,
+): Offset {
+    val pulls = targets.map { target ->
+        target.pull(
+            offset = offset,
+            density = density,
+            layoutDirection = layoutDirection,
+        )
+    }
+
+    return pulls.maxByOrNull { it.getDistance() } ?: Offset.Zero
+}
+
+private fun holdAccessibilityActions(
+    targets: List<CaptureButtonTarget>,
+    listener: CaptureButtonGestureListener,
+): List<CustomAccessibilityAction> {
+    return targets.map { target ->
+        CustomAccessibilityAction(
+            label = target.accessibilityLabel,
+            action = {
+                listener.onHoldStart()
+                listener.onHoldEnd(CaptureButtonHoldEnd.Committed(target = target))
+                true
+            },
+        )
     }
 }
 

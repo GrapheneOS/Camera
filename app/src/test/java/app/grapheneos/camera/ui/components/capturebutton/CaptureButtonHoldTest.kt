@@ -1,11 +1,17 @@
 package app.grapheneos.camera.ui.components.capturebutton
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -96,6 +102,66 @@ class CaptureButtonHoldTest {
     }
 
     @Test
+    fun captureButton_releasedAtATarget_commitsIt() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.hold()
+        fixture.button().performTouchInput {
+            moveBy(Offset(x = -LOCK.distance.toPx() - SLACK, y = 0f))
+            up()
+        }
+
+        assertEquals(listOf(CaptureButtonHoldEnd.Committed(target = LOCK)), fixture.holdEnds)
+    }
+
+    @Test
+    fun captureButton_draggedBackFromATarget_releasesWithoutCommitting() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.hold()
+        fixture.button().performTouchInput {
+            moveBy(Offset(x = -LOCK.distance.toPx() - SLACK, y = 0f))
+            moveBy(Offset(x = LOCK.distance.toPx(), y = 0f))
+            up()
+        }
+
+        assertEquals(listOf(CaptureButtonHoldEnd.Released), fixture.holdEnds)
+    }
+
+    @Test
+    fun captureButton_heldAtATarget_showsItArmedUntilReleased() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.hold()
+        fixture.button().performTouchInput {
+            moveBy(Offset(x = -LOCK.distance.toPx() - SLACK, y = 0f))
+        }
+        assertEquals(LOCK, fixture.holdState.armedTarget)
+
+        fixture.button().performTouchInput { up() }
+        assertNull(fixture.holdState.armedTarget)
+        assertFalse(fixture.holdState.isHeld)
+    }
+
+    @Test
+    fun captureButton_targetAccessibilityAction_commitsTheTarget() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.button()
+            .fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions]
+            .single { it.label == LOCK.accessibilityLabel }
+            .action()
+
+        assertEquals(1, fixture.holdStarts)
+        assertEquals(listOf(CaptureButtonHoldEnd.Committed(target = LOCK)), fixture.holdEnds)
+    }
+
+    @Test
     fun captureButton_removedWhileHeld_endsTheHoldAsCancelled() {
         fixture.setContent()
 
@@ -104,5 +170,15 @@ class CaptureButtonHoldTest {
         composeRule.waitForIdle()
 
         assertEquals(listOf(CaptureButtonHoldEnd.Cancelled), fixture.holdEnds)
+    }
+
+    private companion object {
+        private const val SLACK = 20f
+
+        private val LOCK = CaptureButtonTarget(
+            direction = CaptureButtonDirection.Start,
+            accessibilityLabel = "Lock recording",
+            distance = 100.dp,
+        )
     }
 }
