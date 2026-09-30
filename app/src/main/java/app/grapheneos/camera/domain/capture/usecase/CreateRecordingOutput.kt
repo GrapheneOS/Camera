@@ -28,21 +28,55 @@ internal class CreateRecordingOutputImpl @Inject constructor(
         foreignUri: Uri?,
     ): RecordingOutput? {
         val dateString = SimpleDateFormat(DATE_FORMAT, Locale.US).format(Date())
-        val uri = foreignUri ?: createVideo(storageLocation, dateString)
-        val fileDescriptor = uri?.let { outputUri ->
-            captureOutputRepository.openForWriting(outputUri).getOrNull()
+
+        return when (foreignUri) {
+            null -> createOwnOutput(
+                storageLocation = storageLocation,
+                dateString = dateString,
+            )
+
+            else -> openForeignOutput(
+                uri = foreignUri,
+                dateString = dateString,
+            )
         }
+    }
 
-        return when {
-            uri == null || fileDescriptor == null -> null
+    private suspend fun createOwnOutput(
+        storageLocation: String,
+        dateString: String,
+    ): RecordingOutput? {
+        val uri = createVideo(storageLocation, dateString) ?: return null
 
-            else -> RecordingOutput(
+        return captureOutputRepository.openForWriting(uri).fold(
+            onSuccess = { fileDescriptor ->
+                RecordingOutput(
+                    uri = uri,
+                    dateString = dateString,
+                    fileDescriptor = fileDescriptor,
+                    isOwnFile = true,
+                    isPendingMediaStoreUri = storageLocation ==
+                        CapturedItemRepository.MEDIA_STORE_LOCATION,
+                )
+            },
+            onFailure = {
+                captureOutputRepository.delete(uri)
+                null
+            },
+        )
+    }
+
+    private suspend fun openForeignOutput(
+        uri: Uri,
+        dateString: String,
+    ): RecordingOutput? {
+        return captureOutputRepository.openForWriting(uri).getOrNull()?.let { fileDescriptor ->
+            RecordingOutput(
                 uri = uri,
                 dateString = dateString,
                 fileDescriptor = fileDescriptor,
-                isOwnFile = foreignUri == null,
-                isPendingMediaStoreUri = foreignUri == null &&
-                    storageLocation == CapturedItemRepository.MEDIA_STORE_LOCATION,
+                isOwnFile = false,
+                isPendingMediaStoreUri = false,
             )
         }
     }

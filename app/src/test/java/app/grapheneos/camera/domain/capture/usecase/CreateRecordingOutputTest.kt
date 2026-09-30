@@ -84,6 +84,23 @@ class CreateRecordingOutputTest {
             )
 
             assertNull(output)
+            coVerify(exactly = 1) { repository.delete(ownUri) }
+        }
+    }
+
+    @Test
+    fun invoke_withAnUnopenableForeignUri_leavesItInPlace() {
+        runTest {
+            coEvery { repository.openForWriting(any()) } returns
+                Result.failure(IOException("no"))
+
+            val output = createRecordingOutput(
+                storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
+                foreignUri = foreignUri,
+            )
+
+            assertNull(output)
+            coVerify(exactly = 0) { repository.delete(any()) }
         }
     }
 }
