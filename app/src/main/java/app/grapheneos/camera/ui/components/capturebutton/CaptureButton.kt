@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -42,8 +41,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonKeyHandler
-import app.grapheneos.camera.ui.components.capturebutton.gesture.detectCaptureButtonTaps
+import app.grapheneos.camera.ui.components.capturebutton.gesture.detectCaptureButtonGestures
+import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonGestureListener
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
@@ -78,6 +79,9 @@ internal fun CaptureButton(
     progress: CaptureButtonProgress = CaptureButtonProgress.None,
     trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
     icon: ImageVector? = null,
+    onHoldStart: (() -> Unit)? = null,
+    onHoldDrag: (delta: Offset) -> Unit = {},
+    onHoldEnd: (CaptureButtonHoldEnd) -> Unit = {},
     colors: CaptureButtonColors = CaptureButtonColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
 ) {
@@ -85,11 +89,20 @@ internal fun CaptureButton(
     val isPressed by resolvedInteractionSource.collectIsPressedAsState()
     val isFocused by resolvedInteractionSource.collectIsFocusedAsState()
     val alpha by animateEnabledAlpha(enabled = enabled)
-    val currentOnClick by rememberUpdatedState(onClick)
-    val currentEnabled by rememberUpdatedState(enabled)
-    val currentTrigger by rememberUpdatedState(trigger)
     val keyHandler = remember(resolvedInteractionSource) {
         CaptureButtonKeyHandler(interactionSource = resolvedInteractionSource)
+    }
+    val gestureListener = rememberCaptureButtonGestureListener(
+        enabled = enabled,
+        trigger = trigger,
+        onClick = onClick,
+        onHoldStart = onHoldStart,
+        onHoldDrag = onHoldDrag,
+        onHoldEnd = onHoldEnd,
+    )
+
+    require(trigger == CaptureButtonTrigger.Release || onHoldStart == null) {
+        "A press trigger acts before a hold could start"
     }
 
     Box(
@@ -103,7 +116,7 @@ internal fun CaptureButton(
                 this.onClick(
                     label = null,
                     action = {
-                        currentOnClick()
+                        gestureListener.onClick()
                         true
                     },
                 )
@@ -123,11 +136,9 @@ internal fun CaptureButton(
                 interactionSource = resolvedInteractionSource,
             )
             .pointerInput(resolvedInteractionSource) {
-                detectCaptureButtonTaps(
+                detectCaptureButtonGestures(
                     interactionSource = resolvedInteractionSource,
-                    isEnabled = { currentEnabled },
-                    trigger = { currentTrigger },
-                    onClick = { currentOnClick() },
+                    listener = gestureListener,
                 )
             },
         contentAlignment = Alignment.Center,
