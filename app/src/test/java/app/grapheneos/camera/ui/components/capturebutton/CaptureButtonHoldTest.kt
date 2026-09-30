@@ -162,6 +162,51 @@ class CaptureButtonHoldTest {
     }
 
     @Test
+    fun captureButton_draggedDiagonallyToATarget_zoomsAndCommits() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.hold()
+        fixture.button().performTouchInput {
+            moveBy(Offset(x = -LOCK.distance.toPx() - SLACK, y = -LOCK.distance.toPx()))
+            up()
+        }
+
+        assertTrue(fixture.drag.y < 0f)
+        assertEquals(listOf(CaptureButtonHoldEnd.Committed(target = LOCK)), fixture.holdEnds)
+    }
+
+    @Test
+    fun captureButton_swipedStraightToATarget_commitsWithoutWaitingForTheHold() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.button().performTouchInput {
+            down(center)
+            moveBy(Offset(x = -LOCK.distance.toPx() - SLACK, y = 0f))
+            up()
+        }
+
+        assertEquals(1, fixture.holdStarts)
+        assertEquals(listOf(CaptureButtonHoldEnd.Committed(target = LOCK)), fixture.holdEnds)
+    }
+
+    @Test
+    fun captureButton_swipedAwayFromTargets_neitherClicksNorHolds() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.button().performTouchInput {
+            down(center)
+            moveBy(Offset(x = width * 2f, y = 0f))
+            up()
+        }
+
+        assertEquals(0, fixture.clicks)
+        assertEquals(0, fixture.holdStarts)
+    }
+
+    @Test
     fun captureButton_removedWhileHeld_endsTheHoldAsCancelled() {
         fixture.setContent()
 
@@ -177,6 +222,7 @@ class CaptureButtonHoldTest {
 
         private val LOCK = CaptureButtonTarget(
             direction = CaptureButtonDirection.Start,
+            icon = TEST_ICON,
             accessibilityLabel = "Lock recording",
             distance = 100.dp,
         )

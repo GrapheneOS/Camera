@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.components.capturebutton
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -16,7 +15,6 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
-import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import org.junit.Assert.assertEquals
@@ -110,7 +108,7 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_withAnIcon_announcesOnlyTheCallersDescription() {
-        fixture.icon = ICON
+        fixture.icon = TEST_ICON
         fixture.setContent()
 
         fixture.button().assert(
@@ -184,16 +182,5 @@ class CaptureButtonTest {
         fixture.button().assert(
             SemanticsMatcher.keyNotDefined(SemanticsProperties.ProgressBarRangeInfo),
         )
-    }
-
-    private companion object {
-        private val ICON = ImageVector
-            .Builder(
-                defaultWidth = 24.dp,
-                defaultHeight = 24.dp,
-                viewportWidth = 24f,
-                viewportHeight = 24f,
-            )
-            .build()
     }
 }
