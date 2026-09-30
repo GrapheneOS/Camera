@@ -1,7 +1,6 @@
 package app.grapheneos.camera.domain.capture.usecase
 
 import android.net.Uri
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
@@ -34,44 +33,57 @@ internal class StoreCapturedImageImpl @Inject constructor(
             mimeType = mimeType,
         )
 
-        return when (created) {
-            is CaptureOutputResult.Success -> writeAndPublish(
-                uri = created.value,
-                jpegBytes = jpegBytes,
-            )
-
-            is CaptureOutputResult.Failure -> createFailure(
-                storageLocation = storageLocation,
-                cause = created.cause,
-            )
-        }
+        return created.fold(
+            onSuccess = { uri ->
+                writeAndPublish(
+                    uri = uri,
+                    jpegBytes = jpegBytes,
+                )
+            },
+            onFailure = { cause ->
+                createFailure(
+                    storageLocation = storageLocation,
+                    cause = cause,
+                )
+            },
+        )
     }
 
-    private suspend fun writeAndPublish(uri: Uri, jpegBytes: ByteArray): StoreCapturedImageResult {
-        val written = captureOutputRepository.write(uri, jpegBytes)
-        if (written is CaptureOutputResult.Failure) {
+    private suspend fun writeAndPublish(
+        uri: Uri,
+        jpegBytes: ByteArray,
+    ): StoreCapturedImageResult {
+        val writeFailure = captureOutputRepository.write(
+            uri = uri,
+            bytes = jpegBytes,
+        ).exceptionOrNull()
+
+        if (writeFailure != null) {
             captureOutputRepository.delete(uri)
 
             return StoreCapturedImageResult.Failed(
                 stage = Stage.FILE_WRITE,
-                cause = written.cause,
+                cause = writeFailure,
             )
         }
 
-        return when (val published = captureOutputRepository.publish(uri)) {
-            is CaptureOutputResult.Success -> StoreCapturedImageResult.Stored(uri = uri)
-
+        return captureOutputRepository.publish(uri).fold(
+            onSuccess = {
+                StoreCapturedImageResult.Stored(uri = uri)
+            },
             // don't delete the image in this case, since it's already fully written out
-            is CaptureOutputResult.Failure -> StoreCapturedImageResult.Failed(
-                stage = Stage.FILE_WRITE_COMPLETION,
-                cause = published.cause,
-            )
-        }
+            onFailure = { cause ->
+                StoreCapturedImageResult.Failed(
+                    stage = Stage.FILE_WRITE_COMPLETION,
+                    cause = cause,
+                )
+            },
+        )
     }
 
     private fun createFailure(
         storageLocation: String,
-        cause: Exception,
+        cause: Throwable,
     ): StoreCapturedImageResult {
         return when (storageLocation) {
             CapturedItemRepository.MEDIA_STORE_LOCATION -> {

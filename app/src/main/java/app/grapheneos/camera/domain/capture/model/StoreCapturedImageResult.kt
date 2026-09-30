@@ -9,12 +9,12 @@ sealed interface StoreCapturedImageResult {
     ) : StoreCapturedImageResult
 
     data class StorageLocationNotFound(
-        val cause: Exception,
+        val cause: Throwable,
     ) : StoreCapturedImageResult
 
     data class Failed(
         val stage: Stage,
-        val cause: Exception,
+        val cause: Throwable,
     ) : StoreCapturedImageResult
 
     enum class Stage {

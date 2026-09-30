@@ -2,7 +2,6 @@ package app.grapheneos.camera.domain.capture.usecase
 
 import android.net.Uri
 import android.os.ParcelFileDescriptor
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import io.mockk.coEvery
@@ -27,8 +26,8 @@ class CreateRecordingOutputTest {
     private val fileDescriptor = mockk<ParcelFileDescriptor>(relaxed = true)
 
     private val repository = mockk<CaptureOutputRepository>(relaxed = true) {
-        coEvery { createVideo(any(), any(), any()) } returns CaptureOutputResult.Success(ownUri)
-        coEvery { openForWriting(any()) } returns CaptureOutputResult.Success(fileDescriptor)
+        coEvery { createVideo(any(), any(), any()) } returns Result.success(ownUri)
+        coEvery { openForWriting(any()) } returns Result.success(fileDescriptor)
     }
 
     private val createRecordingOutput = CreateRecordingOutputImpl(repository)
@@ -77,7 +76,7 @@ class CreateRecordingOutputTest {
     fun invoke_withAnUnopenableFile_createsNoOutput() {
         runTest {
             coEvery { repository.openForWriting(any()) } returns
-                CaptureOutputResult.Failure(IOException("no"))
+                Result.failure(IOException("no"))
 
             val output = createRecordingOutput(
                 storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,

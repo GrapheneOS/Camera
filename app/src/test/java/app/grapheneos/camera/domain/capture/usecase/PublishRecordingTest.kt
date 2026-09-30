@@ -1,7 +1,6 @@
 package app.grapheneos.camera.domain.capture.usecase
 
 import android.net.Uri
-import app.grapheneos.camera.data.media.model.CaptureOutputResult
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.testutil.recordingOutput
 import io.mockk.coEvery
@@ -35,7 +34,7 @@ class PublishRecordingTest {
     @Test
     fun invoke_aPendingRowThatCannotBePublished_reportsTheFailure() {
         runTest {
-            coEvery { repository.publish(OWN_URI) } returns CaptureOutputResult.Failure(
+            coEvery { repository.publish(OWN_URI) } returns Result.failure(
                 IOException("gone"),
             )
             val output = recordingOutput(uri = OWN_URI, isPendingMediaStoreUri = true)
