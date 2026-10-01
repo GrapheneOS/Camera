@@ -21,6 +21,8 @@ import androidx.compose.ui.test.requestFocus
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,6 +93,34 @@ class CaptureButtonTest {
         }
 
         assertEquals(0, fixture.clicks)
+    }
+
+    @Test
+    fun captureButton_disabledBeforeRelease_doesNotClick() {
+        fixture.setContent()
+
+        fixture.button().performTouchInput { down(center) }
+        fixture.enabled = false
+        composeRule.waitForIdle()
+        fixture.button().performTouchInput { up() }
+
+        assertEquals(0, fixture.clicks)
+    }
+
+    @Test
+    fun captureButton_disabledWhileEnterIsHeld_isNoLongerPressed() {
+        fixture.setContent()
+
+        fixture.button().requestFocus()
+        fixture.button().performKeyInput { keyDown(Key.Enter) }
+        composeRule.waitForIdle()
+
+        assertTrue(fixture.isPressed)
+
+        fixture.enabled = false
+        composeRule.waitForIdle()
+
+        assertFalse(fixture.isPressed)
     }
 
     @Test

@@ -5,7 +5,7 @@ import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -267,7 +267,7 @@ private fun Modifier.targetPlacement(
     layoutDirection: LayoutDirection,
 ): Modifier {
     return this
-        .offset {
+        .absoluteOffset {
             target
                 .position(
                     density = this,

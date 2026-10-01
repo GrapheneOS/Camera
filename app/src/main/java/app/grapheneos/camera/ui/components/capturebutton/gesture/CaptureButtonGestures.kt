@@ -119,11 +119,15 @@ private suspend fun AwaitPointerEventScope.awaitTapOrHold(
 
         PressOutcome.Cancelled -> false
 
-        PressOutcome.Held -> awaitHold(
-            down = down,
-            targetTracker = targetTracker,
-            listener = listener,
-        )
+        PressOutcome.Held -> when {
+            listener.isEnabled -> awaitHold(
+                down = down,
+                targetTracker = targetTracker,
+                listener = listener,
+            )
+
+            else -> awaitRelease()
+        }
     }
 }
 

@@ -65,7 +65,10 @@ internal fun CaptureButton(
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val alpha by animateEnabledAlpha(enabled = enabled)
-    val keyHandler = rememberCaptureButtonKeyHandler(interactionSource = resolvedInteractionSource)
+    val keyHandler = rememberCaptureButtonKeyHandler(
+        interactionSource = resolvedInteractionSource,
+        enabled = enabled,
+    )
     val gestureListener = rememberCaptureButtonGestureListener(
         enabled = enabled,
         trigger = trigger,

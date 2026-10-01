@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui.components.capturebutton.gesture
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
@@ -35,8 +37,15 @@ internal class CaptureButtonKeyHandler(
         return isClickKey
     }
 
+    fun cancel() {
+        val cancelledPress = press ?: return
+
+        press = null
+        interactionSource.tryEmit(PressInteraction.Cancel(press = cancelledPress))
+    }
+
     private fun onKeyDown(listener: CaptureButtonGestureListener) {
-        if (press != null) return
+        if (press != null || !listener.isEnabled) return
 
         val newPress = PressInteraction.Press(pressPosition = Offset.Zero)
         press = newPress
@@ -71,8 +80,23 @@ internal class CaptureButtonKeyHandler(
 @Composable
 internal fun rememberCaptureButtonKeyHandler(
     interactionSource: MutableInteractionSource,
+    enabled: Boolean,
 ): CaptureButtonKeyHandler {
-    return remember(interactionSource) {
+    val keyHandler = remember(interactionSource) {
         CaptureButtonKeyHandler(interactionSource = interactionSource)
     }
+
+    DisposableEffect(keyHandler) {
+        onDispose {
+            keyHandler.cancel()
+        }
+    }
+
+    SideEffect {
+        if (!enabled) {
+            keyHandler.cancel()
+        }
+    }
+
+    return keyHandler
 }

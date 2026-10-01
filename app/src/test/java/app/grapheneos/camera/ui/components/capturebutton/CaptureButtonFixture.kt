@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.components.capturebutton
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -33,6 +35,8 @@ internal class CaptureButtonFixture(
         private set
     val holdEnds = mutableListOf<CaptureButtonHoldEnd>()
     val holdState = CaptureButtonHoldState()
+    var isPressed = false
+        private set
 
     var isShown by mutableStateOf(true)
     var enabled by mutableStateOf(true)
@@ -43,8 +47,12 @@ internal class CaptureButtonFixture(
     var isHoldEnabled by mutableStateOf(false)
     var holdTargets by mutableStateOf<List<CaptureButtonTarget>>(emptyList())
 
+    private val interactionSource = MutableInteractionSource()
+
     fun setContent() {
         composeRule.setContent {
+            isPressed = interactionSource.collectIsPressedAsState().value
+
             CameraTheme {
                 if (isShown) {
                     CaptureButton(
@@ -64,6 +72,7 @@ internal class CaptureButtonFixture(
                         onHoldEnd = { end -> holdEnds += end },
                         holdTargets = holdTargets,
                         holdState = holdState,
+                        interactionSource = interactionSource,
                     )
                 }
             }
@@ -76,6 +85,10 @@ internal class CaptureButtonFixture(
 
     fun hold() {
         button().performTouchInput { down(center) }
+        waitForHold()
+    }
+
+    fun waitForHold() {
         composeRule.mainClock.advanceTimeBy(HOLD_MILLIS)
     }
 
