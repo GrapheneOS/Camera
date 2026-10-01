@@ -116,7 +116,9 @@ private class CaptureButtonGestureListenerImpl(
         }
 
     override fun onClick() {
-        currentOnClick.value()
+        if (currentEnabled.value) {
+            currentOnClick.value()
+        }
     }
 
     override fun onHoldStart() {

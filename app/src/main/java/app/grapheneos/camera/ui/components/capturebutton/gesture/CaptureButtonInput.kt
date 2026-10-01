@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.components.capturebutton.gesture
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -43,10 +44,15 @@ internal fun Modifier.captureButtonInput(
             }
         }
         .onKeyEvent { event ->
-            enabled && keyHandler.onKeyEvent(
+            keyHandler.onKeyEvent(
                 event = event,
                 listener = listener,
             )
+        }
+        .onFocusChanged { focusState ->
+            if (!focusState.isFocused) {
+                keyHandler.cancel()
+            }
         }
         .focusable(
             enabled = enabled,

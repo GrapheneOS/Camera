@@ -207,6 +207,20 @@ class CaptureButtonHoldTest {
     }
 
     @Test
+    fun captureButton_disabledBeforeTheHoldStarts_neitherHoldsNorClicks() {
+        fixture.setContent()
+
+        fixture.button().performTouchInput { down(center) }
+        fixture.enabled = false
+        composeRule.waitForIdle()
+        fixture.waitForHold()
+        fixture.button().performTouchInput { up() }
+
+        assertEquals(0, fixture.holdStarts)
+        assertEquals(0, fixture.clicks)
+    }
+
+    @Test
     fun captureButton_disabledWhileHeld_keepsTheHold() {
         fixture.setContent()
 
