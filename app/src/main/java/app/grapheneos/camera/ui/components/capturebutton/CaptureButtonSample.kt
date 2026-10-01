@@ -1,23 +1,10 @@
 package app.grapheneos.camera.ui.components.capturebutton
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.KeyframesSpec
-import androidx.compose.animation.core.keyframes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,22 +21,21 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProg
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.CameraPreviewControl
+import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
+import app.grapheneos.camera.ui.core.PreviewCountdown
 import java.util.Locale
 
 private const val TIMER_SECONDS = 3
-private const val SECOND_MILLIS = 1_000
-private const val SEGMENT_DRAIN_MILLIS = 500
 private const val ZOOM_DRAG_PX = 400f
 private const val MIN_ZOOM = 0.5f
 private const val MAX_ZOOM = 10f
 private const val QUARTER_TURN = 90f
 private const val FULL_TURN = 360f
 
-private val SAMPLE_AREA_HEIGHT = 200.dp
 private val SAMPLE_LOCK = CaptureButtonTarget(
     direction = CaptureButtonDirection.Start,
     distance = 120.dp,
@@ -63,43 +49,53 @@ private enum class SampleRecording {
     Locked,
 }
 
-@Preview(heightDp = 400)
+@Preview(heightDp = 720)
 @Composable
 private fun CaptureButtonSamplePreview() {
-    CameraPreviewColumn {
-        CaptureButtonSample()
-    }
+    CaptureButtonSample()
 }
 
 @Composable
 private fun CaptureButtonSample() {
     val state = remember { CaptureButtonSampleState() }
 
-    LaunchedEffect(state.countdowns, state.isCountingDown) {
-        state.runCountdown()
-    }
+    state.countdown.Effect(onFinished = state::finishCountdown)
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(space = 8.dp),
+    CameraPreviewSample(
+        status = "Zoom ${"%.1f".format(Locale.ROOT, state.zoom)}×, ${state.recording}",
+        controls = {
+            CameraPreviewControl(
+                text = state.modeLabel,
+                onClick = state::switchMode,
+            )
+            CameraPreviewControl(
+                text = state.timerLabel,
+                onClick = state::switchTimer,
+            )
+            CameraPreviewControl(
+                text = "Rotate ${state.rotation.toInt()}°",
+                onClick = state::rotate,
+            )
+        },
     ) {
-        Text(text = "Zoom ${"%.1f".format(Locale.ROOT, state.zoom)}×, ${state.recording}")
-        Box(
+        SampleCaptureButton(
+            state = state,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(SAMPLE_AREA_HEIGHT),
-            contentAlignment = Alignment.Center,
-        ) {
-            SampleCaptureButton(state = state)
-        }
-        SampleControls(state = state)
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp),
+        )
     }
 }
 
 @Composable
-private fun SampleCaptureButton(state: CaptureButtonSampleState) {
+private fun SampleCaptureButton(
+    state: CaptureButtonSampleState,
+    modifier: Modifier = Modifier,
+) {
     CaptureButton(
         onClick = state::click,
         core = state.core,
+        modifier = modifier,
         tone = state.tone,
         progress = state.progress,
         trigger = state.trigger,
@@ -112,39 +108,12 @@ private fun SampleCaptureButton(state: CaptureButtonSampleState) {
     )
 }
 
-@Composable
-private fun SampleControls(state: CaptureButtonSampleState) {
-    Row {
-        TextButton(onClick = { state.isVideoMode = !state.isVideoMode }) {
-            Text(
-                text = when {
-                    state.isVideoMode -> "Video"
-                    else -> "Photo"
-                },
-            )
-        }
-        TextButton(onClick = { state.isTimerOn = !state.isTimerOn }) {
-            Text(
-                text = when {
-                    state.isTimerOn -> "Timer ${TIMER_SECONDS}s"
-                    else -> "No timer"
-                },
-            )
-        }
-        TextButton(onClick = state::rotate) {
-            Text(text = "Rotate ${state.rotation.toInt()}°")
-        }
-    }
-}
-
 @Stable
 private class CaptureButtonSampleState {
 
     var isVideoMode by mutableStateOf(false)
-    var isTimerOn by mutableStateOf(false)
-    var isCountingDown by mutableStateOf(false)
         private set
-    var countdowns by mutableIntStateOf(0)
+    var isTimerOn by mutableStateOf(false)
         private set
     var recording by mutableStateOf(SampleRecording.Idle)
         private set
@@ -153,7 +122,12 @@ private class CaptureButtonSampleState {
     var rotation by mutableFloatStateOf(0f)
         private set
 
-    private val countdown = Animatable(initialValue = 1f)
+    val countdown = PreviewCountdown(initialSeconds = TIMER_SECONDS)
+
+    private val isCountingDown: Boolean
+        get() {
+            return countdown.isRunning
+        }
 
     val canHold: Boolean
         get() {
@@ -183,10 +157,26 @@ private class CaptureButtonSampleState {
             return when {
                 isCountingDown -> CaptureButtonProgress.Segmented(
                     segments = TIMER_SECONDS,
-                    fraction = { countdown.value },
+                    fraction = countdown::remainingFraction,
                 )
 
                 else -> CaptureButtonProgress.None
+            }
+        }
+
+    val modeLabel: String
+        get() {
+            return when {
+                isVideoMode -> "Video"
+                else -> "Photo"
+            }
+        }
+
+    val timerLabel: String
+        get() {
+            return when {
+                isTimerOn -> "Timer ${TIMER_SECONDS}s"
+                else -> "No timer"
             }
         }
 
@@ -209,16 +199,19 @@ private class CaptureButtonSampleState {
 
     fun click() {
         when {
-            isCountingDown -> isCountingDown = false
+            isCountingDown -> countdown.cancel()
             recording != SampleRecording.Idle -> recording = SampleRecording.Idle
-            isTimerOn -> startCountdown()
+            isTimerOn -> countdown.start()
             isVideoMode -> recording = SampleRecording.Locked
         }
     }
 
-    private fun startCountdown() {
-        isCountingDown = true
-        countdowns += 1
+    fun switchMode() {
+        isVideoMode = !isVideoMode
+    }
+
+    fun switchTimer() {
+        isTimerOn = !isTimerOn
     }
 
     fun startHold() {
@@ -240,35 +233,9 @@ private class CaptureButtonSampleState {
         rotation = (rotation + QUARTER_TURN) % FULL_TURN
     }
 
-    suspend fun runCountdown() {
-        if (!isCountingDown) return
-
-        countdown.snapTo(targetValue = 1f)
-        countdown.animateTo(
-            targetValue = 0f,
-            animationSpec = countdownSpec(),
-        )
-        if (isCountingDown) {
-            isCountingDown = false
-            if (isVideoMode) {
-                recording = SampleRecording.Locked
-            }
+    fun finishCountdown() {
+        if (isVideoMode) {
+            recording = SampleRecording.Locked
         }
-    }
-
-    private fun countdownSpec(): KeyframesSpec<Float> {
-        return keyframes {
-            durationMillis = TIMER_SECONDS * SECOND_MILLIS
-            repeat(TIMER_SECONDS) { second ->
-                val drainStart = (second + 1) * SECOND_MILLIS - SEGMENT_DRAIN_MILLIS
-
-                remainingFraction(elapsedSeconds = second) at drainStart using FastOutSlowInEasing
-                remainingFraction(elapsedSeconds = second + 1) at (second + 1) * SECOND_MILLIS
-            }
-        }
-    }
-
-    private fun remainingFraction(elapsedSeconds: Int): Float {
-        return (TIMER_SECONDS - elapsedSeconds).toFloat() / TIMER_SECONDS
     }
 }
