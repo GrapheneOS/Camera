@@ -21,12 +21,18 @@ internal fun DrawScope.drawAdjustmentBar(
     hasStartIcon: Boolean,
     hasEndIcon: Boolean,
     isFocused: Boolean,
+    tint: AdjustmentBarTint,
     metrics: AdjustmentBarMetrics,
     colors: AdjustmentBarColors,
 ) {
     drawRoundRect(
         color = colors.containerColor,
         cornerRadius = CornerRadius(size.height / 2),
+    )
+    tint.draw(
+        drawScope = this,
+        position = position,
+        lastTick = scale.lastTick,
     )
     scale(
         scaleX = when (layoutDirection) {
