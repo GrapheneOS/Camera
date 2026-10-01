@@ -60,8 +60,9 @@ app/src/main/java/app/grapheneos/camera/
     qr/usecase/         barcode scanning
     gallery/usecase/    share, edit, delete (the guarded variants from CapturedItems.kt)
   ui/
-    core/               Theme.kt, Preview.kt
-    common/components/  composables shared across screens
+    core/               Theme.kt, CameraColors.kt, Preview.kt, PreviewIcons.kt
+    components/         design-system components, one package each
+    common/components/  screen-level composables shared across screens
     viewfinder/
       screen/           ViewfinderScreen, ViewfinderViewModel, ViewfinderStateHolder,
                         ViewfinderEffectHandler
@@ -69,7 +70,7 @@ app/src/main/java/app/grapheneos/camera/
                         ViewfinderScreenEffect, NavEvent
         mapper/         mappers from ViewfinderState
         delegate/       ViewModel delegates: settings, mode, camera
-      components/       CaptureButton, ModeTabStrip, ZoomSlider, GridOverlay, FocusRing, ...
+      components/       viewfinder-only composables assembled from ui/components
     gallery/            same screen/{model,mapper} + components/ shape
     videoplayer/        "
     settings/           "  (viewfinder settings sheet)

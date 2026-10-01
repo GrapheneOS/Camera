@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ internal fun CameraPreviewColumn(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .safeDrawingPadding()
                 .padding(all = 16.dp),
         ) {
             content()

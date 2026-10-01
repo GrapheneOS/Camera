@@ -1,5 +1,8 @@
 package app.grapheneos.camera.ui.components.capturebutton
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -79,6 +82,18 @@ class CaptureButtonTest {
     }
 
     @Test
+    fun captureButton_touchCancelled_doesNotClick() {
+        fixture.setContent()
+
+        fixture.button().performTouchInput {
+            down(center)
+            cancel()
+        }
+
+        assertEquals(0, fixture.clicks)
+    }
+
+    @Test
     fun captureButton_enterPressed_clicks() {
         fixture.setContent()
 
@@ -128,41 +143,28 @@ class CaptureButtonTest {
     }
 
     @Test
-    fun captureButton_determinateProgress_isReportedOnTheButton() {
-        fixture.progress = CaptureButtonProgress.Determinate(fraction = 0.6f)
+    fun captureButton_segmentedProgress_isReportedOnTheButton() {
+        fixture.progress = CaptureButtonProgress.Segmented(
+            segments = 10,
+            fraction = { 0.7f },
+        )
         fixture.setContent()
 
         fixture.button().assertRangeInfoEquals(
             ProgressBarRangeInfo(
-                current = 0.6f,
+                current = 0.7f,
                 range = 0f..1f,
             ),
         )
     }
 
     @Test
-    fun captureButton_segmentedProgress_isReportedInSteps() {
-        fixture.progress = CaptureButtonProgress.Segmented(
-            segments = 10,
-            filled = 7,
-        )
+    fun captureButton_fractionChanged_reportsTheNewProgress() {
+        var fraction by mutableFloatStateOf(0.2f)
+        fixture.progress = CaptureButtonProgress.Determinate(fraction = { fraction })
         fixture.setContent()
 
-        fixture.button().assertRangeInfoEquals(
-            ProgressBarRangeInfo(
-                current = 7f,
-                range = 0f..10f,
-                steps = 9,
-            ),
-        )
-    }
-
-    @Test
-    fun captureButton_progressChanged_reportsTheNewProgress() {
-        fixture.progress = CaptureButtonProgress.Determinate(fraction = 0.2f)
-        fixture.setContent()
-
-        fixture.progress = CaptureButtonProgress.Determinate(fraction = 0.8f)
+        fraction = 0.8f
 
         fixture.button().assertRangeInfoEquals(
             ProgressBarRangeInfo(
