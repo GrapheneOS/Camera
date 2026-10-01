@@ -1,31 +1,47 @@
 package app.grapheneos.camera.ui.components.countdowntimer
 
-import androidx.compose.animation.core.FloatSpringSpec
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CountDownTimerMotionTest {
 
     @Test
-    fun punch_overshootStaysWithinMaxBoldness() {
-        val spring = FloatSpringSpec(
-            dampingRatio = PUNCH_SPEC.dampingRatio,
-            stiffness = PUNCH_SPEC.stiffness,
-        )
-        val peak = (0..SETTLE_MILLIS).maxOf { millis ->
-            spring.getValueFromNanos(
-                playTimeNanos = millis * NANOS_PER_MILLI,
-                initialValue = 0f,
-                targetValue = 1f,
-                initialVelocity = 0f,
-            )
+    fun boldness_startsWhereThePreviousSecondLeftIt() {
+        assertEquals(0.3f, boldnessAt(elapsedMillis = 0f, startBoldness = 0.3f), TOLERANCE)
+    }
+
+    @Test
+    fun boldness_overshootStaysWithinMaxBoldness() {
+        val peak = (0..SECOND_MILLIS).maxOf { millis ->
+            boldnessAt(elapsedMillis = millis.toFloat(), startBoldness = 0f)
         }
 
         assertTrue("peak $peak", peak in 1f..MAX_BOLDNESS)
     }
 
+    @Test
+    fun boldness_isAtRestWhenTheSecondEnds() {
+        val boldness = boldnessAt(
+            elapsedMillis = SECOND_MILLIS.toFloat(),
+            startBoldness = 0f,
+        )
+
+        assertEquals(0f, boldness, TOLERANCE)
+    }
+
+    private fun boldnessAt(
+        elapsedMillis: Float,
+        startBoldness: Float,
+    ): Float {
+        return CountDownTimerBoldness.boldnessAt(
+            elapsedMillis = elapsedMillis,
+            startBoldness = startBoldness,
+        )
+    }
+
     private companion object {
-        private const val SETTLE_MILLIS = 1_000L
-        private const val NANOS_PER_MILLI = 1_000_000L
+        private const val SECOND_MILLIS = 1_000
+        private const val TOLERANCE = 0.001f
     }
 }

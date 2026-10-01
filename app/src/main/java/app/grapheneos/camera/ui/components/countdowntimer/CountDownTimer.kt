@@ -51,11 +51,11 @@ internal fun CountDownTimer(
         "value must not be negative, was $value"
     }
 
-    val boldness by animateCountDownTimerBoldness(value = value)
+    val boldness = rememberCountDownTimerBoldness(value = value)
 
     CountDownTimerText(
         text = rememberCountDownTimerText(value = value),
-        boldness = { boldness },
+        boldness = { boldness.value },
         modifier = modifier,
         colors = colors,
     )
