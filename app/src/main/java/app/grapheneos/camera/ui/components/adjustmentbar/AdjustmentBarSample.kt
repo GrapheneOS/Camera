@@ -6,17 +6,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -36,7 +31,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.overlayiconbutton.OverlayIconButton
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.CameraPreviewControl
+import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
@@ -48,11 +44,15 @@ import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
 import kotlin.math.roundToLong
 
-private const val VIEWFINDER_ASPECT_RATIO = 3f / 4f
 private const val AUTO_TEMPERATURE = 5_000f
+
+private const val POP_SCALE = 0.8f
 
 private val RESET_BUTTON_SIZE = 48.dp
 private val RESET_BUTTON_GAP = 8.dp
+private val CHIP_SLOT_HEIGHT = 32.dp
+private val POP_IN = fadeIn() + scaleIn(initialScale = POP_SCALE)
+private val POP_OUT = fadeOut() + scaleOut(targetScale = POP_SCALE)
 
 private val EXPOSURE_RANGE = -12f..12f
 private const val EXPOSURE_STEPS = 23
@@ -79,59 +79,48 @@ private enum class SampleAdjustment(
 @Preview(heightDp = 720)
 @Composable
 private fun AdjustmentBarSamplePreview() {
-    CameraPreviewColumn {
-        AdjustmentBarSample()
-    }
+    AdjustmentBarSample()
 }
 
 @Composable
 private fun AdjustmentBarSample() {
     val state = remember { AdjustmentBarSampleState() }
+    val valueLabel = rememberValueLabel(state = state)
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(space = 8.dp),
-    ) {
-        Row {
-            SampleAdjustment.entries.forEach { adjustment ->
-                TextButton(onClick = { state.adjustment = adjustment }) {
-                    Text(text = adjustment.label)
-                }
-            }
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(ratio = VIEWFINDER_ASPECT_RATIO)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    shape = MaterialTheme.shapes.large,
-                ),
-        ) {
-            SampleControls(
-                state = state,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp),
+    CameraPreviewSample(
+        status = "${state.adjustment.label}: $valueLabel",
+        controls = {
+            CameraPreviewControl(
+                text = state.adjustment.label,
+                onClick = state::nextAdjustment,
             )
-        }
+        },
+    ) {
+        SampleControls(
+            state = state,
+            valueLabel = valueLabel,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp),
+        )
     }
 }
 
 @Composable
 private fun SampleControls(
     state: AdjustmentBarSampleState,
+    valueLabel: String,
     modifier: Modifier = Modifier,
 ) {
-    val valueLabel = rememberValueLabel(state = state)
-
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(space = 12.dp),
     ) {
-        AnimatedVisibility(visible = state.adjustment == SampleAdjustment.WhiteBalance) {
-            ValueChip(text = valueLabel)
-        }
+        SampleValueChip(
+            isVisible = state.adjustment == SampleAdjustment.WhiteBalance,
+            text = valueLabel,
+        )
         Box(modifier = Modifier.fillMaxWidth()) {
             SampleAdjustmentBar(
                 state = state,
@@ -151,6 +140,26 @@ private fun SampleControls(
     }
 }
 
+/** The slot keeps its height while the chip is hidden, so the bar below it never moves. */
+@Composable
+private fun SampleValueChip(
+    isVisible: Boolean,
+    text: String,
+) {
+    Box(
+        modifier = Modifier.heightIn(min = CHIP_SLOT_HEIGHT),
+        contentAlignment = Alignment.Center,
+    ) {
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = POP_IN,
+            exit = POP_OUT,
+        ) {
+            ValueChip(text = text)
+        }
+    }
+}
+
 @Composable
 private fun SampleResetButton(
     isVisible: Boolean,
@@ -160,8 +169,8 @@ private fun SampleResetButton(
     AnimatedVisibility(
         visible = isVisible,
         modifier = modifier,
-        enter = fadeIn() + scaleIn(),
-        exit = fadeOut() + scaleOut(),
+        enter = POP_IN,
+        exit = POP_OUT,
     ) {
         OverlayIconButton(
             onClick = onClick,
@@ -226,6 +235,7 @@ private fun rememberValueLabel(state: AdjustmentBarSampleState): String {
 private class AdjustmentBarSampleState {
 
     var adjustment by mutableStateOf(SampleAdjustment.Brightness)
+        private set
     var exposure by mutableFloatStateOf(0f)
         private set
     var isExposureAdjusted by mutableStateOf(false)
@@ -264,6 +274,12 @@ private class AdjustmentBarSampleState {
                 SampleAdjustment.WhiteBalance -> temperature != null
             }
         }
+
+    fun nextAdjustment() {
+        val adjustments = SampleAdjustment.entries
+
+        adjustment = adjustments[(adjustment.ordinal + 1) % adjustments.size]
+    }
 
     fun change(value: Float) {
         when (adjustment) {
