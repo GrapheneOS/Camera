@@ -13,19 +13,15 @@ internal data class CameraColors(
     val overlay: Color,
     val onOverlay: Color,
     val overlayScrim: Color,
-    val overlayAccent: Color,
 ) {
 
     companion object {
-        fun withAccent(overlayAccent: Color): CameraColors {
-            return CameraColors(
-                recording = Color(color = 0xFFEC0000),
-                overlay = Color.White,
-                onOverlay = Color.Black,
-                overlayScrim = Color.Black.copy(alpha = 0.6f),
-                overlayAccent = overlayAccent,
-            )
-        }
+        val DEFAULT = CameraColors(
+            recording = Color(color = 0xFFEC0000),
+            overlay = Color.White,
+            onOverlay = Color.Black,
+            overlayScrim = Color.Black.copy(alpha = 0.6f),
+        )
     }
 }
 

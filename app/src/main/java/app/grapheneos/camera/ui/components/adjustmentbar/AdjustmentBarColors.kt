@@ -30,16 +30,17 @@ internal data class AdjustmentBarColors(
         @ReadOnlyComposable
         fun fromTheme(): AdjustmentBarColors {
             val cameraColors = MaterialTheme.cameraColors
+            val accent = MaterialTheme.colorScheme.primaryFixedDim
 
             return AdjustmentBarColors(
                 containerColor = cameraColors.overlayScrim,
                 startTint = Color.Transparent,
                 endTint = Color.Transparent,
                 tickColor = cameraColors.overlay,
-                majorTickColor = cameraColors.overlayAccent,
-                indicatorColor = cameraColors.overlayAccent,
-                startIconColor = cameraColors.overlayAccent,
-                endIconColor = cameraColors.overlayAccent,
+                majorTickColor = accent,
+                indicatorColor = accent,
+                startIconColor = accent,
+                endIconColor = accent,
                 focusColor = cameraColors.overlay,
             )
         }
