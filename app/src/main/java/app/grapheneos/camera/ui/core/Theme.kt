@@ -14,7 +14,6 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -31,22 +30,12 @@ internal fun CameraTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
     val colorScheme = cameraColorScheme(
-        context = context,
+        context = LocalContext.current,
         darkTheme = darkTheme,
     )
-    // Overlays sit on the camera image whatever the theme, so their accent is always the dark one.
-    val cameraColors = remember(context) {
-        CameraColors.withAccent(
-            overlayAccent = cameraColorScheme(
-                context = context,
-                darkTheme = true,
-            ).primary,
-        )
-    }
 
-    CompositionLocalProvider(LocalCameraColors provides cameraColors) {
+    CompositionLocalProvider(LocalCameraColors provides CameraColors.DEFAULT) {
         MaterialTheme(
             colorScheme = colorScheme,
             shapes = CAMERA_SHAPES,
