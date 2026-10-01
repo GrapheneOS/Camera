@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 private const val PRESSED_SCALE = 1.1f
 private const val HELD_SCALE = 1.15f
 private const val PRESSED_ALPHA = 0.8f
-private const val DISABLED_ALPHA = 0.35f
 private const val FULL_TURN = 360f
 private const val HALF_TURN = 180f
 
@@ -61,16 +60,6 @@ internal fun animatePressedColor(
         animationSpec = when {
             isHeld -> LIFT_COLOR_SPEC
             else -> spring()
-        },
-    )
-}
-
-@Composable
-internal fun animateEnabledAlpha(enabled: Boolean): State<Float> {
-    return animateFloatAsState(
-        targetValue = when {
-            enabled -> 1f
-            else -> DISABLED_ALPHA
         },
     )
 }
