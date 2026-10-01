@@ -31,6 +31,8 @@ import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.PREVIEW_COOL_TINT
+import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
 
 private val BAR_WIDTH = 284.dp
 private val BAR_HEIGHT = 52.dp
@@ -78,6 +80,7 @@ internal fun AdjustmentBar(
         onValueChange = onValueChange,
         onValueChangeFinished = onValueChangeFinished,
     )
+    val tint = rememberAdjustmentBarTint(colors = colors)
     val alpha by animateEnabledAlpha(enabled = enabled)
 
     Box(
@@ -103,6 +106,7 @@ internal fun AdjustmentBar(
             majorTickInterval = majorTickInterval,
             startIcon = startIcon,
             endIcon = endIcon,
+            tint = tint,
             metrics = metrics,
             colors = colors,
             interactionSource = resolvedInteractionSource,
@@ -118,6 +122,7 @@ private fun BoxScope.AdjustmentBarLayers(
     majorTickInterval: Int,
     startIcon: ImageVector?,
     endIcon: ImageVector?,
+    tint: AdjustmentBarTint,
     metrics: AdjustmentBarMetrics,
     colors: AdjustmentBarColors,
     interactionSource: InteractionSource,
@@ -132,6 +137,7 @@ private fun BoxScope.AdjustmentBarLayers(
             hasStartIcon = startIcon != null,
             hasEndIcon = endIcon != null,
             isFocused = isFocused,
+            tint = tint,
             metrics = metrics,
             colors = colors,
         )
@@ -182,11 +188,40 @@ private fun AdjustmentBarPreview() {
     }
 }
 
+@PreviewLightDark
+@Composable
+private fun AdjustmentBarTintPreview() {
+    CameraPreviewColumn {
+        val colors = AdjustmentBarColors.fromTheme().copy(
+            startTint = PREVIEW_COOL_TINT,
+            endTint = PREVIEW_WARM_TINT,
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(space = 16.dp),
+        ) {
+            PreviewAdjustmentBar(
+                value = -6f,
+                colors = colors,
+            )
+            PreviewAdjustmentBar(
+                value = 6f,
+                colors = colors,
+            )
+            PreviewAdjustmentBar(
+                value = 12f,
+                colors = colors,
+            )
+        }
+    }
+}
+
 @Composable
 private fun PreviewAdjustmentBar(
     value: Float,
     hasIcons: Boolean = true,
     enabled: Boolean = true,
+    colors: AdjustmentBarColors = AdjustmentBarColors.fromTheme(),
 ) {
     var currentValue by remember { mutableFloatStateOf(value) }
 
@@ -198,5 +233,6 @@ private fun PreviewAdjustmentBar(
         enabled = enabled,
         startIcon = PREVIEW_BRIGHTNESS_LOW_ICON.takeIf { hasIcons },
         endIcon = PREVIEW_BRIGHTNESS_HIGH_ICON.takeIf { hasIcons },
+        colors = colors,
     )
 }
