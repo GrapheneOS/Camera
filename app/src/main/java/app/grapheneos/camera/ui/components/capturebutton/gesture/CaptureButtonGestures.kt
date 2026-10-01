@@ -6,11 +6,15 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.isOutOfBounds
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 
@@ -130,7 +134,7 @@ private suspend fun AwaitPointerEventScope.awaitPressOutcome(
     var outcome: PressOutcome? = null
 
     while (outcome == null) {
-        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+        val change = awaitPointerEvent().changes.fastFirstOrNull { it.id == down.id }
 
         if (change != null) {
             outcome = pressOutcome(
@@ -139,9 +143,18 @@ private suspend fun AwaitPointerEventScope.awaitPressOutcome(
                 targetTracker = targetTracker,
             )
         }
+        if (outcome == null && isConsumedByOthers(pointerId = down.id)) {
+            outcome = PressOutcome.Cancelled
+        }
     }
 
     return outcome
+}
+
+private suspend fun AwaitPointerEventScope.isConsumedByOthers(pointerId: PointerId): Boolean {
+    val finalChanges = awaitPointerEvent(PointerEventPass.Final).changes
+
+    return finalChanges.fastAny { it.id == pointerId && it.isConsumed }
 }
 
 private fun AwaitPointerEventScope.pressOutcome(
@@ -149,11 +162,6 @@ private fun AwaitPointerEventScope.pressOutcome(
     down: PointerInputChange,
     targetTracker: CaptureButtonTargetTracker,
 ): PressOutcome? {
-    val leadsToTarget = targetTracker.leadsToTarget(
-        offset = change.position - down.position,
-        touchSlop = viewConfiguration.touchSlop,
-    )
-
     return when {
         change.changedToUp() -> {
             change.consume()
@@ -164,7 +172,10 @@ private fun AwaitPointerEventScope.pressOutcome(
             PressOutcome.Cancelled
         }
 
-        leadsToTarget -> {
+        targetTracker.leadsToTarget(
+            offset = change.position - down.position,
+            touchSlop = viewConfiguration.touchSlop,
+        ) -> {
             PressOutcome.Held
         }
 
@@ -204,26 +215,37 @@ private suspend fun AwaitPointerEventScope.trackHold(
     listener: CaptureButtonGestureListener,
 ): CaptureButtonHoldEnd {
     val dragFilter = CaptureButtonDragFilter(touchSlop = viewConfiguration.touchSlop)
-    var isHeld = true
+    var end: CaptureButtonHoldEnd? = null
 
-    while (isHeld) {
-        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+    while (end == null) {
+        val change = awaitPointerEvent().changes.fastFirstOrNull { it.id == down.id }
 
         if (change != null) {
-            val delta = dragFilter.filter(change.positionChange())
-            val offset = change.position - down.position
+            // Compose delivers a system touch cancel as a release that is already consumed
+            val isCancelled = !change.pressed && change.isConsumed
 
+            if (!isCancelled) {
+                val offset = change.position - down.position
+
+                listener.onHoldMove(
+                    delta = dragFilter.filter(change.positionChange()),
+                    offset = offset,
+                    armedTarget = targetTracker.update(offset),
+                )
+            }
             change.consume()
-            isHeld = change.pressed
-
-            listener.onHoldMove(
-                delta = delta,
-                offset = offset,
-                armedTarget = targetTracker.update(offset),
-            )
+            end = when {
+                isCancelled -> CaptureButtonHoldEnd.Cancelled
+                change.pressed -> null
+                else -> releasedHoldEnd(targetTracker = targetTracker)
+            }
         }
     }
 
+    return end
+}
+
+private fun releasedHoldEnd(targetTracker: CaptureButtonTargetTracker): CaptureButtonHoldEnd {
     return when (val armedTarget = targetTracker.armedTarget) {
         null -> CaptureButtonHoldEnd.Released
         else -> CaptureButtonHoldEnd.Committed(target = armedTarget)

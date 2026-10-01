@@ -95,14 +95,46 @@ private fun DrawScope.drawSegments(
             stroke = stroke,
         )
         if (fill > 0f) {
+            val filled = segmentFill(
+                fill = fill,
+                sweepAngle = sweepAngle,
+                capAngle = capAngle,
+            )
+
             drawSegment(
-                color = color,
+                color = color.copy(alpha = color.alpha * filled.alpha),
                 startAngle = startAngle,
-                sweepAngle = sweepAngle * fill,
+                sweepAngle = filled.sweepAngle,
                 radius = radius,
                 stroke = stroke,
             )
         }
+    }
+}
+
+internal data class SegmentFill(
+    val sweepAngle: Float,
+    val alpha: Float,
+)
+
+internal fun segmentFill(
+    fill: Float,
+    sweepAngle: Float,
+    capAngle: Float,
+): SegmentFill {
+    val capsAngle = capAngle * 2
+    val visibleAngle = (sweepAngle + capsAngle) * fill
+
+    return when {
+        visibleAngle >= capsAngle -> SegmentFill(
+            sweepAngle = visibleAngle - capsAngle,
+            alpha = 1f,
+        )
+
+        else -> SegmentFill(
+            sweepAngle = 0f,
+            alpha = visibleAngle / capsAngle,
+        )
     }
 }
 
