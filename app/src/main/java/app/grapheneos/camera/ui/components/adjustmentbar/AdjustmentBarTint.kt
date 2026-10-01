@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import kotlin.math.abs
 
-/** The brushes are built once and only their alpha changes while drawing, so a drag allocates nothing. */
 @Immutable
 internal class AdjustmentBarTint(
     startTint: Color,

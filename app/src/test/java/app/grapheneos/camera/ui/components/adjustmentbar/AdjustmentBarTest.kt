@@ -196,7 +196,7 @@ class AdjustmentBarTest {
     fun adjustmentBar_endIconHeld_keepsSteppingUntilReleased() {
         setContent()
 
-        holdIcon(millis = longPressTimeoutMillis + REPEAT_SLACK_MILLIS)
+        holdIcon(millis = longPressTimeoutMillis + TWO_REPEATS_MILLIS)
 
         assertEquals(listOf(1f, 2f, 3f), changes)
     }
@@ -206,7 +206,7 @@ class AdjustmentBarTest {
         value = 10f
         setContent()
 
-        holdIcon(millis = longPressTimeoutMillis + REPEAT_SLACK_MILLIS)
+        holdIcon(millis = longPressTimeoutMillis + TWO_REPEATS_MILLIS)
 
         assertEquals(listOf(11f, 12f), changes)
     }
@@ -258,9 +258,14 @@ class AdjustmentBarTest {
     }
 
     private fun holdIcon(millis: Long) {
-        bar().performTouchInput { down(Offset(x = width - height / 2f, y = centerY)) }
-        composeRule.mainClock.advanceTimeBy(millis)
-        bar().performTouchInput { up() }
+        composeRule.mainClock.autoAdvance = false
+        try {
+            bar().performTouchInput { down(Offset(x = width - height / 2f, y = centerY)) }
+            composeRule.mainClock.advanceTimeBy(millis)
+            bar().performTouchInput { up() }
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+        }
     }
 
     private fun drag(ticks: Float) {
@@ -285,9 +290,7 @@ class AdjustmentBarTest {
     private companion object {
         private const val TAG = "adjustmentBar"
         private const val DRAG_MOVES = 20
-
-        // Past the long-press timeout: the first step, then two repeats 100 ms apart.
-        private const val REPEAT_SLACK_MILLIS = 250L
+        private const val TWO_REPEATS_MILLIS = 250L
         private val TICK_SPACING = 8.75.dp
     }
 }
