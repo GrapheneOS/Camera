@@ -2,6 +2,8 @@ package app.grapheneos.camera.ui.components.capturebutton.gesture
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -19,52 +21,40 @@ internal class CaptureButtonKeyHandler(
 
     fun onKeyEvent(
         event: KeyEvent,
-        trigger: CaptureButtonTrigger,
-        onClick: () -> Unit,
+        listener: CaptureButtonGestureListener,
     ): Boolean {
         val isClickKey = event.key in CLICK_KEYS
 
         if (isClickKey) {
             when (event.type) {
-                KeyEventType.KeyDown -> onKeyDown(
-                    trigger = trigger,
-                    onClick = onClick,
-                )
-
-                KeyEventType.KeyUp -> onKeyUp(
-                    onClick = onClick,
-                )
+                KeyEventType.KeyDown -> onKeyDown(listener = listener)
+                KeyEventType.KeyUp -> onKeyUp(listener = listener)
             }
         }
 
         return isClickKey
     }
 
-    private fun onKeyDown(
-        trigger: CaptureButtonTrigger,
-        onClick: () -> Unit,
-    ) {
+    private fun onKeyDown(listener: CaptureButtonGestureListener) {
         if (press != null) return
 
         val newPress = PressInteraction.Press(pressPosition = Offset.Zero)
         press = newPress
-        pressTrigger = trigger
+        pressTrigger = listener.trigger
         interactionSource.tryEmit(newPress)
 
-        if (trigger == CaptureButtonTrigger.Press) {
-            onClick()
+        if (pressTrigger == CaptureButtonTrigger.Press) {
+            listener.onClick()
         }
     }
 
-    private fun onKeyUp(
-        onClick: () -> Unit,
-    ) {
+    private fun onKeyUp(listener: CaptureButtonGestureListener) {
         val releasedPress = press ?: return
 
         press = null
         interactionSource.tryEmit(PressInteraction.Release(press = releasedPress))
         if (pressTrigger == CaptureButtonTrigger.Release) {
-            onClick()
+            listener.onClick()
         }
     }
 
@@ -75,5 +65,14 @@ internal class CaptureButtonKeyHandler(
             Key.DirectionCenter,
             Key.Spacebar,
         )
+    }
+}
+
+@Composable
+internal fun rememberCaptureButtonKeyHandler(
+    interactionSource: MutableInteractionSource,
+): CaptureButtonKeyHandler {
+    return remember(interactionSource) {
+        CaptureButtonKeyHandler(interactionSource = interactionSource)
     }
 }

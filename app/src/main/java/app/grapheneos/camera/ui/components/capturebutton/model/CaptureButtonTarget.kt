@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 
+/** A place to release a hold on to commit it, [distance] away from the button's centre. */
 @Immutable
 internal data class CaptureButtonTarget(
     val direction: CaptureButtonDirection,

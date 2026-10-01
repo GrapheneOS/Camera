@@ -207,6 +207,32 @@ class CaptureButtonHoldTest {
     }
 
     @Test
+    fun captureButton_disabledWhileHeld_keepsTheHold() {
+        fixture.setContent()
+
+        fixture.hold()
+        fixture.enabled = false
+        composeRule.waitForIdle()
+        fixture.button().performTouchInput { up() }
+
+        assertEquals(listOf(CaptureButtonHoldEnd.Released), fixture.holdEnds)
+    }
+
+    @Test
+    fun captureButton_touchCancelledAtATarget_cancelsInsteadOfCommitting() {
+        fixture.holdTargets = listOf(LOCK)
+        fixture.setContent()
+
+        fixture.hold()
+        fixture.button().performTouchInput {
+            moveBy(Offset(x = -LOCK.distance.toPx() - SLACK, y = 0f))
+            cancel()
+        }
+
+        assertEquals(listOf(CaptureButtonHoldEnd.Cancelled), fixture.holdEnds)
+    }
+
+    @Test
     fun captureButton_removedWhileHeld_endsTheHoldAsCancelled() {
         fixture.setContent()
 
