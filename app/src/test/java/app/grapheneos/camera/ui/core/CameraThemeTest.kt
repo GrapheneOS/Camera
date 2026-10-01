@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
@@ -47,6 +48,20 @@ class CameraThemeTest {
 
         assertNotEquals(darkColorScheme().primary, colorScheme.primary)
         assertEquals(dynamicDarkColorScheme(context).primary, colorScheme.primary)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun cameraTheme_light_keepsTheDarkAccentForOverlays() {
+        var overlayAccent = Color.Unspecified
+
+        composeRule.setContent {
+            CameraTheme(darkTheme = false) {
+                overlayAccent = MaterialTheme.cameraColors.overlayAccent
+            }
+        }
+
+        assertEquals(darkColorScheme().primary, overlayAccent)
     }
 
     private fun composeColorScheme(darkTheme: Boolean): ColorScheme {

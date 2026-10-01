@@ -34,6 +34,7 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProg
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
+import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
