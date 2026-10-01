@@ -16,6 +16,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import app.grapheneos.camera.ui.core.TABULAR_FIGURES
 import kotlin.math.roundToInt
 
 @Composable
@@ -46,7 +47,7 @@ internal fun rememberCountDownTimerLayout(
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Thin,
                 fontSize = fontSize,
-                fontFeatureSettings = "tnum",
+                fontFeatureSettings = TABULAR_FIGURES,
                 lineHeight = fontSize,
                 lineHeightStyle = LineHeightStyle(
                     alignment = LineHeightStyle.Alignment.Center,
