@@ -80,17 +80,17 @@ internal fun Density.zoomBarWindow(height: Float): RulerWindow {
 
 @Composable
 internal fun rememberZoomBarLabels(
-    stops: List<Float>,
+    marks: List<Float>,
     format: ZoomFormat,
     style: TextStyle,
 ): List<TextLayoutResult> {
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
 
-    return remember(stops, format, style, textMeasurer, density) {
-        stops.map { stop ->
+    return remember(marks, format, style, textMeasurer, density) {
+        marks.map { mark ->
             textMeasurer.measure(
-                text = format.format(value = stop),
+                text = format.format(value = mark),
                 style = style,
             )
         }
@@ -108,7 +108,7 @@ private fun DrawScope.drawLabels(
     val labelCenterY = size.height / 2 + LABEL_OFFSET.toPx()
 
     for (index in labels.indices) {
-        val stopPosition = scale.stopTicks[index].toFloat()
+        val stopPosition = scale.markTicks[index].toFloat()
         val label = labels[index]
         val alpha = rulerMarkAlpha(
             markPosition = stopPosition,

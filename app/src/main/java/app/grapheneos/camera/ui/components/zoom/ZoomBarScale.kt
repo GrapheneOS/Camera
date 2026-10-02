@@ -21,7 +21,8 @@ internal data class ZoomBarScale(
 
     override val lastTick: Int
 
-    val stopTicks: List<Int>
+    val marks: List<Float>
+    val markTicks: List<Int>
 
     private val anchors: FloatArray
     private val anchorTicks: IntArray
@@ -54,11 +55,11 @@ internal data class ZoomBarScale(
         }
 
         lastTick = anchorTicks.last()
-        stopTicks = stops.map { stop ->
-            anchorTicks[anchors.indexOfFirst { anchor -> anchor == stop }]
+        marks = (stops + valueRange.endInclusive).distinct()
+        markTicks = marks.map { mark ->
+            anchorTicks[anchors.indexOfFirst { anchor -> anchor == mark }]
         }
-        majorTicks = BooleanArray(lastTick + 1)
-        stopTicks.forEach { tick -> majorTicks[tick] = true }
+        majorTicks = BooleanArray(lastTick + 1) { tick -> tick in markTicks }
     }
 
     override fun isMajor(tick: Int): Boolean {

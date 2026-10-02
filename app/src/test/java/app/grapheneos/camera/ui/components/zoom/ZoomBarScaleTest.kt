@@ -14,8 +14,8 @@ class ZoomBarScaleTest {
     )
 
     @Test
-    fun stopTicks_giveEachSpanFiveTicksPerOctaveRounded() {
-        assertEquals(listOf(5, 10, 17, 22), scale.stopTicks)
+    fun markTicks_giveEachSpanFiveTicksPerOctaveRounded() {
+        assertEquals(listOf(5, 10, 17, 22), scale.markTicks)
         assertEquals(22, scale.lastTick)
     }
 
@@ -24,6 +24,17 @@ class ZoomBarScaleTest {
         assertEquals(10f, scale.position(value = 2f), TOLERANCE)
         assertEquals(17f, scale.position(value = 5f), TOLERANCE)
         assertEquals(22f, scale.position(value = 10f), TOLERANCE)
+    }
+
+    @Test
+    fun marks_addTheEndOfTheRangeToTheStops() {
+        val scale = ZoomBarScale(
+            valueRange = 0.5f..8f,
+            stops = listOf(0.5f, 1f, 2f),
+        )
+
+        assertEquals(listOf(0.5f, 1f, 2f, 8f), scale.marks)
+        assertTrue(scale.isMajor(tick = scale.lastTick))
     }
 
     @Test

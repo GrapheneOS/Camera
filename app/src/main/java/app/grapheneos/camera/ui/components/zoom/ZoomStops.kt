@@ -16,8 +16,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,6 +52,7 @@ internal fun ZoomStops(
     onStopClick: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    customActions: List<CustomAccessibilityAction> = emptyList(),
     colors: PillSelectorColors = PillSelectorColors.fromTheme(),
 ) {
     val stopList = remember(stops) { ZoomStopList(stops = stops) }
@@ -83,6 +86,7 @@ internal fun ZoomStops(
                 else -> number
             },
             description = number + valueSuffix,
+            customActions = customActions,
             style = when {
                 isSelected -> style.copy(fontWeight = FontWeight.Bold)
                 else -> style
@@ -96,13 +100,17 @@ internal fun ZoomStops(
 private fun ZoomStopLabel(
     text: String,
     description: String,
+    customActions: List<CustomAccessibilityAction>,
     style: TextStyle,
     scope: PillSelectorItemScope,
 ) {
     Box(
         modifier = Modifier
             .size(STOP_SIZE)
-            .semantics { contentDescription = description },
+            .semantics {
+                contentDescription = description
+                this.customActions = customActions
+            },
         contentAlignment = Alignment.Center,
     ) {
         BasicText(
