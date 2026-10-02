@@ -86,10 +86,10 @@ internal fun Modifier.rulerDrag(
         state = state,
         orientation = Orientation.Horizontal,
         enabled = enabled,
-        interactionSource = interactionSource,
+        interactionSource = state.dragInteractions(forwardTo = interactionSource),
         reverseDirection = layoutDirection == LayoutDirection.Rtl,
         onDragStarted = { onDragStarted() },
-        onDragStopped = { state.release() },
+        onDragStopped = { state.endDrag() },
     )
 }
 

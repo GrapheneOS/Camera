@@ -21,9 +21,9 @@ class ZoomBarScaleTest {
 
     @Test
     fun position_putsEveryStopExactlyOnItsTick() {
-        assertEquals(10f, scale.position(value = 2f), TOLERANCE)
-        assertEquals(17f, scale.position(value = 5f), TOLERANCE)
-        assertEquals(22f, scale.position(value = 10f), TOLERANCE)
+        assertEquals(10f, scale.position(value = 2f))
+        assertEquals(17f, scale.position(value = 5f))
+        assertEquals(22f, scale.position(value = 10f))
     }
 
     @Test
@@ -52,9 +52,9 @@ class ZoomBarScaleTest {
 
     @Test
     fun position_andValue_clampToTheRange() {
-        assertEquals(0f, scale.position(value = 0.1f), TOLERANCE)
-        assertEquals(22f, scale.position(value = 30f), TOLERANCE)
-        assertEquals(10f, scale.value(position = 40f), TOLERANCE)
+        assertEquals(0f, scale.position(value = 0.1f))
+        assertEquals(22f, scale.position(value = 30f))
+        assertEquals(10f, scale.value(position = 40f))
     }
 
     @Test

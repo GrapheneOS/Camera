@@ -8,7 +8,7 @@ class CountDownTimerMotionTest {
 
     @Test
     fun boldness_startsWhereThePreviousSecondLeftIt() {
-        assertEquals(0.3f, boldnessAt(elapsedMillis = 0f, startBoldness = 0.3f), TOLERANCE)
+        assertEquals(0.3f, boldnessAt(elapsedMillis = 0f, startBoldness = 0.3f))
     }
 
     @Test
@@ -27,7 +27,7 @@ class CountDownTimerMotionTest {
             startBoldness = 0f,
         )
 
-        assertEquals(0f, boldness, TOLERANCE)
+        assertEquals(0f, boldness)
     }
 
     private fun boldnessAt(
@@ -42,6 +42,5 @@ class CountDownTimerMotionTest {
 
     private companion object {
         private const val SECOND_MILLIS = 1_000
-        private const val TOLERANCE = 0.001f
     }
 }
