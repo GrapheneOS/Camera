@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 
-private val ITEM_SPACING = 4.5.dp
+private val ITEM_SPACING = 4.dp
 private val CONTAINER_PADDING = 2.dp
 private val SELECTION_SPEC = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,

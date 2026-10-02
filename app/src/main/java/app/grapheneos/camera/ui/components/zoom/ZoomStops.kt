@@ -35,7 +35,7 @@ import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.TABULAR_FIGURES
 
 private val STOP_SIZE = 48.dp
-private val LABEL_SIZE = 15.5.dp
+private val LABEL_SIZE = 16.dp
 
 private const val SELECTED_LABEL_SCALE = 1.15f
 
