@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.components.zoom
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -39,9 +41,10 @@ import app.grapheneos.camera.ui.components.ruler.RulerMetrics
 import app.grapheneos.camera.ui.components.ruler.rememberRulerBindings
 import app.grapheneos.camera.ui.components.ruler.rememberRulerMetrics
 import app.grapheneos.camera.ui.components.ruler.rulerControls
-import app.grapheneos.camera.ui.components.ruler.rulerDrag
 import app.grapheneos.camera.ui.components.zoom.gesture.ZoomBarState
 import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomBarState
+import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomControlExpander
+import app.grapheneos.camera.ui.components.zoom.gesture.zoomControlInput
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 
 private val MORPH_FADE_SPEC = spring<Float>(
@@ -55,10 +58,11 @@ private val MORPH_SIZE_SPEC = spring<IntSize>(
 
 /**
  * Collapsed, it shows [stops], and a tap on one reports it through [onStopClick]. A horizontal
- * swipe on the stops calls [onExpand] and goes on moving the value with the same touch, as the
- * expanded bar does. [expanded] belongs to the caller: it expands on [onExpand] and collapses
- * whenever the screen decides to. [expandLabel] names the accessibility action that expands the
- * stops, the only way to the bar without a swipe.
+ * swipe or a long press on the stops calls [onExpand], and the same touch goes on moving the value
+ * as on the expanded bar. [expanded] belongs to the caller: it expands on [onExpand] and collapses
+ * whenever the screen decides to. [interactionSource] holds a press for as long as a finger is on
+ * the control, so a screen that collapses on a timer can wait for the release. [expandLabel] names
+ * the accessibility action that expands the stops, the only way to the bar without a gesture.
  */
 @Composable
 internal fun ZoomControl(
@@ -96,18 +100,27 @@ internal fun ZoomControl(
             tickSpacing = metrics.tickSpacing,
         ),
     )
-    val currentExpanded = rememberUpdatedState(expanded)
-    val currentOnExpand = rememberUpdatedState(onExpand)
+    val expander = rememberZoomControlExpander(
+        enabled = enabled,
+        expanded = expanded,
+        onExpand = onExpand,
+    )
     val alpha by animateEnabledAlpha(enabled = enabled)
+    val valueDescription = rememberZoomFormat().format(value = value) + valueSuffix
 
     ZoomControlLayers(
         value = value,
+        valueDescription = valueDescription,
         valueRange = valueRange,
         stops = stops,
         valueSuffix = valueSuffix,
         expanded = expanded,
-        onExpand = { currentOnExpand.value() },
-        onStopClick = onStopClick,
+        onExpand = expander::expand,
+        onStopClick = { stop ->
+            if (expander.isCollapsed()) {
+                onStopClick(stop)
+            }
+        },
         expandLabel = expandLabel,
         enabled = enabled,
         alpha = { alpha },
@@ -117,16 +130,12 @@ internal fun ZoomControl(
         barColors = barColors,
         stopsColors = stopsColors,
         interactionSource = resolvedInteractionSource,
-        modifier = modifier.rulerDrag(
+        modifier = modifier.zoomControlInput(
             state = state,
+            expander = expander,
             enabled = enabled,
             layoutDirection = LocalLayoutDirection.current,
             interactionSource = resolvedInteractionSource,
-            onDragStarted = {
-                if (!currentExpanded.value) {
-                    currentOnExpand.value()
-                }
-            },
         ),
     )
 }
@@ -134,6 +143,7 @@ internal fun ZoomControl(
 @Composable
 private fun ZoomControlLayers(
     value: Float,
+    valueDescription: String,
     valueRange: ClosedFloatingPointRange<Float>,
     stops: List<Float>,
     valueSuffix: String,
@@ -168,7 +178,7 @@ private fun ZoomControlLayers(
             targetState = expanded,
             transitionSpec = {
                 fadeIn(animationSpec = MORPH_FADE_SPEC) togetherWith
-                    fadeOut(animationSpec = MORPH_FADE_SPEC) using
+                    fadeOut(animationSpec = snap()) using
                     SizeTransform { _, _ -> MORPH_SIZE_SPEC }
             },
             contentAlignment = Alignment.Center,
@@ -176,6 +186,7 @@ private fun ZoomControlLayers(
             when {
                 isExpanded -> ZoomControlBar(
                     value = value,
+                    valueDescription = valueDescription,
                     valueRange = valueRange,
                     state = state,
                     scale = scale,
@@ -231,6 +242,7 @@ private fun ZoomControlStops(
 @Composable
 private fun ZoomControlBar(
     value: Float,
+    valueDescription: String,
     valueRange: ClosedFloatingPointRange<Float>,
     state: ZoomBarState,
     scale: ZoomBarScale,
@@ -258,7 +270,8 @@ private fun ZoomControlBar(
                 enabled = enabled,
                 layoutDirection = LocalLayoutDirection.current,
                 interactionSource = interactionSource,
-            ),
+            )
+            .semantics { stateDescription = valueDescription },
     )
 }
 
