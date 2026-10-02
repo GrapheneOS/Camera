@@ -25,8 +25,7 @@ import kotlinx.coroutines.flow.filterNotNull
 internal abstract class RulerState(
     initialPosition: Float,
     private val currentScale: State<RulerScale>,
-    private val currentTickSpacing: State<Float>,
-    private val currentOnValueChangeFinished: State<() -> Unit>,
+    protected val bindings: RulerBindings,
 ) : DraggableState,
     DragScope {
 
@@ -58,8 +57,11 @@ internal abstract class RulerState(
     final override fun dragBy(pixels: Float) {
         val previousPosition = position
 
-        position = (position - pixels / currentTickSpacing.value)
-            .coerceIn(0f, currentScale.value.lastTick.toFloat())
+        position = dragTarget(
+            from = previousPosition,
+            ticks = -pixels / bindings.tickSpacing.value,
+        ).coerceIn(0f, currentScale.value.lastTick.toFloat())
+
         onDragged(
             from = previousPosition,
             to = position,
@@ -69,12 +71,23 @@ internal abstract class RulerState(
     @CallSuper
     open suspend fun release() {
         isDragging = false
-        currentOnValueChangeFinished.value()
+        bindings.onValueChangeFinished.value()
     }
+
+    abstract fun step(ticks: Int): Boolean
+
+    abstract fun moveTo(value: Float): Boolean
 
     abstract fun isReported(value: Float): Boolean
 
     abstract suspend fun syncTo(value: Float)
+
+    protected open fun dragTarget(
+        from: Float,
+        ticks: Float,
+    ): Float {
+        return from + ticks
+    }
 
     protected abstract fun onDragged(
         from: Float,
@@ -95,6 +108,15 @@ internal abstract class RulerState(
                 position = value
             }
         }
+    }
+
+    protected fun commit(value: Float) {
+        bindings.onValueChange.value(value)
+        bindings.onValueChangeFinished.value()
+    }
+
+    protected fun report(value: Float) {
+        bindings.onValueChange.value(value)
     }
 
     private companion object {

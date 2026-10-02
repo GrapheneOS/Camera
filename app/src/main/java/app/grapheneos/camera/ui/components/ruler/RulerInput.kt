@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.components.adjustmentbar.gesture
+package app.grapheneos.camera.ui.components.ruler
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
@@ -16,37 +16,35 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
-import app.grapheneos.camera.ui.components.adjustmentbar.AdjustmentBarScale
+import androidx.compose.ui.unit.LayoutDirection
 
-internal fun Modifier.adjustmentBarInput(
-    value: Float,
-    scale: AdjustmentBarScale,
-    state: AdjustmentBarState,
+internal fun Modifier.rulerInput(
+    state: RulerState,
+    rangeInfo: ProgressBarRangeInfo,
     enabled: Boolean,
-    isRtl: Boolean,
+    layoutDirection: LayoutDirection,
     interactionSource: MutableInteractionSource,
 ): Modifier {
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
     return this
         .semantics(mergeDescendants = true) {
-            progressBarRangeInfo = ProgressBarRangeInfo(
-                current = value,
-                range = scale.valueRange,
-                steps = scale.steps,
-            )
+            progressBarRangeInfo = rangeInfo
             when {
-                enabled -> setProgress { target ->
-                    state.moveTo(tick = scale.tickOf(value = target))
-                }
-
+                enabled -> setProgress(action = state::moveTo)
                 else -> disabled()
             }
         }
         .onKeyEvent { event ->
-            enabled && onKeyEvent(
+            val ticks = keySteps(
                 event = event,
                 isRtl = isRtl,
-                state = state,
             )
+
+            if (enabled && ticks != 0 && event.type == KeyEventType.KeyDown) {
+                state.step(ticks = ticks)
+            }
+            enabled && ticks != 0
         }
         .focusable(
             enabled = enabled,
@@ -62,24 +60,18 @@ internal fun Modifier.adjustmentBarInput(
         )
 }
 
-private fun onKeyEvent(
+private fun keySteps(
     event: KeyEvent,
     isRtl: Boolean,
-    state: AdjustmentBarState,
-): Boolean {
+): Int {
     val towardEnd = when (event.key) {
         Key.DirectionRight -> 1
         Key.DirectionLeft -> -1
         else -> 0
     }
-    val ticks = when {
+
+    return when {
         isRtl -> -towardEnd
         else -> towardEnd
     }
-
-    if (ticks != 0 && event.type == KeyEventType.KeyDown) {
-        state.step(ticks = ticks)
-    }
-
-    return ticks != 0
 }

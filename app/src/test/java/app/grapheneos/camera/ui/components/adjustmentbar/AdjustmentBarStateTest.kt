@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.AdjustmentBarState
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.rememberAdjustmentBarState
+import app.grapheneos.camera.ui.components.ruler.rememberRulerBindings
 import kotlin.math.min
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -117,12 +118,15 @@ class AdjustmentBarStateTest {
             state = rememberAdjustmentBarState(
                 value = value,
                 scale = SCALE,
-                tickSpacing = TICK_SPACING_PX,
-                onValueChange = { newValue ->
-                    changes += newValue
-                    applyChange(newValue)
-                },
-                onValueChangeFinished = {},
+                bindings = rememberRulerBindings(
+                    value = value,
+                    onValueChange = { newValue ->
+                        changes += newValue
+                        applyChange(newValue)
+                    },
+                    onValueChangeFinished = {},
+                    tickSpacing = TICK_SPACING_PX,
+                ),
             )
             Box(
                 modifier = Modifier

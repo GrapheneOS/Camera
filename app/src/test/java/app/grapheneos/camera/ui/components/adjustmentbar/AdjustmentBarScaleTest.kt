@@ -31,10 +31,10 @@ class AdjustmentBarScaleTest {
     }
 
     @Test
-    fun value_isTheValueOfTheTick() {
-        assertEquals(-12f, scale.value(tick = 0))
-        assertEquals(0f, scale.value(tick = 12))
-        assertEquals(12f, scale.value(tick = 24))
+    fun value_isTheValueAtThePosition() {
+        assertEquals(-12f, scale.value(position = 0f))
+        assertEquals(0f, scale.value(position = 12f))
+        assertEquals(12f, scale.value(position = 24f))
     }
 
     @Test

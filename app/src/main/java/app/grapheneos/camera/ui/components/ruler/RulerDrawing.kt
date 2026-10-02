@@ -3,12 +3,10 @@ package app.grapheneos.camera.ui.components.ruler
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -25,38 +23,47 @@ internal fun DrawScope.drawRulerContainer(color: Color) {
 internal fun DrawScope.drawRulerTicks(
     position: Float,
     scale: RulerScale,
-    startInset: Float,
-    endInset: Float,
+    window: RulerWindow,
     metrics: RulerMetrics,
     tickColor: Color,
     majorTickColor: Color,
 ) {
-    scale(
-        scaleX = when (layoutDirection) {
-            LayoutDirection.Rtl -> -1f
-            LayoutDirection.Ltr -> 1f
-        },
-        scaleY = 1f,
-    ) {
-        drawTicks(
+    val ticksBefore = (center.x - window.startInset) / metrics.tickSpacing
+    val ticksAfter = (size.width - window.endInset - center.x) / metrics.tickSpacing
+    val firstTick = max(0, ceil(position - ticksBefore).toInt())
+    val lastTick = min(scale.lastTick, floor(position + ticksAfter).toInt())
+
+    for (tick in firstTick..lastTick) {
+        val isMajor = scale.isMajor(tick = tick)
+
+        drawTick(
+            markPosition = tick.toFloat(),
             position = position,
-            scale = scale,
-            left = startInset,
-            right = size.width - endInset,
+            height = when {
+                isMajor -> metrics.majorTickHeight
+                else -> metrics.minorTickHeight
+            },
+            color = when {
+                isMajor -> majorTickColor
+                else -> tickColor
+            },
+            window = window,
             metrics = metrics,
-            tickColor = tickColor,
-            majorTickColor = majorTickColor,
         )
     }
 }
 
 internal fun DrawScope.drawRulerIndicator(
+    centerY: Float,
     metrics: RulerMetrics,
     color: Color,
 ) {
     drawRoundRect(
         color = color,
-        topLeft = center - metrics.indicatorSize.center,
+        topLeft = Offset(
+            x = center.x - metrics.indicatorSize.width / 2,
+            y = centerY - metrics.indicatorSize.height / 2,
+        ),
         size = metrics.indicatorSize,
         cornerRadius = CornerRadius(metrics.indicatorSize.width / 2),
     )
@@ -80,39 +87,61 @@ internal fun DrawScope.drawRulerFocusRing(
     )
 }
 
-private fun DrawScope.drawTicks(
+internal fun DrawScope.rulerMarkX(
+    markPosition: Float,
     position: Float,
-    scale: RulerScale,
-    left: Float,
-    right: Float,
     metrics: RulerMetrics,
-    tickColor: Color,
-    majorTickColor: Color,
-) {
-    val ticksToLeft = (center.x - left) / metrics.tickSpacing
-    val ticksToRight = (right - center.x) / metrics.tickSpacing
-    val firstTick = max(0, ceil(position - ticksToLeft).toInt())
-    val lastTick = min(scale.lastTick, floor(position + ticksToRight).toInt())
-    val capInset = metrics.tickWidth / 2
+): Float {
+    val offset = (markPosition - position) * metrics.tickSpacing
 
-    for (tick in firstTick..lastTick) {
-        val x = center.x + (tick - position) * metrics.tickSpacing
-        val isMajor = scale.isMajor(tick = tick)
-        val height = when {
-            isMajor -> metrics.majorTickHeight
-            else -> metrics.minorTickHeight
-        }
-
-        drawLine(
-            color = when {
-                isMajor -> majorTickColor
-                else -> tickColor
-            },
-            start = Offset(x = x, y = center.y - height / 2 + capInset),
-            end = Offset(x = x, y = center.y + height / 2 - capInset),
-            strokeWidth = metrics.tickWidth,
-            cap = StrokeCap.Round,
-            alpha = (min(x - left, right - x) / metrics.fadeWidth).coerceIn(0f, 1f),
-        )
+    return when (layoutDirection) {
+        LayoutDirection.Ltr -> center.x + offset
+        LayoutDirection.Rtl -> center.x - offset
     }
+}
+
+internal fun DrawScope.rulerMarkAlpha(
+    markPosition: Float,
+    position: Float,
+    window: RulerWindow,
+    metrics: RulerMetrics,
+): Float {
+    val x = center.x + (markPosition - position) * metrics.tickSpacing
+    val distanceToEdge = min(x - window.startInset, size.width - window.endInset - x)
+
+    return (distanceToEdge / metrics.fadeWidth).coerceIn(0f, 1f)
+}
+
+private fun DrawScope.drawTick(
+    markPosition: Float,
+    position: Float,
+    height: Float,
+    color: Color,
+    window: RulerWindow,
+    metrics: RulerMetrics,
+) {
+    val x = rulerMarkX(
+        markPosition = markPosition,
+        position = position,
+        metrics = metrics,
+    )
+    val capInset = metrics.tickWidth / 2
+    val bottom = when (window.alignment) {
+        RulerTickAlignment.Center -> window.centerY + height / 2
+        RulerTickAlignment.Bottom -> window.centerY + metrics.indicatorSize.height / 2
+    }
+
+    drawLine(
+        color = color,
+        start = Offset(x = x, y = bottom - height + capInset),
+        end = Offset(x = x, y = bottom - capInset),
+        strokeWidth = metrics.tickWidth,
+        cap = StrokeCap.Round,
+        alpha = rulerMarkAlpha(
+            markPosition = markPosition,
+            position = position,
+            window = window,
+            metrics = metrics,
+        ),
+    )
 }

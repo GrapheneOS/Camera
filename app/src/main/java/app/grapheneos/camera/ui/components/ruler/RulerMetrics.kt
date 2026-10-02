@@ -1,10 +1,19 @@
 package app.grapheneos.camera.ui.components.ruler
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+
+internal val RULER_SIZE = DpSize(
+    width = 284.dp,
+    height = 52.dp,
+)
 
 @Immutable
 internal class RulerMetrics(
@@ -29,4 +38,11 @@ internal class RulerMetrics(
         private val FADE_WIDTH = 56.dp
         private val FOCUS_RING_WIDTH = 3.dp
     }
+}
+
+@Composable
+internal fun rememberRulerMetrics(): RulerMetrics {
+    val density = LocalDensity.current
+
+    return remember(density) { RulerMetrics(density = density) }
 }

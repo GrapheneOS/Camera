@@ -11,8 +11,6 @@ internal data class AdjustmentBarScale(
     val majorTickInterval: Int,
 ) : RulerScale {
 
-    override val lastTick: Int = steps + 1
-
     init {
         require(steps > 0) {
             "steps must be positive, was $steps"
@@ -25,21 +23,27 @@ internal data class AdjustmentBarScale(
         }
     }
 
+    override val lastTick: Int = steps + 1
+
     override fun isMajor(tick: Int): Boolean {
         return tick % majorTickInterval == 0
     }
 
-    fun tickOf(value: Float): Int {
+    override fun position(value: Float): Float {
         val fraction = (value - valueRange.start) / (valueRange.endInclusive - valueRange.start)
 
-        return nearestTick(position = fraction * lastTick)
+        return fraction.coerceIn(0f, 1f) * lastTick
+    }
+
+    override fun value(position: Float): Float {
+        return valueRange.start + (valueRange.endInclusive - valueRange.start) * position / lastTick
+    }
+
+    fun tickOf(value: Float): Int {
+        return nearestTick(position = position(value = value))
     }
 
     fun nearestTick(position: Float): Int {
         return position.roundToInt().coerceIn(0, lastTick)
-    }
-
-    fun value(tick: Int): Float {
-        return valueRange.start + (valueRange.endInclusive - valueRange.start) * tick / lastTick
     }
 }
