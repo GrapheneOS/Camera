@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.components.ruler
 
-import androidx.annotation.CallSuper
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
@@ -8,16 +7,21 @@ import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.DragScope
 import androidx.compose.foundation.gestures.DraggableState
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.interaction.Interaction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 
@@ -34,6 +38,12 @@ internal abstract class RulerState(
 
     var isDragging by mutableStateOf(false)
         private set
+
+    internal var revision by mutableIntStateOf(0)
+        private set
+
+    private var forwardingInteractions: DragInteractions? = null
+    private var isDragCanceled = false
 
     private val mutex = MutatorMutex()
 
@@ -68,10 +78,12 @@ internal abstract class RulerState(
         )
     }
 
-    @CallSuper
     open suspend fun release() {
-        isDragging = false
-        bindings.onValueChangeFinished.value()
+        finishDrag()
+    }
+
+    open suspend fun cancel() {
+        release()
     }
 
     abstract fun step(ticks: Int): Boolean
@@ -81,6 +93,22 @@ internal abstract class RulerState(
     abstract fun isReported(value: Float): Boolean
 
     abstract suspend fun syncTo(value: Float)
+
+    internal suspend fun endDrag() {
+        when {
+            isDragCanceled -> cancel()
+            else -> release()
+        }
+    }
+
+    internal fun dragInteractions(forwardTo: MutableInteractionSource): MutableInteractionSource {
+        val current = forwardingInteractions
+
+        return when {
+            current != null && current.forwardTo === forwardTo -> current
+            else -> DragInteractions(forwardTo = forwardTo).also { forwardingInteractions = it }
+        }
+    }
 
     protected open fun dragTarget(
         from: Float,
@@ -110,6 +138,12 @@ internal abstract class RulerState(
         }
     }
 
+    protected fun finishDrag() {
+        isDragging = false
+        revision++
+        bindings.onValueChangeFinished.value()
+    }
+
     protected fun commit(value: Float) {
         bindings.onValueChange.value(value)
         bindings.onValueChangeFinished.value()
@@ -117,6 +151,30 @@ internal abstract class RulerState(
 
     protected fun report(value: Float) {
         bindings.onValueChange.value(value)
+    }
+
+    private inner class DragInteractions(
+        val forwardTo: MutableInteractionSource,
+    ) : MutableInteractionSource {
+
+        override val interactions: Flow<Interaction> = forwardTo.interactions
+
+        override suspend fun emit(interaction: Interaction) {
+            noteDragEnd(interaction = interaction)
+            forwardTo.emit(interaction)
+        }
+
+        override fun tryEmit(interaction: Interaction): Boolean {
+            noteDragEnd(interaction = interaction)
+            return forwardTo.tryEmit(interaction)
+        }
+
+        private fun noteDragEnd(interaction: Interaction) {
+            when (interaction) {
+                is DragInteraction.Stop -> isDragCanceled = false
+                is DragInteraction.Cancel -> isDragCanceled = true
+            }
+        }
     }
 
     private companion object {
@@ -139,7 +197,7 @@ internal fun RulerSyncEffect(
     }
     val currentSyncTarget = rememberUpdatedState(syncTarget)
 
-    LaunchedEffect(state) {
+    LaunchedEffect(state, state.revision) {
         snapshotFlow { currentSyncTarget.value }
             .filterNotNull()
             .collectLatest { target -> state.syncTo(value = target) }

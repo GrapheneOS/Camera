@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -32,6 +33,7 @@ class ZoomBarStateTest {
     val composeRule = createComposeRule()
 
     private var value by mutableFloatStateOf(1f)
+    private var scale by mutableStateOf(SCALE)
     private var touchSlop = 0f
     private val changes = mutableListOf<Float>()
     private var applyChange: (Float) -> Unit = { newValue -> value = newValue }
@@ -87,7 +89,7 @@ class ZoomBarStateTest {
         drag(ticks = 1.5f)
 
         composeRule.runOnIdle {
-            assertEquals(SCALE.position(value = 1f) + 0.5f, state.position, TOLERANCE)
+            assertEquals(SCALE.position(value = 1f) + 0.5f, state.position)
         }
     }
 
@@ -104,6 +106,33 @@ class ZoomBarStateTest {
         }
     }
 
+    @Test
+    fun state_scaleChangedAtTheSameValue_showsTheValueOnTheNewScale() {
+        scale = FRONT_SCALE
+        setContent()
+
+        scale = SCALE
+
+        composeRule.runOnIdle {
+            assertEquals(emptyList<Float>(), changes)
+            assertEquals(SCALE.position(value = 1f), state.position)
+        }
+    }
+
+    @Test
+    fun state_draggedAfterAScaleChange_movesOnFromTheValue() {
+        scale = FRONT_SCALE
+        setContent()
+        scale = SCALE
+        composeRule.waitForIdle()
+
+        drag(ticks = 1.5f)
+
+        composeRule.runOnIdle {
+            assertEquals(SCALE.position(value = 1f) + 0.5f, state.position)
+        }
+    }
+
     private fun drag(ticks: Float) {
         composeRule.onNodeWithTag(TAG).performTouchInput {
             down(center)
@@ -117,7 +146,7 @@ class ZoomBarStateTest {
             touchSlop = LocalViewConfiguration.current.touchSlop
             state = rememberZoomBarState(
                 value = value,
-                scale = SCALE,
+                scale = scale,
                 bindings = rememberRulerBindings(
                     value = value,
                     onValueChange = { newValue ->
@@ -144,10 +173,13 @@ class ZoomBarStateTest {
     private companion object {
         private const val TAG = "ruler"
         private const val TICK_SPACING_PX = 10f
-        private const val TOLERANCE = 0.001f
         private val SCALE = ZoomBarScale(
             valueRange = 0.5f..8f,
             stops = listOf(0.5f, 1f, 2f, 8f),
+        )
+        private val FRONT_SCALE = ZoomBarScale(
+            valueRange = 1f..4f,
+            stops = listOf(1f, 2f),
         )
     }
 }
