@@ -13,9 +13,12 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -24,6 +27,8 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 
 private val SETTLE_SPEC = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
@@ -46,7 +51,10 @@ internal class AdjustmentBarState(
     var position by mutableFloatStateOf(initialTick.toFloat())
         private set
 
-    var reportedTick = initialTick
+    var reportedTick by mutableIntStateOf(initialTick)
+        private set
+
+    var isDragging by mutableStateOf(false)
         private set
 
     private val mutex = MutatorMutex()
@@ -58,8 +66,10 @@ internal class AdjustmentBarState(
         mutex.mutateWith(
             receiver = this,
             priority = dragPriority,
-            block = block,
-        )
+        ) {
+            isDragging = true
+            block()
+        }
     }
 
     override fun dispatchRawDelta(delta: Float) {
@@ -89,6 +99,7 @@ internal class AdjustmentBarState(
         if (isNewTick) {
             report(tick = target)
         }
+        isDragging = false
         currentOnValueChangeFinished.value()
         animateTo(tick = target)
         if (isNewTick) {
@@ -96,17 +107,8 @@ internal class AdjustmentBarState(
         }
     }
 
-    suspend fun animateTo(tick: Int) {
-        mutex.mutate {
-            reportedTick = tick
-            animate(
-                initialValue = position,
-                targetValue = tick.toFloat(),
-                animationSpec = SETTLE_SPEC,
-            ) { value, _ ->
-                position = value
-            }
-        }
+    suspend fun syncTo(value: Float) {
+        animateTo(tick = currentScale.value.tickOf(value = value))
     }
 
     fun step(ticks: Int): Boolean {
@@ -135,6 +137,19 @@ internal class AdjustmentBarState(
         }
 
         return moves
+    }
+
+    private suspend fun animateTo(tick: Int) {
+        mutex.mutate {
+            reportedTick = tick
+            animate(
+                initialValue = position,
+                targetValue = tick.toFloat(),
+                animationSpec = SETTLE_SPEC,
+            ) { value, _ ->
+                position = value
+            }
+        }
     }
 
     private fun valueTick(): Int {
@@ -198,12 +213,17 @@ internal fun rememberAdjustmentBarState(
         )
     }
 
-    LaunchedEffect(state, scale, value) {
-        val tick = scale.tickOf(value = value)
+    val syncTarget = when {
+        state.isDragging -> null
+        scale.tickOf(value = value) == state.reportedTick -> null
+        else -> value
+    }
+    val currentSyncTarget = rememberUpdatedState(syncTarget)
 
-        if (tick != state.reportedTick) {
-            state.animateTo(tick = tick)
-        }
+    LaunchedEffect(state) {
+        snapshotFlow { currentSyncTarget.value }
+            .filterNotNull()
+            .collectLatest { target -> state.syncTo(value = target) }
     }
 
     return state
