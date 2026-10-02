@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.components.adjustmentbar
+package app.grapheneos.camera.ui.components.ruler
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Size
@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 
 @Immutable
-internal class AdjustmentBarMetrics(
+internal class RulerMetrics(
     density: Density,
 ) {
 

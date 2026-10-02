@@ -1,114 +1,76 @@
 package app.grapheneos.camera.ui.components.adjustmentbar.gesture
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.MutatePriority
-import androidx.compose.foundation.MutatorMutex
-import androidx.compose.foundation.gestures.DragScope
-import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import app.grapheneos.camera.ui.components.adjustmentbar.AdjustmentBarScale
+import app.grapheneos.camera.ui.components.ruler.RulerState
+import app.grapheneos.camera.ui.components.ruler.RulerSyncEffect
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
 
-private val SETTLE_SPEC = spring<Float>(
-    dampingRatio = Spring.DampingRatioNoBouncy,
-    stiffness = 500f,
-)
-
-/** [position] is in fractional ticks; a tick is reached when it passes the indicator. */
 @Stable
 internal class AdjustmentBarState(
     initialTick: Int,
     private val currentScale: State<AdjustmentBarScale>,
-    private val currentTickSpacing: State<Float>,
+    currentTickSpacing: State<Float>,
     private val currentHapticFeedback: State<HapticFeedback>,
     private val currentValue: State<Float>,
     private val currentOnValueChange: State<(Float) -> Unit>,
     private val currentOnValueChangeFinished: State<() -> Unit>,
-) : DraggableState,
-    DragScope {
+) : RulerState(
+    initialPosition = initialTick.toFloat(),
+    currentScale = currentScale,
+    currentTickSpacing = currentTickSpacing,
+    currentOnValueChangeFinished = currentOnValueChangeFinished,
+) {
 
-    var position by mutableFloatStateOf(initialTick.toFloat())
-        private set
+    private var reportedTick by mutableIntStateOf(initialTick)
 
-    var reportedTick by mutableIntStateOf(initialTick)
-        private set
-
-    var isDragging by mutableStateOf(false)
-        private set
-
-    private val mutex = MutatorMutex()
-
-    override suspend fun drag(
-        dragPriority: MutatePriority,
-        block: suspend DragScope.() -> Unit,
-    ) {
-        mutex.mutateWith(
-            receiver = this,
-            priority = dragPriority,
-        ) {
-            isDragging = true
-            block()
-        }
+    override fun isReported(value: Float): Boolean {
+        return currentScale.value.tickOf(value = value) == reportedTick
     }
 
-    override fun dispatchRawDelta(delta: Float) {
-        dragBy(pixels = delta)
-    }
-
-    override fun dragBy(pixels: Float) {
-        val previousPosition = position
-
-        position = (position - pixels / currentTickSpacing.value)
-            .coerceIn(0f, currentScale.value.lastTick.toFloat())
-
-        val passedTick = passedTick(
-            from = previousPosition,
-            to = position,
-        )
-        if (passedTick != reportedTick) {
-            report(tick = passedTick)
-            performTickFeedback(tick = passedTick)
-        }
-    }
-
-    suspend fun release() {
+    override suspend fun release() {
         val target = currentScale.value.nearestTick(position = position)
         val isNewTick = target != reportedTick
 
         if (isNewTick) {
             report(tick = target)
         }
-        isDragging = false
-        currentOnValueChangeFinished.value()
+        super.release()
         animateTo(tick = target)
         if (isNewTick) {
             performTickFeedback(tick = target)
         }
     }
 
-    suspend fun syncTo(value: Float) {
+    override suspend fun syncTo(value: Float) {
         animateTo(tick = currentScale.value.tickOf(value = value))
+    }
+
+    override fun onDragged(
+        from: Float,
+        to: Float,
+    ) {
+        val passedTick = passedTick(
+            from = from,
+            to = to,
+        )
+        if (passedTick != reportedTick) {
+            report(tick = passedTick)
+            performTickFeedback(tick = passedTick)
+        }
     }
 
     fun step(ticks: Int): Boolean {
@@ -140,16 +102,10 @@ internal class AdjustmentBarState(
     }
 
     private suspend fun animateTo(tick: Int) {
-        mutex.mutate {
-            reportedTick = tick
-            animate(
-                initialValue = position,
-                targetValue = tick.toFloat(),
-                animationSpec = SETTLE_SPEC,
-            ) { value, _ ->
-                position = value
-            }
-        }
+        animatePosition(
+            target = tick.toFloat(),
+            onStart = { reportedTick = tick },
+        )
     }
 
     private fun valueTick(): Int {
@@ -213,18 +169,10 @@ internal fun rememberAdjustmentBarState(
         )
     }
 
-    val syncTarget = when {
-        state.isDragging -> null
-        scale.tickOf(value = value) == state.reportedTick -> null
-        else -> value
-    }
-    val currentSyncTarget = rememberUpdatedState(syncTarget)
-
-    LaunchedEffect(state) {
-        snapshotFlow { currentSyncTarget.value }
-            .filterNotNull()
-            .collectLatest { target -> state.syncTo(value = target) }
-    }
+    RulerSyncEffect(
+        state = state,
+        value = value,
+    )
 
     return state
 }

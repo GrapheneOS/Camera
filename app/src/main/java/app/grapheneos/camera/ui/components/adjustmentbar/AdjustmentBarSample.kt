@@ -140,7 +140,6 @@ private fun SampleControls(
     }
 }
 
-/** The slot keeps its height while the chip is hidden, so the bar below it never moves. */
 @Composable
 private fun SampleValueChip(
     isVisible: Boolean,
