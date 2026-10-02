@@ -25,6 +25,29 @@ internal fun Modifier.rulerInput(
     layoutDirection: LayoutDirection,
     interactionSource: MutableInteractionSource,
 ): Modifier {
+    return this
+        .rulerControls(
+            state = state,
+            rangeInfo = rangeInfo,
+            enabled = enabled,
+            layoutDirection = layoutDirection,
+            interactionSource = interactionSource,
+        )
+        .rulerDrag(
+            state = state,
+            enabled = enabled,
+            layoutDirection = layoutDirection,
+            interactionSource = interactionSource,
+        )
+}
+
+internal fun Modifier.rulerControls(
+    state: RulerState,
+    rangeInfo: ProgressBarRangeInfo,
+    enabled: Boolean,
+    layoutDirection: LayoutDirection,
+    interactionSource: MutableInteractionSource,
+): Modifier {
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
     return this
@@ -50,14 +73,24 @@ internal fun Modifier.rulerInput(
             enabled = enabled,
             interactionSource = interactionSource,
         )
-        .draggable(
-            state = state,
-            orientation = Orientation.Horizontal,
-            enabled = enabled,
-            interactionSource = interactionSource,
-            reverseDirection = isRtl,
-            onDragStopped = { state.release() },
-        )
+}
+
+internal fun Modifier.rulerDrag(
+    state: RulerState,
+    enabled: Boolean,
+    layoutDirection: LayoutDirection,
+    interactionSource: MutableInteractionSource,
+    onDragStarted: () -> Unit = {},
+): Modifier {
+    return this.draggable(
+        state = state,
+        orientation = Orientation.Horizontal,
+        enabled = enabled,
+        interactionSource = interactionSource,
+        reverseDirection = layoutDirection == LayoutDirection.Rtl,
+        onDragStarted = { onDragStarted() },
+        onDragStopped = { state.release() },
+    )
 }
 
 private fun keySteps(
