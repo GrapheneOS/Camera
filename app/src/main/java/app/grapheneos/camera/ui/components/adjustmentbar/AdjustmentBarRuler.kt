@@ -1,103 +1,47 @@
 package app.grapheneos.camera.ui.components.adjustmentbar
 
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.center
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.unit.LayoutDirection
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
+import app.grapheneos.camera.ui.components.ruler.RulerMetrics
+import app.grapheneos.camera.ui.components.ruler.drawRulerContainer
+import app.grapheneos.camera.ui.components.ruler.drawRulerFocusRing
+import app.grapheneos.camera.ui.components.ruler.drawRulerIndicator
+import app.grapheneos.camera.ui.components.ruler.drawRulerTicks
 
 internal fun DrawScope.drawAdjustmentBar(
     position: Float,
     scale: AdjustmentBarScale,
-    majorTickInterval: Int,
     hasStartIcon: Boolean,
     hasEndIcon: Boolean,
     isFocused: Boolean,
     tint: AdjustmentBarTint,
-    metrics: AdjustmentBarMetrics,
+    metrics: RulerMetrics,
     colors: AdjustmentBarColors,
 ) {
-    drawRoundRect(
+    drawRulerContainer(
         color = colors.containerColor,
-        cornerRadius = CornerRadius(size.height / 2),
     )
     tint.draw(
         drawScope = this,
         position = position,
         lastTick = scale.lastTick,
     )
-    scale(
-        scaleX = when (layoutDirection) {
-            LayoutDirection.Rtl -> -1f
-            LayoutDirection.Ltr -> 1f
-        },
-        scaleY = 1f,
-    ) {
-        drawTicks(
-            position = position,
-            scale = scale,
-            majorTickInterval = majorTickInterval,
-            left = inset(hasIcon = hasStartIcon),
-            right = size.width - inset(hasIcon = hasEndIcon),
-            metrics = metrics,
-            colors = colors,
-        )
-    }
-    drawRoundRect(
+    drawRulerTicks(
+        position = position,
+        scale = scale,
+        startInset = inset(hasIcon = hasStartIcon),
+        endInset = inset(hasIcon = hasEndIcon),
+        metrics = metrics,
+        tickColor = colors.tickColor,
+        majorTickColor = colors.majorTickColor,
+    )
+    drawRulerIndicator(
+        metrics = metrics,
         color = colors.indicatorColor,
-        topLeft = center - metrics.indicatorSize.center,
-        size = metrics.indicatorSize,
-        cornerRadius = CornerRadius(metrics.indicatorSize.width / 2),
     )
     if (isFocused) {
-        drawFocusRing(
+        drawRulerFocusRing(
             stroke = metrics.focusStroke,
-            colors = colors,
-        )
-    }
-}
-
-private fun DrawScope.drawTicks(
-    position: Float,
-    scale: AdjustmentBarScale,
-    majorTickInterval: Int,
-    left: Float,
-    right: Float,
-    metrics: AdjustmentBarMetrics,
-    colors: AdjustmentBarColors,
-) {
-    val ticksToLeft = (center.x - left) / metrics.tickSpacing
-    val ticksToRight = (right - center.x) / metrics.tickSpacing
-    val firstTick = max(0, ceil(position - ticksToLeft).toInt())
-    val lastTick = min(scale.lastTick, floor(position + ticksToRight).toInt())
-    val capInset = metrics.tickWidth / 2
-
-    for (tick in firstTick..lastTick) {
-        val x = center.x + (tick - position) * metrics.tickSpacing
-        val isMajor = tick % majorTickInterval == 0
-        val height = when {
-            isMajor -> metrics.majorTickHeight
-            else -> metrics.minorTickHeight
-        }
-
-        drawLine(
-            color = when {
-                isMajor -> colors.majorTickColor
-                else -> colors.tickColor
-            },
-            start = Offset(x = x, y = center.y - height / 2 + capInset),
-            end = Offset(x = x, y = center.y + height / 2 - capInset),
-            strokeWidth = metrics.tickWidth,
-            cap = StrokeCap.Round,
-            alpha = (min(x - left, right - x) / metrics.fadeWidth).coerceIn(0f, 1f),
+            color = colors.focusColor,
         )
     }
 }
@@ -107,22 +51,4 @@ private fun DrawScope.inset(hasIcon: Boolean): Float {
         hasIcon -> size.height
         else -> size.height / 2
     }
-}
-
-private fun DrawScope.drawFocusRing(
-    stroke: Stroke,
-    colors: AdjustmentBarColors,
-) {
-    val halfWidth = stroke.width / 2
-
-    drawRoundRect(
-        color = colors.focusColor,
-        topLeft = Offset(x = halfWidth, y = halfWidth),
-        size = Size(
-            width = size.width - stroke.width,
-            height = size.height - stroke.width,
-        ),
-        cornerRadius = CornerRadius((size.height - stroke.width) / 2),
-        style = stroke,
-    )
 }

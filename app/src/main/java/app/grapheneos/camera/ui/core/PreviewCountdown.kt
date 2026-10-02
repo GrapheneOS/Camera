@@ -49,7 +49,6 @@ internal class PreviewCountdown(
         return (seconds - second - drain) / seconds
     }
 
-    /** Runs [onFinished] when a countdown reaches zero, not when it is canceled. */
     @Composable
     fun Effect(onFinished: () -> Unit) {
         val currentOnFinished by rememberUpdatedState(onFinished)

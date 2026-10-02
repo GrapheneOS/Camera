@@ -28,6 +28,7 @@ import app.grapheneos.camera.ui.components.adjustmentbar.gesture.AdjustmentBarSt
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.adjustmentBarInput
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.rememberAdjustmentBarState
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
+import app.grapheneos.camera.ui.components.ruler.RulerMetrics
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
@@ -58,20 +59,17 @@ internal fun AdjustmentBar(
     colors: AdjustmentBarColors = AdjustmentBarColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
 ) {
-    require(majorTickInterval > 0) {
-        "majorTickInterval must be positive, was $majorTickInterval"
-    }
-
     val density = LocalDensity.current
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
-    val scale = remember(valueRange, steps) {
+    val scale = remember(valueRange, steps, majorTickInterval) {
         AdjustmentBarScale(
             valueRange = valueRange,
             steps = steps,
+            majorTickInterval = majorTickInterval,
         )
     }
     val metrics = remember(density) {
-        AdjustmentBarMetrics(density = density)
+        RulerMetrics(density = density)
     }
     val state = rememberAdjustmentBarState(
         value = value,
@@ -103,7 +101,6 @@ internal fun AdjustmentBar(
             state = state,
             enabled = enabled,
             scale = scale,
-            majorTickInterval = majorTickInterval,
             startIcon = startIcon,
             endIcon = endIcon,
             tint = tint,
@@ -119,11 +116,10 @@ private fun BoxScope.AdjustmentBarLayers(
     state: AdjustmentBarState,
     enabled: Boolean,
     scale: AdjustmentBarScale,
-    majorTickInterval: Int,
     startIcon: ImageVector?,
     endIcon: ImageVector?,
     tint: AdjustmentBarTint,
-    metrics: AdjustmentBarMetrics,
+    metrics: RulerMetrics,
     colors: AdjustmentBarColors,
     interactionSource: InteractionSource,
 ) {
@@ -133,7 +129,6 @@ private fun BoxScope.AdjustmentBarLayers(
         drawAdjustmentBar(
             position = state.position,
             scale = scale,
-            majorTickInterval = majorTickInterval,
             hasStartIcon = startIcon != null,
             hasEndIcon = endIcon != null,
             isFocused = isFocused,
@@ -147,7 +142,7 @@ private fun BoxScope.AdjustmentBarLayers(
             icon = startIcon,
             tint = colors.startIconColor,
             enabled = enabled,
-            onStep = { state.stepWithFeedback(ticks = -1) },
+            tryStep = { state.stepWithFeedback(ticks = -1) },
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .size(BAR_HEIGHT),
@@ -158,7 +153,7 @@ private fun BoxScope.AdjustmentBarLayers(
             icon = endIcon,
             tint = colors.endIconColor,
             enabled = enabled,
-            onStep = { state.stepWithFeedback(ticks = 1) },
+            tryStep = { state.stepWithFeedback(ticks = 1) },
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(BAR_HEIGHT),
