@@ -37,8 +37,9 @@ private val LABEL_SIZE = 14.dp
 /**
  * A logarithmic ruler: the indicator stays in the center and the scale moves under it.
  * [onValueChange] is called continuously during a drag, without snapping, and
- * [onValueChangeFinished] when it ends; any other change of [value] is animated to. [stops] get a
- * major mark, a label and a haptic tick, and a drag holds on a stop until pulled a tick past it.
+ * [onValueChangeFinished] when it ends; any other change of [value] is animated to. [stops] and the end
+ * of [valueRange] get a major mark, a label and a haptic tick, and a drag holds on one until pulled
+ * a tick past it.
  */
 @Composable
 internal fun ZoomBar(
@@ -95,7 +96,7 @@ internal fun ZoomBar(
 }
 
 @Composable
-private fun ZoomBarLayers(
+internal fun ZoomBarLayers(
     state: ZoomBarState,
     scale: ZoomBarScale,
     metrics: RulerMetrics,
@@ -105,7 +106,7 @@ private fun ZoomBarLayers(
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
     val labels = rememberZoomBarLabels(
-        stops = scale.stops,
+        marks = scale.marks,
         format = rememberZoomFormat(),
         style = MaterialTheme.typography.labelLarge.copy(
             fontSize = with(LocalDensity.current) { LABEL_SIZE.toSp() },
