@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.components.adjustmentbar
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -17,26 +17,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.AdjustmentBarState
-import app.grapheneos.camera.ui.components.adjustmentbar.gesture.adjustmentBarInput
 import app.grapheneos.camera.ui.components.adjustmentbar.gesture.rememberAdjustmentBarState
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
+import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
 import app.grapheneos.camera.ui.components.ruler.RulerMetrics
+import app.grapheneos.camera.ui.components.ruler.rememberRulerBindings
+import app.grapheneos.camera.ui.components.ruler.rememberRulerMetrics
+import app.grapheneos.camera.ui.components.ruler.rulerInput
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_COOL_TINT
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
-
-private val BAR_WIDTH = 284.dp
-private val BAR_HEIGHT = 52.dp
 
 /**
  * The indicator stays in the center and the scale moves under it. [onValueChange] is called for
@@ -59,7 +59,6 @@ internal fun AdjustmentBar(
     colors: AdjustmentBarColors = AdjustmentBarColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
 ) {
-    val density = LocalDensity.current
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val scale = remember(valueRange, steps, majorTickInterval) {
         AdjustmentBarScale(
@@ -68,32 +67,33 @@ internal fun AdjustmentBar(
             majorTickInterval = majorTickInterval,
         )
     }
-    val metrics = remember(density) {
-        RulerMetrics(density = density)
-    }
+    val metrics = rememberRulerMetrics()
     val state = rememberAdjustmentBarState(
         value = value,
         scale = scale,
-        tickSpacing = metrics.tickSpacing,
-        onValueChange = onValueChange,
-        onValueChangeFinished = onValueChangeFinished,
+        bindings = rememberRulerBindings(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            tickSpacing = metrics.tickSpacing,
+        ),
     )
     val tint = rememberAdjustmentBarTint(colors = colors)
     val alpha by animateEnabledAlpha(enabled = enabled)
 
     Box(
         modifier = modifier
-            .size(
-                width = BAR_WIDTH,
-                height = BAR_HEIGHT,
-            )
+            .size(size = RULER_SIZE)
             .graphicsLayer { this.alpha = alpha }
-            .adjustmentBarInput(
-                value = value,
-                scale = scale,
+            .rulerInput(
                 state = state,
+                rangeInfo = ProgressBarRangeInfo(
+                    current = value,
+                    range = valueRange,
+                    steps = steps,
+                ),
                 enabled = enabled,
-                isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl,
+                layoutDirection = LocalLayoutDirection.current,
                 interactionSource = resolvedInteractionSource,
             ),
     ) {
@@ -125,18 +125,29 @@ private fun BoxScope.AdjustmentBarLayers(
 ) {
     val isFocused by interactionSource.collectIsFocusedAsState()
 
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawAdjustmentBar(
-            position = state.position,
-            scale = scale,
-            hasStartIcon = startIcon != null,
-            hasEndIcon = endIcon != null,
-            isFocused = isFocused,
-            tint = tint,
-            metrics = metrics,
-            colors = colors,
-        )
-    }
+    Spacer(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawWithCache {
+                val window = adjustmentBarWindow(
+                    height = size.height,
+                    hasStartIcon = startIcon != null,
+                    hasEndIcon = endIcon != null,
+                )
+
+                onDrawBehind {
+                    drawAdjustmentBar(
+                        position = state.position,
+                        scale = scale,
+                        window = window,
+                        isFocused = isFocused,
+                        tint = tint,
+                        metrics = metrics,
+                        colors = colors,
+                    )
+                }
+            },
+    )
     if (startIcon != null) {
         AdjustmentBarIcon(
             icon = startIcon,
@@ -145,7 +156,7 @@ private fun BoxScope.AdjustmentBarLayers(
             tryStep = { state.stepWithFeedback(ticks = -1) },
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .size(BAR_HEIGHT),
+                .size(size = RULER_SIZE.height),
         )
     }
     if (endIcon != null) {
@@ -156,7 +167,7 @@ private fun BoxScope.AdjustmentBarLayers(
             tryStep = { state.stepWithFeedback(ticks = 1) },
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .size(BAR_HEIGHT),
+                .size(size = RULER_SIZE.height),
         )
     }
 }
