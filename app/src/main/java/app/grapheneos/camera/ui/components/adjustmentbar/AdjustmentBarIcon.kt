@@ -38,8 +38,8 @@ internal fun AdjustmentBarIcon(
     onStep: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val currentEnabled by rememberUpdatedState(enabled)
-    val currentOnStep by rememberUpdatedState(onStep)
+    val currentEnabled = rememberUpdatedState(enabled)
+    val currentOnStep = rememberUpdatedState(onStep)
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = when {
@@ -54,19 +54,19 @@ internal fun AdjustmentBarIcon(
 
             detectTapGestures(
                 onPress = {
-                    if (currentEnabled) {
+                    if (currentEnabled.value) {
                         isPressed = true
                         repeatWhileHeld(
                             delay = longPressTimeout,
-                            onStep = { currentOnStep() },
+                            onStep = { currentEnabled.value && currentOnStep.value() },
                         )
                         isPressed = false
                     }
                 },
                 onLongPress = {},
                 onTap = {
-                    if (currentEnabled) {
-                        currentOnStep()
+                    if (currentEnabled.value) {
+                        currentOnStep.value()
                     }
                 },
             )

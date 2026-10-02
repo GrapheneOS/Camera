@@ -221,6 +221,24 @@ class AdjustmentBarTest {
         assertEquals(emptyList<Float>(), changes)
     }
 
+    @Test
+    fun adjustmentBar_disabledWhileAnIconIsHeld_stopsStepping() {
+        setContent()
+
+        composeRule.mainClock.autoAdvance = false
+        try {
+            bar().performTouchInput { down(Offset(x = width - height / 2f, y = centerY)) }
+            composeRule.mainClock.advanceTimeBy(longPressTimeoutMillis + BEFORE_REPEAT_MILLIS)
+            enabled = false
+            composeRule.mainClock.advanceTimeBy(TWO_REPEATS_MILLIS)
+            bar().performTouchInput { up() }
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+        }
+
+        assertEquals(listOf(1f), changes)
+    }
+
     private fun setContent() {
         composeRule.setContent {
             touchSlop = LocalViewConfiguration.current.touchSlop
@@ -291,6 +309,7 @@ class AdjustmentBarTest {
         private const val TAG = "adjustmentBar"
         private const val DRAG_MOVES = 20
         private const val TWO_REPEATS_MILLIS = 250L
+        private const val BEFORE_REPEAT_MILLIS = 50L
         private val TICK_SPACING = 8.75.dp
     }
 }
