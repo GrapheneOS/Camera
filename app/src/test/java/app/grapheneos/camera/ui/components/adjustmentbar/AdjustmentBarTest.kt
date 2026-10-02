@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.click
@@ -81,6 +82,21 @@ class AdjustmentBarTest {
 
         assertEquals(listOf(1f, 2f, 3f), changes)
         assertEquals(1, finishes)
+    }
+
+    @Test
+    fun adjustmentBar_canceledPastHalfATick_staysOnTheLastReportedTick() {
+        setContent()
+
+        bar().performTouchInput {
+            pressAndMove(ticks = -2.7f)
+            cancel()
+        }
+
+        composeRule.runOnIdle {
+            assertEquals(listOf(1f, 2f), changes)
+            assertEquals(1, finishes)
+        }
     }
 
     @Test
@@ -230,6 +246,7 @@ class AdjustmentBarTest {
             bar().performTouchInput { down(Offset(x = width - height / 2f, y = centerY)) }
             composeRule.mainClock.advanceTimeBy(longPressTimeoutMillis + BEFORE_REPEAT_MILLIS)
             enabled = false
+            composeRule.waitForIdle()
             composeRule.mainClock.advanceTimeBy(TWO_REPEATS_MILLIS)
             bar().performTouchInput { up() }
         } finally {
@@ -288,12 +305,16 @@ class AdjustmentBarTest {
 
     private fun drag(ticks: Float) {
         bar().performTouchInput {
-            down(center)
-            moveBy(Offset(x = touchSlop * ticks.sign, y = 0f))
-            repeat(DRAG_MOVES) {
-                moveBy(Offset(x = ticks * tickSpacing() / DRAG_MOVES, y = 0f))
-            }
+            pressAndMove(ticks = ticks)
             up()
+        }
+    }
+
+    private fun TouchInjectionScope.pressAndMove(ticks: Float) {
+        down(center)
+        moveBy(Offset(x = touchSlop * ticks.sign, y = 0f))
+        repeat(DRAG_MOVES) {
+            moveBy(Offset(x = ticks * tickSpacing() / DRAG_MOVES, y = 0f))
         }
     }
 

@@ -55,7 +55,7 @@ internal class ZoomBarState(
 
     override suspend fun release() {
         detentTravel = 0f
-        super.release()
+        finishDrag()
     }
 
     override suspend fun syncTo(value: Float) {
@@ -136,7 +136,7 @@ internal fun rememberZoomBarState(
     bindings: RulerBindings,
 ): ZoomBarState {
     val currentScale = rememberUpdatedState(scale)
-    val state = remember {
+    val state = remember(scale) {
         ZoomBarState(
             initialValue = value,
             currentScale = currentScale,

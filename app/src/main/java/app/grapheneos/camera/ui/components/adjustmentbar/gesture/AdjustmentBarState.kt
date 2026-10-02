@@ -50,15 +50,31 @@ internal class AdjustmentBarState(
         if (isNewTick) {
             reportTick(tick = target)
         }
-        super.release()
+        finishDrag()
         animateTo(tick = target)
         if (isNewTick) {
             performTickFeedback(tick = target)
         }
     }
 
+    override suspend fun cancel() {
+        finishDrag()
+        animateTo(tick = reportedTick)
+    }
+
     override suspend fun syncTo(value: Float) {
         animateTo(tick = currentScale.value.tickOf(value = value))
+    }
+
+    fun stepWithFeedback(ticks: Int): Boolean {
+        val target = (valueTick() + ticks).coerceIn(0, currentScale.value.lastTick)
+        val moves = moveToTick(tick = target)
+
+        if (moves) {
+            performTickFeedback(tick = target)
+        }
+
+        return moves
     }
 
     override fun onDragged(
@@ -73,17 +89,6 @@ internal class AdjustmentBarState(
             reportTick(tick = passedTick)
             performTickFeedback(tick = passedTick)
         }
-    }
-
-    fun stepWithFeedback(ticks: Int): Boolean {
-        val target = (valueTick() + ticks).coerceIn(0, currentScale.value.lastTick)
-        val moves = moveToTick(tick = target)
-
-        if (moves) {
-            performTickFeedback(tick = target)
-        }
-
-        return moves
     }
 
     private fun moveToTick(tick: Int): Boolean {
@@ -146,7 +151,7 @@ internal fun rememberAdjustmentBarState(
     bindings: RulerBindings,
 ): AdjustmentBarState {
     val currentScale = rememberUpdatedState(scale)
-    val state = remember {
+    val state = remember(scale) {
         AdjustmentBarState(
             initialTick = scale.tickOf(value = value),
             currentScale = currentScale,

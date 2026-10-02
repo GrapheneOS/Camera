@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,35 +65,37 @@ internal fun ZoomStops(
         fontFeatureSettings = TABULAR_FIGURES,
     )
 
-    PillSelector(
-        selectedIndex = selectedIndex,
-        itemCount = stops.size,
-        onItemClick = { index -> onStopClick(stops[index]) },
-        modifier = modifier,
-        enabled = enabled,
-        colors = colors,
-    ) { index ->
-        val isSelected = index == selectedIndex
-        val number = format.format(
-            value = when {
-                isSelected -> value
-                else -> stops[index]
-            },
-        )
+    key(stops) {
+        PillSelector(
+            selectedIndex = selectedIndex,
+            itemCount = stops.size,
+            onItemClick = { index -> onStopClick(stops[index]) },
+            modifier = modifier,
+            enabled = enabled,
+            colors = colors,
+        ) { index ->
+            val isSelected = index == selectedIndex
+            val number = format.format(
+                value = when {
+                    isSelected -> value
+                    else -> stops[index]
+                },
+            )
 
-        ZoomStopLabel(
-            text = when {
-                isSelected -> number + valueSuffix
-                else -> number
-            },
-            description = number + valueSuffix,
-            customActions = customActions,
-            style = when {
-                isSelected -> style.copy(fontWeight = FontWeight.Bold)
-                else -> style
-            },
-            scope = this,
-        )
+            ZoomStopLabel(
+                text = when {
+                    isSelected -> number + valueSuffix
+                    else -> number
+                },
+                description = number + valueSuffix,
+                customActions = customActions,
+                style = when {
+                    isSelected -> style.copy(fontWeight = FontWeight.Bold)
+                    else -> style
+                },
+                scope = this,
+            )
+        }
     }
 }
 

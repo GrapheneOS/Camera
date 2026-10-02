@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -32,6 +33,7 @@ class AdjustmentBarStateTest {
     val composeRule = createComposeRule()
 
     private var value by mutableFloatStateOf(0f)
+    private var scale by mutableStateOf(SCALE)
     private var touchSlop = 0f
     private val changes = mutableListOf<Float>()
     private var applyChange: (Float) -> Unit = { newValue -> value = newValue }
@@ -101,6 +103,22 @@ class AdjustmentBarStateTest {
         }
     }
 
+    @Test
+    fun state_rangeChanged_jumpsStraightToTheValue() {
+        setContent()
+
+        composeRule.mainClock.autoAdvance = false
+        try {
+            scale = NARROW_SCALE
+            composeRule.waitForIdle()
+            composeRule.mainClock.advanceTimeByFrame()
+
+            assertEquals(NARROW_SCALE.tickOf(value = 0f).toFloat(), state.position)
+        } finally {
+            composeRule.mainClock.autoAdvance = true
+        }
+    }
+
     private fun drag(ticks: Float) {
         composeRule.onNodeWithTag(TAG).performTouchInput {
             down(center)
@@ -117,7 +135,7 @@ class AdjustmentBarStateTest {
             touchSlop = LocalViewConfiguration.current.touchSlop
             state = rememberAdjustmentBarState(
                 value = value,
-                scale = SCALE,
+                scale = scale,
                 bindings = rememberRulerBindings(
                     value = value,
                     onValueChange = { newValue ->
@@ -148,6 +166,11 @@ class AdjustmentBarStateTest {
         private val SCALE = AdjustmentBarScale(
             valueRange = -12f..12f,
             steps = 23,
+            majorTickInterval = 4,
+        )
+        private val NARROW_SCALE = AdjustmentBarScale(
+            valueRange = -6f..6f,
+            steps = 11,
             majorTickInterval = 4,
         )
     }

@@ -25,13 +25,13 @@ class CountDownTimerBoldnessTest {
 
             frame(millis = 0)
             frame(millis = 320)
-            assertEquals(boldnessAt(elapsedMillis = 160f), boldness.value, TOLERANCE)
+            assertEquals(boldnessAt(elapsedMillis = 160f), boldness.value)
 
             frame(millis = 1_400)
-            assertEquals(boldnessAt(elapsedMillis = 700f), boldness.value, TOLERANCE)
+            assertEquals(boldnessAt(elapsedMillis = 700f), boldness.value)
 
             frame(millis = 2_000)
-            assertEquals(0f, boldness.value, TOLERANCE)
+            assertEquals(0f, boldness.value)
             assertTrue(punch.isCompleted)
         }
     }
@@ -42,7 +42,7 @@ class CountDownTimerBoldnessTest {
             val punch = launch(clock + AnimationScale(scaleFactor = 0f)) { boldness.punch() }
 
             frame(millis = 0)
-            assertEquals(0f, boldness.value, TOLERANCE)
+            assertEquals(0f, boldness.value)
             assertTrue(punch.isCompleted)
         }
     }
@@ -75,6 +75,5 @@ class CountDownTimerBoldnessTest {
 
     private companion object {
         private const val NANOS_PER_MILLI = 1_000_000L
-        private const val TOLERANCE = 0.001f
     }
 }

@@ -8,18 +8,18 @@ class AdjustmentBarTintTest {
 
     @Test
     fun strength_inTheMiddle_isZero() {
-        assertEquals(0f, strength(position = 12f), TOLERANCE)
+        assertEquals(0f, strength(position = 12f))
     }
 
     @Test
     fun strength_atTheEnds_isFull() {
-        assertEquals(1f, strength(position = 0f), TOLERANCE)
-        assertEquals(1f, strength(position = 24f), TOLERANCE)
+        assertEquals(1f, strength(position = 0f))
+        assertEquals(1f, strength(position = 24f))
     }
 
     @Test
     fun strength_isTheSameOnBothSides() {
-        assertEquals(strength(position = 6f), strength(position = 18f), TOLERANCE)
+        assertEquals(strength(position = 6f), strength(position = 18f))
     }
 
     @Test
@@ -36,7 +36,6 @@ class AdjustmentBarTintTest {
 
     private companion object {
         private const val MIDDLE = 12f
-        private const val TOLERANCE = 0.0001f
         private const val FLAT_START = 0.01f
     }
 }
