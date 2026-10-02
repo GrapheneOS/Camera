@@ -25,21 +25,16 @@ private const val PRESSED_SCALE = 1.1f
 
 private val REPEAT_INTERVAL = 100.milliseconds
 
-/**
- * A tap steps once; holding past the long-press timeout keeps stepping until release or until
- * [onStep] reports the end. Taps have no semantics of their own: TalkBack and keys step the bar
- * through its slider actions.
- */
 @Composable
 internal fun AdjustmentBarIcon(
     icon: ImageVector,
     tint: Color,
     enabled: Boolean,
-    onStep: () -> Boolean,
+    tryStep: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     val currentEnabled = rememberUpdatedState(enabled)
-    val currentOnStep = rememberUpdatedState(onStep)
+    val currentOnStep = rememberUpdatedState(tryStep)
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = when {
@@ -49,6 +44,7 @@ internal fun AdjustmentBarIcon(
     )
 
     Box(
+        // Not clickable: TalkBack and keys already step the bar through its slider actions.
         modifier = modifier.pointerInput(Unit) {
             val longPressTimeout = viewConfiguration.longPressTimeoutMillis.milliseconds
 
@@ -58,7 +54,7 @@ internal fun AdjustmentBarIcon(
                         isPressed = true
                         repeatWhileHeld(
                             delay = longPressTimeout,
-                            onStep = { currentEnabled.value && currentOnStep.value() },
+                            tryStep = { currentEnabled.value && currentOnStep.value() },
                         )
                         isPressed = false
                     }
@@ -87,11 +83,11 @@ internal fun AdjustmentBarIcon(
 
 private suspend fun PressGestureScope.repeatWhileHeld(
     delay: Duration,
-    onStep: () -> Boolean,
+    tryStep: () -> Boolean,
 ) {
     var isHeld = withTimeoutOrNull(delay) { tryAwaitRelease() } == null
 
-    while (isHeld && onStep()) {
+    while (isHeld && tryStep()) {
         isHeld = withTimeoutOrNull(REPEAT_INTERVAL) { tryAwaitRelease() } == null
     }
     if (isHeld) {

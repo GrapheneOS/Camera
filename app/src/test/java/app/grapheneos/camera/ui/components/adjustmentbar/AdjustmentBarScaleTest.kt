@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.components.adjustmentbar
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AdjustmentBarScaleTest {
@@ -8,6 +10,7 @@ class AdjustmentBarScaleTest {
     private val scale = AdjustmentBarScale(
         valueRange = -12f..12f,
         steps = 23,
+        majorTickInterval = 4,
     )
 
     @Test
@@ -45,6 +48,23 @@ class AdjustmentBarScaleTest {
         AdjustmentBarScale(
             valueRange = 0f..1f,
             steps = 0,
+            majorTickInterval = 4,
+        )
+    }
+
+    @Test
+    fun isMajor_everyIntervalFromTheStart() {
+        assertTrue(scale.isMajor(tick = 0))
+        assertTrue(scale.isMajor(tick = 12))
+        assertFalse(scale.isMajor(tick = 13))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun scale_withoutMajorTicks_isRejected() {
+        AdjustmentBarScale(
+            valueRange = 0f..1f,
+            steps = 4,
+            majorTickInterval = 0,
         )
     }
 }

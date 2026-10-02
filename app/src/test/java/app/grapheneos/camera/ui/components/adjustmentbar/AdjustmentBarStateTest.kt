@@ -144,6 +144,7 @@ class AdjustmentBarStateTest {
         private val SCALE = AdjustmentBarScale(
             valueRange = -12f..12f,
             steps = 23,
+            majorTickInterval = 4,
         )
     }
 }

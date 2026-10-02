@@ -17,7 +17,6 @@ import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
 
 private val BUTTON_SIZE = 48.dp
 
-/** The icon is decorative: the caller describes the action through [modifier]. */
 @Composable
 internal fun OverlayIconButton(
     onClick: () -> Unit,
