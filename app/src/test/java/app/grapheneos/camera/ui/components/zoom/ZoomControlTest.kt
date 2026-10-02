@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.components.zoom
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -11,6 +13,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -19,6 +22,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.CameraTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -35,8 +39,11 @@ class ZoomControlTest {
     private var expanded by mutableStateOf(false)
     private var enabled by mutableStateOf(true)
     private var touchSlop = 0f
+    private var longPressTimeoutMillis = 0L
+    private var isPressed = false
     private var expansions = 0
     private var finishes = 0
+    private val interactionSource = MutableInteractionSource()
     private val changes = mutableListOf<Float>()
     private val stopClicks = mutableListOf<Float>()
 
@@ -54,7 +61,7 @@ class ZoomControlTest {
     fun zoomControl_swipedOnTheStops_expandsAndKeepsZoomingWithTheSameTouch() {
         setContent()
 
-        swipe(ticks = 3f)
+        swipe()
 
         composeRule.runOnIdle {
             assertEquals(1, expansions)
@@ -67,12 +74,66 @@ class ZoomControlTest {
     }
 
     @Test
+    fun zoomControl_longPressedOnTheStops_expandsWithoutSelectingAStop() {
+        setContent()
+
+        longPress()
+        composeRule.onNodeWithTag(TAG).performTouchInput { up() }
+
+        composeRule.runOnIdle {
+            assertEquals(1, expansions)
+            assertTrue(expanded)
+            assertEquals(emptyList<Float>(), stopClicks)
+        }
+    }
+
+    @Test
+    fun zoomControl_draggedAfterALongPress_keepsZoomingWithTheSameTouch() {
+        setContent()
+
+        longPress()
+        composeRule.onNodeWithTag(TAG).performTouchInput {
+            moveBy(Offset(x = -touchSlop, y = 0f))
+            repeat(DRAG_MOVES) {
+                moveBy(Offset(x = -SWIPE_TICKS * TICK_SPACING.toPx() / DRAG_MOVES, y = 0f))
+            }
+            up()
+        }
+
+        composeRule.runOnIdle {
+            assertEquals(1, expansions)
+            assertTrue(changes.isNotEmpty())
+            assertEquals(1, finishes)
+        }
+    }
+
+    @Test
+    fun zoomControl_heldAfterExpanding_staysPressedUntilReleased() {
+        setContent()
+
+        longPress()
+        composeRule.runOnIdle { assertTrue(isPressed) }
+        composeRule.onNodeWithTag(TAG).performTouchInput { up() }
+
+        composeRule.runOnIdle { assertFalse(isPressed) }
+    }
+
+    @Test
+    fun zoomControl_tapped_endsItsPress() {
+        setContent()
+
+        composeRule.onNodeWithContentDescription("2×").performClick()
+
+        composeRule.runOnIdle { assertFalse(isPressed) }
+    }
+
+    @Test
     fun zoomControl_expanded_isASliderInsteadOfStops() {
         expanded = true
         setContent()
 
         composeRule.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
-            .assertExists()
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1×"))
         composeRule.onNodeWithContentDescription("2×").assertDoesNotExist()
     }
 
@@ -94,7 +155,7 @@ class ZoomControlTest {
         enabled = false
         setContent()
 
-        swipe(ticks = 3f)
+        swipe()
 
         composeRule.runOnIdle {
             assertEquals(0, expansions)
@@ -102,14 +163,19 @@ class ZoomControlTest {
         }
     }
 
-    private fun swipe(ticks: Float) {
+    private fun longPress() {
+        composeRule.onNodeWithTag(TAG).performTouchInput { down(center) }
+        composeRule.mainClock.advanceTimeBy(longPressTimeoutMillis + AFTER_LONG_PRESS_MILLIS)
+    }
+
+    private fun swipe() {
         composeRule.onNodeWithTag(TAG).performTouchInput {
             val tickSpacing = TICK_SPACING.toPx()
 
             down(center)
             moveBy(Offset(x = -touchSlop, y = 0f))
             repeat(DRAG_MOVES) {
-                moveBy(Offset(x = -ticks * tickSpacing / DRAG_MOVES, y = 0f))
+                moveBy(Offset(x = -SWIPE_TICKS * tickSpacing / DRAG_MOVES, y = 0f))
             }
             up()
         }
@@ -118,6 +184,8 @@ class ZoomControlTest {
     private fun setContent() {
         composeRule.setContent {
             touchSlop = LocalViewConfiguration.current.touchSlop
+            longPressTimeoutMillis = LocalViewConfiguration.current.longPressTimeoutMillis
+            isPressed = interactionSource.collectIsPressedAsState().value
             CameraTheme {
                 ZoomControl(
                     value = value,
@@ -138,6 +206,7 @@ class ZoomControlTest {
                     modifier = Modifier.testTag(TAG),
                     enabled = enabled,
                     onValueChangeFinished = { finishes += 1 },
+                    interactionSource = interactionSource,
                 )
             }
         }
@@ -147,6 +216,8 @@ class ZoomControlTest {
         private const val TAG = "zoomControl"
         private const val EXPAND_LABEL = "Adjust zoom"
         private const val DRAG_MOVES = 20
+        private const val SWIPE_TICKS = 3f
+        private const val AFTER_LONG_PRESS_MILLIS = 100L
         private val TICK_SPACING = 8.75.dp
     }
 }
