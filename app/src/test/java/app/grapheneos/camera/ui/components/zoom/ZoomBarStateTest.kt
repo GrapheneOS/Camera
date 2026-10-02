@@ -87,7 +87,7 @@ class ZoomBarStateTest {
         drag(ticks = 1.5f)
 
         composeRule.runOnIdle {
-            assertEquals(SCALE.position(value = 1f) + 0.5f, state.position, TOLERANCE)
+            assertEquals(SCALE.position(value = 1f) + 0.5f, state.position)
         }
     }
 
@@ -144,7 +144,6 @@ class ZoomBarStateTest {
     private companion object {
         private const val TAG = "ruler"
         private const val TICK_SPACING_PX = 10f
-        private const val TOLERANCE = 0.001f
         private val SCALE = ZoomBarScale(
             valueRange = 0.5f..8f,
             stops = listOf(0.5f, 1f, 2f, 8f),
