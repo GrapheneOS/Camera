@@ -7,8 +7,6 @@ import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.DragScope
 import androidx.compose.foundation.gestures.DraggableState
-import androidx.compose.foundation.interaction.DragInteraction
-import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -27,10 +25,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import app.grapheneos.camera.ui.components.gesture.DragEndInteractions
 import app.grapheneos.camera.ui.components.modeselector.ModeSelectorGeometry
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.emptyFlow
 
 @Stable
 internal class ModeSelectorState(
@@ -66,7 +63,10 @@ internal class ModeSelectorState(
 
     internal var onSettled: (Int) -> Unit = {}
 
-    internal val dragInteractions: MutableInteractionSource = DragEnds()
+    internal val dragInteractions: MutableInteractionSource = DragEndInteractions(
+        onStop = ::release,
+        onCancel = ::cancel,
+    )
 
     private var labels: List<String>? = null
 
@@ -148,7 +148,7 @@ internal class ModeSelectorState(
         isDragging = false
     }
 
-    private fun cancelDrag() {
+    private fun cancel() {
         isDragging = false
         revision++
     }
@@ -196,23 +196,6 @@ internal class ModeSelectorState(
     internal class SettleRequest(
         val index: Int,
     )
-
-    private inner class DragEnds : MutableInteractionSource {
-
-        override val interactions: Flow<Interaction> = emptyFlow()
-
-        override suspend fun emit(interaction: Interaction) {
-            tryEmit(interaction = interaction)
-        }
-
-        override fun tryEmit(interaction: Interaction): Boolean {
-            when (interaction) {
-                is DragInteraction.Stop -> release()
-                is DragInteraction.Cancel -> cancelDrag()
-            }
-            return true
-        }
-    }
 
     private companion object {
         private val SETTLE_SPEC = spring<Float>(
