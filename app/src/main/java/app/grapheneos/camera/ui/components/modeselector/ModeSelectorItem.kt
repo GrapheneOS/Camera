@@ -14,14 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -35,6 +28,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.highlight.highlightedContent
 import app.grapheneos.camera.ui.components.modeselector.gesture.ModeSelectorState
 
 internal val ITEM_PADDING = 24.dp
@@ -50,6 +44,7 @@ internal fun ModeSelectorItem(
     enabled: Boolean,
     state: ModeSelectorState,
     style: TextStyle,
+    highlightColor: Color,
     highlightContentColor: Color,
     customActions: List<CustomAccessibilityAction>,
 ) {
@@ -84,15 +79,18 @@ internal fun ModeSelectorItem(
                 role = Role.Tab,
                 onClick = { state.select(index = index) },
             )
-            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-            .drawWithContent {
-                drawContent()
-                recolorOverHighlight(
-                    index = index,
-                    state = state,
-                    color = highlightContentColor,
-                )
-            }
+            .highlightedContent(
+                highlightColor = highlightColor,
+                highlightContentColor = highlightContentColor,
+                highlightStart = {
+                    state.geometry.highlightStartIn(
+                        index = index,
+                        position = state.position,
+                        isRtl = layoutDirection == LayoutDirection.Rtl,
+                    )
+                },
+                highlightWidth = { state.geometry.highlightWidth(position = state.position) },
+            )
             .padding(horizontal = ITEM_PADDING),
         contentAlignment = Alignment.Center,
     ) {
@@ -109,30 +107,4 @@ internal fun ModeSelectorItem(
             maxLines = 1,
         )
     }
-}
-
-private fun DrawScope.recolorOverHighlight(
-    index: Int,
-    state: ModeSelectorState,
-    color: Color,
-) {
-    val geometry = state.geometry
-
-    drawRoundRect(
-        color = color,
-        topLeft = Offset(
-            x = geometry.highlightStartIn(
-                index = index,
-                position = state.position,
-                isRtl = layoutDirection == LayoutDirection.Rtl,
-            ),
-            y = 0f,
-        ),
-        size = Size(
-            width = geometry.highlightWidth(position = state.position),
-            height = size.height,
-        ),
-        cornerRadius = CornerRadius(size.height / 2),
-        blendMode = BlendMode.SrcAtop,
-    )
 }

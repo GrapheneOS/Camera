@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.highlight.drawHighlight
 import app.grapheneos.camera.ui.components.modeselector.gesture.ModeSelectorEffects
 import app.grapheneos.camera.ui.components.modeselector.gesture.ModeSelectorState
 import app.grapheneos.camera.ui.components.modeselector.gesture.modeSelectorInput
@@ -86,11 +87,18 @@ private fun ModeSelectorLayers(
     modifier: Modifier = Modifier,
 ) {
     val style = MaterialTheme.typography.labelLarge.copy(color = colors.contentColor)
-    val selectActions = remember(labels, state) {
-        labels.mapIndexed { index, label ->
+    val itemActions = remember(labels, state, enabled) {
+        val selectActions = labels.mapIndexed { index, label ->
             CustomAccessibilityAction(label = label) {
                 state.select(index = index)
                 true
+            }
+        }
+
+        labels.indices.map { index ->
+            when {
+                enabled -> selectActions.filterIndexed { other, _ -> other != index }
+                else -> emptyList()
             }
         }
     }
@@ -105,11 +113,9 @@ private fun ModeSelectorLayers(
                     enabled = enabled,
                     state = state,
                     style = style,
+                    highlightColor = colors.selectedContainerColor,
                     highlightContentColor = colors.selectedContentColor,
-                    customActions = when {
-                        enabled -> selectActions.filterIndexed { other, _ -> other != index }
-                        else -> emptyList()
-                    },
+                    customActions = itemActions[index],
                 )
             }
         },
@@ -122,8 +128,11 @@ private fun ModeSelectorLayers(
                 )
             }
             .drawBehind {
-                drawModeSelectorHighlight(
-                    state = state,
+                val width = state.geometry.highlightWidth(position = state.position)
+
+                drawHighlight(
+                    start = (size.width - width) / 2,
+                    width = width,
                     color = colors.selectedContainerColor,
                 )
             },

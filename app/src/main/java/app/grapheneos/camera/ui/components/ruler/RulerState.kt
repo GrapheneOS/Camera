@@ -7,8 +7,6 @@ import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.DragScope
 import androidx.compose.foundation.gestures.DraggableState
-import androidx.compose.foundation.interaction.DragInteraction
-import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,7 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.Flow
+import app.grapheneos.camera.ui.components.gesture.DragEndInteractions
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 
@@ -42,7 +40,7 @@ internal abstract class RulerState(
     internal var revision by mutableIntStateOf(0)
         private set
 
-    private var forwardingInteractions: DragInteractions? = null
+    private var forwardingInteractions: DragEndInteractions? = null
     private var isDragCanceled = false
 
     private val mutex = MutatorMutex()
@@ -106,7 +104,11 @@ internal abstract class RulerState(
 
         return when {
             current != null && current.forwardTo === forwardTo -> current
-            else -> DragInteractions(forwardTo = forwardTo).also { forwardingInteractions = it }
+            else -> DragEndInteractions(
+                onStop = { isDragCanceled = false },
+                onCancel = { isDragCanceled = true },
+                forwardTo = forwardTo,
+            ).also { forwardingInteractions = it }
         }
     }
 
@@ -151,30 +153,6 @@ internal abstract class RulerState(
 
     protected fun report(value: Float) {
         bindings.onValueChange.value(value)
-    }
-
-    private inner class DragInteractions(
-        val forwardTo: MutableInteractionSource,
-    ) : MutableInteractionSource {
-
-        override val interactions: Flow<Interaction> = forwardTo.interactions
-
-        override suspend fun emit(interaction: Interaction) {
-            noteDragEnd(interaction = interaction)
-            forwardTo.emit(interaction)
-        }
-
-        override fun tryEmit(interaction: Interaction): Boolean {
-            noteDragEnd(interaction = interaction)
-            return forwardTo.tryEmit(interaction)
-        }
-
-        private fun noteDragEnd(interaction: Interaction) {
-            when (interaction) {
-                is DragInteraction.Stop -> isDragCanceled = false
-                is DragInteraction.Cancel -> isDragCanceled = true
-            }
-        }
     }
 
     private companion object {
