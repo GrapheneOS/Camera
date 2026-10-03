@@ -1,10 +1,5 @@
 package app.grapheneos.camera.ui.components.pillselector
 
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.util.lerp
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -12,6 +7,11 @@ import kotlin.math.floor
 internal class PillSelectorGeometry(
     itemCount: Int,
 ) {
+
+    val lastIndex: Int
+        get() {
+            return starts.lastIndex
+        }
 
     private val starts = FloatArray(itemCount)
     private val widths = FloatArray(itemCount)
@@ -39,6 +39,16 @@ internal class PillSelectorGeometry(
         )
     }
 
+    fun itemStart(index: Int): Float {
+        return starts[index]
+    }
+
+    fun pitch(selection: Float): Float {
+        val from = floor(selection).toInt().coerceIn(0, lastIndex - 1)
+
+        return starts[from + 1] - starts[from]
+    }
+
     private fun interpolate(
         values: FloatArray,
         selection: Float,
@@ -52,23 +62,4 @@ internal class PillSelectorGeometry(
             fraction = selection - from,
         )
     }
-}
-
-internal fun DrawScope.drawPillSelectorHighlight(
-    selection: Float,
-    geometry: PillSelectorGeometry,
-    color: Color,
-) {
-    drawRoundRect(
-        color = color,
-        topLeft = Offset(
-            x = geometry.start(selection = selection),
-            y = 0f,
-        ),
-        size = Size(
-            width = geometry.width(selection = selection),
-            height = size.height,
-        ),
-        cornerRadius = CornerRadius(size.height / 2),
-    )
 }

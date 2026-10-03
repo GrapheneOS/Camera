@@ -69,7 +69,7 @@ internal fun ZoomStops(
         PillSelector(
             selectedIndex = selectedIndex,
             itemCount = stops.size,
-            onItemClick = { index -> onStopClick(stops[index]) },
+            onItemSelected = { index -> onStopClick(stops[index]) },
             modifier = modifier,
             enabled = enabled,
             colors = colors,

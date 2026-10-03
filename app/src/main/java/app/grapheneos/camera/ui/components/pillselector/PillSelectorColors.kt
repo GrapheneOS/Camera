@@ -29,5 +29,18 @@ internal data class PillSelectorColors(
                 selectedContentColor = colorScheme.onPrimaryFixed,
             )
         }
+
+        @Composable
+        @ReadOnlyComposable
+        fun fromSurfaceTheme(): PillSelectorColors {
+            val colorScheme = MaterialTheme.colorScheme
+
+            return PillSelectorColors(
+                containerColor = colorScheme.surfaceContainerHighest,
+                contentColor = colorScheme.onSurface,
+                selectedContainerColor = colorScheme.primary,
+                selectedContentColor = colorScheme.onPrimary,
+            )
+        }
     }
 }
