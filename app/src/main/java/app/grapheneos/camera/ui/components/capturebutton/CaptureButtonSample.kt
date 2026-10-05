@@ -17,10 +17,10 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
+import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
@@ -152,15 +152,15 @@ private class CaptureButtonSampleState {
             }
         }
 
-    val progress: CaptureButtonProgress
+    val progress: RingProgress
         get() {
             return when {
-                isCountingDown -> CaptureButtonProgress.Segmented(
+                isCountingDown -> RingProgress.Segmented(
                     segments = TIMER_SECONDS,
                     fraction = countdown::remainingFraction,
                 )
 
-                else -> CaptureButtonProgress.None
+                else -> RingProgress.None
             }
         }
 

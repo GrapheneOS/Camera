@@ -18,8 +18,8 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
+import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -166,7 +166,7 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_indeterminateProgress_isReportedOnTheButton() {
-        fixture.progress = CaptureButtonProgress.Indeterminate
+        fixture.progress = RingProgress.Indeterminate
         fixture.setContent()
 
         fixture.button().assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
@@ -174,7 +174,7 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_segmentedProgress_isReportedOnTheButton() {
-        fixture.progress = CaptureButtonProgress.Segmented(
+        fixture.progress = RingProgress.Segmented(
             segments = 10,
             fraction = { 0.7f },
         )
@@ -191,7 +191,7 @@ class CaptureButtonTest {
     @Test
     fun captureButton_fractionChanged_reportsTheNewProgress() {
         var fraction by mutableFloatStateOf(0.2f)
-        fixture.progress = CaptureButtonProgress.Determinate(fraction = { fraction })
+        fixture.progress = RingProgress.Determinate(fraction = { fraction })
         fixture.setContent()
 
         fraction = 0.8f
@@ -206,10 +206,10 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_progressRemoved_stopsReportingProgress() {
-        fixture.progress = CaptureButtonProgress.Indeterminate
+        fixture.progress = RingProgress.Indeterminate
         fixture.setContent()
 
-        fixture.progress = CaptureButtonProgress.None
+        fixture.progress = RingProgress.None
 
         fixture.button().assert(
             SemanticsMatcher.keyNotDefined(SemanticsProperties.ProgressBarRangeInfo),
