@@ -2,8 +2,6 @@ package app.grapheneos.camera.ui.components.capturebutton
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.size
@@ -31,6 +29,7 @@ import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.lerp
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
+import app.grapheneos.camera.ui.components.motion.MORPH_OFFSET_SPEC
 import kotlinx.coroutines.flow.collectLatest
 
 private val TARGET_SIZE = 56.dp
@@ -38,12 +37,6 @@ private val TARGET_ICON_SIZE = 24.dp
 private val DOCKED_CORE_GAP = 4.dp
 
 private const val PULL_GROWTH = 0.2f
-
-private val PULL_SPEC = spring(
-    dampingRatio = 0.7f,
-    stiffness = 500f,
-    visibilityThreshold = Offset.VisibilityThreshold,
-)
 
 @Composable
 internal fun CaptureButtonTargetBackgrounds(
@@ -170,7 +163,7 @@ internal fun animateHoldPull(
 
                 else -> springBack.animateTo(
                     targetValue = pull,
-                    animationSpec = PULL_SPEC,
+                    animationSpec = MORPH_OFFSET_SPEC,
                 )
             }
         }

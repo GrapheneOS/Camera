@@ -1,8 +1,6 @@
 package app.grapheneos.camera.ui.components.pillselector.gesture
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
@@ -19,6 +17,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import app.grapheneos.camera.ui.components.gesture.DragEndInteractions
+import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorGeometry
 import kotlin.math.roundToInt
 
@@ -71,7 +70,7 @@ internal class PillSelectorSelection(
     suspend fun animateTo(index: Int) {
         animatable.animateTo(
             targetValue = index.toFloat(),
-            animationSpec = SELECTION_SPEC,
+            animationSpec = SETTLE_SPEC,
         )
     }
 
@@ -84,13 +83,6 @@ internal class PillSelectorSelection(
         if (next.roundToInt() != previous.roundToInt()) {
             hapticFeedback.value.performHapticFeedback(HapticFeedbackType.SegmentTick)
         }
-    }
-
-    private companion object {
-        private val SELECTION_SPEC = spring<Float>(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = 500f,
-        )
     }
 }
 

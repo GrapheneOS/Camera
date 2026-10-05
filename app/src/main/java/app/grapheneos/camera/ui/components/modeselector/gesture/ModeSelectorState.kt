@@ -1,8 +1,6 @@
 package app.grapheneos.camera.ui.components.modeselector.gesture
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.DragScope
@@ -27,6 +25,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import app.grapheneos.camera.ui.components.gesture.DragEndInteractions
 import app.grapheneos.camera.ui.components.modeselector.ModeSelectorGeometry
+import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 import kotlinx.coroutines.flow.collectLatest
 
 @Stable
@@ -196,13 +195,6 @@ internal class ModeSelectorState(
     internal class SettleRequest(
         val index: Int,
     )
-
-    private companion object {
-        private val SETTLE_SPEC = spring<Float>(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = 500f,
-        )
-    }
 }
 
 @Composable

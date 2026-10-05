@@ -2,9 +2,7 @@ package app.grapheneos.camera.ui.components.zoom
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -32,8 +30,9 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
+import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
@@ -46,15 +45,6 @@ import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomBarState
 import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomControlExpander
 import app.grapheneos.camera.ui.components.zoom.gesture.zoomControlInput
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
-
-private val MORPH_FADE_SPEC = spring<Float>(
-    dampingRatio = Spring.DampingRatioNoBouncy,
-    stiffness = 500f,
-)
-private val MORPH_SIZE_SPEC = spring<IntSize>(
-    dampingRatio = Spring.DampingRatioNoBouncy,
-    stiffness = 500f,
-)
 
 /**
  * Collapsed, it shows [stops], and a tap on one reports it through [onStopClick]. A horizontal
@@ -177,9 +167,9 @@ private fun ZoomControlLayers(
         AnimatedContent(
             targetState = expanded,
             transitionSpec = {
-                fadeIn(animationSpec = MORPH_FADE_SPEC) togetherWith
+                fadeIn(animationSpec = SETTLE_SPEC) togetherWith
                     fadeOut(animationSpec = snap()) using
-                    SizeTransform { _, _ -> MORPH_SIZE_SPEC }
+                    SizeTransform { _, _ -> SETTLE_SIZE_SPEC }
             },
             contentAlignment = Alignment.Center,
         ) { isExpanded ->
