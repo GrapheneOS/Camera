@@ -1,14 +1,14 @@
-package app.grapheneos.camera.ui.components.capturebutton.model
+package app.grapheneos.camera.ui.components.progress.model
 
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class CaptureButtonProgressTest {
+class RingProgressTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun segmented_withoutSegments_isRejected() {
-        CaptureButtonProgress.Segmented(
+        RingProgress.Segmented(
             segments = 0,
             fraction = { 0f },
         )
@@ -16,7 +16,7 @@ class CaptureButtonProgressTest {
 
     @Test
     fun determinate_fractionOutOfRange_isReportedWithinRange() {
-        val progress = CaptureButtonProgress.Determinate(fraction = { 1.5f })
+        val progress = RingProgress.Determinate(fraction = { 1.5f })
 
         assertEquals(
             ProgressBarRangeInfo(

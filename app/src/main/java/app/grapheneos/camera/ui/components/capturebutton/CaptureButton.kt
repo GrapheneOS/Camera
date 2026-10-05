@@ -30,11 +30,11 @@ import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCapture
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
+import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
@@ -52,7 +52,7 @@ internal fun CaptureButton(
     modifier: Modifier = Modifier,
     tone: CaptureButtonTone = CaptureButtonTone.Neutral,
     enabled: Boolean = true,
-    progress: CaptureButtonProgress = CaptureButtonProgress.None,
+    progress: RingProgress = RingProgress.None,
     trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
     icon: ImageVector? = null,
     iconRotationDegrees: Float = 0f,
@@ -112,7 +112,7 @@ internal fun CaptureButton(
 private fun CaptureButtonLayers(
     core: CaptureButtonCore,
     tone: CaptureButtonTone,
-    progress: CaptureButtonProgress,
+    progress: RingProgress,
     icon: ImageVector?,
     iconRotationDegrees: Float,
     holdTargets: List<CaptureButtonTarget>,
@@ -140,7 +140,7 @@ private fun CaptureButtonLayers(
         isPressed = isPressed,
         isHeld = holdState.isHeld,
         isFocused = isFocused,
-        hasProgress = progress != CaptureButtonProgress.None,
+        hasProgress = progress != RingProgress.None,
         coreColor = colors.coreColor(tone),
         containerColor = colors.containerColor,
         focusColor = colors.focusColor,
@@ -219,17 +219,17 @@ private fun CaptureButtonProgressPreview() {
         ) {
             PreviewCaptureButton(
                 core = CaptureButtonCore.Disc,
-                progress = CaptureButtonProgress.Indeterminate,
+                progress = RingProgress.Indeterminate,
             )
             PreviewCaptureButton(
                 core = CaptureButtonCore.Disc,
-                progress = CaptureButtonProgress.Determinate(
+                progress = RingProgress.Determinate(
                     fraction = { 0.6f },
                 ),
             )
             PreviewCaptureButton(
                 core = CaptureButtonCore.None,
-                progress = CaptureButtonProgress.Segmented(
+                progress = RingProgress.Segmented(
                     segments = 10,
                     fraction = { 0.7f },
                 ),
@@ -237,7 +237,7 @@ private fun CaptureButtonProgressPreview() {
             )
             PreviewCaptureButton(
                 core = CaptureButtonCore.None,
-                progress = CaptureButtonProgress.Segmented(
+                progress = RingProgress.Segmented(
                     segments = 3,
                     fraction = { 2f / 3 },
                 ),
@@ -290,7 +290,7 @@ private fun PreviewCaptureButton(
     core: CaptureButtonCore,
     tone: CaptureButtonTone = CaptureButtonTone.Neutral,
     enabled: Boolean = true,
-    progress: CaptureButtonProgress = CaptureButtonProgress.None,
+    progress: RingProgress = RingProgress.None,
     icon: ImageVector? = null,
 ) {
     CaptureButton(

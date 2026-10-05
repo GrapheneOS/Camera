@@ -1,24 +1,24 @@
-package app.grapheneos.camera.ui.components.capturebutton.model
+package app.grapheneos.camera.ui.components.progress.model
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 
 @Stable
-internal sealed interface CaptureButtonProgress {
+internal sealed interface RingProgress {
 
     val rangeInfo: ProgressBarRangeInfo?
 
-    data object None : CaptureButtonProgress {
+    data object None : RingProgress {
         override val rangeInfo: ProgressBarRangeInfo? = null
     }
 
-    data object Indeterminate : CaptureButtonProgress {
+    data object Indeterminate : RingProgress {
         override val rangeInfo: ProgressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
     }
 
     class Determinate(
         val fraction: () -> Float,
-    ) : CaptureButtonProgress {
+    ) : RingProgress {
 
         override val rangeInfo: ProgressBarRangeInfo
             get() {
@@ -29,7 +29,7 @@ internal sealed interface CaptureButtonProgress {
     class Segmented(
         val segments: Int,
         val fraction: () -> Float,
-    ) : CaptureButtonProgress {
+    ) : RingProgress {
 
         init {
             require(segments > 0) {
