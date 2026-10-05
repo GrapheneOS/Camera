@@ -9,24 +9,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import app.grapheneos.camera.ui.components.motion.LIFT_SPEC
+import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
+import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
 
 private const val PRESSED_SCALE = 1.1f
 private const val HELD_SCALE = 1.15f
 private const val PRESSED_ALPHA = 0.8f
 private const val FULL_TURN = 360f
 private const val HALF_TURN = 180f
-
-internal val MORPH_SPEC = spring<Float>(
-    dampingRatio = 0.7f,
-    stiffness = 500f,
-)
-private val LIFT_SPEC = spring<Float>(
-    dampingRatio = 0.5f,
-    stiffness = 500f,
-)
-private val LIFT_COLOR_SPEC = spring<Color>(
-    stiffness = 500f,
-)
 
 @Composable
 internal fun animatePressedScale(
@@ -58,7 +49,7 @@ internal fun animatePressedColor(
             else -> color
         },
         animationSpec = when {
-            isHeld -> LIFT_COLOR_SPEC
+            isHeld -> SETTLE_COLOR_SPEC
             else -> spring()
         },
     )
