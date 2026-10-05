@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.components.squarebutton
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,13 +10,12 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,6 +28,8 @@ import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
 
 private val BUTTON_SIZE = 60.dp
+
+internal val SQUARE_BUTTON_SHAPE = RoundedCornerShape(size = 12.dp)
 
 @Composable
 internal fun SquareButton(
@@ -45,16 +47,17 @@ internal fun SquareButton(
     }
 
     val alpha by animateEnabledAlpha(enabled = enabled)
+    val interactions = interactionSource ?: remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
             .size(size = BUTTON_SIZE)
             .graphicsLayer { this.alpha = alpha }
-            .clip(shape = MaterialTheme.shapes.extraSmall)
+            .clip(shape = SQUARE_BUTTON_SHAPE)
             .background(color = colors.containerColor)
             .combinedClickable(
-                interactionSource = interactionSource,
-                indication = ripple(color = colors.contentColor),
+                interactionSource = interactions,
+                indication = null,
                 enabled = enabled,
                 onLongClickLabel = onLongClickLabel,
                 role = Role.Button,
@@ -63,9 +66,15 @@ internal fun SquareButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        CompositionLocalProvider(LocalContentColor provides colors.contentColor) {
-            content()
-        }
+        content()
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .indication(
+                    interactionSource = interactions,
+                    indication = ripple(color = colors.contentColor),
+                ),
+        )
     }
 }
 
@@ -98,6 +107,7 @@ private fun PreviewSquareButtonRow(
                 Icon(
                     imageVector = PREVIEW_RESTART_ICON,
                     contentDescription = null,
+                    tint = colors.contentColor,
                 )
             }
         }

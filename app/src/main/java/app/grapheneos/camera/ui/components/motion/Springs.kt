@@ -7,6 +7,7 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 
 private const val STIFFNESS = 500f
@@ -18,6 +19,10 @@ internal val MORPH_SPEC = springOf<Float>(dampingRatio = MORPH_DAMPING)
 internal val MORPH_OFFSET_SPEC = springOf(
     dampingRatio = MORPH_DAMPING,
     visibilityThreshold = Offset.VisibilityThreshold,
+)
+internal val MORPH_INT_OFFSET_SPEC = springOf(
+    dampingRatio = MORPH_DAMPING,
+    visibilityThreshold = IntOffset.VisibilityThreshold,
 )
 
 internal val LIFT_SPEC = springOf<Float>(dampingRatio = LIFT_DAMPING)

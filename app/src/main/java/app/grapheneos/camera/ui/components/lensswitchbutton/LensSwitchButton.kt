@@ -53,6 +53,7 @@ internal fun LensSwitchButton(
             modifier = Modifier
                 .size(size = ICON_SIZE)
                 .graphicsLayer { rotationZ = turn.value },
+            tint = colors.contentColor,
         )
     }
 }
