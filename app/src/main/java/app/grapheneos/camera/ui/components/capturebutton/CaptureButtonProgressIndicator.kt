@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonProgress
-import app.grapheneos.camera.ui.components.progress.SegmentedCircularProgressIndicator
+import app.grapheneos.camera.ui.components.progress.RingProgressIndicator
+import app.grapheneos.camera.ui.components.progress.model.RingProgress
 
 private val PROGRESS_PADDING = 4.dp
 private val PROGRESS_GAP = 4.dp
@@ -26,7 +26,7 @@ internal val PROGRESS_INSET = PROGRESS_PADDING +
 
 @Composable
 internal fun CaptureButtonProgressIndicator(
-    progress: CaptureButtonProgress,
+    progress: RingProgress,
     color: Color,
     trackColor: Color,
     modifier: Modifier = Modifier,
@@ -45,16 +45,16 @@ internal fun CaptureButtonProgressIndicator(
         contentKey = { it::class },
     ) { targetProgress ->
         when (targetProgress) {
-            CaptureButtonProgress.None -> Unit
+            RingProgress.None -> Unit
 
-            CaptureButtonProgress.Indeterminate -> {
+            RingProgress.Indeterminate -> {
                 CircularProgressIndicator(
                     modifier = Modifier.fillMaxSize(),
                     color = color,
                 )
             }
 
-            is CaptureButtonProgress.Determinate -> {
+            is RingProgress.Determinate -> {
                 CircularProgressIndicator(
                     progress = targetProgress.fraction,
                     modifier = Modifier.fillMaxSize(),
@@ -63,10 +63,9 @@ internal fun CaptureButtonProgressIndicator(
                 )
             }
 
-            is CaptureButtonProgress.Segmented -> {
-                SegmentedCircularProgressIndicator(
-                    segments = targetProgress.segments,
-                    progress = targetProgress.fraction,
+            is RingProgress.Segmented -> {
+                RingProgressIndicator(
+                    progress = targetProgress,
                     modifier = Modifier.fillMaxSize(),
                     color = color,
                     trackColor = trackColor,
