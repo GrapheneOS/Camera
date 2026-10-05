@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.pillselector.PillSelector
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.pillselector.model.PillSelectorSpacing
@@ -69,6 +70,7 @@ private fun SegmentedIconToggleIcon(
     option: SegmentedIconToggleOption,
     color: ColorProducer,
 ) {
+    val rotation = LocalContentRotation.current
     val painter = rememberVectorPainter(image = option.icon)
 
     Box(
@@ -80,7 +82,10 @@ private fun SegmentedIconToggleIcon(
         Spacer(
             modifier = Modifier
                 .size(ICON_SIZE)
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .graphicsLayer {
+                    compositingStrategy = CompositingStrategy.Offscreen
+                    rotationZ = rotation()
+                }
                 .drawBehind {
                     with(painter) { draw(size = size) }
                     drawRect(

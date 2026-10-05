@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class InsetCornerShapeTest {
@@ -29,21 +30,24 @@ class InsetCornerShapeTest {
     }
 
     @Test
-    fun anInsetDeeperThanTheCorner_leavesASquareCorner() {
-        val corner = innerCorner(outer = RoundedCornerShape(size = 1.dp))
+    fun anInsetDeeperThanTheCorner_leavesASquare() {
+        val outline = innerOutline(outer = RoundedCornerShape(size = 1.dp))
 
-        assertEquals(CornerRadius.Zero, corner)
+        assertTrue(outline is Outline.Rectangle)
     }
 
     private fun innerCorner(outer: CornerBasedShape): CornerRadius {
+        return (innerOutline(outer = outer) as Outline.Rounded).roundRect.topLeftCornerRadius
+    }
+
+    private fun innerOutline(outer: CornerBasedShape): Outline {
         val innerSize = OUTER_SIZE - 2 * INSET
-        val outline = InsetCornerShape(outer = outer, inset = INSET.dp).createOutline(
+
+        return InsetCornerShape(outer = outer, inset = INSET.dp).createOutline(
             size = Size(width = innerSize, height = innerSize),
             layoutDirection = LayoutDirection.Ltr,
             density = Density(density = 1f),
         )
-
-        return (outline as Outline.Rounded).roundRect.topLeftCornerRadius
     }
 
     private companion object {

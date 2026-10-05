@@ -33,6 +33,7 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHold
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
@@ -55,7 +56,6 @@ internal fun CaptureButton(
     progress: RingProgress = RingProgress.None,
     trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
     icon: ImageVector? = null,
-    iconRotationDegrees: Float = 0f,
     onHoldStart: (() -> Unit)? = null,
     onHoldDrag: (delta: Offset) -> Unit = {},
     onHoldEnd: (CaptureButtonHoldEnd) -> Unit = {},
@@ -99,7 +99,6 @@ internal fun CaptureButton(
             tone = tone,
             progress = progress,
             icon = icon,
-            iconRotationDegrees = iconRotationDegrees,
             holdTargets = holdTargets,
             holdState = holdState,
             colors = colors,
@@ -114,16 +113,15 @@ private fun CaptureButtonLayers(
     tone: CaptureButtonTone,
     progress: RingProgress,
     icon: ImageVector?,
-    iconRotationDegrees: Float,
     holdTargets: List<CaptureButtonTarget>,
     holdState: CaptureButtonHoldState,
     colors: CaptureButtonColors,
     interactionSource: InteractionSource,
 ) {
+    val rotation = LocalContentRotation.current
     val isPressed by interactionSource.collectIsPressedAsState()
     val isFocused by interactionSource.collectIsFocusedAsState()
     val targetVisibility by animateVisibility(isVisible = holdState.isHeld)
-    val iconRotation by animateRotation(degrees = iconRotationDegrees)
     val pull = animateHoldPull(
         holdState = holdState,
         targets = holdTargets,
@@ -160,13 +158,13 @@ private fun CaptureButtonLayers(
         isHeld = holdState.isHeld,
         tint = colors.contentColor(core),
         pull = pull,
-        rotation = { iconRotation },
+        rotation = rotation,
     )
     CaptureButtonTargetIcons(
         targets = holdTargets,
         holdState = holdState,
         visibility = { targetVisibility },
-        rotation = { iconRotation },
+        rotation = rotation,
         tint = colors.contentColor,
     )
 }

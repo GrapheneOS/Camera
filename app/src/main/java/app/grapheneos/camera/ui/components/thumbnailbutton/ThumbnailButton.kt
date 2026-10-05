@@ -10,12 +10,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.LinearGradientShader
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
@@ -25,8 +20,7 @@ import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
-
-private const val PREVIEW_SHOT_SIZE = 96
+import app.grapheneos.camera.ui.core.previewShot
 
 /**
  * @param image the latest shot. A new instance slides in from the top and pushes the shown one out
@@ -119,31 +113,4 @@ private fun PreviewThumbnailButtonRow(
             colors = colors,
         )
     }
-}
-
-private fun previewShot(
-    top: Color,
-    bottom: Color,
-): ImageBitmap {
-    val image = ImageBitmap(
-        width = PREVIEW_SHOT_SIZE,
-        height = PREVIEW_SHOT_SIZE,
-    )
-    val paint = Paint().apply {
-        shader = LinearGradientShader(
-            from = Offset.Zero,
-            to = Offset(x = 0f, y = PREVIEW_SHOT_SIZE.toFloat()),
-            colors = listOf(top, bottom),
-        )
-    }
-
-    Canvas(image).drawRect(
-        left = 0f,
-        top = 0f,
-        right = PREVIEW_SHOT_SIZE.toFloat(),
-        bottom = PREVIEW_SHOT_SIZE.toFloat(),
-        paint = paint,
-    )
-
-    return image
 }

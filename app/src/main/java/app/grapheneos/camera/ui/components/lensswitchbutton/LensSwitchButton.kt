@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.squarebutton.SquareButton
 import app.grapheneos.camera.ui.components.squarebutton.SquareButtonColors
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
@@ -39,6 +40,7 @@ internal fun LensSwitchButton(
     interactionSource: MutableInteractionSource? = null,
 ) {
     val turn = animateFlipTurn(flipped = flipped)
+    val rotation = LocalContentRotation.current
 
     SquareButton(
         onClick = onClick,
@@ -52,7 +54,7 @@ internal fun LensSwitchButton(
             contentDescription = null,
             modifier = Modifier
                 .size(size = ICON_SIZE)
-                .graphicsLayer { rotationZ = turn.value },
+                .graphicsLayer { rotationZ = rotation() + turn.value },
             tint = colors.contentColor,
         )
     }

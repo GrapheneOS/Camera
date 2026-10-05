@@ -11,9 +11,11 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.progress.RingProgressIndicator
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 
@@ -31,6 +33,11 @@ internal fun CaptureButtonProgressIndicator(
     trackColor: Color,
     modifier: Modifier = Modifier,
 ) {
+    val rotation = LocalContentRotation.current
+    val turned = Modifier
+        .fillMaxSize()
+        .graphicsLayer { rotationZ = rotation() }
+
     AnimatedContent(
         targetState = progress,
         modifier = modifier
@@ -49,7 +56,7 @@ internal fun CaptureButtonProgressIndicator(
 
             RingProgress.Indeterminate -> {
                 CircularProgressIndicator(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = turned,
                     color = color,
                 )
             }
@@ -57,7 +64,7 @@ internal fun CaptureButtonProgressIndicator(
             is RingProgress.Determinate -> {
                 CircularProgressIndicator(
                     progress = targetProgress.fraction,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = turned,
                     color = color,
                     trackColor = trackColor,
                 )

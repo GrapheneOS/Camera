@@ -13,10 +13,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.MORPH_INT_OFFSET_SPEC
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val IMAGE_GAP = 2.dp
 
@@ -26,6 +31,7 @@ internal fun ThumbnailButtonImage(
     buttonShape: CornerBasedShape,
     modifier: Modifier = Modifier,
 ) {
+    val rotation = LocalContentRotation.current
     val gap = with(LocalDensity.current) { IMAGE_GAP.roundToPx() }
     val shape = remember(buttonShape) {
         InsetCornerShape(
@@ -38,7 +44,15 @@ internal fun ThumbnailButtonImage(
         targetState = image,
         modifier = modifier
             .padding(all = RING_WIDTH)
-            .clip(shape = shape),
+            .clip(shape = shape)
+            .graphicsLayer {
+                val degrees = rotation()
+                val scale = coverScale(degrees = degrees)
+
+                rotationZ = degrees
+                scaleX = scale
+                scaleY = scale
+            },
         transitionSpec = {
             val slideIn = slideInVertically(animationSpec = MORPH_INT_OFFSET_SPEC) { -(it + gap) }
             val slideOut = slideOutVertically(animationSpec = MORPH_INT_OFFSET_SPEC) { it + gap }
@@ -57,4 +71,10 @@ internal fun ThumbnailButtonImage(
             )
         }
     }
+}
+
+internal fun coverScale(degrees: Float): Float {
+    val radians = Math.toRadians(degrees.toDouble())
+
+    return (abs(cos(radians)) + abs(sin(radians))).toFloat()
 }

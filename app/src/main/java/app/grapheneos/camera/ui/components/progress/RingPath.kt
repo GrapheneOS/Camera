@@ -33,7 +33,7 @@ internal class RingPath(
         sweep: Float,
         destination: Path,
     ) {
-        val from = start % length
+        val from = start.mod(length)
         val to = from + sweep
 
         destination.reset()
@@ -52,7 +52,7 @@ internal class RingPath(
     }
 
     fun position(distance: Float): Offset {
-        return measure.getPosition(distance = distance % length)
+        return measure.getPosition(distance = distance.mod(length))
     }
 
     private companion object {
