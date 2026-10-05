@@ -20,7 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-private const val VIEWFINDER_ASPECT_RATIO = 3f / 4f
+internal const val PREVIEW_ASPECT_RATIO = 3f / 4f
+internal const val PREVIEW_TALL_ASPECT_RATIO = 9f / 16f
 
 @Composable
 internal fun CameraPreviewTheme(
@@ -62,12 +63,13 @@ internal fun CameraPreviewColumn(
 @Composable
 internal fun CameraPreviewViewfinder(
     modifier: Modifier = Modifier,
+    aspectRatio: Float = PREVIEW_ASPECT_RATIO,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(ratio = VIEWFINDER_ASPECT_RATIO)
+            .aspectRatio(ratio = aspectRatio)
             .background(
                 color = PREVIEW_SCENE,
                 shape = MaterialTheme.shapes.large,
@@ -80,6 +82,7 @@ internal fun CameraPreviewViewfinder(
 internal fun CameraPreviewSample(
     status: String,
     controls: @Composable FlowRowScope.() -> Unit,
+    viewfinderAspectRatio: Float = PREVIEW_ASPECT_RATIO,
     viewfinder: @Composable BoxScope.() -> Unit,
 ) {
     CameraPreviewColumn {
@@ -90,7 +93,10 @@ internal fun CameraPreviewSample(
                 text = status,
                 style = MaterialTheme.typography.bodyMedium,
             )
-            CameraPreviewViewfinder(content = viewfinder)
+            CameraPreviewViewfinder(
+                aspectRatio = viewfinderAspectRatio,
+                content = viewfinder,
+            )
             FlowRow(content = controls)
         }
     }
