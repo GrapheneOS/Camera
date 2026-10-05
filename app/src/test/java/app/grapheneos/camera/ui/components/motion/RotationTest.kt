@@ -1,9 +1,9 @@
-package app.grapheneos.camera.ui.components.capturebutton
+package app.grapheneos.camera.ui.components.motion
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class CaptureButtonMotionTest {
+class RotationTest {
 
     @Test
     fun shortestTurn_threeQuarters_turnsBackInstead() {

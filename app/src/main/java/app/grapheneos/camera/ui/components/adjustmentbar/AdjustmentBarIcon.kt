@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withTimeoutOrNull
@@ -33,6 +34,7 @@ internal fun AdjustmentBarIcon(
     tryStep: () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val rotation = LocalContentRotation.current
     val currentEnabled = rememberUpdatedState(enabled)
     val currentOnStep = rememberUpdatedState(tryStep)
     var isPressed by remember { mutableStateOf(false) }
@@ -75,6 +77,7 @@ internal fun AdjustmentBarIcon(
             modifier = Modifier.graphicsLayer {
                 scaleX = scale
                 scaleY = scale
+                rotationZ = rotation()
             },
             tint = tint,
         )

@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -34,6 +34,7 @@ internal fun DrawScope.drawZoomBar(
     position: Float,
     scale: ZoomBarScale,
     labels: List<TextLayoutResult>,
+    labelRotation: Float,
     window: RulerWindow,
     isFocused: Boolean,
     metrics: RulerMetrics,
@@ -52,6 +53,7 @@ internal fun DrawScope.drawZoomBar(
         position = position,
         scale = scale,
         labels = labels,
+        labelRotation = labelRotation,
         window = window,
         metrics = metrics,
         colors = colors,
@@ -101,6 +103,7 @@ private fun DrawScope.drawLabels(
     position: Float,
     scale: ZoomBarScale,
     labels: List<TextLayoutResult>,
+    labelRotation: Float,
     window: RulerWindow,
     metrics: RulerMetrics,
     colors: ZoomBarColors,
@@ -128,14 +131,24 @@ private fun DrawScope.drawLabels(
             )
             val distance = abs(stopPosition - position)
             val selection = (1f - distance / LABEL_GROWTH_TICKS).coerceIn(0f, 1f)
+            val labelScale = lerp(
+                start = 1f,
+                stop = SELECTED_LABEL_SCALE,
+                fraction = selection,
+            )
 
-            scale(
-                scale = lerp(
-                    start = 1f,
-                    stop = SELECTED_LABEL_SCALE,
-                    fraction = selection,
-                ),
-                pivot = labelCenter,
+            withTransform(
+                transformBlock = {
+                    scale(
+                        scaleX = labelScale,
+                        scaleY = labelScale,
+                        pivot = labelCenter,
+                    )
+                    rotate(
+                        degrees = labelRotation,
+                        pivot = labelCenter,
+                    )
+                },
             ) {
                 drawText(
                     textLayoutResult = label,

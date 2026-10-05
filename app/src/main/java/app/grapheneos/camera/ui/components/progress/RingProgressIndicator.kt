@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 
@@ -33,6 +34,7 @@ private val DIAMETER = 40.dp
 private val GAP_SIZE = 4.dp
 
 private const val INDETERMINATE_LAP_MILLIS = 1_000
+private const val FULL_TURN = 360f
 
 @Composable
 internal fun RingProgressIndicator(
@@ -45,6 +47,7 @@ internal fun RingProgressIndicator(
     strokeCap: StrokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
     gapSize: Dp = GAP_SIZE,
 ) {
+    val rotation = LocalContentRotation.current
     val head = when (progress) {
         RingProgress.Indeterminate -> animateIndeterminateHead()
         else -> null
@@ -78,6 +81,7 @@ internal fun RingProgressIndicator(
                         drawProgress(
                             progress = progress,
                             head = head?.value ?: 0f,
+                            start = rotation() / FULL_TURN,
                         )
                     }
                 }

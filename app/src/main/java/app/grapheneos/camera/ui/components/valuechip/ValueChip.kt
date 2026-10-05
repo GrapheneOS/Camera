@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
+import app.grapheneos.camera.ui.components.motion.rotateLayout
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.TABULAR_FIGURES
 
@@ -30,6 +32,7 @@ internal fun ValueChip(
 ) {
     Box(
         modifier = modifier
+            .rotateLayout(rotation = LocalContentRotation.current)
             .heightIn(min = CHIP_HEIGHT)
             .widthIn(min = CHIP_MIN_WIDTH)
             .background(

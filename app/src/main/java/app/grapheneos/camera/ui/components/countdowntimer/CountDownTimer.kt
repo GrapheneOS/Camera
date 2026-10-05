@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.cameraColors
 import kotlin.math.max
@@ -68,6 +69,7 @@ private fun CountDownTimerText(
     colors: CountDownTimerColors = CountDownTimerColors.fromTheme(),
 ) {
     val density = LocalDensity.current
+    val rotation = LocalContentRotation.current
     val emSize = with(density) { FONT_SIZE.toPx() }
     val layout = rememberCountDownTimerLayout(
         text = text,
@@ -96,6 +98,7 @@ private fun CountDownTimerText(
             .fitInto(naturalSize = naturalSize)
             .graphicsLayer {
                 alpha = color.alpha
+                rotationZ = rotation()
                 compositingStrategy = when {
                     color.alpha < 1f -> CompositingStrategy.Offscreen
                     else -> CompositingStrategy.Auto

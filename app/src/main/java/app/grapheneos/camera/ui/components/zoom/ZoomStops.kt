@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.pillselector.PillSelector
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorItemScope
@@ -107,6 +108,8 @@ private fun ZoomStopLabel(
     style: TextStyle,
     scope: PillSelectorItemScope,
 ) {
+    val rotation = LocalContentRotation.current
+
     Box(
         modifier = Modifier
             .size(STOP_SIZE)
@@ -129,6 +132,7 @@ private fun ZoomStopLabel(
 
                     scaleX = scale
                     scaleY = scale
+                    rotationZ = rotation()
                 }
                 .clearAndSetSemantics {},
             style = style,

@@ -22,13 +22,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.overlayiconbutton.OverlayIconButton
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.core.CameraPreviewControl
@@ -50,7 +53,6 @@ private const val POP_SCALE = 0.8f
 
 private val RESET_BUTTON_SIZE = 48.dp
 private val RESET_BUTTON_GAP = 8.dp
-private val CHIP_SLOT_HEIGHT = 32.dp
 private val POP_IN = fadeIn() + scaleIn(initialScale = POP_SCALE)
 private val POP_OUT = fadeOut() + scaleOut(targetScale = POP_SCALE)
 
@@ -94,15 +96,21 @@ private fun AdjustmentBarSample() {
                 text = state.adjustment.label,
                 onClick = state::nextAdjustment,
             )
+            CameraPreviewControl(
+                text = "Rotate",
+                onClick = state::rotate,
+            )
         },
     ) {
-        SampleControls(
-            state = state,
-            valueLabel = valueLabel,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp),
-        )
+        ProvideContentRotation(degrees = state.rotation) {
+            SampleControls(
+                state = state,
+                valueLabel = valueLabel,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp),
+            )
+        }
     }
 }
 
@@ -145,10 +153,13 @@ private fun SampleValueChip(
     isVisible: Boolean,
     text: String,
 ) {
-    Box(
-        modifier = Modifier.heightIn(min = CHIP_SLOT_HEIGHT),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(contentAlignment = Alignment.Center) {
+        ValueChip(
+            text = text,
+            modifier = Modifier
+                .alpha(alpha = 0f)
+                .clearAndSetSemantics {},
+        )
         AnimatedVisibility(
             visible = isVisible,
             enter = POP_IN,
@@ -241,6 +252,8 @@ private class AdjustmentBarSampleState {
         private set
     var temperature by mutableStateOf<Float?>(null)
         private set
+    var rotation by mutableFloatStateOf(0f)
+        private set
 
     val value: Float
         get() {
@@ -274,6 +287,10 @@ private class AdjustmentBarSampleState {
             }
         }
 
+    fun rotate() {
+        rotation = (rotation + QUARTER_TURN) % FULL_TURN
+    }
+
     fun nextAdjustment() {
         val adjustments = SampleAdjustment.entries
 
@@ -300,5 +317,10 @@ private class AdjustmentBarSampleState {
 
             SampleAdjustment.WhiteBalance -> temperature = null
         }
+    }
+
+    private companion object {
+        private const val QUARTER_TURN = 90f
+        private const val FULL_TURN = 360f
     }
 }
