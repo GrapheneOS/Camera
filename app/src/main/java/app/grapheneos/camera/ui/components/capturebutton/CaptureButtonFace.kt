@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
+import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
 
 private val FOCUS_RING_WIDTH = 3.dp
 

@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.components.countdowntimer
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.FloatSpringSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
@@ -12,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import app.grapheneos.camera.ui.components.motion.LIFT_FLOAT_SPEC
 import kotlin.math.min
 
 internal const val MAX_BOLDNESS = 1.2f
@@ -48,11 +48,6 @@ internal class CountDownTimerBoldness {
         private const val PUNCH_MILLIS = 500f
         private const val NANOS_PER_MILLI = 1_000_000L
 
-        private val PUNCH_SPEC = FloatSpringSpec(
-            dampingRatio = 0.5f,
-            stiffness = 500f,
-        )
-
         internal fun boldnessAt(
             elapsedMillis: Float,
             startBoldness: Float,
@@ -69,7 +64,7 @@ internal class CountDownTimerBoldness {
             elapsedMillis: Float,
             startBoldness: Float,
         ): Float {
-            return PUNCH_SPEC.getValueFromNanos(
+            return LIFT_FLOAT_SPEC.getValueFromNanos(
                 playTimeNanos = (elapsedMillis * NANOS_PER_MILLI).toLong(),
                 initialValue = startBoldness,
                 targetValue = 1f,
