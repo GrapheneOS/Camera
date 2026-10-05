@@ -87,7 +87,7 @@ private fun ModeSelectorLayers(
     modifier: Modifier = Modifier,
 ) {
     val style = MaterialTheme.typography.labelLarge.copy(color = colors.contentColor)
-    val itemActions = remember(labels, state, enabled) {
+    val itemActions = remember(labels, state, enabled, selectedIndex) {
         val selectActions = labels.mapIndexed { index, label ->
             CustomAccessibilityAction(label = label) {
                 state.select(index = index)
@@ -97,7 +97,10 @@ private fun ModeSelectorLayers(
 
         labels.indices.map { index ->
             when {
-                enabled -> selectActions.filterIndexed { other, _ -> other != index }
+                enabled -> selectActions.filterIndexed { other, _ ->
+                    other != index && other != selectedIndex
+                }
+
                 else -> emptyList()
             }
         }

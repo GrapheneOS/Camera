@@ -61,9 +61,10 @@ internal class PreviewCountdown(
     }
 
     private suspend fun run(): Boolean {
+        elapsedSeconds.snapTo(targetValue = 0f)
+
         if (!isRunning) return false
 
-        elapsedSeconds.snapTo(targetValue = 0f)
         elapsedSeconds.animateTo(
             targetValue = seconds.toFloat(),
             animationSpec = tween(

@@ -26,9 +26,10 @@ internal val MORPH_INT_OFFSET_SPEC = springOf(
 )
 
 internal val LIFT_SPEC = springOf<Float>(dampingRatio = LIFT_DAMPING)
-internal val LIFT_FLOAT_SPEC = FloatSpringSpec(
+
+internal val PUNCH_SPEC = FloatSpringSpec(
     dampingRatio = LIFT_DAMPING,
-    stiffness = STIFFNESS,
+    stiffness = Spring.StiffnessMedium,
 )
 
 internal val SETTLE_SPEC = springOf<Float>(dampingRatio = SETTLE_DAMPING)
