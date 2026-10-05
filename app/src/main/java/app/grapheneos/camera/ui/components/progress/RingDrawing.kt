@@ -25,23 +25,28 @@ internal class RingDrawing(
     fun DrawScope.drawProgress(
         progress: RingProgress,
         head: Float,
+        start: Float,
     ) {
+        val offset = start * ring.length
+
         when (progress) {
             RingProgress.None -> Unit
 
             RingProgress.Indeterminate -> drawRingArc(
-                start = head * ring.length,
+                start = offset + head * ring.length,
                 sweep = INDETERMINATE_SWEEP * ring.length,
                 color = color,
             )
 
             is RingProgress.Determinate -> drawSegments(
+                offset = offset,
                 segments = 1,
                 filledSegments = progress.fraction().coerceIn(0f, 1f),
                 gap = 0f,
             )
 
             is RingProgress.Segmented -> drawSegments(
+                offset = offset,
                 segments = progress.segments,
                 filledSegments = progress.fraction().coerceIn(0f, 1f) * progress.segments,
                 gap = gap,
@@ -50,6 +55,7 @@ internal class RingDrawing(
     }
 
     private fun DrawScope.drawSegments(
+        offset: Float,
         segments: Int,
         filledSegments: Float,
         gap: Float,
@@ -58,7 +64,7 @@ internal class RingDrawing(
         val sweep = (segmentLength - gap - cap * 2).coerceAtLeast(0f)
 
         repeat(segments) { index ->
-            val start = segmentLength * index + gap / 2 + cap
+            val start = offset + segmentLength * index + gap / 2 + cap
             val fill = (filledSegments - index).coerceIn(0f, 1f)
 
             drawRingArc(

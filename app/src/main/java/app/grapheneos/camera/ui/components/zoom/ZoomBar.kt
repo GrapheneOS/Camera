@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
 import app.grapheneos.camera.ui.components.ruler.RulerMetrics
@@ -104,6 +105,7 @@ internal fun ZoomBarLayers(
     interactionSource: InteractionSource,
     modifier: Modifier = Modifier,
 ) {
+    val rotation = LocalContentRotation.current
     val isFocused by interactionSource.collectIsFocusedAsState()
     val labels = rememberZoomBarLabels(
         marks = scale.marks,
@@ -123,6 +125,7 @@ internal fun ZoomBarLayers(
                     position = state.position,
                     scale = scale,
                     labels = labels,
+                    labelRotation = rotation(),
                     window = window,
                     isFocused = isFocused,
                     metrics = metrics,

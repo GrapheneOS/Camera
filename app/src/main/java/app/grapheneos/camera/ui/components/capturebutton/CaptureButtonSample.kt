@@ -20,6 +20,7 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHold
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
+import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
@@ -92,20 +93,21 @@ private fun SampleCaptureButton(
     state: CaptureButtonSampleState,
     modifier: Modifier = Modifier,
 ) {
-    CaptureButton(
-        onClick = state::click,
-        core = state.core,
-        modifier = modifier,
-        tone = state.tone,
-        progress = state.progress,
-        trigger = state.trigger,
-        icon = state.icon,
-        iconRotationDegrees = state.rotation,
-        onHoldStart = state::startHold.takeIf { state.canHold },
-        onHoldDrag = state::zoomBy,
-        onHoldEnd = state::endHold,
-        holdTargets = listOf(SAMPLE_LOCK),
-    )
+    ProvideContentRotation(degrees = state.rotation) {
+        CaptureButton(
+            onClick = state::click,
+            core = state.core,
+            modifier = modifier,
+            tone = state.tone,
+            progress = state.progress,
+            trigger = state.trigger,
+            icon = state.icon,
+            onHoldStart = state::startHold.takeIf { state.canHold },
+            onHoldDrag = state::zoomBy,
+            onHoldEnd = state::endHold,
+            holdTargets = listOf(SAMPLE_LOCK),
+        )
+    }
 }
 
 @Stable

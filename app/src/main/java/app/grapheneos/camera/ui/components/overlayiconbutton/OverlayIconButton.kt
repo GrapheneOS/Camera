@@ -9,9 +9,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
 
@@ -26,6 +28,8 @@ internal fun OverlayIconButton(
     colors: OverlayIconButtonColors = OverlayIconButtonColors.fromTheme(),
     interactionSource: MutableInteractionSource? = null,
 ) {
+    val rotation = LocalContentRotation.current
+
     FilledIconButton(
         onClick = onClick,
         modifier = modifier.size(BUTTON_SIZE),
@@ -39,6 +43,7 @@ internal fun OverlayIconButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
+            modifier = Modifier.graphicsLayer { rotationZ = rotation() },
         )
     }
 }
