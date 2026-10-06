@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.components.adjustmentbar
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -18,6 +17,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
+import app.grapheneos.camera.ui.components.motion.animatePressScale
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withTimeoutOrNull
@@ -38,11 +38,9 @@ internal fun AdjustmentBarIcon(
     val currentEnabled = rememberUpdatedState(enabled)
     val currentOnStep = rememberUpdatedState(tryStep)
     var isPressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = when {
-            isPressed -> PRESSED_SCALE
-            else -> 1f
-        },
+    val scale by animatePressScale(
+        isPressed = isPressed,
+        pressedScale = PRESSED_SCALE,
     )
 
     Box(

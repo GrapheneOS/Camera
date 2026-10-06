@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.components.modeselector
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.highlight.highlightedContent
 import app.grapheneos.camera.ui.components.modeselector.gesture.ModeSelectorState
+import app.grapheneos.camera.ui.components.motion.animatePressScale
 
 internal val ITEM_PADDING = 24.dp
 private val ITEM_HEIGHT = 34.dp
@@ -51,11 +51,9 @@ internal fun ModeSelectorItem(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isFocused by interactionSource.collectIsFocusedAsState()
-    val scale = animateFloatAsState(
-        targetValue = when {
-            isPressed || isFocused -> PRESSED_SCALE
-            else -> 1f
-        },
+    val scale = animatePressScale(
+        isPressed = isPressed || isFocused,
+        pressedScale = PRESSED_SCALE,
     )
 
     Box(
