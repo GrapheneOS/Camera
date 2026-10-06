@@ -13,5 +13,6 @@ internal fun animateEnabledAlpha(enabled: Boolean): State<Float> {
             enabled -> 1f
             else -> DISABLED_ALPHA
         },
+        animationSpec = QUICK_SPEC,
     )
 }

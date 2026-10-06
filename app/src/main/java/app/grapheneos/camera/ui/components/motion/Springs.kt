@@ -36,6 +36,9 @@ internal val SETTLE_SPEC = springOf<Float>(dampingRatio = SETTLE_DAMPING)
 internal val SETTLE_SIZE_SPEC = springOf<IntSize>(dampingRatio = SETTLE_DAMPING)
 internal val SETTLE_COLOR_SPEC = springOf<Color>(dampingRatio = SETTLE_DAMPING)
 
+internal val QUICK_SPEC: SpringSpec<Float> = spring(stiffness = Spring.StiffnessMedium)
+internal val QUICK_COLOR_SPEC: SpringSpec<Color> = spring(stiffness = Spring.StiffnessMedium)
+
 private fun <T> springOf(
     dampingRatio: Float,
     visibilityThreshold: T? = null,

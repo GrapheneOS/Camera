@@ -2,12 +2,13 @@ package app.grapheneos.camera.ui.components.capturebutton
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Color
 import app.grapheneos.camera.ui.components.motion.LIFT_SPEC
 import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
+import app.grapheneos.camera.ui.components.motion.QUICK_COLOR_SPEC
+import app.grapheneos.camera.ui.components.motion.QUICK_SPEC
 import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
 
 private const val PRESSED_SCALE = 1.1f
@@ -45,7 +46,7 @@ internal fun animatePressedColor(
         },
         animationSpec = when {
             isHeld -> SETTLE_COLOR_SPEC
-            else -> spring()
+            else -> QUICK_COLOR_SPEC
         },
     )
 }
@@ -57,5 +58,6 @@ internal fun animateVisibility(isVisible: Boolean): State<Float> {
             isVisible -> 1f
             else -> 0f
         },
+        animationSpec = QUICK_SPEC,
     )
 }

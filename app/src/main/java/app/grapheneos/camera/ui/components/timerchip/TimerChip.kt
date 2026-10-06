@@ -1,8 +1,6 @@
 package app.grapheneos.camera.ui.components.timerchip
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -12,9 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.motion.FADE_IN
-import app.grapheneos.camera.ui.components.motion.FADE_OUT
-import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
+import app.grapheneos.camera.ui.components.motion.crossfadeResizing
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.components.valuechip.ValueChipColors
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
@@ -41,9 +37,7 @@ internal fun TimerChip(
     ) { textStyle ->
         AnimatedContent(
             targetState = label,
-            transitionSpec = {
-                FADE_IN togetherWith FADE_OUT using SizeTransform { _, _ -> SETTLE_SIZE_SPEC }
-            },
+            transitionSpec = { crossfadeResizing() },
             contentAlignment = Alignment.CenterStart,
         ) { shownLabel ->
             if (shownLabel != null) {
@@ -55,11 +49,18 @@ internal fun TimerChip(
                 )
             }
         }
-        Text(
-            text = rememberTimerChipFormat().format(elapsed = elapsed),
-            style = textStyle,
-            maxLines = 1,
-        )
+        AnimatedContent(
+            targetState = rememberTimerChipFormat().format(elapsed = elapsed),
+            transitionSpec = { crossfadeResizing() },
+            contentAlignment = Alignment.Center,
+            contentKey = { it.length },
+        ) { time ->
+            Text(
+                text = time,
+                style = textStyle,
+                maxLines = 1,
+            )
+        }
     }
 }
 

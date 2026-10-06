@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.QUICK_COLOR_SPEC
+import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 
 private val ICON_SIZE = 24.dp
 
@@ -25,7 +27,10 @@ internal fun CaptureButtonIcon(
     rotation: () -> Float,
     modifier: Modifier = Modifier,
 ) {
-    val animatedTint by animateColorAsState(targetValue = tint)
+    val animatedTint by animateColorAsState(
+        targetValue = tint,
+        animationSpec = QUICK_COLOR_SPEC,
+    )
     val pressedScale by animatePressedScale(
         isPressed = isPressed,
         isHeld = isHeld,
@@ -40,6 +45,7 @@ internal fun CaptureButtonIcon(
             translationY = pull().y
             rotationZ = rotation()
         },
+        animationSpec = SETTLE_SPEC,
     ) { targetIcon ->
         if (targetIcon != null) {
             Icon(
