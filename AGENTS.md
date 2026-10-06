@@ -60,7 +60,8 @@ app/src/main/java/app/grapheneos/camera/
     qr/usecase/         barcode scanning
     gallery/usecase/    share, edit, delete (the guarded variants from CapturedItems.kt)
   ui/
-    core/               Theme.kt, CameraColors.kt, Preview.kt, PreviewIcons.kt
+    core/               Theme.kt, CameraColors.kt, Typography.kt; Preview*.kt, shared by
+                        previews and samples
     components/         design-system components, one package each
     common/components/  screen-level composables shared across screens
     viewfinder/
@@ -392,8 +393,11 @@ payoff of the migration:
 ### Compose
 
 - **Material 3 only.** Colors, typography and shapes all come from `CameraTheme` /
-  `MaterialTheme` — never a hardcoded color, and corners come from `MaterialTheme.shapes`, not an
-  inline `RoundedCornerShape`.
+  `MaterialTheme` — never a hardcoded color, and a screen's corners come from
+  `MaterialTheme.shapes`, not an inline `RoundedCornerShape`. Design-system components in
+  `ui/components/` are the exception for geometry: a component owns its corners and sizes as named
+  constants (`SQUARE_BUTTON_SHAPE`), so its look does not depend on the shape scale of the theme
+  that hosts it. Its colors still come from the theme, through its `<X>Colors.fromTheme()`.
 - **Dynamic color first.** The theme uses the user's device colors (`dynamicDarkColorScheme` /
   `dynamicLightColorScheme`). Introduce a custom color only when a real need can't be met by an
   existing `MaterialTheme.colorScheme` role, and add it as a theme extension — not inline in a
