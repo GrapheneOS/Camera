@@ -58,7 +58,7 @@ internal fun ModeSelectorItem(
 
     Box(
         modifier = Modifier
-            .height(ITEM_HEIGHT)
+            .height(height = ITEM_HEIGHT)
             .semantics {
                 text = AnnotatedString(label)
                 collectionItemInfo = CollectionItemInfo(
