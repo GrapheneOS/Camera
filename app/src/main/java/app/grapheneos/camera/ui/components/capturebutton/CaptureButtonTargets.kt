@@ -94,7 +94,7 @@ private fun CaptureButtonTargetBackground(
                 visibility = visibility,
                 layoutDirection = LocalLayoutDirection.current,
             )
-            .size(TARGET_SIZE)
+            .size(size = TARGET_SIZE)
             .drawBehind {
                 drawCircle(color = color)
             },
@@ -123,7 +123,7 @@ private fun CaptureButtonTargetIcon(
             .graphicsLayer {
                 rotationZ = rotation()
             }
-            .size(TARGET_ICON_SIZE),
+            .size(size = TARGET_ICON_SIZE),
         tint = tint,
     )
 }

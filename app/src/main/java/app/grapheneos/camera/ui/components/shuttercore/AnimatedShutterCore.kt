@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -42,16 +43,21 @@ internal fun AnimatedShutterCore(
 
 @Composable
 internal fun animateShutterCoreShape(core: ShutterCore): ShutterCoreShape {
-    return ShutterCoreShape(
-        sizeFraction = animateFloatAsState(
-            targetValue = core.sizeFraction,
-            animationSpec = MORPH_SPEC,
-        ),
-        cornerFraction = animateFloatAsState(
-            targetValue = core.cornerFraction,
-            animationSpec = MORPH_SPEC,
-        ),
+    val sizeFraction = animateFloatAsState(
+        targetValue = core.sizeFraction,
+        animationSpec = MORPH_SPEC,
     )
+    val cornerFraction = animateFloatAsState(
+        targetValue = core.cornerFraction,
+        animationSpec = MORPH_SPEC,
+    )
+
+    return remember(sizeFraction, cornerFraction) {
+        ShutterCoreShape(
+            sizeFraction = sizeFraction,
+            cornerFraction = cornerFraction,
+        )
+    }
 }
 
 internal fun DrawScope.drawShutterCore(

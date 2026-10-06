@@ -75,13 +75,13 @@ private fun SegmentedIconToggleIcon(
 
     Box(
         modifier = Modifier
-            .size(OPTION_SIZE)
+            .size(size = OPTION_SIZE)
             .semantics { contentDescription = option.contentDescription },
         contentAlignment = Alignment.Center,
     ) {
         Spacer(
             modifier = Modifier
-                .size(ICON_SIZE)
+                .size(size = ICON_SIZE)
                 .graphicsLayer {
                     compositingStrategy = CompositingStrategy.Offscreen
                     rotationZ = rotation()
