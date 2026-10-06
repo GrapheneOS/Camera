@@ -9,6 +9,7 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDire
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
+import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -262,7 +263,7 @@ class CaptureButtonHoldTest {
 
         private val LOCK = CaptureButtonTarget(
             direction = CaptureButtonDirection.Start,
-            icon = TEST_ICON,
+            icon = PREVIEW_LOCK_ICON,
             accessibilityLabel = "Lock recording",
             distance = 100.dp,
         )

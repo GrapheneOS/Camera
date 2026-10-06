@@ -7,6 +7,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
@@ -23,7 +24,7 @@ class ThumbnailButtonTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun withoutProgress_reportsNoProgress() {
+    fun thumbnailButton_withoutProgress_reportsNoProgress() {
         setContent(progress = RingProgress.None)
 
         composeRule.onNodeWithContentDescription(DESCRIPTION)
@@ -31,28 +32,21 @@ class ThumbnailButtonTest {
     }
 
     @Test
-    fun indeterminateProgress_isReportedAsIndeterminate() {
+    fun thumbnailButton_indeterminateProgress_isReportedOnTheButton() {
         setContent(progress = RingProgress.Indeterminate)
 
-        composeRule.onNodeWithContentDescription(DESCRIPTION).assert(
-            SemanticsMatcher.expectValue(
-                key = SemanticsProperties.ProgressBarRangeInfo,
-                expectedValue = ProgressBarRangeInfo.Indeterminate,
-            ),
-        )
+        composeRule.onNodeWithContentDescription(DESCRIPTION)
+            .assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
     }
 
     @Test
-    fun determinateProgress_reportsItsFraction() {
+    fun thumbnailButton_determinateProgress_isReportedOnTheButton() {
         setContent(progress = RingProgress.Determinate(fraction = { FRACTION }))
 
-        composeRule.onNodeWithContentDescription(DESCRIPTION).assert(
-            SemanticsMatcher.expectValue(
-                key = SemanticsProperties.ProgressBarRangeInfo,
-                expectedValue = ProgressBarRangeInfo(
-                    current = FRACTION,
-                    range = 0f..1f,
-                ),
+        composeRule.onNodeWithContentDescription(DESCRIPTION).assertRangeInfoEquals(
+            ProgressBarRangeInfo(
+                current = FRACTION,
+                range = 0f..1f,
             ),
         )
     }
