@@ -23,6 +23,7 @@ import androidx.compose.ui.test.requestFocus
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonSize
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
+import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -166,7 +167,7 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_withAnIcon_announcesOnlyTheCallersDescription() {
-        fixture.icon = TEST_ICON
+        fixture.icon = PREVIEW_CLOSE_ICON
         fixture.setContent()
 
         fixture.button().assert(

@@ -4,9 +4,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.capturebutton.TEST_ICON
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
+import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -17,7 +17,7 @@ class CaptureButtonTargetTrackerTest {
 
     private val start = CaptureButtonTarget(
         direction = CaptureButtonDirection.Start,
-        icon = TEST_ICON,
+        icon = PREVIEW_LOCK_ICON,
         accessibilityLabel = "Lock",
         distance = 100.dp,
     )
