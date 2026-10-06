@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.components.squarebutton
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +45,6 @@ internal fun SquareButton(
     }
 
     val alpha by animateEnabledAlpha(enabled = enabled)
-    val interactions = interactionSource ?: remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
@@ -56,8 +53,8 @@ internal fun SquareButton(
             .clip(shape = SQUARE_BUTTON_SHAPE)
             .background(color = colors.containerColor)
             .combinedClickable(
-                interactionSource = interactions,
-                indication = null,
+                interactionSource = interactionSource,
+                indication = ripple(color = colors.contentColor),
                 enabled = enabled,
                 onLongClickLabel = onLongClickLabel,
                 role = Role.Button,
@@ -65,17 +62,8 @@ internal fun SquareButton(
                 onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
-    ) {
-        content()
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .indication(
-                    interactionSource = interactions,
-                    indication = ripple(color = colors.contentColor),
-                ),
-        )
-    }
+        content = content,
+    )
 }
 
 @PreviewLightDark
