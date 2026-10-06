@@ -2,8 +2,8 @@ package app.grapheneos.camera.ui.components.valuechip
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -13,6 +13,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
@@ -30,7 +32,30 @@ internal fun ValueChip(
     modifier: Modifier = Modifier,
     colors: ValueChipColors = ValueChipColors.fromTheme(),
 ) {
-    Box(
+    ValueChip(
+        modifier = modifier,
+        colors = colors,
+    ) { textStyle ->
+        Text(
+            text = text,
+            style = textStyle,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+internal fun ValueChip(
+    modifier: Modifier = Modifier,
+    colors: ValueChipColors = ValueChipColors.fromTheme(),
+    content: @Composable RowScope.(textStyle: TextStyle) -> Unit,
+) {
+    val textStyle = MaterialTheme.typography.labelLarge.copy(
+        color = colors.contentColor,
+        fontFeatureSettings = TABULAR_FIGURES,
+    )
+
+    Row(
         modifier = modifier
             .rotateLayout(rotation = LocalContentRotation.current)
             .heightIn(min = CHIP_HEIGHT)
@@ -39,17 +64,12 @@ internal fun ValueChip(
                 color = colors.containerColor,
                 shape = CircleShape,
             )
-            .padding(horizontal = CHIP_PADDING),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = CHIP_PADDING)
+            .semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = text,
-            color = colors.contentColor,
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontFeatureSettings = TABULAR_FIGURES,
-            ),
-            maxLines = 1,
-        )
+        content(textStyle)
     }
 }
 

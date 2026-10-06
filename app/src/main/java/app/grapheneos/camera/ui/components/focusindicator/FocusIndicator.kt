@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
@@ -28,6 +26,8 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
+import app.grapheneos.camera.ui.components.motion.FADE_IN
+import app.grapheneos.camera.ui.components.motion.FADE_OUT
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
 import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
@@ -68,11 +68,11 @@ internal fun FocusIndicator(
             enter = scaleIn(
                 animationSpec = MORPH_SPEC,
                 initialScale = SHOWN_SCALE_FROM,
-            ) + fadeIn(animationSpec = SETTLE_SPEC),
+            ) + FADE_IN,
             exit = scaleOut(
                 animationSpec = MORPH_SPEC,
                 targetScale = SHOWN_SCALE_FROM,
-            ) + fadeOut(animationSpec = SETTLE_SPEC),
+            ) + FADE_OUT,
         ) {
             FocusIndicatorLayers(
                 appearance = appearance,
@@ -133,8 +133,8 @@ private fun FocusIndicatorLayers(
                 enter = scaleIn(
                     animationSpec = MORPH_SPEC,
                     initialScale = LOCK_SCALE_FROM,
-                ) + fadeIn(animationSpec = SETTLE_SPEC),
-                exit = fadeOut(animationSpec = SETTLE_SPEC),
+                ) + FADE_IN,
+                exit = FADE_OUT,
             ) {
                 Icon(
                     imageVector = lockIcon,

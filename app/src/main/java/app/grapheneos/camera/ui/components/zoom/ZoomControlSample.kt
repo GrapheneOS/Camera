@@ -1,10 +1,6 @@
 package app.grapheneos.camera.ui.components.zoom
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.POP_IN
+import app.grapheneos.camera.ui.components.motion.POP_OUT
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
@@ -32,11 +30,8 @@ import kotlinx.coroutines.delay
 
 private const val ZOOM_SUFFIX = "×"
 private const val PINCH_FACTOR = 1.25f
-private const val POP_SCALE = 0.8f
 
 private val COLLAPSE_DELAY = 1.seconds
-private val POP_IN = fadeIn() + scaleIn(initialScale = POP_SCALE)
-private val POP_OUT = fadeOut() + scaleOut(targetScale = POP_SCALE)
 
 private val THREE_STOPS = listOf(0.5f, 1f, 2f)
 private val THREE_STOPS_RANGE = 0.5f..8f

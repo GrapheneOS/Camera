@@ -1,9 +1,6 @@
 package app.grapheneos.camera.ui.components.capturebutton
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,6 +13,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
+import app.grapheneos.camera.ui.components.motion.crossfade
 import app.grapheneos.camera.ui.components.progress.RingProgressIndicator
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 
@@ -48,7 +46,7 @@ internal fun CaptureButtonProgressIndicator(
                     progressBarRangeInfo = rangeInfo
                 }
             },
-        transitionSpec = { fadeIn() togetherWith fadeOut() using null },
+        transitionSpec = { crossfade() },
         contentKey = { it::class },
     ) { targetProgress ->
         when (targetProgress) {
