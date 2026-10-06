@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -19,6 +18,7 @@ import app.grapheneos.camera.ui.components.motion.POP_OUT
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
+import app.grapheneos.camera.ui.core.PreviewRotation
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
@@ -58,13 +58,10 @@ private fun TimerChipSample() {
                 text = "+1 h",
                 onClick = state::addHour,
             )
-            CameraPreviewControl(
-                text = "Rotate",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
-        ProvideContentRotation(degrees = state.rotation) {
+        ProvideContentRotation(degrees = state.rotation.degrees) {
             AnimatedVisibility(
                 visible = state.isRecording,
                 modifier = Modifier
@@ -85,13 +82,13 @@ private fun TimerChipSample() {
 @Stable
 private class TimerChipSampleState {
 
+    val rotation = PreviewRotation()
+
     var isRecording by mutableStateOf(false)
         private set
     var isPaused by mutableStateOf(false)
         private set
     var elapsed by mutableStateOf(Duration.ZERO)
-        private set
-    var rotation by mutableFloatStateOf(0f)
         private set
 
     val isRunning: Boolean
@@ -144,14 +141,5 @@ private class TimerChipSampleState {
 
     fun tick() {
         elapsed += TICK
-    }
-
-    fun rotate() {
-        rotation = (rotation + QUARTER_TURN) % FULL_TURN
-    }
-
-    private companion object {
-        private const val QUARTER_TURN = 90f
-        private const val FULL_TURN = 360f
     }
 }

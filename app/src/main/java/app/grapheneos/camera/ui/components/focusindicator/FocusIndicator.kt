@@ -36,8 +36,6 @@ import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.CameraPreviewViewfinder
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 
-private val INDICATOR_SIZE = 62.dp
-private val RING_DIAMETER = 60.dp
 private val RING_WIDTH = 1.5.dp
 private val LOCK_ICON_SIZE = 26.dp
 private val LOCK_ICON_GAP = 8.dp
@@ -45,6 +43,9 @@ private val LOCK_ICON_GAP = 8.dp
 private const val SHOWN_SCALE_FROM = 1.3f
 private const val LOCK_SCALE_FROM = 0.5f
 private const val FOCUSED_ALPHA = 0.5f
+
+internal val FOCUS_INDICATOR_SIZE = 62.dp
+internal val FOCUS_RING_DIAMETER = 60.dp
 
 /**
  * The ring is as big as the indicator, so centering the indicator on the focus point centers the
@@ -62,7 +63,7 @@ internal fun FocusIndicator(
     val visibility = remember { MutableTransitionState(initialState = false) }
     visibility.targetState = visible
 
-    Box(modifier = modifier.size(size = INDICATOR_SIZE)) {
+    Box(modifier = modifier.size(size = FOCUS_INDICATOR_SIZE)) {
         AnimatedVisibility(
             visibleState = visibility,
             enter = scaleIn(
@@ -111,11 +112,11 @@ private fun FocusIndicatorLayers(
     }
     lockVisibility.targetState = isLocked
 
-    Box(modifier = Modifier.size(size = INDICATOR_SIZE)) {
+    Box(modifier = Modifier.size(size = FOCUS_INDICATOR_SIZE)) {
         Canvas(modifier = Modifier.matchParentSize()) {
             drawCircle(
                 color = ringColor,
-                radius = RING_DIAMETER.toPx() / 2,
+                radius = FOCUS_RING_DIAMETER.toPx() / 2,
                 alpha = ringAlpha,
                 style = Stroke(width = RING_WIDTH.toPx()),
             )

@@ -25,8 +25,7 @@ import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
 
-private val BUTTON_SIZE = 60.dp
-
+internal val SQUARE_BUTTON_SIZE = 60.dp
 internal val SQUARE_BUTTON_SHAPE = RoundedCornerShape(size = 12.dp)
 
 @Composable
@@ -48,7 +47,7 @@ internal fun SquareButton(
 
     Box(
         modifier = modifier
-            .size(size = BUTTON_SIZE)
+            .size(size = SQUARE_BUTTON_SIZE)
             .graphicsLayer { this.alpha = alpha }
             .clip(shape = SQUARE_BUTTON_SHAPE)
             .background(color = colors.containerColor)

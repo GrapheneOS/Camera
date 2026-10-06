@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,13 +34,13 @@ import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
 import app.grapheneos.camera.ui.components.squarebutton.model.SquareButtonMark
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
 import app.grapheneos.camera.ui.components.timerchip.TimerChip
-import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LENS_SWITCH_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_PAUSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
+import app.grapheneos.camera.ui.core.PreviewRotation
 import app.grapheneos.camera.ui.core.previewShot
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -49,7 +48,6 @@ import kotlinx.coroutines.delay
 
 private val TICK = 1.seconds
 private val SAVING_DURATION = 1.seconds
-private val SLOT_SIZE = 60.dp
 
 private val SAMPLE_PAUSE = SquareButtonMark.Icon(
     icon = PREVIEW_PAUSE_ICON,
@@ -85,13 +83,10 @@ private fun SquareMarkButtonSample() {
     CameraPreviewSample(
         status = state.status,
         controls = {
-            CameraPreviewControl(
-                text = "Rotate ${state.rotation.toInt()}°",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
-        ProvideContentRotation(degrees = state.rotation) {
+        ProvideContentRotation(degrees = state.rotation.degrees) {
             AnimatedVisibility(
                 visible = state.isRecording,
                 modifier = Modifier
@@ -176,7 +171,7 @@ private fun SampleSlot(
 ) {
     AnimatedContent(
         targetState = isRecording,
-        modifier = Modifier.size(size = SLOT_SIZE),
+        modifier = Modifier.size(size = SQUARE_BUTTON_SIZE),
         transitionSpec = { POP_IN togetherWith POP_OUT using null },
         contentAlignment = Alignment.Center,
     ) { shownRecording ->
@@ -190,6 +185,8 @@ private fun SampleSlot(
 @Stable
 private class SquareMarkButtonSampleState {
 
+    val rotation = PreviewRotation()
+
     var isRecording by mutableStateOf(false)
         private set
     var isPaused by mutableStateOf(false)
@@ -201,8 +198,6 @@ private class SquareMarkButtonSampleState {
     var savingRun by mutableIntStateOf(0)
         private set
     var isFront by mutableStateOf(false)
-        private set
-    var rotation by mutableFloatStateOf(0f)
         private set
 
     private var snapshots by mutableIntStateOf(0)
@@ -300,14 +295,5 @@ private class SquareMarkButtonSampleState {
 
     fun tick() {
         elapsed += TICK
-    }
-
-    fun rotate() {
-        rotation = (rotation + QUARTER_TURN) % FULL_TURN
-    }
-
-    private companion object {
-        private const val QUARTER_TURN = 90f
-        private const val FULL_TURN = 360f
     }
 }

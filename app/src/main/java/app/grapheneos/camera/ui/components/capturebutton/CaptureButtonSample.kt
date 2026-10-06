@@ -28,14 +28,13 @@ import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
 import app.grapheneos.camera.ui.core.PreviewCountdown
+import app.grapheneos.camera.ui.core.PreviewRotation
 import java.util.Locale
 
 private const val TIMER_SECONDS = 3
 private const val ZOOM_DRAG_PX = 400f
 private const val MIN_ZOOM = 0.5f
 private const val MAX_ZOOM = 10f
-private const val QUARTER_TURN = 90f
-private const val FULL_TURN = 360f
 
 private val SAMPLE_LOCK = CaptureButtonTarget(
     direction = CaptureButtonDirection.Start,
@@ -73,10 +72,7 @@ private fun CaptureButtonSample() {
                 text = state.timerLabel,
                 onClick = state::switchTimer,
             )
-            CameraPreviewControl(
-                text = "Rotate ${state.rotation.toInt()}°",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
         SampleCaptureButton(
@@ -93,7 +89,7 @@ private fun SampleCaptureButton(
     state: CaptureButtonSampleState,
     modifier: Modifier = Modifier,
 ) {
-    ProvideContentRotation(degrees = state.rotation) {
+    ProvideContentRotation(degrees = state.rotation.degrees) {
         CaptureButton(
             onClick = state::click,
             core = state.core,
@@ -113,6 +109,8 @@ private fun SampleCaptureButton(
 @Stable
 private class CaptureButtonSampleState {
 
+    val rotation = PreviewRotation()
+
     var isVideoMode by mutableStateOf(false)
         private set
     var isTimerOn by mutableStateOf(false)
@@ -120,8 +118,6 @@ private class CaptureButtonSampleState {
     var recording by mutableStateOf(SampleRecording.Idle)
         private set
     var zoom by mutableFloatStateOf(1f)
-        private set
-    var rotation by mutableFloatStateOf(0f)
         private set
 
     val countdown = PreviewCountdown(initialSeconds = TIMER_SECONDS)
@@ -229,10 +225,6 @@ private class CaptureButtonSampleState {
 
     fun zoomBy(delta: Offset) {
         zoom = (zoom * (1f - delta.y / ZOOM_DRAG_PX)).coerceIn(MIN_ZOOM, MAX_ZOOM)
-    }
-
-    fun rotate() {
-        rotation = (rotation + QUARTER_TURN) % FULL_TURN
     }
 
     fun finishCountdown() {

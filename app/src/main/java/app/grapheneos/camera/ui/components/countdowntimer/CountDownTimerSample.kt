@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,6 +21,7 @@ import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
 import app.grapheneos.camera.ui.core.PreviewCountdown
+import app.grapheneos.camera.ui.core.PreviewRotation
 
 private val TIMER_OPTIONS = listOf(3, 5, 10)
 
@@ -44,13 +44,10 @@ private fun CountDownTimerSample() {
                 text = "Timer ${state.countdown.seconds}s",
                 onClick = state::nextDuration,
             )
-            CameraPreviewControl(
-                text = "Rotate",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
-        ProvideContentRotation(degrees = state.rotation) {
+        ProvideContentRotation(degrees = state.rotation.degrees) {
             if (state.countdown.isRunning) {
                 CountDownTimer(
                     value = state.countdown.secondsLeft,
@@ -73,11 +70,11 @@ private fun CountDownTimerSample() {
 @Stable
 private class CountDownTimerSampleState {
 
+    val rotation = PreviewRotation()
+
     val countdown = PreviewCountdown(initialSeconds = TIMER_OPTIONS.first())
 
     var captures by mutableIntStateOf(0)
-        private set
-    var rotation by mutableFloatStateOf(0f)
         private set
 
     val core: ShutterCore
@@ -115,10 +112,6 @@ private class CountDownTimerSampleState {
         }
     }
 
-    fun rotate() {
-        rotation = (rotation + QUARTER_TURN) % FULL_TURN
-    }
-
     fun nextDuration() {
         val next = (TIMER_OPTIONS.indexOf(countdown.seconds) + 1) % TIMER_OPTIONS.size
 
@@ -128,10 +121,5 @@ private class CountDownTimerSampleState {
 
     fun capture() {
         captures += 1
-    }
-
-    private companion object {
-        private const val QUARTER_TURN = 90f
-        private const val FULL_TURN = 360f
     }
 }
