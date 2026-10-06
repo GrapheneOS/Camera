@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.POP_IN
 import app.grapheneos.camera.ui.components.motion.POP_OUT
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
+import app.grapheneos.camera.ui.components.overlayiconbutton.OVERLAY_ICON_BUTTON_SIZE
 import app.grapheneos.camera.ui.components.overlayiconbutton.OverlayIconButton
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.core.CameraPreviewControl
@@ -43,11 +44,11 @@ import app.grapheneos.camera.ui.core.PREVIEW_THERMOMETER_ADD_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_THERMOMETER_MINUS_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
+import app.grapheneos.camera.ui.core.PreviewRotation
 import kotlin.math.roundToLong
 
 private const val AUTO_TEMPERATURE = 5_000f
 
-private val RESET_BUTTON_SIZE = 48.dp
 private val RESET_BUTTON_GAP = 8.dp
 
 private val EXPOSURE_RANGE = -12f..12f
@@ -90,13 +91,10 @@ private fun AdjustmentBarSample() {
                 text = state.adjustment.label,
                 onClick = state::nextAdjustment,
             )
-            CameraPreviewControl(
-                text = "Rotate",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
-        ProvideContentRotation(degrees = state.rotation) {
+        ProvideContentRotation(degrees = state.rotation.degrees) {
             SampleControls(
                 state = state,
                 valueLabel = valueLabel,
@@ -129,7 +127,7 @@ private fun SampleControls(
                 valueLabel = valueLabel,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(horizontal = RESET_BUTTON_SIZE + RESET_BUTTON_GAP * 2),
+                    .padding(horizontal = OVERLAY_ICON_BUTTON_SIZE + RESET_BUTTON_GAP * 2),
             )
             SampleResetButton(
                 isVisible = state.isAdjusted,
@@ -238,6 +236,8 @@ private fun rememberValueLabel(state: AdjustmentBarSampleState): String {
 @Stable
 private class AdjustmentBarSampleState {
 
+    val rotation = PreviewRotation()
+
     var adjustment by mutableStateOf(SampleAdjustment.Brightness)
         private set
     var exposure by mutableFloatStateOf(0f)
@@ -245,8 +245,6 @@ private class AdjustmentBarSampleState {
     var isExposureAdjusted by mutableStateOf(false)
         private set
     var temperature by mutableStateOf<Float?>(null)
-        private set
-    var rotation by mutableFloatStateOf(0f)
         private set
 
     val value: Float
@@ -281,10 +279,6 @@ private class AdjustmentBarSampleState {
             }
         }
 
-    fun rotate() {
-        rotation = (rotation + QUARTER_TURN) % FULL_TURN
-    }
-
     fun nextAdjustment() {
         val adjustments = SampleAdjustment.entries
 
@@ -311,10 +305,5 @@ private class AdjustmentBarSampleState {
 
             SampleAdjustment.WhiteBalance -> temperature = null
         }
-    }
-
-    private companion object {
-        private const val QUARTER_TURN = 90f
-        private const val FULL_TURN = 360f
     }
 }

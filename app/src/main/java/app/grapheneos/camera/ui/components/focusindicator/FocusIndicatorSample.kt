@@ -7,7 +7,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,16 +20,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
-import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.PreviewRotation
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
 private val FOCUS_DURATION = 600.milliseconds
-private val RING_RADIUS = 30.dp
-private val INDICATOR_HALF = 31.dp
 
 @Preview(heightDp = 720)
 @Composable
@@ -42,8 +39,8 @@ private fun FocusIndicatorSamplePreview() {
 private fun FocusIndicatorSample() {
     val state = remember { FocusIndicatorSampleState() }
     val density = LocalDensity.current
-    val ringRadius = with(density) { RING_RADIUS.toPx() }
-    val indicatorHalf = with(density) { INDICATOR_HALF.toPx() }
+    val ringRadius = with(density) { FOCUS_RING_DIAMETER.toPx() / 2 }
+    val indicatorHalf = with(density) { FOCUS_INDICATOR_SIZE.toPx() / 2 }
 
     LaunchedEffect(state.focusRequest) {
         delay(FOCUS_DURATION)
@@ -53,10 +50,7 @@ private fun FocusIndicatorSample() {
     CameraPreviewSample(
         status = state.status,
         controls = {
-            CameraPreviewControl(
-                text = "Rotate",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
         Box(
@@ -83,7 +77,7 @@ private fun FocusIndicatorSample() {
                     )
                 },
         )
-        ProvideContentRotation(degrees = state.rotation) {
+        ProvideContentRotation(degrees = state.rotation.degrees) {
             key(state.focusRequest) {
                 FocusIndicator(
                     visible = state.isVisible,
@@ -112,6 +106,8 @@ private fun Modifier.centerAt(point: Offset): Modifier {
 @Stable
 private class FocusIndicatorSampleState {
 
+    val rotation = PreviewRotation()
+
     var point by mutableStateOf(Offset.Zero)
         private set
     var isVisible by mutableStateOf(false)
@@ -119,8 +115,6 @@ private class FocusIndicatorSampleState {
     var appearance by mutableStateOf(FocusIndicatorAppearance.Focusing)
         private set
     var focusRequest by mutableIntStateOf(0)
-        private set
-    var rotation by mutableFloatStateOf(0f)
         private set
 
     private var isPressOnRing = false
@@ -161,19 +155,10 @@ private class FocusIndicatorSampleState {
         }
     }
 
-    fun rotate() {
-        rotation = (rotation + QUARTER_TURN) % FULL_TURN
-    }
-
     private fun show(point: Offset) {
         this.point = point
         appearance = FocusIndicatorAppearance.Focusing
         isVisible = true
         focusRequest += 1
-    }
-
-    private companion object {
-        private const val QUARTER_TURN = 90f
-        private const val FULL_TURN = 360f
     }
 }

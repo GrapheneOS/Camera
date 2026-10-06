@@ -17,7 +17,7 @@ import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
 
-private val BUTTON_SIZE = 48.dp
+internal val OVERLAY_ICON_BUTTON_SIZE = 48.dp
 
 @Composable
 internal fun OverlayIconButton(
@@ -32,7 +32,7 @@ internal fun OverlayIconButton(
 
     FilledIconButton(
         onClick = onClick,
-        modifier = modifier.size(BUTTON_SIZE),
+        modifier = modifier.size(size = OVERLAY_ICON_BUTTON_SIZE),
         enabled = enabled,
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = colors.containerColor,

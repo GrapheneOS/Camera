@@ -22,9 +22,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.POP_IN
 import app.grapheneos.camera.ui.components.motion.POP_OUT
+import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
+import app.grapheneos.camera.ui.core.PreviewRotation
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
@@ -90,16 +92,19 @@ private fun ZoomControlSample() {
                 text = state.camera.label,
                 onClick = state::nextCamera,
             )
+            state.rotation.Control()
         },
     ) {
-        SampleControls(
-            state = state,
-            valueLabel = valueLabel,
-            interactionSource = interactionSource,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp),
-        )
+        ProvideContentRotation(degrees = state.rotation.degrees) {
+            SampleControls(
+                state = state,
+                valueLabel = valueLabel,
+                interactionSource = interactionSource,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp),
+            )
+        }
     }
 }
 
@@ -141,6 +146,8 @@ private fun SampleControls(
 
 @Stable
 private class ZoomControlSampleState {
+
+    val rotation = PreviewRotation()
 
     var camera by mutableStateOf(SampleCamera.ThreeStops)
         private set
