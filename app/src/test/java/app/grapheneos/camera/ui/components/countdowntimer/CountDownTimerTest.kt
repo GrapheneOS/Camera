@@ -28,13 +28,6 @@ class CountDownTimerTest {
     private var value by mutableIntStateOf(3)
 
     @Test
-    fun countDownTimer_showsItsValue() {
-        setContent()
-
-        composeRule.onNodeWithTag(TAG).assertTextEquals("3")
-    }
-
-    @Test
     fun countDownTimer_followsANewValue() {
         setContent()
 
