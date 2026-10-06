@@ -5,22 +5,22 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
+import app.grapheneos.camera.ui.components.shuttercore.animateShutterCoreShape
+import app.grapheneos.camera.ui.components.shuttercore.drawShutterCore
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 
 private val FOCUS_RING_WIDTH = 3.dp
 
 @Composable
 internal fun CaptureButtonFace(
-    core: CaptureButtonCore,
+    core: ShutterCore,
     isPressed: Boolean,
     isHeld: Boolean,
     isFocused: Boolean,
@@ -32,14 +32,7 @@ internal fun CaptureButtonFace(
     dockProgress: () -> Float,
     modifier: Modifier = Modifier,
 ) {
-    val sizeFraction by animateFloatAsState(
-        targetValue = core.sizeFraction,
-        animationSpec = MORPH_SPEC,
-    )
-    val cornerFraction by animateFloatAsState(
-        targetValue = core.cornerFraction,
-        animationSpec = MORPH_SPEC,
-    )
+    val shape = animateShutterCoreShape(core = core)
     val pressedScale by animatePressedScale(
         isPressed = isPressed && !hasProgress,
         isHeld = isHeld && !hasProgress,
@@ -59,7 +52,7 @@ internal fun CaptureButtonFace(
 
     Canvas(modifier = modifier) {
         val progressInset = PROGRESS_INSET.toPx() * progressInsetFraction
-        val restingSize = (size.minDimension * sizeFraction)
+        val restingSize = (size.minDimension * shape.sizeFraction)
             .coerceAtMost(size.minDimension - progressInset * 2)
         val currentDockProgress = dockProgress()
         val coreSize = dockCoreSize(
@@ -76,29 +69,16 @@ internal fun CaptureButtonFace(
             left = pull().x,
             top = pull().y,
         ) {
-            drawCore(
+            drawShutterCore(
                 color = animatedCoreColor,
                 coreSize = coreSize,
-                cornerFraction = cornerFraction,
+                cornerFraction = shape.cornerFraction,
             )
         }
         if (isFocused) {
             drawFocusRing(color = focusColor)
         }
     }
-}
-
-private fun DrawScope.drawCore(
-    color: Color,
-    coreSize: Float,
-    cornerFraction: Float,
-) {
-    drawRoundRect(
-        color = color,
-        topLeft = center - Offset(x = coreSize / 2, y = coreSize / 2),
-        size = Size(width = coreSize, height = coreSize),
-        cornerRadius = CornerRadius(coreSize * cornerFraction),
-    )
 }
 
 private fun DrawScope.drawFocusRing(color: Color) {

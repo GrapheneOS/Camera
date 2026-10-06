@@ -15,12 +15,12 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTouchInput
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonHoldState
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
 import app.grapheneos.camera.ui.core.CameraTheme
 
 internal class CaptureButtonFixture(
@@ -40,7 +40,7 @@ internal class CaptureButtonFixture(
 
     var isShown by mutableStateOf(true)
     var enabled by mutableStateOf(true)
-    var tone by mutableStateOf(CaptureButtonTone.Neutral)
+    var tone by mutableStateOf(ShutterTone.Neutral)
     var progress by mutableStateOf<RingProgress>(RingProgress.None)
     var trigger by mutableStateOf(CaptureButtonTrigger.Release)
     var icon by mutableStateOf<ImageVector?>(null)
@@ -57,7 +57,7 @@ internal class CaptureButtonFixture(
                 if (isShown) {
                     CaptureButton(
                         onClick = { clicks += 1 },
-                        core = CaptureButtonCore.Disc,
+                        core = ShutterCore.Disc,
                         modifier = Modifier.semantics { contentDescription = DESCRIPTION },
                         tone = tone,
                         enabled = enabled,

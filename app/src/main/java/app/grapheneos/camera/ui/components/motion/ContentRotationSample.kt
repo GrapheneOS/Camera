@@ -18,11 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.CaptureButton
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.lensswitchbutton.LensSwitchButton
 import app.grapheneos.camera.ui.components.overlayiconbutton.OverlayIconButton
 import app.grapheneos.camera.ui.components.segmentedicontoggle.SegmentedIconToggle
 import app.grapheneos.camera.ui.components.segmentedicontoggle.model.SegmentedIconToggleOption
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
 import app.grapheneos.camera.ui.components.zoom.ZoomStops
 import app.grapheneos.camera.ui.core.CameraPreviewControl
@@ -114,7 +114,7 @@ private fun SampleControls(
             )
             CaptureButton(
                 onClick = {},
-                core = CaptureButtonCore.Disc,
+                core = ShutterCore.Disc,
             )
             LensSwitchButton(
                 flipped = state.isFront,

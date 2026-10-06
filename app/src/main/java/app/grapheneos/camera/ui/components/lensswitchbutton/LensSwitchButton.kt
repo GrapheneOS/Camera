@@ -4,25 +4,21 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.squarebutton.SquareButton
 import app.grapheneos.camera.ui.components.squarebutton.SquareButtonColors
+import app.grapheneos.camera.ui.components.squarebutton.SquareButtonMarkContent
+import app.grapheneos.camera.ui.components.squarebutton.model.SquareButtonMark
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_LENS_SWITCH_ICON
-
-private val ICON_SIZE = 32.dp
 
 /**
  * @param flipped which camera is in use. Every change turns the icon half a turn
@@ -40,7 +36,6 @@ internal fun LensSwitchButton(
     interactionSource: MutableInteractionSource? = null,
 ) {
     val turn = animateFlipTurn(flipped = flipped)
-    val rotation = LocalContentRotation.current
 
     SquareButton(
         onClick = onClick,
@@ -49,13 +44,10 @@ internal fun LensSwitchButton(
         colors = colors,
         interactionSource = interactionSource,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier
-                .size(size = ICON_SIZE)
-                .graphicsLayer { rotationZ = rotation() + turn.value },
-            tint = colors.contentColor,
+        SquareButtonMarkContent(
+            mark = SquareButtonMark.Icon(icon = icon),
+            iconTint = colors.contentColor,
+            turn = { turn.value },
         )
     }
 }

@@ -14,9 +14,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.CaptureButton
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
@@ -80,11 +80,11 @@ private class CountDownTimerSampleState {
     var rotation by mutableFloatStateOf(0f)
         private set
 
-    val core: CaptureButtonCore
+    val core: ShutterCore
         get() {
             return when {
-                countdown.isRunning -> CaptureButtonCore.None
-                else -> CaptureButtonCore.Disc
+                countdown.isRunning -> ShutterCore.None
+                else -> ShutterCore.Disc
             }
         }
 
