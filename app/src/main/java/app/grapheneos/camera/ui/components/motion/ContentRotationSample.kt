@@ -25,7 +25,6 @@ import app.grapheneos.camera.ui.components.segmentedicontoggle.model.SegmentedIc
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
 import app.grapheneos.camera.ui.components.zoom.ZoomStops
-import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_LENS_SWITCH_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_PHOTO_CAMERA_ICON
@@ -33,6 +32,7 @@ import app.grapheneos.camera.ui.core.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_VIDEOCAM_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
+import app.grapheneos.camera.ui.core.PreviewRotation
 import app.grapheneos.camera.ui.core.previewShot
 
 private val SAMPLE_STOPS = listOf(0.5f, 1f, 2f)
@@ -58,15 +58,12 @@ private fun ContentRotationSample() {
     val state = remember { ContentRotationSampleState() }
 
     CameraPreviewSample(
-        status = "Rotation ${state.degrees.toInt()}°",
+        status = "Icons and labels turn in place",
         controls = {
-            CameraPreviewControl(
-                text = "Rotate",
-                onClick = state::rotate,
-            )
+            state.rotation.Control()
         },
     ) {
-        ProvideContentRotation(degrees = state.degrees) {
+        ProvideContentRotation(degrees = state.rotation.degrees) {
             OverlayIconButton(
                 onClick = {},
                 icon = PREVIEW_TIMER_ICON,
@@ -133,18 +130,14 @@ private fun SampleControls(
 @Stable
 private class ContentRotationSampleState {
 
-    var degrees by mutableFloatStateOf(0f)
-        private set
+    val rotation = PreviewRotation()
+
     var zoom by mutableFloatStateOf(1f)
         private set
     var isFront by mutableStateOf(false)
         private set
     var modeIndex by mutableIntStateOf(0)
         private set
-
-    fun rotate() {
-        degrees = (degrees + QUARTER_TURN) % FULL_TURN
-    }
 
     fun zoomTo(value: Float) {
         zoom = value
@@ -156,10 +149,5 @@ private class ContentRotationSampleState {
 
     fun selectMode(index: Int) {
         modeIndex = index
-    }
-
-    private companion object {
-        private const val QUARTER_TURN = 90f
-        private const val FULL_TURN = 360f
     }
 }
