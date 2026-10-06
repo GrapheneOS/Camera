@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performTouchInput
 import app.grapheneos.camera.ui.components.capturebutton.gesture.CaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonSize
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
@@ -39,6 +40,7 @@ internal class CaptureButtonFixture(
         private set
 
     var isShown by mutableStateOf(true)
+    var size by mutableStateOf(CaptureButtonSize.Regular)
     var enabled by mutableStateOf(true)
     var tone by mutableStateOf(ShutterTone.Neutral)
     var progress by mutableStateOf<RingProgress>(RingProgress.None)
@@ -59,6 +61,7 @@ internal class CaptureButtonFixture(
                         onClick = { clicks += 1 },
                         core = ShutterCore.Disc,
                         modifier = Modifier.semantics { contentDescription = DESCRIPTION },
+                        size = size,
                         tone = tone,
                         enabled = enabled,
                         progress = progress,

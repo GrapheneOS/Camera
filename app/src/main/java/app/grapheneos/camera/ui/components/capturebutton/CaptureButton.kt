@@ -29,6 +29,7 @@ import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCapture
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonKeyHandler
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
+import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonSize
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
@@ -40,8 +41,6 @@ import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 
-private val BUTTON_SIZE = 84.dp
-
 /**
  * Passing [onHoldStart] lets the button be held. While held, its core can be dragged out to
  * [holdTargets], which are drawn outside the button's bounds.
@@ -51,6 +50,7 @@ internal fun CaptureButton(
     onClick: () -> Unit,
     core: ShutterCore,
     modifier: Modifier = Modifier,
+    size: CaptureButtonSize = CaptureButtonSize.Regular,
     tone: ShutterTone = ShutterTone.Neutral,
     enabled: Boolean = true,
     progress: RingProgress = RingProgress.None,
@@ -83,7 +83,7 @@ internal fun CaptureButton(
 
     Box(
         modifier = modifier
-            .size(BUTTON_SIZE)
+            .size(size = size.diameter)
             .graphicsLayer { this.alpha = alpha }
             .captureButtonInput(
                 enabled = enabled,
@@ -203,6 +203,10 @@ private fun CaptureButtonPreview() {
                 core = ShutterCore.Disc,
                 enabled = false,
             )
+            PreviewCaptureButton(
+                core = ShutterCore.Disc,
+                size = CaptureButtonSize.Small,
+            )
         }
     }
 }
@@ -286,6 +290,7 @@ private fun PreviewHeldCaptureButton(progress: Float) {
 @Composable
 private fun PreviewCaptureButton(
     core: ShutterCore,
+    size: CaptureButtonSize = CaptureButtonSize.Regular,
     tone: ShutterTone = ShutterTone.Neutral,
     enabled: Boolean = true,
     progress: RingProgress = RingProgress.None,
@@ -294,6 +299,7 @@ private fun PreviewCaptureButton(
     CaptureButton(
         onClick = {},
         core = core,
+        size = size,
         tone = tone,
         enabled = enabled,
         progress = progress,
