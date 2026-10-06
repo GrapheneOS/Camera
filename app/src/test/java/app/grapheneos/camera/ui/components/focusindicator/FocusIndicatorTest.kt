@@ -9,10 +9,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
@@ -46,7 +48,9 @@ class FocusIndicatorTest {
     fun indicator_addsNothingToTheAccessibilityTree() {
         setContent(tappable = false)
 
-        composeRule.onNodeWithTag(VIEWFINDER_TAG).onChildren().assertCountEquals(0)
+        composeRule
+            .onAllNodes(hasAnyAncestor(hasTestTag(VIEWFINDER_TAG)) and HAS_SEMANTICS)
+            .assertCountEquals(0)
     }
 
     private fun setContent(tappable: Boolean) {
@@ -78,5 +82,8 @@ class FocusIndicatorTest {
     private companion object {
         private const val VIEWFINDER_TAG = "viewfinder"
         private val VIEWFINDER_SIZE = 160.dp
+        private val HAS_SEMANTICS = SemanticsMatcher(description = "has semantics") { node ->
+            node.config.any()
+        }
     }
 }
