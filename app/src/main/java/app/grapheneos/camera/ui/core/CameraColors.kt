@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 @Immutable
 internal data class CameraColors(
     val recording: Color,
+    val locked: Color,
     val overlay: Color,
     val onOverlay: Color,
     val overlayScrim: Color,
@@ -18,6 +19,7 @@ internal data class CameraColors(
     companion object {
         val DEFAULT = CameraColors(
             recording = Color(color = 0xFFEC0000),
+            locked = Color(color = 0xFFEAC76B),
             overlay = Color.White,
             onOverlay = Color.Black,
             overlayScrim = Color.Black.copy(alpha = 0.6f),
