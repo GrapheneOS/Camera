@@ -14,14 +14,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
@@ -136,21 +136,21 @@ private class CaptureButtonSampleState {
             return !isVideoMode && !isCountingDown && recording == SampleRecording.Idle
         }
 
-    val core: CaptureButtonCore
+    val core: ShutterCore
         get() {
             return when {
-                isCountingDown -> CaptureButtonCore.None
-                recording == SampleRecording.Locked -> CaptureButtonCore.Square
-                recording == SampleRecording.Held || isVideoMode -> CaptureButtonCore.Dot
-                else -> CaptureButtonCore.Disc
+                isCountingDown -> ShutterCore.None
+                recording == SampleRecording.Locked -> ShutterCore.Square
+                recording == SampleRecording.Held || isVideoMode -> ShutterCore.Dot
+                else -> ShutterCore.Disc
             }
         }
 
-    val tone: CaptureButtonTone
+    val tone: ShutterTone
         get() {
             return when (recording) {
-                SampleRecording.Idle -> CaptureButtonTone.Neutral
-                else -> CaptureButtonTone.Recording
+                SampleRecording.Idle -> ShutterTone.Neutral
+                else -> ShutterTone.Recording
             }
         }
 

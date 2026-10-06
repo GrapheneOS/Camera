@@ -1,6 +1,6 @@
-package app.grapheneos.camera.ui.components.capturebutton.model
+package app.grapheneos.camera.ui.components.shuttercore.model
 
-internal enum class CaptureButtonCore(
+internal enum class ShutterCore(
     internal val sizeFraction: Float,
     internal val cornerFraction: Float,
 ) {
