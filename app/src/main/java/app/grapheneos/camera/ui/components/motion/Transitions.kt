@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.components.motion
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,7 +14,7 @@ private const val POP_SCALE = 0.8f
 
 internal val FADE_IN = fadeIn(animationSpec = SETTLE_SPEC)
 internal val FADE_OUT = fadeOut(animationSpec = SETTLE_SPEC)
-internal val HIDE_AT_ONCE = fadeOut(animationSpec = snap())
+private val HIDE_AT_ONCE = fadeOut(animationSpec = snap())
 
 internal val POP_IN = FADE_IN + scaleIn(
     animationSpec = MORPH_SPEC,
@@ -26,4 +27,12 @@ internal val POP_OUT = FADE_OUT + scaleOut(
 
 internal fun <S> AnimatedContentTransitionScope<S>.crossfade(): ContentTransform {
     return FADE_IN togetherWith FADE_OUT using null
+}
+
+internal fun <S> AnimatedContentTransitionScope<S>.crossfadeResizing(): ContentTransform {
+    return FADE_IN togetherWith FADE_OUT using SizeTransform { _, _ -> SETTLE_SIZE_SPEC }
+}
+
+internal fun <S> AnimatedContentTransitionScope<S>.revealResizing(): ContentTransform {
+    return FADE_IN togetherWith HIDE_AT_ONCE using SizeTransform { _, _ -> SETTLE_SIZE_SPEC }
 }

@@ -4,14 +4,15 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 
-private const val DISABLED_ALPHA = 0.35f
-
 @Composable
-internal fun animateEnabledAlpha(enabled: Boolean): State<Float> {
+internal fun animatePressScale(
+    isPressed: Boolean,
+    pressedScale: Float,
+): State<Float> {
     return animateFloatAsState(
         targetValue = when {
-            enabled -> 1f
-            else -> DISABLED_ALPHA
+            isPressed -> pressedScale
+            else -> 1f
         },
         animationSpec = QUICK_SPEC,
     )
