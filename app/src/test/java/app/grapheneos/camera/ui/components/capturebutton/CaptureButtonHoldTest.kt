@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -94,7 +94,7 @@ class CaptureButtonHoldTest {
         fixture.setContent()
 
         fixture.hold()
-        fixture.tone = CaptureButtonTone.Recording
+        fixture.tone = ShutterTone.Recording
         composeRule.waitForIdle()
         fixture.button().performTouchInput { up() }
 

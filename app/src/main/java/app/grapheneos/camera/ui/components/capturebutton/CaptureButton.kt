@@ -27,15 +27,15 @@ import app.grapheneos.camera.ui.components.capturebutton.gesture.captureButtonIn
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonGestureListener
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonHoldState
 import app.grapheneos.camera.ui.components.capturebutton.gesture.rememberCaptureButtonKeyHandler
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonCore
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonDirection
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonHoldEnd
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarget
-import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTone
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
+import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
@@ -49,9 +49,9 @@ private val BUTTON_SIZE = 84.dp
 @Composable
 internal fun CaptureButton(
     onClick: () -> Unit,
-    core: CaptureButtonCore,
+    core: ShutterCore,
     modifier: Modifier = Modifier,
-    tone: CaptureButtonTone = CaptureButtonTone.Neutral,
+    tone: ShutterTone = ShutterTone.Neutral,
     enabled: Boolean = true,
     progress: RingProgress = RingProgress.None,
     trigger: CaptureButtonTrigger = CaptureButtonTrigger.Release,
@@ -109,8 +109,8 @@ internal fun CaptureButton(
 
 @Composable
 private fun CaptureButtonLayers(
-    core: CaptureButtonCore,
-    tone: CaptureButtonTone,
+    core: ShutterCore,
+    tone: ShutterTone,
     progress: RingProgress,
     icon: ImageVector?,
     holdTargets: List<CaptureButtonTarget>,
@@ -139,7 +139,7 @@ private fun CaptureButtonLayers(
         isHeld = holdState.isHeld,
         isFocused = isFocused,
         hasProgress = progress != RingProgress.None,
-        coreColor = colors.coreColor(tone),
+        coreColor = colors.core.color(tone),
         containerColor = colors.containerColor,
         focusColor = colors.focusColor,
         pull = pull,
@@ -178,29 +178,29 @@ private fun CaptureButtonPreview() {
             verticalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
             PreviewCaptureButton(
-                core = CaptureButtonCore.Disc,
+                core = ShutterCore.Disc,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.Dot,
+                core = ShutterCore.Dot,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.Square,
-                tone = CaptureButtonTone.Recording,
+                core = ShutterCore.Square,
+                tone = ShutterTone.Recording,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.Dot,
-                tone = CaptureButtonTone.Recording,
+                core = ShutterCore.Dot,
+                tone = ShutterTone.Recording,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.None,
+                core = ShutterCore.None,
                 icon = PREVIEW_CLOSE_ICON,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.Disc,
+                core = ShutterCore.Disc,
                 icon = PREVIEW_CLOSE_ICON,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.Disc,
+                core = ShutterCore.Disc,
                 enabled = false,
             )
         }
@@ -216,17 +216,17 @@ private fun CaptureButtonProgressPreview() {
             verticalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
             PreviewCaptureButton(
-                core = CaptureButtonCore.Disc,
+                core = ShutterCore.Disc,
                 progress = RingProgress.Indeterminate,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.Disc,
+                core = ShutterCore.Disc,
                 progress = RingProgress.Determinate(
                     fraction = { 0.6f },
                 ),
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.None,
+                core = ShutterCore.None,
                 progress = RingProgress.Segmented(
                     segments = 10,
                     fraction = { 0.7f },
@@ -234,7 +234,7 @@ private fun CaptureButtonProgressPreview() {
                 icon = PREVIEW_CLOSE_ICON,
             )
             PreviewCaptureButton(
-                core = CaptureButtonCore.None,
+                core = ShutterCore.None,
                 progress = RingProgress.Segmented(
                     segments = 3,
                     fraction = { 2f / 3 },
@@ -274,9 +274,9 @@ private fun PreviewHeldCaptureButton(progress: Float) {
 
     CaptureButton(
         onClick = {},
-        core = CaptureButtonCore.Dot,
+        core = ShutterCore.Dot,
         modifier = Modifier.padding(start = PREVIEW_TARGET.distance),
-        tone = CaptureButtonTone.Recording,
+        tone = ShutterTone.Recording,
         onHoldStart = {},
         holdTargets = listOf(PREVIEW_TARGET),
         holdState = holdState,
@@ -285,8 +285,8 @@ private fun PreviewHeldCaptureButton(progress: Float) {
 
 @Composable
 private fun PreviewCaptureButton(
-    core: CaptureButtonCore,
-    tone: CaptureButtonTone = CaptureButtonTone.Neutral,
+    core: ShutterCore,
+    tone: ShutterTone = ShutterTone.Neutral,
     enabled: Boolean = true,
     progress: RingProgress = RingProgress.None,
     icon: ImageVector? = null,
