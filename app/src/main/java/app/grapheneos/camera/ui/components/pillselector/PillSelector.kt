@@ -180,7 +180,7 @@ private fun PillSelectorItem(
         Spacer(
             modifier = Modifier
                 .matchParentSize()
-                .clip(CircleShape)
+                .clip(shape = CircleShape)
                 .indication(
                     interactionSource = interactionSource,
                     indication = ripple(color = colors.contentColor),
@@ -257,7 +257,7 @@ private fun PreviewCircleSelector(
         enabled = enabled,
     ) { index ->
         Box(
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(size = 48.dp),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(

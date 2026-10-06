@@ -21,9 +21,6 @@ import kotlin.time.Duration.Companion.seconds
 
 private val LABEL_GAP = 6.dp
 
-/**
- * @param label shown before the time.
- */
 @Composable
 internal fun TimerChip(
     elapsed: Duration,

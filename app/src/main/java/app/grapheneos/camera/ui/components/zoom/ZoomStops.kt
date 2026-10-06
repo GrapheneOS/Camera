@@ -112,7 +112,7 @@ private fun ZoomStopLabel(
 
     Box(
         modifier = Modifier
-            .size(STOP_SIZE)
+            .size(size = STOP_SIZE)
             .semantics {
                 contentDescription = description
                 this.customActions = customActions

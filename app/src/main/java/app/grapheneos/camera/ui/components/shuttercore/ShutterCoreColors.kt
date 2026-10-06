@@ -14,7 +14,7 @@ internal data class ShutterCoreColors(
     val recordingColor: Color,
 ) {
 
-    fun color(tone: ShutterTone): Color {
+    internal fun color(tone: ShutterTone): Color {
         return when (tone) {
             ShutterTone.Neutral -> neutralColor
             ShutterTone.Recording -> recordingColor

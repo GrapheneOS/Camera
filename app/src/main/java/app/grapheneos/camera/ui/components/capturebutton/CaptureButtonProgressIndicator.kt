@@ -41,10 +41,7 @@ internal fun CaptureButtonProgressIndicator(
         modifier = modifier
             .padding(all = PROGRESS_PADDING)
             .clearAndSetSemantics {
-                val rangeInfo = progress.rangeInfo
-                if (rangeInfo != null) {
-                    progressBarRangeInfo = rangeInfo
-                }
+                progress.rangeInfo?.let { progressBarRangeInfo = it }
             },
         transitionSpec = { crossfade() },
         contentKey = { it::class },

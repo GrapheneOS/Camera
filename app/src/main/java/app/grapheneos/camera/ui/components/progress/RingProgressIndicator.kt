@@ -58,7 +58,7 @@ internal fun RingProgressIndicator(
             .semantics(mergeDescendants = true) {
                 progress.rangeInfo?.let { progressBarRangeInfo = it }
             }
-            .size(DIAMETER)
+            .size(size = DIAMETER)
             .drawWithCache {
                 val stroke = Stroke(
                     width = strokeWidth.toPx(),
