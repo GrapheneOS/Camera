@@ -2,10 +2,6 @@ package app.grapheneos.camera.ui.components.adjustmentbar
 
 import android.icu.text.NumberFormat
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +27,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.POP_IN
+import app.grapheneos.camera.ui.components.motion.POP_OUT
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.overlayiconbutton.OverlayIconButton
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
@@ -49,12 +47,8 @@ import kotlin.math.roundToLong
 
 private const val AUTO_TEMPERATURE = 5_000f
 
-private const val POP_SCALE = 0.8f
-
 private val RESET_BUTTON_SIZE = 48.dp
 private val RESET_BUTTON_GAP = 8.dp
-private val POP_IN = fadeIn() + scaleIn(initialScale = POP_SCALE)
-private val POP_OUT = fadeOut() + scaleOut(targetScale = POP_SCALE)
 
 private val EXPOSURE_RANGE = -12f..12f
 private const val EXPOSURE_STEPS = 23
