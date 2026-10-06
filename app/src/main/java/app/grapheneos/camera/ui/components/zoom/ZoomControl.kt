@@ -2,9 +2,6 @@ package app.grapheneos.camera.ui.components.zoom
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,8 +28,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.motion.FADE_IN
+import app.grapheneos.camera.ui.components.motion.HIDE_AT_ONCE
 import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
-import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.ruler.RULER_SIZE
@@ -167,9 +165,7 @@ private fun ZoomControlLayers(
         AnimatedContent(
             targetState = expanded,
             transitionSpec = {
-                fadeIn(animationSpec = SETTLE_SPEC) togetherWith
-                    fadeOut(animationSpec = snap()) using
-                    SizeTransform { _, _ -> SETTLE_SIZE_SPEC }
+                FADE_IN togetherWith HIDE_AT_ONCE using SizeTransform { _, _ -> SETTLE_SIZE_SPEC }
             },
             contentAlignment = Alignment.Center,
         ) { isExpanded ->
