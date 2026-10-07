@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.screenshot)
 }
 
 detekt {
@@ -45,7 +46,7 @@ fun addOwnClassesToDetektClasspath(
 
 // Only the variants `check` gates on below. The plugin's other detekt tasks analyse a source set
 // at a time without types and have no compilation to take a classpath from.
-listOf("Debug", "DebugUnitTest", "DebugAndroidTest").forEach { variantName ->
+listOf("Debug", "DebugUnitTest", "DebugAndroidTest", "DebugScreenshotTest").forEach { variantName ->
     tasks
         .withType<Detekt>()
         .matching { it.name == "detekt$variantName" }
@@ -69,6 +70,8 @@ tasks.named("check") {
         tasks.named("detektDebug"),
         tasks.named("detektDebugUnitTest"),
         tasks.named("detektDebugAndroidTest"),
+        tasks.named("detektDebugScreenshotTest"),
+        tasks.named("validateDebugScreenshotTest"),
     )
 }
 
@@ -117,6 +120,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     buildTypes {
         getByName("release") {
@@ -228,5 +233,11 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.mockk.agent)
     androidTestImplementation(libs.mockk.android)
+    // endregion
+
+    // region Screenshot tests
+    screenshotTestImplementation(platform(libs.androidx.compose.bom))
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+    screenshotTestImplementation(libs.screenshot.validation.api)
     // endregion
 }

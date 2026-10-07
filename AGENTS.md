@@ -124,6 +124,10 @@ verify against `.dev` — verifying against the stock package makes a working ch
 |------------------|------------------------|--------------------------------------------|:------:|
 | **Instrumented** | `app/src/androidTest/` | `./gradlew :app:connectedDebugAndroidTest` |  yes   |
 | **Unit**         | `app/src/test/`        | `./gradlew :app:testDebugUnitTest`         |   no   |
+| **Screenshot**   | `app/src/screenshotTest/` | `./gradlew :app:validateDebugScreenshotTest` | no |
+
+Screenshot tests are `@PreviewTest` previews rendered by layoutlib; references live in
+`app/src/screenshotTestDebug/reference/` and are rewritten by `./gradlew :app:updateDebugScreenshotTest`.
 
 The instrumented tests are Espresso/UiAutomator against the View hierarchy.
 **Each one encodes a real incident** — video double-start crashes, SAF grant `SecurityException`s,
