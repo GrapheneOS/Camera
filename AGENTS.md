@@ -128,6 +128,10 @@ verify against `.dev` — verifying against the stock package makes a working ch
 
 Screenshot tests are `@PreviewTest` previews rendered by layoutlib; references live in
 `app/src/screenshotTestDebug/reference/` and are rewritten by `./gradlew :app:updateDebugScreenshotTest`.
+References are recorded on CI (Linux). On macOS, add
+`screenshotTest.imageDifferenceThreshold=0.015` to `~/.gradle/gradle.properties`. If CI fails on
+screenshot tests after a visual change, unzip the run's `screenshot-references` artifact into
+`app/src/screenshotTestDebug/reference/`.
 
 The instrumented tests are Espresso/UiAutomator against the View hierarchy.
 **Each one encodes a real incident** — video double-start crashes, SAF grant `SecurityException`s,
