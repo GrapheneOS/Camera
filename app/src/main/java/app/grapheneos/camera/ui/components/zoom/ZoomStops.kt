@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.TextUnit
@@ -33,6 +34,7 @@ import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.pillselector.PillSelector
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorItemScope
+import app.grapheneos.camera.ui.components.text.inkCenteringOffsetY
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.TABULAR_FIGURES
 
@@ -109,6 +111,15 @@ private fun ZoomStopLabel(
     scope: PillSelectorItemScope,
 ) {
     val rotation = LocalContentRotation.current
+    val textMeasurer = rememberTextMeasurer()
+    val inkOffsetY = remember(text, style, textMeasurer) {
+        textMeasurer
+            .measure(
+                text = text,
+                style = style,
+            )
+            .inkCenteringOffsetY()
+    }
 
     Box(
         modifier = Modifier
@@ -134,6 +145,7 @@ private fun ZoomStopLabel(
                     scaleY = scale
                     rotationZ = rotation()
                 }
+                .graphicsLayer { translationY = inkOffsetY }
                 .clearAndSetSemantics {},
             style = style,
             softWrap = false,

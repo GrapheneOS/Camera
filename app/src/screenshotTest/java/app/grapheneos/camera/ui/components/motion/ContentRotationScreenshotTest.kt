@@ -1,11 +1,14 @@
 package app.grapheneos.camera.ui.components.motion
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.adjustmentbar.AdjustmentBar
@@ -18,6 +21,7 @@ import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.squarebutton.SquareMarkButton
 import app.grapheneos.camera.ui.components.squarebutton.model.SquareButtonMark
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
+import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.components.zoom.ZoomStops
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
@@ -28,6 +32,7 @@ import app.grapheneos.camera.ui.core.PREVIEW_PHOTO_CAMERA_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_VIDEOCAM_ICON
+import app.grapheneos.camera.ui.core.cameraColors
 import app.grapheneos.camera.ui.core.previewShot
 import com.android.tools.screenshot.PreviewTest
 
@@ -58,7 +63,7 @@ private fun ContentRotationThreeQuarterTurn() {
 
 @Composable
 private fun RotatedComponents(degrees: Float) {
-    CameraPreviewColumn(darkTheme = true) {
+    CameraPreviewColumn {
         ProvideContentRotation(degrees = degrees) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(space = 16.dp),
@@ -66,6 +71,7 @@ private fun RotatedComponents(degrees: Float) {
             ) {
                 RotatedButtons()
                 RotatedSelectors()
+                RotatedChips()
                 AdjustmentBar(
                     value = 0f,
                     onValueChange = {},
@@ -131,6 +137,23 @@ private fun RotatedSelectors() {
             selectedIndex = 0,
             onOptionSelected = {},
         )
-        CountDownTimer(value = 3)
+        CountDownTimer(
+            value = 3,
+            modifier = Modifier.background(
+                color = MaterialTheme.cameraColors.overlayScrim,
+                shape = MaterialTheme.shapes.large,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun RotatedChips() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ValueChip(text = "0")
+        ValueChip(text = "3968K")
     }
 }

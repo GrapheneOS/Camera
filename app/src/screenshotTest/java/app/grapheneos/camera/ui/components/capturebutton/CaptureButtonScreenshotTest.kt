@@ -34,35 +34,37 @@ private val HOLD_TARGET = CaptureButtonTarget(
 @PreviewLightDark
 @Composable
 private fun CaptureButtonCores() {
-    CaptureButtonFlow {
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Dot,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Square,
-            tone = ShutterTone.Recording,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Dot,
-            tone = ShutterTone.Recording,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.None,
-            icon = PREVIEW_CLOSE_ICON,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-            icon = PREVIEW_CLOSE_ICON,
-        )
+    CameraPreviewColumn {
+        CaptureButtonFlow {
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Dot,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Square,
+                tone = ShutterTone.Recording,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Dot,
+                tone = ShutterTone.Recording,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.None,
+                icon = PREVIEW_CLOSE_ICON,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+                icon = PREVIEW_CLOSE_ICON,
+            )
+        }
     }
 }
 
@@ -70,23 +72,25 @@ private fun CaptureButtonCores() {
 @PreviewLightDark
 @Composable
 private fun CaptureButtonSizes() {
-    CaptureButtonFlow {
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-            enabled = false,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-            size = CaptureButtonSize.Small,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-            size = CaptureButtonSize.Small,
-            enabled = false,
-        )
+    CameraPreviewColumn {
+        CaptureButtonFlow {
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+                enabled = false,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+                size = CaptureButtonSize.Small,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+                size = CaptureButtonSize.Small,
+                enabled = false,
+            )
+        }
     }
 }
 
@@ -94,35 +98,37 @@ private fun CaptureButtonSizes() {
 @PreviewLightDark
 @Composable
 private fun CaptureButtonProgress() {
-    CaptureButtonFlow {
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-            progress = RingProgress.Indeterminate,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.Disc,
-            progress = RingProgress.Determinate(fraction = { 0.6f }),
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.None,
-            progress = RingProgress.Segmented(
-                segments = 10,
-                fraction = { 0.7f },
-            ),
-            icon = PREVIEW_CLOSE_ICON,
-        )
-        CaptureButton(
-            onClick = {},
-            core = ShutterCore.None,
-            progress = RingProgress.Segmented(
-                segments = 3,
-                fraction = { 2f / 3 },
-            ),
-            icon = PREVIEW_CLOSE_ICON,
-        )
+    CameraPreviewColumn {
+        CaptureButtonFlow {
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+                progress = RingProgress.Indeterminate,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.Disc,
+                progress = RingProgress.Determinate(fraction = { 0.6f }),
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.None,
+                progress = RingProgress.Segmented(
+                    segments = 10,
+                    fraction = { 0.7f },
+                ),
+                icon = PREVIEW_CLOSE_ICON,
+            )
+            CaptureButton(
+                onClick = {},
+                core = ShutterCore.None,
+                progress = RingProgress.Segmented(
+                    segments = 3,
+                    fraction = { 2f / 3 },
+                ),
+                icon = PREVIEW_CLOSE_ICON,
+            )
+        }
     }
 }
 
@@ -145,13 +151,11 @@ private fun CaptureButtonHold() {
 private fun CaptureButtonFlow(
     content: @Composable () -> Unit,
 ) {
-    CameraPreviewColumn {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(space = 16.dp),
-        ) {
-            content()
-        }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(space = 16.dp),
+    ) {
+        content()
     }
 }
 

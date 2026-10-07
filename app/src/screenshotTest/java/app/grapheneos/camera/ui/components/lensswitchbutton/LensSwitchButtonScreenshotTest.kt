@@ -15,7 +15,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 private fun LensSwitchButtonOverImage() {
     CameraPreviewColumn {
-        LensSwitchButtonStates(colors = SquareButtonColors.fromTheme())
+        LensSwitchButtonRow(colors = SquareButtonColors.fromTheme())
     }
 }
 
@@ -24,12 +24,12 @@ private fun LensSwitchButtonOverImage() {
 @Composable
 private fun LensSwitchButtonOnSurface() {
     CameraPreviewColumn {
-        LensSwitchButtonStates(colors = SquareButtonColors.fromSurfaceTheme())
+        LensSwitchButtonRow(colors = SquareButtonColors.fromSurfaceTheme())
     }
 }
 
 @Composable
-private fun LensSwitchButtonStates(
+private fun LensSwitchButtonRow(
     colors: SquareButtonColors,
 ) {
     Row(

@@ -8,6 +8,9 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import com.android.tools.screenshot.PreviewTest
 
+private val THREE_STOPS = listOf(0.5f, 1f, 2f)
+private val THREE_STOPS_RANGE = 0.5f..8f
+
 @PreviewTest
 @PreviewLightDark
 @Composable
@@ -16,9 +19,9 @@ private fun ZoomControlStates() {
         Column(
             verticalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
-            ZoomControlState(expanded = false)
-            ZoomControlState(expanded = true)
-            ZoomControlState(
+            ThreeStopZoomControl(expanded = false)
+            ThreeStopZoomControl(expanded = true)
+            ThreeStopZoomControl(
                 expanded = false,
                 enabled = false,
             )
@@ -27,15 +30,15 @@ private fun ZoomControlStates() {
 }
 
 @Composable
-private fun ZoomControlState(
+private fun ThreeStopZoomControl(
     expanded: Boolean,
     enabled: Boolean = true,
 ) {
     ZoomControl(
         value = 1.4f,
         onValueChange = {},
-        valueRange = 0.5f..8f,
-        stops = listOf(0.5f, 1f, 2f),
+        valueRange = THREE_STOPS_RANGE,
+        stops = THREE_STOPS,
         valueSuffix = "×",
         expanded = expanded,
         onExpand = {},
