@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <baseline version="1.0">
     <file name="build.gradle.kts">
-        <error line="130" column="27" source="standard:argument-list-wrapping" />
-        <error line="130" column="50" source="standard:argument-list-wrapping" />
-        <error line="130" column="81" source="standard:argument-list-wrapping" />
-        <error line="130" column="84" source="standard:argument-list-wrapping" />
-        <error line="130" column="101" source="standard:max-line-length" />
-        <error line="130" column="104" source="standard:argument-list-wrapping" />
+        <error line="142" column="27" source="standard:argument-list-wrapping" />
+        <error line="142" column="50" source="standard:argument-list-wrapping" />
+        <error line="142" column="81" source="standard:argument-list-wrapping" />
+        <error line="142" column="84" source="standard:argument-list-wrapping" />
+        <error line="142" column="101" source="standard:max-line-length" />
+        <error line="142" column="104" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/androidTest/java/app/grapheneos/camera/BottomTabLayoutRegressionTest.kt">
         <error line="67" column="28" source="standard:argument-list-wrapping" />

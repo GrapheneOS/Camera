@@ -1,3 +1,4 @@
+import com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask
 import dev.detekt.gradle.Detekt
 import dev.detekt.gradle.DetektCreateBaselineTask
 import java.io.FileInputStream
@@ -77,6 +78,17 @@ tasks.named("check") {
 
 tasks.named("detekt") {
     enabled = false
+}
+
+// References are recorded on Linux; other platforms render slightly differently.
+// The screenshot plugin exposes the threshold only on its tasks.
+val screenshotThreshold = providers
+    .gradleProperty("screenshotTest.imageDifferenceThreshold")
+    .map { it.toFloat() }
+    .orElse(0f)
+
+tasks.withType<PreviewScreenshotValidationTask>().configureEach {
+    testEngineInput.threshold.set(screenshotThreshold)
 }
 
 java {
