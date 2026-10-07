@@ -12,12 +12,21 @@ import app.grapheneos.camera.ui.core.cameraColors
 internal data class ShutterCoreColors(
     val neutralColor: Color,
     val recordingColor: Color,
+    val onNeutralColor: Color,
+    val onRecordingColor: Color,
 ) {
 
     internal fun color(tone: ShutterTone): Color {
         return when (tone) {
             ShutterTone.Neutral -> neutralColor
             ShutterTone.Recording -> recordingColor
+        }
+    }
+
+    internal fun contentColor(tone: ShutterTone): Color {
+        return when (tone) {
+            ShutterTone.Neutral -> onNeutralColor
+            ShutterTone.Recording -> onRecordingColor
         }
     }
 
@@ -30,6 +39,8 @@ internal data class ShutterCoreColors(
             return ShutterCoreColors(
                 neutralColor = cameraColors.overlay,
                 recordingColor = cameraColors.recording,
+                onNeutralColor = cameraColors.onOverlay,
+                onRecordingColor = cameraColors.overlay,
             )
         }
     }

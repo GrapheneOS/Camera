@@ -139,11 +139,12 @@ private fun CaptureButtonLayers(
         isHeld = holdState.isHeld,
         isFocused = isFocused,
         hasProgress = progress != RingProgress.None,
-        coreColor = colors.core.color(tone),
+        coreColor = colors.coreColors.color(tone),
         containerColor = colors.containerColor,
         focusColor = colors.focusColor,
         pull = pull,
         dockProgress = holdDockProgress(pull = pull, targets = holdTargets),
+        rotation = rotation,
         modifier = Modifier.fillMaxSize(),
     )
     CaptureButtonProgressIndicator(
@@ -156,7 +157,10 @@ private fun CaptureButtonLayers(
         icon = icon,
         isPressed = isPressed,
         isHeld = holdState.isHeld,
-        tint = colors.contentColor(core),
+        tint = colors.contentColor(
+            core = core,
+            tone = tone,
+        ),
         pull = pull,
         rotation = rotation,
     )

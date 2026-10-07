@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
@@ -30,6 +31,7 @@ internal fun CaptureButtonFace(
     focusColor: Color,
     pull: () -> Offset,
     dockProgress: () -> Float,
+    rotation: () -> Float,
     modifier: Modifier = Modifier,
 ) {
     val shape = animateShutterCoreShape(core = core)
@@ -69,11 +71,13 @@ internal fun CaptureButtonFace(
             left = pull().x,
             top = pull().y,
         ) {
-            drawShutterCore(
-                color = animatedCoreColor,
-                coreSize = coreSize,
-                cornerFraction = shape.cornerFraction,
-            )
+            rotate(degrees = rotation()) {
+                drawShutterCore(
+                    color = animatedCoreColor,
+                    coreSize = coreSize,
+                    cornerFraction = shape.cornerFraction,
+                )
+            }
         }
         if (isFocused) {
             drawFocusRing(color = focusColor)
