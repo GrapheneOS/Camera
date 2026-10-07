@@ -15,7 +15,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 private fun SquareButtonOverImage() {
     CameraPreviewColumn {
-        SquareButtonStates(colors = SquareButtonColors.fromTheme())
+        SquareButtonRow(colors = SquareButtonColors.fromTheme())
     }
 }
 
@@ -24,12 +24,12 @@ private fun SquareButtonOverImage() {
 @Composable
 private fun SquareButtonOnSurface() {
     CameraPreviewColumn {
-        SquareButtonStates(colors = SquareButtonColors.fromSurfaceTheme())
+        SquareButtonRow(colors = SquareButtonColors.fromSurfaceTheme())
     }
 }
 
 @Composable
-private fun SquareButtonStates(
+private fun SquareButtonRow(
     colors: SquareButtonColors,
 ) {
     Row(

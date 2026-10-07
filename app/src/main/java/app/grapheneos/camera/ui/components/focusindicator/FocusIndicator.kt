@@ -60,7 +60,8 @@ internal fun FocusIndicator(
     modifier: Modifier = Modifier,
     colors: FocusIndicatorColors = FocusIndicatorColors.fromTheme(),
 ) {
-    val visibility = remember { MutableTransitionState(initialState = false) }
+    val isInspecting = LocalInspectionMode.current
+    val visibility = remember { MutableTransitionState(initialState = isInspecting && visible) }
     visibility.targetState = visible
 
     Box(modifier = modifier.size(size = FOCUS_INDICATOR_SIZE)) {
@@ -160,10 +161,10 @@ private fun FocusIndicatorPreview() {
                 horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
             ) {
                 FocusIndicatorAppearance.entries.forEach { appearance ->
-                    FocusIndicatorLayers(
+                    FocusIndicator(
+                        visible = true,
                         appearance = appearance,
                         lockIcon = PREVIEW_LOCK_ICON,
-                        colors = FocusIndicatorColors.fromTheme(),
                     )
                 }
             }

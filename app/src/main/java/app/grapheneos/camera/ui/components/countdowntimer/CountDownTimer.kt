@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
+import app.grapheneos.camera.ui.components.text.inkBounds
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import app.grapheneos.camera.ui.core.cameraColors
 import kotlin.math.max
@@ -76,15 +77,17 @@ private fun CountDownTimerText(
         fontSize = with(density) { FONT_SIZE.toSp() },
     )
     val strokes = remember(emSize) { CountDownTimerStrokes(emSize = emSize) }
-    val inkBounds = remember(layout) {
-        layout.getPathForRange(start = 0, end = text.length).getBounds()
-    }
+    val inkBounds = remember(layout) { layout.inkBounds() }
     val naturalSize = remember(layout, inkBounds, emSize) {
         val maxStrokeWidth = CountDownTimerStrokes.width(boldness = MAX_BOLDNESS) * emSize
+        val side = max(
+            max(layout.size.width.toFloat(), inkBounds.width) + maxStrokeWidth,
+            max(layout.size.height.toFloat(), inkBounds.height + maxStrokeWidth),
+        )
 
         Size(
-            width = max(layout.size.width.toFloat(), inkBounds.width) + maxStrokeWidth,
-            height = max(layout.size.height.toFloat(), inkBounds.height + maxStrokeWidth),
+            width = side,
+            height = side,
         )
     }
     val color = colors.contentColor
@@ -202,7 +205,7 @@ private fun CountDownTimerPreview() {
     }
 }
 
-@Preview(name = "Arabic", locale = "ar")
+@Preview(name = "Arabic", locale = "ar-rEG")
 @Preview(name = "Persian", locale = "fa")
 @Preview(name = "Marathi", locale = "mr")
 @Composable

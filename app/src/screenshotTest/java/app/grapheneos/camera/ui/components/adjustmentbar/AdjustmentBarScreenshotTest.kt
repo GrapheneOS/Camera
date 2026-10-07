@@ -25,10 +25,10 @@ private fun AdjustmentBarValues() {
 @PreviewTest
 @Preview(
     name = "Arabic",
-    locale = "ar",
+    locale = "ar-rEG",
 )
 @Composable
-private fun AdjustmentBarRightToLeft() {
+private fun AdjustmentBarLayouts() {
     CameraPreviewColumn {
         AdjustmentBarColumn()
     }
