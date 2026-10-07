@@ -19,11 +19,15 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 private fun CountDownTimerValues() {
     CameraPreviewColumn {
-        CountDownTimerRow()
+        CountDownTimerFlow()
     }
 }
 
 @PreviewTest
+@Preview(
+    name = "Arabic",
+    locale = "ar-rEG",
+)
 @Preview(
     name = "Persian",
     locale = "fa",
@@ -33,14 +37,14 @@ private fun CountDownTimerValues() {
     locale = "mr",
 )
 @Composable
-private fun CountDownTimerNumerals() {
-    CameraPreviewColumn(darkTheme = true) {
-        CountDownTimerRow()
+private fun CountDownTimerLayouts() {
+    CameraPreviewColumn {
+        CountDownTimerFlow()
     }
 }
 
 @Composable
-private fun CountDownTimerRow() {
+private fun CountDownTimerFlow() {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(space = 16.dp),
         verticalArrangement = Arrangement.spacedBy(space = 16.dp),

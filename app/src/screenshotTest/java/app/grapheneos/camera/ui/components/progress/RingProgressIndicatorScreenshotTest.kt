@@ -18,7 +18,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 private fun RingProgressIndicatorCircle() {
     CameraPreviewColumn {
-        RingProgressIndicatorKinds(shape = CircleShape)
+        RingProgressIndicatorFlow(shape = CircleShape)
     }
 }
 
@@ -27,12 +27,12 @@ private fun RingProgressIndicatorCircle() {
 @Composable
 private fun RingProgressIndicatorRoundedSquare() {
     CameraPreviewColumn {
-        RingProgressIndicatorKinds(shape = SQUARE_BUTTON_SHAPE)
+        RingProgressIndicatorFlow(shape = SQUARE_BUTTON_SHAPE)
     }
 }
 
 @Composable
-private fun RingProgressIndicatorKinds(
+private fun RingProgressIndicatorFlow(
     shape: CornerBasedShape,
 ) {
     FlowRow(

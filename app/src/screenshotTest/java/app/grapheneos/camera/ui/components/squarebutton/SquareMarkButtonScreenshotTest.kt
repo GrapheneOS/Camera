@@ -25,7 +25,7 @@ private val RESUME = SquareButtonMark.Core(
 @Composable
 private fun SquareMarkButtonOverImage() {
     CameraPreviewColumn {
-        SquareMarkButtonMarks(colors = SquareButtonColors.fromTheme())
+        SquareMarkButtonRow(colors = SquareButtonColors.fromTheme())
     }
 }
 
@@ -34,12 +34,12 @@ private fun SquareMarkButtonOverImage() {
 @Composable
 private fun SquareMarkButtonOnSurface() {
     CameraPreviewColumn {
-        SquareMarkButtonMarks(colors = SquareButtonColors.fromSurfaceTheme())
+        SquareMarkButtonRow(colors = SquareButtonColors.fromSurfaceTheme())
     }
 }
 
 @Composable
-private fun SquareMarkButtonMarks(
+private fun SquareMarkButtonRow(
     colors: SquareButtonColors,
 ) {
     Row(

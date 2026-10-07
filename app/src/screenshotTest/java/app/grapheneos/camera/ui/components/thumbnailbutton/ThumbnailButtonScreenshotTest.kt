@@ -18,7 +18,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 private fun ThumbnailButtonOverImage() {
     CameraPreviewColumn {
-        ThumbnailButtonStates(colors = ThumbnailButtonColors.fromTheme())
+        ThumbnailButtonFlow(colors = ThumbnailButtonColors.fromTheme())
     }
 }
 
@@ -27,12 +27,12 @@ private fun ThumbnailButtonOverImage() {
 @Composable
 private fun ThumbnailButtonOnSurface() {
     CameraPreviewColumn {
-        ThumbnailButtonStates(colors = ThumbnailButtonColors.fromSurfaceTheme())
+        ThumbnailButtonFlow(colors = ThumbnailButtonColors.fromSurfaceTheme())
     }
 }
 
 @Composable
-private fun ThumbnailButtonStates(
+private fun ThumbnailButtonFlow(
     colors: ThumbnailButtonColors,
 ) {
     val shot = remember {

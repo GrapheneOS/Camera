@@ -31,7 +31,7 @@ private fun ModeSelectorStates() {
 @PreviewTest
 @Preview(
     name = "Arabic",
-    locale = "ar",
+    locale = "ar-rEG",
 )
 @Preview(
     name = "LargeFont",

@@ -16,8 +16,16 @@ import app.grapheneos.camera.ui.components.pillselector.model.PillSelectorSpacin
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import com.android.tools.screenshot.PreviewTest
 
-private val TEXT_LABELS = listOf("Portrait", "Photo", "Night Sight")
-private val LETTER_LABELS = listOf("A", "B", "C")
+private val TEXT_LABELS = listOf(
+    "Portrait",
+    "Photo",
+    "Night Sight",
+)
+private val LETTER_LABELS = listOf(
+    "A",
+    "B",
+    "C",
+)
 
 @PreviewTest
 @PreviewLightDark

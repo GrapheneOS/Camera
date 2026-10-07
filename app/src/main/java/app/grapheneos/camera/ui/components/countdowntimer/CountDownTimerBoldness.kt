@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalInspectionMode
 import app.grapheneos.camera.ui.components.motion.PUNCH_SPEC
 import kotlin.math.min
 
@@ -18,10 +19,22 @@ internal const val MAX_BOLDNESS = 1.2f
 
 /** One timeline for both phases, so the animator duration scale stretches them together. */
 @Stable
-internal class CountDownTimerBoldness {
+internal class CountDownTimerBoldness(
+    startsPunched: Boolean = false,
+) {
 
-    private val elapsedMillis = Animatable(initialValue = SECOND_MILLIS)
-    private var startBoldness by mutableFloatStateOf(0f)
+    private val elapsedMillis = Animatable(
+        initialValue = when {
+            startsPunched -> 0f
+            else -> SECOND_MILLIS
+        },
+    )
+    private var startBoldness by mutableFloatStateOf(
+        when {
+            startsPunched -> 1f
+            else -> 0f
+        },
+    )
 
     val value: Float
         get() {
@@ -76,7 +89,8 @@ internal class CountDownTimerBoldness {
 
 @Composable
 internal fun rememberCountDownTimerBoldness(value: Int): CountDownTimerBoldness {
-    val boldness = remember { CountDownTimerBoldness() }
+    val isInspecting = LocalInspectionMode.current
+    val boldness = remember { CountDownTimerBoldness(startsPunched = isInspecting) }
 
     LaunchedEffect(boldness, value) {
         boldness.punch()

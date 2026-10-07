@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import com.android.tools.screenshot.PreviewTest
 
@@ -20,34 +19,14 @@ private fun ValueChipTexts() {
 }
 
 @PreviewTest
-@Preview(fontScale = 2f)
+@Preview(
+    name = "LargeFont",
+    fontScale = 2f,
+)
 @Composable
-private fun ValueChipLargeFont() {
+private fun ValueChipLayouts() {
     CameraPreviewColumn {
         ValueChipRow()
-    }
-}
-
-@PreviewTest
-@PreviewLightDark
-@Composable
-private fun ValueChipRecording() {
-    CameraPreviewColumn {
-        ValueChip(
-            text = "00:01",
-            colors = ValueChipColors.fromRecordingTheme(),
-        )
-    }
-}
-
-@PreviewTest
-@Preview
-@Composable
-private fun ValueChipQuarterTurn() {
-    CameraPreviewColumn {
-        ProvideContentRotation(degrees = 90f) {
-            ValueChipRow()
-        }
     }
 }
 

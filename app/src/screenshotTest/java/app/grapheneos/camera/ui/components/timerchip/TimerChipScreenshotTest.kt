@@ -24,7 +24,7 @@ private fun TimerChipDurations() {
 @PreviewTest
 @Preview(
     name = "Arabic",
-    locale = "ar",
+    locale = "ar-rEG",
 )
 @Preview(
     name = "Persian",
@@ -35,7 +35,7 @@ private fun TimerChipDurations() {
     fontScale = 2f,
 )
 @Composable
-private fun TimerChipLocales() {
+private fun TimerChipLayouts() {
     CameraPreviewColumn {
         TimerChipColumn()
     }

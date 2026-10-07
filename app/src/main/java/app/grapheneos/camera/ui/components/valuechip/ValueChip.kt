@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -25,6 +26,8 @@ import app.grapheneos.camera.ui.core.TABULAR_FIGURES
 private val CHIP_HEIGHT = 32.dp
 private val CHIP_MIN_WIDTH = 52.dp
 private val CHIP_PADDING = 12.dp
+private val LABEL_SIZE = 14.dp
+private val LABEL_LINE_HEIGHT = 20.dp
 
 @Composable
 internal fun ValueChip(
@@ -50,8 +53,11 @@ internal fun ValueChip(
     colors: ValueChipColors = ValueChipColors.fromTheme(),
     content: @Composable RowScope.(textStyle: TextStyle) -> Unit,
 ) {
+    val density = LocalDensity.current
     val textStyle = MaterialTheme.typography.labelLarge.copy(
         color = colors.contentColor,
+        fontSize = with(density) { LABEL_SIZE.toSp() },
+        lineHeight = with(density) { LABEL_LINE_HEIGHT.toSp() },
         fontFeatureSettings = TABULAR_FIGURES,
     )
 

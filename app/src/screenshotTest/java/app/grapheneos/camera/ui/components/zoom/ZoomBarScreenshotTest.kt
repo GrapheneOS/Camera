@@ -9,8 +9,10 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.CameraPreviewColumn
 import com.android.tools.screenshot.PreviewTest
 
-private val RANGE = 0.5f..8f
-private val STOPS = listOf(0.5f, 1f, 2f, 8f)
+private val FOUR_STOPS = listOf(0.5f, 1f, 2f, 8f)
+private val FOUR_STOPS_RANGE = 0.5f..8f
+private val FIVE_STOPS = listOf(0.5f, 1f, 2f, 5f, 10f)
+private val FIVE_STOPS_RANGE = 0.5f..10f
 
 @PreviewTest
 @PreviewLightDark
@@ -26,8 +28,12 @@ private fun ZoomBarValues() {
     name = "Persian",
     locale = "fa",
 )
+@Preview(
+    name = "LargeFont",
+    fontScale = 2f,
+)
 @Composable
-private fun ZoomBarNumerals() {
+private fun ZoomBarLayouts() {
     CameraPreviewColumn {
         ZoomBarColumn()
     }
@@ -42,21 +48,21 @@ private fun ZoomBarColumn() {
             ZoomBar(
                 value = value,
                 onValueChange = {},
-                valueRange = RANGE,
-                stops = STOPS,
+                valueRange = FOUR_STOPS_RANGE,
+                stops = FOUR_STOPS,
             )
         }
         ZoomBar(
             value = 5f,
             onValueChange = {},
-            valueRange = 0.5f..10f,
-            stops = listOf(0.5f, 1f, 2f, 5f, 10f),
+            valueRange = FIVE_STOPS_RANGE,
+            stops = FIVE_STOPS,
         )
         ZoomBar(
             value = 1f,
             onValueChange = {},
-            valueRange = RANGE,
-            stops = STOPS,
+            valueRange = FOUR_STOPS_RANGE,
+            stops = FOUR_STOPS,
             enabled = false,
         )
     }
