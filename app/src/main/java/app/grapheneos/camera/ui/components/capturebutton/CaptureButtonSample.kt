@@ -22,6 +22,7 @@ import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
+import app.grapheneos.camera.ui.components.zoom.rememberZoomFormat
 import app.grapheneos.camera.ui.core.CameraPreviewControl
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
@@ -29,7 +30,6 @@ import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
 import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
 import app.grapheneos.camera.ui.core.PreviewCountdown
 import app.grapheneos.camera.ui.core.PreviewRotation
-import java.util.Locale
 
 private const val TIMER_SECONDS = 3
 private const val ZOOM_DRAG_PX = 400f
@@ -58,11 +58,12 @@ private fun CaptureButtonSamplePreview() {
 @Composable
 private fun CaptureButtonSample() {
     val state = remember { CaptureButtonSampleState() }
+    val zoomLabel = rememberZoomFormat().format(value = state.zoom)
 
     state.countdown.Effect(onFinished = state::finishCountdown)
 
     CameraPreviewSample(
-        status = "Zoom ${"%.1f".format(Locale.ROOT, state.zoom)}×, ${state.recording}",
+        status = "Zoom $zoomLabel×, ${state.recording}",
         controls = {
             CameraPreviewControl(
                 text = state.modeLabel,
