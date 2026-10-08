@@ -24,17 +24,28 @@ internal class LevelIndicatorLabels(
     private val textMeasurer: TextMeasurer,
     private val style: TextStyle,
     private val numberFormat: NumberFormat,
+    private val shadow: Shadow,
 ) {
 
     private val labels = HashMap<Int, CenteredText>()
 
+    fun shadow(alpha: Float): Shadow {
+        return when {
+            alpha >= 1f -> shadow
+            else -> shadow.copy(color = shadow.color.copy(alpha = shadow.color.alpha * alpha))
+        }
+    }
+
     fun label(degrees: Int): CenteredText {
         return labels.getOrPut(degrees) {
+            val number = numberFormat.format(degrees.toLong())
+
             CenteredText(
                 layout = textMeasurer.measure(
-                    text = numberFormat.format(degrees.toLong()) + DEGREE_SIGN,
+                    text = number + DEGREE_SIGN,
                     style = style,
                 ),
+                centeredLength = number.length,
             )
         }
     }
@@ -56,17 +67,17 @@ internal fun rememberLevelIndicatorLabels(
     val style = MaterialTheme.typography.labelMedium.copy(
         fontSize = with(density) { LABEL_SIZE.toSp() },
         fontFeatureSettings = TABULAR_FIGURES,
-        shadow = Shadow(
-            color = shadowColor,
-            blurRadius = shadowRadiusPx,
-        ),
     )
 
-    return remember(textMeasurer, locale, style) {
+    return remember(textMeasurer, locale, style, shadowColor, shadowRadiusPx) {
         LevelIndicatorLabels(
             textMeasurer = textMeasurer,
             style = style,
             numberFormat = NumberFormat.getIntegerInstance(locale),
+            shadow = Shadow(
+                color = shadowColor,
+                blurRadius = shadowRadiusPx,
+            ),
         )
     }
 }

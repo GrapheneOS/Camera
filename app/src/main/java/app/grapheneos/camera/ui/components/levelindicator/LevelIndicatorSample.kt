@@ -1,30 +1,37 @@
 package app.grapheneos.camera.ui.components.levelindicator
 
 import android.icu.text.NumberFormat
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.components.adjustmentbar.AdjustmentBar
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
-import app.grapheneos.camera.ui.core.CameraPreviewControl
+import app.grapheneos.camera.ui.components.motion.rotateLayout
 import app.grapheneos.camera.ui.core.CameraPreviewSample
 import app.grapheneos.camera.ui.core.PreviewRotation
-import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.delay
 
-private val SAMPLE_ROLLS = listOf(22f, 6f, 1f, 0.3f, 0f)
-private val SAMPLE_PITCHES = listOf(0f, 0.6f, 10f, -10f)
-private val SHAKE_INTERVAL = 50.milliseconds
+private val ROLL_RANGE = -30f..30f
+private val PITCH_RANGE = -90f..90f
+
+private val BAR_PADDING = 16.dp
+
+private const val ROLL_STEPS = 59
+private const val PITCH_STEPS = 59
+private const val MAJOR_TICK_INTERVAL = 5
+private const val INITIAL_ROLL = 22f
+private const val VERTICAL_TURN = -90f
 
 @Preview(heightDp = 720)
 @Composable
@@ -43,29 +50,9 @@ private fun LevelIndicatorSample() {
         }
     }
 
-    LaunchedEffect(state.isShaking) {
-        while (state.isShaking) {
-            state.shake()
-            delay(SHAKE_INTERVAL)
-        }
-        state.steady()
-    }
-
     CameraPreviewSample(
-        status = state.status,
+        status = "Roll ${degrees.format(state.roll)}°, pitch ${degrees.format(state.pitch)}°",
         controls = {
-            CameraPreviewControl(
-                text = "Roll ${degrees.format(state.presetRoll)}°",
-                onClick = state::nextRoll,
-            )
-            CameraPreviewControl(
-                text = "Pitch ${degrees.format(state.presetPitch)}°",
-                onClick = state::nextPitch,
-            )
-            CameraPreviewControl(
-                text = state.shakeLabel,
-                onClick = state::switchShake,
-            )
             state.rotation.Control()
         },
     ) {
@@ -76,7 +63,35 @@ private fun LevelIndicatorSample() {
                 modifier = Modifier.align(Alignment.Center),
             )
         }
+        SampleBars(state = state)
     }
+}
+
+@Composable
+private fun BoxScope.SampleBars(state: LevelIndicatorSampleState) {
+    AdjustmentBar(
+        value = state.roll,
+        onValueChange = state::changeRoll,
+        valueRange = ROLL_RANGE,
+        steps = ROLL_STEPS,
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(all = BAR_PADDING)
+            .semantics { contentDescription = "Roll" },
+        majorTickInterval = MAJOR_TICK_INTERVAL,
+    )
+    AdjustmentBar(
+        value = state.pitch,
+        onValueChange = state::changePitch,
+        valueRange = PITCH_RANGE,
+        steps = PITCH_STEPS,
+        modifier = Modifier
+            .align(Alignment.CenterEnd)
+            .padding(all = BAR_PADDING)
+            .rotateLayout { VERTICAL_TURN }
+            .semantics { contentDescription = "Pitch" },
+        majorTickInterval = MAJOR_TICK_INTERVAL,
+    )
 }
 
 @Stable
@@ -84,82 +99,16 @@ private class LevelIndicatorSampleState {
 
     val rotation = PreviewRotation()
 
-    var isShaking by mutableStateOf(false)
+    var roll by mutableFloatStateOf(INITIAL_ROLL)
+        private set
+    var pitch by mutableFloatStateOf(0f)
         private set
 
-    private var rollIndex by mutableIntStateOf(0)
-    private var pitchIndex by mutableIntStateOf(0)
-    private var rollNoise by mutableFloatStateOf(0f)
-    private var pitchNoise by mutableFloatStateOf(0f)
-
-    val roll: Float
-        get() {
-            return presetRoll + rollNoise
-        }
-
-    val pitch: Float
-        get() {
-            return presetPitch + pitchNoise
-        }
-
-    val status: String
-        get() {
-            val zone = LevelZone.of(
-                roll = presetRoll,
-                pitch = presetPitch,
-            )
-
-            return when (zone) {
-                LevelZone.Level -> "Level: the lines meet, a tick plays"
-                else -> "Not level: turn and tilt until the lines meet"
-            }
-        }
-
-    val presetRoll: Float
-        get() {
-            return SAMPLE_ROLLS[rollIndex]
-        }
-
-    val presetPitch: Float
-        get() {
-            return SAMPLE_PITCHES[pitchIndex]
-        }
-
-    val shakeLabel: String
-        get() {
-            return when {
-                isShaking -> "Shaking"
-                else -> "Steady"
-            }
-        }
-
-    fun nextRoll() {
-        rollIndex = (rollIndex + 1) % SAMPLE_ROLLS.size
+    fun changeRoll(value: Float) {
+        roll = value
     }
 
-    fun nextPitch() {
-        pitchIndex = (pitchIndex + 1) % SAMPLE_PITCHES.size
-    }
-
-    fun switchShake() {
-        isShaking = !isShaking
-    }
-
-    fun shake() {
-        rollNoise = noise()
-        pitchNoise = noise()
-    }
-
-    fun steady() {
-        rollNoise = 0f
-        pitchNoise = 0f
-    }
-
-    private fun noise(): Float {
-        return (Random.nextFloat() * 2 - 1) * SHAKE_DEGREES
-    }
-
-    private companion object {
-        private const val SHAKE_DEGREES = 0.8f
+    fun changePitch(value: Float) {
+        pitch = value
     }
 }

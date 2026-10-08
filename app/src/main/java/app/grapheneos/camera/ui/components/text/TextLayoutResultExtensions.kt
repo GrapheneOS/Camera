@@ -24,6 +24,20 @@ internal fun TextLayoutResult.inkBounds(): Rect {
     )
 }
 
+internal fun TextLayoutResult.rangeCenterX(end: Int): Float {
+    var left = Float.MAX_VALUE
+    var right = -Float.MAX_VALUE
+
+    for (offset in 0 until end) {
+        val box = getBoundingBox(offset = offset)
+
+        left = minOf(left, box.left)
+        right = maxOf(right, box.right)
+    }
+
+    return (left + right) / 2f
+}
+
 internal fun TextLayoutResult.inkCenteringOffsetY(): Float {
     return size.height / 2f - inkBounds().center.y
 }
