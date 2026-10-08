@@ -38,6 +38,14 @@ private fun LevelIndicatorAngles() {
                     roll = { 0f },
                     pitch = { 0f },
                 )
+                LevelIndicator(
+                    roll = { 150f },
+                    pitch = { -70f },
+                )
+                LevelIndicator(
+                    roll = { 0f },
+                    pitch = { -90f },
+                )
             }
         }
     }
