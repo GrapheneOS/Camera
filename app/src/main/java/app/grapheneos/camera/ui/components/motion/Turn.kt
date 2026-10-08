@@ -5,6 +5,7 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.collectLatest
 private const val FULL_TURN = 360f
 private const val HALF_TURN = 180f
 
+/** From 170° to −170° it turns 20°, not 340°, and the angle it returns stays within ±180°. */
 @Composable
 internal fun animateTurn(
     degrees: () -> Float,
@@ -22,7 +24,7 @@ internal fun animateTurn(
 ): State<Float> {
     val currentDegrees by rememberUpdatedState(degrees)
     val turn = remember {
-        Animatable(initialValue = Snapshot.withoutReadObservation { degrees() })
+        Animatable(initialValue = Snapshot.withoutReadObservation(degrees))
     }
 
     LaunchedEffect(turn) {
@@ -37,7 +39,14 @@ internal fun animateTurn(
         }
     }
 
-    return turn.asState()
+    return remember(turn) {
+        derivedStateOf {
+            shortestTurn(
+                from = 0f,
+                to = turn.value,
+            )
+        }
+    }
 }
 
 internal fun shortestTurn(
