@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import app.grapheneos.camera.ui.components.motion.shortestTurn
 import app.grapheneos.camera.ui.components.text.drawCenteredText
 import kotlin.math.abs
 import kotlin.math.cos
@@ -71,11 +70,6 @@ private fun DrawScope.drawHorizonLevel(
         alpha = alpha,
     )
     rotate(degrees = motion.roll) {
-        val rollDegrees = shortestTurn(
-            from = 0f,
-            to = motion.roll,
-        )
-
         drawLevelLine(
             paint = paint,
             halfLength = lerp(
@@ -97,7 +91,7 @@ private fun DrawScope.drawHorizonLevel(
             alpha = alpha * (1f - motion.rollLevel * motion.pitchLevel),
         )
         drawCenteredText(
-            text = labels.label(degrees = abs(rollDegrees).roundToInt()),
+            text = labels.label(degrees = abs(motion.roll).roundToInt()),
             center = center - Offset(x = 0f, y = LABEL_OFFSET.toPx()),
             color = color,
             alpha = alpha,

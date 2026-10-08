@@ -13,6 +13,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
+import app.grapheneos.camera.ui.components.motion.animateFollow
 import app.grapheneos.camera.ui.components.motion.animateTurn
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -44,8 +45,8 @@ internal fun rememberLevelIndicatorMotion(
         degrees = roll,
         animationSpec = SETTLE_SPEC,
     )
-    val shownPitch = animateTurn(
-        degrees = pitch,
+    val shownPitch = animateFollow(
+        value = pitch,
         animationSpec = SETTLE_SPEC,
     )
     val rollLevel = animateLevelFraction { LevelZone.isRollLevel(roll = shownRoll.value) }
