@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -21,6 +20,8 @@ import app.grapheneos.camera.ui.components.ruler.drawRulerIndicator
 import app.grapheneos.camera.ui.components.ruler.drawRulerTicks
 import app.grapheneos.camera.ui.components.ruler.rulerMarkAlpha
 import app.grapheneos.camera.ui.components.ruler.rulerMarkX
+import app.grapheneos.camera.ui.components.text.CenteredText
+import app.grapheneos.camera.ui.components.text.drawCenteredText
 import kotlin.math.abs
 
 private const val SELECTED_LABEL_SCALE = 1.1f
@@ -32,7 +33,7 @@ private val LABEL_OFFSET = 12.dp
 internal fun DrawScope.drawZoomBar(
     position: Float,
     scale: ZoomBarScale,
-    labels: List<ZoomBarLabel>,
+    labels: List<CenteredText>,
     labelRotation: Float,
     window: RulerWindow,
     isFocused: Boolean,
@@ -84,13 +85,13 @@ internal fun rememberZoomBarLabels(
     marks: List<Float>,
     format: ZoomFormat,
     style: TextStyle,
-): List<ZoomBarLabel> {
+): List<CenteredText> {
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
 
     return remember(marks, format, style, textMeasurer, density) {
         marks.map { mark ->
-            ZoomBarLabel(
+            CenteredText(
                 layout = textMeasurer.measure(
                     text = format.format(value = mark),
                     style = style,
@@ -103,7 +104,7 @@ internal fun rememberZoomBarLabels(
 private fun DrawScope.drawLabels(
     position: Float,
     scale: ZoomBarScale,
-    labels: List<ZoomBarLabel>,
+    labels: List<CenteredText>,
     labelRotation: Float,
     window: RulerWindow,
     metrics: RulerMetrics,
@@ -151,13 +152,10 @@ private fun DrawScope.drawLabels(
                     )
                 },
             ) {
-                drawText(
-                    textLayoutResult = label.layout,
+                drawCenteredText(
+                    text = label,
+                    center = labelCenter,
                     color = colors.stopColor,
-                    topLeft = Offset(
-                        x = labelCenter.x - label.layout.size.width / 2f,
-                        y = labelCenter.y - label.layout.size.height / 2f + label.inkOffsetY,
-                    ),
                     alpha = alpha,
                 )
             }
