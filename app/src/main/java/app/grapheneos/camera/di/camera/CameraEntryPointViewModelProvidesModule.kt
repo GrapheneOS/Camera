@@ -1,8 +1,8 @@
 package app.grapheneos.camera.di.camera
 
 import androidx.lifecycle.SavedStateHandle
+import app.grapheneos.camera.di.core.cameraEntryPointOf
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +16,6 @@ internal class CameraEntryPointViewModelProvidesModule {
     @Provides
     @ViewModelScoped
     fun provideCameraEntryPoint(arguments: SavedStateHandle): CameraEntryPoint {
-        return ViewfinderViewModel.entryPoint(arguments)
+        return cameraEntryPointOf(arguments)
     }
 }
