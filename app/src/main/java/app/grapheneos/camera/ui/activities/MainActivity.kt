@@ -55,6 +55,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.data.sound.player.CameraSoundPlayer
 import app.grapheneos.camera.databinding.ActivityMainBinding
+import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.common.TunePlayer
@@ -829,7 +830,7 @@ open class MainActivity : AppCompatActivity() {
         val defaults = defaultViewModelCreationExtras
         val arguments = Bundle().apply {
             defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
-            putAll(ViewfinderViewModel.arguments(cameraEntryPoint))
+            putAll(cameraEntryPointArguments(cameraEntryPoint))
         }
 
         return MutableCreationExtras(defaults)
