@@ -3,6 +3,7 @@ package app.grapheneos.camera
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import app.grapheneos.camera.ui.activities.AutoFinishOnSleep
 import app.grapheneos.camera.ui.activities.SecureActivity
 
 class ActivityLifeCycleHelper(
@@ -10,9 +11,12 @@ class ActivityLifeCycleHelper(
     private val onSecureActivityDestroyed: (isChangingConfigurations: Boolean) -> Unit,
 ) : Application.ActivityLifecycleCallbacks {
 
+    private val autoFinishers = HashMap<Activity, AutoFinishOnSleep>()
+
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         if (activity is SecureActivity) {
             onSecureActivityCreated()
+            autoFinishers[activity] = AutoFinishOnSleep(activity).also { it.start() }
         }
     }
 
@@ -28,6 +32,7 @@ class ActivityLifeCycleHelper(
 
     override fun onActivityDestroyed(activity: Activity) {
         if (activity is SecureActivity) {
+            autoFinishers.remove(activity)?.stop()
             onSecureActivityDestroyed(activity.isChangingConfigurations)
         }
     }
