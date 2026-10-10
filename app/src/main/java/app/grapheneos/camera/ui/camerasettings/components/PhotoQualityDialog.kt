@@ -1,12 +1,10 @@
 package app.grapheneos.camera.ui.camerasettings.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,15 +17,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
 import app.grapheneos.camera.ui.core.CameraPreviewTheme
 import java.text.NumberFormat
+import kotlin.math.roundToInt
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -41,25 +37,54 @@ private val SECTION_SPACING = 16.dp
 internal fun PhotoQualityDialog(
     quality: Int,
     isFullResolution: Boolean,
-    options: ImmutableList<PhotoQualityOption>,
+    presets: ImmutableList<PhotoQualityOption>,
+    custom: PhotoQualityOption,
+    customRange: IntRange,
     resolutions: PhotoResolutionOptions?,
     onConfirm: (quality: Int, isFullResolution: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var selectedQuality by rememberSaveable { mutableIntStateOf(quality) }
+    val isPreset = presets.any { it.quality == quality }
+    var isCustomSelected by rememberSaveable { mutableStateOf(!isPreset) }
+    var presetQuality by rememberSaveable { mutableIntStateOf(quality) }
+    var customQuality by rememberSaveable {
+        mutableIntStateOf(
+            when {
+                isPreset -> custom.quality
+                else -> quality
+            },
+        )
+    }
     var selectedFullResolution by rememberSaveable { mutableStateOf(isFullResolution) }
 
     SettingsDialogFrame(
         title = stringResource(R.string.image_quality),
-        onConfirm = { onConfirm(selectedQuality, selectedFullResolution) },
+        onConfirm = {
+            val selectedQuality = when {
+                isCustomSelected -> customQuality
+                else -> presetQuality
+            }
+            onConfirm(selectedQuality, selectedFullResolution)
+        },
         onDismiss = onDismiss,
     ) {
         PhotoQualityDialogContent(
-            selectedQuality = selectedQuality,
-            onSelectQuality = { selectedQuality = it },
+            selection = PhotoQualitySelection(
+                presetQuality = presetQuality,
+                customQuality = customQuality,
+                isCustomSelected = isCustomSelected,
+            ),
+            onSelectPreset = { preset ->
+                presetQuality = preset
+                isCustomSelected = false
+            },
+            onSelectCustom = { isCustomSelected = true },
+            onCustomQualityChange = { customQuality = it },
             isFullResolution = selectedFullResolution,
             onSelectResolution = { selectedFullResolution = it },
-            options = options,
+            presets = presets,
+            custom = custom,
+            customRange = customRange,
             resolutions = resolutions,
         )
     }
@@ -67,11 +92,15 @@ internal fun PhotoQualityDialog(
 
 @Composable
 private fun PhotoQualityDialogContent(
-    selectedQuality: Int,
-    onSelectQuality: (Int) -> Unit,
+    selection: PhotoQualitySelection,
+    onSelectPreset: (Int) -> Unit,
+    onSelectCustom: () -> Unit,
+    onCustomQualityChange: (Int) -> Unit,
     isFullResolution: Boolean,
     onSelectResolution: (Boolean) -> Unit,
-    options: ImmutableList<PhotoQualityOption>,
+    presets: ImmutableList<PhotoQualityOption>,
+    custom: PhotoQualityOption,
+    customRange: IntRange,
     resolutions: PhotoResolutionOptions?,
 ) {
     Column(
@@ -84,14 +113,14 @@ private fun PhotoQualityDialogContent(
                 modifier = Modifier.selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(TILE_SPACING),
             ) {
-                PhotoQualityTile(
+                SettingsTile(
                     title = resolutions.standard,
                     subtitle = stringResource(R.string.camera_settings_resolution_default),
                     selected = !isFullResolution,
                     onClick = { onSelectResolution(false) },
                     modifier = Modifier.weight(1f),
                 )
-                PhotoQualityTile(
+                SettingsTile(
                     title = resolutions.full,
                     subtitle = stringResource(R.string.camera_settings_resolution_full),
                     selected = isFullResolution,
@@ -106,9 +135,13 @@ private fun PhotoQualityDialogContent(
         }
 
         PhotoQualityTiles(
-            options = options,
-            selectedQuality = selectedQuality,
-            onSelect = onSelectQuality,
+            selection = selection,
+            onSelectPreset = onSelectPreset,
+            onSelectCustom = onSelectCustom,
+            onCustomQualityChange = onCustomQualityChange,
+            presets = presets,
+            custom = custom,
+            customRange = customRange,
         )
     }
 }
@@ -128,82 +161,49 @@ private fun PhotoQualitySectionLabel(
 
 @Composable
 private fun PhotoQualityTiles(
-    options: ImmutableList<PhotoQualityOption>,
-    selectedQuality: Int,
-    onSelect: (Int) -> Unit,
+    selection: PhotoQualitySelection,
+    onSelectPreset: (Int) -> Unit,
+    onSelectCustom: () -> Unit,
+    onCustomQualityChange: (Int) -> Unit,
+    presets: ImmutableList<PhotoQualityOption>,
+    custom: PhotoQualityOption,
+    customRange: IntRange,
 ) {
-    Column(
+    FlowRow(
         modifier = Modifier.selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(TILE_SPACING),
         verticalArrangement = Arrangement.spacedBy(TILE_SPACING),
+        maxItemsInEachRow = TILES_PER_ROW,
     ) {
-        options.chunked(TILES_PER_ROW).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(TILE_SPACING)) {
-                row.forEach { option ->
-                    PhotoQualityTile(
-                        title = option.label,
-                        subtitle = formatPhotoQuality(option.quality),
-                        selected = option.quality == selectedQuality,
-                        onClick = { onSelect(option.quality) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PhotoQualityTile(
-    title: String,
-    subtitle: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val containerColor by animateColorAsState(
-        targetValue = when {
-            selected -> colorScheme.primaryContainer
-            else -> colorScheme.surfaceContainerHighest
-        },
-        animationSpec = SETTLE_COLOR_SPEC,
-        label = "photo_quality_tile_container",
-    )
-    val contentColor by animateColorAsState(
-        targetValue = when {
-            selected -> colorScheme.onPrimaryContainer
-            else -> colorScheme.onSurface
-        },
-        animationSpec = SETTLE_COLOR_SPEC,
-        label = "photo_quality_tile_content",
-    )
-
-    Column(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.small)
-            .background(containerColor)
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.RadioButton,
+        presets.forEach { preset ->
+            SettingsTile(
+                title = preset.label,
+                subtitle = formatPhotoQuality(preset.quality),
+                selected = !selection.isCustomSelected && preset.quality == selection.presetQuality,
+                onClick = { onSelectPreset(preset.quality) },
+                modifier = Modifier.weight(1f),
             )
-            .padding(
-                horizontal = 16.dp,
-                vertical = 12.dp,
-            ),
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = contentColor,
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = contentColor,
+        }
+        SettingsSliderTile(
+            title = custom.label,
+            subtitle = formatPhotoQuality(selection.customQuality),
+            selected = selection.isCustomSelected,
+            value = selection.customQuality.toFloat(),
+            onValueChange = { onCustomQualityChange(it.roundToInt()) },
+            onClick = onSelectCustom,
+            valueRange = customRange.first.toFloat()..customRange.last.toFloat(),
+            steps = customRange.last - customRange.first - 1,
+            modifier = Modifier.weight(1f),
         )
     }
 }
+
+@Immutable
+private data class PhotoQualitySelection(
+    val presetQuality: Int,
+    val customQuality: Int,
+    val isCustomSelected: Boolean,
+)
 
 @Immutable
 internal data class PhotoQualityOption(
@@ -250,16 +250,23 @@ private fun PhotoQualityDialogPreviewContent(resolutions: PhotoResolutionOptions
                 onConfirm = {},
             ) {
                 PhotoQualityDialogContent(
-                    selectedQuality = 95,
-                    onSelectQuality = {},
+                    selection = PhotoQualitySelection(
+                        presetQuality = 90,
+                        customQuality = 75,
+                        isCustomSelected = true,
+                    ),
+                    onSelectPreset = {},
+                    onSelectCustom = {},
+                    onCustomQualityChange = {},
                     isFullResolution = false,
                     onSelectResolution = {},
-                    options = persistentListOf(
+                    presets = persistentListOf(
                         PhotoQualityOption(quality = 100, label = "Maximum"),
                         PhotoQualityOption(quality = 95, label = "High"),
                         PhotoQualityOption(quality = 90, label = "Standard"),
-                        PhotoQualityOption(quality = 75, label = "Compact"),
                     ),
+                    custom = PhotoQualityOption(quality = 75, label = "Custom"),
+                    customRange = 1..100,
                     resolutions = resolutions,
                 )
             }
