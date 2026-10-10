@@ -9,47 +9,47 @@
         <error line="142" column="104" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/androidTest/java/app/grapheneos/camera/BottomTabLayoutRegressionTest.kt">
-        <error line="67" column="28" source="standard:argument-list-wrapping" />
-        <error line="67" column="87" source="standard:binary-expression-wrapping" />
-        <error line="67" column="87" source="standard:argument-list-wrapping" />
-        <error line="67" column="95" source="standard:binary-expression-wrapping" />
-        <error line="67" column="101" source="standard:max-line-length" />
-        <error line="67" column="102" source="standard:argument-list-wrapping" />
-        <error line="69" column="26" source="standard:argument-list-wrapping" />
-        <error line="69" column="65" source="standard:argument-list-wrapping" />
-        <error line="69" column="89" source="standard:argument-list-wrapping" />
-        <error line="69" column="101" source="standard:argument-list-wrapping" />
+        <error line="69" column="28" source="standard:argument-list-wrapping" />
+        <error line="69" column="87" source="standard:binary-expression-wrapping" />
+        <error line="69" column="87" source="standard:argument-list-wrapping" />
+        <error line="69" column="95" source="standard:binary-expression-wrapping" />
         <error line="69" column="101" source="standard:max-line-length" />
-        <error line="255" column="30" source="standard:argument-list-wrapping" />
-        <error line="255" column="67" source="standard:argument-list-wrapping" />
-        <error line="255" column="76" source="standard:argument-list-wrapping" />
-        <error line="255" column="82" source="standard:argument-list-wrapping" />
-        <error line="255" column="88" source="standard:argument-list-wrapping" />
-        <error line="255" column="91" source="standard:argument-list-wrapping" />
-        <error line="255" column="100" source="standard:max-line-length" />
-        <error line="255" column="103" source="standard:argument-list-wrapping" />
-        <error line="405" column="29" source="standard:argument-list-wrapping" />
-        <error line="405" column="33" source="standard:argument-list-wrapping" />
-        <error line="405" column="65" source="standard:argument-list-wrapping" />
-        <error line="410" column="101" source="standard:max-line-length" />
-        <error line="411" column="1" source="standard:indent" />
-        <error line="413" column="1" source="standard:indent" />
-        <error line="422" column="20" source="standard:wrapping" />
-        <error line="422" column="20" source="standard:argument-list-wrapping" />
-        <error line="423" column="30" source="standard:wrapping" />
-        <error line="423" column="31" source="standard:argument-list-wrapping" />
-        <error line="437" column="39" source="standard:argument-list-wrapping" />
-        <error line="437" column="53" source="standard:argument-list-wrapping" />
-        <error line="437" column="60" source="standard:argument-list-wrapping" />
-        <error line="437" column="86" source="standard:argument-list-wrapping" />
-        <error line="437" column="99" source="standard:argument-list-wrapping" />
-        <error line="437" column="100" source="standard:argument-list-wrapping" />
-        <error line="437" column="100" source="standard:max-line-length" />
-        <error line="437" column="101" source="standard:argument-list-wrapping" />
-        <error line="481" column="24" source="standard:wrapping" />
-        <error line="481" column="24" source="standard:argument-list-wrapping" />
-        <error line="482" column="42" source="standard:wrapping" />
-        <error line="482" column="43" source="standard:argument-list-wrapping" />
+        <error line="69" column="102" source="standard:argument-list-wrapping" />
+        <error line="71" column="26" source="standard:argument-list-wrapping" />
+        <error line="71" column="65" source="standard:argument-list-wrapping" />
+        <error line="71" column="89" source="standard:argument-list-wrapping" />
+        <error line="71" column="101" source="standard:argument-list-wrapping" />
+        <error line="71" column="101" source="standard:max-line-length" />
+        <error line="257" column="30" source="standard:argument-list-wrapping" />
+        <error line="257" column="67" source="standard:argument-list-wrapping" />
+        <error line="257" column="76" source="standard:argument-list-wrapping" />
+        <error line="257" column="82" source="standard:argument-list-wrapping" />
+        <error line="257" column="88" source="standard:argument-list-wrapping" />
+        <error line="257" column="91" source="standard:argument-list-wrapping" />
+        <error line="257" column="100" source="standard:max-line-length" />
+        <error line="257" column="103" source="standard:argument-list-wrapping" />
+        <error line="413" column="29" source="standard:argument-list-wrapping" />
+        <error line="413" column="33" source="standard:argument-list-wrapping" />
+        <error line="413" column="65" source="standard:argument-list-wrapping" />
+        <error line="418" column="101" source="standard:max-line-length" />
+        <error line="419" column="1" source="standard:indent" />
+        <error line="421" column="1" source="standard:indent" />
+        <error line="430" column="20" source="standard:wrapping" />
+        <error line="430" column="20" source="standard:argument-list-wrapping" />
+        <error line="431" column="30" source="standard:wrapping" />
+        <error line="431" column="31" source="standard:argument-list-wrapping" />
+        <error line="445" column="39" source="standard:argument-list-wrapping" />
+        <error line="445" column="53" source="standard:argument-list-wrapping" />
+        <error line="445" column="60" source="standard:argument-list-wrapping" />
+        <error line="445" column="86" source="standard:argument-list-wrapping" />
+        <error line="445" column="99" source="standard:argument-list-wrapping" />
+        <error line="445" column="100" source="standard:argument-list-wrapping" />
+        <error line="445" column="100" source="standard:max-line-length" />
+        <error line="445" column="101" source="standard:argument-list-wrapping" />
+        <error line="489" column="24" source="standard:wrapping" />
+        <error line="489" column="24" source="standard:argument-list-wrapping" />
+        <error line="490" column="42" source="standard:wrapping" />
+        <error line="490" column="43" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/androidTest/java/app/grapheneos/camera/CameraModeTabsRegressionTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
