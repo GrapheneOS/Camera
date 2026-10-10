@@ -23,6 +23,9 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.activities.MoreSettingsSecure
+import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.shareCapturedItem
 import app.grapheneos.camera.ui.common.dialog.showCameraPermissionDialog
@@ -67,7 +70,7 @@ internal class ViewfinderEffectHandlerImpl(
         when (effect) {
             is Effect.ShowMessage -> activity.showMessage(effect.message)
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
-            is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFoundDialog(activity)
+            is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
             is Effect.ShowQrResult -> showQrResult(effect.text)
             is Effect.AnimateLensSwitch -> activity.animateLensSwitch()
             is Effect.PlayLevelHaptic -> playLevelHaptic()
@@ -91,6 +94,13 @@ internal class ViewfinderEffectHandlerImpl(
                 R.string.quality_unsupported,
                 videoQualityTitle(activity, quality),
             ),
+        )
+    }
+
+    private fun showStorageLocationNotFound() {
+        showStorageLocationNotFoundDialog(
+            activity = activity,
+            onMoreSettingsClicked = { onAction(SettingsAction.MoreSettingsClicked) },
         )
     }
 
@@ -175,6 +185,7 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Settings.OpenSheet -> openSettingsSheet()
             is Effect.Settings.CloseSheet -> activity.settingsDialog.slideDialogUp()
             is Effect.Settings.ShowQrFormats -> showQrFormats()
+            is Effect.Settings.OpenMoreSettings -> openMoreSettings(effect.isZslSupported)
         }
     }
 
@@ -191,6 +202,21 @@ internal class ViewfinderEffectHandlerImpl(
             activity = activity,
             barcodeFormats = activity.barcodeFormats,
         )
+    }
+
+    private fun openMoreSettings(isZslSupported: Boolean) {
+        val screen = when (activity) {
+            is SecureActivity -> MoreSettingsSecure::class.java
+            else -> MoreSettings::class.java
+        }
+        val intent = Intent(activity, screen)
+            .putExtra(
+                MoreSettings.INTENT_EXTRA_IN_CAPTURE_MODE,
+                activity.cameraEntryPoint.isCaptureSession,
+            )
+            .putExtra(MoreSettings.INTENT_EXTRA_ZSL_SUPPORTED, isZslSupported)
+
+        activity.startActivity(intent)
     }
 
     private fun handleModeTab(effect: Effect.ModeTab) {

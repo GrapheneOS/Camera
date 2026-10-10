@@ -9,6 +9,7 @@ import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -93,7 +94,7 @@ class PhotoQualityRegressionTest {
 
     private fun openMoreSettings(scenario: ActivityScenario<MainActivity>): MoreSettings {
         val monitor = instrumentation.addMonitor(MoreSettings::class.java.name, null, false)
-        scenario.onActivity { MoreSettings.start(it) }
+        scenario.onActivity { it.viewfinder.onAction(SettingsAction.MoreSettingsClicked) }
         val settings = instrumentation.waitForMonitorWithTimeout(monitor, 10_000)
         assertNotNull("More Settings did not open", settings)
         return settings as MoreSettings

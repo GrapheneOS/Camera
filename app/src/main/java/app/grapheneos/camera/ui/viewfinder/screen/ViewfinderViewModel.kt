@@ -246,6 +246,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.SettingsIconClicked -> onSettingsIconClicked()
+            is SettingsAction.MoreSettingsClicked -> openMoreSettings()
             is SettingsAction.GridToggleClicked -> settingsDelegate.cycleGridType()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
             is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
@@ -721,6 +722,21 @@ class ViewfinderViewModel @AssistedInject constructor(
         if (!state().isQrMode()) {
             emitEffect(Effect.Settings.OpenSheet)
         }
+    }
+
+    private fun openMoreSettings() {
+        val state = state()
+        val effect = when {
+            state.recording.isActive() -> {
+                Effect.ShowMessage(R.string.more_settings_unavailable_during_recording)
+            }
+
+            else -> {
+                Effect.Settings.OpenMoreSettings(isZslSupported = state.session.isZslSupported)
+            }
+        }
+
+        emitEffect(effect)
     }
 
     private fun toggleGeoTagging(enabled: Boolean) {
