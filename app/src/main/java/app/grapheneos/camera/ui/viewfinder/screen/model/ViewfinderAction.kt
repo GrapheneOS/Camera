@@ -145,6 +145,8 @@ sealed interface ViewfinderAction {
 
         data object SettingsIconClicked : SettingsAction
 
+        data object MoreSettingsClicked : SettingsAction
+
         data object GridToggleClicked : SettingsAction
 
         data object EnableLocationClicked : SettingsAction

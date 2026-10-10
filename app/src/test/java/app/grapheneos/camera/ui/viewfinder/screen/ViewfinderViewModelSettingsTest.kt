@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -47,6 +48,46 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
                 settingsDelegate.setWaitForFocusLock(true)
                 cameraDelegate.canBeginBind(forced = true)
             }
+        }
+    }
+
+    @Test
+    fun moreSettingsClicked_opensThemWithTheCamerasZslSupport() {
+        runTest {
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+            stateHolder.update {
+                it.copy(session = ViewfinderSessionState(isZslSupported = true))
+            }
+
+            viewModel.onAction(SettingsAction.MoreSettingsClicked)
+
+            assertEquals(
+                listOf(ViewfinderScreenEffect.Settings.OpenMoreSettings(isZslSupported = true)),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun moreSettingsClicked_whileRecording_saysSoInstead() {
+        runTest {
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
+            }
+
+            viewModel.onAction(SettingsAction.MoreSettingsClicked)
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.ShowMessage(
+                        R.string.more_settings_unavailable_during_recording,
+                    ),
+                ),
+                effects,
+            )
         }
     }
 

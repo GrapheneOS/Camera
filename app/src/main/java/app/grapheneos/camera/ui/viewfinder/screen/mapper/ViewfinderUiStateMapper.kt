@@ -68,7 +68,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             isVideoMode = isVideoMode,
             scanAllCodes = settings.scanAllCodes,
             availableModes = state.session.availableModes,
-            zslSupported = state.session.isZslSupported,
             sensorOrientationDegrees = state.session.sensorOrientationDegrees,
             iconRotationDegrees = when {
                 state.autoRotateEnabled -> deviceRotation

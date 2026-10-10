@@ -35,7 +35,6 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MoreSettings
 import app.grapheneos.camera.ui.common.videoQualityTitle
 import app.grapheneos.camera.ui.settings.components.SettingsFrameLayout
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
@@ -115,11 +114,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         moreSettingsButton = binding.moreSettings
         moreSettingsButton.setOnClickListener {
-            if (!mActivity.viewfinder.uiState.value.isRecordingActive) {
-                MoreSettings.start(mActivity)
-            } else {
-                mActivity.showMessage(getString(R.string.more_settings_unavailable_during_recording))
-            }
+            viewfinder.onAction(SettingsAction.MoreSettingsClicked)
         }
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)

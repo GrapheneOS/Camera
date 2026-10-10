@@ -478,7 +478,6 @@ class ViewfinderUiStateMapperTest {
 
         val state = map(
             session = ViewfinderSessionState(
-                isZslSupported = true,
                 sensorOrientationDegrees = 270,
                 availableModes = modes,
                 exposure = CameraExposure(
@@ -488,7 +487,6 @@ class ViewfinderUiStateMapperTest {
             ),
         )
 
-        assertTrue(state.zslSupported)
         assertEquals(270, state.sensorOrientationDegrees)
         assertEquals(modes, state.availableModes)
         assertEquals(ExposureUiState(min = -12, max = 12, progress = 3), state.exposure)

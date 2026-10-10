@@ -382,21 +382,7 @@ open class MoreSettings :
     }
 
     companion object {
-
-        private const val INTENT_EXTRA_IN_CAPTURE_MODE = "in_capture_mode"
-        private const val INTENT_EXTRA_ZSL_SUPPORTED = "zsl_supported"
-
-        fun start(caller: MainActivity) {
-            val flavor = if (caller is SecureActivity) MoreSettingsSecure::class else MoreSettings::class
-            Intent(caller, flavor.java).let {
-                it.putExtra(INTENT_EXTRA_IN_CAPTURE_MODE, caller.cameraEntryPoint.isCaptureSession)
-                it.putExtra(
-                    INTENT_EXTRA_ZSL_SUPPORTED,
-                    caller.viewfinder.uiState.value.zslSupported,
-                )
-
-                caller.startActivity(it)
-            }
-        }
+        const val INTENT_EXTRA_IN_CAPTURE_MODE = "in_capture_mode"
+        const val INTENT_EXTRA_ZSL_SUPPORTED = "zsl_supported"
     }
 }
