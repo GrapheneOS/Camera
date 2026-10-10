@@ -111,21 +111,6 @@
 
                 </FrameLayout>
 
-                <FrameLayout
-                    android:layout_weight="1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:id="@+id/grid_toggle_option"
-                        android:src="@drawable/grid_off_circle"
-                        android:layout_gravity="center"
-                        android:layout_width="@dimen/toggle_button_size"
-                        android:layout_height="@dimen/toggle_button_size"
-                        android:contentDescription="@string/grid_off"/>
-
-                </FrameLayout>
-
             </LinearLayout>
 
             <com.google.android.material.divider.MaterialDivider
@@ -248,75 +233,6 @@
 
                         </LinearLayout>
 
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/enable_eis_setting"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:text="@string/enable_eis"/>
-
-                        <LinearLayout
-                            android:id="@+id/enable_eis_switch_container"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="end|center_vertical">
-
-                            <com.google.android.material.materialswitch.MaterialSwitch
-                                android:id="@+id/enable_eis_switch"
-                                android:layout_width="wrap_content"
-                                android:layout_height="@dimen/settings_dialog_switch_height"
-                                android:scaleX="@integer/settings_dialog_switch_scale"
-                                android:scaleY="@integer/settings_dialog_switch_scale"
-                                android:checked="true"
-                                android:contentDescription="@string/enable_eis"/>
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/settings_dialog_menu_item_height"
-                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-                        android:layout_gravity="end"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:labelFor="@id/focus_timeout_spinner"
-                            android:text="@string/focus_timeout"/>
-
-                        <FrameLayout
-                            android:layout_height="wrap_content"
-                            android:padding="0dp"
-                            android:layout_margin="0dp"
-                            android:layout_width="match_parent">
-
-                            <Spinner
-                                android:id="@+id/focus_timeout_spinner"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:entries="@array/time_options"
-                                android:checked="true"
-                                android:padding="0dp"
-                                android:layout_margin="0dp"
-                                android:layout_gravity="end"/>
-
-                        </FrameLayout>
                     </LinearLayout>
 
                     <LinearLayout

@@ -4,6 +4,7 @@ import android.util.Log
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
@@ -71,6 +72,8 @@ interface ViewfinderCameraDelegate {
 
     fun refreshVideoQualities()
     fun dismissQrResult()
+
+    fun capabilities(): CameraCapabilities
 }
 
 internal class ViewfinderCameraDelegateImpl @Inject constructor(
@@ -205,7 +208,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     override fun bindCamera(settings: CameraBindSettings): BindOutcome {
         val outcome = session.bind(settings)
 
-        refreshSessionState(isVideoMode = settings.isVideoMode)
+        refreshSessionState()
 
         return outcome
     }
@@ -348,6 +351,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = false)) }
     }
 
+    override fun capabilities(): CameraCapabilities {
+        return session.capabilities()
+    }
+
     private fun onSessionEvent(event: CameraSessionEvent) {
         when (event) {
             is CameraSessionEvent.ZoomStateLoaded -> refreshZoom()
@@ -404,18 +411,14 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         postEffect(Effect.ShowQrResult(text))
     }
 
-    private fun refreshSessionState(isVideoMode: Boolean) {
+    private fun refreshSessionState() {
         stateHolder.update {
             it.copy(
                 session = it.session.copy(
                     lensFacing = session.lensFacing,
                     canTakePicture = session.imageCapture != null,
                     isFlashAvailable = session.isFlashAvailable,
-                    canApplyVideoStabilization = isVideoMode &&
-                        session.canApplyVideoStabilization(),
                     isTorchOn = false,
-                    isZslSupported = session.isZslSupported,
-                    photoResolutions = session.photoResolutions,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,
                 ),
             )

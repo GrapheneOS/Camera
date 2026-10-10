@@ -387,7 +387,6 @@ class ViewfinderCameraDelegateTest {
     @Test
     fun bindCamera_keepsTheModesAndPublishesWhatTheNewCameraSupports() {
         val modes = setOf(CameraMode.CAMERA)
-        every { session.isZslSupported } returns true
         every { session.sensorOrientationDegrees } returns SENSOR_ORIENTATION
         stateHolder.update { it.copy(session = it.session.copy(availableModes = modes)) }
 
@@ -396,27 +395,7 @@ class ViewfinderCameraDelegateTest {
 
         val session = stateHolder.state.value.session
         assertEquals(modes, session.availableModes)
-        assertTrue(session.isZslSupported)
         assertEquals(SENSOR_ORIENTATION, session.sensorOrientationDegrees)
-    }
-
-    @Test
-    fun bindCamera_outsideVideoMode_doesNotAskWhetherVideoCanBeStabilized() {
-        val delegate = createAttachedDelegate()
-        delegate.bindCamera(mockk(relaxed = true) { every { isVideoMode } returns false })
-
-        verify(exactly = 0) { session.canApplyVideoStabilization() }
-        assertFalse(stateHolder.state.value.session.canApplyVideoStabilization)
-    }
-
-    @Test
-    fun bindCamera_inVideoMode_publishesWhetherVideoCanBeStabilized() {
-        every { session.canApplyVideoStabilization() } returns true
-
-        val delegate = createAttachedDelegate()
-        delegate.bindCamera(mockk(relaxed = true) { every { isVideoMode } returns true })
-
-        assertTrue(stateHolder.state.value.session.canApplyVideoStabilization)
     }
 
     @Test

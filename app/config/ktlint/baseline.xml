@@ -173,62 +173,54 @@
         <error line="56" column="27" source="standard:property-naming" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/common/dialog/SettingsDialog.kt">
-        <error line="49" column="22" source="standard:class-signature" />
-        <error line="49" column="51" source="standard:class-signature" />
-        <error line="49" column="73" source="standard:class-signature" />
-        <error line="50" column="5" source="standard:class-signature" />
-        <error line="136" column="47" source="standard:trailing-comma-on-declaration-site" />
-        <error line="143" column="40" source="standard:trailing-comma-on-declaration-site" />
-        <error line="214" column="29" source="standard:trailing-comma-on-declaration-site" />
-        <error line="243" column="29" source="standard:trailing-comma-on-declaration-site" />
-        <error line="245" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="248" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="263" column="29" source="standard:trailing-comma-on-declaration-site" />
-        <error line="265" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="280" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="396" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="400" column="63" source="standard:argument-list-wrapping" />
-        <error line="400" column="101" source="standard:max-line-length" />
-        <error line="400" column="104" source="standard:argument-list-wrapping" />
-        <error line="404" column="1" source="standard:indent" />
-        <error line="408" column="1" source="standard:indent" />
-        <error line="498" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="502" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="508" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="510" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="514" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="541" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="543" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="560" column="41" source="standard:argument-list-wrapping" />
-        <error line="560" column="55" source="standard:argument-list-wrapping" />
-        <error line="560" column="101" source="standard:max-line-length" />
-        <error line="560" column="104" source="standard:argument-list-wrapping" />
-        <error line="561" column="58" source="standard:argument-list-wrapping" />
-        <error line="561" column="75" source="standard:argument-list-wrapping" />
-        <error line="561" column="94" source="standard:argument-list-wrapping" />
-        <error line="561" column="101" source="standard:max-line-length" />
-        <error line="561" column="105" source="standard:argument-list-wrapping" />
-        <error line="588" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="590" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="607" column="41" source="standard:argument-list-wrapping" />
-        <error line="607" column="55" source="standard:argument-list-wrapping" />
-        <error line="607" column="101" source="standard:max-line-length" />
-        <error line="607" column="104" source="standard:argument-list-wrapping" />
-        <error line="608" column="58" source="standard:argument-list-wrapping" />
-        <error line="608" column="75" source="standard:argument-list-wrapping" />
-        <error line="608" column="88" source="standard:argument-list-wrapping" />
-        <error line="608" column="101" source="standard:max-line-length" />
-        <error line="608" column="105" source="standard:argument-list-wrapping" />
-        <error line="622" column="58" source="standard:argument-list-wrapping" />
-        <error line="622" column="75" source="standard:argument-list-wrapping" />
-        <error line="622" column="88" source="standard:argument-list-wrapping" />
-        <error line="622" column="100" source="standard:max-line-length" />
-        <error line="622" column="104" source="standard:argument-list-wrapping" />
-        <error line="653" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="685" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="693" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="703" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="724" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="48" column="22" source="standard:class-signature" />
+        <error line="48" column="51" source="standard:class-signature" />
+        <error line="48" column="73" source="standard:class-signature" />
+        <error line="49" column="5" source="standard:class-signature" />
+        <error line="131" column="47" source="standard:trailing-comma-on-declaration-site" />
+        <error line="138" column="40" source="standard:trailing-comma-on-declaration-site" />
+        <error line="204" column="29" source="standard:trailing-comma-on-declaration-site" />
+        <error line="233" column="29" source="standard:trailing-comma-on-declaration-site" />
+        <error line="235" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="250" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="355" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="359" column="63" source="standard:argument-list-wrapping" />
+        <error line="359" column="101" source="standard:max-line-length" />
+        <error line="359" column="104" source="standard:argument-list-wrapping" />
+        <error line="363" column="1" source="standard:indent" />
+        <error line="367" column="1" source="standard:indent" />
+        <error line="470" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="472" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="489" column="41" source="standard:argument-list-wrapping" />
+        <error line="489" column="55" source="standard:argument-list-wrapping" />
+        <error line="489" column="101" source="standard:max-line-length" />
+        <error line="489" column="104" source="standard:argument-list-wrapping" />
+        <error line="490" column="58" source="standard:argument-list-wrapping" />
+        <error line="490" column="75" source="standard:argument-list-wrapping" />
+        <error line="490" column="94" source="standard:argument-list-wrapping" />
+        <error line="490" column="101" source="standard:max-line-length" />
+        <error line="490" column="105" source="standard:argument-list-wrapping" />
+        <error line="517" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="519" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="536" column="41" source="standard:argument-list-wrapping" />
+        <error line="536" column="55" source="standard:argument-list-wrapping" />
+        <error line="536" column="101" source="standard:max-line-length" />
+        <error line="536" column="104" source="standard:argument-list-wrapping" />
+        <error line="537" column="58" source="standard:argument-list-wrapping" />
+        <error line="537" column="75" source="standard:argument-list-wrapping" />
+        <error line="537" column="88" source="standard:argument-list-wrapping" />
+        <error line="537" column="101" source="standard:max-line-length" />
+        <error line="537" column="105" source="standard:argument-list-wrapping" />
+        <error line="551" column="58" source="standard:argument-list-wrapping" />
+        <error line="551" column="75" source="standard:argument-list-wrapping" />
+        <error line="551" column="88" source="standard:argument-list-wrapping" />
+        <error line="551" column="100" source="standard:max-line-length" />
+        <error line="551" column="104" source="standard:argument-list-wrapping" />
+        <error line="582" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="614" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="622" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="632" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="649" column="1" source="standard:no-empty-first-line-in-method-block" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/settings/components/SettingsFrameLayout.kt">
         <error line="3" column="1" source="standard:import-ordering" />
@@ -295,7 +287,7 @@
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="607" column="100" source="standard:max-line-length" />
-        <error line="748" column="100" source="standard:max-line-length" />
+        <error line="746" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/QrTile.kt">
         <error line="28" column="64" source="standard:no-semi" />

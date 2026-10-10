@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -11,6 +12,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraA
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
+import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
@@ -23,16 +25,15 @@ import org.robolectric.RobolectricTestRunner
 class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
 
     @Test
-    fun stabilizationToggled_storesTheSettingBeforeRebinding() {
+    fun cameraSettingsClicked_opensThemWithWhatTheCameraSupports() {
         runTest {
+            val capabilities = CameraCapabilities(isZslSupported = true)
+            every { cameraDelegate.capabilities() } returns capabilities
             val viewModel = createViewModel()
 
-            viewModel.onAction(SettingsAction.StabilizationToggled(enabled = true))
+            viewModel.onAction(SettingsAction.CameraSettingsClicked)
 
-            verifyOrder {
-                settingsDelegate.setEnableEis(true)
-                cameraDelegate.canBeginBind(forced = true)
-            }
+            verify { settingsDelegate.openCameraSettings(capabilities) }
         }
     }
 

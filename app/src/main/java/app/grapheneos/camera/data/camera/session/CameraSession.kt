@@ -37,6 +37,7 @@ import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.CameraZoom
@@ -44,7 +45,6 @@ import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
-import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
@@ -78,8 +78,6 @@ interface CameraSession {
 
     val extensionsAvailable: Boolean
     val isFlashAvailable: Boolean
-    val isZslSupported: Boolean
-    val photoResolutions: PhotoResolutions?
     val isTorchOn: Boolean
     val exposure: CameraExposure?
     val sensorOrientationDegrees: Int?
@@ -93,7 +91,7 @@ interface CameraSession {
     fun unbind()
     fun probeUnknownExtensions(onRestart: () -> Unit, onSettled: () -> Unit)
     fun supportedVideoQualities(): List<VideoQuality>
-    fun canApplyVideoStabilization(): Boolean
+    fun capabilities(): CameraCapabilities
     fun setCaptureOrientation(orientation: DeviceOrientation)
     fun setPreviewRotation(rotation: Int)
     fun setFlashMode(flashMode: FlashMode)
@@ -168,16 +166,6 @@ internal class CameraSessionImpl @Inject constructor(
     override val isFlashAvailable: Boolean
         get() {
             return camera?.cameraInfo?.hasFlashUnit() ?: false
-        }
-
-    override val isZslSupported: Boolean
-        get() {
-            return camera?.cameraInfo?.isZslSupported ?: false
-        }
-
-    override val photoResolutions: PhotoResolutions?
-        get() {
-            return camera?.cameraInfo?.let(photoResolutionSupport::resolutions)
         }
 
     override var isTorchOn: Boolean = false
@@ -837,12 +825,22 @@ internal class CameraSessionImpl @Inject constructor(
             .mapNotNull { cameraXConstantsMapper.map(it) }
     }
 
+    override fun capabilities(): CameraCapabilities {
+        val cameraInfo = camera?.cameraInfo ?: return CameraCapabilities()
+
+        return CameraCapabilities(
+            isZslSupported = cameraInfo.isZslSupported,
+            isVideoStabilizationSupported = canApplyVideoStabilization(),
+            photoResolutions = photoResolutionSupport.resolutions(cameraInfo),
+        )
+    }
+
     // Whether the EIS toggle has anything to act on. Stabilization is only ever requested through
     // the feature group (see bind), which in turn needs the platform to be able to verify
     // feature combinations, so a camera that can stabilize is not on its own enough: where the
     // group cannot be used nothing applies EIS, and offering the toggle there is offering a
     // control that does nothing.
-    override fun canApplyVideoStabilization(): Boolean {
+    private fun canApplyVideoStabilization(): Boolean {
         return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
     }
 

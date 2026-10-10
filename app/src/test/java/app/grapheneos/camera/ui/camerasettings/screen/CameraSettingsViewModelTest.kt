@@ -2,9 +2,11 @@ package app.grapheneos.camera.ui.camerasettings.screen
 
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.media.model.StorageLocationChange
 import app.grapheneos.camera.domain.media.usecase.ChangeStorageLocation
@@ -118,6 +120,28 @@ class CameraSettingsViewModelTest {
     }
 
     @Test
+    fun gridConfirmed_isStoredAndClosesTheDialog() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(Action.GridClicked)
+        viewModel.onAction(Action.GridConfirmed(GridType.FOUR_BY_FOUR))
+
+        assertEquals(GridType.FOUR_BY_FOUR, storedSettings.value.gridType)
+        assertNull(viewModel.uiState.value.dialog)
+    }
+
+    @Test
+    fun focusTimeoutConfirmed_isStoredAndClosesTheDialog() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(Action.FocusTimeoutClicked)
+        viewModel.onAction(Action.FocusTimeoutConfirmed(seconds = 0))
+
+        assertEquals(0L, storedSettings.value.focusTimeoutSeconds)
+        assertNull(viewModel.uiState.value.dialog)
+    }
+
+    @Test
     fun storageLocationPicked_nothing_leavesTheLocationAlone() {
         runTest {
             val viewModel = createViewModel()
@@ -157,12 +181,8 @@ class CameraSettingsViewModelTest {
 
     private fun createViewModel(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
-        isZslSupported: Boolean = false,
     ): CameraSettingsViewModel {
-        val arguments = cameraSettingsArguments(
-            isZslSupported = isZslSupported,
-            photoResolutions = null,
-        )
+        val arguments = cameraSettingsArguments(CameraCapabilities())
 
         return CameraSettingsViewModel(
             arguments = SavedStateHandle(

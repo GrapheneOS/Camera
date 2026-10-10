@@ -735,8 +735,6 @@ open class MainActivity : AppCompatActivity() {
 
         selectBarcodeFormatToggles()
 
-        settingsDialog.loadInitialState()
-
         muteToggle.setOnClickListener {
             viewfinder.onAction(RecordingAction.MuteToggleClicked)
         }
