@@ -147,8 +147,6 @@ sealed interface ViewfinderAction {
 
         data object CameraSettingsClicked : SettingsAction
 
-        data object GridToggleClicked : SettingsAction
-
         data object EnableLocationClicked : SettingsAction
 
         data class AudioToggled(
@@ -161,14 +159,6 @@ sealed interface ViewfinderAction {
 
         data class SelfIlluminationToggled(
             val enabled: Boolean,
-        ) : SettingsAction
-
-        data class StabilizationToggled(
-            val enabled: Boolean,
-        ) : SettingsAction
-
-        data class FocusTimeoutSelected(
-            val seconds: Long,
         ) : SettingsAction
 
         data class SelfTimerSelected(

@@ -5,7 +5,8 @@ import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
-import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.ChoiceSettingUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.GridOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
@@ -26,6 +27,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         return CameraSettingsUiState(
             showsSecureSessionBanner = state.isSecureSession,
             removeExif = removeExif(state),
+            grid = grid(state),
             gyroscopeSuggestions = switchSetting(
                 checked = settings.gyroscopeSuggestions,
                 default = SettingsDefaults.GYROSCOPE_SUGGESTIONS,
@@ -36,10 +38,12 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             ),
             photoQuality = photoQuality(state),
             captureMode = captureMode(state),
+            videoStabilization = videoStabilization(state),
             cameraSounds = switchSetting(
                 checked = settings.enableCameraSounds,
                 default = SettingsDefaults.CAMERA_SOUNDS,
             ),
+            focusTimeout = focusTimeout(state),
             storageLocation = storageLocation(state),
             dialog = state.dialog,
         )
@@ -59,17 +63,26 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         }
     }
 
+    private fun grid(state: CameraSettingsState): ChoiceSettingUiModel<GridOption> {
+        val selected = GridOption.of(state.settings.gridType)
+
+        return ChoiceSettingUiModel(
+            selected = selected,
+            options = GridOption.entries.toImmutableList(),
+            isChanged = selected.type != SettingsDefaults.GRID_TYPE,
+        )
+    }
+
     private fun photoQuality(state: CameraSettingsState): PhotoQualityUiModel {
         val quality = state.settings.photoQuality
         val isFullResolution = state.settings.selectHighestResolution
-        val resolution = state.photoResolutions?.let { resolutions ->
+        val resolution = state.capabilities.photoResolutions?.let { resolutions ->
             PhotoResolutionUiModel(
                 standardMegapixels = resolutions.standardMegapixels,
                 fullMegapixels = resolutions.fullMegapixels,
             )
         }
-        val isResolutionChanged = resolution != null &&
-            isFullResolution != SettingsDefaults.SELECT_HIGHEST_RESOLUTION
+        val isResolutionChanged = resolution != null && isFullResolution
 
         return PhotoQualityUiModel(
             quality = quality,
@@ -81,18 +94,38 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         )
     }
 
-    private fun captureMode(state: CameraSettingsState): CaptureModeUiModel {
+    private fun captureMode(state: CameraSettingsState): ChoiceSettingUiModel<CaptureModeOption> {
         val selected = CaptureModeOption.of(state.settings.captureMode)
         val options = CaptureModeOption.entries.filter { option ->
             option != CaptureModeOption.ZERO_SHUTTER_LAG ||
-                state.isZslSupported ||
+                state.capabilities.isZslSupported ||
                 option == selected
         }
 
-        return CaptureModeUiModel(
+        return ChoiceSettingUiModel(
             selected = selected,
             options = options.toImmutableList(),
             isChanged = selected.mode != SettingsDefaults.CAPTURE_MODE,
+        )
+    }
+
+    private fun videoStabilization(state: CameraSettingsState): SwitchSettingUiModel {
+        val setting = switchSetting(
+            checked = state.settings.enableEis,
+            default = SettingsDefaults.ENABLE_EIS,
+        )
+
+        return setting.copy(enabled = state.capabilities.isVideoStabilizationSupported)
+    }
+
+    private fun focusTimeout(state: CameraSettingsState): ChoiceSettingUiModel<Long> {
+        val selected = state.settings.focusTimeoutSeconds
+        val options = (FOCUS_TIMEOUT_OPTIONS + selected).distinct().sorted()
+
+        return ChoiceSettingUiModel(
+            selected = selected,
+            options = options.toImmutableList(),
+            isChanged = selected != SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
         )
     }
 
@@ -113,5 +146,9 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             checked = checked,
             isChanged = checked != default,
         )
+    }
+
+    private companion object {
+        val FOCUS_TIMEOUT_OPTIONS = listOf(0L, 3L, 5L, 8L, 10L)
     }
 }

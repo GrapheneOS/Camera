@@ -7,7 +7,6 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
@@ -37,7 +36,6 @@ class SettingsSheetUiStateMapperTest {
 
         assertFalse(state.includeAudioSettingEnabled)
         assertFalse(state.videoQualitySettingEnabled)
-        assertFalse(state.stabilizationSettingEnabled)
     }
 
     @Test
@@ -59,7 +57,6 @@ class SettingsSheetUiStateMapperTest {
 
         assertTrue(state.includeAudioSettingEnabled)
         assertTrue(state.videoQualitySettingEnabled)
-        assertTrue(state.stabilizationSettingEnabled)
     }
 
     @Test
@@ -101,15 +98,6 @@ class SettingsSheetUiStateMapperTest {
         assertFalse(photo.includeAudioSettingVisible)
         assertFalse(photo.videoQualitySettingVisible)
         assertTrue(photo.timerSettingVisible)
-    }
-
-    @Test
-    fun stabilization_needsBothVideoModeAndACameraThatCanDoIt() {
-        val capable = ViewfinderSessionState(canApplyVideoStabilization = true)
-
-        assertTrue(map(mode = CameraMode.VIDEO, session = capable).stabilizationSettingVisible)
-        assertFalse(map(mode = CameraMode.CAMERA, session = capable).stabilizationSettingVisible)
-        assertFalse(map(mode = CameraMode.VIDEO).stabilizationSettingVisible)
     }
 
     @Test
@@ -155,18 +143,6 @@ class SettingsSheetUiStateMapperTest {
 
         assertFalse(narrow.is16by9)
         assertEquals(R.string.aspect_ratio_4_3, narrow.aspectRatioDescription)
-    }
-
-    @Test
-    fun gridToggle_carriesADescriptionWithEveryIcon() {
-        val byType = GridType.entries.associateWith { gridType ->
-            map(settings = CameraSettings(gridType = gridType))
-        }
-
-        assertEquals(GridType.entries.size, byType.values.map { it.gridIcon }.toSet().size)
-        assertEquals(GridType.entries.size, byType.values.map { it.gridDescription }.toSet().size)
-        assertEquals(R.drawable.grid_off_circle, byType.getValue(GridType.NONE).gridIcon)
-        assertEquals(R.string.grid_off, byType.getValue(GridType.NONE).gridDescription)
     }
 
     @Test

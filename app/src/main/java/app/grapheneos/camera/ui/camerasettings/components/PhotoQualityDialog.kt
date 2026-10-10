@@ -114,14 +114,14 @@ private fun PhotoQualityDialogContent(
                 horizontalArrangement = Arrangement.spacedBy(TILE_SPACING),
             ) {
                 SettingsTile(
-                    title = resolutions.standard,
+                    title = formatMegapixels(resolutions.standardMegapixels),
                     subtitle = stringResource(R.string.camera_settings_resolution_default),
                     selected = !isFullResolution,
                     onClick = { onSelectResolution(false) },
                     modifier = Modifier.weight(1f),
                 )
                 SettingsTile(
-                    title = resolutions.full,
+                    title = formatMegapixels(resolutions.fullMegapixels),
                     subtitle = stringResource(R.string.camera_settings_resolution_full),
                     selected = isFullResolution,
                     onClick = { onSelectResolution(true) },
@@ -213,12 +213,17 @@ internal data class PhotoQualityOption(
 
 @Immutable
 internal data class PhotoResolutionOptions(
-    val standard: String,
-    val full: String,
+    val standardMegapixels: Int,
+    val fullMegapixels: Int,
 )
 
 internal fun formatPhotoQuality(quality: Int): String {
     return NumberFormat.getPercentInstance().format(quality / PERCENT)
+}
+
+@Composable
+internal fun formatMegapixels(megapixels: Int): String {
+    return stringResource(R.string.camera_settings_megapixels, megapixels)
 }
 
 @PreviewLightDark
@@ -232,8 +237,8 @@ private fun PhotoQualityDialogPreview() {
 private fun PhotoQualityDialogResolutionPreview() {
     PhotoQualityDialogPreviewContent(
         resolutions = PhotoResolutionOptions(
-            standard = "12 MP",
-            full = "50 MP",
+            standardMegapixels = 12,
+            fullMegapixels = 50,
         ),
     )
 }

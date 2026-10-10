@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -52,11 +53,10 @@ internal class CameraSettingsViewModel @Inject constructor(
     CameraSettingsScreenModel {
 
     private var state = CameraSettingsState(
-        settings = settingsRepository.settings.value,
         isSecureSession = entryPoint.isSecureSession,
         isCaptureSession = entryPoint.isCaptureSession,
-        isZslSupported = isZslSupportedOf(arguments),
-        photoResolutions = photoResolutionsOf(arguments),
+        capabilities = cameraCapabilitiesOf(arguments),
+        settings = settingsRepository.settings.value,
     )
 
     private val _uiState = MutableStateFlow(uiStateMapper.map(state))
@@ -82,10 +82,14 @@ internal class CameraSettingsViewModel @Inject constructor(
     override fun onAction(action: Action) {
         when (action) {
             is Action.SwitchToggled -> onSwitchToggled(action)
+            is Action.GridClicked -> showDialog(Dialog.Grid)
+            is Action.GridConfirmed -> confirmGrid(action.type)
             is Action.PhotoQualityClicked -> showDialog(Dialog.PhotoQuality)
             is Action.PhotoQualityConfirmed -> confirmPhotoQuality(action)
             is Action.CaptureModeClicked -> showDialog(Dialog.CaptureMode)
             is Action.CaptureModeConfirmed -> confirmCaptureMode(action.mode)
+            is Action.FocusTimeoutClicked -> showDialog(Dialog.FocusTimeout)
+            is Action.FocusTimeoutConfirmed -> confirmFocusTimeout(action.seconds)
             is Action.StorageLocationClicked -> _effects.trySend(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
@@ -107,6 +111,10 @@ internal class CameraSettingsViewModel @Inject constructor(
                 updateSettings { it.copy(keepSelfiesAsSeen = enabled) }
             }
 
+            is Action.VideoStabilizationToggled -> {
+                updateSettings { it.copy(enableEis = enabled) }
+            }
+
             is Action.CameraSoundsToggled -> {
                 updateSettings { it.copy(enableCameraSounds = enabled) }
             }
@@ -117,6 +125,12 @@ internal class CameraSettingsViewModel @Inject constructor(
         if (state.isCaptureSession) return
 
         updateSettings { it.copy(removeExifAfterCapture = enabled) }
+    }
+
+    private fun confirmGrid(type: GridType) {
+        showDialog(null)
+
+        updateSettings { it.copy(gridType = type) }
     }
 
     private fun confirmPhotoQuality(action: Action.PhotoQualityConfirmed) {
@@ -136,6 +150,12 @@ internal class CameraSettingsViewModel @Inject constructor(
         showDialog(null)
 
         updateSettings { it.copy(captureMode = mode) }
+    }
+
+    private fun confirmFocusTimeout(seconds: Long) {
+        showDialog(null)
+
+        updateSettings { it.copy(focusTimeoutSeconds = seconds) }
     }
 
     private fun changeStorageLocation(tree: Uri?) {

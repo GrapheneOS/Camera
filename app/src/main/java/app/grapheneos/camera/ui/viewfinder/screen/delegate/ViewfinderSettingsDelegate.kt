@@ -1,11 +1,11 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
@@ -24,10 +24,7 @@ interface ViewfinderSettingsDelegate {
         stateHolder: ViewfinderStateHolder,
     )
 
-    fun cycleGridType()
-    fun setFocusTimeout(seconds: Long)
     fun setSelfTimerDuration(seconds: Int)
-    fun setEnableEis(enabled: Boolean)
     fun setAspectRatio(value: AspectRatio)
     fun toggleScanAllCodes()
     fun setIncludeAudio(enabled: Boolean)
@@ -38,7 +35,7 @@ interface ViewfinderSettingsDelegate {
     fun setSelfIllumination(enabled: Boolean)
     fun setVideoQuality(quality: VideoQuality)
 
-    fun openCameraSettings()
+    fun openCameraSettings(capabilities: CameraCapabilities)
 }
 
 internal class ViewfinderSettingsDelegateImpl @Inject constructor(
@@ -70,27 +67,8 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         }
     }
 
-    override fun cycleGridType() {
-        val next = when (stateHolder.state.value.settings.gridType) {
-            GridType.NONE -> GridType.THREE_BY_THREE
-            GridType.THREE_BY_THREE -> GridType.FOUR_BY_FOUR
-            GridType.FOUR_BY_FOUR -> GridType.GOLDEN_RATIO
-            GridType.GOLDEN_RATIO -> GridType.NONE
-        }
-
-        update { it.copy(gridType = next) }
-    }
-
-    override fun setFocusTimeout(seconds: Long) {
-        update { it.copy(focusTimeoutSeconds = seconds) }
-    }
-
     override fun setSelfTimerDuration(seconds: Int) {
         update { it.copy(selfTimerDurationSeconds = seconds) }
-    }
-
-    override fun setEnableEis(enabled: Boolean) {
-        update { it.copy(enableEis = enabled) }
     }
 
     override fun setAspectRatio(value: AspectRatio) {
@@ -164,17 +142,14 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
-    override fun openCameraSettings() {
+    override fun openCameraSettings(capabilities: CameraCapabilities) {
         val state = stateHolder.state.value
         val effect = when {
             state.recording.isActive() -> {
                 Effect.ShowMessage(R.string.camera_settings_unavailable_during_recording)
             }
 
-            else -> Effect.Settings.OpenCameraSettings(
-                isZslSupported = state.session.isZslSupported,
-                photoResolutions = state.session.photoResolutions,
-            )
+            else -> Effect.Settings.OpenCameraSettings(capabilities)
         }
 
         stateHolder.postEffect(effect)

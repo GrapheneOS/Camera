@@ -5,7 +5,6 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
@@ -32,7 +31,6 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             flashIcon = flash.first,
             flashDescription = flash.second,
             includeAudio = settings.includeAudio,
-            focusTimeoutSeconds = settings.focusTimeoutSeconds,
             selfTimerSeconds = settings.selfTimerDurationSeconds,
             videoQuality = state.modeSettings.videoQuality,
             videoQualities = session.videoQualities,
@@ -44,24 +42,19 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             torchOn = session.isTorchOn,
             geoTagging = state.requireLocation,
             selfIllumination = state.modeSettings.selfIllumination,
-            stabilizationEnabled = settings.enableEis,
             is16by9 = aspectRatio == AspectRatio.RATIO_16_9,
             aspectRatioFixed = isVideoMode,
             aspectRatioDescription = when (aspectRatio) {
                 AspectRatio.RATIO_16_9 -> R.string.aspect_ratio_16_9
                 AspectRatio.RATIO_4_3 -> R.string.aspect_ratio_4_3
             },
-            gridIcon = gridIconOf(settings.gridType),
-            gridDescription = gridDescriptionOf(settings.gridType),
             includeAudioSettingVisible = isVideoMode,
             videoQualitySettingVisible = isVideoMode,
-            stabilizationSettingVisible = isVideoMode && session.canApplyVideoStabilization,
             selfIlluminationSettingVisible =
                 session.lensFacing == LensFacing.FRONT,
             timerSettingVisible = !isVideoMode,
             includeAudioSettingEnabled = !isRecording,
             videoQualitySettingEnabled = !isRecording,
-            stabilizationSettingEnabled = !isRecording,
         )
     }
 
@@ -76,24 +69,6 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
         }
 
         return position.takeIf { it in videoQualities.indices }
-    }
-
-    private fun gridIconOf(gridType: GridType): Int {
-        return when (gridType) {
-            GridType.NONE -> R.drawable.grid_off_circle
-            GridType.THREE_BY_THREE -> R.drawable.grid_3x3_circle
-            GridType.FOUR_BY_FOUR -> R.drawable.grid_4x4_circle
-            GridType.GOLDEN_RATIO -> R.drawable.grid_goldenratio_circle
-        }
-    }
-
-    private fun gridDescriptionOf(gridType: GridType): Int {
-        return when (gridType) {
-            GridType.NONE -> R.string.grid_off
-            GridType.THREE_BY_THREE -> R.string.grid_3x3
-            GridType.FOUR_BY_FOUR -> R.string.grid_4x4
-            GridType.GOLDEN_RATIO -> R.string.grid_golden_ratio
-        }
     }
 
     private fun flashOf(

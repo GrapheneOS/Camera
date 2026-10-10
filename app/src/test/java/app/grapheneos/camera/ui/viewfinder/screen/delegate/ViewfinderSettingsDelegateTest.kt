@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -14,7 +15,6 @@ import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import io.mockk.every
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,18 +98,6 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun cycleGridType_fromTheLastGrid_wrapsAroundToNone() {
-        runTest {
-            storedSettings.value = CameraSettings(gridType = GridType.GOLDEN_RATIO)
-
-            val delegate = createDelegate()
-            delegate.cycleGridType()
-
-            assertEquals(GridType.NONE, storedSettings.value.gridType)
-        }
-    }
-
-    @Test
     fun perModeWrite_beforeAModeIsSlotted_isDropped() {
         runTest {
             val delegate = createDelegate()
@@ -155,24 +143,11 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
-            stateHolder.update {
-                it.copy(
-                    session = ViewfinderSessionState(
-                        isZslSupported = true,
-                        photoResolutions = PHOTO_RESOLUTIONS,
-                    ),
-                )
-            }
 
-            delegate.openCameraSettings()
+            delegate.openCameraSettings(CAPABILITIES)
 
             assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.Settings.OpenCameraSettings(
-                        isZslSupported = true,
-                        photoResolutions = PHOTO_RESOLUTIONS,
-                    ),
-                ),
+                listOf(ViewfinderScreenEffect.Settings.OpenCameraSettings(CAPABILITIES)),
                 effects,
             )
         }
@@ -187,7 +162,7 @@ class ViewfinderSettingsDelegateTest {
                 it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
             }
 
-            delegate.openCameraSettings()
+            delegate.openCameraSettings(CAPABILITIES)
 
             assertEquals(
                 listOf(
@@ -217,9 +192,13 @@ class ViewfinderSettingsDelegateTest {
     private companion object {
         const val SELF_TIMER_SECONDS = 5
 
-        val PHOTO_RESOLUTIONS = PhotoResolutions(
-            standardMegapixels = 12,
-            fullMegapixels = 50,
+        val CAPABILITIES = CameraCapabilities(
+            isZslSupported = true,
+            isVideoStabilizationSupported = true,
+            photoResolutions = PhotoResolutions(
+                standardMegapixels = 12,
+                fullMegapixels = 50,
+            ),
         )
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
