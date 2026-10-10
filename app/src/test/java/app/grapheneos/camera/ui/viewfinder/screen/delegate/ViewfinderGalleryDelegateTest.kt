@@ -10,7 +10,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
-import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
+import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder

@@ -4,8 +4,6 @@ import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSessionImpl
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapperImpl
-import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocation
-import app.grapheneos.camera.domain.gallery.usecase.RevertToMediaStoreLocationImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -28,10 +26,4 @@ internal abstract class GalleryViewModelBindsModule {
     abstract fun bindVisibleCaptureMapper(
         impl: VisibleCaptureMapperImpl,
     ): VisibleCaptureMapper
-
-    @Binds
-    @Reusable
-    abstract fun bindRevertToMediaStoreLocation(
-        impl: RevertToMediaStoreLocationImpl,
-    ): RevertToMediaStoreLocation
 }

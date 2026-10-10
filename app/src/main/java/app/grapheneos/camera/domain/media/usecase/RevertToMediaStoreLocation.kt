@@ -1,4 +1,4 @@
-package app.grapheneos.camera.domain.gallery.usecase
+package app.grapheneos.camera.domain.media.usecase
 
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import javax.inject.Inject

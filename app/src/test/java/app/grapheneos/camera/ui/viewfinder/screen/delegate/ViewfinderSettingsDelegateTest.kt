@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -7,8 +8,12 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.testutil.MainDispatcherRule
+import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import io.mockk.every
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -141,6 +146,46 @@ class ViewfinderSettingsDelegateTest {
             delegate.setVideoQuality(VideoQuality.UHD)
 
             assertEquals(stored, stateHolder.state.value.modeSettings)
+        }
+    }
+
+    @Test
+    fun openCameraSettings_opensThemWithTheCamerasZslSupport() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            stateHolder.update {
+                it.copy(session = ViewfinderSessionState(isZslSupported = true))
+            }
+
+            delegate.openCameraSettings()
+
+            assertEquals(
+                listOf(ViewfinderScreenEffect.Settings.OpenCameraSettings(isZslSupported = true)),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun openCameraSettings_whileRecording_saysSoInstead() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.RECORDING))
+            }
+
+            delegate.openCameraSettings()
+
+            assertEquals(
+                listOf(
+                    ViewfinderScreenEffect.ShowMessage(
+                        R.string.camera_settings_unavailable_during_recording,
+                    ),
+                ),
+                effects,
+            )
         }
     }
 

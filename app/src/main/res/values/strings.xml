@@ -85,9 +85,7 @@
     <string name="aztec_code">Aztec Code</string>
     <string name="more_options">More Options</string>
     <string name="pdf_417">PDF 417</string>
-    <string name="more_settings">More Settings</string>
-
-    <string name="general">General</string>
+    <string name="camera_settings">Camera settings</string>
 
     <string name="save_image_as_previewed">Save image as previewed</string>
     <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion in front camera)</string>
@@ -103,23 +101,16 @@
 
     <string name="storage">Storage</string>
     <string name="storage_location">Storage Location</string>
-    <string name="revert_back_to_dcim">Revert back to DCIM</string>
 
     <string name="image_quality">Image Quality</string>
-    <string name="image_quality_desc" formatted="false">Adjust the quality of an image captured by the app from 1% to 100%.</string>
-    <string name="photo">Photo</string>
     <string name="remove_exif_title">Remove EXIF data after capture</string>
     <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
-    <string name="video_setting_title">Video</string>
     <string name="degree_format">%d°</string>
-    <string name="percent_symbol">%</string>
 
     <string name="location_is_disabled">Location is disabled</string>
     <string name="settings">Settings</string>
     <string name="enable">Enable</string>
     <string name="ok">OK</string>
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
     <string name="disable_audio">Disable Audio</string>
     <string name="copied_text_to_clipboard">Copied text to clipboard</string>
     <string name="share_text_via">Share text via</string>
@@ -175,21 +166,13 @@
     <string name="qr_rear_camera_unavailable">The rear camera seems to be unavailable. Using front camera for QR mode instead.</string>
     <string name="folder_not_found">Storage location not found</string>
     <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
-    <string name="more_settings_unavailable_during_recording">Cannot switch activities when recording</string>
+    <string name="camera_settings_unavailable_during_recording">Cannot switch activities when recording</string>
     <string name="toggle_geo_tagging_unsupported_while_recording">Can\'t toggle geo-tagging for ongoing recording</string>
     <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
     <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
     <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
     <string name="unexpected_error_while_setting_focus_timeout">An unexpected error occurred while setting focus timeout</string>
     <string name="unexpected_error_while_setting_timer_duration">An unexpected error occurred while setting the self-timer duration</string>
-    <string name="storage_location_updated">Storage location successfully updated to %s</string>
-    <string name="no_directory_selected">No directory was selected by the picker</string>
-    <string name="choose_storage_location">Choose storage location</string>
-    <string name="are_you_sure">Are you sure?</string>
-    <string name="revert_to_default_directory">Do you want to revert back to the default directory?</string>
-    <string name="reverted_to_default_directory">Switched back to the default storage location</string>
-    <string name="already_using_default_directory">Already using the default storage location</string>
-    <string name="photo_quality_number_limit" tools:ignore="PluralsCandidate">Photo quality can only be between %1$d and %2$d</string>
     <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
     <string name="couldnt_exclude_qr_format">Couldn\'t exclude %s format. Please ensure at least one format is selected in manual mode.</string>
 
@@ -236,5 +219,24 @@
     <string name="highest_res_setting_desc">Enable using the highest supported resolution for images instead of the default. This can lead to very large images on certain devices.</string>
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
-    <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
+
+    <string name="back">Back</string>
+    <string name="done">Done</string>
+
+    <string name="camera_settings_secure_session_banner">The camera was opened from the lock screen. Changes made here are not kept.</string>
+    <string name="camera_settings_section_privacy">Privacy</string>
+    <string name="camera_settings_section_composition">Composition</string>
+    <string name="camera_settings_section_quality">Quality</string>
+    <string name="camera_settings_section_sound">Sound</string>
+    <string name="camera_settings_photo_only">Photo only</string>
+    <string name="camera_settings_video_only">Video only</string>
+    <string name="camera_settings_changed">Changed from default</string>
+    <string name="camera_settings_reset">Reset</string>
+    <string name="camera_settings_reset_storage_location">Reset storage location</string>
+    <string name="camera_settings_photo_quality_maximum">Maximum</string>
+    <string name="camera_settings_photo_quality_high">High</string>
+    <string name="camera_settings_photo_quality_standard">Standard</string>
+    <string name="camera_settings_photo_quality_compact">Compact</string>
+    <string name="camera_settings_photo_quality_custom">Custom</string>
+    <string name="camera_settings_photo_quality_summary">%1$s · %2$s</string>
 </resources>

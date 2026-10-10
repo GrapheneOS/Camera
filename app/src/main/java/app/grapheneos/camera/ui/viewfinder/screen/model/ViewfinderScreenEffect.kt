@@ -54,7 +54,7 @@ sealed interface ViewfinderScreenEffect {
 
         data object ShowQrFormats : Settings
 
-        data class OpenMoreSettings(
+        data class OpenCameraSettings(
             val isZslSupported: Boolean,
         ) : Settings
     }

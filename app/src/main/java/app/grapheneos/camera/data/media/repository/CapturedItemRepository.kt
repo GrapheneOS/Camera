@@ -3,6 +3,7 @@ package app.grapheneos.camera.data.media.repository
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -44,6 +45,10 @@ interface CapturedItemRepository {
     val storageLocation: Flow<String>
 
     suspend fun setStorageLocation(value: String)
+
+    fun canStoreSafTree(tree: Uri): Boolean
+
+    suspend fun persistSafTreeAccess(tree: Uri)
 
     suspend fun releaseUntrackedSafTrees()
 
@@ -113,6 +118,19 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    override fun canStoreSafTree(tree: Uri): Boolean {
+        return !tree.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)
+    }
+
+    override suspend fun persistSafTreeAccess(tree: Uri) {
+        withContext(ioDispatcher) {
+            context.contentResolver.takePersistableUriPermission(
+                tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
         }
     }
 
@@ -395,6 +413,10 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 internal class LockscreenCapturedItemRepository(
     private val delegate: CapturedItemRepository,
 ) : CapturedItemRepository by delegate {
+
+    override fun canStoreSafTree(tree: Uri): Boolean {
+        return false
+    }
 
     @Suppress("EmptyFunctionBlock")
     override suspend fun releaseUntrackedSafTrees() {
