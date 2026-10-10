@@ -53,6 +53,10 @@ sealed interface ViewfinderScreenEffect {
         data object CloseSheet : Settings
 
         data object ShowQrFormats : Settings
+
+        data class OpenMoreSettings(
+            val isZslSupported: Boolean,
+        ) : Settings
     }
 
     sealed interface ModeTab : ViewfinderScreenEffect {

@@ -2,16 +2,18 @@ package app.grapheneos.camera.ui.common.dialog
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.MoreSettings
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-fun showStorageLocationNotFoundDialog(activity: MainActivity) {
+fun showStorageLocationNotFoundDialog(
+    activity: MainActivity,
+    onMoreSettingsClicked: () -> Unit,
+) {
     val dialog = MaterialAlertDialogBuilder(activity)
         .setTitle(R.string.folder_not_found)
         .setMessage(R.string.reverting_to_default_folder)
         .setPositiveButton(R.string.ok, null)
         .setNeutralButton(R.string.more_settings) { _, _ ->
-            MoreSettings.start(activity)
+            onMoreSettingsClicked()
         }
         .create()
 
