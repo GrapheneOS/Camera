@@ -1,10 +1,13 @@
 package app.grapheneos.camera.ui.camerasettings.screen.model
 
 import android.net.Uri
+import app.grapheneos.camera.data.core.model.CaptureMode
 
 internal sealed interface CameraSettingsAction {
 
     data object PhotoQualityClicked : CameraSettingsAction
+
+    data object CaptureModeClicked : CameraSettingsAction
 
     data object StorageLocationClicked : CameraSettingsAction
 
@@ -24,19 +27,7 @@ internal sealed interface CameraSettingsAction {
         override val enabled: Boolean,
     ) : SwitchToggled
 
-    data class SaveImageAsPreviewedToggled(
-        override val enabled: Boolean,
-    ) : SwitchToggled
-
-    data class SaveVideoAsPreviewedToggled(
-        override val enabled: Boolean,
-    ) : SwitchToggled
-
-    data class HighestResolutionToggled(
-        override val enabled: Boolean,
-    ) : SwitchToggled
-
-    data class ZslToggled(
+    data class KeepSelfiesAsSeenToggled(
         override val enabled: Boolean,
     ) : SwitchToggled
 
@@ -46,6 +37,11 @@ internal sealed interface CameraSettingsAction {
 
     data class PhotoQualityConfirmed(
         val quality: Int,
+        val isFullResolution: Boolean,
+    ) : CameraSettingsAction
+
+    data class CaptureModeConfirmed(
+        val mode: CaptureMode,
     ) : CameraSettingsAction
 
     data class StorageLocationPicked(

@@ -57,6 +57,8 @@ internal data class StoredCameraSettings(
     val includeAudio: Boolean? = null,
     @SerialName("enable_eis")
     val enableEis: Boolean? = null,
+    @SerialName("capture_mode")
+    val captureMode: StoredCaptureMode? = null,
     @SerialName("enable_zsl")
     val enableZsl: Boolean? = null,
     @SerialName("wait_for_focus_lock")
@@ -69,6 +71,8 @@ internal data class StoredCameraSettings(
     val removeExifAfterCapture: Boolean? = null,
     @SerialName("gyroscope_suggestions")
     val gyroscopeSuggestions: Boolean? = null,
+    @SerialName("keep_selfies_as_seen")
+    val keepSelfiesAsSeen: Boolean? = null,
     @SerialName("save_image_as_previewed")
     val saveImageAsPreviewed: Boolean? = null,
     @SerialName("save_video_as_previewed")
@@ -127,6 +131,42 @@ internal object StoredGridTypeSerializer : KSerializer<StoredGridType> {
             StoredGridType.THREE_BY_THREE -> "THREE_BY_THREE"
             StoredGridType.FOUR_BY_FOUR -> "FOUR_BY_FOUR"
             StoredGridType.GOLDEN_RATIO -> "GOLDEN_RATIO"
+        }
+    }
+}
+
+@Serializable(with = StoredCaptureModeSerializer::class)
+internal enum class StoredCaptureMode {
+    UNKNOWN,
+    SPEED,
+    QUALITY,
+    ZERO_SHUTTER_LAG,
+}
+
+internal object StoredCaptureModeSerializer : KSerializer<StoredCaptureMode> {
+
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
+        serialName = "StoredCaptureMode",
+        kind = PrimitiveKind.STRING,
+    )
+
+    override fun serialize(encoder: Encoder, value: StoredCaptureMode) {
+        encoder.encodeString(wireName(value))
+    }
+
+    override fun deserialize(decoder: Decoder): StoredCaptureMode {
+        val stored = decoder.decodeString()
+
+        return StoredCaptureMode.entries.firstOrNull { wireName(it) == stored }
+            ?: StoredCaptureMode.UNKNOWN
+    }
+
+    private fun wireName(mode: StoredCaptureMode): String {
+        return when (mode) {
+            StoredCaptureMode.UNKNOWN -> "UNKNOWN"
+            StoredCaptureMode.SPEED -> "SPEED"
+            StoredCaptureMode.QUALITY -> "QUALITY"
+            StoredCaptureMode.ZERO_SHUTTER_LAG -> "ZERO_SHUTTER_LAG"
         }
     }
 }

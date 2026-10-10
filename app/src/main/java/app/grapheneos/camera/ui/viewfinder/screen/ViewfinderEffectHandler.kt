@@ -187,7 +187,7 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Settings.OpenSheet -> openSettingsSheet()
             is Effect.Settings.CloseSheet -> activity.settingsDialog.slideDialogUp()
             is Effect.Settings.ShowQrFormats -> showQrFormats()
-            is Effect.Settings.OpenCameraSettings -> openCameraSettings(effect.isZslSupported)
+            is Effect.Settings.OpenCameraSettings -> openCameraSettings(effect)
         }
     }
 
@@ -206,14 +206,19 @@ internal class ViewfinderEffectHandlerImpl(
         )
     }
 
-    private fun openCameraSettings(isZslSupported: Boolean) {
+    private fun openCameraSettings(effect: Effect.Settings.OpenCameraSettings) {
         val screen = when (activity) {
             is SecureActivity -> SecureCameraSettingsActivity::class.java
             else -> CameraSettingsActivity::class.java
         }
         val intent = Intent(activity, screen)
             .putExtras(cameraEntryPointArguments(activity.cameraEntryPoint))
-            .putExtras(cameraSettingsArguments(isZslSupported = isZslSupported))
+            .putExtras(
+                cameraSettingsArguments(
+                    isZslSupported = effect.isZslSupported,
+                    photoResolutions = effect.photoResolutions,
+                ),
+            )
 
         activity.startActivity(intent)
     }

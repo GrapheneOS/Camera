@@ -20,6 +20,8 @@ import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolver
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolverImpl
 import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.camera.session.JpegExtractorImpl
+import app.grapheneos.camera.data.camera.session.PhotoResolutionSupport
+import app.grapheneos.camera.data.camera.session.PhotoResolutionSupportImpl
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCacheImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
@@ -52,6 +54,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindFeatureCombinationSupport(
         impl: FeatureCombinationSupportImpl,
     ): FeatureCombinationSupport
+
+    @Binds
+    @Reusable
+    abstract fun bindPhotoResolutionSupport(
+        impl: PhotoResolutionSupportImpl,
+    ): PhotoResolutionSupport
 
     @Binds
     @Reusable

@@ -87,12 +87,6 @@
     <string name="pdf_417">PDF 417</string>
     <string name="camera_settings">Camera settings</string>
 
-    <string name="save_image_as_previewed">Save image as previewed</string>
-    <string name="save_as_image_preview_desc">Save output image as visible on preview (fixes inversion in front camera)</string>
-
-    <string name="save_video_as_previewed">Save video as previewed</string>
-    <string name="save_as_video_preview_desc">Save output video as visible on preview (fixes inversion in front camera)</string>
-
     <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
     <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
 
@@ -206,19 +200,11 @@
 
     <string name="main_storage">Main storage</string>
 
-    <string name="zsl_setting_title">Enable Zero Shutter Lag</string>
-    <string name="zsl_setting_desc">Uses Zero Shutter Lag (ZSL) for faster image capture. Ignores wait for focus setting. Certain devices may have a buggy implementation for this.</string>
-
     <string name="tap_to_mute_audio">Tap to mute audio</string>
     <string name="tap_to_unmute_audio">Tap to unmute audio</string>
 
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
-
-    <string name="highest_res_setting">Use highest photo resolution</string>
-    <string name="highest_res_setting_desc">Enable using the highest supported resolution for images instead of the default. This can lead to very large images on certain devices.</string>
-
-    <string name="wait_for_focus_lock">Wait for Focus Lock</string>
 
     <string name="back">Back</string>
     <string name="done">Done</string>
@@ -229,14 +215,27 @@
     <string name="camera_settings_section_quality">Quality</string>
     <string name="camera_settings_section_sound">Sound</string>
     <string name="camera_settings_photo_only">Photo only</string>
-    <string name="camera_settings_video_only">Video only</string>
     <string name="camera_settings_changed">Changed from default</string>
     <string name="camera_settings_reset">Reset</string>
     <string name="camera_settings_reset_storage_location">Reset storage location</string>
     <string name="camera_settings_photo_quality_maximum">Maximum</string>
     <string name="camera_settings_photo_quality_high">High</string>
     <string name="camera_settings_photo_quality_standard">Standard</string>
-    <string name="camera_settings_photo_quality_compact">Compact</string>
     <string name="camera_settings_photo_quality_custom">Custom</string>
     <string name="camera_settings_photo_quality_summary">%1$s · %2$s</string>
+    <string name="camera_settings_photo_quality_summary_with_resolution">%1$s · %2$s · %3$s</string>
+    <string name="camera_settings_resolution">Resolution</string>
+    <string name="camera_settings_resolution_default">Default</string>
+    <string name="camera_settings_resolution_full">Full</string>
+    <string name="camera_settings_megapixels">%d MP</string>
+    <string name="camera_settings_compression">Compression</string>
+    <string name="camera_settings_capture_mode">Capture mode</string>
+    <string name="camera_settings_capture_mode_speed">Speed</string>
+    <string name="camera_settings_capture_mode_speed_summary">Takes the photo as soon as you press the shutter</string>
+    <string name="camera_settings_capture_mode_quality">Quality</string>
+    <string name="camera_settings_capture_mode_quality_summary">Waits for focus before taking the photo</string>
+    <string name="camera_settings_capture_mode_zero_shutter_lag">Zero shutter lag</string>
+    <string name="camera_settings_capture_mode_zero_shutter_lag_summary">Fastest shutter, uses more battery</string>
+    <string name="camera_settings_keep_selfies_as_seen">Keep selfies as seen</string>
+    <string name="camera_settings_keep_selfies_as_seen_summary">Save selfies as they appear on screen</string>
 </resources>

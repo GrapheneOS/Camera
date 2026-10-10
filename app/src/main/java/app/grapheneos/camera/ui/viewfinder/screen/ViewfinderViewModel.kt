@@ -266,11 +266,6 @@ class ViewfinderViewModel @AssistedInject constructor(
                 settingsDelegate.setEnableEis(action.enabled)
                 startCamera(forced = true)
             }
-
-            is SettingsAction.FocusLockToggled -> {
-                settingsDelegate.setWaitForFocusLock(action.enabled)
-                startCamera(forced = true)
-            }
         }
     }
 

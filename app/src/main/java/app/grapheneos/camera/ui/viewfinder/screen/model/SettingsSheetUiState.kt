@@ -20,7 +20,6 @@ data class SettingsSheetUiState(
     val geoTagging: Boolean = false,
     val selfIllumination: Boolean = false,
     val stabilizationEnabled: Boolean = false,
-    val waitForFocusLock: Boolean = false,
     val is16by9: Boolean = false,
     val aspectRatioFixed: Boolean = false,
     @StringRes val aspectRatioDescription: Int = R.string.aspect_ratio_4_3,
@@ -31,9 +30,7 @@ data class SettingsSheetUiState(
     val stabilizationSettingVisible: Boolean = false,
     val selfIlluminationSettingVisible: Boolean = false,
     val timerSettingVisible: Boolean = true,
-    val waitForFocusLockSettingVisible: Boolean = true,
     val includeAudioSettingEnabled: Boolean = true,
     val videoQualitySettingEnabled: Boolean = true,
     val stabilizationSettingEnabled: Boolean = true,
-    val waitForFocusLockSettingEnabled: Boolean = true,
 )

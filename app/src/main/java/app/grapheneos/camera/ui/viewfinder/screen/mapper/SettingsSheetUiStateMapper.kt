@@ -45,7 +45,6 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             geoTagging = state.requireLocation,
             selfIllumination = state.modeSettings.selfIllumination,
             stabilizationEnabled = settings.enableEis,
-            waitForFocusLock = settings.waitForFocusLock,
             is16by9 = aspectRatio == AspectRatio.RATIO_16_9,
             aspectRatioFixed = isVideoMode,
             aspectRatioDescription = when (aspectRatio) {
@@ -60,11 +59,9 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             selfIlluminationSettingVisible =
                 session.lensFacing == LensFacing.FRONT,
             timerSettingVisible = !isVideoMode,
-            waitForFocusLockSettingVisible = !state.requiresVideoModeOnly,
             includeAudioSettingEnabled = !isRecording,
             videoQualitySettingEnabled = !isRecording,
             stabilizationSettingEnabled = !isRecording,
-            waitForFocusLockSettingEnabled = !isRecording,
         )
     }
 

@@ -31,11 +31,10 @@ internal class CameraBindSettingsMapperImpl @Inject constructor() : CameraBindSe
             flashMode = state.flashMode,
             photoQuality = settings.photoQuality,
             videoQuality = state.modeSettings.videoQuality,
-            waitForFocusLock = settings.waitForFocusLock,
-            enableZsl = settings.enableZsl,
+            captureMode = settings.captureMode,
             enableEis = settings.enableEis,
             selectHighestResolution = settings.selectHighestResolution,
-            mirrorVideoOnFrontCamera = settings.saveVideoAsPreviewed,
+            mirrorVideoOnFrontCamera = settings.keepSelfiesAsSeen,
             barcodeFormats = state.barcodeFormats(),
         )
     }

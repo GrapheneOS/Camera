@@ -1,11 +1,13 @@
 package app.grapheneos.camera.data.settings.mapper
 
 import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.store.StoredAspectRatio
 import app.grapheneos.camera.data.settings.store.StoredCameraSettings
+import app.grapheneos.camera.data.settings.store.StoredCaptureMode
 import app.grapheneos.camera.data.settings.store.StoredGridType
 import javax.inject.Inject
 
@@ -30,8 +32,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             enableCameraSounds = stored.enableCameraSounds ?: SettingsDefaults.CAMERA_SOUNDS,
             includeAudio = stored.includeAudio ?: SettingsDefaults.INCLUDE_AUDIO,
             enableEis = stored.enableEis ?: SettingsDefaults.ENABLE_EIS,
-            enableZsl = stored.enableZsl ?: SettingsDefaults.ENABLE_ZSL,
-            waitForFocusLock = stored.waitForFocusLock ?: SettingsDefaults.WAIT_FOR_FOCUS_LOCK,
+            captureMode = captureMode(stored),
             selectHighestResolution = stored.selectHighestResolution
                 ?: SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
             photoQuality = stored.photoQuality ?: SettingsDefaults.PHOTO_QUALITY,
@@ -39,10 +40,9 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 ?: SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE,
             gyroscopeSuggestions = stored.gyroscopeSuggestions
                 ?: SettingsDefaults.GYROSCOPE_SUGGESTIONS,
-            saveImageAsPreviewed = stored.saveImageAsPreviewed
-                ?: SettingsDefaults.SAVE_IMAGE_AS_PREVIEW,
-            saveVideoAsPreviewed = stored.saveVideoAsPreviewed
-                ?: SettingsDefaults.SAVE_VIDEO_AS_PREVIEW,
+            keepSelfiesAsSeen = stored.keepSelfiesAsSeen
+                ?: stored.saveImageAsPreviewed
+                ?: SettingsDefaults.KEEP_SELFIES_AS_SEEN,
             scanAllCodes = stored.scanAllCodes ?: SettingsDefaults.SCAN_ALL_CODES,
             enabledBarcodeFormats = stored.enabledBarcodeFormats
                 ?: SettingsDefaults.ENABLED_BARCODE_FORMATS,
@@ -67,9 +67,9 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             includeAudio = settings.includeAudio
                 .takeUnless { it == SettingsDefaults.INCLUDE_AUDIO },
             enableEis = settings.enableEis.takeUnless { it == SettingsDefaults.ENABLE_EIS },
-            enableZsl = settings.enableZsl.takeUnless { it == SettingsDefaults.ENABLE_ZSL },
-            waitForFocusLock = settings.waitForFocusLock
-                .takeUnless { it == SettingsDefaults.WAIT_FOR_FOCUS_LOCK },
+            captureMode = settings.captureMode
+                .takeUnless { it == SettingsDefaults.CAPTURE_MODE }
+                ?.let(::map),
             selectHighestResolution = settings.selectHighestResolution
                 .takeUnless { it == SettingsDefaults.SELECT_HIGHEST_RESOLUTION },
             photoQuality = settings.photoQuality
@@ -78,15 +78,40 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 .takeUnless { it == SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE },
             gyroscopeSuggestions = settings.gyroscopeSuggestions
                 .takeUnless { it == SettingsDefaults.GYROSCOPE_SUGGESTIONS },
-            saveImageAsPreviewed = settings.saveImageAsPreviewed
-                .takeUnless { it == SettingsDefaults.SAVE_IMAGE_AS_PREVIEW },
-            saveVideoAsPreviewed = settings.saveVideoAsPreviewed
-                .takeUnless { it == SettingsDefaults.SAVE_VIDEO_AS_PREVIEW },
+            keepSelfiesAsSeen = settings.keepSelfiesAsSeen
+                .takeUnless { it == SettingsDefaults.KEEP_SELFIES_AS_SEEN },
             scanAllCodes = settings.scanAllCodes
                 .takeUnless { it == SettingsDefaults.SCAN_ALL_CODES },
             enabledBarcodeFormats = settings.enabledBarcodeFormats
                 .takeUnless { it == SettingsDefaults.ENABLED_BARCODE_FORMATS },
         )
+    }
+
+    private fun captureMode(stored: StoredCameraSettings): CaptureMode {
+        return when (stored.captureMode) {
+            StoredCaptureMode.SPEED -> CaptureMode.SPEED
+            StoredCaptureMode.QUALITY -> CaptureMode.QUALITY
+            StoredCaptureMode.ZERO_SHUTTER_LAG -> CaptureMode.ZERO_SHUTTER_LAG
+            StoredCaptureMode.UNKNOWN -> SettingsDefaults.CAPTURE_MODE
+            null -> legacyCaptureMode(stored)
+        }
+    }
+
+    // Before capture_mode, the bind let waiting for focus win over zero shutter lag.
+    private fun legacyCaptureMode(stored: StoredCameraSettings): CaptureMode {
+        return when {
+            stored.waitForFocusLock == true -> CaptureMode.QUALITY
+            stored.enableZsl == true -> CaptureMode.ZERO_SHUTTER_LAG
+            else -> SettingsDefaults.CAPTURE_MODE
+        }
+    }
+
+    private fun map(mode: CaptureMode): StoredCaptureMode {
+        return when (mode) {
+            CaptureMode.SPEED -> StoredCaptureMode.SPEED
+            CaptureMode.QUALITY -> StoredCaptureMode.QUALITY
+            CaptureMode.ZERO_SHUTTER_LAG -> StoredCaptureMode.ZERO_SHUTTER_LAG
+        }
     }
 
     private fun map(stored: StoredAspectRatio?): AspectRatio {

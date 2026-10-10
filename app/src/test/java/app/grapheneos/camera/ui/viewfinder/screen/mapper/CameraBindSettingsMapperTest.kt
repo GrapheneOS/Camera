@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -29,11 +30,10 @@ class CameraBindSettingsMapperTest {
             settings = CameraSettings(
                 aspectRatio = AspectRatio.RATIO_16_9,
                 photoQuality = PHOTO_QUALITY,
-                waitForFocusLock = true,
-                enableZsl = true,
+                captureMode = CaptureMode.QUALITY,
                 enableEis = true,
                 selectHighestResolution = true,
-                saveVideoAsPreviewed = true,
+                keepSelfiesAsSeen = true,
             ),
             modeSettings = ModeSettings(videoQuality = VideoQuality.UHD),
             flashMode = FlashMode.AUTO,
@@ -55,8 +55,7 @@ class CameraBindSettingsMapperTest {
                 flashMode = FlashMode.AUTO,
                 photoQuality = PHOTO_QUALITY,
                 videoQuality = VideoQuality.UHD,
-                waitForFocusLock = true,
-                enableZsl = true,
+                captureMode = CaptureMode.QUALITY,
                 enableEis = true,
                 selectHighestResolution = true,
                 mirrorVideoOnFrontCamera = true,

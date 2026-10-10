@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.settings.model
 
 import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.CaptureMode
 
 data class CameraSettings(
     val aspectRatio: AspectRatio = SettingsDefaults.ASPECT_RATIO,
@@ -10,14 +11,12 @@ data class CameraSettings(
     val enableCameraSounds: Boolean = SettingsDefaults.CAMERA_SOUNDS,
     val includeAudio: Boolean = SettingsDefaults.INCLUDE_AUDIO,
     val enableEis: Boolean = SettingsDefaults.ENABLE_EIS,
-    val enableZsl: Boolean = SettingsDefaults.ENABLE_ZSL,
-    val waitForFocusLock: Boolean = SettingsDefaults.WAIT_FOR_FOCUS_LOCK,
+    val captureMode: CaptureMode = SettingsDefaults.CAPTURE_MODE,
     val selectHighestResolution: Boolean = SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
     val photoQuality: Int = SettingsDefaults.PHOTO_QUALITY,
     val removeExifAfterCapture: Boolean = SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE,
     val gyroscopeSuggestions: Boolean = SettingsDefaults.GYROSCOPE_SUGGESTIONS,
-    val saveImageAsPreviewed: Boolean = SettingsDefaults.SAVE_IMAGE_AS_PREVIEW,
-    val saveVideoAsPreviewed: Boolean = SettingsDefaults.SAVE_VIDEO_AS_PREVIEW,
+    val keepSelfiesAsSeen: Boolean = SettingsDefaults.KEEP_SELFIES_AS_SEEN,
     val scanAllCodes: Boolean = SettingsDefaults.SCAN_ALL_CODES,
     val enabledBarcodeFormats: Set<String> = SettingsDefaults.ENABLED_BARCODE_FORMATS,
 ) {
