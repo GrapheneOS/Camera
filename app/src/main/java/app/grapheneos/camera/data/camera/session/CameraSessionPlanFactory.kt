@@ -16,7 +16,7 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
-import app.grapheneos.camera.data.camera.model.ImageCaptureMode
+import app.grapheneos.camera.data.core.model.CaptureMode
 import javax.inject.Inject
 
 interface CameraSessionPlanFactory {
@@ -34,12 +34,6 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
             AspectRatioStrategy.FALLBACK_RULE_AUTO,
         )
 
-        val captureMode = when {
-            request.waitForFocusLock -> ImageCaptureMode.MAXIMIZE_QUALITY
-            request.enableZsl -> ImageCaptureMode.ZERO_SHUTTER_LAG
-            else -> ImageCaptureMode.MINIMIZE_LATENCY
-        }
-
         return CameraSessionPlan(
             videoCapture = when {
                 request.includesVideoCapture -> buildVideoCapture(request)
@@ -48,7 +42,7 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
             imageCapture = when {
                 request.includesImageCapture -> buildImageCapture(
                     request = request,
-                    captureMode = captureMode,
+                    captureMode = request.captureMode,
                     aspectRatioStrategy = aspectRatioStrategy,
                 )
 
@@ -58,7 +52,7 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
                 request = request,
                 aspectRatioStrategy = aspectRatioStrategy,
             ),
-            captureMode = captureMode,
+            captureMode = request.captureMode,
             preferredFeatures = preferredFeatures(request),
         )
     }
@@ -103,7 +97,7 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
 
     private fun buildImageCapture(
         request: CameraBindRequest,
-        captureMode: ImageCaptureMode,
+        captureMode: CaptureMode,
         aspectRatioStrategy: AspectRatioStrategy,
     ): ImageCapture {
         val resolutionSelectorBuilder = ResolutionSelector.Builder()
@@ -124,11 +118,11 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
             .build()
     }
 
-    private fun cameraXCaptureMode(captureMode: ImageCaptureMode): Int {
+    private fun cameraXCaptureMode(captureMode: CaptureMode): Int {
         return when (captureMode) {
-            ImageCaptureMode.MAXIMIZE_QUALITY -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-            ImageCaptureMode.ZERO_SHUTTER_LAG -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-            ImageCaptureMode.MINIMIZE_LATENCY -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+            CaptureMode.SPEED -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+            CaptureMode.QUALITY -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
+            CaptureMode.ZERO_SHUTTER_LAG -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
         }
     }
 

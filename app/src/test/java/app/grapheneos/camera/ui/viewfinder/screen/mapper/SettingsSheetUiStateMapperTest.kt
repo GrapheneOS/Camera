@@ -38,7 +38,6 @@ class SettingsSheetUiStateMapperTest {
         assertFalse(state.includeAudioSettingEnabled)
         assertFalse(state.videoQualitySettingEnabled)
         assertFalse(state.stabilizationSettingEnabled)
-        assertFalse(state.waitForFocusLockSettingEnabled)
     }
 
     @Test
@@ -51,7 +50,6 @@ class SettingsSheetUiStateMapperTest {
         assertTrue(state.includeAudioSettingEnabled)
         assertTrue(state.videoQualitySettingEnabled)
         assertTrue(state.stabilizationSettingEnabled)
-        assertTrue(state.waitForFocusLockSettingEnabled)
     }
 
     @Test
@@ -102,12 +100,6 @@ class SettingsSheetUiStateMapperTest {
         assertTrue(map(mode = CameraMode.VIDEO, session = capable).stabilizationSettingVisible)
         assertFalse(map(mode = CameraMode.CAMERA, session = capable).stabilizationSettingVisible)
         assertFalse(map(mode = CameraMode.VIDEO).stabilizationSettingVisible)
-    }
-
-    @Test
-    fun focusLockRow_isHiddenInAVideoOnlyEntryPoint() {
-        assertTrue(map(mode = CameraMode.VIDEO).waitForFocusLockSettingVisible)
-        assertFalse(map(requiresVideoModeOnly = true).waitForFocusLockSettingVisible)
     }
 
     @Test

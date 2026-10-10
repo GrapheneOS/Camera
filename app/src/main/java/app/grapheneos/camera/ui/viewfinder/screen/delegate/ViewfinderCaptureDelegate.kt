@@ -136,7 +136,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                         request = CaptureImageRequest(
                             storageLocation = storageLocation,
                             includeLocation = state.requireLocation,
-                            saveAsPreviewed = state.settings.saveImageAsPreviewed,
+                            saveAsPreviewed = state.settings.keepSelfiesAsSeen,
                             removeExif = state.settings.removeExifAfterCapture,
                             targetThumbnailWidth = thumbnailSize.width,
                             targetThumbnailHeight = thumbnailSize.height,

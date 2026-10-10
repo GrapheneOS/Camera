@@ -37,20 +37,6 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun focusLockToggled_storesTheSettingBeforeRebinding() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(SettingsAction.FocusLockToggled(enabled = true))
-
-            verifyOrder {
-                settingsDelegate.setWaitForFocusLock(true)
-                cameraDelegate.canBeginBind(forced = true)
-            }
-        }
-    }
-
-    @Test
     fun aspectRatioToggleClicked_storesTheOtherRatioBeforeRebinding() {
         runTest {
             val viewModel = createViewModel()

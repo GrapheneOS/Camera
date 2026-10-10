@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
@@ -55,6 +56,7 @@ internal class CameraSettingsViewModel @Inject constructor(
         isSecureSession = entryPoint.isSecureSession,
         isCaptureSession = entryPoint.isCaptureSession,
         isZslSupported = isZslSupportedOf(arguments),
+        photoResolutions = photoResolutionsOf(arguments),
     )
 
     private val _uiState = MutableStateFlow(uiStateMapper.map(state))
@@ -80,8 +82,10 @@ internal class CameraSettingsViewModel @Inject constructor(
     override fun onAction(action: Action) {
         when (action) {
             is Action.SwitchToggled -> onSwitchToggled(action)
-            is Action.PhotoQualityConfirmed -> confirmPhotoQuality(action.quality)
             is Action.PhotoQualityClicked -> showDialog(Dialog.PhotoQuality)
+            is Action.PhotoQualityConfirmed -> confirmPhotoQuality(action)
+            is Action.CaptureModeClicked -> showDialog(Dialog.CaptureMode)
+            is Action.CaptureModeConfirmed -> confirmCaptureMode(action.mode)
             is Action.StorageLocationClicked -> _effects.trySend(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
@@ -95,24 +99,12 @@ internal class CameraSettingsViewModel @Inject constructor(
         when (action) {
             is Action.RemoveExifToggled -> setRemoveExif(enabled)
 
-            is Action.ZslToggled -> {
-                updateSettings { it.copy(enableZsl = enabled) }
-            }
-
             is Action.GyroscopeSuggestionsToggled -> {
                 updateSettings { it.copy(gyroscopeSuggestions = enabled) }
             }
 
-            is Action.SaveImageAsPreviewedToggled -> {
-                updateSettings { it.copy(saveImageAsPreviewed = enabled) }
-            }
-
-            is Action.SaveVideoAsPreviewedToggled -> {
-                updateSettings { it.copy(saveVideoAsPreviewed = enabled) }
-            }
-
-            is Action.HighestResolutionToggled -> {
-                updateSettings { it.copy(selectHighestResolution = enabled) }
+            is Action.KeepSelfiesAsSeenToggled -> {
+                updateSettings { it.copy(keepSelfiesAsSeen = enabled) }
             }
 
             is Action.CameraSoundsToggled -> {
@@ -127,12 +119,23 @@ internal class CameraSettingsViewModel @Inject constructor(
         updateSettings { it.copy(removeExifAfterCapture = enabled) }
     }
 
-    private fun confirmPhotoQuality(quality: Int) {
+    private fun confirmPhotoQuality(action: Action.PhotoQualityConfirmed) {
         showDialog(null)
 
-        if (quality in CameraSettings.PHOTO_QUALITY_RANGE) {
-            updateSettings { it.copy(photoQuality = quality) }
+        updateSettings { settings ->
+            settings.copy(
+                photoQuality = action.quality
+                    .takeIf { it in CameraSettings.PHOTO_QUALITY_RANGE }
+                    ?: settings.photoQuality,
+                selectHighestResolution = action.isFullResolution,
+            )
         }
+    }
+
+    private fun confirmCaptureMode(mode: CaptureMode) {
+        showDialog(null)
+
+        updateSettings { it.copy(captureMode = mode) }
     }
 
     private fun changeStorageLocation(tree: Uri?) {

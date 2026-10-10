@@ -44,6 +44,7 @@ import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
@@ -78,6 +79,7 @@ interface CameraSession {
     val extensionsAvailable: Boolean
     val isFlashAvailable: Boolean
     val isZslSupported: Boolean
+    val photoResolutions: PhotoResolutions?
     val isTorchOn: Boolean
     val exposure: CameraExposure?
     val sensorOrientationDegrees: Int?
@@ -111,6 +113,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
+    private val photoResolutionSupport: PhotoResolutionSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
@@ -170,6 +173,11 @@ internal class CameraSessionImpl @Inject constructor(
     override val isZslSupported: Boolean
         get() {
             return camera?.cameraInfo?.isZslSupported ?: false
+        }
+
+    override val photoResolutions: PhotoResolutions?
+        get() {
+            return camera?.cameraInfo?.let(photoResolutionSupport::resolutions)
         }
 
     override var isTorchOn: Boolean = false
@@ -533,8 +541,7 @@ internal class CameraSessionImpl @Inject constructor(
             previewTargetRotation = displayRotation(),
             flashMode = settings.flashMode,
             photoQuality = settings.photoQuality,
-            waitForFocusLock = settings.waitForFocusLock,
-            enableZsl = settings.enableZsl,
+            captureMode = settings.captureMode,
             selectHighestResolution = settings.selectHighestResolution,
             videoQuality = settings.videoQuality,
             mirrorVideoOnFrontCamera = settings.mirrorVideoOnFrontCamera,

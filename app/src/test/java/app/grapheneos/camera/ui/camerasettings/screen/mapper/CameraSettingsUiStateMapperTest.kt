@@ -1,9 +1,13 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
+import app.grapheneos.camera.data.camera.model.PhotoResolutions
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
+import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
+import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -48,12 +52,12 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
-    fun photoQuality_matchingALevel_isShownAsThatLevel() {
-        val preset = mapper.map(CameraSettingsState(settings = CameraSettings(photoQuality = 75)))
-        val custom = mapper.map(CameraSettingsState(settings = CameraSettings(photoQuality = 77)))
+    fun photoQuality_matchingAPreset_isShownAsThatPreset() {
+        val preset = mapper.map(CameraSettingsState(settings = CameraSettings(photoQuality = 90)))
+        val custom = mapper.map(CameraSettingsState(settings = CameraSettings(photoQuality = 96)))
 
-        assertEquals(PhotoQualityLevel.COMPACT, preset.photoQuality.level)
-        assertNull(custom.photoQuality.level)
+        assertEquals(PhotoQualityLevel.STANDARD, preset.photoQuality.level)
+        assertEquals(PhotoQualityLevel.CUSTOM, custom.photoQuality.level)
     }
 
     @Test
@@ -75,12 +79,46 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
-    fun zsl_isShownOnlyWhereSupported() {
-        assertNull(mapper.map(CameraSettingsState(isZslSupported = false)).zsl)
-        assertEquals(
-            SwitchSettingUiModel(),
-            mapper.map(CameraSettingsState(isZslSupported = true)).zsl,
+    fun zeroShutterLag_isOfferedWhereSupportedOrAlreadyChosen() {
+        val unsupported = mapper.map(CameraSettingsState(isZslSupported = false))
+        val supported = mapper.map(CameraSettingsState(isZslSupported = true))
+        val chosen = mapper.map(
+            CameraSettingsState(
+                settings = CameraSettings(captureMode = CaptureMode.ZERO_SHUTTER_LAG),
+            ),
         )
+
+        assertFalse(CaptureModeOption.ZERO_SHUTTER_LAG in unsupported.captureMode.options)
+        assertTrue(CaptureModeOption.ZERO_SHUTTER_LAG in supported.captureMode.options)
+        assertTrue(CaptureModeOption.ZERO_SHUTTER_LAG in chosen.captureMode.options)
+    }
+
+    @Test
+    fun resolution_isOfferedOnlyWhereTheCameraHasMorePixelsToGive() {
+        val withoutChoice = mapper.map(
+            CameraSettingsState(settings = CameraSettings(selectHighestResolution = true)),
+        )
+        val withChoice = mapper.map(
+            CameraSettingsState(
+                settings = CameraSettings(selectHighestResolution = true),
+                photoResolutions = PhotoResolutions(
+                    standardMegapixels = 12,
+                    fullMegapixels = 50,
+                ),
+            ),
+        )
+
+        assertNull(withoutChoice.photoQuality.resolution)
+        assertTrue(withoutChoice.photoQuality.isFullResolution)
+        assertFalse(withoutChoice.photoQuality.isChanged)
+        assertEquals(
+            PhotoResolutionUiModel(
+                standardMegapixels = 12,
+                fullMegapixels = 50,
+            ),
+            withChoice.photoQuality.resolution,
+        )
+        assertTrue(withChoice.photoQuality.isChanged)
     }
 
     @Test

@@ -167,10 +167,6 @@ sealed interface ViewfinderAction {
             val enabled: Boolean,
         ) : SettingsAction
 
-        data class FocusLockToggled(
-            val enabled: Boolean,
-        ) : SettingsAction
-
         data class FocusTimeoutSelected(
             val seconds: Long,
         ) : SettingsAction

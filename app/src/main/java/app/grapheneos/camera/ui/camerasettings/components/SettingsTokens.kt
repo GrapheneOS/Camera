@@ -16,6 +16,8 @@ internal val ITEM_END_PADDING = 16.dp
 internal val ITEM_VERTICAL_PADDING = 20.dp
 internal val ITEM_ICON_SPACING = 24.dp
 
+internal val DIALOG_PADDING = 24.dp
+
 @Composable
 @ReadOnlyComposable
 internal fun groupedItemShape(

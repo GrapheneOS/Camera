@@ -4,8 +4,11 @@ import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
+import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
+import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import javax.inject.Inject
@@ -27,23 +30,12 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
                 checked = settings.gyroscopeSuggestions,
                 default = SettingsDefaults.GYROSCOPE_SUGGESTIONS,
             ),
-            saveImageAsPreviewed = switchSetting(
-                checked = settings.saveImageAsPreviewed,
-                default = SettingsDefaults.SAVE_IMAGE_AS_PREVIEW,
+            keepSelfiesAsSeen = switchSetting(
+                checked = settings.keepSelfiesAsSeen,
+                default = SettingsDefaults.KEEP_SELFIES_AS_SEEN,
             ),
-            saveVideoAsPreviewed = switchSetting(
-                checked = settings.saveVideoAsPreviewed,
-                default = SettingsDefaults.SAVE_VIDEO_AS_PREVIEW,
-            ),
-            photoQuality = photoQuality(settings.photoQuality),
-            selectHighestResolution = switchSetting(
-                checked = settings.selectHighestResolution,
-                default = SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
-            ),
-            zsl = switchSetting(
-                checked = settings.enableZsl,
-                default = SettingsDefaults.ENABLE_ZSL,
-            ).takeIf { state.isZslSupported },
+            photoQuality = photoQuality(state),
+            captureMode = captureMode(state),
             cameraSounds = switchSetting(
                 checked = settings.enableCameraSounds,
                 default = SettingsDefaults.CAMERA_SOUNDS,
@@ -67,12 +59,40 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         }
     }
 
-    private fun photoQuality(quality: Int): PhotoQualityUiModel {
+    private fun photoQuality(state: CameraSettingsState): PhotoQualityUiModel {
+        val quality = state.settings.photoQuality
+        val isFullResolution = state.settings.selectHighestResolution
+        val resolution = state.photoResolutions?.let { resolutions ->
+            PhotoResolutionUiModel(
+                standardMegapixels = resolutions.standardMegapixels,
+                fullMegapixels = resolutions.fullMegapixels,
+            )
+        }
+        val isResolutionChanged = resolution != null &&
+            isFullResolution != SettingsDefaults.SELECT_HIGHEST_RESOLUTION
+
         return PhotoQualityUiModel(
             quality = quality,
             level = PhotoQualityLevel.of(quality),
-            isChanged = quality != SettingsDefaults.PHOTO_QUALITY,
-            levels = PhotoQualityLevel.entries.toImmutableList(),
+            isFullResolution = isFullResolution,
+            resolution = resolution,
+            isChanged = quality != SettingsDefaults.PHOTO_QUALITY || isResolutionChanged,
+            presets = PhotoQualityLevel.presets().toImmutableList(),
+        )
+    }
+
+    private fun captureMode(state: CameraSettingsState): CaptureModeUiModel {
+        val selected = CaptureModeOption.of(state.settings.captureMode)
+        val options = CaptureModeOption.entries.filter { option ->
+            option != CaptureModeOption.ZERO_SHUTTER_LAG ||
+                state.isZslSupported ||
+                option == selected
+        }
+
+        return CaptureModeUiModel(
+            selected = selected,
+            options = options.toImmutableList(),
+            isChanged = selected.mode != SettingsDefaults.CAPTURE_MODE,
         )
     }
 

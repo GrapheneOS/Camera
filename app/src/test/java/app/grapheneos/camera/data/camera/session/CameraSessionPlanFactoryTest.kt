@@ -9,8 +9,8 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
-import app.grapheneos.camera.data.camera.model.ImageCaptureMode
 import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import org.junit.Assert.assertEquals
@@ -44,27 +44,17 @@ class CameraSessionPlanFactoryTest {
     }
 
     @Test
-    fun create_focusLockWinsOverZeroShutterLag() {
-        val plan = buildPlan(request(waitForFocusLock = true, enableZsl = true))
+    fun create_eachCaptureMode_reachesTheImageCapture() {
+        mapOf(
+            CaptureMode.SPEED to ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            CaptureMode.QUALITY to ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
+            CaptureMode.ZERO_SHUTTER_LAG to ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
+        ).forEach { (captureMode, cameraXCaptureMode) ->
+            val plan = buildPlan(request(captureMode = captureMode))
 
-        assertEquals(ImageCaptureMode.MAXIMIZE_QUALITY, plan.captureMode)
-        assertEquals(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY, plan.imageCapture?.captureMode)
-    }
-
-    @Test
-    fun create_zeroShutterLagAlone_isRequested() {
-        val plan = buildPlan(request(enableZsl = true))
-
-        assertEquals(ImageCaptureMode.ZERO_SHUTTER_LAG, plan.captureMode)
-        assertEquals(ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG, plan.imageCapture?.captureMode)
-    }
-
-    @Test
-    fun create_neitherFocusLockNorZeroShutterLag_minimizesLatency() {
-        val plan = buildPlan(request())
-
-        assertEquals(ImageCaptureMode.MINIMIZE_LATENCY, plan.captureMode)
-        assertEquals(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY, plan.imageCapture?.captureMode)
+            assertEquals(captureMode, plan.captureMode)
+            assertEquals(cameraXCaptureMode, plan.imageCapture?.captureMode)
+        }
     }
 
     @Test
@@ -153,8 +143,7 @@ class CameraSessionPlanFactoryTest {
         includesImageCapture: Boolean = true,
         flashMode: FlashMode = FlashMode.OFF,
         imageCaptureTargetRotation: Int = 0,
-        waitForFocusLock: Boolean = false,
-        enableZsl: Boolean = false,
+        captureMode: CaptureMode = CaptureMode.SPEED,
         featureGroup: FeatureGroupRequest = FeatureGroupRequest.Unused,
     ): CameraBindRequest {
         return CameraBindRequest(
@@ -165,8 +154,7 @@ class CameraSessionPlanFactoryTest {
             previewTargetRotation = 0,
             flashMode = flashMode,
             photoQuality = 90,
-            waitForFocusLock = waitForFocusLock,
-            enableZsl = enableZsl,
+            captureMode = captureMode,
             selectHighestResolution = false,
             videoQuality = VideoQuality.UHD,
             mirrorVideoOnFrontCamera = false,
