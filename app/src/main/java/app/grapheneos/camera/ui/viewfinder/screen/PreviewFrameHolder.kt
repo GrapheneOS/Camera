@@ -184,13 +184,13 @@ internal class PreviewFrameHolderImpl(
             SystemClock.uptimeMillis() - framePrefetchedAt < PREFETCH_FRESHNESS_MS
     }
 
-    private companion object {
-        const val TAG = "PreviewFrameHolder"
-
+    internal companion object {
         const val PREFETCH_FRESHNESS_MS = 2_000L
 
+        private const val TAG = "PreviewFrameHolder"
+
         // One preview frame at 30fps, the wait for the camera to fill the surface again.
-        const val FRAME_COPY_RETRY_DELAY_MS = 33L
-        const val FRAME_COPY_RETRIES = 3
+        private const val FRAME_COPY_RETRY_DELAY_MS = 33L
+        private const val FRAME_COPY_RETRIES = 3
     }
 }
