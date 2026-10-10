@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.StringRes
+import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.model.CapturedItem
@@ -56,6 +57,7 @@ sealed interface ViewfinderScreenEffect {
 
         data class OpenCameraSettings(
             val isZslSupported: Boolean,
+            val photoResolutions: PhotoResolutions?,
         ) : Settings
     }
 

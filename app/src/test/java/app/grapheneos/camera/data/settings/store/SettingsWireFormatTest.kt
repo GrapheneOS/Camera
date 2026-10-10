@@ -2,6 +2,7 @@ package app.grapheneos.camera.data.settings.store
 
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -27,14 +28,12 @@ class SettingsWireFormatTest {
         enableCameraSounds = false,
         includeAudio = false,
         enableEis = false,
-        enableZsl = true,
-        waitForFocusLock = true,
+        captureMode = CaptureMode.QUALITY,
         selectHighestResolution = true,
         photoQuality = SOME_PHOTO_QUALITY,
         removeExifAfterCapture = false,
         gyroscopeSuggestions = true,
-        saveImageAsPreviewed = false,
-        saveVideoAsPreviewed = false,
+        keepSelfiesAsSeen = false,
         scanAllCodes = true,
         enabledBarcodeFormats = setOf(SOME_BARCODE_FORMAT),
     )
@@ -57,6 +56,51 @@ class SettingsWireFormatTest {
     fun nothingChosen_isNotWrittenAtAll() {
         runTest {
             assertEquals("{}", encode(CameraSettings()))
+        }
+    }
+
+    @Test
+    fun captureMode_storedBeforeIt_readsAsTheModeTheBindUsedToPick() {
+        runTest {
+            mapOf(
+                """{"enable_zsl":true,"wait_for_focus_lock":true}""" to CaptureMode.QUALITY,
+                """{"enable_zsl":true}""" to CaptureMode.ZERO_SHUTTER_LAG,
+                """{"enable_zsl":false,"wait_for_focus_lock":false}""" to CaptureMode.SPEED,
+            ).forEach { (common, mode) ->
+                assertEquals(mode, decode("""{"common":$common}""").captureMode)
+            }
+        }
+    }
+
+    @Test
+    fun keepSelfiesAsSeen_storedBeforeIt_followsThePhotoSetting() {
+        runTest {
+            val stored = """{"common":{"save_image_as_previewed":false,""" +
+                """"save_video_as_previewed":true}}"""
+
+            assertEquals(false, decode(stored).keepSelfiesAsSeen)
+        }
+    }
+
+    @Test
+    fun mergedSettings_writtenAgain_leaveTheOldKeysBehind() {
+        runTest {
+            val stored = """{"common":{"wait_for_focus_lock":true,""" +
+                """"save_image_as_previewed":false,"save_video_as_previewed":true}}"""
+
+            assertEquals(
+                """{"common":{"capture_mode":"QUALITY","keep_selfies_as_seen":false}}""",
+                encode(decode(stored)),
+            )
+        }
+    }
+
+    @Test
+    fun captureMode_aNameThisVersionDoesNotKnow_readsAsTheDefault() {
+        runTest {
+            val stored = """{"common":{"capture_mode":"FROM_THE_FUTURE","enable_zsl":true}}"""
+
+            assertEquals(SettingsDefaults.CAPTURE_MODE, decode(stored).captureMode)
         }
     }
 
@@ -292,11 +336,10 @@ class SettingsWireFormatTest {
         const val EVERY_SETTING_ON_DISK = """{"common":{"aspect_ratio":1,""" +
             """"grid_type":"GOLDEN_RATIO","focus_timeout_seconds":10,""" +
             """"self_timer_duration_seconds":3,"enable_camera_sounds":false,""" +
-            """"include_audio":false,"enable_eis":false,"enable_zsl":true,""" +
-            """"wait_for_focus_lock":true,"select_highest_resolution":true,""" +
-            """"photo_quality":71,"remove_exif_after_capture":false,""" +
-            """"gyroscope_suggestions":true,"save_image_as_previewed":false,""" +
-            """"save_video_as_previewed":false,"scan_all_codes":true,""" +
+            """"include_audio":false,"enable_eis":false,"capture_mode":"QUALITY",""" +
+            """"select_highest_resolution":true,"photo_quality":71,""" +
+            """"remove_exif_after_capture":false,"gyroscope_suggestions":true,""" +
+            """"keep_selfies_as_seen":false,"scan_all_codes":true,""" +
             """"enabled_barcode_formats":["AZTEC"]}}"""
 
         const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode":2,""" +

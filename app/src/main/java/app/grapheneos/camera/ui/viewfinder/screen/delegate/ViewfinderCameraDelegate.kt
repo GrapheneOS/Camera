@@ -415,6 +415,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                         session.canApplyVideoStabilization(),
                     isTorchOn = false,
                     isZslSupported = session.isZslSupported,
+                    photoResolutions = session.photoResolutions,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,
                 ),
             )

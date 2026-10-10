@@ -72,8 +72,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
     var selfIlluminationToggle: MaterialSwitch
 
-    var waitForFocusLockSwitch: MaterialSwitch
-
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
     private var includeAudioSetting: View
@@ -81,7 +79,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
-    private var waitForFocusLockSetting: View
 
     var settingsFrame: View
 
@@ -224,13 +221,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 override fun onNothingSelected(p0: AdapterView<*>?) {}
             }
 
-        waitForFocusLockSwitch = binding.waitForFocusLockSwitch
-        waitForFocusLockSwitch.setOnClickListener {
-            viewfinder.onAction(
-                SettingsAction.FocusLockToggled(waitForFocusLockSwitch.isChecked),
-            )
-        }
-
         selfIlluminationToggle = binding.selfIlluminationSwitch
         selfIlluminationToggle.setOnClickListener {
             viewfinder.onAction(
@@ -303,7 +293,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
-        waitForFocusLockSetting = binding.waitForFocusLockSetting
 
         includeAudioToggle = binding.includeAudioSwitch
         includeAudioToggle.setOnClickListener {
@@ -450,12 +439,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         includeAudioToggle.isChecked = state.includeAudio
         enableEISToggle.isChecked = state.stabilizationEnabled
-        waitForFocusLockSwitch.isChecked = state.waitForFocusLock
 
         includeAudioToggle.isEnabled = state.includeAudioSettingEnabled
         videoQualitySpinner.isEnabled = state.videoQualitySettingEnabled
         enableEISToggle.isEnabled = state.stabilizationSettingEnabled
-        waitForFocusLockSwitch.isEnabled = state.waitForFocusLockSettingEnabled
 
         aRToggle.isChecked = state.is16by9
         ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
@@ -472,7 +459,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         enableEISSetting.visibility = visibleOrGone(state.stabilizationSettingVisible)
         selfIlluminationSetting.visibility = visibleOrGone(state.selfIlluminationSettingVisible)
         timerSetting.visibility = visibleOrGone(state.timerSettingVisible)
-        waitForFocusLockSetting.visibility = visibleOrGone(state.waitForFocusLockSettingVisible)
 
         renderVideoQualities(state)
     }

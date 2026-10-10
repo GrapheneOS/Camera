@@ -5,16 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,18 +15,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
 import app.grapheneos.camera.ui.core.CameraPreviewTheme
@@ -44,69 +34,96 @@ import kotlinx.collections.immutable.persistentListOf
 private const val TILES_PER_ROW = 2
 private const val PERCENT = 100.0
 
-private val DIALOG_PADDING = 24.dp
 private val TILE_SPACING = 8.dp
+private val SECTION_SPACING = 16.dp
 
 @Composable
 internal fun PhotoQualityDialog(
     quality: Int,
+    isFullResolution: Boolean,
     options: ImmutableList<PhotoQualityOption>,
-    onConfirm: (Int) -> Unit,
+    resolutions: PhotoResolutionOptions?,
+    onConfirm: (quality: Int, isFullResolution: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ) {
-            PhotoQualityDialogContent(
-                quality = quality,
-                options = options,
-                onConfirm = onConfirm,
-            )
-        }
+    var selectedQuality by rememberSaveable { mutableIntStateOf(quality) }
+    var selectedFullResolution by rememberSaveable { mutableStateOf(isFullResolution) }
+
+    SettingsDialogFrame(
+        title = stringResource(R.string.image_quality),
+        onConfirm = { onConfirm(selectedQuality, selectedFullResolution) },
+        onDismiss = onDismiss,
+    ) {
+        PhotoQualityDialogContent(
+            selectedQuality = selectedQuality,
+            onSelectQuality = { selectedQuality = it },
+            isFullResolution = selectedFullResolution,
+            onSelectResolution = { selectedFullResolution = it },
+            options = options,
+            resolutions = resolutions,
+        )
     }
 }
 
 @Composable
 private fun PhotoQualityDialogContent(
-    quality: Int,
+    selectedQuality: Int,
+    onSelectQuality: (Int) -> Unit,
+    isFullResolution: Boolean,
+    onSelectResolution: (Boolean) -> Unit,
     options: ImmutableList<PhotoQualityOption>,
-    onConfirm: (Int) -> Unit,
+    resolutions: PhotoResolutionOptions?,
 ) {
-    var selectedQuality by rememberSaveable { mutableIntStateOf(quality) }
-
     Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(DIALOG_PADDING),
+        modifier = Modifier.padding(horizontal = DIALOG_PADDING),
+        verticalArrangement = Arrangement.spacedBy(TILE_SPACING),
     ) {
-        Text(
-            text = stringResource(R.string.image_quality),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.semantics { heading() },
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
+        if (resolutions != null) {
+            PhotoQualitySectionLabel(text = stringResource(R.string.camera_settings_resolution))
+            Row(
+                modifier = Modifier.selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(TILE_SPACING),
+            ) {
+                PhotoQualityTile(
+                    title = resolutions.standard,
+                    subtitle = stringResource(R.string.camera_settings_resolution_default),
+                    selected = !isFullResolution,
+                    onClick = { onSelectResolution(false) },
+                    modifier = Modifier.weight(1f),
+                )
+                PhotoQualityTile(
+                    title = resolutions.full,
+                    subtitle = stringResource(R.string.camera_settings_resolution_full),
+                    selected = isFullResolution,
+                    onClick = { onSelectResolution(true) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            PhotoQualitySectionLabel(
+                text = stringResource(R.string.camera_settings_compression),
+                modifier = Modifier.padding(top = SECTION_SPACING - TILE_SPACING),
+            )
+        }
 
         PhotoQualityTiles(
             options = options,
             selectedQuality = selectedQuality,
-            onSelect = { selectedQuality = it },
+            onSelect = onSelectQuality,
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { onConfirm(selectedQuality) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentWidth(Alignment.End),
-        ) {
-            Text(text = stringResource(R.string.done))
-        }
     }
+}
+
+@Composable
+private fun PhotoQualitySectionLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -123,7 +140,8 @@ private fun PhotoQualityTiles(
             Row(horizontalArrangement = Arrangement.spacedBy(TILE_SPACING)) {
                 row.forEach { option ->
                     PhotoQualityTile(
-                        option = option,
+                        title = option.label,
+                        subtitle = formatPhotoQuality(option.quality),
                         selected = option.quality == selectedQuality,
                         onClick = { onSelect(option.quality) },
                         modifier = Modifier.weight(1f),
@@ -136,7 +154,8 @@ private fun PhotoQualityTiles(
 
 @Composable
 private fun PhotoQualityTile(
-    option: PhotoQualityOption,
+    title: String,
+    subtitle: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -174,12 +193,12 @@ private fun PhotoQualityTile(
             ),
     ) {
         Text(
-            text = option.label,
+            text = title,
             style = MaterialTheme.typography.titleSmall,
             color = contentColor,
         )
         Text(
-            text = formatPhotoQuality(option.quality),
+            text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = contentColor,
         )
@@ -192,39 +211,58 @@ internal data class PhotoQualityOption(
     val label: String,
 )
 
+@Immutable
+internal data class PhotoResolutionOptions(
+    val standard: String,
+    val full: String,
+)
+
 internal fun formatPhotoQuality(quality: Int): String {
     return NumberFormat.getPercentInstance().format(quality / PERCENT)
 }
 
 @PreviewLightDark
 @Composable
-private fun PhotoQualityDialogLevelPreview() {
-    PhotoQualityDialogPreview(quality = 95)
+private fun PhotoQualityDialogPreview() {
+    PhotoQualityDialogPreviewContent(resolutions = null)
 }
 
 @PreviewLightDark
 @Composable
-private fun PhotoQualityDialogCustomPreview() {
-    PhotoQualityDialogPreview(quality = 77)
+private fun PhotoQualityDialogResolutionPreview() {
+    PhotoQualityDialogPreviewContent(
+        resolutions = PhotoResolutionOptions(
+            standard = "12 MP",
+            full = "50 MP",
+        ),
+    )
 }
 
 @Composable
-private fun PhotoQualityDialogPreview(quality: Int) {
+private fun PhotoQualityDialogPreviewContent(resolutions: PhotoResolutionOptions?) {
     CameraPreviewTheme {
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
-            PhotoQualityDialogContent(
-                quality = quality,
-                options = persistentListOf(
-                    PhotoQualityOption(quality = 100, label = "Maximum"),
-                    PhotoQualityOption(quality = 95, label = "High"),
-                    PhotoQualityOption(quality = 90, label = "Standard"),
-                    PhotoQualityOption(quality = 75, label = "Compact"),
-                ),
+            SettingsDialogFrameContent(
+                title = "Image quality",
                 onConfirm = {},
-            )
+            ) {
+                PhotoQualityDialogContent(
+                    selectedQuality = 95,
+                    onSelectQuality = {},
+                    isFullResolution = false,
+                    onSelectResolution = {},
+                    options = persistentListOf(
+                        PhotoQualityOption(quality = 100, label = "Maximum"),
+                        PhotoQualityOption(quality = 95, label = "High"),
+                        PhotoQualityOption(quality = 90, label = "Standard"),
+                        PhotoQualityOption(quality = 75, label = "Compact"),
+                    ),
+                    resolutions = resolutions,
+                )
+            }
         }
     }
 }

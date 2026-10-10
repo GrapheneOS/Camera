@@ -285,40 +285,6 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:id="@+id/wait_for_focus_lock_setting"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
-                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_height="wrap_content"
-                            android:layout_width="wrap_content"
-                            android:layout_gravity="center_vertical"
-                            android:text="@string/wait_for_focus_lock"/>
-
-                        <LinearLayout
-                            android:id="@+id/wait_for_focus_lock_container"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="end|center_vertical">
-
-                            <com.google.android.material.materialswitch.MaterialSwitch
-                                android:id="@+id/wait_for_focus_lock_switch"
-                                android:layout_width="wrap_content"
-                                android:layout_height="@dimen/settings_dialog_switch_height"
-                                android:scaleX="@integer/settings_dialog_switch_scale"
-                                android:scaleY="@integer/settings_dialog_switch_scale"
-                                android:checked="true"
-                                android:contentDescription="@string/wait_for_focus_lock"/>
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-
-                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/settings_dialog_menu_item_height"
                         android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"

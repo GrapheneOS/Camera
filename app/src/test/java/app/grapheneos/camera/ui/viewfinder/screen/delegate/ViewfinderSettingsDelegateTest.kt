@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -150,18 +151,28 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun openCameraSettings_opensThemWithTheCamerasZslSupport() {
+    fun openCameraSettings_opensThemWithWhatTheCameraSupports() {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
             stateHolder.update {
-                it.copy(session = ViewfinderSessionState(isZslSupported = true))
+                it.copy(
+                    session = ViewfinderSessionState(
+                        isZslSupported = true,
+                        photoResolutions = PHOTO_RESOLUTIONS,
+                    ),
+                )
             }
 
             delegate.openCameraSettings()
 
             assertEquals(
-                listOf(ViewfinderScreenEffect.Settings.OpenCameraSettings(isZslSupported = true)),
+                listOf(
+                    ViewfinderScreenEffect.Settings.OpenCameraSettings(
+                        isZslSupported = true,
+                        photoResolutions = PHOTO_RESOLUTIONS,
+                    ),
+                ),
                 effects,
             )
         }
@@ -205,6 +216,11 @@ class ViewfinderSettingsDelegateTest {
 
     private companion object {
         const val SELF_TIMER_SECONDS = 5
+
+        val PHOTO_RESOLUTIONS = PhotoResolutions(
+            standardMegapixels = 12,
+            fullMegapixels = 50,
+        )
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
         val SLOTTED = ModeSettings(geoTagging = true, videoQuality = VideoQuality.FHD)

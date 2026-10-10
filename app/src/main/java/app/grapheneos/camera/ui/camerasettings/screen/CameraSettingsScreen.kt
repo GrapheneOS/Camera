@@ -16,11 +16,9 @@ import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.CameraFront
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.HighQuality
-import androidx.compose.material.icons.outlined.PhotoSizeSelectLarge
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
 import androidx.compose.material.icons.outlined.Straighten
-import androidx.compose.material.icons.outlined.VideoCameraFront
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -55,6 +53,7 @@ import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopApp
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
@@ -245,26 +244,14 @@ private fun compositionRows(
                 onCheckedChange = { onAction(Action.GyroscopeSuggestionsToggled(it)) },
             )
         },
-        SettingsRow(key = "save_image_as_previewed") { shape ->
+        SettingsRow(key = "keep_selfies_as_seen") { shape ->
             SwitchSettingItem(
-                setting = uiState.saveImageAsPreviewed,
-                title = stringResource(R.string.save_image_as_previewed),
-                summary = stringResource(R.string.save_as_image_preview_desc),
-                label = stringResource(R.string.camera_settings_photo_only),
+                setting = uiState.keepSelfiesAsSeen,
+                title = stringResource(R.string.camera_settings_keep_selfies_as_seen),
+                summary = stringResource(R.string.camera_settings_keep_selfies_as_seen_summary),
                 icon = Icons.Outlined.CameraFront,
                 shape = shape,
-                onCheckedChange = { onAction(Action.SaveImageAsPreviewedToggled(it)) },
-            )
-        },
-        SettingsRow(key = "save_video_as_previewed") { shape ->
-            SwitchSettingItem(
-                setting = uiState.saveVideoAsPreviewed,
-                title = stringResource(R.string.save_video_as_previewed),
-                summary = stringResource(R.string.save_as_video_preview_desc),
-                label = stringResource(R.string.camera_settings_video_only),
-                icon = Icons.Outlined.VideoCameraFront,
-                shape = shape,
-                onCheckedChange = { onAction(Action.SaveVideoAsPreviewedToggled(it)) },
+                onCheckedChange = { onAction(Action.KeepSelfiesAsSeenToggled(it)) },
             )
         },
     )
@@ -274,46 +261,29 @@ private fun qualityRows(
     uiState: UiState,
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
-    val photoQuality = SettingsRow(key = "photo_quality") { shape ->
-        SettingsClickableItem(
-            title = stringResource(R.string.image_quality),
-            summary = photoQualitySummary(uiState.photoQuality),
-            label = stringResource(R.string.camera_settings_photo_only),
-            icon = Icons.Outlined.HighQuality,
-            isChanged = uiState.photoQuality.isChanged,
-            shape = shape,
-            onClick = { onAction(Action.PhotoQualityClicked) },
-        )
-    }
-    val highestResolution = SettingsRow(key = "highest_resolution") { shape ->
-        SwitchSettingItem(
-            setting = uiState.selectHighestResolution,
-            title = stringResource(R.string.highest_res_setting),
-            summary = stringResource(R.string.highest_res_setting_desc),
-            label = stringResource(R.string.camera_settings_photo_only),
-            icon = Icons.Outlined.PhotoSizeSelectLarge,
-            shape = shape,
-            onCheckedChange = { onAction(Action.HighestResolutionToggled(it)) },
-        )
-    }
-    val zsl = uiState.zsl?.let { setting ->
-        SettingsRow(key = "zsl") { shape ->
-            SwitchSettingItem(
-                setting = setting,
-                title = stringResource(R.string.zsl_setting_title),
-                summary = stringResource(R.string.zsl_setting_desc),
+    return listOf(
+        SettingsRow(key = "photo_quality") { shape ->
+            SettingsClickableItem(
+                title = stringResource(R.string.image_quality),
+                summary = photoQualitySummary(uiState.photoQuality),
+                label = stringResource(R.string.camera_settings_photo_only),
+                icon = Icons.Outlined.HighQuality,
+                isChanged = uiState.photoQuality.isChanged,
+                shape = shape,
+                onClick = { onAction(Action.PhotoQualityClicked) },
+            )
+        },
+        SettingsRow(key = "capture_mode") { shape ->
+            SettingsClickableItem(
+                title = stringResource(R.string.camera_settings_capture_mode),
+                summary = stringResource(uiState.captureMode.selected.label),
                 label = stringResource(R.string.camera_settings_photo_only),
                 icon = Icons.Outlined.ShutterSpeed,
+                isChanged = uiState.captureMode.isChanged,
                 shape = shape,
-                onCheckedChange = { onAction(Action.ZslToggled(it)) },
+                onClick = { onAction(Action.CaptureModeClicked) },
             )
-        }
-    }
-
-    return listOfNotNull(
-        photoQuality,
-        highestResolution,
-        zsl,
+        },
     )
 }
 
@@ -404,16 +374,39 @@ private fun SwitchSettingItem(
 
 @Composable
 private fun photoQualitySummary(photoQuality: PhotoQualityUiModel): String {
-    val label = when (val level = photoQuality.level) {
-        null -> R.string.camera_settings_photo_quality_custom
-        else -> level.label
+    val percent = formatPhotoQuality(photoQuality.quality)
+    val compression = stringResource(photoQuality.level.label)
+
+    return when (val resolution = photoQuality.resolution) {
+        null -> stringResource(
+            R.string.camera_settings_photo_quality_summary,
+            compression,
+            percent,
+        )
+
+        else -> stringResource(
+            R.string.camera_settings_photo_quality_summary_with_resolution,
+            megapixels(
+                resolution = resolution,
+                isFull = photoQuality.isFullResolution,
+            ),
+            compression,
+            percent,
+        )
+    }
+}
+
+@Composable
+private fun megapixels(
+    resolution: PhotoResolutionUiModel,
+    isFull: Boolean,
+): String {
+    val megapixels = when {
+        isFull -> resolution.fullMegapixels
+        else -> resolution.standardMegapixels
     }
 
-    return stringResource(
-        R.string.camera_settings_photo_quality_summary,
-        stringResource(label),
-        formatPhotoQuality(photoQuality.quality),
-    )
+    return stringResource(R.string.camera_settings_megapixels, megapixels)
 }
 
 private class SettingsRow(
@@ -431,10 +424,8 @@ private fun CameraSettingsContentPreview() {
                     checked = true,
                     isChanged = true,
                 ),
-                saveImageAsPreviewed = SwitchSettingUiModel(checked = true),
-                saveVideoAsPreviewed = SwitchSettingUiModel(checked = true),
+                keepSelfiesAsSeen = SwitchSettingUiModel(checked = true),
                 removeExif = SwitchSettingUiModel(checked = true),
-                zsl = SwitchSettingUiModel(),
                 cameraSounds = SwitchSettingUiModel(checked = true),
                 storageLocation = StorageLocationUiModel(
                     location = "",

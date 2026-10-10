@@ -19,15 +19,19 @@ internal enum class PhotoQualityLevel(
         quality = 90,
         label = R.string.camera_settings_photo_quality_standard,
     ),
-    COMPACT(
+    CUSTOM(
         quality = 75,
-        label = R.string.camera_settings_photo_quality_compact,
+        label = R.string.camera_settings_photo_quality_custom,
     ),
     ;
 
     companion object {
-        fun of(quality: Int): PhotoQualityLevel? {
-            return entries.find { it.quality == quality }
+        fun presets(): List<PhotoQualityLevel> {
+            return entries.filter { it != CUSTOM }
+        }
+
+        fun of(quality: Int): PhotoQualityLevel {
+            return entries.find { it != CUSTOM && it.quality == quality } ?: CUSTOM
         }
     }
 }

@@ -28,7 +28,6 @@ interface ViewfinderSettingsDelegate {
     fun setFocusTimeout(seconds: Long)
     fun setSelfTimerDuration(seconds: Int)
     fun setEnableEis(enabled: Boolean)
-    fun setWaitForFocusLock(enabled: Boolean)
     fun setAspectRatio(value: AspectRatio)
     fun toggleScanAllCodes()
     fun setIncludeAudio(enabled: Boolean)
@@ -92,10 +91,6 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     override fun setEnableEis(enabled: Boolean) {
         update { it.copy(enableEis = enabled) }
-    }
-
-    override fun setWaitForFocusLock(enabled: Boolean) {
-        update { it.copy(waitForFocusLock = enabled) }
     }
 
     override fun setAspectRatio(value: AspectRatio) {
@@ -176,9 +171,10 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
                 Effect.ShowMessage(R.string.camera_settings_unavailable_during_recording)
             }
 
-            else -> {
-                Effect.Settings.OpenCameraSettings(isZslSupported = state.session.isZslSupported)
-            }
+            else -> Effect.Settings.OpenCameraSettings(
+                isZslSupported = state.session.isZslSupported,
+                photoResolutions = state.session.photoResolutions,
+            )
         }
 
         stateHolder.postEffect(effect)

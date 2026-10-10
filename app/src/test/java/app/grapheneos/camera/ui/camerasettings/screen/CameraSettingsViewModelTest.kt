@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.camerasettings.screen
 
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -76,9 +77,15 @@ class CameraSettingsViewModelTest {
         val viewModel = createViewModel()
 
         viewModel.onAction(Action.PhotoQualityClicked)
-        viewModel.onAction(Action.PhotoQualityConfirmed(quality = 77))
+        viewModel.onAction(
+            Action.PhotoQualityConfirmed(
+                quality = 77,
+                isFullResolution = true,
+            ),
+        )
 
         assertEquals(77, storedSettings.value.photoQuality)
+        assertEquals(true, storedSettings.value.selectHighestResolution)
         assertNull(viewModel.uiState.value.dialog)
     }
 
@@ -88,10 +95,26 @@ class CameraSettingsViewModelTest {
         val stored = storedSettings.value.photoQuality
 
         listOf(0, 101).forEach { quality ->
-            viewModel.onAction(Action.PhotoQualityConfirmed(quality = quality))
+            viewModel.onAction(
+                Action.PhotoQualityConfirmed(
+                    quality = quality,
+                    isFullResolution = false,
+                ),
+            )
         }
 
         assertEquals(stored, storedSettings.value.photoQuality)
+    }
+
+    @Test
+    fun captureModeConfirmed_isStoredAndClosesTheDialog() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(Action.CaptureModeClicked)
+        viewModel.onAction(Action.CaptureModeConfirmed(CaptureMode.QUALITY))
+
+        assertEquals(CaptureMode.QUALITY, storedSettings.value.captureMode)
+        assertNull(viewModel.uiState.value.dialog)
     }
 
     @Test
@@ -136,7 +159,10 @@ class CameraSettingsViewModelTest {
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
         isZslSupported: Boolean = false,
     ): CameraSettingsViewModel {
-        val arguments = cameraSettingsArguments(isZslSupported = isZslSupported)
+        val arguments = cameraSettingsArguments(
+            isZslSupported = isZslSupported,
+            photoResolutions = null,
+        )
 
         return CameraSettingsViewModel(
             arguments = SavedStateHandle(

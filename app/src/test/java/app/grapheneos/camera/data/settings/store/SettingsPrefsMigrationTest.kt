@@ -131,14 +131,13 @@ class SettingsPrefsMigrationTest {
     }
 
     @Test
-    fun migrate_installPredatingSaveAsPreviewed_keepsRecordingTheOldWay() {
+    fun migrate_installPredatingSaveAsPreviewed_keepsSelfiesAsThePhotoSettingSays() {
         runTest {
             commons().edit(commit = true) { putBoolean(SAVE_IMAGE_AS_PREVIEW, true) }
 
             val migrated = migrateCommon()
 
-            assertEquals(true, migrated.saveImageAsPreviewed)
-            assertEquals(false, migrated.saveVideoAsPreviewed)
+            assertEquals(true, migrated.keepSelfiesAsSeen)
         }
     }
 
@@ -149,8 +148,8 @@ class SettingsPrefsMigrationTest {
 
             val migrated = migrateCommon()
 
-            assertEquals(SettingsDefaults.SAVE_IMAGE_AS_PREVIEW, migrated.saveImageAsPreviewed)
-            assertEquals(SettingsDefaults.SAVE_VIDEO_AS_PREVIEW, migrated.saveVideoAsPreviewed)
+            assertEquals(SettingsDefaults.KEEP_SELFIES_AS_SEEN, migrated.keepSelfiesAsSeen)
+            assertEquals(SettingsDefaults.CAPTURE_MODE, migrated.captureMode)
             assertEquals(SettingsDefaults.ENABLE_EIS, migrated.enableEis)
             assertEquals(SettingsDefaults.ASPECT_RATIO, migrated.aspectRatio)
         }
