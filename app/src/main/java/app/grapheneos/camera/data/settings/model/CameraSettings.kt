@@ -30,15 +30,6 @@ data class CameraSettings(
     }
 
     companion object {
-        const val FOCUS_TIMEOUT_OFF = "Off"
-
         val PHOTO_QUALITY_RANGE = 1..100
-    }
-}
-
-fun focusTimeoutLabel(seconds: Long): String {
-    return when (seconds) {
-        0L -> CameraSettings.FOCUS_TIMEOUT_OFF
-        else -> "${seconds}s"
     }
 }

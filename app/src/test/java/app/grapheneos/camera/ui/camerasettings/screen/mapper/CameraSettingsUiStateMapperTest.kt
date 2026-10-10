@@ -1,9 +1,11 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
+import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
@@ -30,7 +32,10 @@ class CameraSettingsUiStateMapperTest {
 
         assertFalse(uiState.cameraSounds.isChanged)
         assertFalse(uiState.removeExif.isChanged)
+        assertFalse(uiState.grid.isChanged)
         assertFalse(uiState.photoQuality.isChanged)
+        assertFalse(uiState.videoStabilization.isChanged)
+        assertFalse(uiState.focusTimeout.isChanged)
         assertEquals(false, uiState.storageLocation?.isChanged)
     }
 
@@ -39,7 +44,10 @@ class CameraSettingsUiStateMapperTest {
         val uiState = mapper.map(
             CameraSettingsState(
                 settings = CameraSettings(
+                    gridType = GridType.GOLDEN_RATIO,
+                    focusTimeoutSeconds = 10,
                     enableCameraSounds = false,
+                    enableEis = false,
                     photoQuality = 80,
                 ),
                 storageLocation = "content://tree",
@@ -47,7 +55,10 @@ class CameraSettingsUiStateMapperTest {
         )
 
         assertTrue(uiState.cameraSounds.isChanged)
+        assertTrue(uiState.grid.isChanged)
         assertTrue(uiState.photoQuality.isChanged)
+        assertTrue(uiState.videoStabilization.isChanged)
+        assertTrue(uiState.focusTimeout.isChanged)
         assertEquals(true, uiState.storageLocation?.isChanged)
     }
 
@@ -80,8 +91,12 @@ class CameraSettingsUiStateMapperTest {
 
     @Test
     fun zeroShutterLag_isOfferedWhereSupportedOrAlreadyChosen() {
-        val unsupported = mapper.map(CameraSettingsState(isZslSupported = false))
-        val supported = mapper.map(CameraSettingsState(isZslSupported = true))
+        val unsupported = mapper.map(
+            CameraSettingsState(capabilities = CameraCapabilities(isZslSupported = false)),
+        )
+        val supported = mapper.map(
+            CameraSettingsState(capabilities = CameraCapabilities(isZslSupported = true)),
+        )
         val chosen = mapper.map(
             CameraSettingsState(
                 settings = CameraSettings(captureMode = CaptureMode.ZERO_SHUTTER_LAG),
@@ -101,9 +116,11 @@ class CameraSettingsUiStateMapperTest {
         val withChoice = mapper.map(
             CameraSettingsState(
                 settings = CameraSettings(selectHighestResolution = true),
-                photoResolutions = PhotoResolutions(
-                    standardMegapixels = 12,
-                    fullMegapixels = 50,
+                capabilities = CameraCapabilities(
+                    photoResolutions = PhotoResolutions(
+                        standardMegapixels = 12,
+                        fullMegapixels = 50,
+                    ),
                 ),
             ),
         )
@@ -119,6 +136,33 @@ class CameraSettingsUiStateMapperTest {
             withChoice.photoQuality.resolution,
         )
         assertTrue(withChoice.photoQuality.isChanged)
+    }
+
+    @Test
+    fun videoStabilization_onACameraThatCannotStabilize_isLockedAtItsStoredValue() {
+        val unsupported = mapper.map(
+            CameraSettingsState(settings = CameraSettings(enableEis = false)),
+        )
+        val supported = mapper.map(
+            CameraSettingsState(
+                settings = CameraSettings(enableEis = false),
+                capabilities = CameraCapabilities(isVideoStabilizationSupported = true),
+            ),
+        )
+
+        assertFalse(unsupported.videoStabilization.enabled)
+        assertFalse(unsupported.videoStabilization.checked)
+        assertTrue(supported.videoStabilization.enabled)
+    }
+
+    @Test
+    fun focusTimeout_storedOutsideTheChoices_isStillOffered() {
+        val uiState = mapper.map(
+            CameraSettingsState(settings = CameraSettings(focusTimeoutSeconds = 7)),
+        )
+
+        assertEquals(listOf(0L, 3L, 5L, 7L, 8L, 10L), uiState.focusTimeout.options)
+        assertEquals(7L, uiState.focusTimeout.selected)
     }
 
     @Test

@@ -246,25 +246,18 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.SettingsIconClicked -> onSettingsIconClicked()
-            is SettingsAction.CameraSettingsClicked -> settingsDelegate.openCameraSettings()
-            is SettingsAction.GridToggleClicked -> settingsDelegate.cycleGridType()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
             is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
             is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
             is SettingsAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
 
-            is SettingsAction.FocusTimeoutSelected -> {
-                settingsDelegate.setFocusTimeout(action.seconds)
+            is SettingsAction.CameraSettingsClicked -> {
+                settingsDelegate.openCameraSettings(cameraDelegate.capabilities())
             }
 
             is SettingsAction.SelfTimerSelected -> {
                 settingsDelegate.setSelfTimerDuration(action.seconds)
-            }
-
-            is SettingsAction.StabilizationToggled -> {
-                settingsDelegate.setEnableEis(action.enabled)
-                startCamera(forced = true)
             }
         }
     }

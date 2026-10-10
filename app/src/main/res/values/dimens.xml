@@ -5,9 +5,6 @@
 
     <dimen name="qr_toggle_button_size">52dp</dimen>
 
-    <dimen name="grid_on_toggle_button_padding">6dp</dimen>
-    <dimen name="grid_off_toggle_button_padding">12dp</dimen>
-
     <dimen name="settings_dialog_padding_vertical">12dp</dimen>
     <dimen name="settings_dialog_padding_horizontal">14dp</dimen>
 

@@ -213,12 +213,7 @@ internal class ViewfinderEffectHandlerImpl(
         }
         val intent = Intent(activity, screen)
             .putExtras(cameraEntryPointArguments(activity.cameraEntryPoint))
-            .putExtras(
-                cameraSettingsArguments(
-                    isZslSupported = effect.isZslSupported,
-                    photoResolutions = effect.photoResolutions,
-                ),
-            )
+            .putExtras(cameraSettingsArguments(effect.capabilities))
 
         activity.startActivity(intent)
     }

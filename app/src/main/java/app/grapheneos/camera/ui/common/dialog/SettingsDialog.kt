@@ -32,7 +32,6 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.data.settings.model.focusTimeoutLabel
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.common.videoQualityTitle
@@ -56,26 +55,22 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     private var flashToggle: ImageView
     private var aRToggle: ToggleButton
     var torchToggle: ToggleButton
-    private var gridToggle: ImageView
     var videoQualitySpinner: Spinner
     internal var videoQualities: List<VideoQuality> = emptyList()
         private set
 
-    private var focusTimeoutSpinner: Spinner
     private var timerSpinner: Spinner
 
     var mScrollView: ScrollView
     var mScrollViewContent: View
 
     var includeAudioToggle: MaterialSwitch
-    var enableEISToggle: MaterialSwitch
 
     var selfIlluminationToggle: MaterialSwitch
 
     private val timeOptions = mActivity.resources.getStringArray(R.array.time_options)
 
     private var includeAudioSetting: View
-    private var enableEISSetting: View
     private var selfIlluminationSetting: View
     private var videoQualitySetting: View
     private var timerSetting: View
@@ -198,11 +193,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             }
         }
 
-        gridToggle = binding.gridToggleOption
-        gridToggle.setOnClickListener {
-            viewfinder.onAction(SettingsAction.GridToggleClicked)
-        }
-
         videoQualitySpinner = binding.videoQualitySpinner
 
         videoQualitySpinner.onItemSelectedListener =
@@ -232,26 +222,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             selfIlluminationToggle.dispatchTouchEvent(event)
             true
         }
-
-        focusTimeoutSpinner = binding.focusTimeoutSpinner
-        focusTimeoutSpinner.onItemSelectedListener =
-            object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    p0: AdapterView<*>?,
-                    p1: View?,
-                    position: Int,
-                    p3: Long
-                ) {
-
-                    val selectedOption = focusTimeoutSpinner.selectedItem.toString()
-                    updateFocusTimeout(selectedOption)
-
-                }
-
-                override fun onNothingSelected(p0: AdapterView<*>?) {}
-            }
-
-        focusTimeoutSpinner.setSelection(2)
 
         timerSpinner = binding.timerSpinner
         timerSpinner.onItemSelectedListener =
@@ -289,7 +259,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         mScrollViewContent = binding.settingsScrollviewContent
 
         includeAudioSetting = binding.includeAudioSetting
-        enableEISSetting = binding.enableEisSetting
         selfIlluminationSetting = binding.selfIlluminationSetting
         videoQualitySetting = binding.videoQualitySetting
         timerSetting = binding.timerSetting
@@ -302,16 +271,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
             includeAudioToggle.dispatchTouchEvent(event)
-            true
-        }
-
-        enableEISToggle = binding.enableEisSwitch
-        enableEISToggle.setOnClickListener {
-            viewfinder.onAction(SettingsAction.StabilizationToggled(enableEISToggle.isChecked))
-        }
-        binding.enableEisSwitchContainer.setOnTouchListener { _, event ->
-            event.setLocation(0f, 0f)
-            enableEISToggle.dispatchTouchEvent(event)
             true
         }
 
@@ -438,17 +397,12 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         flashToggle.contentDescription = mActivity.getString(state.flashDescription)
 
         includeAudioToggle.isChecked = state.includeAudio
-        enableEISToggle.isChecked = state.stabilizationEnabled
 
         includeAudioToggle.isEnabled = state.includeAudioSettingEnabled
         videoQualitySpinner.isEnabled = state.videoQualitySettingEnabled
-        enableEISToggle.isEnabled = state.stabilizationSettingEnabled
 
         aRToggle.isChecked = state.is16by9
         ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
-
-        gridToggle.setImageResource(state.gridIcon)
-        gridToggle.contentDescription = mActivity.getString(state.gridDescription)
 
         locToggle.isChecked = state.geoTagging
         torchToggle.isChecked = state.torchOn
@@ -456,7 +410,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         includeAudioSetting.visibility = visibleOrGone(state.includeAudioSettingVisible)
         videoQualitySetting.visibility = visibleOrGone(state.videoQualitySettingVisible)
-        enableEISSetting.visibility = visibleOrGone(state.stabilizationSettingVisible)
         selfIlluminationSetting.visibility = visibleOrGone(state.selfIlluminationSettingVisible)
         timerSetting.visibility = visibleOrGone(state.timerSettingVisible)
 
@@ -492,30 +445,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             visible -> View.VISIBLE
             else -> View.GONE
         }
-    }
-
-    fun updateFocusTimeout(selectedOption: String) {
-
-        if (selectedOption == timeOptions[0]) {
-            viewfinder.onAction(SettingsAction.FocusTimeoutSelected(seconds = 0))
-        } else {
-
-            try {
-                val durS = selectedOption.substring(0, selectedOption.length - 1)
-                val dur = durS.toLong()
-
-                viewfinder.onAction(SettingsAction.FocusTimeoutSelected(seconds = dur))
-
-            } catch (exception: Exception) {
-
-                mActivity.showMessage(
-                    getString(R.string.unexpected_error_while_setting_focus_timeout)
-                )
-
-            }
-        }
-
-        focusTimeoutSpinner.setSelection(timeOptions.indexOf(selectedOption), false)
     }
 
     private fun updateTimerDuration(duration: Int) {
@@ -714,10 +643,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             return
         }
         settingsFrame.startAnimation(slideUpAnimation)
-    }
-
-    fun loadInitialState() {
-        updateFocusTimeout(focusTimeoutLabel(storedSheetState().focusTimeoutSeconds))
     }
 
     override fun show() {

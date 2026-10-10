@@ -14,11 +14,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.CameraFront
+import androidx.compose.material.icons.outlined.CenterFocusWeak
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
 import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.VideoStable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -31,6 +34,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,6 +50,7 @@ import app.grapheneos.camera.ui.camerasettings.components.SettingsCategoryHeader
 import app.grapheneos.camera.ui.camerasettings.components.SettingsClickableItem
 import app.grapheneos.camera.ui.camerasettings.components.SettingsSwitchItem
 import app.grapheneos.camera.ui.camerasettings.components.SettingsTopAppBar
+import app.grapheneos.camera.ui.camerasettings.components.formatMegapixels
 import app.grapheneos.camera.ui.camerasettings.components.formatPhotoQuality
 import app.grapheneos.camera.ui.camerasettings.components.groupedItemShape
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarNestedScroll
@@ -174,6 +179,11 @@ private fun CameraSettingsList(
             rows = soundRows(uiState, onAction),
         )
         settingsSection(
+            key = "controls",
+            title = R.string.camera_settings_section_controls,
+            rows = controlsRows(uiState, onAction),
+        )
+        settingsSection(
             key = "storage",
             title = R.string.storage,
             rows = storageRows(uiState, onAction),
@@ -233,6 +243,16 @@ private fun compositionRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
+        SettingsRow(key = "grid") { shape ->
+            SettingsClickableItem(
+                title = stringResource(R.string.camera_settings_grid),
+                summary = stringResource(uiState.grid.selected.label),
+                icon = Icons.Outlined.GridOn,
+                isChanged = uiState.grid.isChanged,
+                shape = shape,
+                onClick = { onAction(Action.GridClicked) },
+            )
+        },
         SettingsRow(key = "gyroscope_suggestions") { shape ->
             SwitchSettingItem(
                 setting = uiState.gyroscopeSuggestions,
@@ -284,6 +304,25 @@ private fun qualityRows(
                 onClick = { onAction(Action.CaptureModeClicked) },
             )
         },
+        SettingsRow(key = "video_stabilization") { shape ->
+            val summary = when {
+                uiState.videoStabilization.enabled -> {
+                    R.string.camera_settings_video_stabilization_summary
+                }
+
+                else -> R.string.camera_settings_video_stabilization_unavailable
+            }
+
+            SwitchSettingItem(
+                setting = uiState.videoStabilization,
+                title = stringResource(R.string.camera_settings_video_stabilization),
+                summary = stringResource(summary),
+                label = stringResource(R.string.camera_settings_video_only),
+                icon = Icons.Outlined.VideoStable,
+                shape = shape,
+                onCheckedChange = { onAction(Action.VideoStabilizationToggled(it)) },
+            )
+        },
     )
 }
 
@@ -300,6 +339,24 @@ private fun soundRows(
                 icon = Icons.AutoMirrored.Outlined.VolumeUp,
                 shape = shape,
                 onCheckedChange = { onAction(Action.CameraSoundsToggled(it)) },
+            )
+        },
+    )
+}
+
+private fun controlsRows(
+    uiState: UiState,
+    onAction: (Action) -> Unit,
+): List<SettingsRow> {
+    return listOf(
+        SettingsRow(key = "focus_timeout") { shape ->
+            SettingsClickableItem(
+                title = stringResource(R.string.camera_settings_focus_timeout),
+                summary = focusTimeoutLabel(uiState.focusTimeout.selected),
+                icon = Icons.Outlined.CenterFocusWeak,
+                isChanged = uiState.focusTimeout.isChanged,
+                shape = shape,
+                onClick = { onAction(Action.FocusTimeoutClicked) },
             )
         },
     )
@@ -406,7 +463,19 @@ private fun megapixels(
         else -> resolution.standardMegapixels
     }
 
-    return stringResource(R.string.camera_settings_megapixels, megapixels)
+    return formatMegapixels(megapixels)
+}
+
+@Composable
+internal fun focusTimeoutLabel(seconds: Long): String {
+    return when (seconds) {
+        0L -> stringResource(R.string.camera_settings_focus_timeout_off)
+        else -> pluralStringResource(
+            R.plurals.camera_settings_seconds,
+            seconds.toInt(),
+            seconds,
+        )
+    }
 }
 
 private class SettingsRow(

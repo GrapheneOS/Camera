@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.camerasettings.screen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.camerasettings.components.PhotoQualityDialog
 import app.grapheneos.camera.ui.camerasettings.components.PhotoQualityOption
@@ -14,7 +13,8 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsDialog as Dialog
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
-import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.ChoiceSettingUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.GridOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
@@ -27,6 +27,11 @@ internal fun CameraSettingsDialogs(
     onAction: (Action) -> Unit,
 ) {
     when (uiState.dialog) {
+        is Dialog.Grid -> GridSettingDialog(
+            grid = uiState.grid,
+            onAction = onAction,
+        )
+
         is Dialog.PhotoQuality -> PhotoQualitySettingDialog(
             photoQuality = uiState.photoQuality,
             onAction = onAction,
@@ -37,8 +42,30 @@ internal fun CameraSettingsDialogs(
             onAction = onAction,
         )
 
+        is Dialog.FocusTimeout -> FocusTimeoutSettingDialog(
+            focusTimeout = uiState.focusTimeout,
+            onAction = onAction,
+        )
+
         null -> Unit
     }
+}
+
+@Composable
+private fun GridSettingDialog(
+    grid: ChoiceSettingUiModel<GridOption>,
+    onAction: (Action) -> Unit,
+) {
+    SettingsChoiceDialog(
+        title = stringResource(R.string.camera_settings_grid),
+        choices = choices(
+            options = grid.options,
+            label = { stringResource(it.label) },
+        ),
+        selected = grid.selected,
+        onConfirm = { onAction(Action.GridConfirmed(it.type)) },
+        onDismiss = { onAction(Action.DialogDismissed) },
+    )
 }
 
 @Composable
@@ -67,16 +94,54 @@ private fun PhotoQualitySettingDialog(
 
 @Composable
 private fun CaptureModeSettingDialog(
-    captureMode: CaptureModeUiModel,
+    captureMode: ChoiceSettingUiModel<CaptureModeOption>,
     onAction: (Action) -> Unit,
 ) {
     SettingsChoiceDialog(
         title = stringResource(R.string.camera_settings_capture_mode),
-        choices = captureModeChoices(captureMode.options),
-        selected = captureMode.selected.mode,
-        onConfirm = { onAction(Action.CaptureModeConfirmed(it)) },
+        choices = choices(
+            options = captureMode.options,
+            label = { stringResource(it.label) },
+            summary = { stringResource(it.summary) },
+        ),
+        selected = captureMode.selected,
+        onConfirm = { onAction(Action.CaptureModeConfirmed(it.mode)) },
         onDismiss = { onAction(Action.DialogDismissed) },
     )
+}
+
+@Composable
+private fun FocusTimeoutSettingDialog(
+    focusTimeout: ChoiceSettingUiModel<Long>,
+    onAction: (Action) -> Unit,
+) {
+    SettingsChoiceDialog(
+        title = stringResource(R.string.camera_settings_focus_timeout),
+        choices = choices(
+            options = focusTimeout.options,
+            label = { focusTimeoutLabel(it) },
+        ),
+        selected = focusTimeout.selected,
+        onConfirm = { onAction(Action.FocusTimeoutConfirmed(it)) },
+        onDismiss = { onAction(Action.DialogDismissed) },
+    )
+}
+
+@Composable
+private fun <T> choices(
+    options: ImmutableList<T>,
+    label: @Composable (T) -> String,
+    summary: @Composable (T) -> String? = { null },
+): ImmutableList<SettingsChoice<T>> {
+    return options
+        .map { option ->
+            SettingsChoice(
+                value = option,
+                label = label(option),
+                summary = summary(option),
+            )
+        }
+        .toImmutableList()
 }
 
 @Composable
@@ -96,31 +161,9 @@ private fun photoQualityOption(level: PhotoQualityLevel): PhotoQualityOption {
     )
 }
 
-@Composable
 private fun photoResolutionOptions(resolution: PhotoResolutionUiModel): PhotoResolutionOptions {
     return PhotoResolutionOptions(
-        standard = stringResource(
-            R.string.camera_settings_megapixels,
-            resolution.standardMegapixels,
-        ),
-        full = stringResource(
-            R.string.camera_settings_megapixels,
-            resolution.fullMegapixels,
-        ),
+        standardMegapixels = resolution.standardMegapixels,
+        fullMegapixels = resolution.fullMegapixels,
     )
-}
-
-@Composable
-private fun captureModeChoices(
-    options: ImmutableList<CaptureModeOption>,
-): ImmutableList<SettingsChoice<CaptureMode>> {
-    return options
-        .map { option ->
-            SettingsChoice(
-                value = option.mode,
-                label = stringResource(option.label),
-                summary = stringResource(option.summary),
-            )
-        }
-        .toImmutableList()
 }

@@ -36,22 +36,17 @@
     <string name="turn_torch_off">Turn torch off</string>
     <string name="mute_audio">Mute audio</string>
     <string name="unmute_audio">Unmute audio</string>
-    <!-- The flash and grid controls cycle through several states rather than toggling between
-         two, so their labels name the state they are currently in; naming the next action
-         instead would leave a screen reader user unable to tell where in the cycle they are. -->
+    <!-- The flash control cycles through several states rather than toggling between two, so
+         its labels name the state it is currently in; naming the next action instead would
+         leave a screen reader user unable to tell where in the cycle they are. -->
     <string name="flash_off">Flash off</string>
     <string name="flash_on">Flash on</string>
     <string name="flash_auto">Flash auto</string>
-    <string name="grid_off">Grid off</string>
-    <string name="grid_3x3">Grid 3 by 3</string>
-    <string name="grid_4x4">Grid 4 by 4</string>
-    <string name="grid_golden_ratio">Grid golden ratio</string>
     <string name="scan_all_formats">Scan all barcode formats</string>
     <string name="stop_scanning_all_formats">Stop scanning all barcode formats</string>
     <string name="play_preview">Play Preview</string>
     <string name="aspect_ratio">Aspect Ratio</string>
     <string name="include_audio">Include Audio</string>
-    <string name="enable_eis">Enable EIS</string>
     <string name="video_quality">Video Quality</string>
     <string name="optimize_for">Optimize for</string>
     <string name="quality">Quality</string>
@@ -62,7 +57,6 @@
     <string name="delete_file">Delete file</string>
     <string name="edit">Edit</string>
     <string name="self_illumination">Self Illumination</string>
-    <string name="focus_timeout">Focus Timeout</string>
     <string name="timer">Timer</string>
     <string name="cancel_timer">Cancel Timer</string>
     <string name="video_capture_label">Record Video</string>
@@ -165,7 +159,6 @@
     <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
     <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
     <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
-    <string name="unexpected_error_while_setting_focus_timeout">An unexpected error occurred while setting focus timeout</string>
     <string name="unexpected_error_while_setting_timer_duration">An unexpected error occurred while setting the self-timer duration</string>
     <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
     <string name="couldnt_exclude_qr_format">Couldn\'t exclude %s format. Please ensure at least one format is selected in manual mode.</string>
@@ -214,7 +207,9 @@
     <string name="camera_settings_section_composition">Composition</string>
     <string name="camera_settings_section_quality">Quality</string>
     <string name="camera_settings_section_sound">Sound</string>
+    <string name="camera_settings_section_controls">Controls</string>
     <string name="camera_settings_photo_only">Photo only</string>
+    <string name="camera_settings_video_only">Video only</string>
     <string name="camera_settings_changed">Changed from default</string>
     <string name="camera_settings_reset">Reset</string>
     <string name="camera_settings_reset_storage_location">Reset storage location</string>
@@ -238,4 +233,18 @@
     <string name="camera_settings_capture_mode_zero_shutter_lag_summary">Fastest shutter, uses more battery</string>
     <string name="camera_settings_keep_selfies_as_seen">Keep selfies as seen</string>
     <string name="camera_settings_keep_selfies_as_seen_summary">Save selfies as they appear on screen</string>
+    <string name="camera_settings_grid">Grid</string>
+    <string name="camera_settings_grid_none">None</string>
+    <string name="camera_settings_grid_3x3">3 × 3</string>
+    <string name="camera_settings_grid_4x4">4 × 4</string>
+    <string name="camera_settings_grid_golden_ratio">Golden ratio</string>
+    <string name="camera_settings_video_stabilization">Video stabilization</string>
+    <string name="camera_settings_video_stabilization_summary">Reduces shake in videos</string>
+    <string name="camera_settings_video_stabilization_unavailable">Not available for this camera</string>
+    <string name="camera_settings_focus_timeout">Focus timeout</string>
+    <string name="camera_settings_focus_timeout_off">Off</string>
+    <plurals name="camera_settings_seconds">
+        <item quantity="one">%d second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
 </resources>
