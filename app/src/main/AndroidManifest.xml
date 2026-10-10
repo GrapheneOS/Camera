@@ -189,15 +189,14 @@
             android:exported="false"/>
 
         <activity
-            android:name=".ui.activities.MoreSettings"
+            android:name=".ui.camerasettings.CameraSettingsActivity"
             android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
-            android:windowSoftInputMode="adjustResize"
             android:exported="false"/>
 
         <activity
-            android:name=".ui.activities.MoreSettingsSecure"
+            android:name=".ui.camerasettings.SecureCameraSettingsActivity"
             android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"

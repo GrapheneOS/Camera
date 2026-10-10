@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
+import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -10,6 +11,7 @@ import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +38,8 @@ interface ViewfinderSettingsDelegate {
     fun setGeoTagging(enabled: Boolean)
     fun setSelfIllumination(enabled: Boolean)
     fun setVideoQuality(quality: VideoQuality)
+
+    fun openCameraSettings()
 }
 
 internal class ViewfinderSettingsDelegateImpl @Inject constructor(
@@ -163,6 +167,21 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         }
 
         stateHolder.update { it.copy(modeSettings = modeSettings) }
+    }
+
+    override fun openCameraSettings() {
+        val state = stateHolder.state.value
+        val effect = when {
+            state.recording.isActive() -> {
+                Effect.ShowMessage(R.string.camera_settings_unavailable_during_recording)
+            }
+
+            else -> {
+                Effect.Settings.OpenCameraSettings(isZslSupported = state.session.isZslSupported)
+            }
+        }
+
+        stateHolder.postEffect(effect)
     }
 
     private fun update(transform: (CameraSettings) -> CameraSettings) {

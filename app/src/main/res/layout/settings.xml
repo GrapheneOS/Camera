@@ -401,19 +401,19 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/more_settings"
+            android:id="@+id/camera_settings"
             android:visibility="invisible"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:layout_below="@id/settings_dialog"
             android:layout_alignParentEnd="true"
             android:background="@drawable/settings_bg"
-            android:foreground="@drawable/more_settings_bg"
+            android:foreground="@drawable/camera_settings_bg"
             android:layout_marginEnd="@dimen/settings_dialog_horizontal_margin"
             android:layout_marginTop="8dp"
             android:paddingHorizontal="18dp"
             android:paddingVertical="10dp"
-            android:text="@string/more_settings"/>
+            android:text="@string/camera_settings"/>
 
     </RelativeLayout>
 

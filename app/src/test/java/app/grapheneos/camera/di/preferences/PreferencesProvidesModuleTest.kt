@@ -5,8 +5,8 @@ import androidx.datastore.core.DataStore
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.ui.activities.MoreSettings
-import app.grapheneos.camera.ui.activities.MoreSettingsSecure
+import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
+import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -37,7 +37,7 @@ class PreferencesProvidesModuleTest {
     @Test
     fun settingsRepository_secureActivity_isACopyOfTheOwners() {
         runTest {
-            val session = settingsRepositoryFor(MoreSettingsSecure::class.java)
+            val session = settingsRepositoryFor(SecureCameraSettingsActivity::class.java)
 
             assertNotSame(owners, session)
             verify(exactly = 1) { owners.sessionCopy() }
@@ -47,7 +47,7 @@ class PreferencesProvidesModuleTest {
     @Test
     fun settingsRepository_regularActivity_isTheOwners() {
         runTest {
-            val session = settingsRepositoryFor(MoreSettings::class.java)
+            val session = settingsRepositoryFor(CameraSettingsActivity::class.java)
 
             assertSame(owners, session)
             verify(exactly = 0) { owners.sessionCopy() }
@@ -57,7 +57,7 @@ class PreferencesProvidesModuleTest {
     @Test
     fun storagePrefs_secureActivity_keepsWritesOutOfTheOwnersStore() {
         runTest {
-            val session = storagePrefsFor(MoreSettingsSecure::class.java)
+            val session = storagePrefsFor(SecureCameraSettingsActivity::class.java)
 
             session.updateData { it.copy(storageLocation = SESSIONS_LOCATION) }
 
@@ -69,7 +69,7 @@ class PreferencesProvidesModuleTest {
     @Test
     fun storagePrefs_secureActivity_doesNotFollowTheOwnersLaterChanges() {
         runTest {
-            val session = storagePrefsFor(MoreSettingsSecure::class.java)
+            val session = storagePrefsFor(SecureCameraSettingsActivity::class.java)
 
             durableStorage.updateData { it.copy(storageLocation = OWNERS_LOCATION) }
 
@@ -80,7 +80,7 @@ class PreferencesProvidesModuleTest {
     @Test
     fun storagePrefs_regularActivity_writesTheOwnersStore() {
         runTest {
-            val session = storagePrefsFor(MoreSettings::class.java)
+            val session = storagePrefsFor(CameraSettingsActivity::class.java)
 
             session.updateData { it.copy(storageLocation = OWNERS_LOCATION) }
 

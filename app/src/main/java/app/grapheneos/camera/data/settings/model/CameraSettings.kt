@@ -32,6 +32,8 @@ data class CameraSettings(
 
     companion object {
         const val FOCUS_TIMEOUT_OFF = "Off"
+
+        val PHOTO_QUALITY_RANGE = 1..100
     }
 }
 

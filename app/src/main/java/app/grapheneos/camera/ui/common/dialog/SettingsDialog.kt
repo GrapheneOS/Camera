@@ -89,7 +89,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     // frame the panel is drawn in.
     private val sizedForRegion = Rect()
 
-    private var moreSettingsButton: View
+    private var cameraSettingsButton: View
 
     private val tabSelectedColor =
         MaterialColors.getColor(binding.root, androidx.appcompat.R.attr.colorPrimary)
@@ -112,9 +112,9 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         dialog = binding.settingsDialog
         dialog.setOnClickListener {}
 
-        moreSettingsButton = binding.moreSettings
-        moreSettingsButton.setOnClickListener {
-            viewfinder.onAction(SettingsAction.MoreSettingsClicked)
+        cameraSettingsButton = binding.cameraSettings
+        cameraSettingsButton.setOnClickListener {
+            viewfinder.onAction(SettingsAction.CameraSettingsClicked)
         }
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -340,10 +340,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         settingsDialogBackgroundDrawable?.setTint(backgroundColor)
         binding.settingsDialog.background = settingsDialogBackgroundDrawable
 
-        val moreSettingsBackgroundDrawable =
+        val cameraSettingsBackgroundDrawable =
             ContextCompat.getDrawable(context, R.drawable.settings_bg)
-        moreSettingsBackgroundDrawable?.setTint(backgroundColor)
-        binding.moreSettings.background = moreSettingsBackgroundDrawable
+        cameraSettingsBackgroundDrawable?.setTint(backgroundColor)
+        binding.cameraSettings.background = cameraSettingsBackgroundDrawable
     }
 
     /**
@@ -409,10 +409,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
                 val settingsDialogHorizontalMargin =
                     mActivity.resources.getDimensionPixelSize(R.dimen.settings_dialog_horizontal_margin)
-                val moreSettingsButtonTopPadding =
+                val cameraSettingsButtonTopPadding =
                     (8 * mActivity.resources.displayMetrics.density).toInt()
-                val totalDialogHeight = moreSettingsButton.height + moreSettingsButtonTopPadding +
-                        dialog.height
+                val totalDialogHeight = cameraSettingsButton.height +
+                        cameraSettingsButtonTopPadding + dialog.height
                 val availableWidth = dialog.width - (settingsDialogHorizontalMargin * 4)
                 val regionHeight = previewRegion()?.height() ?: binding.root.measuredHeight
                 val availableHeight = availableWidth.coerceAtMost(regionHeight) -
@@ -660,7 +660,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             override fun onAnimationStart(p0: Animation?) {}
 
             override fun onAnimationEnd(p0: Animation?) {
-                moreSettingsButton.visibility = View.VISIBLE
+                cameraSettingsButton.visibility = View.VISIBLE
             }
 
             override fun onAnimationRepeat(p0: Animation?) {}
@@ -685,7 +685,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             object : Animation.AnimationListener {
 
                 override fun onAnimationStart(p0: Animation?) {
-                    moreSettingsButton.visibility = View.INVISIBLE
+                    cameraSettingsButton.visibility = View.INVISIBLE
                 }
 
                 override fun onAnimationEnd(p0: Animation?) {
