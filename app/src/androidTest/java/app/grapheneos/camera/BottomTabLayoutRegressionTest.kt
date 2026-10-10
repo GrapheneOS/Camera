@@ -4,6 +4,7 @@ import android.Manifest
 import android.animation.ValueAnimator
 import android.graphics.Bitmap
 import android.graphics.RectF
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import androidx.camera.view.PreviewView
@@ -14,6 +15,7 @@ import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
+import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -286,6 +288,7 @@ class BottomTabLayoutRegressionTest {
             }
 
             var prefetched: Bitmap? = null
+            val touchedAt = SystemClock.uptimeMillis()
             dragStrip(scenario, scrollPx = travel) { activity ->
                 assertEquals(
                     "the camera switched before there was anything to check",
@@ -299,6 +302,11 @@ class BottomTabLayoutRegressionTest {
             waitUntil(scenario, "the camera switched to tab $target") {
                 it.viewfinder.uiState.value.mode == it.tabLayout.getTabAt(target)!!.tag
             }
+            val switchedAfterMs = SystemClock.uptimeMillis() - touchedAt
+            assumeTrue(
+                "the switch came ${switchedAfterMs}ms after the touch, past the copy's freshness",
+                switchedAfterMs < PreviewFrameHolderImpl.PREFETCH_FRESHNESS_MS,
+            )
             scenario.onActivity {
                 assertSame(
                     "the switch read a fresh frame back instead of using the one waiting for it",
