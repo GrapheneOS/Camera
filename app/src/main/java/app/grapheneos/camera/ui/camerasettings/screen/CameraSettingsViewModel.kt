@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
@@ -44,6 +46,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     arguments: SavedStateHandle,
     entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
+    private val permissionRepository: PermissionRepository,
     private val capturedItemRepository: CapturedItemRepository,
     private val changeStorageLocation: ChangeStorageLocation,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
@@ -56,6 +59,7 @@ internal class CameraSettingsViewModel @Inject constructor(
         isSecureSession = entryPoint.isSecureSession,
         isCaptureSession = entryPoint.isCaptureSession,
         capabilities = cameraCapabilitiesOf(arguments),
+        isLocationPermissionGranted = permissionRepository.isGranted(AppPermission.LOCATION),
         settings = settingsRepository.settings.value,
     )
 
@@ -81,19 +85,32 @@ internal class CameraSettingsViewModel @Inject constructor(
 
     override fun onAction(action: Action) {
         when (action) {
+            is Action.ScreenResumed -> refreshLocationPermission()
+            is Action.LocationPermissionAnswered -> onLocationPermissionAnswered()
+            is Action.DialogSettingClicked -> showDialog(action.dialog)
             is Action.SwitchToggled -> onSwitchToggled(action)
-            is Action.GridClicked -> showDialog(Dialog.Grid)
             is Action.GridConfirmed -> confirmGrid(action.type)
-            is Action.PhotoQualityClicked -> showDialog(Dialog.PhotoQuality)
             is Action.PhotoQualityConfirmed -> confirmPhotoQuality(action)
-            is Action.CaptureModeClicked -> showDialog(Dialog.CaptureMode)
             is Action.CaptureModeConfirmed -> confirmCaptureMode(action.mode)
-            is Action.FocusTimeoutClicked -> showDialog(Dialog.FocusTimeout)
             is Action.FocusTimeoutConfirmed -> confirmFocusTimeout(action.seconds)
+            is Action.DialogDismissed -> showDialog(null)
             is Action.StorageLocationClicked -> _effects.trySend(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
-            is Action.DialogDismissed -> showDialog(null)
+        }
+    }
+
+    private fun refreshLocationPermission() {
+        val isGranted = permissionRepository.isGranted(AppPermission.LOCATION)
+
+        update { it.copy(isLocationPermissionGranted = isGranted) }
+    }
+
+    private fun onLocationPermissionAnswered() {
+        refreshLocationPermission()
+
+        if (state.isLocationPermissionGranted) {
+            updateSettings { it.copy(geoTagging = true) }
         }
     }
 
@@ -101,6 +118,7 @@ internal class CameraSettingsViewModel @Inject constructor(
         val enabled = action.enabled
 
         when (action) {
+            is Action.GeoTaggingToggled -> setGeoTagging(enabled)
             is Action.RemoveExifToggled -> setRemoveExif(enabled)
 
             is Action.GyroscopeSuggestionsToggled -> {
@@ -118,6 +136,16 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.CameraSoundsToggled -> {
                 updateSettings { it.copy(enableCameraSounds = enabled) }
             }
+        }
+    }
+
+    private fun setGeoTagging(enabled: Boolean) {
+        when {
+            enabled && !state.isLocationPermissionGranted -> {
+                _effects.trySend(Effect.RequestLocationPermission)
+            }
+
+            else -> updateSettings { it.copy(geoTagging = enabled) }
         }
     }
 

@@ -49,7 +49,7 @@ class SettingsPrefsMigrationTest {
     @Test
     fun shouldMigrate_onlyAModeFileHoldsAnything_isTrue() {
         runTest {
-            modePreferences(MODE).edit(commit = true) { putBoolean(GEO_TAGGING, true) }
+            modePreferences(MODE).edit(commit = true) { putBoolean(SELF_ILLUMINATION, true) }
 
             assertTrue(migration.shouldMigrate(SettingsPrefs()))
         }
@@ -209,15 +209,37 @@ class SettingsPrefsMigrationTest {
     }
 
     @Test
+    fun migrate_photoModeGeoTagging_becomesTheAppWideSetting() {
+        runTest {
+            modePreferences(CameraMode.CAMERA).edit(commit = true) {
+                putBoolean(GEO_TAGGING, true)
+            }
+
+            assertTrue(migrateCommon().geoTagging)
+        }
+    }
+
+    @Test
+    fun migrate_otherModesGeoTagging_isLeftBehind() {
+        runTest {
+            modePreferences(CameraMode.VIDEO).edit(commit = true) {
+                putBoolean(GEO_TAGGING, true)
+            }
+
+            assertFalse(migrateCommon().geoTagging)
+        }
+    }
+
+    @Test
     fun migrate_perModeSettings_stayWithTheirOwnMode() {
         runTest {
-            modePreferences(MODE).edit(commit = true) { putBoolean(GEO_TAGGING, true) }
+            modePreferences(MODE).edit(commit = true) { putBoolean(SELF_ILLUMINATION, true) }
             modePreferences(OTHER_MODE).edit(commit = true) { putInt(FLASH_MODE, SOME_FLASH_MODE) }
 
             val modes = migrate().modes
 
             assertEquals(
-                StoredModeSettings(geoTagging = true),
+                StoredModeSettings(selfIllumination = true),
                 modes.getValue(MODE.name),
             )
             assertEquals(
@@ -237,7 +259,7 @@ class SettingsPrefsMigrationTest {
                     photoQuality = 55,
                 ),
                 modes = mapOf(
-                    MODE.name to StoredModeSettings(geoTagging = true),
+                    MODE.name to StoredModeSettings(selfIllumination = true),
                     futureMode to StoredModeSettings(flashMode = StoredFlashMode.OFF),
                 ),
             )
@@ -248,7 +270,7 @@ class SettingsPrefsMigrationTest {
 
             assertEquals(StoredAspectRatio.RATIO_16_9, migrated.common.aspectRatio)
             assertEquals(SOME_PHOTO_QUALITY, migrated.common.photoQuality)
-            assertEquals(true, migrated.modes.getValue(MODE.name).geoTagging)
+            assertEquals(true, migrated.modes.getValue(MODE.name).selfIllumination)
             assertEquals(StoredFlashMode.ON, migrated.modes.getValue(MODE.name).flashMode)
             assertEquals(current.modes.getValue(futureMode), migrated.modes.getValue(futureMode))
         }
@@ -270,7 +292,7 @@ class SettingsPrefsMigrationTest {
     @Test
     fun migrate_modeWithNothingStored_isNotCarriedOver() {
         runTest {
-            modePreferences(MODE).edit(commit = true) { putBoolean(GEO_TAGGING, true) }
+            modePreferences(MODE).edit(commit = true) { putBoolean(SELF_ILLUMINATION, true) }
 
             assertEquals(setOf(MODE.name), migrate().modes.keys)
         }
@@ -280,7 +302,7 @@ class SettingsPrefsMigrationTest {
     fun cleanUp_leavesNoLegacyFileBehind() {
         runTest {
             commons().edit(commit = true) { putInt(PHOTO_QUALITY, SOME_PHOTO_QUALITY) }
-            modePreferences(MODE).edit(commit = true) { putBoolean(GEO_TAGGING, true) }
+            modePreferences(MODE).edit(commit = true) { putBoolean(SELF_ILLUMINATION, true) }
 
             migration.migrate(SettingsPrefs())
             migration.cleanUp()
@@ -340,6 +362,7 @@ class SettingsPrefsMigrationTest {
         const val PHOTO_QUALITY = "photo_quality"
         const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
         const val SCAN_ALL_CODES = "scan_all_codes"
+        const val SELF_ILLUMINATION = "self_illumination"
         const val VIDEO_QUALITY_BACK = "video_quality_BACK"
         const val VIDEO_QUALITY_FRONT = "video_quality_FRONT"
 

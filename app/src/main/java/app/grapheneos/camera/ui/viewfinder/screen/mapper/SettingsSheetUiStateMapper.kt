@@ -40,7 +40,6 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             ),
             torchAvailable = session.isFlashAvailable,
             torchOn = session.isTorchOn,
-            geoTagging = state.requireLocation,
             selfIllumination = state.modeSettings.selfIllumination,
             is16by9 = aspectRatio == AspectRatio.RATIO_16_9,
             aspectRatioFixed = isVideoMode,

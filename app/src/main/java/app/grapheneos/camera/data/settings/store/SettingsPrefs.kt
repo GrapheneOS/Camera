@@ -67,6 +67,8 @@ internal data class StoredCameraSettings(
     val selectHighestResolution: Boolean? = null,
     @SerialName("photo_quality")
     val photoQuality: Int? = null,
+    @SerialName("geo_tagging")
+    val geoTagging: Boolean? = null,
     @SerialName("remove_exif_after_capture")
     val removeExifAfterCapture: Boolean? = null,
     @SerialName("gyroscope_suggestions")
@@ -87,8 +89,6 @@ internal data class StoredCameraSettings(
 internal data class StoredModeSettings(
     @SerialName("flash_mode")
     val flashMode: StoredFlashMode? = null,
-    @SerialName("geo_tagging")
-    val geoTagging: Boolean? = null,
     @SerialName("self_illumination")
     val selfIllumination: Boolean? = null,
     @SerialName("video_quality_front")

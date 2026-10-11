@@ -72,6 +72,30 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
+    fun geoTagging_withoutPermission_keepsItsValueAndIsLockedOnlyInASecureSession() {
+        val settings = CameraSettings(geoTagging = true)
+        val granted = mapper.map(
+            CameraSettingsState(
+                settings = settings,
+                isLocationPermissionGranted = true,
+            ),
+        )
+        val revoked = mapper.map(CameraSettingsState(settings = settings))
+        val lockscreen = mapper.map(
+            CameraSettingsState(
+                settings = settings,
+                isSecureSession = true,
+            ),
+        )
+
+        val on = SwitchSettingUiModel(checked = true, isChanged = true)
+
+        assertEquals(on, granted.geoTagging)
+        assertEquals(on, revoked.geoTagging)
+        assertEquals(on.copy(enabled = false), lockscreen.geoTagging)
+    }
+
+    @Test
     fun removeExif_inACaptureSession_isLockedOnWithoutAChangedMark() {
         val uiState = mapper.map(
             CameraSettingsState(

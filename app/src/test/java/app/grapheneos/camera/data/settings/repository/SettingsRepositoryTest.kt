@@ -39,6 +39,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -98,11 +99,11 @@ class SettingsRepositoryTest {
             val repository = repository(from = stalledStore())
 
             repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            repository.setGeoTagging(SLOT, true)
+            repository.setSelfIllumination(SLOT, true)
             repository.modeSettings(SLOT)
 
             assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
-            assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
+            assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
         }
     }
 
@@ -148,13 +149,13 @@ class SettingsRepositoryTest {
         runTest {
             val owners = repository(from = stalledStore())
             owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            owners.setGeoTagging(SLOT, true)
+            owners.setSelfIllumination(SLOT, true)
 
             val session = owners.sessionCopy()
             session.modeSettings(SLOT)
 
             assertEquals(SOME_PHOTO_QUALITY, settingsOf(session).photoQuality)
-            assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
+            assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
         }
     }
 
@@ -166,7 +167,7 @@ class SettingsRepositoryTest {
 
             val session = owners.sessionCopy()
             session.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
-            session.setGeoTagging(SLOT, true)
+            session.setSelfIllumination(SLOT, true)
 
             assertEquals(OTHER_PHOTO_QUALITY, settingsOf(session).photoQuality)
             assertEquals(SOME_PHOTO_QUALITY, settingsOf(owners).photoQuality)
@@ -204,11 +205,11 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
-            repository.setGeoTagging(SLOT, true)
+            repository.setSelfIllumination(SLOT, true)
             repository.modeSettings(SLOT)
 
             assertEquals(
-                StoredModeSettings(geoTagging = true),
+                StoredModeSettings(selfIllumination = true),
                 lastMappedMode(),
             )
         }
@@ -297,14 +298,14 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
-            repository.setGeoTagging(SLOT, true)
+            repository.setSelfIllumination(SLOT, true)
             repository.modeSettings(OTHER_SLOT)
 
             assertEquals(StoredModeSettings(), lastMappedMode())
 
             repository.modeSettings(SLOT)
 
-            assertEquals(StoredModeSettings(geoTagging = true), lastMappedMode())
+            assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
         }
     }
 
@@ -391,7 +392,7 @@ class SettingsRepositoryTest {
         val FRONT_SLOT = ModeSlot(mode = MODE, isFrontFacing = true)
         val OTHER_SLOT = ModeSlot(mode = OTHER_MODE, isFrontFacing = false)
 
-        val MAPPER_RESULT = ModeSettings(geoTagging = true, videoQuality = VideoQuality.FHD)
+        val MAPPER_RESULT = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
 
         const val QR_CODE_FORMAT = "QR_CODE"
         const val AZTEC_FORMAT = "AZTEC"

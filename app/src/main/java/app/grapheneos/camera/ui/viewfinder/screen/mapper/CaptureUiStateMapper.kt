@@ -12,7 +12,6 @@ internal class CaptureUiStateMapperImpl @Inject constructor() : CaptureUiStateMa
 
     override fun map(state: ViewfinderState): CaptureUiState {
         return CaptureUiState(
-            geoTagging = state.requireLocation,
             includeAudio = state.settings.includeAudio,
             cameraSounds = state.settings.enableCameraSounds,
         )

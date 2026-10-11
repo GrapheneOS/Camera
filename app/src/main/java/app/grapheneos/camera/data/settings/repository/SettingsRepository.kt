@@ -38,7 +38,6 @@ interface SettingsRepository {
     fun update(transform: (CameraSettings) -> CameraSettings): CameraSettings
     fun modeSettings(slot: ModeSlot): ModeSettings
     fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings
-    fun setGeoTagging(slot: ModeSlot, value: Boolean): ModeSettings
     fun setSelfIllumination(slot: ModeSlot, value: Boolean): ModeSettings
     fun setVideoQuality(slot: ModeSlot, value: VideoQuality): ModeSettings
     fun sessionCopy(): SettingsRepository
@@ -79,14 +78,6 @@ internal class SettingsRepositoryImpl @Inject constructor(
             slot = slot,
             store = { stored -> stored.copy(flashMode = modeSettingsMapper.map(value)) },
             asRequested = { it.copy(flashMode = value) },
-        )
-    }
-
-    override fun setGeoTagging(slot: ModeSlot, value: Boolean): ModeSettings {
-        return writeMode(
-            slot = slot,
-            store = { stored -> stored.copy(geoTagging = value) },
-            asRequested = { it.copy(geoTagging = value) },
         )
     }
 

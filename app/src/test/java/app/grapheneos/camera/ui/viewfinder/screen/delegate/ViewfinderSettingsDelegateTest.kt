@@ -102,10 +102,12 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             val delegate = createDelegate()
 
-            delegate.setGeoTagging(enabled = true)
+            delegate.setSelfIllumination(enabled = true)
 
-            verify(exactly = 0) { settingsRepository.setGeoTagging(slot = any(), value = any()) }
-            assertTrue(stateHolder.state.value.requireLocation)
+            verify(exactly = 0) {
+                settingsRepository.setSelfIllumination(slot = any(), value = any())
+            }
+            assertEquals(ModeSettings(), stateHolder.state.value.modeSettings)
         }
     }
 
@@ -202,6 +204,6 @@ class ViewfinderSettingsDelegateTest {
         )
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
-        val SLOTTED = ModeSettings(geoTagging = true, videoQuality = VideoQuality.FHD)
+        val SLOTTED = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
     }
 }

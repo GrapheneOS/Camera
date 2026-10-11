@@ -5,6 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -16,13 +18,16 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapperImpl
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
+import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -43,6 +48,10 @@ class CameraSettingsViewModelTest {
     }
     private val changeStorageLocation = mockk<ChangeStorageLocation>()
     private val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation>(relaxed = true)
+    private var isLocationPermissionGranted = false
+    private val permissionRepository = mockk<PermissionRepository> {
+        every { isGranted(AppPermission.LOCATION) } answers { isLocationPermissionGranted }
+    }
 
     @Test
     fun switchToggled_storesTheSetting() {
@@ -61,6 +70,48 @@ class CameraSettingsViewModelTest {
         storedSettings.value = storedSettings.value.copy(gyroscopeSuggestions = true)
 
         assertTrue(viewModel.uiState.value.gyroscopeSuggestions.checked)
+    }
+
+    @Test
+    fun geoTaggingToggledOn_withoutPermission_asksForItBeforeStoringAnything() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(Action.GeoTaggingToggled(enabled = true))
+
+            assertEquals(Effect.RequestLocationPermission, viewModel.effects.first())
+            assertFalse(storedSettings.value.geoTagging)
+        }
+    }
+
+    @Test
+    fun locationPermissionAnswered_withAGrant_turnsGeoTaggingOn() {
+        val viewModel = createViewModel()
+
+        isLocationPermissionGranted = true
+        viewModel.onAction(Action.LocationPermissionAnswered)
+
+        assertTrue(storedSettings.value.geoTagging)
+    }
+
+    @Test
+    fun locationPermissionAnswered_withARefusal_leavesGeoTaggingOff() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(Action.LocationPermissionAnswered)
+
+        assertFalse(storedSettings.value.geoTagging)
+    }
+
+    @Test
+    fun screenResumed_afterThePermissionWasGrantedElsewhere_storesTheToggleRightAway() {
+        val viewModel = createViewModel()
+
+        isLocationPermissionGranted = true
+        viewModel.onAction(Action.ScreenResumed)
+        viewModel.onAction(Action.GeoTaggingToggled(enabled = true))
+
+        assertTrue(storedSettings.value.geoTagging)
     }
 
     @Test
@@ -190,6 +241,7 @@ class CameraSettingsViewModelTest {
             ),
             entryPoint = entryPoint,
             settingsRepository = settingsRepositoryOver(storedSettings),
+            permissionRepository = permissionRepository,
             capturedItemRepository = capturedItemRepository,
             changeStorageLocation = changeStorageLocation,
             revertToMediaStoreLocation = revertToMediaStoreLocation,

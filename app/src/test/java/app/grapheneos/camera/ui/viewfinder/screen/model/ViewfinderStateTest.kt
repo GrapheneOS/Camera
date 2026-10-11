@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import com.google.zxing.BarcodeFormat
@@ -52,6 +53,15 @@ class ViewfinderStateTest {
         )
 
         assertEquals(AspectRatio.RATIO_4_3, state.aspectRatio())
+    }
+
+    @Test
+    fun includesLocation_onlyWhileGeoTaggingIsOnAndPermitted() {
+        val on = state(settings = CameraSettings(geoTagging = true))
+
+        assertTrue(on.includesLocation())
+        assertFalse(on.copy(missingPermissions = setOf(AppPermission.LOCATION)).includesLocation())
+        assertFalse(state(settings = CameraSettings(geoTagging = false)).includesLocation())
     }
 
     @Test

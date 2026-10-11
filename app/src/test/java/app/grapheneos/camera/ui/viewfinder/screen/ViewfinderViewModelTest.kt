@@ -253,7 +253,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(PermissionAction.SettingsClicked)
 
             verify(exactly = 1) { permissionDelegate.openSettings() }
-            verify(exactly = 0) { settingsDelegate.setGeoTagging(any()) }
         }
     }
 

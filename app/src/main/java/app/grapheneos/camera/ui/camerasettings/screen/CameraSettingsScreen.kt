@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.CenterFocusWeak
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.HighQuality
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
 import androidx.compose.material.icons.outlined.Straighten
@@ -40,6 +41,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.camerasettings.components.GROUPED_ITEM_SPACING
@@ -73,14 +76,24 @@ internal fun CameraSettingsScreen(
     screenModel: CameraSettingsScreenModel = hiltViewModel<CameraSettingsViewModel>(),
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
+    val locationPermissionRequest = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        screenModel.onAction(Action.LocationPermissionAnswered)
+    }
     val storageLocationPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
     ) { tree ->
         screenModel.onAction(Action.StorageLocationPicked(tree))
     }
     val effectHandler = rememberCameraSettingsEffectHandler(
+        locationPermissionRequest = locationPermissionRequest,
         storageLocationPicker = storageLocationPicker,
     )
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        screenModel.onAction(Action.ScreenResumed)
+    }
 
     CollectEvents(
         events = screenModel.effects,
@@ -219,6 +232,21 @@ private fun privacyRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
+        SettingsRow(key = "geo_tagging") { shape ->
+            val summary = when {
+                uiState.geoTagging.enabled -> R.string.camera_settings_geo_tagging_summary
+                else -> R.string.camera_settings_geo_tagging_locked
+            }
+
+            SwitchSettingItem(
+                setting = uiState.geoTagging,
+                title = stringResource(R.string.camera_settings_geo_tagging),
+                summary = stringResource(summary),
+                icon = Icons.Outlined.LocationOn,
+                shape = shape,
+                onCheckedChange = { onAction(Action.GeoTaggingToggled(it)) },
+            )
+        },
         SettingsRow(key = "remove_exif") { shape ->
             val summary = when {
                 uiState.removeExif.enabled -> R.string.remove_exif_subtitle

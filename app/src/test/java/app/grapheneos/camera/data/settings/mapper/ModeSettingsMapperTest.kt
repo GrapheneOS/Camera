@@ -22,7 +22,6 @@ class ModeSettingsMapperTest {
         val mapped = mapper.map(stored = StoredModeSettings(), isFrontFacing = false)
 
         assertEquals(SettingsDefaults.FLASH_MODE, mapped.flashMode)
-        assertEquals(SettingsDefaults.GEO_TAGGING, mapped.geoTagging)
         assertEquals(SettingsDefaults.SELF_ILLUMINATION, mapped.selfIllumination)
         assertEquals(SettingsDefaults.VIDEO_QUALITY, mapped.videoQuality)
     }
@@ -31,7 +30,6 @@ class ModeSettingsMapperTest {
     fun map_everySettingConfigured_isCarriedOver() {
         val stored = StoredModeSettings(
             flashMode = StoredFlashMode.AUTO,
-            geoTagging = true,
             selfIllumination = true,
             videoQualityBack = StoredVideoQuality.FHD,
         )
@@ -39,7 +37,6 @@ class ModeSettingsMapperTest {
         assertEquals(
             ModeSettings(
                 flashMode = FlashMode.AUTO,
-                geoTagging = true,
                 selfIllumination = true,
                 videoQuality = VideoQuality.FHD,
             ),
