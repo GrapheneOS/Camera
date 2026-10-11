@@ -18,7 +18,6 @@ import android.util.AttributeSet
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 
 import androidx.appcompat.widget.AppCompatImageView
-import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.InAppGallery
 import kotlin.math.abs
 
@@ -42,7 +41,7 @@ class ZoomableImageView @JvmOverloads constructor(
     private var origHeight = 0f
     private var oldMeasuredWidth = 0
     private var oldMeasuredHeight = 0
-    private var mScaleDetector: ScaleGestureDetector? = null
+    private val mScaleDetector = ScaleGestureDetector(context, ScaleListener())
 
     private var isZoomingDisabled = true
 
@@ -59,12 +58,6 @@ class ZoomableImageView @JvmOverloads constructor(
         sharedConstructing()
     }
 
-    private val currentInstance: ZoomableImageView
-        get() {
-            return gActivity.gallerySlider.getChildAt(0)
-                .findViewById(R.id.slide_preview)
-        }
-
     fun setGalleryActivity(gActivity: InAppGallery) {
         this.gActivity = gActivity
     }
@@ -80,16 +73,15 @@ class ZoomableImageView @JvmOverloads constructor(
     @SuppressLint("ClickableViewAccessibility")
     private fun sharedConstructing() {
         super.setClickable(true)
-        mScaleDetector = ScaleGestureDetector(context, ScaleListener())
         mMatrix = Matrix()
         imageMatrix = mMatrix
         scaleType = ScaleType.MATRIX
 
         setOnTouchListener { _, event ->
 
-            currentInstance.mScaleDetector!!.onTouchEvent(event)
+            mScaleDetector.onTouchEvent(event)
 
-            if (currentInstance.isZoomingDisabled) {
+            if (isZoomingDisabled) {
                 if (event.action == MotionEvent.ACTION_UP) {
                     this.onClickEvent(event)
                     return@setOnTouchListener performClick()
@@ -101,42 +93,39 @@ class ZoomableImageView @JvmOverloads constructor(
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    currentInstance.last.set(curr)
-                    currentInstance.start.set(currentInstance.last)
-                    currentInstance.mode = DRAG
+                    last.set(curr)
+                    start.set(last)
+                    mode = DRAG
                 }
-                MotionEvent.ACTION_MOVE -> if (currentInstance.mode == DRAG) {
-                    val deltaX = curr.x - currentInstance.last.x
-                    val deltaY = curr.y - currentInstance.last.y
+                MotionEvent.ACTION_MOVE -> if (mode == DRAG) {
+                    val deltaX = curr.x - last.x
+                    val deltaY = curr.y - last.y
 
-                    val fixTransX = currentInstance.getFixDragTrans(
-                        deltaX, currentInstance.viewWidth.toFloat(),
-                        currentInstance.origWidth
-                                * currentInstance.saveScale
+                    val fixTransX = getFixDragTrans(
+                        deltaX, viewWidth.toFloat(), origWidth * saveScale
                     )
 
-                    val fixTransY = currentInstance.getFixDragTrans(
-                        deltaY, currentInstance.viewHeight.toFloat(),
-                        currentInstance.origHeight * currentInstance.saveScale
+                    val fixTransY = getFixDragTrans(
+                        deltaY, viewHeight.toFloat(), origHeight * saveScale
                     )
 
-                    currentInstance.mMatrix.postTranslate(fixTransX, fixTransY)
-                    currentInstance.fixTrans()
-                    currentInstance.last[curr.x] = curr.y
+                    mMatrix.postTranslate(fixTransX, fixTransY)
+                    fixTrans()
+                    last[curr.x] = curr.y
                 }
                 MotionEvent.ACTION_UP -> {
-                    currentInstance.mode = NONE
-                    val xDiff = abs(curr.x - currentInstance.start.x).toInt()
-                    val yDiff = abs(curr.y - currentInstance.start.y).toInt()
+                    mode = NONE
+                    val xDiff = abs(curr.x - start.x).toInt()
+                    val yDiff = abs(curr.y - start.y).toInt()
                     if (xDiff < CLICK && yDiff < CLICK) {
-                        currentInstance.onClickEvent(event)
+                        onClickEvent(event)
                         performClick()
                     }
                 }
-                MotionEvent.ACTION_POINTER_UP -> currentInstance.mode = NONE
+                MotionEvent.ACTION_POINTER_UP -> mode = NONE
             }
-            currentInstance.imageMatrix = currentInstance.mMatrix
-            currentInstance.invalidate()
+            imageMatrix = mMatrix
+            invalidate()
             true
         }
     }
@@ -237,8 +226,8 @@ class ZoomableImageView @JvmOverloads constructor(
             moveIntoZoomMode()
         }
 
-        currentInstance.imageMatrix = currentInstance.mMatrix
-        currentInstance.invalidate()
+        imageMatrix = mMatrix
+        invalidate()
     }
 
     private inner class ScaleListener : SimpleOnScaleGestureListener() {
