@@ -38,6 +38,18 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
+    fun enableLocationClicked_opensTheLocationSettings() {
+        runTest {
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(SettingsAction.EnableLocationClicked)
+
+            assertEquals(listOf(ViewfinderScreenEffect.Location.OpenSettings), effects)
+        }
+    }
+
+    @Test
     fun aspectRatioToggleClicked_storesTheOtherRatioBeforeRebinding() {
         runTest {
             val viewModel = createViewModel()

@@ -19,14 +19,6 @@ class CaptureUiStateMapperTest {
     private val mapper: CaptureUiStateMapper = CaptureUiStateMapperImpl()
 
     @Test
-    fun geoTagging_followsTheSettledValueNotTheStoredOne() {
-        val storedOn = ModeSettings(geoTagging = true)
-
-        assertFalse(map(requireLocation = false, modeSettings = storedOn).geoTagging)
-        assertTrue(map(requireLocation = true).geoTagging)
-    }
-
-    @Test
     fun storedCaptureSettings_arePassedThrough() {
         val state = map(
             settings = CameraSettings(
@@ -45,7 +37,6 @@ class CaptureUiStateMapperTest {
     }
 
     private fun map(
-        requireLocation: Boolean = false,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
@@ -54,7 +45,6 @@ class CaptureUiStateMapperTest {
             ViewfinderState(
                 mode = CameraMode.CAMERA,
                 requiresVideoModeOnly = false,
-                requireLocation = requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,
                 session = session,

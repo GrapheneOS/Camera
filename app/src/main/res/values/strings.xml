@@ -7,18 +7,12 @@
     <string name="audio_permission_dialog_title">Audio permission required</string>
     <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record a video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just disable it (and enable it back later in the settings).</string>
 
-    <string name="location_permission_dialog_title">Location permission required</string>
-    <string name="location_permission_dialog_message">
-        The app needs location permission for geo-tagging. Please provide the required permission via Settings in order to use this app.
-    </string>
-
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>
     <string name="flash_mode">Flash Mode</string>
     <string name="start_value_timer">00:00</string>
     <string name="zoom">Zoom</string>
     <string name="exposure_compensation">Exposure compensation</string>
-    <string name="geo_tagging">Geo-tagging</string>
     <string name="torch">Torch</string>
     <string name="scan_result">Scan Result</string>
     <string name="share_qr_text">Share QR Text</string>
@@ -155,7 +149,6 @@
     <string name="folder_not_found">Storage location not found</string>
     <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
     <string name="camera_settings_unavailable_during_recording">Cannot switch activities when recording</string>
-    <string name="toggle_geo_tagging_unsupported_while_recording">Can\'t toggle geo-tagging for ongoing recording</string>
     <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
     <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
     <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
@@ -208,6 +201,9 @@
     <string name="camera_settings_section_quality">Quality</string>
     <string name="camera_settings_section_sound">Sound</string>
     <string name="camera_settings_section_controls">Controls</string>
+    <string name="camera_settings_geo_tagging">Save location</string>
+    <string name="camera_settings_geo_tagging_summary">Add where photos and videos were taken</string>
+    <string name="camera_settings_geo_tagging_locked">Location access can only be allowed when the device is unlocked</string>
     <string name="camera_settings_photo_only">Photo only</string>
     <string name="camera_settings_video_only">Video only</string>
     <string name="camera_settings_changed">Changed from default</string>

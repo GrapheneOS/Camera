@@ -247,7 +247,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is SettingsAction.SettingsIconClicked -> onSettingsIconClicked()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
-            is SettingsAction.GeoTaggingToggled -> toggleGeoTagging(action.enabled)
             is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
             is SettingsAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
@@ -265,7 +264,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPermissionAction(action: PermissionAction) {
         when (action) {
             is PermissionAction.RequestAnswered -> onPermissionRequestAnswered(action.permission)
-            is PermissionAction.SettingsClicked -> openAppSettings()
+            is PermissionAction.SettingsClicked -> permissionDelegate.openSettings()
 
             is PermissionAction.RationaleRequired -> {
                 permissionDelegate.showDialog(action.permission)
@@ -535,7 +534,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
 
         recordingDelegate.prepareRecording(
-            includeLocation = state.requireLocation,
+            includeLocation = state.includesLocation(),
             includeAudio = state.settings.includeAudio,
             outputUri = outputUri,
         )
@@ -633,25 +632,9 @@ class ViewfinderViewModel @AssistedInject constructor(
         permissionDelegate.refresh()
 
         when (permission) {
-            AppPermission.CAMERA -> Unit
             AppPermission.MICROPHONE -> onMicrophonePermissionAnswered()
-            AppPermission.LOCATION -> onLocationPermissionAnswered()
-        }
-    }
-
-    private fun onLocationPermissionAnswered() {
-        if (AppPermission.LOCATION in state().missingPermissions) {
-            settingsDelegate.setGeoTagging(false)
-        }
-    }
-
-    private fun openAppSettings() {
-        val permission = state().permissionDialog
-
-        permissionDelegate.openSettings()
-
-        if (permission == AppPermission.LOCATION) {
-            settingsDelegate.setGeoTagging(false)
+            AppPermission.CAMERA -> Unit
+            AppPermission.LOCATION -> Unit
         }
     }
 
@@ -659,10 +642,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         if (state().permissionDialog != permission) return
 
         permissionDelegate.onDialogDismissed(permission)
-
-        if (permission == AppPermission.LOCATION) {
-            settingsDelegate.setGeoTagging(false)
-        }
     }
 
     private fun initializeCamera(forced: Boolean) {
@@ -694,32 +673,12 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         cameraDelegate.applyFlashMode(slotted.modeSettings.flashMode)
 
-        // A stored "on" is written before a permission request resolves, and it outlives a later
-        // revocation, so it cannot be asserted on its own: doing so opened a permission dialog on
-        // startup that the user never asked for. Coercing it here settles the stale value through
-        // the setter, and leaves every dialog in the app originating from an explicit toggle.
-        val geoTagging = slotted.modeSettings.geoTagging &&
-            AppPermission.LOCATION !in slotted.missingPermissions
-
-        settingsDelegate.setGeoTagging(geoTagging)
-
         setSelfIllumination(slotted.modeSettings.selfIllumination)
     }
 
     private fun onSettingsIconClicked() {
         if (!state().isQrMode()) {
             emitEffect(Effect.Settings.OpenSheet)
-        }
-    }
-
-    private fun toggleGeoTagging(enabled: Boolean) {
-        settingsDelegate.setGeoTagging(enabled)
-
-        if (enabled && AppPermission.LOCATION in state().missingPermissions) {
-            permissionDelegate.request(
-                permission = AppPermission.LOCATION,
-                explainsFirst = true,
-            )
         }
     }
 

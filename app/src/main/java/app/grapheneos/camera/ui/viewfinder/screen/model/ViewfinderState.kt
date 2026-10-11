@@ -19,8 +19,6 @@ data class ViewfinderState(
     val showsCameraModeTabs: Boolean = false,
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
-    // Settled against the location permission; never read back from the stored preference.
-    val requireLocation: Boolean = false,
     val session: ViewfinderSessionState = ViewfinderSessionState(),
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val capture: ViewfinderCaptureState = ViewfinderCaptureState(),
@@ -67,6 +65,10 @@ data class ViewfinderState(
         val isAwaitingReview = capture.isCapturedPreviewShown || recording.isSaving
 
         return isCaptureSession && requiresVideoModeOnly && isAwaitingReview
+    }
+
+    fun includesLocation(): Boolean {
+        return settings.geoTagging && AppPermission.LOCATION !in missingPermissions
     }
 
     fun showsLevel(): Boolean {

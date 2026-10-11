@@ -36,6 +36,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             selectHighestResolution = stored.selectHighestResolution
                 ?: SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
             photoQuality = stored.photoQuality ?: SettingsDefaults.PHOTO_QUALITY,
+            geoTagging = stored.geoTagging ?: SettingsDefaults.GEO_TAGGING,
             removeExifAfterCapture = stored.removeExifAfterCapture
                 ?: SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE,
             gyroscopeSuggestions = stored.gyroscopeSuggestions
@@ -66,7 +67,8 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 .takeUnless { it == SettingsDefaults.CAMERA_SOUNDS },
             includeAudio = settings.includeAudio
                 .takeUnless { it == SettingsDefaults.INCLUDE_AUDIO },
-            enableEis = settings.enableEis.takeUnless { it == SettingsDefaults.ENABLE_EIS },
+            enableEis = settings.enableEis
+                .takeUnless { it == SettingsDefaults.ENABLE_EIS },
             captureMode = settings.captureMode
                 .takeUnless { it == SettingsDefaults.CAPTURE_MODE }
                 ?.let(::map),
@@ -74,6 +76,8 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 .takeUnless { it == SettingsDefaults.SELECT_HIGHEST_RESOLUTION },
             photoQuality = settings.photoQuality
                 .takeUnless { it == SettingsDefaults.PHOTO_QUALITY },
+            geoTagging = settings.geoTagging
+                .takeUnless { it == SettingsDefaults.GEO_TAGGING },
             removeExifAfterCapture = settings.removeExifAfterCapture
                 .takeUnless { it == SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE },
             gyroscopeSuggestions = settings.gyroscopeSuggestions

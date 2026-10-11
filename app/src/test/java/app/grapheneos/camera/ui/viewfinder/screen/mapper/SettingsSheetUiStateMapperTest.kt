@@ -102,13 +102,11 @@ class SettingsSheetUiStateMapperTest {
     @Test
     fun toggles_readTheValuesTheyStandFor() {
         val state = map(
-            requireLocation = true,
             settings = CameraSettings(includeAudio = true),
             modeSettings = ModeSettings(selfIllumination = true),
         )
 
         assertTrue(state.includeAudio)
-        assertTrue(state.geoTagging)
         assertTrue(state.selfIllumination)
     }
 
@@ -185,7 +183,6 @@ class SettingsSheetUiStateMapperTest {
         mode: CameraMode = CameraMode.CAMERA,
         requiresVideoModeOnly: Boolean = false,
         flashMode: FlashMode = FlashMode.OFF,
-        requireLocation: Boolean = false,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         session: ViewfinderSessionState = ViewfinderSessionState(),
@@ -197,7 +194,6 @@ class SettingsSheetUiStateMapperTest {
                 mode = mode,
                 requiresVideoModeOnly = requiresVideoModeOnly,
                 flashMode = flashMode,
-                requireLocation = requireLocation,
                 settings = settings,
                 modeSettings = modeSettings,
                 session = session,

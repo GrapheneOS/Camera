@@ -14,6 +14,7 @@ data class CameraSettings(
     val captureMode: CaptureMode = SettingsDefaults.CAPTURE_MODE,
     val selectHighestResolution: Boolean = SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
     val photoQuality: Int = SettingsDefaults.PHOTO_QUALITY,
+    val geoTagging: Boolean = SettingsDefaults.GEO_TAGGING,
     val removeExifAfterCapture: Boolean = SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE,
     val gyroscopeSuggestions: Boolean = SettingsDefaults.GYROSCOPE_SUGGESTIONS,
     val keepSelfiesAsSeen: Boolean = SettingsDefaults.KEEP_SELFIES_AS_SEEN,

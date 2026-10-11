@@ -73,7 +73,7 @@ class SecurePrefsIsolationTest {
 
     private lateinit var ownersSettings: CameraSettings
 
-    private var ownersGeoTagging = false
+    private var ownersSelfIllumination = false
 
     private fun storedOnceItHolds(condition: (SettingsPrefs) -> Boolean): SettingsPrefs {
         return runBlocking {
@@ -94,7 +94,7 @@ class SecurePrefsIsolationTest {
         val owners = durable.settingsRepository()
 
         ownersSettings = owners.settings.value
-        ownersGeoTagging = owners.modeSettings(SLOT).geoTagging
+        ownersSelfIllumination = owners.modeSettings(SLOT).selfIllumination
     }
 
     @After
@@ -102,7 +102,7 @@ class SecurePrefsIsolationTest {
         val owners = durable.settingsRepository()
 
         owners.update { ownersSettings }
-        owners.setGeoTagging(SLOT, ownersGeoTagging)
+        owners.setSelfIllumination(SLOT, ownersSelfIllumination)
     }
 
     @Test
@@ -142,23 +142,23 @@ class SecurePrefsIsolationTest {
     @Test
     fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
         asTheOwner { repository ->
-            repository.setGeoTagging(SLOT, false)
+            repository.setSelfIllumination(SLOT, false)
         }
 
         asASecureSession { repository ->
-            repository.setGeoTagging(SLOT, true)
+            repository.setSelfIllumination(SLOT, true)
 
             assertTrue(
                 "The session lost its own mode-scoped write, so it was handed a second copy" +
                     " of the owner's preferences instead of the one it had been changing",
-                repository.modeSettings(SLOT).geoTagging,
+                repository.modeSettings(SLOT).selfIllumination,
             )
         }
 
         assertEquals(
             "A secure session wrote through to the owner's mode preferences",
             false,
-            storedAfterEveryEarlierWrite().modes[MODE.name]?.geoTagging,
+            storedAfterEveryEarlierWrite().modes[MODE.name]?.selfIllumination,
         )
     }
 
