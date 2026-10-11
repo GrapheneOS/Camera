@@ -7,6 +7,7 @@ import kotlinx.collections.immutable.persistentListOf
 @Immutable
 internal data class CameraSettingsUiState(
     val showsSecureSessionBanner: Boolean = false,
+    val geoTagging: SwitchSettingUiModel = SwitchSettingUiModel(),
     val removeExif: SwitchSettingUiModel = SwitchSettingUiModel(),
     val grid: ChoiceSettingUiModel<GridOption> = ChoiceSettingUiModel(
         selected = GridOption.of(SettingsDefaults.GRID_TYPE),

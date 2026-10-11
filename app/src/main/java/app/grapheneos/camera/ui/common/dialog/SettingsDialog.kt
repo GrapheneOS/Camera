@@ -51,7 +51,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
     private var dialog: View
-    var locToggle: ToggleButton
     private var flashToggle: ImageView
     private var aRToggle: ToggleButton
     var torchToggle: ToggleButton
@@ -150,18 +149,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         // this one: without this the panel would keep the bounds of the preview it was opened over.
         mActivity.previewView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updatePanelRegion()
-        }
-
-        locToggle = binding.locationToggle
-        locToggle.setOnClickListener {
-            if (mActivity.viewfinder.uiState.value.isRecordingActive) {
-                locToggle.isChecked = !locToggle.isChecked
-                mActivity.showMessage(
-                    getString(R.string.toggle_geo_tagging_unsupported_while_recording)
-                )
-            } else {
-                viewfinder.onAction(SettingsAction.GeoTaggingToggled(locToggle.isChecked))
-            }
         }
 
         flashToggle = binding.flashToggleOption
@@ -404,7 +391,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         aRToggle.isChecked = state.is16by9
         ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
 
-        locToggle.isChecked = state.geoTagging
         torchToggle.isChecked = state.torchOn
         selfIlluminationToggle.isChecked = state.selfIllumination
 

@@ -26,6 +26,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
 
         return CameraSettingsUiState(
             showsSecureSessionBanner = state.isSecureSession,
+            geoTagging = geoTagging(state),
             removeExif = removeExif(state),
             grid = grid(state),
             gyroscopeSuggestions = switchSetting(
@@ -47,6 +48,15 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             storageLocation = storageLocation(state),
             dialog = state.dialog,
         )
+    }
+
+    private fun geoTagging(state: CameraSettingsState): SwitchSettingUiModel {
+        val setting = switchSetting(
+            checked = state.settings.geoTagging,
+            default = SettingsDefaults.GEO_TAGGING,
+        )
+
+        return setting.copy(enabled = state.isLocationPermissionGranted || !state.isSecureSession)
     }
 
     private fun removeExif(state: CameraSettingsState): SwitchSettingUiModel {

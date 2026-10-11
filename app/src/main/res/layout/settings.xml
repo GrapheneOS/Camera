@@ -40,24 +40,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content">
 
-                    <ToggleButton
-                        android:id="@+id/location_toggle"
-                        android:layout_width="@dimen/toggle_button_size"
-                        android:layout_height="@dimen/toggle_button_size"
-                        android:textOn=""
-                        android:textOff=""
-                        android:checked="false"
-                        android:layout_gravity="center"
-                        android:background="@drawable/location"
-                        android:contentDescription="@string/geo_tagging"/>
-
-                </FrameLayout>
-
-                <FrameLayout
-                    android:layout_weight="1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content">
-
                     <!-- dp was used instead of sp to avoid resizing text
                     based on user pref. -->
                     <ToggleButton

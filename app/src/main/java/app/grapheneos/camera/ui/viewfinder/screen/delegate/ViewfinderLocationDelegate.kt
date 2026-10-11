@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -50,16 +51,29 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
 
         scope.launch(mainDispatcher) {
             stateHolder.state
-                .map { state -> state.requireLocation }
+                .map { state -> state.includesLocation() }
                 .distinctUntilChanged()
-                .filterNot { requireLocation -> requireLocation }
+                .filterNot { includesLocation -> includesLocation }
                 .collect { locationRepository.forgetLocation() }
+        }
+
+        scope.launch(mainDispatcher) {
+            stateHolder.state.first { state ->
+                needsPermission(state)
+            }
+
+            stateHolder.postEffect(
+                Effect.Permission.Request(
+                    permission = AppPermission.LOCATION,
+                    explainsFirst = false,
+                ),
+            )
         }
     }
 
     override suspend fun trackLocation() {
         stateHolder.state
-            .map { state -> tracksLocation(state) }
+            .map { state -> state.includesLocation() }
             .distinctUntilChanged()
             .collectLatest { tracks ->
                 if (tracks) {
@@ -68,8 +82,13 @@ internal class ViewfinderLocationDelegateImpl @Inject constructor(
             }
     }
 
-    private fun tracksLocation(state: ViewfinderState): Boolean {
-        return state.requireLocation && AppPermission.LOCATION !in state.missingPermissions
+    private fun needsPermission(state: ViewfinderState): Boolean {
+        val missing = state.missingPermissions
+
+        return when {
+            entryPoint.isSecureSession || AppPermission.CAMERA in missing -> false
+            else -> state.settings.geoTagging && AppPermission.LOCATION in missing
+        }
     }
 
     @SuppressLint("MissingPermission")

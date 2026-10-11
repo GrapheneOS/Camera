@@ -31,6 +31,7 @@ class SettingsWireFormatTest {
         captureMode = CaptureMode.QUALITY,
         selectHighestResolution = true,
         photoQuality = SOME_PHOTO_QUALITY,
+        geoTagging = true,
         removeExifAfterCapture = false,
         gyroscopeSuggestions = true,
         keepSelfiesAsSeen = false,
@@ -186,7 +187,6 @@ class SettingsWireFormatTest {
         runTest {
             val mode = StoredModeSettings(
                 flashMode = SOME_FLASH_MODE,
-                geoTagging = true,
                 selfIllumination = true,
                 videoQualityFront = StoredVideoQuality.HD,
                 videoQualityBack = StoredVideoQuality.UHD,
@@ -259,12 +259,12 @@ class SettingsWireFormatTest {
     @Test
     fun flashMode_aValueThisVersionDoesNotKnow_readsAsUnknown() {
         runTest {
-            val stored = """{"modes":{"VIDEO":{"flash_mode":7,"geo_tagging":true}}}"""
+            val stored = """{"modes":{"VIDEO":{"flash_mode":7,"self_illumination":true}}}"""
 
             val mode = decodeMode(stored)
 
             assertEquals(StoredFlashMode.UNKNOWN, mode.flashMode)
-            assertEquals(true, mode.geoTagging)
+            assertEquals(true, mode.selfIllumination)
         }
     }
 
@@ -337,13 +337,13 @@ class SettingsWireFormatTest {
             """"grid_type":"GOLDEN_RATIO","focus_timeout_seconds":10,""" +
             """"self_timer_duration_seconds":3,"enable_camera_sounds":false,""" +
             """"include_audio":false,"enable_eis":false,"capture_mode":"QUALITY",""" +
-            """"select_highest_resolution":true,"photo_quality":71,""" +
+            """"select_highest_resolution":true,"photo_quality":71,"geo_tagging":true,""" +
             """"remove_exif_after_capture":false,"gyroscope_suggestions":true,""" +
             """"keep_selfies_as_seen":false,"scan_all_codes":true,""" +
             """"enabled_barcode_formats":["AZTEC"]}}"""
 
         const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode":2,""" +
-            """"geo_tagging":true,"self_illumination":true,""" +
+            """"self_illumination":true,""" +
             """"video_quality_front":"HD","video_quality_back":"UHD"}}}"""
 
         val SOME_FLASH_MODE = StoredFlashMode.OFF

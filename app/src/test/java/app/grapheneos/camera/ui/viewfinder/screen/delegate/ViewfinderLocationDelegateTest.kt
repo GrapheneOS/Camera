@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.location.model.LocationAvailability
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
@@ -45,7 +46,7 @@ class ViewfinderLocationDelegateTest {
             startTracking(delegate)
             assertEquals(0, collectors)
 
-            stateHolder.update { it.copy(requireLocation = true) }
+            stateHolder.update { it.copy(settings = CameraSettings(geoTagging = true)) }
             assertEquals(1, collectors)
 
             stateHolder.update { it.copy(missingPermissions = setOf(AppPermission.LOCATION)) }
@@ -57,7 +58,7 @@ class ViewfinderLocationDelegateTest {
     fun location_stopsBeingTrackedWhenTrackingIsCancelled() {
         runTest {
             val delegate = createDelegate()
-            stateHolder.update { it.copy(requireLocation = true) }
+            stateHolder.update { it.copy(settings = CameraSettings(geoTagging = true)) }
 
             val tracking = startTracking(delegate)
             tracking.cancel()
@@ -71,7 +72,7 @@ class ViewfinderLocationDelegateTest {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
-            stateHolder.update { it.copy(requireLocation = true) }
+            stateHolder.update { it.copy(settings = CameraSettings(geoTagging = true)) }
             startTracking(delegate)
 
             availability.emit(LocationAvailability.PROVIDERS_DISABLED)
@@ -90,7 +91,7 @@ class ViewfinderLocationDelegateTest {
         runTest {
             val delegate = createDelegate(isSecureSession = true)
             val effects = collectEffects(stateHolder)
-            stateHolder.update { it.copy(requireLocation = true) }
+            stateHolder.update { it.copy(settings = CameraSettings(geoTagging = true)) }
             startTracking(delegate)
 
             availability.emit(LocationAvailability.PROVIDERS_DISABLED)
@@ -103,7 +104,7 @@ class ViewfinderLocationDelegateTest {
     fun location_isForgottenWhenGeoTaggingTurnsOffButNotWhenTrackingStops() {
         runTest {
             val delegate = createDelegate()
-            stateHolder.update { it.copy(requireLocation = true) }
+            stateHolder.update { it.copy(settings = CameraSettings(geoTagging = true)) }
 
             val tracking = startTracking(delegate)
             clearMocks(locationRepository, answers = false)
@@ -111,8 +112,51 @@ class ViewfinderLocationDelegateTest {
             tracking.cancel()
             verify(exactly = 0) { locationRepository.forgetLocation() }
 
-            stateHolder.update { it.copy(requireLocation = false) }
+            stateHolder.update { it.copy(settings = CameraSettings(geoTagging = false)) }
             verify(exactly = 1) { locationRepository.forgetLocation() }
+        }
+    }
+
+    @Test
+    fun permission_missingWhileGeoTaggingIsOn_isRequestedOnce() {
+        runTest {
+            createDelegate()
+            val effects = collectEffects(stateHolder)
+
+            stateHolder.update {
+                it.copy(
+                    settings = CameraSettings(geoTagging = true),
+                    missingPermissions = setOf(AppPermission.LOCATION),
+                )
+            }
+            stateHolder.update { it.copy(keepsScreenAwake = true) }
+
+            assertEquals(
+                listOf(
+                    Effect.Permission.Request(
+                        permission = AppPermission.LOCATION,
+                        explainsFirst = false,
+                    ),
+                ),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun permission_isNotRequestedOnTheLockScreenOrBeforeTheCameraIsAllowed() {
+        runTest {
+            createDelegate(isSecureSession = true)
+            val effects = collectEffects(stateHolder)
+
+            stateHolder.update {
+                it.copy(
+                    settings = CameraSettings(geoTagging = true),
+                    missingPermissions = setOf(AppPermission.LOCATION, AppPermission.CAMERA),
+                )
+            }
+
+            assertEquals(emptyList<Effect>(), effects)
         }
     }
 

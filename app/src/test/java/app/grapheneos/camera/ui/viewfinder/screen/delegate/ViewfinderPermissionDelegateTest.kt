@@ -82,12 +82,12 @@ class ViewfinderPermissionDelegateTest {
         runTest {
             val effects = collectEffects(stateHolder)
 
-            createDelegate(isSecureSession = true).showDialog(AppPermission.LOCATION)
+            createDelegate(isSecureSession = true).showDialog(AppPermission.MICROPHONE)
 
             assertEquals(
                 listOf(
                     Effect.Permission.ShowDialog(
-                        permission = AppPermission.LOCATION,
+                        permission = AppPermission.MICROPHONE,
                         offersSettings = false,
                     ),
                 ),
@@ -138,7 +138,7 @@ class ViewfinderPermissionDelegateTest {
             val effects = collectEffects(stateHolder)
             val delegate = createDelegate()
 
-            delegate.showDialog(AppPermission.LOCATION)
+            delegate.showDialog(AppPermission.MICROPHONE)
             effects.clear()
 
             delegate.openSettings()

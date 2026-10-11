@@ -31,7 +31,6 @@ import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
 import app.grapheneos.camera.ui.common.dialog.showCameraPermissionDialog
-import app.grapheneos.camera.ui.common.dialog.showLocationPermissionDialog
 import app.grapheneos.camera.ui.common.dialog.showMicrophonePermissionDialog
 import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
@@ -459,9 +458,9 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun showPermissionDialog(effect: Effect.Permission.ShowDialog) {
         val permission = effect.permission
+        val onDismissed = { onAction(PermissionAction.DialogDismissed(permission)) }
         val onSettingsClicked = { onAction(PermissionAction.SettingsClicked) }
             .takeIf { effect.offersSettings }
-        val onDismissed = { onAction(PermissionAction.DialogDismissed(permission)) }
 
         permissionDialog = when (permission) {
             AppPermission.CAMERA -> showCameraPermissionDialog(
@@ -479,11 +478,7 @@ internal class ViewfinderEffectHandlerImpl(
                 onDismissed = onDismissed,
             )
 
-            AppPermission.LOCATION -> showLocationPermissionDialog(
-                activity = activity,
-                onSettingsClicked = onSettingsClicked,
-                onDismissed = onDismissed,
-            )
+            AppPermission.LOCATION -> null
         }
     }
 

@@ -26,7 +26,6 @@ internal class ModeSettingsMapperImpl @Inject constructor() : ModeSettingsMapper
 
         return ModeSettings(
             flashMode = mapFlashMode(stored.flashMode),
-            geoTagging = stored.geoTagging ?: SettingsDefaults.GEO_TAGGING,
             selfIllumination = stored.selfIllumination ?: SettingsDefaults.SELF_ILLUMINATION,
             videoQuality = mapVideoQuality(storedQuality),
         )

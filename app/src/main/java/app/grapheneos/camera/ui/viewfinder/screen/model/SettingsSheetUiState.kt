@@ -16,7 +16,6 @@ data class SettingsSheetUiState(
     val videoQualityPosition: Int? = null,
     val torchAvailable: Boolean = false,
     val torchOn: Boolean = false,
-    val geoTagging: Boolean = false,
     val selfIllumination: Boolean = false,
     val is16by9: Boolean = false,
     val aspectRatioFixed: Boolean = false,

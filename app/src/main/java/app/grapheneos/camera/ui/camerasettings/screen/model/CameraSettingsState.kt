@@ -7,6 +7,7 @@ internal data class CameraSettingsState(
     val isSecureSession: Boolean = false,
     val isCaptureSession: Boolean = false,
     val capabilities: CameraCapabilities = CameraCapabilities(),
+    val isLocationPermissionGranted: Boolean = false,
     val settings: CameraSettings = CameraSettings(),
     val storageLocation: String? = null,
     val dialog: CameraSettingsDialog? = null,

@@ -6,23 +6,39 @@ import app.grapheneos.camera.data.settings.model.GridType
 
 internal sealed interface CameraSettingsAction {
 
-    data object GridClicked : CameraSettingsAction
+    data object ScreenResumed : CameraSettingsAction
 
-    data object PhotoQualityClicked : CameraSettingsAction
+    data object LocationPermissionAnswered : CameraSettingsAction
 
-    data object CaptureModeClicked : CameraSettingsAction
+    sealed interface DialogSettingClicked : CameraSettingsAction {
+        val dialog: CameraSettingsDialog
+    }
 
-    data object FocusTimeoutClicked : CameraSettingsAction
+    data object GridClicked : DialogSettingClicked {
+        override val dialog: CameraSettingsDialog = CameraSettingsDialog.Grid
+    }
 
-    data object StorageLocationClicked : CameraSettingsAction
+    data object PhotoQualityClicked : DialogSettingClicked {
+        override val dialog: CameraSettingsDialog = CameraSettingsDialog.PhotoQuality
+    }
 
-    data object StorageLocationResetClicked : CameraSettingsAction
+    data object CaptureModeClicked : DialogSettingClicked {
+        override val dialog: CameraSettingsDialog = CameraSettingsDialog.CaptureMode
+    }
+
+    data object FocusTimeoutClicked : DialogSettingClicked {
+        override val dialog: CameraSettingsDialog = CameraSettingsDialog.FocusTimeout
+    }
 
     data object DialogDismissed : CameraSettingsAction
 
     sealed interface SwitchToggled : CameraSettingsAction {
         val enabled: Boolean
     }
+
+    data class GeoTaggingToggled(
+        override val enabled: Boolean,
+    ) : SwitchToggled
 
     data class RemoveExifToggled(
         override val enabled: Boolean,
@@ -61,7 +77,11 @@ internal sealed interface CameraSettingsAction {
         val seconds: Long,
     ) : CameraSettingsAction
 
+    data object StorageLocationClicked : CameraSettingsAction
+
     data class StorageLocationPicked(
         val tree: Uri?,
     ) : CameraSettingsAction
+
+    data object StorageLocationResetClicked : CameraSettingsAction
 }

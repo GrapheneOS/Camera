@@ -71,6 +71,7 @@ internal class SettingsPrefsMigration(
             selectHighestResolution = booleanOrNull(commons, SELECT_HIGHEST_RESOLUTION)
                 ?: current.selectHighestResolution,
             photoQuality = readPhotoQuality(commons, current.photoQuality),
+            geoTagging = readGeoTagging() ?: current.geoTagging,
             removeExifAfterCapture = booleanOrNull(commons, REMOVE_EXIF_AFTER_CAPTURE)
                 ?: current.removeExifAfterCapture,
             gyroscopeSuggestions = booleanOrNull(commons, GYROSCOPE_SUGGESTIONS)
@@ -112,6 +113,13 @@ internal class SettingsPrefsMigration(
             commons.contains(EMPHASIS_ON_QUALITY) -> SettingsDefaults.PHOTO_QUALITY
             else -> current
         }
+    }
+
+    // Geotagging was set per mode; the photo mode's choice becomes the app-wide one.
+    private fun readGeoTagging(): Boolean? {
+        val photoMode = preferences(SettingsPrefs.storedModeName(CameraMode.CAMERA))
+
+        return booleanOrNull(photoMode, GEO_TAGGING)
     }
 
     // Installs predating this setting recorded without preview mirroring.
@@ -168,7 +176,6 @@ internal class SettingsPrefsMigration(
             flashMode = intOrNull(modePreferences, FLASH_MODE)
                 ?.let(StoredFlashModeSerializer::fromWireValue)
                 ?: current.flashMode,
-            geoTagging = booleanOrNull(modePreferences, GEO_TAGGING) ?: current.geoTagging,
             selfIllumination = booleanOrNull(modePreferences, SELF_ILLUMINATION)
                 ?: current.selfIllumination,
             videoQualityFront = readVideoQuality(

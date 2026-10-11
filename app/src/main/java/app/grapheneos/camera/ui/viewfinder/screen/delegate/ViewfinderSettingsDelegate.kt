@@ -31,7 +31,6 @@ interface ViewfinderSettingsDelegate {
 
     fun selectModeSlot(slot: ModeSlot)
     fun setFlashMode(value: FlashMode)
-    fun setGeoTagging(enabled: Boolean)
     fun setSelfIllumination(enabled: Boolean)
     fun setVideoQuality(quality: VideoQuality)
 
@@ -100,24 +99,6 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         }
 
         stateHolder.update { it.copy(modeSettings = modeSettings) }
-    }
-
-    override fun setGeoTagging(enabled: Boolean) {
-        // A permission result is delivered before the first onResume of an activity the system
-        // recreated, so this can run before a mode has been slotted — see selectModeSlot().
-        val modeSettings = writeMode { slot ->
-            settingsRepository.setGeoTagging(
-                slot = slot,
-                value = enabled,
-            )
-        }
-
-        stateHolder.update {
-            it.copy(
-                modeSettings = modeSettings,
-                requireLocation = enabled,
-            )
-        }
     }
 
     override fun setSelfIllumination(enabled: Boolean) {
