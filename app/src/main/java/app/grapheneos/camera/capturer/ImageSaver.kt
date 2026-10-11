@@ -278,8 +278,10 @@ class ImageSaver(
         val bitmap = try {
             ImageDecoder.decodeBitmap(source, ImageResizer(targetThumbnailWidth, targetThumbnailHeight))
         } catch (e: IOException) {
-            // reading from a ByteBuffer should never cause an IOException
-            throw IllegalStateException("unable to generate a thumbnail", e)
+            // Some HALs produce JPEGs that end early. The image is already saved by now, so it is
+            // kept and goes without a thumbnail, like any other item that can't be decoded
+            Log.w(TAG, "unable to generate a thumbnail", e)
+            null
         }
         mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
     }
