@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.camerasettings.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.gestures.Orientation
@@ -62,12 +63,8 @@ internal fun SettingsTile(
         title = title,
         subtitle = subtitle,
         selected = selected,
+        onClick = onClick,
         modifier = modifier,
-        interaction = Modifier.selectable(
-            selected = selected,
-            onClick = onClick,
-            role = Role.RadioButton,
-        ),
     )
 }
 
@@ -106,16 +103,9 @@ internal fun SettingsSliderTile(
         title = title,
         subtitle = subtitle,
         selected = selected,
-        modifier = modifier,
+        onClick = onClick,
         fill = { scale.fraction(currentValue) * reveal },
-        interaction = Modifier
-            .selectable(
-                selected = selected,
-                interactionSource = null,
-                indication = null,
-                onClick = onClick,
-                role = Role.RadioButton,
-            )
+        modifier = modifier
             .sliderDrag(
                 state = dragState,
                 enabled = selected,
@@ -137,8 +127,8 @@ private fun SettingsTileLayout(
     title: String,
     subtitle: String,
     selected: Boolean,
-    modifier: Modifier,
-    interaction: Modifier,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     fill: (() -> Float)? = null,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -172,32 +162,56 @@ private fun SettingsTileLayout(
                     )
                 },
             )
-            .then(interaction),
+            .selectable(
+                selected = selected,
+                interactionSource = null,
+                indication = when (fill) {
+                    null -> LocalIndication.current
+                    else -> null
+                },
+                onClick = onClick,
+                role = Role.RadioButton,
+            ),
         propagateMinConstraints = true,
     ) {
-        SettingsTileText(
+        SettingsTileTexts(
             title = title,
             subtitle = subtitle,
             color = contentColor,
-            modifier = when (fill) {
-                null -> Modifier
-                else -> Modifier.clipToFill(
-                    fill = fill,
-                    clipOp = ClipOp.Difference,
-                )
-            },
+            fill = fill,
         )
-        if (fill != null) {
-            SettingsTileText(
-                title = title,
-                subtitle = subtitle,
-                color = colorScheme.onPrimaryContainer,
-                modifier = Modifier.clipToFill(
-                    fill = fill,
-                    clipOp = ClipOp.Intersect,
-                ),
+    }
+}
+
+@Composable
+private fun SettingsTileTexts(
+    title: String,
+    subtitle: String,
+    color: Color,
+    fill: (() -> Float)?,
+) {
+    SettingsTileText(
+        title = title,
+        subtitle = subtitle,
+        color = color,
+        modifier = when (fill) {
+            null -> Modifier
+            else -> Modifier.clipToFill(
+                fill = fill,
+                clipOp = ClipOp.Difference,
             )
-        }
+        },
+    )
+    if (fill != null) {
+        SettingsTileText(
+            title = title,
+            subtitle = subtitle,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.clipToFill(
+                fill = fill,
+                clipOp = ClipOp.Intersect,
+            ),
+        )
     }
 }
 

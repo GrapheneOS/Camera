@@ -203,9 +203,11 @@
     <string name="camera_settings_section_controls">Controls</string>
     <string name="camera_settings_geo_tagging">Save location</string>
     <string name="camera_settings_geo_tagging_summary">Add where photos and videos were taken</string>
+    <string name="camera_settings_geo_tagging_access_off">Location access is off</string>
     <string name="camera_settings_geo_tagging_locked">Location access can only be allowed when the device is unlocked</string>
     <string name="camera_settings_photo_only">Photo only</string>
     <string name="camera_settings_video_only">Video only</string>
+    <string name="camera_settings_open_settings">Open settings</string>
     <string name="camera_settings_changed">Changed from default</string>
     <string name="camera_settings_reset">Reset</string>
     <string name="camera_settings_reset_storage_location">Reset storage location</string>

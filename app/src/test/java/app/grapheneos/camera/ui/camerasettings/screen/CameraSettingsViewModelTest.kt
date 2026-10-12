@@ -86,22 +86,26 @@ class CameraSettingsViewModelTest {
     }
 
     @Test
-    fun locationPermissionAnswered_withAGrant_turnsGeoTaggingOn() {
+    fun locationPermissionAnswered_turnsGeoTaggingOnOnlyWithAGrant() {
         val viewModel = createViewModel()
+
+        viewModel.onAction(Action.LocationPermissionAnswered)
+        assertFalse(storedSettings.value.geoTagging)
 
         isLocationPermissionGranted = true
         viewModel.onAction(Action.LocationPermissionAnswered)
-
         assertTrue(storedSettings.value.geoTagging)
     }
 
     @Test
-    fun locationPermissionAnswered_withARefusal_leavesGeoTaggingOff() {
-        val viewModel = createViewModel()
+    fun locationSettingsClicked_opensTheAppSettings() {
+        runTest {
+            val viewModel = createViewModel()
 
-        viewModel.onAction(Action.LocationPermissionAnswered)
+            viewModel.onAction(Action.LocationSettingsClicked)
 
-        assertFalse(storedSettings.value.geoTagging)
+            assertEquals(Effect.OpenAppSettings, viewModel.effects.first())
+        }
     }
 
     @Test
