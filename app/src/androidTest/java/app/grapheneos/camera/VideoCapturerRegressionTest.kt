@@ -1,7 +1,6 @@
 package app.grapheneos.camera
 
 import android.Manifest
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Color
@@ -10,7 +9,6 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.net.Uri
-import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
@@ -55,13 +53,6 @@ class VideoCapturerRegressionTest {
         }
     }
 
-    /** Runs the callback synchronously, skipping the sound. */
-    private class ImmediateTunePlayer(activity: MainActivity) : TunePlayer(activity) {
-        override fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-            onPlayed.run()
-        }
-    }
-
     /** Holds the callback until the test releases it. */
     private class ManualTunePlayer(activity: MainActivity) : TunePlayer(activity) {
         var deferred: Runnable? = null
@@ -82,7 +73,7 @@ class VideoCapturerRegressionTest {
                 activity.videoCapturer.startRecording()
             }
 
-            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+            awaitRecordingStarted(scenario)
 
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
@@ -105,6 +96,7 @@ class VideoCapturerRegressionTest {
                 activity.videoCapturer.startRecording()
                 assertTrue(activity.videoCapturer.isRecording)
             }
+            awaitStartSound(scenario, player)
 
             scenario.onActivity { activity ->
                 activity.videoCapturer.stopRecording()
@@ -112,14 +104,16 @@ class VideoCapturerRegressionTest {
                 assertFalse(activity.videoCapturer.isRecording)
             }
 
-            assertEquals(pendingBefore, pendingVideoCount())
+            waitUntil(scenario, "the abandoned output is deleted") {
+                pendingVideoCount() == pendingBefore
+            }
 
             // A fresh recording must still work after the abandoned one.
             scenario.onActivity { activity ->
                 activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
-            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+            awaitRecordingStarted(scenario)
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
         }
@@ -134,6 +128,9 @@ class VideoCapturerRegressionTest {
                 player = ManualTunePlayer(activity)
                 activity.camConfig.mPlayer = player
                 activity.videoCapturer.startRecording()
+            }
+            awaitStartSound(scenario, player)
+            scenario.onActivity { activity ->
                 activity.videoCapturer.isPaused = true
                 player.deferred!!.run()
             }
@@ -170,6 +167,9 @@ class VideoCapturerRegressionTest {
                 player = ManualTunePlayer(activity)
                 activity.camConfig.mPlayer = player
                 activity.videoCapturer.startRecording()
+            }
+            awaitStartSound(scenario, player)
+            scenario.onActivity { activity ->
                 activity.videoCapturer.isPaused = true
                 player.deferred!!.run()
             }
@@ -284,7 +284,7 @@ class VideoCapturerRegressionTest {
                     activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
                     activity.videoCapturer.startRecording()
                 }
-                waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+                awaitRecordingStarted(scenario)
 
                 var mode: CameraMode? = null
                 var stillRecording = false
@@ -324,7 +324,7 @@ class VideoCapturerRegressionTest {
                 activity.camConfig.mPlayer = ImmediateTunePlayer(activity)
                 activity.videoCapturer.startRecording()
             }
-            waitUntil(scenario, "recording is running") { it.videoCapturer.isRecording }
+            awaitRecordingStarted(scenario)
 
             // Stops the activity, which stops the recording; the finalize event that used to crash
             // lands afterwards, on the main thread of a stopped activity.
@@ -365,6 +365,10 @@ class VideoCapturerRegressionTest {
                     player = ManualTunePlayer(activity)
                     activity.camConfig.mPlayer = player
                     activity.videoCapturer.startRecording()
+                }
+                awaitStartSound(scenario, player)
+
+                scenario.onActivity { activity ->
                     assertTrue(activity.videoCapturer.isRecording)
 
                     val cameraTab = activity.tabLayout.getTabForMode(CameraMode.CAMERA)
@@ -393,6 +397,14 @@ class VideoCapturerRegressionTest {
         }
     }
 
+    /** The start sound only plays once the recording's output has been created. */
+    private fun <A : MainActivity> awaitStartSound(
+        scenario: ActivityScenario<A>,
+        player: ManualTunePlayer,
+    ) {
+        waitUntil(scenario, "the start sound is playing") { player.deferred != null }
+    }
+
     private fun recordingTest(body: (ActivityScenario<VideoOnlyActivity>) -> Unit) {
         recordingTest({ ActivityScenario.launch(VideoOnlyActivity::class.java) }, body)
     }
@@ -416,21 +428,6 @@ class VideoCapturerRegressionTest {
                 stopAndDeleteRecording(scenario, capturedBefore)
             }
         }
-    }
-
-    /**
-     * Every step is best-effort: this also runs after a failed assertion, where the activity may
-     * already be gone and where throwing would replace the failure the test is reporting.
-     */
-    private fun <A : MainActivity> stopAndDeleteRecording(
-        scenario: ActivityScenario<A>,
-        capturedBefore: Uri?,
-    ) {
-        runCatching { scenario.onActivity { it.videoCapturer.stopRecording() } }
-        runCatching {
-            waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
-        }
-        runCatching { deleteNewCapture(scenario, capturedBefore) }
     }
 
     private val targetContext
@@ -458,40 +455,5 @@ class VideoCapturerRegressionTest {
         return targetContext.contentResolver
             .query(pendingUri, arrayOf(MediaColumns._ID), null, null, null)
             ?.use { it.count == 1 } ?: false
-    }
-
-    /** Pending entries are how in-flight and orphaned outputs appear in MediaStore. */
-    private fun pendingVideoCount(): Int {
-        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
-        val args = Bundle().apply {
-            putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
-            putString(
-                ContentResolver.QUERY_ARG_SQL_SELECTION,
-                "${MediaColumns.IS_PENDING} = 1" +
-                        " AND ${MediaColumns.DISPLAY_NAME} LIKE '$VIDEO_NAME_PREFIX%'",
-            )
-        }
-        return resolver.query(CamConfig.videoCollectionUri, arrayOf(MediaColumns._ID), args, null)
-            ?.use { it.count } ?: 0
-    }
-
-    private fun <A : MainActivity> lastCapturedUri(scenario: ActivityScenario<A>): Uri? {
-        var uri: Uri? = null
-        scenario.onActivity { uri = it.camConfig.lastCapturedItem?.uri }
-        return uri
-    }
-
-    /** Keeps test runs from accumulating videos on the device. */
-    private fun <A : MainActivity> deleteNewCapture(scenario: ActivityScenario<A>, previous: Uri?) {
-        scenario.onActivity { activity ->
-            val item = activity.camConfig.lastCapturedItem ?: return@onActivity
-            if (item.uri != previous) {
-                try {
-                    activity.contentResolver.delete(item.uri, null, null)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
     }
 }
