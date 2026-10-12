@@ -2,30 +2,57 @@ package app.grapheneos.camera
 
 import android.content.Context
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.SystemClock
+import androidx.annotation.VisibleForTesting
+import androidx.core.net.toUri
 import app.grapheneos.camera.ui.activities.MainActivity
 
-private fun prepareMediaPlayer(context: Context, resid: Int, listener: MediaPlayer.OnPreparedListener) {
-    MediaPlayer().apply {
-        setDataSource(context, Uri.parse("android.resource://" + context.getPackageName() + "/" + resid))
-        setOnPreparedListener(listener)
-        prepareAsync()
+// Every MediaPlayer call is a synchronous binder transaction into mediaserver, which can take
+// seconds to answer. Made from the main thread, that wait was reported as an ANR, so the players
+// are created, prepared and played here. A player also delivers its events to the thread that
+// created it, and the prepared event calls into mediaserver too.
+private val soundHandler = HandlerThread("TunePlayer").run {
+    start()
+    Handler(looper)
+}
+
+private fun prepareMediaPlayer(
+    context: Context,
+    resid: Int,
+    listener: MediaPlayer.OnPreparedListener
+) {
+    soundHandler.post {
+        TunePlayer.newMediaPlayer().apply {
+            setDataSource(
+                context,
+                "android.resource://${context.packageName}/$resid".toUri()
+            )
+            setOnPreparedListener(listener)
+            prepareAsync()
+        }
     }
 }
 
 open class TunePlayer(val context: MainActivity) {
 
-    private lateinit var shutterPlayer: MediaPlayer
+    // Set on the sound thread once loaded. The main thread only hands them back there to play.
+    @Volatile
+    private var shutterPlayer: MediaPlayer? = null
 
-    private lateinit var fSPlayer: MediaPlayer
+    @Volatile
+    private var fSPlayer: MediaPlayer? = null
 
-    private lateinit var tIPlayer: MediaPlayer
-    private lateinit var tCPlayer: MediaPlayer
+    @Volatile
+    private var tIPlayer: MediaPlayer? = null
+    @Volatile
+    private var tCPlayer: MediaPlayer? = null
 
-    private lateinit var vRecPlayer: MediaPlayer
-    private lateinit var vStopPlayer: MediaPlayer
+    @Volatile
+    private var vRecPlayer: MediaPlayer? = null
+    @Volatile
+    private var vStopPlayer: MediaPlayer? = null
 
     init {
         prepareMediaPlayer(context, R.raw.image_shot, { player -> shutterPlayer = player })
@@ -43,58 +70,67 @@ open class TunePlayer(val context: MainActivity) {
         return !context.camConfig.enableCameraSounds
     }
 
+    private fun play(player: MediaPlayer?) {
+        if (shouldNotPlayTune() || player == null) return
+        soundHandler.post {
+            player.seekTo(0)
+            player.start()
+        }
+    }
+
     fun playShutterSound() {
-        if (shouldNotPlayTune() || !::shutterPlayer.isInitialized) return
-        shutterPlayer.seekTo(0)
-        shutterPlayer.start()
+        play(shutterPlayer)
     }
 
     open fun playVRStartSound(handler: Handler, onPlayed: Runnable) {
-        if (shouldNotPlayTune() || !::vRecPlayer.isInitialized) {
+        val player = vRecPlayer
+        if (shouldNotPlayTune() || player == null) {
             onPlayed.run()
             return
         }
-        // An unhandled playback error is also delivered to the completion listener, and a
-        // failed sound must still deliver onPlayed once: the recording start is waiting on it.
-        var delivered = false
-        val deliverOnce = MediaPlayer.OnCompletionListener {
-            if (!delivered) {
-                delivered = true
-                vRecPlayer.setOnCompletionListener(null)
-                vRecPlayer.setOnErrorListener(null)
-                handler.postDelayed(onPlayed, 10)
+        soundHandler.post {
+            // An unhandled playback error is also delivered to the completion listener, and a
+            // failed sound must still deliver onPlayed once: the recording start is waiting on it.
+            var delivered = false
+            val deliverOnce = MediaPlayer.OnCompletionListener {
+                if (!delivered) {
+                    delivered = true
+                    player.setOnCompletionListener(null)
+                    player.setOnErrorListener(null)
+                    handler.postDelayed(onPlayed, 10)
+                }
             }
+            player.setOnCompletionListener(deliverOnce)
+            player.setOnErrorListener { _, _, _ ->
+                deliverOnce.onCompletion(player)
+                true
+            }
+            player.seekTo(0)
+            player.start()
         }
-        vRecPlayer.setOnCompletionListener(deliverOnce)
-        vRecPlayer.setOnErrorListener { player, _, _ ->
-            deliverOnce.onCompletion(player)
-            true
-        }
-        vRecPlayer.seekTo(0)
-        vRecPlayer.start()
     }
 
     fun playVRStopSound() {
-        if (shouldNotPlayTune() || !::vStopPlayer.isInitialized) return
-        vStopPlayer.seekTo(0)
-        vStopPlayer.start()
+        play(vStopPlayer)
     }
 
     fun playTimerIncrementSound() {
-        if (shouldNotPlayTune() || !::tIPlayer.isInitialized) return
-        tIPlayer.seekTo(0)
-        tIPlayer.start()
+        play(tIPlayer)
     }
 
     fun playTimerFinalSSound() {
-        if (shouldNotPlayTune() || !::tCPlayer.isInitialized) return
-        tCPlayer.seekTo(0)
-        tCPlayer.start()
+        play(tCPlayer)
     }
 
     fun playFocusStartSound() {
-        if (shouldNotPlayTune() || !::fSPlayer.isInitialized) return
-        fSPlayer.seekTo(0)
-        fSPlayer.start()
+        play(fSPlayer)
+    }
+
+    companion object {
+        // A stalled mediaserver can't be produced on demand, so tests swap in a player whose
+        // calls into it block
+        @VisibleForTesting
+        @Volatile
+        var newMediaPlayer: () -> MediaPlayer = ::MediaPlayer
     }
 }
