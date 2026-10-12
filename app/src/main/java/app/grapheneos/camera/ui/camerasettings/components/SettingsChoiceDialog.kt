@@ -27,6 +27,8 @@ import app.grapheneos.camera.ui.core.CameraPreviewTheme
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
+private val ROW_SPACING = 16.dp
+
 @Composable
 internal fun <T> SettingsChoiceDialog(
     title: String,
@@ -93,8 +95,8 @@ private fun SettingsChoiceRow(
             selected = selected,
             onClick = null,
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column {
+        Spacer(modifier = Modifier.width(ROW_SPACING))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = choice.label,
                 style = MaterialTheme.typography.bodyLarge,
@@ -108,6 +110,10 @@ private fun SettingsChoiceRow(
                 )
             }
         }
+        if (choice.trailing != null) {
+            Spacer(modifier = Modifier.width(ROW_SPACING))
+            choice.trailing.invoke()
+        }
     }
 }
 
@@ -116,6 +122,7 @@ internal data class SettingsChoice<T>(
     val value: T,
     val label: String,
     val summary: String? = null,
+    val trailing: (@Composable () -> Unit)? = null,
 )
 
 @PreviewLightDark

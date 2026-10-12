@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.ui.camerasettings.components.GridIllustration
 import app.grapheneos.camera.ui.camerasettings.components.PhotoQualityDialog
 import app.grapheneos.camera.ui.camerasettings.components.PhotoQualityOption
 import app.grapheneos.camera.ui.camerasettings.components.PhotoResolutionOptions
@@ -66,6 +67,7 @@ private fun GridSettingDialog(
         choices = choices(
             options = grid.options,
             label = { stringResource(it.label) },
+            trailing = { option -> { GridIllustration(pattern = option.pattern) } },
         ),
         selected = grid.selected,
         onConfirm = { onAction(Action.GridConfirmed(it.type)) },
@@ -148,6 +150,7 @@ private fun <T> choices(
     options: ImmutableList<T>,
     label: @Composable (T) -> String,
     summary: @Composable (T) -> String? = { null },
+    trailing: (T) -> (@Composable () -> Unit)? = { null },
 ): ImmutableList<SettingsChoice<T>> {
     return options
         .map { option ->
@@ -155,6 +158,7 @@ private fun <T> choices(
                 value = option,
                 label = label(option),
                 summary = summary(option),
+                trailing = trailing(option),
             )
         }
         .toImmutableList()

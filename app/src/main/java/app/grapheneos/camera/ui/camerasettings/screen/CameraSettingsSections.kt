@@ -29,11 +29,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
@@ -43,6 +38,7 @@ import app.grapheneos.camera.ui.camerasettings.components.SettingsSwitchItem
 import app.grapheneos.camera.ui.camerasettings.components.formatMegapixels
 import app.grapheneos.camera.ui.camerasettings.components.formatPhotoQuality
 import app.grapheneos.camera.ui.camerasettings.components.groupedItemShape
+import app.grapheneos.camera.ui.camerasettings.components.linkedText
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
@@ -129,14 +125,17 @@ private fun privacyRows(
     return listOf(
         SettingsRow(key = "geo_tagging") { shape ->
             val summary = when {
+                uiState.offersLocationSettings -> R.string.camera_settings_geo_tagging_access_off
                 uiState.geoTagging.enabled -> R.string.camera_settings_geo_tagging_summary
                 else -> R.string.camera_settings_geo_tagging_locked
             }
-
             SwitchSettingItem(
                 setting = uiState.geoTagging,
                 title = stringResource(R.string.camera_settings_geo_tagging),
                 summary = stringResource(summary),
+                label = stringResource(R.string.camera_settings_open_settings)
+                    .takeIf { uiState.offersLocationSettings },
+                onLabelClick = { onAction(Action.LocationSettingsClicked) },
                 icon = Icons.Outlined.LocationOn,
                 shape = shape,
                 onCheckedChange = { onAction(Action.GeoTaggingToggled(it)) },
@@ -335,25 +334,11 @@ private fun ResetSettingsFooter(
     modifier: Modifier = Modifier,
 ) {
     val link = stringResource(R.string.camera_settings_reset)
-    val sentence = stringResource(R.string.camera_settings_reset_settings_footer, link)
-    val linkStart = sentence.indexOf(link)
-    val linkStyles = TextLinkStyles(
-        style = SpanStyle(
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium,
-        ),
+    val text = linkedText(
+        text = stringResource(R.string.camera_settings_reset_settings_footer, link),
+        link = link,
+        onClick = onClick,
     )
-    val text = buildAnnotatedString {
-        append(sentence)
-        addLink(
-            clickable = LinkAnnotation.Clickable(
-                tag = link,
-                styles = linkStyles,
-            ) { onClick() },
-            start = linkStart,
-            end = linkStart + link.length,
-        )
-    }
 
     Text(
         text = text,
@@ -379,6 +364,7 @@ private fun SwitchSettingItem(
     shape: Shape,
     onCheckedChange: (Boolean) -> Unit,
     label: String? = null,
+    onLabelClick: (() -> Unit)? = null,
 ) {
     SettingsSwitchItem(
         title = title,
@@ -386,6 +372,7 @@ private fun SwitchSettingItem(
         onCheckedChange = onCheckedChange,
         summary = summary,
         label = label,
+        onLabelClick = onLabelClick,
         icon = icon,
         enabled = setting.enabled,
         isChanged = setting.isChanged,

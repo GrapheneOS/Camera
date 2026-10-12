@@ -10,6 +10,8 @@ internal sealed interface CameraSettingsAction {
 
     data object LocationPermissionAnswered : CameraSettingsAction
 
+    data object LocationSettingsClicked : CameraSettingsAction
+
     sealed interface DialogSettingClicked : CameraSettingsAction {
         val dialog: CameraSettingsDialog
     }

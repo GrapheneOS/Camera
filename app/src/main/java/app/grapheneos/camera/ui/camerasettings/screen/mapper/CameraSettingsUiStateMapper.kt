@@ -27,6 +27,9 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         return CameraSettingsUiState(
             showsSecureSessionBanner = state.isSecureSession,
             geoTagging = geoTagging(state),
+            offersLocationSettings = settings.geoTagging &&
+                !state.isLocationPermissionGranted &&
+                !state.isSecureSession,
             removeExif = removeExif(state),
             grid = grid(state),
             gyroscopeSuggestions = switchSetting(

@@ -86,6 +86,7 @@ internal class CameraSettingsViewModel @Inject constructor(
         when (action) {
             is Action.ScreenResumed -> refreshLocationPermission()
             is Action.LocationPermissionAnswered -> onLocationPermissionAnswered()
+            is Action.LocationSettingsClicked -> _effects.trySend(Effect.OpenAppSettings)
             is Action.DialogSettingClicked -> showDialog(action.dialog)
             is Action.SwitchToggled -> onSwitchToggled(action)
             is Action.DialogConfirmed -> onDialogConfirmed(action)
@@ -105,9 +106,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun onLocationPermissionAnswered() {
         refreshLocationPermission()
 
-        if (state.isLocationPermissionGranted) {
-            updateSettings { it.copy(geoTagging = true) }
-        }
+        updateSettings { it.copy(geoTagging = state.isLocationPermissionGranted) }
     }
 
     private fun onSwitchToggled(action: Action.SwitchToggled) {
