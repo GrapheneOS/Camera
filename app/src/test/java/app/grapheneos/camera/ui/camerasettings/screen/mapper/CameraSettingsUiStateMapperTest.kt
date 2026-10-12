@@ -95,6 +95,9 @@ class CameraSettingsUiStateMapperTest {
         assertEquals(on, granted.geoTagging)
         assertEquals(on, revoked.geoTagging)
         assertEquals(on.copy(enabled = false), lockscreen.geoTagging)
+        assertFalse(granted.offersLocationSettings)
+        assertTrue(revoked.offersLocationSettings)
+        assertFalse(lockscreen.offersLocationSettings)
     }
 
     @Test

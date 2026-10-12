@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
@@ -116,6 +117,7 @@ internal fun SettingsSwitchItem(
     modifier: Modifier = Modifier,
     summary: String? = null,
     label: String? = null,
+    onLabelClick: (() -> Unit)? = null,
     icon: ImageVector? = null,
     enabled: Boolean = true,
     isChanged: Boolean = false,
@@ -134,6 +136,7 @@ internal fun SettingsSwitchItem(
             ),
         summary = summary,
         label = label,
+        onLabelClick = onLabelClick,
         icon = icon,
         enabled = enabled,
         isChanged = isChanged,
@@ -153,6 +156,7 @@ private fun SettingsItemLayout(
     modifier: Modifier = Modifier,
     summary: String? = null,
     label: String? = null,
+    onLabelClick: (() -> Unit)? = null,
     icon: ImageVector? = null,
     enabled: Boolean = true,
     isChanged: Boolean = false,
@@ -189,24 +193,17 @@ private fun SettingsItemLayout(
             )
             if (!summary.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor(
-                        enabled = enabled,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
+                SettingsItemSummary(
+                    summary = summary,
+                    enabled = enabled,
                 )
             }
             if (!label.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = contentColor(
-                        enabled = enabled,
-                        color = MaterialTheme.colorScheme.primary,
-                    ),
+                SettingsItemLabel(
+                    label = label,
+                    onLabelClick = onLabelClick,
+                    enabled = enabled,
                 )
             }
         }
@@ -248,6 +245,44 @@ private fun SettingsItemTitle(
                 contentDescription = "$title, $changedDescription"
             }
         },
+    )
+}
+
+@Composable
+private fun SettingsItemSummary(
+    summary: String,
+    enabled: Boolean,
+) {
+    Text(
+        text = summary,
+        style = MaterialTheme.typography.bodyMedium,
+        color = contentColor(
+            enabled = enabled,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+    )
+}
+
+@Composable
+private fun SettingsItemLabel(
+    label: String,
+    onLabelClick: (() -> Unit)?,
+    enabled: Boolean,
+) {
+    Text(
+        text = when (onLabelClick) {
+            null -> AnnotatedString(label)
+            else -> linkedText(
+                text = label,
+                link = label,
+                onClick = onLabelClick,
+            )
+        },
+        style = MaterialTheme.typography.labelMedium,
+        color = contentColor(
+            enabled = enabled,
+            color = MaterialTheme.colorScheme.primary,
+        ),
     )
 }
 
