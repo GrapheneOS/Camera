@@ -2,6 +2,7 @@ package app.grapheneos.camera.capturer
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -21,6 +22,7 @@ import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.view.View
 import android.webkit.MimeTypeMap
+import androidx.annotation.VisibleForTesting
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.PendingRecording
 import androidx.camera.video.Recorder
@@ -41,6 +43,7 @@ import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -53,7 +56,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private var recording: Recording? = null
 
-    // Invoking this abandons a start still queued behind the record-start sound.
+    // Invoking this abandons a start still waiting on its output or queued behind the record-start
+    // sound.
     private var cancelDeferredStart: (() -> Unit)? = null
 
     var isMuted = false
@@ -77,35 +81,39 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val handler = Handler(Looper.getMainLooper())
 
+    // The output is created, opened and discarded through this
+    @set:VisibleForTesting
+    var contentResolver: ContentResolver = mActivity.contentResolver
+
     private fun updateTimerTime(timeInNanos: Long) {
         mActivity.timerView.text = formatVideoDuration(timeInNanos / 1_000_000_000)
     }
 
     private class RecordingContext(
-        val pendingRecording: PendingRecording,
         val uri: Uri,
         val fileDescriptor: ParcelFileDescriptor,
         val shouldAddToGallery: Boolean,
         val isPendingMediaStoreUri: Boolean,
     )
 
-    private fun createRecordingContext(recorder: Recorder, fileName: String): RecordingContext? {
+    // Runs on outputExecutor: each step is a call into another process, MediaProvider or the app
+    // the video is for, and can take seconds to answer.
+    private fun createRecordingContext(
+        fileName: String,
+        foreignUri: Uri?,
+        storageLocation: String,
+    ): RecordingContext? {
         val mimeType =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat) ?: "video/mp4"
-
-        val ctx = mActivity
-        val contentResolver = ctx.contentResolver
 
         val uri: Uri?
         var shouldAddToGallery = true
         var isPendingMediaStoreUri = false
 
-        if (ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()) {
-            uri = ctx.outputUri
+        if (foreignUri != null) {
+            uri = foreignUri
             shouldAddToGallery = false
         } else {
-            val storageLocation = camConfig.storageLocation
-
             if (storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION) {
                 val contentValues = ContentValues().apply {
                     put(MediaColumns.DISPLAY_NAME, fileName)
@@ -127,6 +135,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
             return null
         }
 
+        return contentResolver
+            .openFileDescriptor(uri, "w")
+            ?.let {
+                RecordingContext(uri, it, shouldAddToGallery, isPendingMediaStoreUri)
+            }
+    }
+
+    private fun prepareRecording(recorder: Recorder, recordingCtx: RecordingContext): PendingRecording {
         var location: Location? = null
         if (camConfig.requireLocation) {
             location = (mActivity.applicationContext as App).getLocation()
@@ -134,14 +150,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 mActivity.showMessage(R.string.location_unavailable)
             }
         }
-        contentResolver.openFileDescriptor(uri,"w")?.let {
-            val outputOptions = FileDescriptorOutputOptions.Builder(it)
-                .setLocation(location)
-                .build()
-            val pendingRecording = recorder.prepareRecording(ctx, outputOptions)
-            return RecordingContext(pendingRecording, uri, it, shouldAddToGallery, isPendingMediaStoreUri)
-        }
-        return null
+        val outputOptions = FileDescriptorOutputOptions.Builder(recordingCtx.fileDescriptor)
+            .setLocation(location)
+            .build()
+        return recorder.prepareRecording(mActivity, outputOptions)
     }
 
     fun startRecording() {
@@ -167,132 +179,165 @@ class VideoCapturer(private val mActivity: MainActivity) {
             }
         }
 
-        val recordingCtx = try {
-            createRecordingContext(recorder, fileName)!!
-        } catch (exception: Exception) {
-            val foreignUri = ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()
-            if (!foreignUri) {
-                camConfig.onStorageLocationNotFound()
-            }
-            ctx.showMessage(R.string.unable_to_access_output_file)
-            isRecording = false
-            return
+        val foreignUri = if (ctx is VideoCaptureActivity && ctx.isOutputUriAvailable()) {
+            ctx.outputUri
+        } else {
+            null
         }
-
-        val pendingRecording = recordingCtx.pendingRecording
-
-        if (includeAudio) {
-            pendingRecording.withAudioEnabled()
-        }
+        val storageLocation = camConfig.storageLocation
 
         beforeRecordingStarts()
 
-        // The sound callback may fire more than once; a second PendingRecording.start() throws.
+        // A stop cancels the start until the recording exists, and the sound callback may fire
+        // more than once; a second PendingRecording.start() throws.
         var consumed = false
+        // A cancel discards the output if it exists by then, and its arrival does otherwise
+        var createdCtx: RecordingContext? = null
 
         cancelDeferredStart = {
             consumed = true
             cancelDeferredStart = null
-            try {
-                recordingCtx.fileDescriptor.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            discardUnusedOutput(recordingCtx)
+            createdCtx?.let { abandonOutput(it) }
             afterRecordingStops()
         }
 
-        camConfig.mPlayer.playVRStartSound(handler) {
-            if (consumed) {
-                return@playVRStartSound
-            }
-
-            consumed = true
-            cancelDeferredStart = null
-
-            recording = pendingRecording.start(ctx.mainExecutor) { event ->
-
-                if (event is VideoRecordEvent.Start) {
-                    onRecordingStart()
-                }
-
-                if (event is VideoRecordEvent.Status) {
-                    updateTimerTime(event.recordingStats.recordedDurationNanos)
-                }
-
-                if (event is VideoRecordEvent.Finalize) {
-                    afterRecordingStops()
-
-                    camConfig.mPlayer.playVRStopSound()
-
-                    if (event.hasError()) {
-                        when (event.error) {
-                            VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
-                                discardUnusedOutput(recordingCtx)
-                                ctx.showMessage(R.string.recording_too_short_to_be_saved)
-                                return@start
-                            }
-                            VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
-                            VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
-                            VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
-                                discardUnusedOutput(recordingCtx)
-                                ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
-                                return@start
-                            }
-                            else -> {
-                                ctx.showMessage(ctx.getString(R.string.error_during_recording, event.error))
-                                // The errors left unnamed here (the camera going away, storage
-                                // running out) finalize whatever was written before they hit, which
-                                // is worth keeping — but only if anything was.
-                                if (event.recordingStats.numBytesRecorded == 0L) {
-                                    discardUnusedOutput(recordingCtx)
-                                    return@start
-                                }
-                            }
-                        }
-                    }
-
-                    val uri = recordingCtx.uri
-
-                    if (recordingCtx.isPendingMediaStoreUri) {
-                        try {
-                            removePendingFlagFromUri(ctx.contentResolver, uri)
-                        } catch (e: Exception) {
-                            ctx.showMessage(R.string.unable_to_save_video)
-                        }
-                    }
-
-                    if (recordingCtx.shouldAddToGallery) {
-                        val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
-                        camConfig.updateLastCapturedItem(item)
-
-                        ctx.updateThumbnail()
-
-                        if (ctx is SecureMainActivity) {
-                            ctx.capturedItems.add(item)
-                        }
-                    }
-
-                    if (ctx is VideoCaptureActivity) {
-                        ctx.afterRecording(uri)
-                    }
-                }
-            }
-
-            // The Recording didn't exist yet when the mute/pause setters ran.
-            if (isMuted) {
-                recording?.mute(true)
-            }
-            if (isPaused) {
-                recording?.pause()
-            }
-
-            try {
-                // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
-                // caller, and that it's safe to do so as soon as pendingRecording.start() returns
-                recordingCtx.fileDescriptor.close()
+        outputExecutor.execute {
+            val recordingCtx = try {
+                createRecordingContext(fileName, foreignUri, storageLocation)
             } catch (e: Exception) {
                 e.printStackTrace()
+                null
+            }
+
+            handler.post {
+                if (consumed) {
+                    recordingCtx?.let { abandonOutput(it) }
+                    return@post
+                }
+
+                val pendingRecording = try {
+                    recordingCtx?.let { prepareRecording(recorder, it) }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+
+                if (recordingCtx == null || pendingRecording == null) {
+                    recordingCtx?.let { abandonOutput(it) }
+                    if (foreignUri == null) {
+                        camConfig.onStorageLocationNotFound()
+                    }
+                    ctx.showMessage(R.string.unable_to_access_output_file)
+                    cancelDeferredStart = null
+                    afterRecordingStops()
+                    return@post
+                }
+
+                createdCtx = recordingCtx
+
+                if (includeAudio) {
+                    pendingRecording.withAudioEnabled()
+                }
+
+                camConfig.mPlayer.playVRStartSound(handler) {
+                    if (consumed) {
+                        return@playVRStartSound
+                    }
+
+                    consumed = true
+                    cancelDeferredStart = null
+
+                    recording = pendingRecording.start(ctx.mainExecutor) { event ->
+                        onRecordEvent(event, recordingCtx, dateString)
+                    }
+
+                    // The Recording didn't exist yet when the mute/pause setters ran.
+                    if (isMuted) {
+                        recording?.mute(true)
+                    }
+
+                    if (isPaused) {
+                        recording?.pause()
+                    }
+
+                    try {
+                        // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
+                        // caller, and that it's safe to do so as soon as pendingRecording.start() returns
+                        recordingCtx.fileDescriptor.close()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onRecordEvent(event: VideoRecordEvent, recordingCtx: RecordingContext, dateString: String) {
+        val ctx = mActivity
+
+        if (event is VideoRecordEvent.Start) {
+            onRecordingStart()
+        }
+
+        if (event is VideoRecordEvent.Status) {
+            updateTimerTime(event.recordingStats.recordedDurationNanos)
+        }
+
+        if (event is VideoRecordEvent.Finalize) {
+            afterRecordingStops()
+
+            camConfig.mPlayer.playVRStopSound()
+
+            if (event.hasError()) {
+                when (event.error) {
+                    VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
+                        discardUnusedOutput(recordingCtx)
+                        ctx.showMessage(R.string.recording_too_short_to_be_saved)
+                        return
+                    }
+                    VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
+                    VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
+                    VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
+                        discardUnusedOutput(recordingCtx)
+                        ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                        return
+                    }
+                    else -> {
+                        ctx.showMessage(ctx.getString(R.string.error_during_recording, event.error))
+                        // The errors left unnamed here (the camera going away, storage
+                        // running out) finalize whatever was written before they hit, which
+                        // is worth keeping — but only if anything was.
+                        if (event.recordingStats.numBytesRecorded == 0L) {
+                            discardUnusedOutput(recordingCtx)
+                            return
+                        }
+                    }
+                }
+            }
+
+            val uri = recordingCtx.uri
+
+            if (recordingCtx.isPendingMediaStoreUri) {
+                try {
+                    removePendingFlagFromUri(ctx.contentResolver, uri)
+                } catch (e: Exception) {
+                    ctx.showMessage(R.string.unable_to_save_video)
+                }
+            }
+
+            if (recordingCtx.shouldAddToGallery) {
+                val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
+                camConfig.updateLastCapturedItem(item)
+
+                ctx.updateThumbnail()
+
+                if (ctx is SecureMainActivity) {
+                    ctx.capturedItems.add(item)
+                }
+            }
+
+            if (ctx is VideoCaptureActivity) {
+                ctx.afterRecording(uri)
             }
         }
     }
@@ -330,6 +375,13 @@ class VideoCapturer(private val mActivity: MainActivity) {
         isPaused = false
         isMuted = false
 
+        // The recording is made with the recorder and audio choice of the press, but its output
+        // can take seconds to arrive: these must not rebind the camera or flip the audio meanwhile.
+        mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
+        mActivity.settingsDialog.enableEISToggle.isEnabled = false
+        mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
+        mActivity.settingsDialog.includeAudioToggle.isEnabled = false
+
         mActivity.previewView.keepScreenOn = true
     }
 
@@ -338,9 +390,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // mActivity.micOffIcon.visibility = View.GONE
 
         animateCaptureButtonCorners(dp16, dp8)
-
-        mActivity.settingsDialog.videoQualitySpinner.isEnabled = false
-        mActivity.settingsDialog.enableEISToggle.isEnabled = false
 
         // The user may have paused before the recording actually started.
         if (isPaused) {
@@ -358,15 +407,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.thirdOption.visibility = View.INVISIBLE
         }
 
-        mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = false
-
         // While recording, the gallery button turns into a shutter for stills
         mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
-
-        mActivity.settingsDialog.includeAudioToggle.isEnabled = false
 
         if (camConfig.includeAudio) {
             mActivity.setMuteToggleState(muted = isMuted)
@@ -445,6 +490,18 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording = null
     }
 
+    // Off the main thread for the same reason the output is created there
+    private fun abandonOutput(recordingCtx: RecordingContext) {
+        outputExecutor.execute {
+            try {
+                recordingCtx.fileDescriptor.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            discardUnusedOutput(recordingCtx)
+        }
+    }
+
     private fun discardUnusedOutput(recordingCtx: RecordingContext) {
         if (!recordingCtx.shouldAddToGallery) {
             return
@@ -452,13 +509,19 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         try {
             if (recordingCtx.isPendingMediaStoreUri) {
-                mActivity.contentResolver.delete(recordingCtx.uri, null, null)
+                contentResolver.delete(recordingCtx.uri, null, null)
             } else {
-                DocumentsContract.deleteDocument(mActivity.contentResolver, recordingCtx.uri)
+                DocumentsContract.deleteDocument(contentResolver, recordingCtx.uri)
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    companion object {
+        // Shared across activities like ImageSaver's: a stalled MediaProvider holds one thread, not
+        // one per press
+        private val outputExecutor = Executors.newSingleThreadExecutor()
     }
 }
 
