@@ -44,6 +44,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -81,7 +82,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    // The output is created, opened and discarded through this
+    // The output is created, opened, saved and discarded through this
     @set:VisibleForTesting
     var contentResolver: ContentResolver = mActivity.contentResolver
 
@@ -291,14 +292,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
             if (event.hasError()) {
                 when (event.error) {
                     VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
-                        discardUnusedOutput(recordingCtx)
+                        abandonOutput(recordingCtx)
                         ctx.showMessage(R.string.recording_too_short_to_be_saved)
                         return
                     }
                     VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
                     VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
                     VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
-                        discardUnusedOutput(recordingCtx)
+                        abandonOutput(recordingCtx)
                         ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
                         return
                     }
@@ -308,37 +309,62 @@ class VideoCapturer(private val mActivity: MainActivity) {
                         // running out) finalize whatever was written before they hit, which
                         // is worth keeping — but only if anything was.
                         if (event.recordingStats.numBytesRecorded == 0L) {
-                            discardUnusedOutput(recordingCtx)
+                            abandonOutput(recordingCtx)
                             return
                         }
                     }
                 }
             }
 
-            val uri = recordingCtx.uri
+            saveOutput(recordingCtx, dateString)
+        }
+    }
 
-            if (recordingCtx.isPendingMediaStoreUri) {
-                try {
-                    removePendingFlagFromUri(ctx.contentResolver, uri)
-                } catch (e: Exception) {
-                    ctx.showMessage(R.string.unable_to_save_video)
+    // A video in MediaStore stays pending, hidden from other apps and left to be deleted, until
+    // MediaProvider is told to make it visible: only then is it saved.
+    private fun saveOutput(recordingCtx: RecordingContext, dateString: String) {
+        if (!recordingCtx.isPendingMediaStoreUri) {
+            onOutputSaved(recordingCtx, dateString)
+            return
+        }
+
+        // Off the main thread for the same reason the output is created there
+        outputExecutor.execute {
+            val saved = try {
+                removePendingFlagFromUri(contentResolver, recordingCtx.uri)
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+
+            handler.post {
+                if (saved) {
+                    onOutputSaved(recordingCtx, dateString)
+                } else {
+                    mActivity.showMessage(R.string.unable_to_save_video)
                 }
             }
+        }
+    }
 
-            if (recordingCtx.shouldAddToGallery) {
-                val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
-                camConfig.updateLastCapturedItem(item)
+    private fun onOutputSaved(recordingCtx: RecordingContext, dateString: String) {
+        val ctx = mActivity
+        val uri = recordingCtx.uri
 
-                ctx.updateThumbnail()
+        if (recordingCtx.shouldAddToGallery) {
+            val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
+            camConfig.updateLastCapturedItem(item)
 
-                if (ctx is SecureMainActivity) {
-                    ctx.capturedItems.add(item)
-                }
+            ctx.updateThumbnail()
+
+            if (ctx is SecureMainActivity) {
+                ctx.capturedItems.add(item)
             }
+        }
 
-            if (ctx is VideoCaptureActivity) {
-                ctx.afterRecording(uri)
-            }
+        if (ctx is VideoCaptureActivity) {
+            ctx.afterRecording(uri)
         }
     }
 
@@ -494,6 +520,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private fun abandonOutput(recordingCtx: RecordingContext) {
         outputExecutor.execute {
             try {
+                // A no-op once the recording has started: starting it closed this
                 recordingCtx.fileDescriptor.close()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -522,6 +549,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // Shared across activities like ImageSaver's: a stalled MediaProvider holds one thread, not
         // one per press
         private val outputExecutor = Executors.newSingleThreadExecutor()
+
+        /**
+         * Returns once the output work queued so far is done, and has posted back what it posts
+         */
+        @VisibleForTesting
+        fun awaitOutputWork(timeoutS: Long) {
+            outputExecutor.submit {}.get(timeoutS, TimeUnit.SECONDS)
+        }
     }
 }
 

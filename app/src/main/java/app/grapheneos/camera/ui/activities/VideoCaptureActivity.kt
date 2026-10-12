@@ -54,6 +54,10 @@ class VideoCaptureActivity : CaptureActivity() {
 
     fun afterRecording(savedUri: Uri?) {
 
+        if (videoCapturer.isRecording) {
+            return
+        }
+
         this.savedUri = savedUri
 
         if (!isStarted) {

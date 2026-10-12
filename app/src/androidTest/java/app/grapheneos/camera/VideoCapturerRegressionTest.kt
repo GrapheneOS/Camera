@@ -178,6 +178,7 @@ class VideoCapturerRegressionTest {
             Thread.sleep(300)
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            awaitOutputSettled(scenario)
 
             assertEquals(pendingBefore, pendingVideoCount())
         }
@@ -330,6 +331,7 @@ class VideoCapturerRegressionTest {
             // lands afterwards, on the main thread of a stopped activity.
             scenario.moveToState(Lifecycle.State.CREATED)
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            awaitOutputSettled(scenario)
 
             scenario.moveToState(Lifecycle.State.RESUMED)
 

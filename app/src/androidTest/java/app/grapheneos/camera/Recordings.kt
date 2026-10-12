@@ -9,6 +9,7 @@ import android.provider.MediaStore.MediaColumns
 import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
+import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.ui.activities.MainActivity
 
 /** Starts the recording as soon as it is asked to, skipping the sound. */
@@ -48,6 +49,16 @@ fun <A : MainActivity> awaitRecordingStarted(scenario: ActivityScenario<A>) {
 }
 
 /**
+ * A finished recording's output is saved or discarded off the main thread, and only published once
+ * saved: waits for both, so that what the camera shows as captured is final.
+ */
+fun <A : MainActivity> awaitOutputSettled(scenario: ActivityScenario<A>) {
+    VideoCapturer.awaitOutputWork(timeoutS = 10)
+    // Runs after what the output work posted back
+    scenario.onActivity {}
+}
+
+/**
  * Every step is best-effort: this also runs after a failed assertion, where the activity may
  * already be gone and where throwing would replace the failure the test is reporting.
  */
@@ -59,6 +70,7 @@ fun <A : MainActivity> stopAndDeleteRecording(
     runCatching {
         waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
     }
+    runCatching { awaitOutputSettled(scenario) }
     runCatching { deleteNewCapture(scenario, capturedBefore) }
 }
 
