@@ -4,20 +4,27 @@ import android.Manifest
 import android.content.ContentProvider
 import android.content.ContentResolver
 import android.content.ContentValues
+import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.provider.MediaStore
 import android.view.View
+import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -40,8 +47,9 @@ class StalledMediaProviderRegressionTest {
 
     /**
      * Stands in for a MediaProvider that stops answering, and passes everything to the real one.
-     * Creating the output and opening it are separate synchronous binder transactions into it, so a
-     * stall in either holds whichever thread made the call.
+     * Creating the output, opening it and making the finished video visible are separate
+     * synchronous binder transactions into it, so a stall in any of them holds whichever thread
+     * made the call.
      */
     private class StallingMediaProvider(private val real: ContentResolver) : ContentProvider() {
         /** Holds each call until [answer]; from then on, calls go straight through. */
@@ -61,13 +69,22 @@ class StalledMediaProviderRegressionTest {
 
         val insertStall = Stall()
         val openStall = Stall()
+        val updateStall = Stall()
         private val inserted = CountDownLatch(1)
+        private val outputs = CopyOnWriteArrayList<Uri>()
+
+        /** Answers every update with no row updated, which is how a failed one answers. */
+        @Volatile
+        var refuseUpdates = false
 
         override fun onCreate() = true
 
         override fun insert(uri: Uri, values: ContentValues?): Uri? {
             insertStall.hold()
-            return real.insert(uri, values).also { inserted.countDown() }
+            return real.insert(uri, values)?.also {
+                outputs.add(it)
+                inserted.countDown()
+            }
         }
 
         override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
@@ -83,7 +100,10 @@ class StalledMediaProviderRegressionTest {
             values: ContentValues?,
             selection: String?,
             selectionArgs: Array<String>?,
-        ) = real.update(uri, values, selection, selectionArgs)
+        ): Int {
+            updateStall.hold()
+            return if (refuseUpdates) 0 else real.update(uri, values, selection, selectionArgs)
+        }
 
         override fun query(
             uri: Uri,
@@ -97,10 +117,22 @@ class StalledMediaProviderRegressionTest {
 
         fun awaitInsert() = inserted.await(TIMEOUT_S, TimeUnit.SECONDS)
 
-        /** Answers every call, from now on. */
-        fun recover() {
+        /** Lets recordings start, for tests of what comes after. */
+        fun answerOutputCreation() {
             insertStall.answer()
             openStall.answer()
+        }
+
+        /** Answers every call, from now on. */
+        fun recover() {
+            answerOutputCreation()
+            updateStall.answer()
+            refuseUpdates = false
+        }
+
+        /** Deletes what is left of every output created, which a refused update leaves pending. */
+        fun deleteOutputs() {
+            outputs.forEach { runCatching { real.delete(it, null, null) } }
         }
     }
 
@@ -132,12 +164,10 @@ class StalledMediaProviderRegressionTest {
             // The output made off the main thread still has to take the recording
             val capturedBefore = lastCapturedUri(scenario)
             mediaProvider.recover()
-            waitUntil(scenario, "a second of video is recorded") {
-                it.timerView.visibility == View.VISIBLE &&
-                        it.timerView.text != it.getString(R.string.start_value_timer)
-            }
+            recordASecond(scenario)
             scenario.onActivity { it.videoCapturer.stopRecording() }
             waitUntil(scenario, "recording is finalized") { !it.videoCapturer.isRecording }
+            awaitOutputSettled(scenario)
             assertNotEquals(
                 "The recording was not saved",
                 capturedBefore,
@@ -216,22 +246,121 @@ class StalledMediaProviderRegressionTest {
     }
 
     /**
-     * Hands [body] a camera that records through a [StallingMediaProvider], and cleans up after it
-     * either way.
+     * A finished recording only becomes visible to other apps with one more call into
+     * MediaProvider, which was made on the main thread, so a stall froze the camera from the press
+     * of the stop button and a key pressed meanwhile was reported as an ANR.
      */
+    @Test
+    fun stoppingARecording_whileMediaProviderStalls_leavesTheMainThreadFree() {
+        stalledRecordingTest { scenario, camera, mediaProvider ->
+            val capturedBefore = lastCapturedUri(scenario)
+            mediaProvider.answerOutputCreation()
+            scenario.onActivity { it.videoCapturer.startRecording() }
+            recordASecond(scenario)
+
+            onMainThread { camera.videoCapturer.stopRecording() }
+            assertTrue("The recording was never saved", mediaProvider.updateStall.awaitCall())
+            assertTrue(
+                "Saving the recording held the main thread while MediaProvider was stalled",
+                mainThreadIsFree()
+            )
+            assertEquals(
+                "The recording was published before it was saved",
+                capturedBefore,
+                lastCapturedUri(scenario)
+            )
+
+            mediaProvider.updateStall.answer()
+            awaitOutputSettled(scenario)
+            assertNotEquals(
+                "The saved recording was not published",
+                capturedBefore,
+                lastCapturedUri(scenario)
+            )
+        }
+    }
+
+    /** A recording MediaProvider never made visible is not saved, so it must not show as captured. */
+    @Test
+    fun stoppingARecording_whenMediaProviderStallsThenRefusesTheSave_doesNotPublishIt() {
+        stalledRecordingTest { scenario, camera, mediaProvider ->
+            val capturedBefore = lastCapturedUri(scenario)
+            mediaProvider.answerOutputCreation()
+            scenario.onActivity { it.videoCapturer.startRecording() }
+            recordASecond(scenario)
+
+            onMainThread { camera.videoCapturer.stopRecording() }
+            assertTrue("The recording was never saved", mediaProvider.updateStall.awaitCall())
+            mediaProvider.refuseUpdates = true
+            mediaProvider.updateStall.answer()
+            awaitOutputSettled(scenario)
+
+            waitUntil(scenario, "the failed save is reported") {
+                it.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+                    ?.text?.toString() == it.getString(R.string.unable_to_save_video)
+            }
+            assertEquals(
+                "The unsaved recording was published",
+                capturedBefore,
+                lastCapturedUri(scenario)
+            )
+        }
+    }
+
+    /**
+     * A capture session shows the recording it saved, and stops the camera to do so, so a recording
+     * started while MediaProvider stalled the save of the one before was cut short when that save
+     * went through.
+     */
+    @Test
+    fun recordingAgainInACaptureSession_whileMediaProviderStallsTheLastSave_isNotCutShort() {
+        val intent = Intent(targetContext, VideoCaptureActivity::class.java)
+            .setAction(MediaStore.ACTION_VIDEO_CAPTURE)
+        val launch = { ActivityScenario.launch<VideoCaptureActivity>(intent) }
+
+        stalledRecordingTest(launch) { scenario, camera, mediaProvider ->
+            mediaProvider.answerOutputCreation()
+            scenario.onActivity { it.videoCapturer.startRecording() }
+            recordASecond(scenario)
+
+            onMainThread { camera.videoCapturer.stopRecording() }
+            assertTrue("The recording was never saved", mediaProvider.updateStall.awaitCall())
+            onMainThread { camera.videoCapturer.startRecording() }
+            mediaProvider.updateStall.answer()
+            awaitOutputSettled(scenario)
+
+            var previewShown = true
+            scenario.onActivity { previewShown = it.confirmButton.visibility == View.VISIBLE }
+            assertFalse("The saved recording was shown over the new one", previewShown)
+            recordASecond(scenario)
+            var recording = false
+            scenario.onActivity { recording = it.videoCapturer.isRecording }
+            assertTrue("The new recording was cut short", recording)
+        }
+    }
+
     private fun stalledRecordingTest(
         body: (
             ActivityScenario<VideoOnlyActivity>,
             VideoOnlyActivity,
             StallingMediaProvider,
         ) -> Unit,
+    ) = stalledRecordingTest({ ActivityScenario.launch(VideoOnlyActivity::class.java) }, body)
+
+    /**
+     * Hands [body] a camera that records through a [StallingMediaProvider], and cleans up after it
+     * either way.
+     */
+    private fun <A : MainActivity> stalledRecordingTest(
+        launch: () -> ActivityScenario<A>,
+        body: (ActivityScenario<A>, A, StallingMediaProvider) -> Unit,
     ) {
         val mediaProvider = StallingMediaProvider(targetContext.contentResolver)
-        ActivityScenario.launch(VideoOnlyActivity::class.java).use { scenario ->
+        launch().use { scenario ->
             waitUntil(scenario, "video use case is bound") {
                 it.camConfig.camera != null && it.camConfig.videoCapture != null
             }
-            lateinit var camera: VideoOnlyActivity
+            lateinit var camera: A
             scenario.onActivity {
                 camera = it
                 it.camConfig.mPlayer = ImmediateTunePlayer(it)
@@ -244,7 +373,15 @@ class StalledMediaProviderRegressionTest {
                 // Before anything waits on the main thread, which the stall may be holding
                 mediaProvider.recover()
                 stopAndDeleteRecording(scenario, capturedBefore)
+                mediaProvider.deleteOutputs()
             }
+        }
+    }
+
+    private fun <A : MainActivity> recordASecond(scenario: ActivityScenario<A>) {
+        waitUntil(scenario, "a second of video is recorded") {
+            it.timerView.visibility == View.VISIBLE &&
+                    it.timerView.text != it.getString(R.string.start_value_timer)
         }
     }
 
