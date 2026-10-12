@@ -30,7 +30,9 @@ internal sealed interface CameraSettingsAction {
         override val dialog: CameraSettingsDialog = CameraSettingsDialog.FocusTimeout
     }
 
-    data object DialogDismissed : CameraSettingsAction
+    data object ResetSettingsClicked : DialogSettingClicked {
+        override val dialog: CameraSettingsDialog = CameraSettingsDialog.ResetSettings
+    }
 
     sealed interface SwitchToggled : CameraSettingsAction {
         val enabled: Boolean
@@ -60,22 +62,28 @@ internal sealed interface CameraSettingsAction {
         override val enabled: Boolean,
     ) : SwitchToggled
 
+    data object DialogDismissed : CameraSettingsAction
+
+    sealed interface DialogConfirmed : CameraSettingsAction
+
     data class GridConfirmed(
         val type: GridType,
-    ) : CameraSettingsAction
+    ) : DialogConfirmed
 
     data class PhotoQualityConfirmed(
         val quality: Int,
         val isFullResolution: Boolean,
-    ) : CameraSettingsAction
+    ) : DialogConfirmed
 
     data class CaptureModeConfirmed(
         val mode: CaptureMode,
-    ) : CameraSettingsAction
+    ) : DialogConfirmed
 
     data class FocusTimeoutConfirmed(
         val seconds: Long,
-    ) : CameraSettingsAction
+    ) : DialogConfirmed
+
+    data object ResetSettingsConfirmed : DialogConfirmed
 
     data object StorageLocationClicked : CameraSettingsAction
 
