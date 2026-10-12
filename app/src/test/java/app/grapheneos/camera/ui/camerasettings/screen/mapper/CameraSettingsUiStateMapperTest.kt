@@ -36,6 +36,7 @@ class CameraSettingsUiStateMapperTest {
         assertFalse(uiState.photoQuality.isChanged)
         assertFalse(uiState.videoStabilization.isChanged)
         assertFalse(uiState.focusTimeout.isChanged)
+        assertFalse(uiState.canResetSettings)
         assertEquals(false, uiState.storageLocation?.isChanged)
     }
 
@@ -59,6 +60,7 @@ class CameraSettingsUiStateMapperTest {
         assertTrue(uiState.photoQuality.isChanged)
         assertTrue(uiState.videoStabilization.isChanged)
         assertTrue(uiState.focusTimeout.isChanged)
+        assertTrue(uiState.canResetSettings)
         assertEquals(true, uiState.storageLocation?.isChanged)
     }
 
@@ -150,8 +152,6 @@ class CameraSettingsUiStateMapperTest {
         )
 
         assertNull(withoutChoice.photoQuality.resolution)
-        assertTrue(withoutChoice.photoQuality.isFullResolution)
-        assertFalse(withoutChoice.photoQuality.isChanged)
         assertEquals(
             PhotoResolutionUiModel(
                 standardMegapixels = 12,
@@ -159,7 +159,16 @@ class CameraSettingsUiStateMapperTest {
             ),
             withChoice.photoQuality.resolution,
         )
-        assertTrue(withChoice.photoQuality.isChanged)
+    }
+
+    @Test
+    fun fullResolution_withoutAChoice_isStillMarkedAsChanged() {
+        val uiState = mapper.map(
+            CameraSettingsState(settings = CameraSettings(selectHighestResolution = true)),
+        )
+
+        assertTrue(uiState.photoQuality.isFullResolution)
+        assertTrue(uiState.photoQuality.isChanged)
     }
 
     @Test

@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.camerasettings.screen
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
@@ -190,6 +191,35 @@ class CameraSettingsViewModelTest {
 
         assertEquals(0L, storedSettings.value.focusTimeoutSeconds)
         assertNull(viewModel.uiState.value.dialog)
+    }
+
+    @Test
+    fun resetSettingsConfirmed_resetsThisScreenOnly() {
+        storedSettings.value = CameraSettings(
+            aspectRatio = AspectRatio.RATIO_16_9,
+            gridType = GridType.GOLDEN_RATIO,
+            photoQuality = 80,
+            geoTagging = true,
+        )
+        val viewModel = createViewModel()
+
+        viewModel.onAction(Action.ResetSettingsClicked)
+        viewModel.onAction(Action.ResetSettingsConfirmed)
+
+        assertEquals(CameraSettings(aspectRatio = AspectRatio.RATIO_16_9), storedSettings.value)
+        assertNull(viewModel.uiState.value.dialog)
+    }
+
+    @Test
+    fun resetSettingsConfirmed_inACaptureSession_leavesTheOwnersExifSettingAlone() {
+        storedSettings.value = CameraSettings(removeExifAfterCapture = false)
+        val viewModel = createViewModel(
+            entryPoint = cameraEntryPoint(isCaptureSession = true),
+        )
+
+        viewModel.onAction(Action.ResetSettingsConfirmed)
+
+        assertFalse(storedSettings.value.removeExifAfterCapture)
     }
 
     @Test
