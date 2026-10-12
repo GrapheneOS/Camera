@@ -27,5 +27,6 @@ internal data class CameraSettingsUiState(
         options = persistentListOf(),
     ),
     val storageLocation: StorageLocationUiModel? = null,
+    val canResetSettings: Boolean = false,
     val dialog: CameraSettingsDialog? = null,
 )

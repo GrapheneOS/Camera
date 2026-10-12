@@ -9,7 +9,6 @@ import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -89,10 +88,7 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.LocationPermissionAnswered -> onLocationPermissionAnswered()
             is Action.DialogSettingClicked -> showDialog(action.dialog)
             is Action.SwitchToggled -> onSwitchToggled(action)
-            is Action.GridConfirmed -> confirmGrid(action.type)
-            is Action.PhotoQualityConfirmed -> confirmPhotoQuality(action)
-            is Action.CaptureModeConfirmed -> confirmCaptureMode(action.mode)
-            is Action.FocusTimeoutConfirmed -> confirmFocusTimeout(action.seconds)
+            is Action.DialogConfirmed -> onDialogConfirmed(action)
             is Action.DialogDismissed -> showDialog(null)
             is Action.StorageLocationClicked -> _effects.trySend(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
@@ -155,15 +151,33 @@ internal class CameraSettingsViewModel @Inject constructor(
         updateSettings { it.copy(removeExifAfterCapture = enabled) }
     }
 
-    private fun confirmGrid(type: GridType) {
+    private fun onDialogConfirmed(action: Action.DialogConfirmed) {
         showDialog(null)
 
-        updateSettings { it.copy(gridType = type) }
+        when (action) {
+            is Action.GridConfirmed -> {
+                updateSettings { it.copy(gridType = action.type) }
+            }
+
+            is Action.PhotoQualityConfirmed -> {
+                confirmPhotoQuality(action)
+            }
+
+            is Action.CaptureModeConfirmed -> {
+                updateSettings { it.copy(captureMode = action.mode) }
+            }
+
+            is Action.FocusTimeoutConfirmed -> {
+                updateSettings { it.copy(focusTimeoutSeconds = action.seconds) }
+            }
+
+            is Action.ResetSettingsConfirmed -> {
+                updateSettings { state.settingsAfterReset() }
+            }
+        }
     }
 
     private fun confirmPhotoQuality(action: Action.PhotoQualityConfirmed) {
-        showDialog(null)
-
         updateSettings { settings ->
             settings.copy(
                 photoQuality = action.quality
@@ -172,18 +186,6 @@ internal class CameraSettingsViewModel @Inject constructor(
                 selectHighestResolution = action.isFullResolution,
             )
         }
-    }
-
-    private fun confirmCaptureMode(mode: CaptureMode) {
-        showDialog(null)
-
-        updateSettings { it.copy(captureMode = mode) }
-    }
-
-    private fun confirmFocusTimeout(seconds: Long) {
-        showDialog(null)
-
-        updateSettings { it.copy(focusTimeoutSeconds = seconds) }
     }
 
     private fun changeStorageLocation(tree: Uri?) {

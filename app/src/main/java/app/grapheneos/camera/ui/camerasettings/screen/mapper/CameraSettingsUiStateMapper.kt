@@ -46,6 +46,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             ),
             focusTimeout = focusTimeout(state),
             storageLocation = storageLocation(state),
+            canResetSettings = state.settingsAfterReset() != settings,
             dialog = state.dialog,
         )
     }
@@ -92,14 +93,13 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
                 fullMegapixels = resolutions.fullMegapixels,
             )
         }
-        val isResolutionChanged = resolution != null && isFullResolution
 
         return PhotoQualityUiModel(
             quality = quality,
             level = PhotoQualityLevel.of(quality),
             isFullResolution = isFullResolution,
             resolution = resolution,
-            isChanged = quality != SettingsDefaults.PHOTO_QUALITY || isResolutionChanged,
+            isChanged = quality != SettingsDefaults.PHOTO_QUALITY || isFullResolution,
             presets = PhotoQualityLevel.presets().toImmutableList(),
         )
     }

@@ -209,11 +209,15 @@
     <string name="camera_settings_changed">Changed from default</string>
     <string name="camera_settings_reset">Reset</string>
     <string name="camera_settings_reset_storage_location">Reset storage location</string>
+    <string name="camera_settings_reset_settings_footer">%1$s all settings</string>
+    <string name="camera_settings_reset_settings_title">Reset camera settings?</string>
+    <string name="camera_settings_reset_settings_message">Every setting on this screen goes back to its default, except the storage location.</string>
     <string name="camera_settings_photo_quality_maximum">Maximum</string>
     <string name="camera_settings_photo_quality_high">High</string>
     <string name="camera_settings_photo_quality_standard">Standard</string>
     <string name="camera_settings_photo_quality_custom">Custom</string>
     <string name="camera_settings_photo_quality_summary">%1$s · %2$s</string>
+    <string name="camera_settings_photo_quality_full_resolution">Full resolution</string>
     <string name="camera_settings_photo_quality_summary_with_resolution">%1$s · %2$s · %3$s</string>
     <string name="camera_settings_resolution">Resolution</string>
     <string name="camera_settings_resolution_default">Default</string>

@@ -9,4 +9,6 @@ internal sealed interface CameraSettingsDialog {
     data object CaptureMode : CameraSettingsDialog
 
     data object FocusTimeout : CameraSettingsDialog
+
+    data object ResetSettings : CameraSettingsDialog
 }

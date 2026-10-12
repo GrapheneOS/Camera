@@ -9,6 +9,7 @@ import app.grapheneos.camera.ui.camerasettings.components.PhotoQualityOption
 import app.grapheneos.camera.ui.camerasettings.components.PhotoResolutionOptions
 import app.grapheneos.camera.ui.camerasettings.components.SettingsChoice
 import app.grapheneos.camera.ui.camerasettings.components.SettingsChoiceDialog
+import app.grapheneos.camera.ui.camerasettings.components.SettingsConfirmDialog
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsDialog as Dialog
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
@@ -44,6 +45,10 @@ internal fun CameraSettingsDialogs(
 
         is Dialog.FocusTimeout -> FocusTimeoutSettingDialog(
             focusTimeout = uiState.focusTimeout,
+            onAction = onAction,
+        )
+
+        is Dialog.ResetSettings -> ResetSettingsDialog(
             onAction = onAction,
         )
 
@@ -123,6 +128,17 @@ private fun FocusTimeoutSettingDialog(
         ),
         selected = focusTimeout.selected,
         onConfirm = { onAction(Action.FocusTimeoutConfirmed(it)) },
+        onDismiss = { onAction(Action.DialogDismissed) },
+    )
+}
+
+@Composable
+private fun ResetSettingsDialog(onAction: (Action) -> Unit) {
+    SettingsConfirmDialog(
+        title = stringResource(R.string.camera_settings_reset_settings_title),
+        message = stringResource(R.string.camera_settings_reset_settings_message),
+        confirmLabel = stringResource(R.string.camera_settings_reset),
+        onConfirm = { onAction(Action.ResetSettingsConfirmed) },
         onDismiss = { onAction(Action.DialogDismissed) },
     )
 }
