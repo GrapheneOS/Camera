@@ -78,10 +78,6 @@ internal class SettingsPrefsMigration(
                 ?: current.gyroscopeSuggestions,
             saveImageAsPreviewed = booleanOrNull(commons, SAVE_IMAGE_AS_PREVIEW)
                 ?: current.saveImageAsPreviewed,
-            saveVideoAsPreviewed = readSaveVideoAsPreviewed(
-                commons = commons,
-                current = current.saveVideoAsPreviewed,
-            ),
             scanAllCodes = booleanOrNull(commons, SCAN_ALL_CODES) ?: current.scanAllCodes,
             enabledBarcodeFormats = readEnabledBarcodeFormats(commons)
                 ?: current.enabledBarcodeFormats,
@@ -115,24 +111,15 @@ internal class SettingsPrefsMigration(
         }
     }
 
-    // Geotagging was set per mode; the photo mode's choice becomes the app-wide one.
+    // Geotagging used to be stored per mode; a photo or video mode that had it off keeps it off.
     private fun readGeoTagging(): Boolean? {
-        val photoMode = preferences(SettingsPrefs.storedModeName(CameraMode.CAMERA))
-
-        return booleanOrNull(photoMode, GEO_TAGGING)
-    }
-
-    // Installs predating this setting recorded without preview mirroring.
-    private fun readSaveVideoAsPreviewed(
-        commons: SharedPreferences,
-        current: Boolean?,
-    ): Boolean? {
-        val predatesTheSetting = commons.contains(SAVE_IMAGE_AS_PREVIEW) &&
-            !commons.contains(SAVE_VIDEO_AS_PREVIEW)
+        val stored = GEO_TAGGING_MODES.mapNotNull { mode ->
+            booleanOrNull(preferences(SettingsPrefs.storedModeName(mode)), GEO_TAGGING)
+        }
 
         return when {
-            predatesTheSetting -> false
-            else -> booleanOrNull(commons, SAVE_VIDEO_AS_PREVIEW) ?: current
+            stored.isEmpty() -> null
+            else -> stored.all { it }
         }
     }
 
@@ -236,7 +223,6 @@ internal class SettingsPrefsMigration(
         const val PHOTO_QUALITY = "photo_quality"
         const val REMOVE_EXIF_AFTER_CAPTURE = "remove_exif_after_capture"
         const val SAVE_IMAGE_AS_PREVIEW = "save_image_as_preview"
-        const val SAVE_VIDEO_AS_PREVIEW = "save_video_as_preview"
         const val SCAN_ALL_CODES = "scan_all_codes"
         const val SCAN_PREFIX = "scan_"
         const val DEFAULT_SCAN_KEY = "scan_QR_CODE"
@@ -249,7 +235,13 @@ internal class SettingsPrefsMigration(
 
         const val FOCUS_TIMEOUT_OFF = "Off"
         const val MAX_PHOTO_QUALITY = 100
+
         val UNRECOGNISED_VIDEO_QUALITY = StoredVideoQuality.SD
+
+        val GEO_TAGGING_MODES = listOf(
+            CameraMode.CAMERA,
+            CameraMode.VIDEO,
+        )
 
         // This order is the shipped ordinal wire format.
         val LEGACY_GRID_TYPES = listOf(

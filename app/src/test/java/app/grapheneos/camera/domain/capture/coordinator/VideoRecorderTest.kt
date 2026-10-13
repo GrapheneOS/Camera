@@ -57,6 +57,7 @@ class VideoRecorderTest {
     @Before
     fun setUp() {
         coEvery { createRecordingOutput(any(), any()) } returns output
+        every { recordingSession.start(any(), any()) } returns true
         coEvery { publishRecording(any()) } returns true
         coEvery { resolveCaptureLocation(includeLocation = any()) } returns
             CaptureLocation.NotRequested
@@ -168,6 +169,23 @@ class VideoRecorderTest {
 
             verify(exactly = 1) { recordingSession.setMuted(true) }
             verify(exactly = 1) { recordingSession.setPaused(true) }
+        }
+    }
+
+    @Test
+    fun start_withNoCameraToRecordWith_throwsTheOutputAway() {
+        runTest {
+            every { recordingSession.start(any(), any()) } returns false
+
+            val recorder = createRecorder()
+            val events = collectEvents(recorder)
+            recorder.prepare(REQUEST, isStillWanted = { true })
+
+            recorder.start(muted = true, paused = false)
+
+            coVerify(exactly = 1) { discardRecording(output) }
+            verify(exactly = 0) { recordingSession.setMuted(any()) }
+            assertTrue(RecordedVideoEvent.Abandoned in events)
         }
     }
 
