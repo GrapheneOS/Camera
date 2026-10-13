@@ -29,6 +29,7 @@ internal data class CameraSettingsUiState(
     ),
     val storageSpace: StorageSpaceUiModel? = null,
     val storageLocation: StorageLocationUiModel? = null,
+    val showsLicenses: Boolean = false,
     val canResetSettings: Boolean = false,
     val dialog: CameraSettingsDialog? = null,
 )

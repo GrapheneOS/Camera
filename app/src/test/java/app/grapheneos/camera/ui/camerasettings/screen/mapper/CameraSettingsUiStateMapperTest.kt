@@ -300,4 +300,13 @@ class CameraSettingsUiStateMapperTest {
         assertTrue(uiState.showsSecureSessionBanner)
         assertNull(uiState.storageLocation)
     }
+
+    @Test
+    fun licenses_areOfferedOutsideASecureSessionOnly() {
+        val unlocked = mapper.map(CameraSettingsState())
+        val lockscreen = mapper.map(CameraSettingsState(isSecureSession = true))
+
+        assertTrue(unlocked.showsLicenses)
+        assertFalse(lockscreen.showsLicenses)
+    }
 }

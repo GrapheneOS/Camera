@@ -7,4 +7,6 @@ internal sealed interface CameraSettingsScreenEffect {
     data object OpenAppSettings : CameraSettingsScreenEffect
 
     data object PickStorageLocation : CameraSettingsScreenEffect
+
+    data object OpenLicenses : CameraSettingsScreenEffect
 }

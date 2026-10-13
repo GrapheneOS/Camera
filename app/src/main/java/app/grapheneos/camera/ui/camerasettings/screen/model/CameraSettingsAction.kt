@@ -94,4 +94,6 @@ internal sealed interface CameraSettingsAction {
     ) : CameraSettingsAction
 
     data object StorageLocationResetClicked : CameraSettingsAction
+
+    data object LicensesClicked : CameraSettingsAction
 }

@@ -51,6 +51,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             focusTimeout = focusTimeout(state),
             storageSpace = storageSpace(state),
             storageLocation = storageLocation(state),
+            showsLicenses = !state.isSecureSession,
             canResetSettings = state.settingsAfterReset() != settings,
             dialog = state.dialog,
         )
@@ -224,9 +225,9 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         val JPEG_BITS_PER_PIXEL = listOf(
             1 to 0.2,
             75 to 1.0,
-            90 to 1.8,
+            90 to 1.5,
             95 to 2.5,
-            100 to 5.0,
+            100 to 5.5,
         )
         val FOCUS_TIMEOUT_OPTIONS = listOf(0L, 3L, 5L, 8L, 10L)
 

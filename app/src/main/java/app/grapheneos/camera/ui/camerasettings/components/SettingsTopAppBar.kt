@@ -8,19 +8,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
@@ -29,6 +33,7 @@ import app.grapheneos.camera.ui.core.CameraPreviewTheme
 
 private val NAVIGATION_ICON_START_PADDING = 20.dp
 private val TITLE_START_PADDING = 8.dp
+private val TITLE_END_PADDING = 24.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,10 +44,7 @@ internal fun SettingsTopAppBar(
 ) {
     LargeTopAppBar(
         title = {
-            Text(
-                text = title,
-                modifier = Modifier.padding(start = TITLE_START_PADDING),
-            )
+            SettingsTopAppBarTitle(title = title)
         },
         navigationIcon = {
             IconButton(
@@ -66,6 +68,25 @@ internal fun SettingsTopAppBar(
     )
 }
 
+@Composable
+private fun SettingsTopAppBarTitle(title: String) {
+    val collapsedRowFontSize = MaterialTheme.typography.titleLarge.fontSize
+    val isCollapsedRow = LocalTextStyle.current.fontSize == collapsedRowFontSize
+
+    Text(
+        text = title,
+        modifier = Modifier.padding(
+            start = TITLE_START_PADDING,
+            end = TITLE_END_PADDING,
+        ),
+        overflow = TextOverflow.Ellipsis,
+        maxLines = when {
+            isCollapsedRow -> 1
+            else -> Int.MAX_VALUE
+        },
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun rememberSettingsTopAppBarScrollBehavior(): TopAppBarScrollBehavior {
@@ -77,6 +98,11 @@ internal fun rememberSettingsTopAppBarScrollBehavior(): TopAppBarScrollBehavior 
         initialHeightOffsetLimit = collapsedOffset,
         initialHeightOffset = collapsedOffset,
     )
+
+    LaunchedEffect(state) {
+        withFrameNanos {}
+        state.heightOffset = state.heightOffsetLimit
+    }
 
     return TopAppBarDefaults.exitUntilCollapsedScrollBehavior(state = state)
 }

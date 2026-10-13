@@ -1,6 +1,7 @@
 package app.grapheneos.camera.testutil
 
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -11,6 +12,7 @@ internal fun settingsRepositoryOver(
 ): SettingsRepository {
     return mockk {
         every { settings } returns storedSettings
+        every { modeSettings(slot = any()) } returns ModeSettings()
         every { update(transform = any()) } answers {
             val transform = firstArg<(CameraSettings) -> CameraSettings>()
             storedSettings.value = transform(storedSettings.value)
