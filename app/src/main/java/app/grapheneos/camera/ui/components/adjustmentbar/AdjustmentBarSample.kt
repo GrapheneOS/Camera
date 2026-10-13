@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -218,7 +218,7 @@ private fun SampleAdjustmentBar(
 
 @Composable
 private fun rememberValueLabel(state: AdjustmentBarSampleState): String {
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = LocalLocale.current.platformLocale
     val numberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
     val temperature = state.temperature
 

@@ -5,7 +5,7 @@ import android.icu.text.DecimalFormatSymbols
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import java.math.RoundingMode
 import java.util.Locale
 
@@ -30,7 +30,7 @@ internal class ZoomFormat(
 
 @Composable
 internal fun rememberZoomFormat(): ZoomFormat {
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = LocalLocale.current.platformLocale
 
     return remember(locale) { ZoomFormat(locale = locale) }
 }

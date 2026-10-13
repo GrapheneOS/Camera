@@ -4,7 +4,7 @@ import android.icu.text.NumberFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import java.util.Locale
 import kotlin.time.Duration
 
@@ -32,7 +32,7 @@ internal class TimerChipFormat(
 
 @Composable
 internal fun rememberTimerChipFormat(): TimerChipFormat {
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = LocalLocale.current.platformLocale
 
     return remember(locale) { TimerChipFormat(locale = locale) }
 }

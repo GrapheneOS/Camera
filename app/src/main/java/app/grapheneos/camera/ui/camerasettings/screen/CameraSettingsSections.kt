@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.camerasettings.screen
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
@@ -16,11 +17,12 @@ import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
 import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material.icons.outlined.VideoStable
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -29,7 +31,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.camerasettings.components.SettingsCategoryHeader
@@ -38,7 +39,6 @@ import app.grapheneos.camera.ui.camerasettings.components.SettingsSwitchItem
 import app.grapheneos.camera.ui.camerasettings.components.formatMegapixels
 import app.grapheneos.camera.ui.camerasettings.components.formatPhotoQuality
 import app.grapheneos.camera.ui.camerasettings.components.groupedItemShape
-import app.grapheneos.camera.ui.camerasettings.components.linkedText
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
@@ -47,8 +47,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
 import app.grapheneos.camera.util.storageLocationToUiString
 
-private val FOOTER_HORIZONTAL_PADDING = 8.dp
-private val FOOTER_TOP_PADDING = 16.dp
+private val FOOTER_TOP_PADDING = 4.dp
 
 internal fun LazyListScope.cameraSettingsSections(
     uiState: UiState,
@@ -103,17 +102,22 @@ private fun LazyListScope.settingsSection(
     if (rows.isEmpty()) return
 
     item(key = "${key}_header") {
-        SettingsCategoryHeader(title = stringResource(title))
+        SettingsCategoryHeader(
+            title = stringResource(title),
+            modifier = Modifier.animateItem(),
+        )
     }
 
     rows.forEachIndexed { index, row ->
         item(key = row.key) {
-            row.content(
-                groupedItemShape(
-                    index = index,
-                    count = rows.size,
-                ),
-            )
+            Box(modifier = Modifier.animateItem()) {
+                row.content(
+                    groupedItemShape(
+                        index = index,
+                        count = rows.size,
+                    ),
+                )
+            }
         }
     }
 }
@@ -333,26 +337,16 @@ private fun ResetSettingsFooter(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val link = stringResource(R.string.camera_settings_reset)
-    val text = linkedText(
-        text = stringResource(R.string.camera_settings_reset_settings_footer, link),
-        link = link,
-        onClick = onClick,
-    )
-
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                start = FOOTER_HORIZONTAL_PADDING,
-                end = FOOTER_HORIZONTAL_PADDING,
-                top = FOOTER_TOP_PADDING,
-            ),
-    )
+            .padding(top = FOOTER_TOP_PADDING),
+        contentAlignment = Alignment.Center,
+    ) {
+        TextButton(onClick = onClick) {
+            Text(text = stringResource(R.string.camera_settings_reset_all_settings))
+        }
+    }
 }
 
 @Composable
