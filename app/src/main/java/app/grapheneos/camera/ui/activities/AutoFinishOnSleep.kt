@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 // Finishes the passed [activity] and the ones present below it in the stack if the screen
 // turns off
@@ -23,14 +24,21 @@ class AutoFinishOnSleep(val activity: Activity) {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    ActivityCompat.finishAffinity(activity)
+                    if (!activity.isFinishing) {
+                        ActivityCompat.finishAffinity(activity)
+                    }
                 }
             }
         }
     }
 
     fun start() {
-        activity.registerReceiver(receiver, intentFilter)
+        ContextCompat.registerReceiver(
+            activity,
+            receiver,
+            intentFilter,
+            ContextCompat.RECEIVER_EXPORTED,
+        )
     }
 
     fun stop() {

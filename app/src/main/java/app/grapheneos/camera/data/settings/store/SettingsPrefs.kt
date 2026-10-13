@@ -77,8 +77,6 @@ internal data class StoredCameraSettings(
     val keepSelfiesAsSeen: Boolean? = null,
     @SerialName("save_image_as_previewed")
     val saveImageAsPreviewed: Boolean? = null,
-    @SerialName("save_video_as_previewed")
-    val saveVideoAsPreviewed: Boolean? = null,
     @SerialName("scan_all_codes")
     val scanAllCodes: Boolean? = null,
     @SerialName("enabled_barcode_formats")

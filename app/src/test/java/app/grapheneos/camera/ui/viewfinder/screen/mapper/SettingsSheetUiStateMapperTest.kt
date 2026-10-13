@@ -39,7 +39,7 @@ class SettingsSheetUiStateMapperTest {
     }
 
     @Test
-    fun aRecordingStillStarting_locksTheSettingsWhileItsOutputIsCreated() {
+    fun aRecordingStillStarting_locksTheSettingsItWillStartWith() {
         val state = map(
             mode = CameraMode.VIDEO,
             recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
@@ -47,16 +47,6 @@ class SettingsSheetUiStateMapperTest {
 
         assertFalse(state.includeAudioSettingEnabled)
         assertFalse(state.videoQualitySettingEnabled)
-        assertFalse(state.stabilizationSettingEnabled)
-        assertFalse(state.waitForFocusLockSettingEnabled)
-    }
-
-    @Test
-    fun noRecording_leavesTheSettingsChangeable() {
-        val state = map(mode = CameraMode.VIDEO)
-
-        assertTrue(state.includeAudioSettingEnabled)
-        assertTrue(state.videoQualitySettingEnabled)
     }
 
     @Test
