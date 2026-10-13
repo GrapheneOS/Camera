@@ -11,6 +11,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import javax.inject.Inject
 import kotlinx.collections.immutable.toImmutableList
@@ -48,6 +49,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
                 default = SettingsDefaults.CAMERA_SOUNDS,
             ),
             focusTimeout = focusTimeout(state),
+            storageSpace = storageSpace(state),
             storageLocation = storageLocation(state),
             canResetSettings = state.settingsAfterReset() != settings,
             dialog = state.dialog,
@@ -142,6 +144,62 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         )
     }
 
+    private fun storageSpace(state: CameraSettingsState): StorageSpaceUiModel? {
+        if (state.isSecureSession) return null
+
+        val space = state.storageSpace
+
+        return when {
+            !state.isStorageSpaceLoaded -> StorageSpaceUiModel()
+            space == null -> null
+            else -> StorageSpaceUiModel(
+                freeBytes = space.freeBytes,
+                usedFraction = 1f - space.freeBytes.toFloat() / space.totalBytes,
+                photos = photoBytes(state)?.let { photoBytes -> space.freeBytes / photoBytes },
+                videoMinutes = videoBytesPerMinute(state)?.let { bytesPerMinute ->
+                    space.freeBytes / bytesPerMinute
+                },
+            )
+        }
+    }
+
+    private fun photoBytes(state: CameraSettingsState): Long? {
+        val capabilities = state.capabilities
+        val fullMegapixels = capabilities.photoResolutions?.fullMegapixels
+            ?.takeIf { state.settings.selectHighestResolution }
+        val megapixels = fullMegapixels ?: capabilities.photoMegapixels ?: return null
+        val bits = megapixels * PIXELS_PER_MEGAPIXEL * jpegBitsPerPixel(state.settings.photoQuality)
+
+        return (bits / BITS_PER_BYTE).toLong().takeIf { it > 0 }
+    }
+
+    private fun jpegBitsPerPixel(quality: Int): Double {
+        val lower = JPEG_BITS_PER_PIXEL.last { (level, _) -> level <= quality }
+        val upper = JPEG_BITS_PER_PIXEL.first { (level, _) -> level >= quality }
+        val fraction = when (upper.first) {
+            lower.first -> 0.0
+            else -> (quality - lower.first).toDouble() / (upper.first - lower.first)
+        }
+
+        return lower.second + (upper.second - lower.second) * fraction
+    }
+
+    private fun videoBytesPerMinute(state: CameraSettingsState): Long? {
+        val bitrates = state.capabilities.videoBitrates[state.videoQuality] ?: return null
+        val audioBitsPerSecond = when {
+            state.settings.includeAudio -> bitrates.audioBitsPerSecond
+            else -> 0
+        }
+        val profileBitsPerSecond = bitrates.videoBitsPerSecond.toLong()
+        val videoBitsPerSecond = when {
+            bitrates.videoFrameRate <= 0 -> profileBitsPerSecond
+            else -> profileBitsPerSecond * RECORDING_FRAME_RATE / bitrates.videoFrameRate
+        }
+        val bitsPerSecond = videoBitsPerSecond + audioBitsPerSecond
+
+        return (bitsPerSecond * SECONDS_PER_MINUTE / BITS_PER_BYTE).takeIf { it > 0 }
+    }
+
     private fun storageLocation(state: CameraSettingsState): StorageLocationUiModel? {
         val location = state.storageLocation.takeUnless { state.isSecureSession } ?: return null
 
@@ -162,6 +220,20 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
     }
 
     private companion object {
+        // A typical photo's: a JPEG's size depends on the scene as much as on its quality.
+        val JPEG_BITS_PER_PIXEL = listOf(
+            1 to 0.2,
+            75 to 1.0,
+            90 to 1.8,
+            95 to 2.5,
+            100 to 5.0,
+        )
         val FOCUS_TIMEOUT_OPTIONS = listOf(0L, 3L, 5L, 8L, 10L)
+
+        // With no frame rate set, CameraX records at 30 fps and scales the profile's bitrate to it.
+        const val RECORDING_FRAME_RATE = 30
+        const val SECONDS_PER_MINUTE = 60
+        const val BITS_PER_BYTE = 8
+        const val PIXELS_PER_MEGAPIXEL = 1_000_000
     }
 }

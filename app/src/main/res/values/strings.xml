@@ -211,6 +211,17 @@
     <string name="camera_settings_changed">Changed from default</string>
     <string name="camera_settings_reset">Reset</string>
     <string name="camera_settings_reset_storage_location">Reset storage location</string>
+    <string name="camera_settings_free_space">%1$s free</string>
+    <string name="camera_settings_free_space_estimate">About %1$s</string>
+    <string name="camera_settings_photos_or_video">%1$s or %2$s</string>
+    <plurals name="camera_settings_photo_count">
+        <item quantity="one">%s photo</item>
+        <item quantity="other">%s photos</item>
+    </plurals>
+    <plurals name="camera_settings_video_minute_count">
+        <item quantity="one">%s minute of video</item>
+        <item quantity="other">%s minutes of video</item>
+    </plurals>
     <string name="camera_settings_reset_all_settings">Reset all settings</string>
     <string name="camera_settings_reset_settings_title">Reset camera settings?</string>
     <string name="camera_settings_reset_settings_message">Every setting on this screen goes back to its default, except the storage location.</string>

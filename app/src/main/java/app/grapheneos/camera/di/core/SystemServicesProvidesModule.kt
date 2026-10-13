@@ -1,6 +1,7 @@
 package app.grapheneos.camera.di.core
 
 import android.app.NotificationManager
+import android.app.usage.StorageStatsManager
 import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
@@ -58,6 +59,14 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): SensorManager {
         return context.getSystemService(SensorManager::class.java)
+    }
+
+    @Provides
+    @Reusable
+    fun provideStorageStatsManager(
+        @ApplicationContext context: Context,
+    ): StorageStatsManager {
+        return context.getSystemService(StorageStatsManager::class.java)
     }
 
     @Provides

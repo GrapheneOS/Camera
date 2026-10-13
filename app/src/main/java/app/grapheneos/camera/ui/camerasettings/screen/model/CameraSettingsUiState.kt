@@ -27,6 +27,7 @@ internal data class CameraSettingsUiState(
         selected = SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
         options = persistentListOf(),
     ),
+    val storageSpace: StorageSpaceUiModel? = null,
     val storageLocation: StorageLocationUiModel? = null,
     val canResetSettings: Boolean = false,
     val dialog: CameraSettingsDialog? = null,

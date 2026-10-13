@@ -33,6 +33,7 @@ import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopApp
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import app.grapheneos.camera.ui.core.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.CollectEvents
@@ -168,6 +169,12 @@ private fun CameraSettingsContentPreview() {
                 storageLocation = StorageLocationUiModel(
                     location = "",
                     isChanged = false,
+                ),
+                storageSpace = StorageSpaceUiModel(
+                    freeBytes = 23_680_000_000L,
+                    usedFraction = 0.8f,
+                    photos = 3_036,
+                    videoMinutes = 143,
                 ),
                 canResetSettings = true,
             ),
