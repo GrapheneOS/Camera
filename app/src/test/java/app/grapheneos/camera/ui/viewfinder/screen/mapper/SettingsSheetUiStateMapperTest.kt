@@ -39,14 +39,14 @@ class SettingsSheetUiStateMapperTest {
     }
 
     @Test
-    fun aRecordingStillStarting_leavesTheSettingsChangeable() {
+    fun aRecordingStillStarting_locksTheSettingsItWillStartWith() {
         val state = map(
             mode = CameraMode.VIDEO,
             recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
         )
 
-        assertTrue(state.includeAudioSettingEnabled)
-        assertTrue(state.videoQualitySettingEnabled)
+        assertFalse(state.includeAudioSettingEnabled)
+        assertFalse(state.videoQualitySettingEnabled)
     }
 
     @Test

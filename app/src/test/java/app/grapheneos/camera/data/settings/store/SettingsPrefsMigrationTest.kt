@@ -220,9 +220,37 @@ class SettingsPrefsMigrationTest {
     }
 
     @Test
+    fun migrate_geoTaggingOnForPhotosAndVideos_staysOn() {
+        runTest {
+            modePreferences(CameraMode.CAMERA).edit(commit = true) {
+                putBoolean(GEO_TAGGING, true)
+            }
+            modePreferences(CameraMode.VIDEO).edit(commit = true) {
+                putBoolean(GEO_TAGGING, true)
+            }
+
+            assertTrue(migrateCommon().geoTagging)
+        }
+    }
+
+    @Test
+    fun migrate_geoTaggingOffForVideos_turnsItOffForPhotosToo() {
+        runTest {
+            modePreferences(CameraMode.CAMERA).edit(commit = true) {
+                putBoolean(GEO_TAGGING, true)
+            }
+            modePreferences(CameraMode.VIDEO).edit(commit = true) {
+                putBoolean(GEO_TAGGING, false)
+            }
+
+            assertFalse(migrateCommon().geoTagging)
+        }
+    }
+
+    @Test
     fun migrate_otherModesGeoTagging_isLeftBehind() {
         runTest {
-            modePreferences(CameraMode.VIDEO).edit(commit = true) {
+            modePreferences(CameraMode.NIGHT).edit(commit = true) {
                 putBoolean(GEO_TAGGING, true)
             }
 

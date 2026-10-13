@@ -118,7 +118,7 @@ internal class VideoRecorderImpl @Inject constructor(
 
         pending.isStarted = true
 
-        recordingSession.start(
+        val isSessionStarted = recordingSession.start(
             request = RecordingRequest(
                 fileDescriptor = pending.output.fileDescriptor,
                 location = pending.location,
@@ -132,18 +132,16 @@ internal class VideoRecorderImpl @Inject constructor(
             },
         )
 
-        // The Recording didn't exist yet when the mute/pause setters ran.
-        if (muted) {
-            recordingSession.setMuted(true)
-        }
+        when {
+            isSessionStarted -> onSessionStarted(
+                output = pending.output,
+                muted = muted,
+                paused = paused,
+            )
 
-        if (paused) {
-            recordingSession.setPaused(true)
+            // No camera is bound once the screen went away while the start sound played.
+            else -> abandon(pending)
         }
-
-        // FileDescriptorOutputOptions doc says that the file descriptor should be closed by
-        // the caller, and that it's safe to do so as soon as the recording has started
-        closeOutput(pending.output)
     }
 
     override fun setPaused(paused: Boolean) {
@@ -161,14 +159,35 @@ internal class VideoRecorderImpl @Inject constructor(
             pending == null -> isStopRequested = true
 
             // The start is still queued behind the sound that announces it.
-            !pending.isStarted -> {
-                pendingRecording = null
-                discard(pending.output)
-                _events.trySend(RecordedVideoEvent.Abandoned)
-            }
+            !pending.isStarted -> abandon(pending)
 
             else -> recordingSession.stop()
         }
+    }
+
+    private fun onSessionStarted(
+        output: RecordingOutput,
+        muted: Boolean,
+        paused: Boolean,
+    ) {
+        // The Recording didn't exist yet when the mute/pause setters ran.
+        if (muted) {
+            recordingSession.setMuted(true)
+        }
+
+        if (paused) {
+            recordingSession.setPaused(true)
+        }
+
+        // FileDescriptorOutputOptions doc says that the file descriptor should be closed by
+        // the caller, and that it's safe to do so as soon as the recording has started
+        closeOutput(output)
+    }
+
+    private fun abandon(pending: PendingRecording) {
+        pendingRecording = null
+        discard(pending.output)
+        _events.trySend(RecordedVideoEvent.Abandoned)
     }
 
     private suspend fun location(includeLocation: Boolean): Location? {
