@@ -6,8 +6,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
 
 @Composable
 internal fun rememberCountDownTimerText(value: Int): String {
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = LocalLocale.current.platformLocale
     val numberFormat = remember(locale) { NumberFormat.getIntegerInstance(locale) }
 
     return remember(numberFormat, value) { numberFormat.format(value.toLong()) }

@@ -234,7 +234,7 @@ private fun SettingsItemTitle(
 
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyLarge,
+        style = MaterialTheme.typography.titleMedium,
         color = contentColor(
             enabled = enabled,
             color = MaterialTheme.colorScheme.onSurface,

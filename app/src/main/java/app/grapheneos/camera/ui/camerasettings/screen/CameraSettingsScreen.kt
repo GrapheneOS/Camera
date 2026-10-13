@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -116,6 +117,10 @@ private fun CameraSettingsList(
     contentPadding: PaddingValues,
 ) {
     val listState = rememberLazyListState()
+    val bottomPadding = when {
+        uiState.canResetSettings -> 0.dp
+        else -> SCREEN_CONTENT_PADDING
+    }
 
     KeepAtEndEffect(listState)
 
@@ -125,7 +130,7 @@ private fun CameraSettingsList(
         contentPadding = contentPadding + PaddingValues(
             start = SCREEN_CONTENT_PADDING,
             end = SCREEN_CONTENT_PADDING,
-            bottom = SCREEN_CONTENT_PADDING,
+            bottom = bottomPadding,
         ),
         verticalArrangement = Arrangement.spacedBy(GROUPED_ITEM_SPACING),
     ) {
@@ -133,7 +138,9 @@ private fun CameraSettingsList(
             item(key = "secure_session_banner") {
                 SecureSessionBanner(
                     text = stringResource(R.string.camera_settings_secure_session_banner),
-                    modifier = Modifier.padding(top = SCREEN_CONTENT_PADDING),
+                    modifier = Modifier
+                        .animateItem()
+                        .padding(top = SCREEN_CONTENT_PADDING),
                 )
             }
         }
