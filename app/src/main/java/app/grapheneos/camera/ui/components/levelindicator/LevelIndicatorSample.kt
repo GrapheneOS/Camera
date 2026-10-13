@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,7 +42,7 @@ private fun LevelIndicatorSamplePreview() {
 @Composable
 private fun LevelIndicatorSample() {
     val state = remember { LevelIndicatorSampleState() }
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = LocalLocale.current.platformLocale
     val degrees = remember(locale) {
         NumberFormat.getNumberInstance(locale).apply {
             minimumFractionDigits = 1

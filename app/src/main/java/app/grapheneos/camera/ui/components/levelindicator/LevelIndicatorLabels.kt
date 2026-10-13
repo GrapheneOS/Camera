@@ -7,8 +7,8 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -61,7 +61,7 @@ internal fun rememberLevelIndicatorLabels(
     shadowRadius: Dp,
 ): LevelIndicatorLabels {
     val density = LocalDensity.current
-    val locale = LocalConfiguration.current.locales[0]
+    val locale = LocalLocale.current.platformLocale
     val textMeasurer = rememberTextMeasurer()
     val shadowRadiusPx = with(density) { shadowRadius.toPx() }
     val style = MaterialTheme.typography.labelMedium.copy(
