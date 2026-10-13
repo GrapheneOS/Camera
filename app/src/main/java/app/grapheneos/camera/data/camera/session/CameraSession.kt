@@ -112,6 +112,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
     private val featureCombinationSupport: FeatureCombinationSupport,
     private val photoResolutionSupport: PhotoResolutionSupport,
+    private val videoBitrateSupport: VideoBitrateSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
@@ -829,9 +830,12 @@ internal class CameraSessionImpl @Inject constructor(
         val cameraInfo = camera?.cameraInfo ?: return CameraCapabilities()
 
         return CameraCapabilities(
+            lensFacing = lensFacing,
             isZslSupported = cameraInfo.isZslSupported,
             isVideoStabilizationSupported = canApplyVideoStabilization(),
+            photoMegapixels = photoResolutionSupport.standardMegapixels(cameraInfo),
             photoResolutions = photoResolutionSupport.resolutions(cameraInfo),
+            videoBitrates = videoBitrateSupport.bitrates(cameraInfo),
         )
     }
 

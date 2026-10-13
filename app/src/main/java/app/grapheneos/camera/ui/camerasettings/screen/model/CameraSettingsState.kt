@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.camerasettings.screen.model
 
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 
@@ -10,7 +12,10 @@ internal data class CameraSettingsState(
     val capabilities: CameraCapabilities = CameraCapabilities(),
     val isLocationPermissionGranted: Boolean = false,
     val settings: CameraSettings = CameraSettings(),
+    val videoQuality: VideoQuality = SettingsDefaults.VIDEO_QUALITY,
     val storageLocation: String? = null,
+    val storageSpace: StorageSpace? = null,
+    val isStorageSpaceLoaded: Boolean = false,
     val dialog: CameraSettingsDialog? = null,
 ) {
 

@@ -5,7 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -49,6 +51,9 @@ class CameraSettingsViewModelTest {
     }
     private val changeStorageLocation = mockk<ChangeStorageLocation>()
     private val revertToMediaStoreLocation = mockk<RevertToMediaStoreLocation>(relaxed = true)
+    private val storageSpaceRepository = mockk<StorageSpaceRepository> {
+        coEvery { storageSpace(any()) } returns STORAGE_SPACE
+    }
     private var isLocationPermissionGranted = false
     private val permissionRepository = mockk<PermissionRepository> {
         every { isGranted(AppPermission.LOCATION) } answers { isLocationPermissionGranted }
@@ -227,6 +232,23 @@ class CameraSettingsViewModelTest {
     }
 
     @Test
+    fun storageSpace_ofTheStorageLocation_reachesTheScreen() {
+        val viewModel = createViewModel()
+
+        assertEquals(STORAGE_SPACE.freeBytes, viewModel.uiState.value.storageSpace?.freeBytes)
+        coVerify {
+            storageSpaceRepository.storageSpace(CapturedItemRepository.MEDIA_STORE_LOCATION)
+        }
+    }
+
+    @Test
+    fun storageSpace_inASecureSession_isNotRead() {
+        createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
+
+        coVerify(exactly = 0) { storageSpaceRepository.storageSpace(any()) }
+    }
+
+    @Test
     fun storageLocationPicked_nothing_leavesTheLocationAlone() {
         runTest {
             val viewModel = createViewModel()
@@ -277,6 +299,7 @@ class CameraSettingsViewModelTest {
             settingsRepository = settingsRepositoryOver(storedSettings),
             permissionRepository = permissionRepository,
             capturedItemRepository = capturedItemRepository,
+            storageSpaceRepository = storageSpaceRepository,
             changeStorageLocation = changeStorageLocation,
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             uiStateMapper = CameraSettingsUiStateMapperImpl(),
@@ -285,6 +308,10 @@ class CameraSettingsViewModelTest {
     }
 
     private companion object {
+        val STORAGE_SPACE = StorageSpace(
+            freeBytes = 1_000_000_000L,
+            totalBytes = 4_000_000_000L,
+        )
         val TREE: Uri = Uri.parse(
             "content://com.android.externalstorage.documents/tree/primary%3ADCIM",
         )

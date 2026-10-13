@@ -2,7 +2,10 @@ package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
+import app.grapheneos.camera.data.camera.model.VideoBitrates
 import app.grapheneos.camera.data.core.model.CaptureMode
+import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
@@ -10,6 +13,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -199,6 +203,89 @@ class CameraSettingsUiStateMapperTest {
 
         assertEquals(listOf(0L, 3L, 5L, 7L, 8L, 10L), uiState.focusTimeout.options)
         assertEquals(7L, uiState.focusTimeout.selected)
+    }
+
+    @Test
+    fun storageSpace_isEstimatedFromTheChosenQualitiesAndTheBitrateCameraXRecordsAt() {
+        val uiState = mapper.map(
+            CameraSettingsState(
+                storageSpace = StorageSpace(
+                    freeBytes = 1_200_000_000L,
+                    totalBytes = 4_800_000_000L,
+                ),
+                isStorageSpaceLoaded = true,
+                capabilities = CameraCapabilities(
+                    photoMegapixels = 12,
+                    videoBitrates = mapOf(
+                        VideoQuality.FHD to VideoBitrates(
+                            videoBitsPerSecond = 31_808_000,
+                            videoFrameRate = 60,
+                            audioBitsPerSecond = 96_000,
+                        ),
+                    ),
+                ),
+                settings = CameraSettings(photoQuality = 95),
+                videoQuality = VideoQuality.FHD,
+            ),
+        )
+
+        assertEquals(
+            StorageSpaceUiModel(
+                freeBytes = 1_200_000_000L,
+                usedFraction = 0.75f,
+                photos = 320,
+                videoMinutes = 10,
+            ),
+            uiState.storageSpace,
+        )
+    }
+
+    @Test
+    fun storageSpace_untilItIsRead_isShownAsLoading() {
+        val uiState = mapper.map(CameraSettingsState())
+
+        assertEquals(StorageSpaceUiModel(), uiState.storageSpace)
+    }
+
+    @Test
+    fun storageSpace_ofALocationOffTheDevicesStorage_isHidden() {
+        val uiState = mapper.map(CameraSettingsState(isStorageSpaceLoaded = true))
+
+        assertNull(uiState.storageSpace)
+    }
+
+    @Test
+    fun storageSpace_atFullResolution_isEstimatedForItsPixels() {
+        val uiState = mapper.map(
+            CameraSettingsState(
+                storageSpace = StorageSpace(
+                    freeBytes = 1_200_000_000L,
+                    totalBytes = 4_800_000_000L,
+                ),
+                isStorageSpaceLoaded = true,
+                capabilities = CameraCapabilities(
+                    photoMegapixels = 12,
+                    photoResolutions = PhotoResolutions(
+                        standardMegapixels = 12,
+                        fullMegapixels = 50,
+                    ),
+                ),
+                settings = CameraSettings(
+                    photoQuality = 95,
+                    selectHighestResolution = true,
+                ),
+            ),
+        )
+
+        assertEquals(76L, uiState.storageSpace?.photos)
+        assertNull(uiState.storageSpace?.videoMinutes)
+    }
+
+    @Test
+    fun storageSpace_inASecureSession_isHidden() {
+        val uiState = mapper.map(CameraSettingsState(isSecureSession = true))
+
+        assertNull(uiState.storageSpace)
     }
 
     @Test

@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -35,14 +34,11 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.camerasettings.components.SettingsCategoryHeader
 import app.grapheneos.camera.ui.camerasettings.components.SettingsClickableItem
+import app.grapheneos.camera.ui.camerasettings.components.SettingsStorageCard
 import app.grapheneos.camera.ui.camerasettings.components.SettingsSwitchItem
-import app.grapheneos.camera.ui.camerasettings.components.formatMegapixels
-import app.grapheneos.camera.ui.camerasettings.components.formatPhotoQuality
 import app.grapheneos.camera.ui.camerasettings.components.groupedItemShape
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
-import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
-import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
 import app.grapheneos.camera.util.storageLocationToUiString
@@ -110,14 +106,13 @@ private fun LazyListScope.settingsSection(
 
     rows.forEachIndexed { index, row ->
         item(key = row.key) {
-            Box(modifier = Modifier.animateItem()) {
-                row.content(
-                    groupedItemShape(
-                        index = index,
-                        count = rows.size,
-                    ),
-                )
-            }
+            row.content(
+                groupedItemShape(
+                    index = index,
+                    count = rows.size,
+                ),
+                Modifier.animateItem(),
+            )
         }
     }
 }
@@ -127,7 +122,7 @@ private fun privacyRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
-        SettingsRow(key = "geo_tagging") { shape ->
+        SettingsRow(key = "geo_tagging") { shape, modifier ->
             val summary = when {
                 uiState.offersLocationSettings -> R.string.camera_settings_geo_tagging_access_off
                 uiState.geoTagging.enabled -> R.string.camera_settings_geo_tagging_summary
@@ -142,10 +137,11 @@ private fun privacyRows(
                 onLabelClick = { onAction(Action.LocationSettingsClicked) },
                 icon = Icons.Outlined.LocationOn,
                 shape = shape,
+                modifier = modifier,
                 onCheckedChange = { onAction(Action.GeoTaggingToggled(it)) },
             )
         },
-        SettingsRow(key = "remove_exif") { shape ->
+        SettingsRow(key = "remove_exif") { shape, modifier ->
             val summary = when {
                 uiState.removeExif.enabled -> R.string.remove_exif_subtitle
                 else -> R.string.image_taken_in_this_mode_does_not_contain_extra_data
@@ -158,6 +154,7 @@ private fun privacyRows(
                 label = stringResource(R.string.camera_settings_photo_only),
                 icon = Icons.Outlined.PrivacyTip,
                 shape = shape,
+                modifier = modifier,
                 onCheckedChange = { onAction(Action.RemoveExifToggled(it)) },
             )
         },
@@ -169,17 +166,18 @@ private fun compositionRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
-        SettingsRow(key = "grid") { shape ->
+        SettingsRow(key = "grid") { shape, modifier ->
             SettingsClickableItem(
                 title = stringResource(R.string.camera_settings_grid),
                 summary = stringResource(uiState.grid.selected.label),
                 icon = Icons.Outlined.GridOn,
                 isChanged = uiState.grid.isChanged,
                 shape = shape,
+                modifier = modifier,
                 onClick = { onAction(Action.GridClicked) },
             )
         },
-        SettingsRow(key = "gyroscope_suggestions") { shape ->
+        SettingsRow(key = "gyroscope_suggestions") { shape, modifier ->
             SwitchSettingItem(
                 setting = uiState.gyroscopeSuggestions,
                 title = stringResource(R.string.gyroscope_suggestions),
@@ -187,16 +185,18 @@ private fun compositionRows(
                 label = stringResource(R.string.camera_settings_photo_only),
                 icon = Icons.Outlined.Straighten,
                 shape = shape,
+                modifier = modifier,
                 onCheckedChange = { onAction(Action.GyroscopeSuggestionsToggled(it)) },
             )
         },
-        SettingsRow(key = "keep_selfies_as_seen") { shape ->
+        SettingsRow(key = "keep_selfies_as_seen") { shape, modifier ->
             SwitchSettingItem(
                 setting = uiState.keepSelfiesAsSeen,
                 title = stringResource(R.string.camera_settings_keep_selfies_as_seen),
                 summary = stringResource(R.string.camera_settings_keep_selfies_as_seen_summary),
                 icon = Icons.Outlined.CameraFront,
                 shape = shape,
+                modifier = modifier,
                 onCheckedChange = { onAction(Action.KeepSelfiesAsSeenToggled(it)) },
             )
         },
@@ -208,7 +208,7 @@ private fun qualityRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
-        SettingsRow(key = "photo_quality") { shape ->
+        SettingsRow(key = "photo_quality") { shape, modifier ->
             SettingsClickableItem(
                 title = stringResource(R.string.image_quality),
                 summary = photoQualitySummary(uiState.photoQuality),
@@ -216,10 +216,11 @@ private fun qualityRows(
                 icon = Icons.Outlined.HighQuality,
                 isChanged = uiState.photoQuality.isChanged,
                 shape = shape,
+                modifier = modifier,
                 onClick = { onAction(Action.PhotoQualityClicked) },
             )
         },
-        SettingsRow(key = "capture_mode") { shape ->
+        SettingsRow(key = "capture_mode") { shape, modifier ->
             SettingsClickableItem(
                 title = stringResource(R.string.camera_settings_capture_mode),
                 summary = stringResource(uiState.captureMode.selected.label),
@@ -227,10 +228,11 @@ private fun qualityRows(
                 icon = Icons.Outlined.ShutterSpeed,
                 isChanged = uiState.captureMode.isChanged,
                 shape = shape,
+                modifier = modifier,
                 onClick = { onAction(Action.CaptureModeClicked) },
             )
         },
-        SettingsRow(key = "video_stabilization") { shape ->
+        SettingsRow(key = "video_stabilization") { shape, modifier ->
             val summary = when {
                 uiState.videoStabilization.enabled -> {
                     R.string.camera_settings_video_stabilization_summary
@@ -246,6 +248,7 @@ private fun qualityRows(
                 label = stringResource(R.string.camera_settings_video_only),
                 icon = Icons.Outlined.VideoStable,
                 shape = shape,
+                modifier = modifier,
                 onCheckedChange = { onAction(Action.VideoStabilizationToggled(it)) },
             )
         },
@@ -257,13 +260,14 @@ private fun soundRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
-        SettingsRow(key = "camera_sounds") { shape ->
+        SettingsRow(key = "camera_sounds") { shape, modifier ->
             SwitchSettingItem(
                 setting = uiState.cameraSounds,
                 title = stringResource(R.string.camera_sounds),
                 summary = stringResource(R.string.camera_sounds_desc),
                 icon = Icons.AutoMirrored.Outlined.VolumeUp,
                 shape = shape,
+                modifier = modifier,
                 onCheckedChange = { onAction(Action.CameraSoundsToggled(it)) },
             )
         },
@@ -275,13 +279,14 @@ private fun controlsRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOf(
-        SettingsRow(key = "focus_timeout") { shape ->
+        SettingsRow(key = "focus_timeout") { shape, modifier ->
             SettingsClickableItem(
                 title = stringResource(R.string.camera_settings_focus_timeout),
                 summary = focusTimeoutLabel(uiState.focusTimeout.selected),
                 icon = Icons.Outlined.CenterFocusWeak,
                 isChanged = uiState.focusTimeout.isChanged,
                 shape = shape,
+                modifier = modifier,
                 onClick = { onAction(Action.FocusTimeoutClicked) },
             )
         },
@@ -293,9 +298,21 @@ private fun storageRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     val storageLocation = uiState.storageLocation ?: return emptyList()
+    val storageSpace = uiState.storageSpace
 
-    return listOf(
-        SettingsRow(key = "storage_location") { shape ->
+    return listOfNotNull(
+        storageSpace?.let { space ->
+            SettingsRow(key = "storage_space") { shape, modifier ->
+                SettingsStorageCard(
+                    title = storageSpaceTitle(space),
+                    summary = storageSpaceEstimate(space),
+                    usedFraction = space.usedFraction,
+                    shape = shape,
+                    modifier = modifier,
+                )
+            }
+        },
+        SettingsRow(key = "storage_location") { shape, modifier ->
             val context = LocalContext.current
 
             SettingsClickableItem(
@@ -307,7 +324,7 @@ private fun storageRows(
                 isChanged = storageLocation.isChanged,
                 shape = shape,
                 onClick = { onAction(Action.StorageLocationClicked) },
-                modifier = Modifier.animateContentSize(animationSpec = SETTLE_SIZE_SPEC),
+                modifier = modifier.animateContentSize(animationSpec = SETTLE_SIZE_SPEC),
                 trailing = when {
                     storageLocation.isChanged -> {
                         { ResetStorageLocationButton(onAction = onAction) }
@@ -357,6 +374,7 @@ private fun SwitchSettingItem(
     icon: ImageVector,
     shape: Shape,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     label: String? = null,
     onLabelClick: (() -> Unit)? = null,
 ) {
@@ -371,69 +389,11 @@ private fun SwitchSettingItem(
         enabled = setting.enabled,
         isChanged = setting.isChanged,
         shape = shape,
+        modifier = modifier,
     )
-}
-
-@Composable
-private fun photoQualitySummary(photoQuality: PhotoQualityUiModel): String {
-    val percent = formatPhotoQuality(photoQuality.quality)
-    val compression = stringResource(photoQuality.level.label)
-    val resolution = photoQuality.resolution
-    val resolutionLabel = when {
-        resolution != null -> megapixels(
-            resolution = resolution,
-            isFull = photoQuality.isFullResolution,
-        )
-
-        photoQuality.isFullResolution -> stringResource(
-            R.string.camera_settings_photo_quality_full_resolution,
-        )
-
-        else -> null
-    }
-
-    return when (resolutionLabel) {
-        null -> stringResource(
-            R.string.camera_settings_photo_quality_summary,
-            compression,
-            percent,
-        )
-
-        else -> stringResource(
-            R.string.camera_settings_photo_quality_summary_with_resolution,
-            resolutionLabel,
-            compression,
-            percent,
-        )
-    }
-}
-
-@Composable
-private fun megapixels(
-    resolution: PhotoResolutionUiModel,
-    isFull: Boolean,
-): String {
-    val megapixels = when {
-        isFull -> resolution.fullMegapixels
-        else -> resolution.standardMegapixels
-    }
-
-    return formatMegapixels(megapixels)
-}
-
-@Composable
-internal fun focusTimeoutLabel(seconds: Long): String {
-    return when (seconds) {
-        0L -> stringResource(R.string.camera_settings_focus_timeout_off)
-        else -> pluralStringResource(
-            R.plurals.camera_settings_seconds,
-            seconds.toInt(),
-            seconds,
-        )
-    }
 }
 
 private class SettingsRow(
     val key: String,
-    val content: @Composable (shape: Shape) -> Unit,
+    val content: @Composable (shape: Shape, modifier: Modifier) -> Unit,
 )
