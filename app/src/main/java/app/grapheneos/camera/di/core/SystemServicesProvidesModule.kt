@@ -5,6 +5,7 @@ import android.app.usage.StorageStatsManager
 import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
+import android.content.res.AssetManager
 import android.hardware.SensorManager
 import android.location.LocationManager
 import android.os.Build
@@ -27,6 +28,14 @@ internal class SystemServicesProvidesModule {
         @ApplicationContext context: Context,
     ): ContentResolver {
         return context.contentResolver
+    }
+
+    @Provides
+    @Reusable
+    fun provideAssetManager(
+        @ApplicationContext context: Context,
+    ): AssetManager {
+        return context.assets
     }
 
     @Provides

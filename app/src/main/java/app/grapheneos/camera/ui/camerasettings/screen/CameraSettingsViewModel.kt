@@ -103,6 +103,7 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.StorageLocationClicked -> _effects.trySend(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
+            is Action.LicensesClicked -> _effects.trySend(Effect.OpenLicenses)
         }
     }
 

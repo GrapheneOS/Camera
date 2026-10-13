@@ -204,6 +204,13 @@
             android:exported="false"/>
 
         <activity
+            android:name=".ui.camerasettings.LicensesActivity"
+            android:theme="@style/Theme.App"
+            android:taskAffinity=".ui.activities.InAppGallery"
+            android:excludeFromRecents="true"
+            android:exported="false"/>
+
+        <activity
             android:name=".ui.activities.QrTile"
             android:exported="true"
             android:showWhenLocked="true"

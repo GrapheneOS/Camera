@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.camerasettings.screen
 
 import android.net.Uri
+import androidx.core.os.BundleCompat
 import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.AspectRatio
@@ -293,7 +294,9 @@ class CameraSettingsViewModelTest {
 
         return CameraSettingsViewModel(
             arguments = SavedStateHandle(
-                arguments.keySet().associateWith { arguments.getBoolean(it) },
+                arguments.keySet().associateWith { key ->
+                    BundleCompat.getParcelable(arguments, key, CameraCapabilities::class.java)
+                },
             ),
             entryPoint = entryPoint,
             settingsRepository = settingsRepositoryOver(storedSettings),

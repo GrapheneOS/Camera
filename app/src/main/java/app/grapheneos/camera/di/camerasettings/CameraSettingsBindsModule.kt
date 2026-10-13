@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.camerasettings
 
+import app.grapheneos.camera.ui.camerasettings.licenses.mapper.LicensesUiStateMapper
+import app.grapheneos.camera.ui.camerasettings.licenses.mapper.LicensesUiStateMapperImpl
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapper
 import app.grapheneos.camera.ui.camerasettings.screen.mapper.CameraSettingsUiStateMapperImpl
 import dagger.Binds
@@ -17,4 +19,10 @@ internal abstract class CameraSettingsBindsModule {
     abstract fun bindCameraSettingsUiStateMapper(
         impl: CameraSettingsUiStateMapperImpl,
     ): CameraSettingsUiStateMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindLicensesUiStateMapper(
+        impl: LicensesUiStateMapperImpl,
+    ): LicensesUiStateMapper
 }

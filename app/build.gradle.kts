@@ -21,6 +21,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.screenshot)
+    id("camera.licenses")
 }
 
 detekt {

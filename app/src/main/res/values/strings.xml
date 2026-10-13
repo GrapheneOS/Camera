@@ -201,6 +201,7 @@
     <string name="camera_settings_section_quality">Quality</string>
     <string name="camera_settings_section_sound">Sound</string>
     <string name="camera_settings_section_controls">Controls</string>
+    <string name="camera_settings_section_about">About</string>
     <string name="camera_settings_geo_tagging">Save location</string>
     <string name="camera_settings_geo_tagging_summary">Add where photos and videos were taken</string>
     <string name="camera_settings_geo_tagging_access_off">Location access is off</string>
@@ -222,6 +223,8 @@
         <item quantity="one">%s minute of video</item>
         <item quantity="other">%s minutes of video</item>
     </plurals>
+    <string name="camera_settings_licenses">Open source licenses</string>
+    <string name="camera_settings_licenses_summary">License details for open source software</string>
     <string name="camera_settings_reset_all_settings">Reset all settings</string>
     <string name="camera_settings_reset_settings_title">Reset camera settings?</string>
     <string name="camera_settings_reset_settings_message">Every setting on this screen goes back to its default, except the storage location.</string>

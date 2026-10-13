@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
+body { font-family: -apple-system, Roboto, system-ui, sans-serif;
+       margin: 16px; line-height: 1.5;
+       color: #1d1b20; background: #fef7ff; }
+details { background: #f3edf7; border-radius: 12px;
+          margin: 8px 0; overflow: hidden; }
+summary { list-style: none; cursor: pointer;
+          display: flex; align-items: center; gap: 12px;
+          padding: 14px 16px; font-size: 0.95rem; font-weight: 500;
+          word-break: break-word; overflow-wrap: anywhere; }
+summary::-webkit-details-marker { display: none; }
+summary > .label { flex: 1; min-width: 0; }
+summary > .chev { flex: 0 0 16px; font-weight: 400;
+                  color: #6750a4; text-align: center;
+                  transition: transform 0.15s ease; }
+details[open] summary > .chev { transform: rotate(45deg); }
+details[open] summary { border-bottom: 1px solid rgba(0,0,0,0.08); }
+pre { padding: 16px; margin: 0;
+      white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
+      font-family: ui-monospace, monospace; font-size: 0.8rem; }
+@media (prefers-color-scheme: dark) {
+  body { color: #e6e0e9; background: #141218; }
+  details { background: #211f26; }
+  summary > .chev { color: #d0bcff; }
+  details[open] summary { border-bottom-color: rgba(255,255,255,0.08); }
+}
+</style>
+</head>
+<body>

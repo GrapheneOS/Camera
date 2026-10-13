@@ -1,0 +1,1061 @@
+{
+    "libraries": [
+        {
+            "name": "Activity",
+            "coordinates": "androidx.activity:activity:1.13.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/activity#1.13.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Activity Compose",
+            "coordinates": "androidx.activity:activity-compose:1.13.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/activity#1.13.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Activity Kotlin Extensions",
+            "coordinates": "androidx.activity:activity-ktx:1.13.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/activity#1.13.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Android App Startup Runtime",
+            "coordinates": "androidx.startup:startup-runtime:1.1.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/startup#1.1.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Arch-Common",
+            "coordinates": "androidx.arch.core:core-common:2.2.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/arch-core#2.2.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Arch-Runtime",
+            "coordinates": "androidx.arch.core:core-runtime:2.2.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/arch-core#2.2.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Graphics Path",
+            "coordinates": "androidx.graphics:graphics-path:1.0.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/graphics#1.0.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Resource Inspection - Annotations",
+            "coordinates": "androidx.resourceinspection:resourceinspection-annotation:1.0.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/resourceinspection#1.0.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support AnimatedVectorDrawable",
+            "coordinates": "androidx.vectordrawable:vectordrawable-animated:1.1.0",
+            "url": "https://developer.android.com/jetpack/androidx",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support CardView v7",
+            "coordinates": "androidx.cardview:cardview:1.0.0",
+            "url": "http://developer.android.com/tools/extras/support-library.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library Coordinator Layout",
+            "coordinates": "androidx.coordinatorlayout:coordinatorlayout:1.1.0",
+            "url": "https://developer.android.com/jetpack/androidx",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library Cursor Adapter",
+            "coordinates": "androidx.cursoradapter:cursoradapter:1.0.0",
+            "url": "http://developer.android.com/tools/extras/support-library.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library Drawer Layout",
+            "coordinates": "androidx.drawerlayout:drawerlayout:1.1.1",
+            "url": "https://developer.android.com/jetpack/androidx",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library fragment",
+            "coordinates": "androidx.fragment:fragment:1.5.4",
+            "url": "https://developer.android.com/jetpack/androidx/releases/fragment#1.5.4",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library Interpolators",
+            "coordinates": "androidx.interpolator:interpolator:1.0.0",
+            "url": "http://developer.android.com/tools/extras/support-library.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library loader",
+            "coordinates": "androidx.loader:loader:1.0.0",
+            "url": "http://developer.android.com/tools/extras/support-library.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support Library View Pager",
+            "coordinates": "androidx.viewpager:viewpager:1.0.0",
+            "url": "http://developer.android.com/tools/extras/support-library.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support RecyclerView",
+            "coordinates": "androidx.recyclerview:recyclerview:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/recyclerview#1.2.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Android Support VectorDrawable",
+            "coordinates": "androidx.vectordrawable:vectordrawable:1.1.0",
+            "url": "https://developer.android.com/jetpack/androidx",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "AndroidX Autofill",
+            "coordinates": "androidx.autofill:autofill:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "AndroidX Futures",
+            "coordinates": "androidx.concurrent:concurrent-futures:1.1.0",
+            "url": "https://developer.android.com/topic/libraries/architecture/index.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "AndroidX Futures Kotlin Extensions",
+            "coordinates": "androidx.concurrent:concurrent-futures-ktx:1.1.0",
+            "url": "https://developer.android.com/topic/libraries/architecture/index.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "AndroidX Widget ViewPager2",
+            "coordinates": "androidx.viewpager2:viewpager2:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "androidx.core:core-backported-fixes",
+            "coordinates": "androidx.core:core-backported-fixes:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/core#1.0.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "androidx.core:core-viewtree",
+            "coordinates": "androidx.core:core-viewtree:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/core#1.0.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "androidx.customview:poolingcontainer",
+            "coordinates": "androidx.customview:customview-poolingcontainer:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/customview#1.0.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Annotation",
+            "coordinates": "androidx.annotation:annotation-jvm:1.10.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/annotation#1.10.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Annotation",
+            "coordinates": "androidx.annotation:annotation:1.10.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/annotation#1.10.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "AppCompat",
+            "coordinates": "androidx.appcompat:appcompat:1.8.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/appcompat#1.8.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "AppCompat Resources",
+            "coordinates": "androidx.appcompat:appcompat-resources:1.8.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/appcompat#1.8.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "atomicfu",
+            "coordinates": "org.jetbrains.kotlinx:atomicfu-jvm:0.28.0",
+            "url": "https://github.com/Kotlin/kotlinx.atomicfu",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "atomicfu",
+            "coordinates": "org.jetbrains.kotlinx:atomicfu:0.28.0",
+            "url": "https://github.com/Kotlin/kotlinx.atomicfu",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "AutoValue Annotations",
+            "coordinates": "com.google.auto.value:auto-value-annotations:1.6.3",
+            "url": "http://github.com/google/auto",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Camera Core",
+            "coordinates": "androidx.camera:camera-core:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera Extensions",
+            "coordinates": "androidx.camera:camera-extensions:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera Feature Combination Query",
+            "coordinates": "androidx.camera.featurecombinationquery:featurecombinationquery:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera-featurecombinationquery#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera Lifecycle",
+            "coordinates": "androidx.camera:camera-lifecycle:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera Video",
+            "coordinates": "androidx.camera:camera-video:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera View",
+            "coordinates": "androidx.camera:camera-view:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera Viewfinder Core",
+            "coordinates": "androidx.camera.viewfinder:viewfinder-core:1.5.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera-viewfinder#1.5.1",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera2",
+            "coordinates": "androidx.camera:camera-camera2:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Camera2 Pipe",
+            "coordinates": "androidx.camera:camera-camera2-pipe:1.6.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/camera#1.6.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Checker Qual",
+            "coordinates": "org.checkerframework:checker-qual:3.43.0",
+            "url": "https://checkerframework.org/",
+            "license": "org.checkerframework:checker-qual"
+        },
+        {
+            "name": "collections",
+            "coordinates": "androidx.collection:collection-jvm:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/collection#1.5.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "collections",
+            "coordinates": "androidx.collection:collection:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/collection#1.5.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Collections Kotlin Extensions",
+            "coordinates": "androidx.collection:collection-ktx:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/collection#1.5.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Compose Animation",
+            "coordinates": "androidx.compose.animation:animation-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-animation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Animation",
+            "coordinates": "androidx.compose.animation:animation:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-animation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Animation Core",
+            "coordinates": "androidx.compose.animation:animation-core-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-animation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Animation Core",
+            "coordinates": "androidx.compose.animation:animation-core:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-animation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Foundation",
+            "coordinates": "androidx.compose.foundation:foundation-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-foundation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Foundation",
+            "coordinates": "androidx.compose.foundation:foundation:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-foundation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Geometry",
+            "coordinates": "androidx.compose.ui:ui-geometry-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Geometry",
+            "coordinates": "androidx.compose.ui:ui-geometry:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Graphics",
+            "coordinates": "androidx.compose.ui:ui-graphics-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Graphics",
+            "coordinates": "androidx.compose.ui:ui-graphics:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Layouts",
+            "coordinates": "androidx.compose.foundation:foundation-layout-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-foundation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Layouts",
+            "coordinates": "androidx.compose.foundation:foundation-layout:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-foundation#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material Icons Core",
+            "coordinates": "androidx.compose.material:material-icons-core-android:1.7.8",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material#1.7.8",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material Icons Core",
+            "coordinates": "androidx.compose.material:material-icons-core:1.7.8",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material#1.7.8",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material Icons Extended",
+            "coordinates": "androidx.compose.material:material-icons-extended-android:1.7.8",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material#1.7.8",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material Icons Extended",
+            "coordinates": "androidx.compose.material:material-icons-extended:1.7.8",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material#1.7.8",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material Ripple",
+            "coordinates": "androidx.compose.material:material-ripple-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material Ripple",
+            "coordinates": "androidx.compose.material:material-ripple:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material3 Components",
+            "coordinates": "androidx.compose.material3:material3-android:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material3#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Material3 Components",
+            "coordinates": "androidx.compose.material3:material3:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-material3#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Runtime",
+            "coordinates": "androidx.compose.runtime:runtime-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Runtime",
+            "coordinates": "androidx.compose.runtime:runtime:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Runtime Annotation",
+            "coordinates": "androidx.compose.runtime:runtime-annotation-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Runtime Annotation",
+            "coordinates": "androidx.compose.runtime:runtime-annotation:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Runtime Retain",
+            "coordinates": "androidx.compose.runtime:runtime-retain-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Runtime Retain",
+            "coordinates": "androidx.compose.runtime:runtime-retain:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Saveable",
+            "coordinates": "androidx.compose.runtime:runtime-saveable-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Saveable",
+            "coordinates": "androidx.compose.runtime:runtime-saveable:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-runtime#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose UI",
+            "coordinates": "androidx.compose.ui:ui-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose UI",
+            "coordinates": "androidx.compose.ui:ui:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose UI Preview Tooling",
+            "coordinates": "androidx.compose.ui:ui-tooling-preview-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose UI Preview Tooling",
+            "coordinates": "androidx.compose.ui:ui-tooling-preview:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose UI Text",
+            "coordinates": "androidx.compose.ui:ui-text-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose UI Text",
+            "coordinates": "androidx.compose.ui:ui-text:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Unit",
+            "coordinates": "androidx.compose.ui:ui-unit-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Unit",
+            "coordinates": "androidx.compose.ui:ui-unit:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Util",
+            "coordinates": "androidx.compose.ui:ui-util-android:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Compose Util",
+            "coordinates": "androidx.compose.ui:ui-util:1.12.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui#1.12.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "ConstraintLayout",
+            "coordinates": "androidx.constraintlayout:constraintlayout:2.2.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/constraintlayout#2.2.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "ConstraintLayout Core",
+            "coordinates": "androidx.constraintlayout:constraintlayout-core:1.1.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/constraintlayout#1.1.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Core",
+            "coordinates": "androidx.core:core:1.19.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/core#1.19.1",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Core Kotlin Extensions",
+            "coordinates": "androidx.core:core-ktx:1.19.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/core#1.19.1",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Custom View",
+            "coordinates": "androidx.customview:customview:1.2.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/customview#1.2.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Dagger",
+            "coordinates": "com.google.dagger:dagger:2.60.1",
+            "url": "https://github.com/google/dagger",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Dagger Lint Rules AAR Distribution",
+            "coordinates": "com.google.dagger:dagger-lint-aar:2.60.1",
+            "url": "https://github.com/google/dagger",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "DataStore",
+            "coordinates": "androidx.datastore:datastore-android:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "DataStore",
+            "coordinates": "androidx.datastore:datastore:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "DataStore Core",
+            "coordinates": "androidx.datastore:datastore-core-android:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "DataStore Core",
+            "coordinates": "androidx.datastore:datastore-core:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "DataStore Core Okio",
+            "coordinates": "androidx.datastore:datastore-core-okio-jvm:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "DataStore Core Okio",
+            "coordinates": "androidx.datastore:datastore-core-okio:1.2.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "DynamicAnimation",
+            "coordinates": "androidx.dynamicanimation:dynamicanimation:1.1.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/dynamicanimation#1.1.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Emoji2",
+            "coordinates": "androidx.emoji2:emoji2:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/emoji2#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Emoji2 Views Helper",
+            "coordinates": "androidx.emoji2:emoji2-views-helper:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/emoji2#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "error-prone annotations",
+            "coordinates": "com.google.errorprone:error_prone_annotations:2.28.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "ExifInterface",
+            "coordinates": "androidx.exifinterface:exifinterface:1.4.2",
+            "url": "https://developer.android.com/jetpack/androidx/releases/exifinterface#1.4.2",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Experimental annotation",
+            "coordinates": "androidx.annotation:annotation-experimental:1.4.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/annotation#1.4.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "FindBugs-jsr305",
+            "coordinates": "com.google.code.findbugs:jsr305:3.0.2",
+            "url": "http://findbugs.sourceforge.net/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Graphics Shapes",
+            "coordinates": "androidx.graphics:graphics-shapes-android:1.0.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/graphics#1.0.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Graphics Shapes",
+            "coordinates": "androidx.graphics:graphics-shapes:1.0.1",
+            "url": "https://developer.android.com/jetpack/androidx/releases/graphics#1.0.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Guava InternalFutureFailureAccess and InternalFutures",
+            "coordinates": "com.google.guava:failureaccess:1.0.2",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Guava ListenableFuture only",
+            "coordinates": "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Guava: Google Core Libraries for Java",
+            "coordinates": "com.google.guava:guava:33.3.1-android",
+            "url": "https://github.com/google/guava",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Hilt Android",
+            "coordinates": "com.google.dagger:hilt-android:2.60.1",
+            "url": "https://github.com/google/dagger",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Hilt Core",
+            "coordinates": "com.google.dagger:hilt-core:2.60.1",
+            "url": "https://github.com/google/dagger",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "J2ObjC Annotations",
+            "coordinates": "com.google.j2objc:j2objc-annotations:3.0.0",
+            "url": "https://github.com/google/j2objc/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Jakarta Dependency Injection",
+            "coordinates": "jakarta.inject:jakarta.inject-api:2.0.1",
+            "url": "https://github.com/eclipse-ee4j/injection-api",
+            "license": "Apache-2.0 (3)"
+        },
+        {
+            "name": "javax.inject",
+            "coordinates": "javax.inject:javax.inject:1",
+            "url": "http://code.google.com/p/atinject/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "JetBrains Java Annotations",
+            "coordinates": "org.jetbrains:annotations:23.0.0",
+            "url": "https://github.com/JetBrains/java-annotations",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "JSpecify annotations",
+            "coordinates": "org.jspecify:jspecify:1.0.0",
+            "url": "http://jspecify.org/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Kotlin Stdlib",
+            "coordinates": "org.jetbrains.kotlin:kotlin-stdlib:2.4.20",
+            "url": "https://kotlinlang.org/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Kotlin Stdlib Common",
+            "coordinates": "org.jetbrains.kotlin:kotlin-stdlib-common:2.4.20",
+            "url": "https://kotlinlang.org/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-collections-immutable",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.5.2",
+            "url": "https://github.com/Kotlin/kotlinx.collections.immutable",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-collections-immutable",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.5.2",
+            "url": "https://github.com/Kotlin/kotlinx.collections.immutable",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-coroutines-android",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.coroutines",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-coroutines-core",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.coroutines",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-coroutines-core",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.coroutines",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-serialization-core",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.serialization",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-serialization-core",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.serialization",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-serialization-json",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.serialization",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "kotlinx-serialization-json",
+            "coordinates": "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0",
+            "url": "https://github.com/Kotlin/kotlinx.serialization",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle Kotlin Extensions",
+            "coordinates": "androidx.lifecycle:lifecycle-runtime-ktx-android:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle Kotlin Extensions",
+            "coordinates": "androidx.lifecycle:lifecycle-runtime-ktx:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle LiveData",
+            "coordinates": "androidx.lifecycle:lifecycle-livedata:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Lifecycle LiveData Core",
+            "coordinates": "androidx.lifecycle:lifecycle-livedata-core:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Lifecycle Process",
+            "coordinates": "androidx.lifecycle:lifecycle-process:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Lifecycle Runtime",
+            "coordinates": "androidx.lifecycle:lifecycle-runtime-android:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle Runtime",
+            "coordinates": "androidx.lifecycle:lifecycle-runtime:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle Runtime Compose",
+            "coordinates": "androidx.lifecycle:lifecycle-runtime-compose-android:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle Runtime Compose",
+            "coordinates": "androidx.lifecycle:lifecycle-runtime-compose:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle ViewModel",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel-android:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle ViewModel",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Lifecycle ViewModel Compose",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel-compose-android:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle ViewModel Compose",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle ViewModel Kotlin Extensions",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Lifecycle ViewModel with SavedState",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle ViewModel with SavedState",
+            "coordinates": "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle-Common",
+            "coordinates": "androidx.lifecycle:lifecycle-common-jvm:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Lifecycle-Common",
+            "coordinates": "androidx.lifecycle:lifecycle-common:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Lifecycle-Common for Java 8",
+            "coordinates": "androidx.lifecycle:lifecycle-common-java8:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "LiveData Core Kotlin Extensions",
+            "coordinates": "androidx.lifecycle:lifecycle-livedata-core-ktx:2.11.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle#2.11.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Material Components for Android",
+            "coordinates": "com.google.android.material:material:1.14.0",
+            "url": "https://github.com/material-components/material-components-android",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 common module",
+            "coordinates": "androidx.media3:media3-common:1.9.0",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 Container module",
+            "coordinates": "androidx.media3:media3-container:1.9.0",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 Muxer module",
+            "coordinates": "androidx.media3:media3-muxer:1.9.0",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Navigation Event",
+            "coordinates": "androidx.navigationevent:navigationevent-android:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/navigationevent#1.0.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Navigation Event",
+            "coordinates": "androidx.navigationevent:navigationevent:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/navigationevent#1.0.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "NavigationEvent Compose",
+            "coordinates": "androidx.navigationevent:navigationevent-compose-android:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/navigationevent#1.0.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "NavigationEvent Compose",
+            "coordinates": "androidx.navigationevent:navigationevent-compose:1.0.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/navigationevent#1.0.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "okio",
+            "coordinates": "com.squareup.okio:okio-jvm:3.9.1",
+            "url": "https://github.com/square/okio/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "okio",
+            "coordinates": "com.squareup.okio:okio:3.9.1",
+            "url": "https://github.com/square/okio/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Parcelize Runtime",
+            "coordinates": "org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20",
+            "url": "https://kotlinlang.org/",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Profile Installer",
+            "coordinates": "androidx.profileinstaller:profileinstaller:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/profileinstaller#1.4.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Saved State",
+            "coordinates": "androidx.savedstate:savedstate-android:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/savedstate#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Saved State",
+            "coordinates": "androidx.savedstate:savedstate:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/savedstate#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Saved State Compose",
+            "coordinates": "androidx.savedstate:savedstate-compose-android:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/savedstate#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Saved State Compose",
+            "coordinates": "androidx.savedstate:savedstate-compose:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/savedstate#1.4.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "SavedState Kotlin Extensions",
+            "coordinates": "androidx.savedstate:savedstate-ktx:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/savedstate#1.4.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Tracing",
+            "coordinates": "androidx.tracing:tracing-android:1.3.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Tracing",
+            "coordinates": "androidx.tracing:tracing:1.3.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Tracing Kotlin Extensions",
+            "coordinates": "androidx.tracing:tracing-ktx:1.3.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/tracing#1.3.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "Transition",
+            "coordinates": "androidx.transition:transition:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/transition#1.5.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "VersionedParcelable",
+            "coordinates": "androidx.versionedparcelable:versionedparcelable:1.1.1",
+            "url": "http://developer.android.com/tools/extras/support-library.html",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "viewbinding",
+            "coordinates": "androidx.databinding:viewbinding:9.4.1",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "ViewModel Compose Hilt Extension",
+            "coordinates": "androidx.hilt:hilt-lifecycle-viewmodel-compose:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/hilt#1.4.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "ViewModel Hilt Extension",
+            "coordinates": "androidx.hilt:hilt-lifecycle-viewmodel:1.4.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/hilt#1.4.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "WindowManager",
+            "coordinates": "androidx.window:window:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/window#1.5.0",
+            "license": "Apache-2.0 (2)"
+        },
+        {
+            "name": "WindowManager Core",
+            "coordinates": "androidx.window:window-core-android:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/window#1.5.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "WindowManager Core",
+            "coordinates": "androidx.window:window-core:1.5.0",
+            "url": "https://developer.android.com/jetpack/androidx/releases/window#1.5.0",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "ZXing Core",
+            "coordinates": "com.google.zxing:core:3.5.4",
+            "license": "Apache-2.0"
+        }
+    ],
+    "licenses": {
+        "Apache-2.0": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n1. Definitions.\n\n\"License\" shall mean the terms and conditions for use, reproduction, and distribution as defined by Sections 1 through 9 of this document.\n\n\"Licensor\" shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.\n\n\"Legal Entity\" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity. For the purposes of this definition, \"control\" means (i) the power, direct or indirect, to cause the direction or management of such entity, whether by contract or otherwise, or (ii) ownership of fifty percent (50%) or more of the outstanding shares, or (iii) beneficial ownership of such entity.\n\n\"You\" (or \"Your\") shall mean an individual or Legal Entity exercising permissions granted by this License.\n\n\"Source\" form shall mean the preferred form for making modifications, including but not limited to software source code, documentation source, and configuration files.\n\n\"Object\" form shall mean any form resulting from mechanical transformation or translation of a Source form, including but not limited to compiled object code, generated documentation, and conversions to other media types.\n\n\"Work\" shall mean the work of authorship, whether in Source or Object form, made available under the License, as indicated by a copyright notice that is included in or attached to the work (an example is provided in the Appendix below).\n\n\"Derivative Works\" shall mean any work, whether in Source or Object form, that is based on (or derived from) the Work and for which the editorial revisions, annotations, elaborations, or other modifications represent, as a whole, an original work of authorship. For the purposes of this License, Derivative Works shall not include works that remain separable from, or merely link (or bind by name) to the interfaces of, the Work and Derivative Works thereof.\n\n\"Contribution\" shall mean any work of authorship, including the original version of the Work and any modifications or additions to that Work or Derivative Works thereof, that is intentionally submitted to Licensor for inclusion in the Work by the copyright owner or by an individual or Legal Entity authorized to submit on behalf of the copyright owner. For the purposes of this definition, \"submitted\" means any form of electronic, verbal, or written communication sent to the Licensor or its representatives, including but not limited to communication on electronic mailing lists, source code control systems, and issue tracking systems that are managed by, or on behalf of, the Licensor for the purpose of discussing and improving the Work, but excluding communication that is conspicuously marked or otherwise designated in writing by the copyright owner as \"Not a Contribution.\"\n\n\"Contributor\" shall mean Licensor and any individual or Legal Entity on behalf of whom a Contribution has been received by Licensor and subsequently incorporated within the Work.\n\n2. Grant of Copyright License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form.\n\n3. Grant of Patent License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Work, where such license applies only to those patent claims licensable by such Contributor that are necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Work to which such Contribution(s) was submitted. If You institute patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Work or a Contribution incorporated within the Work constitutes direct or contributory patent infringement, then any patent licenses granted to You under this License for that Work shall terminate as of the date such litigation is filed.\n\n4. Redistribution. You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, and in Source or Object form, provided that You meet the following conditions:\n\n     (a) You must give any other recipients of the Work or Derivative Works a copy of this License; and\n\n     (b) You must cause any modified files to carry prominent notices stating that You changed the files; and\n\n     (c) You must retain, in the Source form of any Derivative Works that You distribute, all copyright, patent, trademark, and attribution notices from the Source form of the Work, excluding those notices that do not pertain to any part of the Derivative Works; and\n\n     (d) If the Work includes a \"NOTICE\" text file as part of its distribution, then any Derivative Works that You distribute must include a readable copy of the attribution notices contained within such NOTICE file, excluding those notices that do not pertain to any part of the Derivative Works, in at least one of the following places: within a NOTICE text file distributed as part of the Derivative Works; within the Source form or documentation, if provided along with the Derivative Works; or, within a display generated by the Derivative Works, if and wherever such third-party notices normally appear. The contents of the NOTICE file are for informational purposes only and do not modify the License. You may add Your own attribution notices within Derivative Works that You distribute, alongside or as an addendum to the NOTICE text from the Work, provided that such additional attribution notices cannot be construed as modifying the License.\n\n     You may add Your own copyright statement to Your modifications and may provide additional or different license terms and conditions for use, reproduction, or distribution of Your modifications, or for any such Derivative Works as a whole, provided Your use, reproduction, and distribution of the Work otherwise complies with the conditions stated in this License.\n\n5. Submission of Contributions. Unless You explicitly state otherwise, any Contribution intentionally submitted for inclusion in the Work by You to the Licensor shall be under the terms and conditions of this License, without any additional terms or conditions. Notwithstanding the above, nothing herein shall supersede or modify the terms of any separate license agreement you may have executed with Licensor regarding such Contributions.\n\n6. Trademarks. This License does not grant permission to use the trade names, trademarks, service marks, or product names of the Licensor, except as required for reasonable and customary use in describing the origin of the Work and reproducing the content of the NOTICE file.\n\n7. Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, Licensor provides the Work (and each Contributor provides its Contributions) on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Work and assume any risks associated with Your exercise of permissions under this License.\n\n8. Limitation of Liability. In no event and under no legal theory, whether in tort (including negligence), contract, or otherwise, unless required by applicable law (such as deliberate and grossly negligent acts) or agreed to in writing, shall any Contributor be liable to You for damages, including any direct, indirect, special, incidental, or consequential damages of any character arising as a result of this License or out of the use or inability to use the Work (including but not limited to damages for loss of goodwill, work stoppage, computer failure or malfunction, or any and all other commercial damages or losses), even if such Contributor has been advised of the possibility of such damages.\n\n9. Accepting Warranty or Additional Liability. While redistributing the Work or Derivative Works thereof, You may choose to offer, and charge a fee for, acceptance of support, warranty, indemnity, or other liability obligations and/or rights consistent with this License. However, in accepting such obligations, You may act only on Your own behalf and on Your sole responsibility, not on behalf of any other Contributor, and only if You agree to indemnify, defend, and hold each Contributor harmless for any liability incurred by, or claims asserted against, such Contributor by reason of your accepting any such warranty or additional liability.\n\nEND OF TERMS AND CONDITIONS\n\nAPPENDIX: How to apply the Apache License to your work.\n\nTo apply the Apache License to your work, attach the following boilerplate notice, with the fields enclosed by brackets \"[]\" replaced with your own identifying information. (Don't include the brackets!)  The text should be enclosed in the appropriate comment syntax for the file format. We also recommend that a file or class name and description of purpose be included on the same \"printed page\" as the copyright notice for easier identification within third-party archives.\n\nCopyright [yyyy] [name of copyright owner]\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.\n",
+        "Apache-2.0 (2)": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS",
+        "Apache-2.0 (3)": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n\n-----\nNOTICE:\n\n# Notices for Eclipse Jakarta Dependency Injection\n\nThis content is produced and maintained by the Eclipse Jakarta Dependency Injection project.\n\n* Project home: https://projects.eclipse.org/projects/cdi.batch\n\n## Trademarks\n\nJakarta Dependency Injection is a trademark of the Eclipse Foundation.\n\n## Copyright\n\nAll content is the property of the respective authors or their employers. For\nmore information regarding authorship of content, please consult the listed\nsource code repository logs.\n\n## Declared Project Licenses\n\nThis program and the accompanying materials are made available under the terms\nof the Apache License, Version 2.0 which is available at\nhttps://www.apache.org/licenses/LICENSE-2.0.\n\nSPDX-License-Identifier: Apache-2.0\n\n## Source Code\n\nThe project maintains the following source code repositories:\n\nhttps://github.com/eclipse-ee4j/injection-api\nhttps://github.com/eclipse-ee4j/injection-spec\nhttps://github.com/eclipse-ee4j/injection-tck\n\n## Third-party Content\n\nThis project leverages the following third party content.\n\nNone\n\n## Cryptography\n\nNone",
+        "org.checkerframework:checker-qual": "Checker Framework qualifiers\nCopyright 2004-present by the Checker Framework developers\n\nMIT License:\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
+    }
+}

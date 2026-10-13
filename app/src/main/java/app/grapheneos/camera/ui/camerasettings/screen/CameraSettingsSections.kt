@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.CameraFront
 import androidx.compose.material.icons.outlined.CenterFocusWeak
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.HighQuality
@@ -78,6 +79,11 @@ internal fun LazyListScope.cameraSettingsSections(
         key = "storage",
         title = R.string.storage,
         rows = storageRows(uiState, onAction),
+    )
+    settingsSection(
+        key = "about",
+        title = R.string.camera_settings_section_about,
+        rows = aboutRows(uiState, onAction),
     )
 
     if (uiState.canResetSettings) {
@@ -332,6 +338,26 @@ private fun storageRows(
 
                     else -> null
                 },
+            )
+        },
+    )
+}
+
+private fun aboutRows(
+    uiState: UiState,
+    onAction: (Action) -> Unit,
+): List<SettingsRow> {
+    if (!uiState.showsLicenses) return emptyList()
+
+    return listOf(
+        SettingsRow(key = "licenses") { shape, modifier ->
+            SettingsClickableItem(
+                title = stringResource(R.string.camera_settings_licenses),
+                summary = stringResource(R.string.camera_settings_licenses_summary),
+                icon = Icons.Outlined.Description,
+                shape = shape,
+                modifier = modifier,
+                onClick = { onAction(Action.LicensesClicked) },
             )
         },
     )
