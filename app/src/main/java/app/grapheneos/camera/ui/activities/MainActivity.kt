@@ -84,6 +84,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.VolumeKey
 import app.grapheneos.camera.util.setBlurBitmapCompat
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.imageview.ShapeableImageView
@@ -393,10 +394,13 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         when (keyCode) {
-            KeyEvent.KEYCODE_VOLUME_DOWN,
-            KeyEvent.KEYCODE_VOLUME_UP,
-            KeyEvent.KEYCODE_CAMERA,
-            -> {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                onVolumeKeyReleased(VolumeKey.UP)
+            }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                onVolumeKeyReleased(VolumeKey.DOWN)
+            }
+            KeyEvent.KEYCODE_CAMERA -> {
                 tabLayout.settleNow()
                 viewfinder.onAction(CaptureAction.CaptureKeyPressed)
             }
@@ -414,11 +418,30 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            // Pretend as if the event was handled by the app (avoid volume bar from appearing)
-            return true
+        val volumeKey = volumeKeyOf(keyCode)
+        if (volumeKey == null || !viewfinder.uiState.value.handlesVolumeKeys) {
+            return super.onKeyDown(keyCode, event)
         }
-        return super.onKeyDown(keyCode, event)
+
+        if (event?.repeatCount == 0) {
+            viewfinder.onAction(CaptureAction.VolumeKeyEvent.Pressed(volumeKey))
+        }
+        return true
+    }
+
+    private fun onVolumeKeyReleased(key: VolumeKey) {
+        if (!viewfinder.uiState.value.handlesVolumeKeys) return
+
+        tabLayout.settleNow()
+        viewfinder.onAction(CaptureAction.VolumeKeyEvent.Released(key))
+    }
+
+    private fun volumeKeyOf(keyCode: Int): VolumeKey? {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> VolumeKey.UP
+            KeyEvent.KEYCODE_VOLUME_DOWN -> VolumeKey.DOWN
+            else -> null
+        }
     }
 
     override fun onResume() {

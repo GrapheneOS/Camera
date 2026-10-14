@@ -5,10 +5,12 @@ import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.data.settings.store.StoredAspectRatio
 import app.grapheneos.camera.data.settings.store.StoredCameraSettings
 import app.grapheneos.camera.data.settings.store.StoredCaptureMode
 import app.grapheneos.camera.data.settings.store.StoredGridType
+import app.grapheneos.camera.data.settings.store.StoredVolumeKeyAction
 import javax.inject.Inject
 
 internal interface CameraSettingsMapper {
@@ -27,6 +29,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             gridType = map(stored.gridType),
             focusTimeoutSeconds = stored.focusTimeoutSeconds
                 ?: SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
+            volumeKeyAction = map(stored.volumeKeyAction),
             selfTimerDurationSeconds = stored.selfTimerDurationSeconds
                 ?: SettingsDefaults.SELF_TIMER_DURATION,
             enableCameraSounds = stored.enableCameraSounds ?: SettingsDefaults.CAMERA_SOUNDS,
@@ -61,6 +64,9 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 ?.let(::map),
             focusTimeoutSeconds = settings.focusTimeoutSeconds
                 .takeUnless { it == SettingsDefaults.FOCUS_TIMEOUT_SECONDS },
+            volumeKeyAction = settings.volumeKeyAction
+                .takeUnless { it == SettingsDefaults.VOLUME_KEY_ACTION }
+                ?.let(::map),
             selfTimerDurationSeconds = settings.selfTimerDurationSeconds
                 .takeUnless { it == SettingsDefaults.SELF_TIMER_DURATION },
             enableCameraSounds = settings.enableCameraSounds
@@ -155,6 +161,26 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             GridType.THREE_BY_THREE -> StoredGridType.THREE_BY_THREE
             GridType.FOUR_BY_FOUR -> StoredGridType.FOUR_BY_FOUR
             GridType.GOLDEN_RATIO -> StoredGridType.GOLDEN_RATIO
+        }
+    }
+
+    private fun map(stored: StoredVolumeKeyAction?): VolumeKeyAction {
+        return when (stored) {
+            StoredVolumeKeyAction.SHUTTER -> VolumeKeyAction.SHUTTER
+            StoredVolumeKeyAction.ZOOM -> VolumeKeyAction.ZOOM
+            StoredVolumeKeyAction.VOLUME -> VolumeKeyAction.VOLUME
+            StoredVolumeKeyAction.OFF -> VolumeKeyAction.OFF
+            StoredVolumeKeyAction.UNKNOWN -> SettingsDefaults.VOLUME_KEY_ACTION
+            null -> SettingsDefaults.VOLUME_KEY_ACTION
+        }
+    }
+
+    private fun map(action: VolumeKeyAction): StoredVolumeKeyAction {
+        return when (action) {
+            VolumeKeyAction.SHUTTER -> StoredVolumeKeyAction.SHUTTER
+            VolumeKeyAction.ZOOM -> StoredVolumeKeyAction.ZOOM
+            VolumeKeyAction.VOLUME -> StoredVolumeKeyAction.VOLUME
+            VolumeKeyAction.OFF -> StoredVolumeKeyAction.OFF
         }
     }
 }

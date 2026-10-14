@@ -26,9 +26,11 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -205,6 +207,7 @@ class ViewfinderRecordingFlowTest {
                 resolveAvailableModes = mockk(relaxed = true),
                 resolveDroppedVideoQuality = mockk(relaxed = true),
                 playCameraSound = mockk(relaxed = true),
+                nextZoomStopMapper = NextZoomStopMapperImpl(),
                 mainDispatcher = mainDispatcher,
             ),
             captureDelegate = ViewfinderCaptureDelegateImpl(
@@ -235,6 +238,7 @@ class ViewfinderRecordingFlowTest {
             zoomUiStateMapper = ZoomUiStateMapperImpl(),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
             swipeEffectMapper = SwipeEffectMapperImpl(),
+            volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
             mainDispatcher = mainDispatcher,
         )
     }

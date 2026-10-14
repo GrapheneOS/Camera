@@ -49,6 +49,8 @@ internal data class StoredCameraSettings(
     val gridType: StoredGridType? = null,
     @SerialName("focus_timeout_seconds")
     val focusTimeoutSeconds: Long? = null,
+    @SerialName("volume_key_action")
+    val volumeKeyAction: StoredVolumeKeyAction? = null,
     @SerialName("self_timer_duration_seconds")
     val selfTimerDurationSeconds: Int? = null,
     @SerialName("enable_camera_sounds")
@@ -202,6 +204,44 @@ internal object StoredAspectRatioSerializer : KSerializer<StoredAspectRatio> {
             StoredAspectRatio.UNKNOWN -> UNKNOWN_WIRE_VALUE
             StoredAspectRatio.RATIO_4_3 -> 0
             StoredAspectRatio.RATIO_16_9 -> 1
+        }
+    }
+}
+
+@Serializable(with = StoredVolumeKeyActionSerializer::class)
+internal enum class StoredVolumeKeyAction {
+    UNKNOWN,
+    SHUTTER,
+    ZOOM,
+    VOLUME,
+    OFF,
+}
+
+internal object StoredVolumeKeyActionSerializer : KSerializer<StoredVolumeKeyAction> {
+
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
+        serialName = "StoredVolumeKeyAction",
+        kind = PrimitiveKind.STRING,
+    )
+
+    override fun serialize(encoder: Encoder, value: StoredVolumeKeyAction) {
+        encoder.encodeString(wireName(value))
+    }
+
+    override fun deserialize(decoder: Decoder): StoredVolumeKeyAction {
+        val stored = decoder.decodeString()
+
+        return StoredVolumeKeyAction.entries.firstOrNull { wireName(it) == stored }
+            ?: StoredVolumeKeyAction.UNKNOWN
+    }
+
+    private fun wireName(action: StoredVolumeKeyAction): String {
+        return when (action) {
+            StoredVolumeKeyAction.UNKNOWN -> "UNKNOWN"
+            StoredVolumeKeyAction.SHUTTER -> "SHUTTER"
+            StoredVolumeKeyAction.ZOOM -> "ZOOM"
+            StoredVolumeKeyAction.VOLUME -> "VOLUME"
+            StoredVolumeKeyAction.OFF -> "OFF"
         }
     }
 }

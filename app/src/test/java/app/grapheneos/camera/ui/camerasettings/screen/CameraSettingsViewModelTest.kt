@@ -13,6 +13,7 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.media.model.StorageLocationChange
 import app.grapheneos.camera.domain.media.usecase.ChangeStorageLocation
@@ -200,6 +201,17 @@ class CameraSettingsViewModelTest {
         viewModel.onAction(Action.FocusTimeoutConfirmed(seconds = 0))
 
         assertEquals(0L, storedSettings.value.focusTimeoutSeconds)
+        assertNull(viewModel.uiState.value.dialog)
+    }
+
+    @Test
+    fun volumeKeyActionConfirmed_isStoredAndClosesTheDialog() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(Action.VolumeKeyActionClicked)
+        viewModel.onAction(Action.VolumeKeyActionConfirmed(VolumeKeyAction.VOLUME))
+
+        assertEquals(VolumeKeyAction.VOLUME, storedSettings.value.volumeKeyAction)
         assertNull(viewModel.uiState.value.dialog)
     }
 

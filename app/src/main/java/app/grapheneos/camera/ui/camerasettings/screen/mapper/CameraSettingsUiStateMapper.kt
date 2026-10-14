@@ -13,6 +13,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiMod
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.VolumeKeyActionOption
 import javax.inject.Inject
 import kotlinx.collections.immutable.toImmutableList
 
@@ -49,6 +50,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
                 default = SettingsDefaults.CAMERA_SOUNDS,
             ),
             focusTimeout = focusTimeout(state),
+            volumeKeyAction = volumeKeyAction(state),
             storageSpace = storageSpace(state),
             storageLocation = storageLocation(state),
             showsLicenses = !state.isSecureSession,
@@ -142,6 +144,18 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             selected = selected,
             options = options.toImmutableList(),
             isChanged = selected != SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
+        )
+    }
+
+    private fun volumeKeyAction(
+        state: CameraSettingsState,
+    ): ChoiceSettingUiModel<VolumeKeyActionOption> {
+        val selected = VolumeKeyActionOption.of(state.settings.volumeKeyAction)
+
+        return ChoiceSettingUiModel(
+            selected = selected,
+            options = VolumeKeyActionOption.entries.toImmutableList(),
+            isChanged = selected.action != SettingsDefaults.VOLUME_KEY_ACTION,
         )
     }
 

@@ -9,6 +9,7 @@ import app.grapheneos.camera.data.media.model.StorageSpace
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CaptureModeOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
@@ -40,6 +41,7 @@ class CameraSettingsUiStateMapperTest {
         assertFalse(uiState.photoQuality.isChanged)
         assertFalse(uiState.videoStabilization.isChanged)
         assertFalse(uiState.focusTimeout.isChanged)
+        assertFalse(uiState.volumeKeyAction.isChanged)
         assertFalse(uiState.canResetSettings)
         assertEquals(false, uiState.storageLocation?.isChanged)
     }
@@ -51,6 +53,7 @@ class CameraSettingsUiStateMapperTest {
                 settings = CameraSettings(
                     gridType = GridType.GOLDEN_RATIO,
                     focusTimeoutSeconds = 10,
+                    volumeKeyAction = VolumeKeyAction.ZOOM,
                     enableCameraSounds = false,
                     enableEis = false,
                     photoQuality = 80,
@@ -64,6 +67,7 @@ class CameraSettingsUiStateMapperTest {
         assertTrue(uiState.photoQuality.isChanged)
         assertTrue(uiState.videoStabilization.isChanged)
         assertTrue(uiState.focusTimeout.isChanged)
+        assertTrue(uiState.volumeKeyAction.isChanged)
         assertTrue(uiState.canResetSettings)
         assertEquals(true, uiState.storageLocation?.isChanged)
     }

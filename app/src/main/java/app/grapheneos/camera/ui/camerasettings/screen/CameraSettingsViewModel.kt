@@ -185,6 +185,10 @@ internal class CameraSettingsViewModel @Inject constructor(
                 updateSettings { it.copy(focusTimeoutSeconds = action.seconds) }
             }
 
+            is Action.VolumeKeyActionConfirmed -> {
+                updateSettings { it.copy(volumeKeyAction = action.action) }
+            }
+
             is Action.ResetSettingsConfirmed -> {
                 updateSettings { state.settingsAfterReset() }
             }

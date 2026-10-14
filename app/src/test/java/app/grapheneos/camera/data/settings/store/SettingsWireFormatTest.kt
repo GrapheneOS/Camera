@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapperImpl
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,6 +25,7 @@ class SettingsWireFormatTest {
         aspectRatio = AspectRatio.RATIO_16_9,
         gridType = GridType.GOLDEN_RATIO,
         focusTimeoutSeconds = SOME_FOCUS_TIMEOUT_SECONDS,
+        volumeKeyAction = VolumeKeyAction.ZOOM,
         selfTimerDurationSeconds = SOME_SELF_TIMER_DURATION,
         enableCameraSounds = false,
         includeAudio = false,
@@ -139,6 +141,46 @@ class SettingsWireFormatTest {
                     encodeCommon(StoredCameraSettings(gridType = it))
                 },
             )
+        }
+    }
+
+    @Test
+    fun volumeKeyAction_everyConstant_roundTripsThroughItsStoredName() {
+        runTest {
+            VolumeKeyAction.entries.forEach { action ->
+                val settings = CameraSettings(volumeKeyAction = action)
+
+                assertEquals(action, decode(encode(settings)).volumeKeyAction)
+            }
+        }
+    }
+
+    @Test
+    fun volumeKeyActionNames_areStableWireKeys() {
+        runTest {
+            assertEquals(
+                mapOf(
+                    StoredVolumeKeyAction.UNKNOWN to
+                        """{"common":{"volume_key_action":"UNKNOWN"}}""",
+                    StoredVolumeKeyAction.SHUTTER to
+                        """{"common":{"volume_key_action":"SHUTTER"}}""",
+                    StoredVolumeKeyAction.ZOOM to """{"common":{"volume_key_action":"ZOOM"}}""",
+                    StoredVolumeKeyAction.VOLUME to """{"common":{"volume_key_action":"VOLUME"}}""",
+                    StoredVolumeKeyAction.OFF to """{"common":{"volume_key_action":"OFF"}}""",
+                ),
+                StoredVolumeKeyAction.entries.associateWith {
+                    encodeCommon(StoredCameraSettings(volumeKeyAction = it))
+                },
+            )
+        }
+    }
+
+    @Test
+    fun volumeKeyAction_aNameThisVersionDoesNotKnow_readsAsTheDefault() {
+        runTest {
+            val stored = """{"common":{"volume_key_action":"FROM_THE_FUTURE"}}"""
+
+            assertEquals(SettingsDefaults.VOLUME_KEY_ACTION, decode(stored).volumeKeyAction)
         }
     }
 
@@ -335,6 +377,7 @@ class SettingsWireFormatTest {
 
         const val EVERY_SETTING_ON_DISK = """{"common":{"aspect_ratio":1,""" +
             """"grid_type":"GOLDEN_RATIO","focus_timeout_seconds":10,""" +
+            """"volume_key_action":"ZOOM",""" +
             """"self_timer_duration_seconds":3,"enable_camera_sounds":false,""" +
             """"include_audio":false,"enable_eis":false,"capture_mode":"QUALITY",""" +
             """"select_highest_resolution":true,"photo_quality":71,"geo_tagging":true,""" +

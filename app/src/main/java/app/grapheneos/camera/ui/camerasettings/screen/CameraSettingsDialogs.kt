@@ -20,6 +20,7 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.GridOption
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityLevel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.VolumeKeyActionOption
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -46,6 +47,11 @@ internal fun CameraSettingsDialogs(
 
         is Dialog.FocusTimeout -> FocusTimeoutSettingDialog(
             focusTimeout = uiState.focusTimeout,
+            onAction = onAction,
+        )
+
+        is Dialog.VolumeKeyAction -> VolumeKeyActionSettingDialog(
+            volumeKeyAction = uiState.volumeKeyAction,
             onAction = onAction,
         )
 
@@ -130,6 +136,23 @@ private fun FocusTimeoutSettingDialog(
         ),
         selected = focusTimeout.selected,
         onConfirm = { onAction(Action.FocusTimeoutConfirmed(it)) },
+        onDismiss = { onAction(Action.DialogDismissed) },
+    )
+}
+
+@Composable
+private fun VolumeKeyActionSettingDialog(
+    volumeKeyAction: ChoiceSettingUiModel<VolumeKeyActionOption>,
+    onAction: (Action) -> Unit,
+) {
+    SettingsChoiceDialog(
+        title = stringResource(R.string.camera_settings_volume_key_action),
+        choices = choices(
+            options = volumeKeyAction.options,
+            label = { stringResource(it.label) },
+        ),
+        selected = volumeKeyAction.selected,
+        onConfirm = { onAction(Action.VolumeKeyActionConfirmed(it.action)) },
         onDismiss = { onAction(Action.DialogDismissed) },
     )
 }

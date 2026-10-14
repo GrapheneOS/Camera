@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
 import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.VideoStable
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -294,6 +295,17 @@ private fun controlsRows(
                 shape = shape,
                 modifier = modifier,
                 onClick = { onAction(Action.FocusTimeoutClicked) },
+            )
+        },
+        SettingsRow(key = "volume_key_action") { shape, modifier ->
+            SettingsClickableItem(
+                title = stringResource(R.string.camera_settings_volume_key_action),
+                summary = stringResource(uiState.volumeKeyAction.selected.label),
+                icon = Icons.Outlined.TouchApp,
+                isChanged = uiState.volumeKeyAction.isChanged,
+                shape = shape,
+                modifier = modifier,
+                onClick = { onAction(Action.VolumeKeyActionClicked) },
             )
         },
     )

@@ -19,13 +19,18 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -64,6 +69,8 @@ interface ViewfinderCameraDelegate {
     fun toggleTorch()
 
     fun stepZoom(step: Float)
+    fun startZoomStepping(direction: ZoomDirection)
+    fun stopZoomStepping()
     fun scaleZoom(scaleFactor: Float)
     fun setLinearZoom(linearZoom: Float)
     fun setExposureCompensation(compensationIndex: Int)
@@ -83,6 +90,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
     private val playCameraSound: PlayCameraSound,
+    private val nextZoomStopMapper: NextZoomStopMapper,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCameraDelegate {
 
@@ -93,6 +101,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private var isBound = false
 
     private var host: ViewfinderHost? = null
+    private var zoomStepping: Job? = null
 
     private val _cameraEvents = Channel<ViewfinderCameraEvent>(capacity = Channel.BUFFERED)
     override val cameraEvents: Flow<ViewfinderCameraEvent> = _cameraEvents.receiveAsFlow()
@@ -285,6 +294,20 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         session.setZoomRatio(zoomRatio)
     }
 
+    override fun startZoomStepping(direction: ZoomDirection) {
+        stopZoomStepping()
+
+        zoomStepping = scope.launch(mainDispatcher) {
+            while (stepToNextZoomStop(direction)) {
+                delay(ZOOM_STOP_INTERVAL)
+            }
+        }
+    }
+
+    override fun stopZoomStepping() {
+        zoomStepping?.cancel()
+    }
+
     override fun scaleZoom(scaleFactor: Float) {
         val zoomRatio = session.zoom?.let { it.zoomRatio * scaleFactor } ?: 1f
 
@@ -402,6 +425,14 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         }
     }
 
+    private fun stepToNextZoomStop(direction: ZoomDirection): Boolean {
+        val zoom = session.zoom.takeUnless { stateHolder.state.value.isQrMode() }
+        val stop = zoom?.let { nextZoomStopMapper.map(zoom = it, direction = direction) }
+
+        stop?.let(session::setZoomRatio)
+        return stop != null
+    }
+
     private fun showQrResult(text: String) {
         if (stateHolder.state.value.session.isQrResultShown) return
 
@@ -466,5 +497,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     private companion object {
         private const val TAG = "ViewfinderCamera"
+
+        private val ZOOM_STOP_INTERVAL = 500.milliseconds
     }
 }

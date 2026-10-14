@@ -10,5 +10,7 @@ internal sealed interface CameraSettingsDialog {
 
     data object FocusTimeout : CameraSettingsDialog
 
+    data object VolumeKeyAction : CameraSettingsDialog
+
     data object ResetSettings : CameraSettingsDialog
 }

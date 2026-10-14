@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
@@ -93,6 +94,23 @@ class ViewfinderUiStateMapperTest {
         assertEquals(R.drawable.torch_off_button, state.captureButton.icon)
         assertEquals(R.string.turn_torch_on, state.captureButton.description)
         assertEquals(android.R.color.transparent, state.captureButton.background)
+    }
+
+    @Test
+    fun volumeKeys_leftToChangeTheVolume_areNotHandled() {
+        val handled = VolumeKeyAction.entries.associateWith { action ->
+            map(settings = CameraSettings(volumeKeyAction = action)).handlesVolumeKeys
+        }
+
+        assertEquals(
+            mapOf(
+                VolumeKeyAction.SHUTTER to true,
+                VolumeKeyAction.ZOOM to true,
+                VolumeKeyAction.VOLUME to false,
+                VolumeKeyAction.OFF to true,
+            ),
+            handled,
+        )
     }
 
     @Test

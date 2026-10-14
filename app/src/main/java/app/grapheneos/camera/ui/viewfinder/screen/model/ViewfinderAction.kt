@@ -40,6 +40,15 @@ sealed interface ViewfinderAction {
             val rotation: Int,
         ) : CameraAction
 
+        sealed interface ZoomStepKey : CameraAction {
+
+            data class Pressed(
+                val direction: ZoomDirection,
+            ) : ZoomStepKey
+
+            data object Released : ZoomStepKey
+        }
+
         sealed interface Preview : CameraAction {
 
             data class Tapped(
@@ -82,6 +91,19 @@ sealed interface ViewfinderAction {
         data class CapturedPreviewConfirmed(
             val bitmap: Bitmap,
         ) : CaptureAction
+
+        sealed interface VolumeKeyEvent : CaptureAction {
+
+            val key: VolumeKey
+
+            data class Pressed(
+                override val key: VolumeKey,
+            ) : VolumeKeyEvent
+
+            data class Released(
+                override val key: VolumeKey,
+            ) : VolumeKeyEvent
+        }
     }
 
     sealed interface RecordingAction : ViewfinderAction {
