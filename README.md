@@ -1,2 +1,1 @@
-This is the new GrapheneOS Camera app based on Android's modern CameraX
-library. It replaces AOSP Camera for GrapheneOS.
+GrapheneOS includes our own modern camera app focused on privacy and security, also available on other Android based operating systems through the Google Play Store and GrapheneOS App Store. It includes modes for capturing images, videos and QR and barcode scanning along with additional modes based on CameraX vendor extensions (Portrait, HDR, Night, Face Retouch and Auto) on devices where they're available (Pixels currently only have support for Night mode).
