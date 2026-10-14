@@ -6,12 +6,16 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
 import dagger.Binds
@@ -65,4 +69,16 @@ internal abstract class ViewfinderBindsModule {
     abstract fun bindSwipeEffectMapper(
         impl: SwipeEffectMapperImpl,
     ): SwipeEffectMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindVolumeKeyActionMapper(
+        impl: VolumeKeyActionMapperImpl,
+    ): VolumeKeyActionMapper
+
+    @Binds
+    @Reusable
+    abstract fun bindNextZoomStopMapper(
+        impl: NextZoomStopMapperImpl,
+    ): NextZoomStopMapper
 }

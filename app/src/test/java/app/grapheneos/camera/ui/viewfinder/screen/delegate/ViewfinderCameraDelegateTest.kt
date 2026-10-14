@@ -21,19 +21,24 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
 import com.google.zxing.BarcodeFormat
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -285,6 +290,33 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
+    fun zoomStepping_stepsAtOnceThenAtEachIntervalWhileHeld() {
+        trackZoomRatio(start = 1f)
+
+        val delegate = createAttachedDelegate()
+        delegate.startZoomStepping(ZoomDirection.IN)
+        verify(exactly = 1) { session.setZoomRatio(2f) }
+
+        scope.advanceTimeBy(ZOOM_STOP_INTERVAL)
+        scope.runCurrent()
+
+        verify(exactly = 1) { session.setZoomRatio(ZOOM.maxZoomRatio) }
+    }
+
+    @Test
+    fun zoomStepping_stopped_takesNoFurtherStep() {
+        trackZoomRatio(start = 1f)
+
+        val delegate = createAttachedDelegate()
+        delegate.startZoomStepping(ZoomDirection.IN)
+        delegate.stopZoomStepping()
+        scope.advanceTimeBy(ZOOM_STOP_INTERVAL * 4)
+        scope.runCurrent()
+
+        verify(exactly = 1) { session.setZoomRatio(any()) }
+    }
+
+    @Test
     fun scaleZoom_scalesTheCurrentRatio() {
         every { session.zoom } returns ZOOM
 
@@ -512,6 +544,12 @@ class ViewfinderCameraDelegateTest {
         )
     }
 
+    private fun trackZoomRatio(start: Float) {
+        var zoomRatio = start
+        every { session.zoom } answers { ZOOM.copy(zoomRatio = zoomRatio, minZoomRatio = 0.5f) }
+        every { session.setZoomRatio(any()) } answers { zoomRatio = firstArg() }
+    }
+
     private fun createAttachedDelegate(
         showsCameraModeTabs: Boolean = true,
     ): ViewfinderCameraDelegate {
@@ -521,6 +559,7 @@ class ViewfinderCameraDelegateTest {
             resolveAvailableModes = resolveAvailableModes,
             resolveDroppedVideoQuality = resolveDroppedVideoQuality,
             playCameraSound = playCameraSound,
+            nextZoomStopMapper = NextZoomStopMapperImpl(),
             mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 
@@ -538,6 +577,8 @@ class ViewfinderCameraDelegateTest {
     }
 
     private companion object {
+        val ZOOM_STOP_INTERVAL = 500.milliseconds
+
         val ZOOM = CameraZoom(
             zoomRatio = 2f,
             linearZoom = 0.5f,

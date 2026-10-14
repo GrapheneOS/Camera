@@ -27,6 +27,10 @@ internal data class CameraSettingsUiState(
         selected = SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
         options = persistentListOf(),
     ),
+    val volumeKeyAction: ChoiceSettingUiModel<VolumeKeyActionOption> = ChoiceSettingUiModel(
+        selected = VolumeKeyActionOption.of(SettingsDefaults.VOLUME_KEY_ACTION),
+        options = persistentListOf(),
+    ),
     val storageSpace: StorageSpaceUiModel? = null,
     val storageLocation: StorageLocationUiModel? = null,
     val showsLicenses: Boolean = false,

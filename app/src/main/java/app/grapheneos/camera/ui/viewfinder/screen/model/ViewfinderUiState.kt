@@ -42,6 +42,7 @@ data class ViewfinderUiState(
     val isQrMode: Boolean = false,
     val isVideoMode: Boolean = false,
     val scanAllCodes: Boolean = false,
+    val handlesVolumeKeys: Boolean = true,
     val availableModes: Set<CameraMode> = emptySet(),
     val sensorOrientationDegrees: Int? = null,
     val iconRotationDegrees: Float = 0f,

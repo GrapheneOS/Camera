@@ -28,6 +28,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
@@ -83,6 +84,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val galleryDelegate: ViewfinderGalleryDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val swipeEffectMapper: SwipeEffectMapper,
+    private val volumeKeyActionMapper: VolumeKeyActionMapper,
     uiStateMapper: ViewfinderUiStateMapper,
     zoomUiStateMapper: ZoomUiStateMapper,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
@@ -183,6 +185,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
             is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
             is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
+            is CameraAction.ZoomStepKey -> onZoomStepKey(action)
             is CameraAction.Preview -> onPreviewAction(action)
             is CameraAction.ZoomSliderDragged -> cameraDelegate.setLinearZoom(action.linearZoom)
 
@@ -214,6 +217,15 @@ class ViewfinderViewModel @AssistedInject constructor(
                     bitmap = action.bitmap,
                     outputUri = outputUri,
                 )
+            }
+
+            is CaptureAction.VolumeKeyEvent -> {
+                volumeKeyActionMapper
+                    .map(
+                        event = action,
+                        volumeKeyAction = state().settings.volumeKeyAction,
+                    )
+                    ?.let(::onAction)
             }
         }
     }
@@ -272,6 +284,18 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             is PermissionAction.DialogDismissed -> {
                 onPermissionDialogDismissed(action.permission)
+            }
+        }
+    }
+
+    private fun onZoomStepKey(action: CameraAction.ZoomStepKey) {
+        when (action) {
+            is CameraAction.ZoomStepKey.Released -> {
+                cameraDelegate.stopZoomStepping()
+            }
+
+            is CameraAction.ZoomStepKey.Pressed -> {
+                cameraDelegate.startZoomStepping(action.direction)
             }
         }
     }

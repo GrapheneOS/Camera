@@ -4,6 +4,7 @@ import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
@@ -67,6 +68,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             isQrMode = state.isQrMode(),
             isVideoMode = isVideoMode,
             scanAllCodes = settings.scanAllCodes,
+            handlesVolumeKeys = settings.volumeKeyAction != VolumeKeyAction.VOLUME,
             availableModes = state.session.availableModes,
             sensorOrientationDegrees = state.session.sensorOrientationDegrees,
             iconRotationDegrees = when {

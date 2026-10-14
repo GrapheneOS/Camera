@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.camerasettings.screen.model
 import android.net.Uri
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.settings.model.GridType
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 
 internal sealed interface CameraSettingsAction {
 
@@ -30,6 +31,10 @@ internal sealed interface CameraSettingsAction {
 
     data object FocusTimeoutClicked : DialogSettingClicked {
         override val dialog: CameraSettingsDialog = CameraSettingsDialog.FocusTimeout
+    }
+
+    data object VolumeKeyActionClicked : DialogSettingClicked {
+        override val dialog: CameraSettingsDialog = CameraSettingsDialog.VolumeKeyAction
     }
 
     data object ResetSettingsClicked : DialogSettingClicked {
@@ -83,6 +88,10 @@ internal sealed interface CameraSettingsAction {
 
     data class FocusTimeoutConfirmed(
         val seconds: Long,
+    ) : DialogConfirmed
+
+    data class VolumeKeyActionConfirmed(
+        val action: VolumeKeyAction,
     ) : DialogConfirmed
 
     data object ResetSettingsConfirmed : DialogConfirmed

@@ -12,6 +12,8 @@ object SettingsDefaults {
 
     val GRID_TYPE = GridType.NONE
 
+    val VOLUME_KEY_ACTION = VolumeKeyAction.SHUTTER
+
     val CAPTURE_MODE = CaptureMode.SPEED
 
     val ENABLED_BARCODE_FORMATS = setOf(BarcodeFormat.QR_CODE.name)
