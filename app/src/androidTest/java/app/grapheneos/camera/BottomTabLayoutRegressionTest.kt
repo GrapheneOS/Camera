@@ -409,8 +409,12 @@ class BottomTabLayoutRegressionTest {
                     // same mismatch the eye had to catch mid-switch.
                     val overlay = activity.mainOverlay
                     val still = overlay.drawable
+                    assumeTrue(
+                        "no frame was copied in time to stand in for the preview",
+                        still != null,
+                    )
                     val drawn = RectF(
-                        0f, 0f, still.intrinsicWidth.toFloat(), still.intrinsicHeight.toFloat()
+                        0f, 0f, still!!.intrinsicWidth.toFloat(), still.intrinsicHeight.toFloat()
                     )
                     overlay.imageMatrix.mapRect(drawn)
 

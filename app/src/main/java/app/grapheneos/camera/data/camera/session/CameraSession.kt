@@ -616,7 +616,7 @@ internal class CameraSessionImpl @Inject constructor(
                 }
 
                 snapshotProbeCache[probeKey] = inVideoSnapshotSupportResolver.resolve(
-                    selectedFeatures = setOfNotNull(
+                    featuresByPriority = listOfNotNull(
                         requiredQualityFeature,
                         requiredHdrFeature,
                     ),

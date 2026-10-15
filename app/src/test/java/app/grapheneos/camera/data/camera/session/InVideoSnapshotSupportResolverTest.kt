@@ -29,14 +29,14 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_noQualityAskedForAndTheStreamsBind_keepsSnapshots() {
         supports(withSnapshots = true, features = emptySet())
 
-        val support = resolver.resolve(selectedFeatures = emptySet(), probe = probe)
+        val support = resolver.resolve(featuresByPriority = emptyList(), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
     }
 
     @Test
     fun resolve_noQualityAskedForAndTheStreamsDoNotBind_dropsSnapshots() {
-        val support = resolver.resolve(selectedFeatures = emptySet(), probe = probe)
+        val support = resolver.resolve(featuresByPriority = emptyList(), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }
@@ -45,7 +45,7 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_theQualityBindsWithSnapshots_keepsSnapshotsWithoutAskingAgain() {
         supports(withSnapshots = true, features = setOf(QUALITY))
 
-        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
         verify(exactly = 1) { probe.isSupported(withSnapshots = true, features = setOf(QUALITY)) }
@@ -56,7 +56,7 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_theQualityBindsOnlyWithoutSnapshots_givesUpTheSnapshots() {
         supports(withSnapshots = false, features = setOf(QUALITY))
 
-        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS, support)
     }
@@ -65,7 +65,7 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_theQualityBindsNeitherWay_keepsSnapshotsAndLeavesTheQualityToTheResolver() {
         supports(withSnapshots = true, features = emptySet())
 
-        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
     }
@@ -75,14 +75,33 @@ class InVideoSnapshotSupportResolverTest {
         supports(withSnapshots = true, features = setOf(QUALITY))
         supports(withSnapshots = false, features = setOf(QUALITY, HDR))
 
-        val support = resolver.resolve(selectedFeatures = setOf(QUALITY, HDR), probe = probe)
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY, HDR), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS, support)
     }
 
     @Test
+    fun resolve_hdrBindsNeitherWayAndTheQualityOnlyWithoutSnapshots_keepsTheQuality() {
+        supports(withSnapshots = true, features = emptySet())
+        supports(withSnapshots = false, features = setOf(QUALITY))
+
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY, HDR), probe = probe)
+
+        assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS, support)
+    }
+
+    @Test
+    fun resolve_hdrBindsNeitherWayAndTheQualityWithSnapshots_keepsSnapshots() {
+        supports(withSnapshots = true, features = setOf(QUALITY))
+
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY, HDR), probe = probe)
+
+        assertEquals(InVideoSnapshotSupport.Supported, support)
+    }
+
+    @Test
     fun resolve_nothingBinds_dropsSnapshots() {
-        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
+        val support = resolver.resolve(featuresByPriority = listOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }

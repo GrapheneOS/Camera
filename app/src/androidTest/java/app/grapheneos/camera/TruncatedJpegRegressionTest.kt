@@ -117,6 +117,7 @@ class TruncatedJpegRegressionTest {
             cropRect = null,
             orientationDegrees = 0,
             shouldUseExifOrientation = false,
+            isUltraHdr = false,
         )
         val storeCapturedImage = mockk<StoreCapturedImage>()
         coEvery { storeCapturedImage(capture(stored), any(), any(), any()) } returns

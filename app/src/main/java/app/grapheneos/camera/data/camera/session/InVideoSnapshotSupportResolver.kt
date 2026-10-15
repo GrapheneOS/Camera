@@ -10,8 +10,26 @@ fun interface SessionProbe {
 
 interface InVideoSnapshotSupportResolver {
 
+    /**
+     * Decides whether in-video snapshots can stay in a video session.
+     *
+     * [featuresByPriority] are the features the session will request, highest priority first:
+     * the video quality, then HDR. They are checked together first, then without the last one,
+     * and so on: the order in which the feature group gives them up. For each set:
+     * - it binds with snapshots: the snapshots stay;
+     * - it binds only without snapshots: the snapshots are dropped, because the user chose the
+     *   quality and HDR, and the snapshots are just a default;
+     * - it binds neither way: the next, smaller set is checked.
+     *
+     * When no set binds, the snapshots stay if the plain streams bind with them: the camera
+     * can't record the selection either way, so dropping them would not help.
+     *
+     * Without these checks the snapshots would stay on a camera that can't keep them at the
+     * chosen quality, and CameraX would drop the quality instead, telling the user that the
+     * camera doesn't support it.
+     */
     fun resolve(
-        selectedFeatures: Set<GroupableFeature>,
+        featuresByPriority: List<GroupableFeature>,
         probe: SessionProbe,
     ): InVideoSnapshotSupport
 }
@@ -20,34 +38,34 @@ internal class InVideoSnapshotSupportResolverImpl @Inject constructor() :
     InVideoSnapshotSupportResolver {
 
     override fun resolve(
-        selectedFeatures: Set<GroupableFeature>,
+        featuresByPriority: List<GroupableFeature>,
         probe: SessionProbe,
     ): InVideoSnapshotSupport {
-        // When a quality feature or HDR is about to be requested, the probe has to require it
-        // too: a camera can be able to run the three plain streams yet not at the
-        // chosen quality, and a probe without it would keep the snapshot use case and leave
-        // the conflict to the feature-group resolver -- which resolves it by dropping the
-        // *quality*, with a notice blaming the camera for a quality it does support. The
-        // quality wins the conflict because it is an explicit choice from the settings while
-        // in-video snapshots are an implicit capability (the same reasoning as the preferred
-        // feature ordering in startCamera), and giving up the snapshots is already the
-        // established answer when they can't be bound at all. The plain-stream fallback keeps
-        // the snapshots when the quality is unreachable even without them: dropping them would
-        // buy nothing, and the resolver's "unsupported quality" notice is genuinely true then.
-        return when {
-            selectedFeatures.isEmpty() -> plainStreamSupport(probe)
+        val featureSets = (featuresByPriority.size downTo 1).map { count ->
+            featuresByPriority.take(count).toSet()
+        }
 
+        return featureSets.firstNotNullOfOrNull {
+            support(it, probe)
+        } ?: plainStreamSupport(probe)
+    }
+
+    private fun support(
+        features: Set<GroupableFeature>,
+        probe: SessionProbe,
+    ): InVideoSnapshotSupport? {
+        return when {
             probe.isSupported(
                 withSnapshots = true,
-                features = selectedFeatures,
+                features = features,
             ) -> InVideoSnapshotSupport.Supported
 
             probe.isSupported(
                 withSnapshots = false,
-                features = selectedFeatures,
+                features = features,
             ) -> InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS
 
-            else -> plainStreamSupport(probe)
+            else -> null
         }
     }
 
