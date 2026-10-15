@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -66,6 +67,7 @@ class ViewfinderCameraDelegateTest {
         thumbnailSize = ThumbnailSize(width = 1, height = 1),
     )
     private val session = mockk<CameraSession>(relaxed = true)
+    private val torch = mockk<TorchControl>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
     private val resolveDroppedVideoQuality = mockk<ResolveDroppedVideoQuality>()
     private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
@@ -432,7 +434,7 @@ class ViewfinderCameraDelegateTest {
 
     @Test
     fun bindCamera_leavesTheTorchOff() {
-        every { session.isTorchOn } returns true
+        every { torch.isOn } returns true
 
         val delegate = createAttachedDelegate()
         delegate.toggleTorch()
@@ -466,10 +468,10 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun toggleTorch_recordsWhatTheSessionReportsAfterwards() {
+    fun toggleTorch_recordsWhatTheTorchReportsAfterwards() {
         var torchOn = false
-        every { session.isTorchOn } answers { torchOn }
-        every { session.toggleTorchState() } answers { torchOn = !torchOn }
+        every { torch.isOn } answers { torchOn }
+        every { torch.enable(any()) } answers { torchOn = firstArg() }
 
         val delegate = createAttachedDelegate()
         delegate.toggleTorch()
@@ -555,6 +557,7 @@ class ViewfinderCameraDelegateTest {
     ): ViewfinderCameraDelegate {
         val delegate = ViewfinderCameraDelegateImpl(
             session = session,
+            torch = torch,
             entryPoint = cameraEntryPoint(showsCameraModeTabs = showsCameraModeTabs),
             resolveAvailableModes = resolveAvailableModes,
             resolveDroppedVideoQuality = resolveDroppedVideoQuality,

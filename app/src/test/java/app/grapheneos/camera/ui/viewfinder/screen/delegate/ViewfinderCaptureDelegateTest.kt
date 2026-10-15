@@ -9,6 +9,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.sound.model.CameraSound
+import app.grapheneos.camera.domain.camera.usecase.BlinkTimerLight
 import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
 import app.grapheneos.camera.domain.capture.model.ImageSaverException
@@ -62,6 +63,7 @@ class ViewfinderCaptureDelegateTest {
     private val capturedItemRepository = mockk<CapturedItemRepository>()
     private val notifyPictureSaveFailed = mockk<NotifyPictureSaveFailed>(relaxed = true)
     private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
+    private val blinkTimerLight = mockk<BlinkTimerLight>(relaxed = true)
 
     private val onCaptureEvent = slot<(CapturedImageEvent) -> Unit>()
     private val captureFinished = CompletableDeferred<Unit>()
@@ -402,6 +404,44 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun selfTimer_withTimerLight_blinksOnceThenTwiceAndLeavesTheLastSecondDark() {
+        runTest {
+            val delegate = createDelegate()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDurationSeconds = 5, timerLight = true))
+            }
+
+            delegate.startSelfTimer()
+            advanceTimeBy(5.seconds)
+            runCurrent()
+
+            coVerifyOrder {
+                blinkTimerLight(1)
+                blinkTimerLight(1)
+                blinkTimerLight(2)
+                blinkTimerLight(2)
+            }
+            coVerify(exactly = 4) { blinkTimerLight(any()) }
+        }
+    }
+
+    @Test
+    fun selfTimer_withoutTimerLight_neverBlinks() {
+        runTest {
+            val delegate = createDelegate()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(selfTimerDurationSeconds = SELF_TIMER_SECONDS))
+            }
+
+            delegate.startSelfTimer()
+            advanceTimeBy(SELF_TIMER_SECONDS.seconds)
+            runCurrent()
+
+            coVerify(exactly = 0) { blinkTimerLight(any()) }
+        }
+    }
+
+    @Test
     fun selfTimer_countsDownOneSecondApartAndThenFinishes() {
         runTest {
             val delegate = createDelegate()
@@ -530,6 +570,7 @@ class ViewfinderCaptureDelegateTest {
             capturedItemRepository = capturedItemRepository,
             notifyPictureSaveFailed = notifyPictureSaveFailed,
             playCameraSound = playCameraSound,
+            blinkTimerLight = blinkTimerLight,
             applicationScope = backgroundScope,
             mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )

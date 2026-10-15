@@ -9,6 +9,7 @@ data class CameraSettings(
     val focusTimeoutSeconds: Long = SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
     val volumeKeyAction: VolumeKeyAction = SettingsDefaults.VOLUME_KEY_ACTION,
     val selfTimerDurationSeconds: Int = SettingsDefaults.SELF_TIMER_DURATION,
+    val timerLight: Boolean = SettingsDefaults.TIMER_LIGHT,
     val enableCameraSounds: Boolean = SettingsDefaults.CAMERA_SOUNDS,
     val includeAudio: Boolean = SettingsDefaults.INCLUDE_AUDIO,
     val enableEis: Boolean = SettingsDefaults.ENABLE_EIS,

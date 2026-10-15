@@ -42,6 +42,7 @@ class CameraSettingsUiStateMapperTest {
         assertFalse(uiState.videoStabilization.isChanged)
         assertFalse(uiState.focusTimeout.isChanged)
         assertFalse(uiState.volumeKeyAction.isChanged)
+        assertFalse(uiState.timerLight.isChanged)
         assertFalse(uiState.canResetSettings)
         assertEquals(false, uiState.storageLocation?.isChanged)
     }
@@ -54,6 +55,7 @@ class CameraSettingsUiStateMapperTest {
                     gridType = GridType.GOLDEN_RATIO,
                     focusTimeoutSeconds = 10,
                     volumeKeyAction = VolumeKeyAction.ZOOM,
+                    timerLight = true,
                     enableCameraSounds = false,
                     enableEis = false,
                     photoQuality = 80,
@@ -68,6 +70,7 @@ class CameraSettingsUiStateMapperTest {
         assertTrue(uiState.videoStabilization.isChanged)
         assertTrue(uiState.focusTimeout.isChanged)
         assertTrue(uiState.volumeKeyAction.isChanged)
+        assertTrue(uiState.timerLight.isChanged)
         assertTrue(uiState.canResetSettings)
         assertEquals(true, uiState.storageLocation?.isChanged)
     }

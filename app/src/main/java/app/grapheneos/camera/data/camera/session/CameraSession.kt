@@ -17,7 +17,6 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
-import androidx.camera.core.TorchState
 import androidx.camera.core.UseCase
 import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
@@ -77,8 +76,6 @@ interface CameraSession {
     val videoCapture: VideoCapture<Recorder>?
 
     val extensionsAvailable: Boolean
-    val isFlashAvailable: Boolean
-    val isTorchOn: Boolean
     val exposure: CameraExposure?
     val sensorOrientationDegrees: Int?
     val zoom: CameraZoom?
@@ -95,7 +92,6 @@ interface CameraSession {
     fun setCaptureOrientation(orientation: DeviceOrientation)
     fun setPreviewRotation(rotation: Int)
     fun setFlashMode(flashMode: FlashMode)
-    fun toggleTorchState()
     fun setZoomRatio(zoomRatio: Float)
     fun setLinearZoom(linearZoom: Float)
     fun setExposureCompensationIndex(index: Int)
@@ -162,26 +158,6 @@ internal class CameraSessionImpl @Inject constructor(
     override val extensionsAvailable: Boolean
         get() {
             return extensionsManager != null && cameraProvider != null
-        }
-
-    override val isFlashAvailable: Boolean
-        get() {
-            return camera?.cameraInfo?.hasFlashUnit() ?: false
-        }
-
-    override var isTorchOn: Boolean = false
-        get() {
-            return camera?.cameraInfo?.torchState?.value == TorchState.ON
-        }
-        set(value) {
-            field = when {
-                isFlashAvailable -> {
-                    camera?.cameraControl?.enableTorch(value)
-                    value
-                }
-
-                else -> false
-            }
         }
 
     override val exposure: CameraExposure?
@@ -910,10 +886,6 @@ internal class CameraSessionImpl @Inject constructor(
 
     override fun setFlashMode(flashMode: FlashMode) {
         imageCapture?.flashMode = cameraXConstantsMapper.map(flashMode)
-    }
-
-    override fun toggleTorchState() {
-        isTorchOn = !isTorchOn
     }
 
     override fun setZoomRatio(zoomRatio: Float) {

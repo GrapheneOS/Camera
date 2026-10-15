@@ -146,6 +146,10 @@ internal class CameraSettingsViewModel @Inject constructor(
             is Action.CameraSoundsToggled -> {
                 updateSettings { it.copy(enableCameraSounds = enabled) }
             }
+
+            is Action.TimerLightToggled -> {
+                updateSettings { it.copy(timerLight = enabled) }
+            }
         }
     }
 

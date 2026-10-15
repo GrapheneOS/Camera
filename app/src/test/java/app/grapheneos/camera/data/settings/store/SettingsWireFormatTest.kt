@@ -27,6 +27,7 @@ class SettingsWireFormatTest {
         focusTimeoutSeconds = SOME_FOCUS_TIMEOUT_SECONDS,
         volumeKeyAction = VolumeKeyAction.ZOOM,
         selfTimerDurationSeconds = SOME_SELF_TIMER_DURATION,
+        timerLight = true,
         enableCameraSounds = false,
         includeAudio = false,
         enableEis = false,
@@ -378,7 +379,8 @@ class SettingsWireFormatTest {
         const val EVERY_SETTING_ON_DISK = """{"common":{"aspect_ratio":1,""" +
             """"grid_type":"GOLDEN_RATIO","focus_timeout_seconds":10,""" +
             """"volume_key_action":"ZOOM",""" +
-            """"self_timer_duration_seconds":3,"enable_camera_sounds":false,""" +
+            """"self_timer_duration_seconds":3,"timer_light":true,""" +
+            """"enable_camera_sounds":false,""" +
             """"include_audio":false,"enable_eis":false,"capture_mode":"QUALITY",""" +
             """"select_highest_resolution":true,"photo_quality":71,"geo_tagging":true,""" +
             """"remove_exif_after_capture":false,"gyroscope_suggestions":true,""" +

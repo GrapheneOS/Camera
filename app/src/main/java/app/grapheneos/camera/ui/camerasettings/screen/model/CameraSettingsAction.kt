@@ -69,6 +69,10 @@ internal sealed interface CameraSettingsAction {
         override val enabled: Boolean,
     ) : SwitchToggled
 
+    data class TimerLightToggled(
+        override val enabled: Boolean,
+    ) : SwitchToggled
+
     data object DialogDismissed : CameraSettingsAction
 
     sealed interface DialogConfirmed : CameraSettingsAction
