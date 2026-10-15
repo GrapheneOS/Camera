@@ -1674,6 +1674,24 @@ class CamConfig(private val mActivity: MainActivity) {
             it.surfaceProvider = mActivity.previewView.surfaceProvider
         }
 
+        // A second direct CameraX preview for the outer display, not a captured bitmap.
+        // Bound to the SAME camera and SAME activity lifecycle as the inner preview.
+        // Only plain Camera mode is used to avoid vendor extension/recording conflicts.
+        val foldOuterPreview = mActivity.foldSecondaryPreviewView()?.takeIf {
+            currentMode == CameraMode.CAMERA
+        }?.let { outer ->
+            Preview.Builder()
+                .setTargetRotation(outer.display?.rotation ?: rotation)
+                .setResolutionSelector(
+                    ResolutionSelector.Builder()
+                        .setAspectRatioStrategy(aspectRatioStrategy).build()
+                )
+                .build().also { second ->
+                    second.surfaceProvider = outer.surfaceProvider
+                    useCasesList.add(second)
+                }
+        }
+
         mActivity.forceUpdateOrientationSensor()
 
         // The list ordering encodes priority (highest priority first): CameraX walks the subsets
@@ -1795,6 +1813,15 @@ class CamConfig(private val mActivity: MainActivity) {
                 sessionConfig
             )
         } catch (exception: RuntimeException) {
+            if (foldOuterPreview != null &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException)) {
+                // Not all Camera2 device configurations permit Preview + Preview + JPEG.
+                // Undo the extra stream, then rebind the ordinary camera without crashing.
+                Log.e(TAG, "Two CameraX previews not supported; reverting to normal preview", exception)
+                mActivity.onFoldSecondaryPreviewBindFailure()
+                startCamera(true)
+                return
+            }
             // A vendor extension can still fail to initialize at bind time even though the
             // pre-flight probe in isExtensionUsable() passed. When one was applied, record the
             // failure so the mode stops being offered, rather than letting the exception kill the
@@ -2064,6 +2091,7 @@ class CamConfig(private val mActivity: MainActivity) {
             return
         }
 
+        mActivity.closeFoldDualForModeChange()
         currentMode = mode
 
         mActivity.cancelFocusTimer()

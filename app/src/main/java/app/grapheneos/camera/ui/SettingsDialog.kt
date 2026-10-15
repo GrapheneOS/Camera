@@ -45,6 +45,7 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.activities.RearDisplaySelfieController
 import app.grapheneos.camera.ui.activities.MoreSettings
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -491,6 +492,34 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 mScrollView.layoutParams = lp
             }
         })
+    }
+
+    /** Show fold controls only where Android exposes the required display capability. */
+    internal fun bindFoldDisplayControls(controller: RearDisplaySelfieController) {
+        binding.rearCameraSelfieSwitch.setOnClickListener { controller.toggleRearSelfie() }
+        binding.dualScreenPreviewSwitch.setOnClickListener { controller.toggleDualPreview() }
+        binding.rearCameraSelfieSetting.setOnClickListener {
+            if (binding.rearCameraSelfieSwitch.isEnabled) binding.rearCameraSelfieSwitch.performClick()
+        }
+        binding.dualScreenPreviewSetting.setOnClickListener {
+            if (binding.dualScreenPreviewSwitch.isEnabled) binding.dualScreenPreviewSwitch.performClick()
+        }
+    }
+
+    internal fun updateFoldDisplayControls(
+        rearSupported: Boolean,
+        rearEnabled: Boolean,
+        rearChecked: Boolean,
+        dualSupported: Boolean,
+        dualEnabled: Boolean,
+        dualChecked: Boolean,
+    ) {
+        binding.rearCameraSelfieSetting.visibility = if (rearSupported) View.VISIBLE else View.GONE
+        binding.rearCameraSelfieSwitch.isEnabled = rearEnabled
+        binding.rearCameraSelfieSwitch.isChecked = rearChecked
+        binding.dualScreenPreviewSetting.visibility = if (dualSupported) View.VISIBLE else View.GONE
+        binding.dualScreenPreviewSwitch.isEnabled = dualEnabled
+        binding.dualScreenPreviewSwitch.isChecked = dualChecked
     }
 
     fun showOnlyRelevantSettings() {

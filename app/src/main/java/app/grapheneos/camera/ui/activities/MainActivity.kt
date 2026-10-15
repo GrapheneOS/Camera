@@ -55,6 +55,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -128,6 +129,10 @@ open class MainActivity : AppCompatActivity(),
         get() = applicationContext as App
 
     private lateinit var binding: ActivityMainBinding
+    private var rearSelfieController: RearDisplaySelfieController? = null
+    internal fun foldSecondaryPreviewView(): PreviewView? = rearSelfieController?.secondaryPreviewView
+    internal fun onFoldSecondaryPreviewBindFailure() { rearSelfieController?.onPreviewBindFailed() }
+    internal fun closeFoldDualForModeChange() { rearSelfieController?.stopDualForModeChange() }
 
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
@@ -741,6 +746,7 @@ open class MainActivity : AppCompatActivity(),
         }
 
     override fun onPause() {
+        rearSelfieController?.onActivityPaused()
         super.onPause()
 
         // Leaving a mode switch waiting on an animation that will never finish would strand the
@@ -1064,6 +1070,30 @@ open class MainActivity : AppCompatActivity(),
 
         val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
         settingsDialog = SettingsDialog(this, themedContext)
+
+        // The foldable display controls belong to the settings panel, never to the viewfinder.
+        // Exclude intent capture and secure/lockscreen camera activities.
+        if (javaClass == MainActivity::class.java) {
+            rearSelfieController = RearDisplaySelfieController(this) {
+                when {
+                    camConfig.isQRMode -> {
+                        showMessage("Switch to Camera mode first")
+                        false
+                    }
+                    videoCapturer.isRecording -> {
+                        showMessage("Stop recording first")
+                        false
+                    }
+                    else -> {
+                        if (camConfig.lensFacing != CameraSelector.LENS_FACING_BACK) {
+                            camConfig.toggleCameraSelector()
+                        }
+                        true
+                    }
+                }
+            }
+            rearSelfieController?.let { settingsDialog.bindFoldDisplayControls(it) }
+        }
 
         SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
             forceUpdateOrientationSensor()
@@ -1890,6 +1920,8 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onDestroy() {
+        rearSelfieController?.dispose()
+        rearSelfieController = null
         super.onDestroy()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()

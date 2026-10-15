@@ -389,6 +389,67 @@
                         </FrameLayout>
                     </LinearLayout>
 
+                    <!-- Fold-only controls; hidden on unsupported devices. -->
+                    <LinearLayout
+                        android:id="@+id/rear_camera_selfie_setting"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
+                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:text="@string/rear_camera_selfie" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="end|center_vertical">
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/rear_camera_selfie_switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/settings_dialog_switch_height"
+                                android:scaleX="@integer/settings_dialog_switch_scale"
+                                android:scaleY="@integer/settings_dialog_switch_scale"
+                                android:contentDescription="@string/rear_camera_selfie" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/dual_screen_preview_setting"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/settings_dialog_menu_item_height"
+                        android:paddingVertical="@dimen/settings_dialog_menu_item_vertical"
+                        android:paddingHorizontal="@dimen/settings_dialog_menu_item_horizontal"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:text="@string/dual_screen_preview" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="end|center_vertical">
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/dual_screen_preview_switch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="@dimen/settings_dialog_switch_height"
+                                android:scaleX="@integer/settings_dialog_switch_scale"
+                                android:scaleY="@integer/settings_dialog_switch_scale"
+                                android:contentDescription="@string/dual_screen_preview" />
+                        </LinearLayout>
+                    </LinearLayout>
+
                     <!-- Extra padding for the bottom of the list -->
                     <View
                         android:layout_width="match_parent"
