@@ -54,6 +54,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
@@ -245,6 +246,9 @@ open class MainActivity : AppCompatActivity(),
     }
 
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
+
+    @set:VisibleForTesting
+    lateinit var mediaContext: Context
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -774,6 +778,7 @@ open class MainActivity : AppCompatActivity(),
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mediaContext = applicationContext
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
@@ -2042,7 +2047,7 @@ open class MainActivity : AppCompatActivity(),
             return
         }
 
-        val ctx = applicationContext
+        val ctx = mediaContext
         val side = preview.layoutParams.width
         // What the gallery opened from here shows; a secure session shows only its own captures
         val videosOnly = requiresVideoModeOnly
@@ -2055,27 +2060,30 @@ open class MainActivity : AppCompatActivity(),
         thumbnailLoaderExecutor.executeIfAlive {
             var shown: CapturedItem? = item
             var bitmap = loadThumbnail(ctx, item, side)
+            var listedEverywhere = true
 
             if (bitmap == null) {
-                val items = try {
-                    CapturedItems.get(ctx)
+                val listing = try {
+                    CapturedItems.list(ctx)
                 } catch (_: InterruptedException) {
                     return@executeIfAlive
                 }
                 // Deleted or moved away since, in the gallery or by another app
-                if (item !in items) {
-                    shown = items.filter {
+                if (listing.lacks(item)) {
+                    shown = listing.items.filter {
                         (sessionItems == null || it in sessionItems) &&
                                 (!videosOnly || it.type == ITEM_TYPE_VIDEO)
                     }.maxByOrNull { it.dateString }
                     bitmap = shown?.let { loadThumbnail(ctx, it, side) }
+                    // A location that could not be listed may hold a newer one
+                    listedEverywhere = listing.isComplete
                 }
             }
 
             mainExecutor.execute {
                 if (isStarted && camConfig.lastCapturedItem == item) {
                     if (shown != item) {
-                        val seesEveryItem = sessionItems == null && !videosOnly
+                        val seesEveryItem = sessionItems == null && !videosOnly && listedEverywhere
                         camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
                     }
                     if (bitmap != null) {
