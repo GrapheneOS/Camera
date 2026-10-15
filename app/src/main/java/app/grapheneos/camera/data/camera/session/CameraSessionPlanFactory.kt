@@ -143,8 +143,8 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
         //
         // setPreviewStabilizationEnabled() is one of the non-groupable setters that SessionConfig
         // rejects outright once a feature group is in use, so it must not be called at all --
-        // with either value -- when stabilization is being requested through the feature group
-        // below. On every other path it is explicitly disabled: EIS is not applied off the feature
+        // with either value -- when a feature group is requested below, for stabilization or
+        // HDR. On every other path it is explicitly disabled: EIS is not applied off the feature
         // group (see the VideoCapture builder above), and leaving it unset would let a device
         // default preview stabilization cost photo capture its field of view.
         when (request.featureGroup) {
@@ -161,7 +161,8 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
     //
     // The video quality leads because it is an explicit, deliberate choice from a spinner,
     // whereas stabilization is a toggle that defaults to on and that most users never touch;
-    // an explicit choice should not lose to a default. This inverts the CameraX 1.5.x
+    // an explicit choice should not lose to a default. HDR is off unless turned on, so it
+    // outranks stabilization but not the quality. This inverts the CameraX 1.5.x
     // behaviour, where asking for 2160p on a Pixel silently recorded at 1080p because
     // stabilization won. Whatever is given up is now reported by onFeaturesSelected().
     //
@@ -182,8 +183,15 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
         val features = arrayListOf<GroupableFeature>()
 
         featureGroup.videoQualityFeature?.let { features.add(it) }
-        features.add(GroupableFeature.PREVIEW_STABILIZATION)
-        features.add(GroupableFeatures.VIDEO_STABILIZATION)
+
+        if (featureGroup.hdr) {
+            features.add(GroupableFeature.HDR_HLG10)
+        }
+
+        if (featureGroup.stabilization) {
+            features.add(GroupableFeature.PREVIEW_STABILIZATION)
+            features.add(GroupableFeatures.VIDEO_STABILIZATION)
+        }
 
         return features
     }

@@ -11,7 +11,7 @@ fun interface SessionProbe {
 interface InVideoSnapshotSupportResolver {
 
     fun resolve(
-        videoQualityFeature: GroupableFeature?,
+        selectedFeatures: Set<GroupableFeature>,
         probe: SessionProbe,
     ): InVideoSnapshotSupport
 }
@@ -20,11 +20,11 @@ internal class InVideoSnapshotSupportResolverImpl @Inject constructor() :
     InVideoSnapshotSupportResolver {
 
     override fun resolve(
-        videoQualityFeature: GroupableFeature?,
+        selectedFeatures: Set<GroupableFeature>,
         probe: SessionProbe,
     ): InVideoSnapshotSupport {
-        // When a quality feature is about to be requested, the probe has to require that
-        // quality too: a camera can be able to run the three plain streams yet not at the
+        // When a quality feature or HDR is about to be requested, the probe has to require it
+        // too: a camera can be able to run the three plain streams yet not at the
         // chosen quality, and a probe without it would keep the snapshot use case and leave
         // the conflict to the feature-group resolver -- which resolves it by dropping the
         // *quality*, with a notice blaming the camera for a quality it does support. The
@@ -35,17 +35,17 @@ internal class InVideoSnapshotSupportResolverImpl @Inject constructor() :
         // the snapshots when the quality is unreachable even without them: dropping them would
         // buy nothing, and the resolver's "unsupported quality" notice is genuinely true then.
         return when {
-            videoQualityFeature == null -> plainStreamSupport(probe)
+            selectedFeatures.isEmpty() -> plainStreamSupport(probe)
 
             probe.isSupported(
                 withSnapshots = true,
-                features = setOf(videoQualityFeature),
+                features = selectedFeatures,
             ) -> InVideoSnapshotSupport.Supported
 
             probe.isSupported(
                 withSnapshots = false,
-                features = setOf(videoQualityFeature),
-            ) -> InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_QUALITY
+                features = selectedFeatures,
+            ) -> InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS
 
             else -> plainStreamSupport(probe)
         }

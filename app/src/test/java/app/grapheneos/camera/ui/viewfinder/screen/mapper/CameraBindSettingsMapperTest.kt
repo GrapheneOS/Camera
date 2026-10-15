@@ -57,6 +57,7 @@ class CameraBindSettingsMapperTest {
                 videoQuality = VideoQuality.UHD,
                 captureMode = CaptureMode.QUALITY,
                 enableEis = true,
+                hdrVideo = false,
                 selectHighestResolution = true,
                 mirrorVideoOnFrontCamera = true,
                 barcodeFormats = setOf(BarcodeFormat.QR_CODE),

@@ -65,6 +65,10 @@ internal sealed interface CameraSettingsAction {
         override val enabled: Boolean,
     ) : SwitchToggled
 
+    data class HdrVideoToggled(
+        override val enabled: Boolean,
+    ) : SwitchToggled
+
     data class CameraSoundsToggled(
         override val enabled: Boolean,
     ) : SwitchToggled

@@ -23,6 +23,8 @@ internal data class StoredCameraSettings(
     val includeAudio: Boolean? = null,
     @SerialName("enable_eis")
     val enableEis: Boolean? = null,
+    @SerialName("hdr_video")
+    val hdrVideo: Boolean? = null,
     @SerialName("capture_mode")
     val captureMode: StoredCaptureMode? = null,
     @SerialName("enable_zsl")

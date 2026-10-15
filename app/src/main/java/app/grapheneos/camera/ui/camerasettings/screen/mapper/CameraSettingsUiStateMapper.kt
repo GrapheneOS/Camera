@@ -45,6 +45,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             photoQuality = photoQuality(state),
             captureMode = captureMode(state),
             videoStabilization = videoStabilization(state),
+            hdrVideo = hdrVideo(state),
             cameraSounds = switchSetting(
                 checked = settings.enableCameraSounds,
                 default = SettingsDefaults.CAMERA_SOUNDS,
@@ -128,6 +129,15 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             selected = selected,
             options = options.toImmutableList(),
             isChanged = selected.mode != SettingsDefaults.CAPTURE_MODE,
+        )
+    }
+
+    private fun hdrVideo(state: CameraSettingsState): SwitchSettingUiModel? {
+        if (!state.capabilities.isHdrVideoSupported) return null
+
+        return switchSetting(
+            checked = state.settings.hdrVideo,
+            default = SettingsDefaults.HDR_VIDEO,
         )
     }
 

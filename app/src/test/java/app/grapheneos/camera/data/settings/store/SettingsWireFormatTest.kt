@@ -31,6 +31,7 @@ class SettingsWireFormatTest {
         enableCameraSounds = false,
         includeAudio = false,
         enableEis = false,
+        hdrVideo = true,
         captureMode = CaptureMode.QUALITY,
         selectHighestResolution = true,
         photoQuality = SOME_PHOTO_QUALITY,
@@ -381,7 +382,8 @@ class SettingsWireFormatTest {
             """"volume_key_action":"ZOOM",""" +
             """"self_timer_duration_seconds":3,"timer_light":true,""" +
             """"enable_camera_sounds":false,""" +
-            """"include_audio":false,"enable_eis":false,"capture_mode":"QUALITY",""" +
+            """"include_audio":false,"enable_eis":false,"hdr_video":true,""" +
+            """"capture_mode":"QUALITY",""" +
             """"select_highest_resolution":true,"photo_quality":71,"geo_tagging":true,""" +
             """"remove_exif_after_capture":false,"gyroscope_suggestions":true,""" +
             """"keep_selfies_as_seen":false,"scan_all_codes":true,""" +

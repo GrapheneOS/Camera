@@ -34,6 +34,8 @@ object SettingsDefaults {
 
     const val ENABLE_EIS = true
 
+    const val HDR_VIDEO = false
+
     const val SELECT_HIGHEST_RESOLUTION = false
 
     const val PHOTO_QUALITY = 95

@@ -29,14 +29,14 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_noQualityAskedForAndTheStreamsBind_keepsSnapshots() {
         supports(withSnapshots = true, features = emptySet())
 
-        val support = resolver.resolve(videoQualityFeature = null, probe = probe)
+        val support = resolver.resolve(selectedFeatures = emptySet(), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
     }
 
     @Test
     fun resolve_noQualityAskedForAndTheStreamsDoNotBind_dropsSnapshots() {
-        val support = resolver.resolve(videoQualityFeature = null, probe = probe)
+        val support = resolver.resolve(selectedFeatures = emptySet(), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }
@@ -45,7 +45,7 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_theQualityBindsWithSnapshots_keepsSnapshotsWithoutAskingAgain() {
         supports(withSnapshots = true, features = setOf(QUALITY))
 
-        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
         verify(exactly = 1) { probe.isSupported(withSnapshots = true, features = setOf(QUALITY)) }
@@ -56,23 +56,33 @@ class InVideoSnapshotSupportResolverTest {
     fun resolve_theQualityBindsOnlyWithoutSnapshots_givesUpTheSnapshots() {
         supports(withSnapshots = false, features = setOf(QUALITY))
 
-        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
 
-        assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_QUALITY, support)
+        assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS, support)
     }
 
     @Test
     fun resolve_theQualityBindsNeitherWay_keepsSnapshotsAndLeavesTheQualityToTheResolver() {
         supports(withSnapshots = true, features = emptySet())
 
-        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Supported, support)
     }
 
     @Test
+    fun resolve_hdrBindsOnlyWithoutSnapshots_givesUpTheSnapshotsForIt() {
+        supports(withSnapshots = true, features = setOf(QUALITY))
+        supports(withSnapshots = false, features = setOf(QUALITY, HDR))
+
+        val support = resolver.resolve(selectedFeatures = setOf(QUALITY, HDR), probe = probe)
+
+        assertEquals(InVideoSnapshotSupport.Unsupported.SELECTED_VIDEO_SETTINGS, support)
+    }
+
+    @Test
     fun resolve_nothingBinds_dropsSnapshots() {
-        val support = resolver.resolve(videoQualityFeature = QUALITY, probe = probe)
+        val support = resolver.resolve(selectedFeatures = setOf(QUALITY), probe = probe)
 
         assertEquals(InVideoSnapshotSupport.Unsupported.STREAM_COMBINATION, support)
     }
@@ -83,5 +93,6 @@ class InVideoSnapshotSupportResolverTest {
 
     private companion object {
         val QUALITY: GroupableFeature = GroupableFeatures.UHD_RECORDING
+        val HDR: GroupableFeature = GroupableFeature.HDR_HLG10
     }
 }
