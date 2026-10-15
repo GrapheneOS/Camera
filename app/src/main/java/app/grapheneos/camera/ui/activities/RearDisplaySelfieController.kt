@@ -2,6 +2,7 @@
 package app.grapheneos.camera.ui.activities
 
 import android.util.Log
+import android.view.Display
 import android.view.View
 import android.widget.FrameLayout
 import androidx.camera.view.PreviewView
@@ -42,6 +43,12 @@ internal class RearDisplaySelfieController(
     private var dualVisible = false
     private var disposed = false
     private var skipNextSessionEndRebind = false
+    // Rear Camera Selfie transfers the Activity itself; when Android moves it back,
+    // the PreviewView's Surface can change even though the Activity remains RESUMED.
+    private var innerPreviewRestorePending = false
+    private val innerPreviewLayoutListener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        restoreInnerPreviewWhenReady()
+    }
 
     /** Non-null only while an outer PreviewView exists for a live CameraX output. */
     var secondaryPreviewView: PreviewView? = null
@@ -121,6 +128,31 @@ internal class RearDisplaySelfieController(
     init {
         controller.addWindowAreaInfoListListener(executor, areasListener)
     }
+
+    /**
+     * The transfer callback can arrive before Android has moved the Activity back to
+     * the default (inner) display. Rebinding at that point would use the old surface.
+     * The layout, configuration and resume callbacks retry once the inner view is ready.
+     */
+    private fun restoreInnerPreviewWhenReady() {
+        if (disposed || !innerPreviewRestorePending || rearSession != null) return
+        val preview = activity.previewView
+        preview.post {
+            if (disposed || !innerPreviewRestorePending || rearSession != null) return@post
+            if (!activity.lifecycle.currentState.isAtLeast(
+                    androidx.lifecycle.Lifecycle.State.RESUMED) ||
+                !preview.isAttachedToWindow || preview.width == 0 || preview.height == 0 ||
+                preview.display?.displayId != Display.DEFAULT_DISPLAY) return@post
+
+            innerPreviewRestorePending = false
+            preview.removeOnLayoutChangeListener(innerPreviewLayoutListener)
+            Log.i(TAG, "Rear Camera Selfie finished; rebinding preview on inner display")
+            activity.camConfig.startCamera(true)
+        }
+    }
+
+    fun onActivityResumed() = restoreInnerPreviewWhenReady()
+    fun onActivityWindowChanged() = restoreInnerPreviewWhenReady()
 
     private fun status(operation: WindowAreaCapability.Operation): WindowAreaCapability.Status? =
         info?.getCapability(operation)?.status
@@ -218,12 +250,20 @@ internal class RearDisplaySelfieController(
             session.close()
             return
         }
+        innerPreviewRestorePending = false
+        activity.previewView.removeOnLayoutChangeListener(innerPreviewLayoutListener)
         rearSession = session
         refreshSettings()
     }
 
     override fun onSessionEnded(t: Throwable?) {
+        val wasActive = rearSession != null
         rearSession = null
+        if (wasActive && !disposed) {
+            innerPreviewRestorePending = true
+            activity.previewView.addOnLayoutChangeListener(innerPreviewLayoutListener)
+            restoreInnerPreviewWhenReady()
+        }
         if (t != null && !disposed) {
             Log.w(TAG, "Rear-display session ended with error", t)
             activity.showMessage("Rear Camera Selfie ended")
@@ -257,6 +297,8 @@ internal class RearDisplaySelfieController(
     fun dispose() {
         if (disposed) return
         disposed = true
+        innerPreviewRestorePending = false
+        activity.previewView.removeOnLayoutChangeListener(innerPreviewLayoutListener)
         secondaryPreviewView = null
         dualSession?.close()
         dualSession = null

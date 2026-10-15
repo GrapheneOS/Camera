@@ -738,6 +738,7 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
+        rearSelfieController?.onActivityResumed()
     }
 
     val requiresVideoModeOnly: Boolean
@@ -1769,6 +1770,7 @@ open class MainActivity : AppCompatActivity(),
         }
 
         rootView.post { sensorNotifier?.notifyListeners() }
+        rearSelfieController?.onActivityWindowChanged()
     }
 
     private fun pauseOrientationSensor() {
