@@ -26,6 +26,8 @@ object SettingsDefaults {
 
     const val SELF_TIMER_DURATION = 0
 
+    const val TIMER_LIGHT = false
+
     const val CAMERA_SOUNDS = true
 
     const val INCLUDE_AUDIO = true

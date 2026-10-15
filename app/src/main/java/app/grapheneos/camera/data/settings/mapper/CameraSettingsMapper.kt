@@ -32,6 +32,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             volumeKeyAction = map(stored.volumeKeyAction),
             selfTimerDurationSeconds = stored.selfTimerDurationSeconds
                 ?: SettingsDefaults.SELF_TIMER_DURATION,
+            timerLight = stored.timerLight ?: SettingsDefaults.TIMER_LIGHT,
             enableCameraSounds = stored.enableCameraSounds ?: SettingsDefaults.CAMERA_SOUNDS,
             includeAudio = stored.includeAudio ?: SettingsDefaults.INCLUDE_AUDIO,
             enableEis = stored.enableEis ?: SettingsDefaults.ENABLE_EIS,
@@ -69,6 +70,8 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 ?.let(::map),
             selfTimerDurationSeconds = settings.selfTimerDurationSeconds
                 .takeUnless { it == SettingsDefaults.SELF_TIMER_DURATION },
+            timerLight = settings.timerLight
+                .takeUnless { it == SettingsDefaults.TIMER_LIGHT },
             enableCameraSounds = settings.enableCameraSounds
                 .takeUnless { it == SettingsDefaults.CAMERA_SOUNDS },
             includeAudio = settings.includeAudio

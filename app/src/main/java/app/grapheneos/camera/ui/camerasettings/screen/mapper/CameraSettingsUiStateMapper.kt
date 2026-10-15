@@ -51,6 +51,10 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             ),
             focusTimeout = focusTimeout(state),
             volumeKeyAction = volumeKeyAction(state),
+            timerLight = switchSetting(
+                checked = settings.timerLight,
+                default = SettingsDefaults.TIMER_LIGHT,
+            ),
             storageSpace = storageSpace(state),
             storageLocation = storageLocation(state),
             showsLicenses = !state.isSecureSession,

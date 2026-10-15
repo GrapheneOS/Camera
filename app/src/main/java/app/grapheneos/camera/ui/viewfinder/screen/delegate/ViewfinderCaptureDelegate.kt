@@ -9,6 +9,7 @@ import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.domain.camera.usecase.BlinkTimerLight
 import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
 import app.grapheneos.camera.domain.capture.model.CapturePreviewResult
 import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
@@ -71,6 +72,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     private val capturedItemRepository: CapturedItemRepository,
     private val notifyPictureSaveFailed: NotifyPictureSaveFailed,
     private val playCameraSound: PlayCameraSound,
+    private val blinkTimerLight: BlinkTimerLight,
     @ApplicationScope private val applicationScope: CoroutineScope,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderCaptureDelegate {
@@ -213,11 +215,18 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         postEffect(Effect.SelfTimer.Started)
         setSelfTimerRunning(true)
 
-        val seconds = stateHolder.state.value.settings.selfTimerDurationSeconds
+        val settings = stateHolder.state.value.settings
         selfTimer = scope.launch(mainDispatcher) {
-            selfTimerCountdown(seconds).collect { secondsLeft ->
+            val timer = this
+
+            selfTimerCountdown(settings.selfTimerDurationSeconds).collect { secondsLeft ->
                 postEffect(Effect.SelfTimer.Ticked(secondsLeft))
                 playCameraSound(tickSound(secondsLeft))
+
+                val flashes = timerLightFlashes(secondsLeft)
+                if (settings.timerLight && flashes > 0) {
+                    timer.launch(mainDispatcher) { blinkTimerLight(flashes) }
+                }
             }
 
             setSelfTimerRunning(false)
@@ -244,6 +253,15 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         return when (secondsLeft) {
             1 -> CameraSound.TIMER_FINAL_SECOND
             else -> CameraSound.TIMER_TICK
+        }
+    }
+
+    // The last second stays dark.
+    private fun timerLightFlashes(secondsLeft: Int): Int {
+        return when {
+            secondsLeft == 1 -> 0
+            secondsLeft <= TIMER_LIGHT_FINAL_SECONDS -> 2
+            else -> 1
         }
     }
 
@@ -430,6 +448,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     private companion object {
         private const val TAG = "ViewfinderCapture"
+
+        private const val TIMER_LIGHT_FINAL_SECONDS = 3
 
         private val SELF_TIMER_TICK = 1.seconds
     }

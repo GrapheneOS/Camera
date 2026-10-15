@@ -31,6 +31,7 @@ internal data class CameraSettingsUiState(
         selected = VolumeKeyActionOption.of(SettingsDefaults.VOLUME_KEY_ACTION),
         options = persistentListOf(),
     ),
+    val timerLight: SwitchSettingUiModel = SwitchSettingUiModel(),
     val storageSpace: StorageSpaceUiModel? = null,
     val storageLocation: StorageLocationUiModel? = null,
     val showsLicenses: Boolean = false,

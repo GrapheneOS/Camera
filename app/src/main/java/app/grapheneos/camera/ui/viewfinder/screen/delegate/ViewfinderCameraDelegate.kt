@@ -8,9 +8,9 @@ import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
+import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
-import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
@@ -86,6 +86,7 @@ interface ViewfinderCameraDelegate {
 
 internal class ViewfinderCameraDelegateImpl @Inject constructor(
     private val session: CameraSession,
+    private val torch: TorchControl,
     private val entryPoint: CameraEntryPoint,
     private val resolveAvailableModes: ResolveAvailableModes,
     private val resolveDroppedVideoQuality: ResolveDroppedVideoQuality,
@@ -270,10 +271,10 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
     }
 
     override fun toggleTorch() {
-        session.toggleTorchState()
+        torch.enable(!torch.isOn)
 
         stateHolder.update {
-            it.copy(session = it.session.copy(isTorchOn = session.isTorchOn))
+            it.copy(session = it.session.copy(isTorchOn = torch.isOn))
         }
     }
 
@@ -449,7 +450,7 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                 session = it.session.copy(
                     lensFacing = session.lensFacing,
                     canTakePicture = session.imageCapture != null,
-                    isFlashAvailable = session.isFlashAvailable,
+                    isFlashAvailable = torch.isAvailable,
                     isTorchOn = false,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,
                 ),

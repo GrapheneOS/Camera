@@ -203,6 +203,7 @@ class ViewfinderRecordingFlowTest {
             modeDelegate = ViewfinderModeDelegateImpl(),
             cameraDelegate = ViewfinderCameraDelegateImpl(
                 session = cameraSession,
+                torch = mockk(relaxed = true),
                 entryPoint = entryPoint,
                 resolveAvailableModes = mockk(relaxed = true),
                 resolveDroppedVideoQuality = mockk(relaxed = true),
@@ -217,6 +218,7 @@ class ViewfinderRecordingFlowTest {
                 capturedItemRepository = capturedItemRepository,
                 notifyPictureSaveFailed = mockk(relaxed = true),
                 playCameraSound = mockk(relaxed = true),
+                blinkTimerLight = mockk(relaxed = true),
                 applicationScope = backgroundScope,
                 mainDispatcher = mainDispatcher,
             ),

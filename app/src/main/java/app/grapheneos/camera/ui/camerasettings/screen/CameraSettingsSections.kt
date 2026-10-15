@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.HighQuality
+import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
@@ -306,6 +307,18 @@ private fun controlsRows(
                 shape = shape,
                 modifier = modifier,
                 onClick = { onAction(Action.VolumeKeyActionClicked) },
+            )
+        },
+        SettingsRow(key = "timer_light") { shape, modifier ->
+            SwitchSettingItem(
+                setting = uiState.timerLight,
+                title = stringResource(R.string.camera_settings_timer_light),
+                summary = stringResource(R.string.camera_settings_timer_light_summary),
+                label = stringResource(R.string.camera_settings_photo_only),
+                icon = Icons.Outlined.Highlight,
+                shape = shape,
+                modifier = modifier,
+                onCheckedChange = { onAction(Action.TimerLightToggled(it)) },
             )
         },
     )

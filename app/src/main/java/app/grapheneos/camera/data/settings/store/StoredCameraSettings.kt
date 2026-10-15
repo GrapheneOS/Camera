@@ -15,6 +15,8 @@ internal data class StoredCameraSettings(
     val volumeKeyAction: StoredVolumeKeyAction? = null,
     @SerialName("self_timer_duration_seconds")
     val selfTimerDurationSeconds: Int? = null,
+    @SerialName("timer_light")
+    val timerLight: Boolean? = null,
     @SerialName("enable_camera_sounds")
     val enableCameraSounds: Boolean? = null,
     @SerialName("include_audio")
