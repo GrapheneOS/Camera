@@ -1,29 +1,17 @@
 package app.grapheneos.camera
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.graphics.ImageFormat
-import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
-import android.media.Image
 import android.net.Uri
 import android.view.View
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageInfo
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.impl.TagBundle
-import androidx.camera.core.impl.utils.ExifData
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.capturer.ImageSaver
 import app.grapheneos.camera.ui.activities.MainActivity
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.random.Random
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -76,20 +64,7 @@ class TruncatedJpegRegressionTest {
             scenario.onActivity { activity ->
                 capturedBefore = activity.camConfig.lastCapturedItem?.uri
                 activity.imagePreview.setImageBitmap(previousThumbnail)
-
-                // What ImageCapturer.takePicture() sets up, saving to MediaStore so that the
-                // capture can be read back and deleted
-                saver = ImageSaver(
-                    activity.imageCapturer,
-                    activity.applicationContext,
-                    jpegQuality = 95,
-                    CamConfig.SettingValues.Default.STORAGE_LOCATION,
-                    ".jpg",
-                    ImageCapture.Metadata(),
-                    removeExifAfterCapture = false,
-                    targetThumbnailWidth = activity.imagePreview.width,
-                    targetThumbnailHeight = activity.imagePreview.height,
-                )
+                saver = imageSaverFor(activity)
             }
 
             // An uncaught exception on any thread kills the process, which would end the whole run
@@ -99,7 +74,7 @@ class TruncatedJpegRegressionTest {
             Thread.setDefaultUncaughtExceptionHandler { _, e -> crash.set(e) }
             try {
                 ImageSaver.imageCaptureCallbackExecutor.execute {
-                    saver.onCaptureSuccess(JpegImageProxy(jpeg, WIDTH, HEIGHT))
+                    saver.onCaptureSuccess(JpegImageProxy(jpeg))
                 }
 
                 // The loader is shown before the capture is saved, so once the capture is saved a
@@ -138,25 +113,6 @@ class TruncatedJpegRegressionTest {
     private val targetContext
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    /** Noise keeps the scan data long, so that cutting it in half lands well inside it. */
-    private fun noiseJpeg(): ByteArray {
-        val random = Random(0)
-        val pixels = IntArray(WIDTH * HEIGHT) { random.nextInt() or (0xff shl 24) }
-        val bitmap = Bitmap.createBitmap(pixels, WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
-        return ByteArrayOutputStream().use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
-            it.toByteArray()
-        }
-    }
-
-    /** The offset of the SOS marker, after which nothing but scan data follows. */
-    private fun startOfScan(jpeg: ByteArray): Int {
-        for (i in 0 until jpeg.size - 1) {
-            if (jpeg[i] == 0xff.toByte() && jpeg[i + 1] == 0xda.toByte()) return i
-        }
-        throw AssertionError("no SOS marker")
-    }
-
     /** Keeps test runs from accumulating images on the device. */
     private fun deleteNewCapture(scenario: ActivityScenario<MainActivity>, previous: Uri?) {
         scenario.onActivity { activity ->
@@ -165,43 +121,5 @@ class TruncatedJpegRegressionTest {
                 activity.contentResolver.delete(item.uri, null, null)
             }
         }
-    }
-
-    /** What ImageCapture hands the saver for a JPEG capture: the bytes the HAL produced. */
-    @SuppressLint("RestrictedApi")
-    private class JpegImageProxy(
-        private val jpeg: ByteArray,
-        private val width: Int,
-        private val height: Int,
-    ) : ImageProxy {
-        private var cropRect = Rect(0, 0, width, height)
-
-        override fun close() {}
-        override fun getCropRect() = Rect(cropRect)
-        override fun setCropRect(rect: Rect?) {
-            cropRect = rect ?: Rect(0, 0, width, height)
-        }
-        override fun getFormat() = ImageFormat.JPEG
-        override fun getWidth() = width
-        override fun getHeight() = height
-        override fun getPlanes(): Array<ImageProxy.PlaneProxy> = arrayOf(
-            object : ImageProxy.PlaneProxy {
-                override fun getRowStride() = 0
-                override fun getPixelStride() = 0
-                override fun getBuffer(): ByteBuffer = ByteBuffer.wrap(jpeg)
-            }
-        )
-        override fun getImageInfo(): ImageInfo = object : ImageInfo {
-            override fun getTagBundle(): TagBundle = TagBundle.emptyBundle()
-            override fun getTimestamp() = 0L
-            override fun getRotationDegrees() = 0
-            override fun populateExifData(exifBuilder: ExifData.Builder) {}
-        }
-        override fun getImage(): Image? = null
-    }
-
-    private companion object {
-        const val WIDTH = 640
-        const val HEIGHT = 480
     }
 }
