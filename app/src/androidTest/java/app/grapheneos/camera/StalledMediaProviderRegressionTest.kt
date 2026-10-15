@@ -419,13 +419,6 @@ class StalledMediaProviderRegressionTest {
         }
     }
 
-    private fun <A : MainActivity> recordASecond(scenario: ActivityScenario<A>) {
-        waitUntil(scenario, "a second of video is recorded") {
-            it.timerView.visibility == View.VISIBLE &&
-                    it.timerView.text != it.getString(R.string.start_value_timer)
-        }
-    }
-
     /** Posts rather than runs: the test thread must not wait on a main thread a stall is holding. */
     private fun onMainThread(block: () -> Unit) {
         Handler(Looper.getMainLooper()).post(block)
