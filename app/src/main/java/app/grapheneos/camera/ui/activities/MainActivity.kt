@@ -677,7 +677,10 @@ open class MainActivity : AppCompatActivity(),
             KeyEvent.KEYCODE_VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_CAMERA -> {
-                captureButton.performClick()
+                // performClick() ignores both, so check them: a key may only do what a tap could
+                if (captureButton.isShown && captureButton.isEnabled) {
+                    captureButton.performClick()
+                }
             }
             KeyEvent.KEYCODE_FOCUS -> {
                 // cancel any manual focus
