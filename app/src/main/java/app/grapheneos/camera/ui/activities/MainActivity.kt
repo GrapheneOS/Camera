@@ -1929,6 +1929,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onDestroy() {
         super.onDestroy()
+        camConfig.stopAwaitingCameraReturn()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         frameCopyThread?.quitSafely()

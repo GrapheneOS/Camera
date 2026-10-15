@@ -1535,7 +1535,7 @@ class CamConfig(private val mActivity: MainActivity) {
             .registerAvailabilityCallback(ContextCompat.getMainExecutor(mActivity), callback)
     }
 
-    private fun stopAwaitingCameraReturn() {
+    fun stopAwaitingCameraReturn() {
         val callback = cameraReturnCallback ?: return
         cameraReturnCallback = null
         mActivity.getSystemService(CameraManager::class.java)
