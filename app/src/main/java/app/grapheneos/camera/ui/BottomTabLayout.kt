@@ -49,14 +49,15 @@ class BottomTabLayout @JvmOverloads constructor(
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            cancelSettle()
+            holdSettle()
         }
 
         val isHandled = super.dispatchTouchEvent(ev)
 
-        // Only a lifted finger commits a mode, so nothing else would put the strip back.
+        // Only a lifted finger commits a mode, so nothing else would put the strip back, or apply
+        // a mode committed before this touch stopped the strip gliding to it.
         if (ev.actionMasked == MotionEvent.ACTION_CANCEL) {
-            selectedTab?.let(::goToTab)
+            selectedTab?.let { goToTab(it, onSettled) }
         }
 
         return isHandled
@@ -146,6 +147,12 @@ class BottomTabLayout @JvmOverloads constructor(
         removeCallbacks(settled)
 
         settled.run()
+    }
+
+    // Stops the strip for a finger that has caught it mid-glide
+    private fun holdSettle() {
+        scroller.cancel()
+        onSettled?.let { removeCallbacks(it) }
     }
 
     private fun cancelSettle() {
