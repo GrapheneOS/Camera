@@ -51,8 +51,12 @@ class StorageRunningOutRegressionTest {
 
         override fun onCreate() = true
 
+        // Creates the real file too, as MediaProvider drops an entry without one once published
         override fun insert(uri: Uri, values: ContentValues?): Uri? =
-            real.insert(uri, values)?.also { outputs.add(it) }
+            real.insert(uri, values)?.also {
+                real.openFileDescriptor(it, "w")?.close()
+                outputs.add(it)
+            }
 
         override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor =
             ParcelFileDescriptor.dup(output)
