@@ -2,6 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -27,7 +29,9 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     @Test
     fun cameraSettingsClicked_opensThemWithWhatTheCameraSupports() {
         runTest {
-            val capabilities = CameraCapabilities(isZslSupported = true)
+            val capabilities = CameraCapabilities(
+                lensFeatures = mapOf(LensFacing.BACK to LensFeatures(isZslSupported = true)),
+            )
             every { cameraDelegate.capabilities() } returns capabilities
             val viewModel = createViewModel()
 

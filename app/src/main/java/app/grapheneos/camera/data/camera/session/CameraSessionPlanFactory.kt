@@ -77,7 +77,7 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
 
         val videoCaptureBuilder = VideoCapture.Builder(recorderBuilder.build())
 
-        // On cameras where the feature group is not used (see canApplyVideoStabilization)
+        // On cameras where the feature group is not used (see CameraFeatureSupport)
         // EIS is deliberately left off. The pre-1.6 stabilization setters cannot be applied
         // on top of the recorder's higher qualities -- UHD in particular is in none of the
         // stabilization-guaranteed configurations -- so requesting them would either kill
@@ -172,7 +172,7 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
     // stabilization won. Whatever is given up is now reported by onFeaturesSelected().
     //
     // Both stabilization features are listed because the EIS toggle is offered whenever
-    // either kind is supported (see canApplyVideoStabilization). They share one feature
+    // either kind is supported (see CameraFeatureSupport). They share one feature
     // type, so CameraX never selects both and skips the subsets containing the pair; the
     // effective order is quality+preview-stabilization, quality+video-stabilization, quality
     // alone, then the same three without the quality. Preview stabilization is preferred

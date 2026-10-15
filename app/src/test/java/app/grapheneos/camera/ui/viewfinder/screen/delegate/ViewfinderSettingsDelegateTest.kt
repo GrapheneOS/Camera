@@ -2,6 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -195,8 +197,12 @@ class ViewfinderSettingsDelegateTest {
         const val SELF_TIMER_SECONDS = 5
 
         val CAPABILITIES = CameraCapabilities(
-            isZslSupported = true,
-            isVideoStabilizationSupported = true,
+            lensFeatures = mapOf(
+                LensFacing.BACK to LensFeatures(
+                    isZslSupported = true,
+                    isVideoStabilizationSupported = true,
+                ),
+            ),
             photoResolutions = PhotoResolutions(
                 standardMegapixels = 12,
                 fullMegapixels = 50,

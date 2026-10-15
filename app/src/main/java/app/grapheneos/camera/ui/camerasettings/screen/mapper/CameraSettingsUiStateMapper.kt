@@ -1,5 +1,7 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
@@ -122,7 +124,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         val selected = CaptureModeOption.of(state.settings.captureMode)
         val options = CaptureModeOption.entries.filter { option ->
             option != CaptureModeOption.ZERO_SHUTTER_LAG ||
-                state.capabilities.isZslSupported ||
+                state.capabilities.lensFeatures.values.any { it.isZslSupported } ||
                 option == selected
         }
 
@@ -134,30 +136,61 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
     }
 
     private fun ultraHdr(state: CameraSettingsState): SwitchSettingUiModel? {
-        if (!state.capabilities.isUltraHdrSupported) return null
-
-        return switchSetting(
+        return lensSwitchSetting(
+            state = state,
             checked = state.settings.ultraHdr,
             default = SettingsDefaults.ULTRA_HDR,
+            isSupported = { it.isUltraHdrSupported },
         )
     }
 
     private fun hdrVideo(state: CameraSettingsState): SwitchSettingUiModel? {
-        if (!state.capabilities.isHdrVideoSupported) return null
-
-        return switchSetting(
+        return lensSwitchSetting(
+            state = state,
             checked = state.settings.hdrVideo,
             default = SettingsDefaults.HDR_VIDEO,
+            isSupported = { it.isHdrVideoSupported },
         )
     }
 
-    private fun videoStabilization(state: CameraSettingsState): SwitchSettingUiModel {
-        val setting = switchSetting(
+    private fun videoStabilization(state: CameraSettingsState): SwitchSettingUiModel? {
+        return lensSwitchSetting(
+            state = state,
             checked = state.settings.enableEis,
             default = SettingsDefaults.ENABLE_EIS,
+            isSupported = { it.isVideoStabilizationSupported },
         )
+    }
 
-        return setting.copy(enabled = state.capabilities.isVideoStabilizationSupported)
+    private fun lensSwitchSetting(
+        state: CameraSettingsState,
+        checked: Boolean,
+        default: Boolean,
+        isSupported: (LensFeatures) -> Boolean,
+    ): SwitchSettingUiModel? {
+        val lensFeatures = state.capabilities.lensFeatures
+        val supportingLenses = lensFeatures.filterValues(isSupported).keys
+        if (supportingLenses.isEmpty()) return null
+
+        return switchSetting(
+            checked = checked,
+            default = default,
+        ).copy(
+            limitedToLens = limitedToLens(
+                supportingLenses = supportingLenses,
+                allLenses = lensFeatures.keys,
+            ),
+        )
+    }
+
+    private fun limitedToLens(
+        supportingLenses: Set<LensFacing>,
+        allLenses: Set<LensFacing>,
+    ): LensFacing? {
+        return when (supportingLenses) {
+            allLenses -> null
+            else -> supportingLenses.singleOrNull()
+        }
     }
 
     private fun focusTimeout(state: CameraSettingsState): ChoiceSettingUiModel<Long> {

@@ -2,17 +2,34 @@ package app.grapheneos.camera.ui.camerasettings.screen
 
 import android.text.format.Formatter
 import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.ui.camerasettings.components.formatMegapixels
 import app.grapheneos.camera.ui.camerasettings.components.formatPhotoQuality
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoQualityUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.PhotoResolutionUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
+import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
 import java.text.NumberFormat
+
+@Composable
+internal fun availabilityLabel(
+    @StringRes modeLabel: Int,
+    setting: SwitchSettingUiModel,
+): String {
+    val label = stringResource(modeLabel)
+
+    return when (setting.limitedToLens) {
+        null -> label
+        LensFacing.BACK -> stringResource(R.string.camera_settings_rear_camera_label, label)
+        LensFacing.FRONT -> stringResource(R.string.camera_settings_front_camera_label, label)
+    }
+}
 
 @Composable
 internal fun photoQualitySummary(photoQuality: PhotoQualityUiModel): String {

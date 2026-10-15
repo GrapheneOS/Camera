@@ -21,7 +21,7 @@ internal data class CameraSettingsUiState(
         selected = CaptureModeOption.of(SettingsDefaults.CAPTURE_MODE),
         options = persistentListOf(),
     ),
-    val videoStabilization: SwitchSettingUiModel = SwitchSettingUiModel(),
+    val videoStabilization: SwitchSettingUiModel? = null,
     val ultraHdr: SwitchSettingUiModel? = null,
     val hdrVideo: SwitchSettingUiModel? = null,
     val cameraSounds: SwitchSettingUiModel = SwitchSettingUiModel(),
