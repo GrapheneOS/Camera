@@ -13,13 +13,13 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.HdrOn
-import androidx.compose.material.icons.outlined.HdrStrong
-import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.ShutterSpeed
 import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.Tonality
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.VideoStable
 import androidx.compose.material3.OutlinedButton
@@ -233,7 +233,7 @@ private fun photoQualityRows(
                 title = stringResource(R.string.image_quality),
                 summary = photoQualitySummary(uiState.photoQuality),
                 label = stringResource(R.string.camera_settings_photo_only),
-                icon = Icons.Outlined.HighQuality,
+                icon = Icons.Outlined.Photo,
                 isChanged = uiState.photoQuality.isChanged,
                 shape = shape,
                 modifier = modifier,
@@ -258,8 +258,11 @@ private fun photoQualityRows(
                     setting = ultraHdr,
                     title = stringResource(R.string.camera_settings_ultra_hdr),
                     summary = stringResource(R.string.camera_settings_ultra_hdr_summary),
-                    label = stringResource(R.string.camera_settings_photo_only),
-                    icon = Icons.Outlined.HdrStrong,
+                    label = availabilityLabel(
+                        R.string.camera_settings_photo_only,
+                        ultraHdr,
+                    ),
+                    icon = Icons.Outlined.Tonality,
                     shape = shape,
                     modifier = modifier,
                     onCheckedChange = { onAction(Action.UltraHdrToggled(it)) },
@@ -274,25 +277,22 @@ private fun videoQualityRows(
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
     return listOfNotNull(
-        SettingsRow(key = "video_stabilization") { shape, modifier ->
-            val summary = when {
-                uiState.videoStabilization.enabled -> {
-                    R.string.camera_settings_video_stabilization_summary
-                }
-
-                else -> R.string.camera_settings_video_stabilization_unavailable
+        uiState.videoStabilization?.let { videoStabilization ->
+            SettingsRow(key = "video_stabilization") { shape, modifier ->
+                SwitchSettingItem(
+                    setting = videoStabilization,
+                    title = stringResource(R.string.camera_settings_video_stabilization),
+                    summary = stringResource(R.string.camera_settings_video_stabilization_summary),
+                    label = availabilityLabel(
+                        R.string.camera_settings_video_only,
+                        videoStabilization,
+                    ),
+                    icon = Icons.Outlined.VideoStable,
+                    shape = shape,
+                    modifier = modifier,
+                    onCheckedChange = { onAction(Action.VideoStabilizationToggled(it)) },
+                )
             }
-
-            SwitchSettingItem(
-                setting = uiState.videoStabilization,
-                title = stringResource(R.string.camera_settings_video_stabilization),
-                summary = stringResource(summary),
-                label = stringResource(R.string.camera_settings_video_only),
-                icon = Icons.Outlined.VideoStable,
-                shape = shape,
-                modifier = modifier,
-                onCheckedChange = { onAction(Action.VideoStabilizationToggled(it)) },
-            )
         },
         uiState.hdrVideo?.let { hdrVideo ->
             SettingsRow(key = "hdr_video") { shape, modifier ->
@@ -300,7 +300,10 @@ private fun videoQualityRows(
                     setting = hdrVideo,
                     title = stringResource(R.string.camera_settings_hdr_video),
                     summary = stringResource(R.string.camera_settings_hdr_video_summary),
-                    label = stringResource(R.string.camera_settings_video_only),
+                    label = availabilityLabel(
+                        R.string.camera_settings_video_only,
+                        hdrVideo,
+                    ),
                     icon = Icons.Outlined.HdrOn,
                     shape = shape,
                     modifier = modifier,

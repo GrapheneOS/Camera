@@ -21,7 +21,7 @@ import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.HighQuality
+import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material3.Icon
@@ -343,7 +343,7 @@ private fun SettingsClickableItemPreview() {
                 title = "Image quality",
                 summary = "High · 95%",
                 label = "Photo only",
-                icon = Icons.Outlined.HighQuality,
+                icon = Icons.Outlined.Photo,
                 shape = groupedItemShape(index = 0, count = 3),
                 onClick = {},
             )

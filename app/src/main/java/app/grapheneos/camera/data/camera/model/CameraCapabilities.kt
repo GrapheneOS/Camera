@@ -7,10 +7,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class CameraCapabilities(
     val lensFacing: LensFacing = LensFacing.BACK,
-    val isZslSupported: Boolean = false,
-    val isVideoStabilizationSupported: Boolean = false,
-    val isHdrVideoSupported: Boolean = false,
-    val isUltraHdrSupported: Boolean = false,
+    val lensFeatures: Map<LensFacing, LensFeatures> = emptyMap(),
     val photoMegapixels: Int? = null,
     val photoResolutions: PhotoResolutions? = null,
     val videoBitrates: Map<VideoQuality, VideoBitrates> = emptyMap(),

@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.ui.camerasettings.components.GROUPED_ITEM_SPACING
 import app.grapheneos.camera.ui.camerasettings.components.KeepAtEndEffect
 import app.grapheneos.camera.ui.camerasettings.components.SCREEN_CONTENT_PADDING
@@ -165,6 +166,9 @@ private fun CameraSettingsContentPreview() {
                 ),
                 keepSelfiesAsSeen = SwitchSettingUiModel(checked = true),
                 removeExif = SwitchSettingUiModel(checked = true),
+                videoStabilization = SwitchSettingUiModel(checked = true),
+                ultraHdr = SwitchSettingUiModel(limitedToLens = LensFacing.BACK),
+                hdrVideo = SwitchSettingUiModel(),
                 cameraSounds = SwitchSettingUiModel(checked = true),
                 storageLocation = StorageLocationUiModel(
                     location = "",
@@ -176,6 +180,7 @@ private fun CameraSettingsContentPreview() {
                     photos = 3_036,
                     videoMinutes = 143,
                 ),
+                showsLicenses = true,
                 canResetSettings = true,
             ),
             onAction = {},
@@ -195,6 +200,9 @@ private fun CameraSettingsContentSecureSessionPreview() {
                     checked = true,
                     enabled = false,
                 ),
+                videoStabilization = SwitchSettingUiModel(checked = true),
+                ultraHdr = SwitchSettingUiModel(),
+                hdrVideo = SwitchSettingUiModel(),
                 cameraSounds = SwitchSettingUiModel(checked = true),
             ),
             onAction = {},

@@ -1,6 +1,8 @@
 package app.grapheneos.camera.ui.camerasettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.camera.model.VideoBitrates
 import app.grapheneos.camera.data.core.model.CaptureMode
@@ -39,7 +41,6 @@ class CameraSettingsUiStateMapperTest {
         assertFalse(uiState.removeExif.isChanged)
         assertFalse(uiState.grid.isChanged)
         assertFalse(uiState.photoQuality.isChanged)
-        assertFalse(uiState.videoStabilization.isChanged)
         assertFalse(uiState.focusTimeout.isChanged)
         assertFalse(uiState.volumeKeyAction.isChanged)
         assertFalse(uiState.timerLight.isChanged)
@@ -57,7 +58,6 @@ class CameraSettingsUiStateMapperTest {
                     volumeKeyAction = VolumeKeyAction.ZOOM,
                     timerLight = true,
                     enableCameraSounds = false,
-                    enableEis = false,
                     photoQuality = 80,
                 ),
                 storageLocation = "content://tree",
@@ -67,7 +67,6 @@ class CameraSettingsUiStateMapperTest {
         assertTrue(uiState.cameraSounds.isChanged)
         assertTrue(uiState.grid.isChanged)
         assertTrue(uiState.photoQuality.isChanged)
-        assertTrue(uiState.videoStabilization.isChanged)
         assertTrue(uiState.focusTimeout.isChanged)
         assertTrue(uiState.volumeKeyAction.isChanged)
         assertTrue(uiState.timerLight.isChanged)
@@ -132,10 +131,10 @@ class CameraSettingsUiStateMapperTest {
     @Test
     fun zeroShutterLag_isOfferedWhereSupportedOrAlreadyChosen() {
         val unsupported = mapper.map(
-            CameraSettingsState(capabilities = CameraCapabilities(isZslSupported = false)),
+            CameraSettingsState(capabilities = everyCamera(LensFeatures())),
         )
         val supported = mapper.map(
-            CameraSettingsState(capabilities = CameraCapabilities(isZslSupported = true)),
+            CameraSettingsState(capabilities = backCameraOnly(LensFeatures(isZslSupported = true))),
         )
         val chosen = mapper.map(
             CameraSettingsState(
@@ -186,20 +185,36 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
-    fun videoStabilization_onACameraThatCannotStabilize_isLockedAtItsStoredValue() {
+    fun videoStabilization_onlyOnADeviceThatCanStabilize_isOffered() {
         val unsupported = mapper.map(
-            CameraSettingsState(settings = CameraSettings(enableEis = false)),
+            CameraSettingsState(capabilities = everyCamera(LensFeatures())),
         )
         val supported = mapper.map(
             CameraSettingsState(
                 settings = CameraSettings(enableEis = false),
-                capabilities = CameraCapabilities(isVideoStabilizationSupported = true),
+                capabilities = everyCamera(LensFeatures(isVideoStabilizationSupported = true)),
             ),
         )
 
-        assertFalse(unsupported.videoStabilization.enabled)
-        assertFalse(unsupported.videoStabilization.checked)
-        assertTrue(supported.videoStabilization.enabled)
+        assertNull(unsupported.videoStabilization)
+        assertEquals(
+            SwitchSettingUiModel(checked = false, isChanged = true),
+            supported.videoStabilization,
+        )
+    }
+
+    @Test
+    fun aSettingOnlyOneCameraSupports_namesThatCamera() {
+        val ultraHdrOnTheBack = backCameraOnly(LensFeatures(isUltraHdrSupported = true))
+        val singleCameraDevice = CameraCapabilities(
+            lensFeatures = mapOf(LensFacing.BACK to LensFeatures(isUltraHdrSupported = true)),
+        )
+
+        val twoCameras = mapper.map(CameraSettingsState(capabilities = ultraHdrOnTheBack))
+        val oneCamera = mapper.map(CameraSettingsState(capabilities = singleCameraDevice))
+
+        assertEquals(LensFacing.BACK, twoCameras.ultraHdr?.limitedToLens)
+        assertNull(oneCamera.ultraHdr?.limitedToLens)
     }
 
     @Test
@@ -210,7 +225,7 @@ class CameraSettingsUiStateMapperTest {
         val supported = mapper.map(
             CameraSettingsState(
                 settings = CameraSettings(ultraHdr = true),
-                capabilities = CameraCapabilities(isUltraHdrSupported = true),
+                capabilities = everyCamera(LensFeatures(isUltraHdrSupported = true)),
             ),
         )
 
@@ -226,7 +241,7 @@ class CameraSettingsUiStateMapperTest {
         val supported = mapper.map(
             CameraSettingsState(
                 settings = CameraSettings(hdrVideo = true),
-                capabilities = CameraCapabilities(isHdrVideoSupported = true),
+                capabilities = everyCamera(LensFeatures(isHdrVideoSupported = true)),
             ),
         )
 
@@ -347,5 +362,23 @@ class CameraSettingsUiStateMapperTest {
 
         assertTrue(unlocked.showsLicenses)
         assertFalse(lockscreen.showsLicenses)
+    }
+
+    private fun everyCamera(features: LensFeatures): CameraCapabilities {
+        return CameraCapabilities(
+            lensFeatures = mapOf(
+                LensFacing.BACK to features,
+                LensFacing.FRONT to features,
+            ),
+        )
+    }
+
+    private fun backCameraOnly(features: LensFeatures): CameraCapabilities {
+        return CameraCapabilities(
+            lensFeatures = mapOf(
+                LensFacing.BACK to features,
+                LensFacing.FRONT to LensFeatures(),
+            ),
+        )
     }
 }

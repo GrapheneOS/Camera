@@ -12,12 +12,12 @@ import app.grapheneos.camera.data.camera.repository.CameraProviderSource
 import app.grapheneos.camera.data.camera.repository.CameraProviderSourceImpl
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepository
 import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityRepositoryImpl
+import app.grapheneos.camera.data.camera.session.CameraFeatureSupport
+import app.grapheneos.camera.data.camera.session.CameraFeatureSupportImpl
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactory
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactoryImpl
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
-import app.grapheneos.camera.data.camera.session.HdrVideoSupport
-import app.grapheneos.camera.data.camera.session.HdrVideoSupportImpl
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolver
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolverImpl
 import app.grapheneos.camera.data.camera.session.JpegExtractor
@@ -26,12 +26,8 @@ import app.grapheneos.camera.data.camera.session.PhotoResolutionSupport
 import app.grapheneos.camera.data.camera.session.PhotoResolutionSupportImpl
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCacheImpl
-import app.grapheneos.camera.data.camera.session.UltraHdrSupport
-import app.grapheneos.camera.data.camera.session.UltraHdrSupportImpl
 import app.grapheneos.camera.data.camera.session.VideoBitrateSupport
 import app.grapheneos.camera.data.camera.session.VideoBitrateSupportImpl
-import app.grapheneos.camera.data.camera.session.VideoStabilizationSupport
-import app.grapheneos.camera.data.camera.session.VideoStabilizationSupportImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModesImpl
 import dagger.Binds
@@ -77,21 +73,9 @@ internal abstract class CameraBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindVideoStabilizationSupport(
-        impl: VideoStabilizationSupportImpl,
-    ): VideoStabilizationSupport
-
-    @Binds
-    @Reusable
-    abstract fun bindHdrVideoSupport(
-        impl: HdrVideoSupportImpl,
-    ): HdrVideoSupport
-
-    @Binds
-    @Reusable
-    abstract fun bindUltraHdrSupport(
-        impl: UltraHdrSupportImpl,
-    ): UltraHdrSupport
+    abstract fun bindCameraFeatureSupport(
+        impl: CameraFeatureSupportImpl,
+    ): CameraFeatureSupport
 
     @Binds
     @Reusable

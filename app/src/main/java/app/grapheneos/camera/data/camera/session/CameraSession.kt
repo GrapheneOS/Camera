@@ -44,6 +44,7 @@ import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PreviewTarget
 import app.grapheneos.camera.data.camera.model.QR_SCAN_AREA_RATIO
 import app.grapheneos.camera.data.camera.model.SnapshotProbeKey
@@ -106,12 +107,9 @@ internal class CameraSessionImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val cameraProviderSource: CameraProviderSource,
     private val extensionAvailabilityRepository: ExtensionAvailabilityRepository,
-    private val featureCombinationSupport: FeatureCombinationSupport,
+    private val cameraFeatureSupport: CameraFeatureSupport,
     private val photoResolutionSupport: PhotoResolutionSupport,
     private val videoBitrateSupport: VideoBitrateSupport,
-    private val videoStabilizationSupport: VideoStabilizationSupport,
-    private val hdrVideoSupport: HdrVideoSupport,
-    private val ultraHdrSupport: UltraHdrSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
@@ -466,6 +464,12 @@ internal class CameraSessionImpl @Inject constructor(
 
         val useCasesList = arrayListOf<UseCase>()
 
+        // Asked of the selector this bind uses, extensions included: an extension mode decides for
+        // itself whether it can produce Ultra HDR.
+        val features = currentCameraInfoOrNull()?.let {
+            cameraFeatureSupport.features(it)
+        } ?: LensFeatures()
+
         // CameraX 1.6.0's SessionConfig throws an IllegalArgumentException at construction time
         // if any use case configures a groupable feature through a non-groupable API while a
         // feature group is in use. Recorder.Builder.setQualitySelector() is such an API since
@@ -479,9 +483,9 @@ internal class CameraSessionImpl @Inject constructor(
         // to map the current quality, and falling back to setQualitySelector() in that case would
         // reintroduce the very exception this works around.
         //
-        // Both halves of canApplyVideoStabilization() gate the group. The platform has to be able
-        // to verify feature combinations: where it cannot, the resolver would conflate "could not
-        // check" with "unsupported", quietly discard the stored video quality and produce
+        // Both halves of LensFeatures.isVideoStabilizationSupported gate the group. The platform
+        // has to be able to verify feature combinations: where it cannot, the resolver would
+        // conflate "could not check" with "unsupported", quietly discard the stored video quality and produce
         // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters in
         // the session plan instead, which are legal exactly because no feature group is in use
         // then. And the group exists solely to negotiate stabilization and HDR against the
@@ -489,8 +493,8 @@ internal class CameraSessionImpl @Inject constructor(
         // plain fallback path directly, which produces the identical output without a needless
         // feature-group round. HDR is never applied off the group either: the strict quality
         // selector there would fail the bind at any quality the camera can't record in HLG.
-        val requestsStabilization = settings.enableEis && canApplyVideoStabilization()
-        val requestsHdr = settings.hdrVideo && canApplyHdrVideo()
+        val requestsStabilization = settings.enableEis && features.isVideoStabilizationSupported
+        val requestsHdr = settings.hdrVideo && features.isHdrVideoSupported
         val featureGroup: FeatureGroupRequest = when {
             settings.isVideoMode && (requestsStabilization || requestsHdr) -> {
                 FeatureGroupRequest.Requested(
@@ -526,7 +530,7 @@ internal class CameraSessionImpl @Inject constructor(
             photoQuality = settings.photoQuality,
             captureMode = settings.captureMode,
             selectHighestResolution = settings.selectHighestResolution,
-            ultraHdr = settings.ultraHdr && !settings.isVideoMode && canApplyUltraHdr(),
+            ultraHdr = settings.ultraHdr && !settings.isVideoMode && features.isUltraHdrSupported,
             videoQuality = settings.videoQuality,
             mirrorVideoOnFrontCamera = settings.mirrorVideoOnFrontCamera,
             featureGroup = featureGroup,
@@ -830,43 +834,26 @@ internal class CameraSessionImpl @Inject constructor(
 
         return CameraCapabilities(
             lensFacing = lensFacing,
-            isZslSupported = cameraInfo.isZslSupported,
-            isVideoStabilizationSupported = canApplyVideoStabilization(),
-            isHdrVideoSupported = canApplyHdrVideo(),
-            isUltraHdrSupported = canApplyUltraHdr(),
+            lensFeatures = lensFeatures(),
             photoMegapixels = photoResolutionSupport.standardMegapixels(cameraInfo),
             photoResolutions = photoResolutionSupport.resolutions(cameraInfo),
             videoBitrates = videoBitrateSupport.bitrates(cameraInfo),
         )
     }
 
-    // Whether the EIS toggle has anything to act on. Stabilization is only ever requested through
-    // the feature group (see bind), which in turn needs the platform to be able to verify
-    // feature combinations, so a camera that can stabilize is not on its own enough: where the
-    // group cannot be used nothing applies EIS, and offering the toggle there is offering a
-    // control that does nothing.
-    private fun canApplyVideoStabilization(): Boolean {
-        return canVerifyFeatureCombinations() &&
-            videoStabilizationSupport.isSupported(getCurrentCameraInfo())
-    }
+    // Every camera rather than the one in use: a setting stays where the user left it whichever
+    // camera the settings were opened from, and is applied wherever the camera supports it.
+    private fun lensFeatures(): Map<LensFacing, LensFeatures> {
+        val provider = cameraProvider ?: return emptyMap()
 
-    private fun canApplyHdrVideo(): Boolean {
-        return canVerifyFeatureCombinations() &&
-            hdrVideoSupport.isSupported(getCurrentCameraInfo())
-    }
-
-    // Asked of the selector the session binds with, extensions included: an extension mode
-    // decides for itself whether it can produce Ultra HDR.
-    private fun canApplyUltraHdr(): Boolean {
-        val cameraInfo = currentCameraInfoOrNull() ?: return false
-
-        return ultraHdrSupport.isSupported(cameraInfo)
-    }
-
-    private fun canVerifyFeatureCombinations(): Boolean {
-        val cameraInfo = currentCameraInfoOrNull() ?: return false
-
-        return featureCombinationSupport.canVerify(cameraInfo)
+        return LensFacing.entries
+            .filter { lensFacing ->
+                provider.hasCamera(selectorFor(lensFacing))
+            }
+            .associateWith { lensFacing ->
+                val cameraInfo = provider.getCameraInfo(selectorFor(lensFacing))
+                cameraFeatureSupport.features(cameraInfo)
+            }
     }
 
     private fun currentCameraInfoOrNull(): CameraInfo? {
@@ -876,14 +863,6 @@ internal class CameraSessionImpl @Inject constructor(
             Log.w(TAG, "Unable to resolve camera info", exception)
             null
         }
-    }
-
-    private fun getCurrentCameraInfo(): CameraInfo {
-        val provider = requireNotNull(cameraProvider) {
-            "Camera provider is not ready yet"
-        }
-
-        return provider.getCameraInfo(cameraSelector)
     }
 
     override fun setCaptureOrientation(orientation: DeviceOrientation) {
