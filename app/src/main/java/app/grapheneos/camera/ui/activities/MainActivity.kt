@@ -73,6 +73,8 @@ import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -2041,39 +2043,69 @@ open class MainActivity : AppCompatActivity(),
         }
 
         val ctx = applicationContext
+        val side = preview.layoutParams.width
+        // What the gallery opened from here shows; a secure session shows only its own captures
+        val videosOnly = requiresVideoModeOnly
+        val sessionItems = when (this) {
+            is SecureMainActivity -> capturedItems.toHashSet()
+            is SecureActivity -> emptySet()
+            else -> null
+        }
 
         thumbnailLoaderExecutor.executeIfAlive {
-            var bitmap: Bitmap? = null
-            try {
-                val side = preview.layoutParams.width
+            var shown: CapturedItem? = item
+            var bitmap = loadThumbnail(ctx, item, side)
 
-                if (item.type == ITEM_TYPE_VIDEO) {
-                    val origBitmap = getVideoThumbnail(ctx, item.uri)
-                    origBitmap?.let {
-                        val w = it.width.toDouble()
-                        val h = it.height.toDouble()
-                        val ratio = max(w / side, h / side)
-
-                        bitmap = it.scale((w / ratio).toInt(), (h / ratio).toInt())
-                        origBitmap.recycle()
-                    }
-                } else if (item.type == ITEM_TYPE_IMAGE) {
-                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
-                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+            if (bitmap == null) {
+                val items = try {
+                    CapturedItems.get(ctx)
+                } catch (_: InterruptedException) {
+                    return@executeIfAlive
                 }
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to update preview", e)
+                // Deleted or moved away since, in the gallery or by another app
+                if (item !in items) {
+                    shown = items.filter {
+                        (sessionItems == null || it in sessionItems) &&
+                                (!videosOnly || it.type == ITEM_TYPE_VIDEO)
+                    }.maxByOrNull { it.dateString }
+                    bitmap = shown?.let { loadThumbnail(ctx, it, side) }
+                }
             }
 
-            if (bitmap != null) {
-                mainExecutor.execute {
-                    if (isStarted && camConfig.lastCapturedItem == item) {
+            mainExecutor.execute {
+                if (isStarted && camConfig.lastCapturedItem == item) {
+                    if (shown != item) {
+                        val seesEveryItem = sessionItems == null && !videosOnly
+                        camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
+                    }
+                    if (bitmap != null) {
                         preview.setImageBitmap(bitmap)
                         isThumbnailLoaded = true
                     }
                 }
             }
         }
+    }
+
+    private fun loadThumbnail(ctx: Context, item: CapturedItem, side: Int): Bitmap? {
+        try {
+            if (item.type == ITEM_TYPE_VIDEO) {
+                val origBitmap = getVideoThumbnail(ctx, item.uri) ?: return null
+                val w = origBitmap.width.toDouble()
+                val h = origBitmap.height.toDouble()
+                val ratio = max(w / side, h / side)
+
+                val bitmap = origBitmap.scale((w / ratio).toInt(), (h / ratio).toInt())
+                origBitmap.recycle()
+                return bitmap
+            } else if (item.type == ITEM_TYPE_IMAGE) {
+                val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
+                return ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "unable to update preview", e)
+        }
+        return null
     }
 
     open fun shouldShowCameraModeTabs() = true
