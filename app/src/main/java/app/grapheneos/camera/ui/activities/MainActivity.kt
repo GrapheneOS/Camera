@@ -38,6 +38,7 @@ import android.view.View
 import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
@@ -797,6 +798,33 @@ open class MainActivity : AppCompatActivity(),
             }
 
             return@setOnTouchListener false
+        }
+
+        // An accessibility action would scroll the strip like any HorizontalScrollView, gliding the
+        // highlight to a mode nothing commits. Step it one mode that way instead, as a drag would.
+        tabLayout.accessibilityDelegate = object : View.AccessibilityDelegate() {
+            override fun performAccessibilityAction(
+                host: View, action: Int, args: Bundle?
+            ): Boolean {
+                val step = when (action) {
+                    AccessibilityAction.ACTION_SCROLL_FORWARD.id,
+                    AccessibilityAction.ACTION_SCROLL_RIGHT.id -> 1
+                    AccessibilityAction.ACTION_SCROLL_BACKWARD.id,
+                    AccessibilityAction.ACTION_SCROLL_LEFT.id -> -1
+                    else -> return super.performAccessibilityAction(host, action, args)
+                }
+
+                // Scrolling right brings in the tabs before the selected one in a rtl layout
+                val isRtl = host.layoutDirection == View.LAYOUT_DIRECTION_RTL
+                val tab = tabLayout
+                    .getTabAt(
+                        tabLayout.selectedTabPosition + if (isRtl) -step else step
+                    )
+                    ?: return false
+
+                finalizeMode(tab)
+                return true
+            }
         }
 
         timerView = binding.timer
