@@ -7,6 +7,7 @@ import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
+import app.grapheneos.camera.util.OneAtATimeStarter
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -16,6 +17,8 @@ class VideoCaptureActivity : CaptureActivity() {
     private var savedUri: Uri? = null
 
     private var previewPending = false
+
+    private val playerStarter = OneAtATimeStarter(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +42,7 @@ class VideoCaptureActivity : CaptureActivity() {
                 VideoPlayer::class.java
             )
             i.putExtra("videoUri", savedUri)
-            startActivity(i)
+            playerStarter.start(i)
         }
 
         imagePreview.visibility = View.GONE

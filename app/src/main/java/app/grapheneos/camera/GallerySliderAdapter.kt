@@ -93,7 +93,7 @@ class GallerySliderAdapter(
                                         VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode
                                     )
 
-                                    gActivity.startActivity(intent)
+                                    gActivity.playerStarter.start(intent)
                                 }
                             }
                         } else if (item.type == ITEM_TYPE_IMAGE) {
