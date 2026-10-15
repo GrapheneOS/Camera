@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.CenterFocusWeak
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.HdrOn
 import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.LocationOn
@@ -215,7 +216,7 @@ private fun qualityRows(
     uiState: UiState,
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
-    return listOf(
+    return listOfNotNull(
         SettingsRow(key = "photo_quality") { shape, modifier ->
             SettingsClickableItem(
                 title = stringResource(R.string.image_quality),
@@ -259,6 +260,20 @@ private fun qualityRows(
                 modifier = modifier,
                 onCheckedChange = { onAction(Action.VideoStabilizationToggled(it)) },
             )
+        },
+        uiState.hdrVideo?.let { hdrVideo ->
+            SettingsRow(key = "hdr_video") { shape, modifier ->
+                SwitchSettingItem(
+                    setting = hdrVideo,
+                    title = stringResource(R.string.camera_settings_hdr_video),
+                    summary = stringResource(R.string.camera_settings_hdr_video_summary),
+                    label = stringResource(R.string.camera_settings_video_only),
+                    icon = Icons.Outlined.HdrOn,
+                    shape = shape,
+                    modifier = modifier,
+                    onCheckedChange = { onAction(Action.HdrVideoToggled(it)) },
+                )
+            }
         },
     )
 }

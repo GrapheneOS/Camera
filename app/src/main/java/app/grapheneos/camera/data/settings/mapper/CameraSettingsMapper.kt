@@ -36,6 +36,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             enableCameraSounds = stored.enableCameraSounds ?: SettingsDefaults.CAMERA_SOUNDS,
             includeAudio = stored.includeAudio ?: SettingsDefaults.INCLUDE_AUDIO,
             enableEis = stored.enableEis ?: SettingsDefaults.ENABLE_EIS,
+            hdrVideo = stored.hdrVideo ?: SettingsDefaults.HDR_VIDEO,
             captureMode = captureMode(stored),
             selectHighestResolution = stored.selectHighestResolution
                 ?: SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
@@ -78,6 +79,8 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 .takeUnless { it == SettingsDefaults.INCLUDE_AUDIO },
             enableEis = settings.enableEis
                 .takeUnless { it == SettingsDefaults.ENABLE_EIS },
+            hdrVideo = settings.hdrVideo
+                .takeUnless { it == SettingsDefaults.HDR_VIDEO },
             captureMode = settings.captureMode
                 .takeUnless { it == SettingsDefaults.CAPTURE_MODE }
                 ?.let(::map),

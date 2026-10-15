@@ -19,6 +19,7 @@ data class CameraBindSettings(
     val videoQuality: VideoQuality,
     val captureMode: CaptureMode,
     val enableEis: Boolean,
+    val hdrVideo: Boolean,
     val selectHighestResolution: Boolean,
     val mirrorVideoOnFrontCamera: Boolean,
     val barcodeFormats: Set<BarcodeFormat>,

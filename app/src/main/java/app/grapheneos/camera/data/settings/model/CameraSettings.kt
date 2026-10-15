@@ -13,6 +13,7 @@ data class CameraSettings(
     val enableCameraSounds: Boolean = SettingsDefaults.CAMERA_SOUNDS,
     val includeAudio: Boolean = SettingsDefaults.INCLUDE_AUDIO,
     val enableEis: Boolean = SettingsDefaults.ENABLE_EIS,
+    val hdrVideo: Boolean = SettingsDefaults.HDR_VIDEO,
     val captureMode: CaptureMode = SettingsDefaults.CAPTURE_MODE,
     val selectHighestResolution: Boolean = SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
     val photoQuality: Int = SettingsDefaults.PHOTO_QUALITY,

@@ -16,6 +16,8 @@ import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactory
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactoryImpl
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
+import app.grapheneos.camera.data.camera.session.HdrVideoSupport
+import app.grapheneos.camera.data.camera.session.HdrVideoSupportImpl
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolver
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolverImpl
 import app.grapheneos.camera.data.camera.session.JpegExtractor
@@ -68,6 +70,12 @@ internal abstract class CameraBindsModule {
     abstract fun bindVideoBitrateSupport(
         impl: VideoBitrateSupportImpl,
     ): VideoBitrateSupport
+
+    @Binds
+    @Reusable
+    abstract fun bindHdrVideoSupport(
+        impl: HdrVideoSupportImpl,
+    ): HdrVideoSupport
 
     @Binds
     @Reusable

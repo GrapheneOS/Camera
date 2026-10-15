@@ -109,6 +109,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val featureCombinationSupport: FeatureCombinationSupport,
     private val photoResolutionSupport: PhotoResolutionSupport,
     private val videoBitrateSupport: VideoBitrateSupport,
+    private val hdrVideoSupport: HdrVideoSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
@@ -481,13 +482,20 @@ internal class CameraSessionImpl @Inject constructor(
         // check" with "unsupported", quietly discard the stored video quality and produce
         // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters in
         // the session plan instead, which are legal exactly because no feature group is in use
-        // then. And the group exists solely to negotiate stabilization against the quality, so a
-        // camera that supports no stabilization at all has nothing to negotiate: it takes the
+        // then. And the group exists solely to negotiate stabilization and HDR against the
+        // quality, so a camera that can apply neither has nothing to negotiate: it takes the
         // plain fallback path directly, which produces the identical output without a needless
-        // feature-group round.
+        // feature-group round. HDR is never applied off the group either: the strict quality
+        // selector there would fail the bind at any quality the camera can't record in HLG.
+        val requestsStabilization = settings.enableEis && canApplyVideoStabilization()
+        val requestsHdr = settings.hdrVideo && canApplyHdrVideo()
         val featureGroup: FeatureGroupRequest = when {
-            settings.isVideoMode && settings.enableEis && canApplyVideoStabilization() -> {
-                FeatureGroupRequest.Requested(videoQualityAsGroupableFeature(settings.videoQuality))
+            settings.isVideoMode && (requestsStabilization || requestsHdr) -> {
+                FeatureGroupRequest.Requested(
+                    videoQualityFeature = videoQualityAsGroupableFeature(settings.videoQuality),
+                    stabilization = requestsStabilization,
+                    hdr = requestsHdr,
+                )
             }
 
             else -> FeatureGroupRequest.Unused
@@ -577,6 +585,7 @@ internal class CameraSessionImpl @Inject constructor(
                 lensFacing = lensFacing,
                 videoQuality = settings.videoQuality,
                 usesFeatureGroup = featureGroup is FeatureGroupRequest.Requested,
+                hdrVideo = requestsHdr,
                 captureMode = plan.captureMode,
                 selectHighestResolution = settings.selectHighestResolution,
             )
@@ -592,7 +601,10 @@ internal class CameraSessionImpl @Inject constructor(
                 }
 
                 snapshotProbeCache[probeKey] = inVideoSnapshotSupportResolver.resolve(
-                    videoQualityFeature = requiredQualityFeature,
+                    selectedFeatures = setOfNotNull(
+                        requiredQualityFeature,
+                        GroupableFeature.HDR_HLG10.takeIf { requestsHdr },
+                    ),
                     probe = { withSnapshots, features ->
                         val probedUseCases = when {
                             withSnapshots -> useCasesList
@@ -809,6 +821,7 @@ internal class CameraSessionImpl @Inject constructor(
             lensFacing = lensFacing,
             isZslSupported = cameraInfo.isZslSupported,
             isVideoStabilizationSupported = canApplyVideoStabilization(),
+            isHdrVideoSupported = canApplyHdrVideo(),
             photoMegapixels = photoResolutionSupport.standardMegapixels(cameraInfo),
             photoResolutions = photoResolutionSupport.resolutions(cameraInfo),
             videoBitrates = videoBitrateSupport.bitrates(cameraInfo),
@@ -822,6 +835,11 @@ internal class CameraSessionImpl @Inject constructor(
     // control that does nothing.
     private fun canApplyVideoStabilization(): Boolean {
         return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
+    }
+
+    private fun canApplyHdrVideo(): Boolean {
+        return canVerifyFeatureCombinations() &&
+            hdrVideoSupport.isSupported(getCurrentCameraInfo())
     }
 
     private fun canVerifyFeatureCombinations(): Boolean {

@@ -8,7 +8,7 @@ import javax.inject.Inject
 
 // CameraX resolves a preferred feature group by dropping features until what is left is a
 // combination the camera actually supports, and it does so silently. This app only ever asks
-// for the video quality and the stabilization that the user selected, so a dropped feature
+// for the video quality, HDR and the stabilization that the user selected, so a dropped feature
 // means a setting the UI still displays is not in effect. Say so rather than letting the
 // recording quietly disagree with the settings screen.
 interface ResolveDroppedVideoQuality {

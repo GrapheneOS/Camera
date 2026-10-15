@@ -143,6 +143,10 @@ internal class CameraSettingsViewModel @Inject constructor(
                 updateSettings { it.copy(enableEis = enabled) }
             }
 
+            is Action.HdrVideoToggled -> {
+                updateSettings { it.copy(hdrVideo = enabled) }
+            }
+
             is Action.CameraSoundsToggled -> {
                 updateSettings { it.copy(enableCameraSounds = enabled) }
             }

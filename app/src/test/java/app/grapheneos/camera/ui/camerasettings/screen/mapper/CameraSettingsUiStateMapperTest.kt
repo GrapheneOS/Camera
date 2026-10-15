@@ -203,6 +203,22 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
+    fun hdrVideo_onlyOnACameraThatRecordsHlg_isOffered() {
+        val unsupported = mapper.map(
+            CameraSettingsState(settings = CameraSettings(hdrVideo = true)),
+        )
+        val supported = mapper.map(
+            CameraSettingsState(
+                settings = CameraSettings(hdrVideo = true),
+                capabilities = CameraCapabilities(isHdrVideoSupported = true),
+            ),
+        )
+
+        assertNull(unsupported.hdrVideo)
+        assertEquals(SwitchSettingUiModel(checked = true, isChanged = true), supported.hdrVideo)
+    }
+
+    @Test
     fun focusTimeout_storedOutsideTheChoices_isStillOffered() {
         val uiState = mapper.map(
             CameraSettingsState(settings = CameraSettings(focusTimeoutSeconds = 7)),

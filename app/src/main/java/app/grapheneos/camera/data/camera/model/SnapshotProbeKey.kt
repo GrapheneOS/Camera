@@ -11,6 +11,7 @@ data class SnapshotProbeKey(
     val lensFacing: LensFacing,
     val videoQuality: VideoQuality,
     val usesFeatureGroup: Boolean,
+    val hdrVideo: Boolean,
     val captureMode: CaptureMode,
     val selectHighestResolution: Boolean,
 )

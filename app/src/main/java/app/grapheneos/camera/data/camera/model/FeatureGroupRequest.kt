@@ -8,5 +8,7 @@ sealed interface FeatureGroupRequest {
 
     data class Requested(
         val videoQualityFeature: GroupableFeature?,
+        val stabilization: Boolean,
+        val hdr: Boolean,
     ) : FeatureGroupRequest
 }

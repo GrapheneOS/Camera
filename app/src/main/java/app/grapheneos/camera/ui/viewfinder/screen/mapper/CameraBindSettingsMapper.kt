@@ -33,6 +33,7 @@ internal class CameraBindSettingsMapperImpl @Inject constructor() : CameraBindSe
             videoQuality = state.modeSettings.videoQuality,
             captureMode = settings.captureMode,
             enableEis = settings.enableEis,
+            hdrVideo = settings.hdrVideo,
             selectHighestResolution = settings.selectHighestResolution,
             mirrorVideoOnFrontCamera = settings.keepSelfiesAsSeen,
             barcodeFormats = state.barcodeFormats(),

@@ -94,6 +94,31 @@ class CameraSessionPlanFactoryTest {
         )
     }
 
+    @Test
+    fun create_aFeatureGroupSessionWithHdr_putsHdrBetweenTheQualityAndStabilization() {
+        val plan = buildPlan(featureGroupRequest(hdr = true))
+
+        assertEquals(
+            listOf(
+                GroupableFeatures.UHD_RECORDING,
+                GroupableFeature.HDR_HLG10,
+                GroupableFeature.PREVIEW_STABILIZATION,
+                GroupableFeatures.VIDEO_STABILIZATION,
+            ),
+            plan.preferredFeatures,
+        )
+    }
+
+    @Test
+    fun create_aFeatureGroupSessionForHdrAlone_asksForNoStabilization() {
+        val plan = buildPlan(featureGroupRequest(stabilization = false, hdr = true))
+
+        assertEquals(
+            listOf(GroupableFeatures.UHD_RECORDING, GroupableFeature.HDR_HLG10),
+            plan.preferredFeatures,
+        )
+    }
+
     // CameraX 1.6.0's SessionConfig rejects at construction time any use case that configured a
     // groupable feature through a non-groupable API while a feature group is in use --
     // Recorder.Builder.setQualitySelector() and Preview.Builder.setPreviewStabilizationEnabled()
@@ -130,11 +155,17 @@ class CameraSessionPlanFactoryTest {
 
     private fun featureGroupRequest(
         videoQualityFeature: GroupableFeature? = GroupableFeatures.UHD_RECORDING,
+        stabilization: Boolean = true,
+        hdr: Boolean = false,
     ): CameraBindRequest {
         return request(
             includesVideoCapture = true,
             includesImageCapture = true,
-            featureGroup = FeatureGroupRequest.Requested(videoQualityFeature),
+            featureGroup = FeatureGroupRequest.Requested(
+                videoQualityFeature = videoQualityFeature,
+                stabilization = stabilization,
+                hdr = hdr,
+            ),
         )
     }
 
