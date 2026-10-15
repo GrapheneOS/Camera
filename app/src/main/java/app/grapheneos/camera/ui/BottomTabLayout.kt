@@ -2,9 +2,14 @@ package app.grapheneos.camera.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Rect
+import android.os.Bundle
 import android.util.AttributeSet
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import android.view.animation.AnimationUtils
 import androidx.core.view.children
 import app.grapheneos.camera.CameraMode
@@ -62,6 +67,30 @@ class BottomTabLayout @JvmOverloads constructor(
 
         return isHandled
     }
+
+    // Only a committed mode moves the strip: bringing a tab into view, for focus or an
+    // accessibility service, a key or a mouse wheel would glide it to a mode the camera never
+    // enters
+    override fun computeScrollDeltaToGetChildRectOnScreen(rect: Rect) = 0
+
+    override fun executeKeyEvent(event: KeyEvent) = false
+
+    override fun onGenericMotionEvent(event: MotionEvent) =
+        event.actionMasked != MotionEvent.ACTION_SCROLL && super.onGenericMotionEvent(event)
+
+    // TalkBack scrolls the strip by action once a swipe runs past the last tab on screen, and no
+    // scroll can commit a mode either. Without a scroll on offer TalkBack moves on past the strip,
+    // and double-tapping the tab at its edge commits that mode and brings in the ones after it.
+    override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
+        super.onInitializeAccessibilityNodeInfo(info)
+
+        SCROLL_ACTIONS.forEach(info::removeAction)
+        info.isScrollable = false
+    }
+
+    override fun performAccessibilityAction(action: Int, arguments: Bundle?) =
+        SCROLL_ACTIONS.none { it.id == action } &&
+            super.performAccessibilityAction(action, arguments)
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
@@ -218,5 +247,12 @@ class BottomTabLayout @JvmOverloads constructor(
 
     private companion object {
         private const val SETTLE_DURATION_MS = 300L
+
+        private val SCROLL_ACTIONS = listOf(
+            AccessibilityAction.ACTION_SCROLL_FORWARD,
+            AccessibilityAction.ACTION_SCROLL_BACKWARD,
+            AccessibilityAction.ACTION_SCROLL_LEFT,
+            AccessibilityAction.ACTION_SCROLL_RIGHT,
+        )
     }
 }
