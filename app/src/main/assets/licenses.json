@@ -695,13 +695,13 @@
         },
         {
             "name": "Kotlin Stdlib",
-            "coordinates": "org.jetbrains.kotlin:kotlin-stdlib:2.4.20",
+            "coordinates": "org.jetbrains.kotlin:kotlin-stdlib:2.4.21",
             "url": "https://kotlinlang.org/",
             "license": "Apache-2.0"
         },
         {
             "name": "Kotlin Stdlib Common",
-            "coordinates": "org.jetbrains.kotlin:kotlin-stdlib-common:2.4.20",
+            "coordinates": "org.jetbrains.kotlin:kotlin-stdlib-common:2.4.21",
             "url": "https://kotlinlang.org/",
             "license": "Apache-2.0"
         },
@@ -941,7 +941,7 @@
         },
         {
             "name": "Parcelize Runtime",
-            "coordinates": "org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.20",
+            "coordinates": "org.jetbrains.kotlin:kotlin-parcelize-runtime:2.4.21",
             "url": "https://kotlinlang.org/",
             "license": "Apache-2.0"
         },
