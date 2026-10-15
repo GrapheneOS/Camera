@@ -150,6 +150,7 @@ internal class ImageSaver @AssistedInject constructor(
                     shouldUseExifOrientation = jpeg.shouldUseExifOrientation,
                     metadata = metadata,
                     removeExif = request.removeExif,
+                    isUltraHdr = jpeg.isUltraHdr,
                     captureTime = captureTime,
                 ),
             )

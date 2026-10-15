@@ -203,6 +203,22 @@ class CameraSettingsUiStateMapperTest {
     }
 
     @Test
+    fun ultraHdr_onlyOnACameraThatCapturesIt_isOffered() {
+        val unsupported = mapper.map(
+            CameraSettingsState(settings = CameraSettings(ultraHdr = true)),
+        )
+        val supported = mapper.map(
+            CameraSettingsState(
+                settings = CameraSettings(ultraHdr = true),
+                capabilities = CameraCapabilities(isUltraHdrSupported = true),
+            ),
+        )
+
+        assertNull(unsupported.ultraHdr)
+        assertEquals(SwitchSettingUiModel(checked = true, isChanged = true), supported.ultraHdr)
+    }
+
+    @Test
     fun hdrVideo_onlyOnACameraThatRecordsHlg_isOffered() {
         val unsupported = mapper.map(
             CameraSettingsState(settings = CameraSettings(hdrVideo = true)),

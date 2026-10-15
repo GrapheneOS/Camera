@@ -43,7 +43,8 @@ internal class CapturedImageExifMapperImpl @Inject constructor() : CapturedImage
         val exifInterface = exif.exifInterface
 
         when {
-            input.removeExif -> exifInterface.clearExif()
+            // The primary image's XMP is what tells a viewer that a gain map follows it.
+            input.removeExif -> exifInterface.clearExif(keepXmp = input.isUltraHdr)
             else -> exifInterface.fixExif(input.captureTime)
         }
 

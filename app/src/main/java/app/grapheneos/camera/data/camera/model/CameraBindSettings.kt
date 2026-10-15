@@ -21,6 +21,7 @@ data class CameraBindSettings(
     val enableEis: Boolean,
     val hdrVideo: Boolean,
     val selectHighestResolution: Boolean,
+    val ultraHdr: Boolean,
     val mirrorVideoOnFrontCamera: Boolean,
     val barcodeFormats: Set<BarcodeFormat>,
 )

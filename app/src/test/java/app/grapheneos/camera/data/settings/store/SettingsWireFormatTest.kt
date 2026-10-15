@@ -34,6 +34,7 @@ class SettingsWireFormatTest {
         hdrVideo = true,
         captureMode = CaptureMode.QUALITY,
         selectHighestResolution = true,
+        ultraHdr = true,
         photoQuality = SOME_PHOTO_QUALITY,
         geoTagging = true,
         removeExifAfterCapture = false,
@@ -384,7 +385,8 @@ class SettingsWireFormatTest {
             """"enable_camera_sounds":false,""" +
             """"include_audio":false,"enable_eis":false,"hdr_video":true,""" +
             """"capture_mode":"QUALITY",""" +
-            """"select_highest_resolution":true,"photo_quality":71,"geo_tagging":true,""" +
+            """"select_highest_resolution":true,"ultra_hdr":true,"photo_quality":71,""" +
+            """"geo_tagging":true,""" +
             """"remove_exif_after_capture":false,"gyroscope_suggestions":true,""" +
             """"keep_selfies_as_seen":false,"scan_all_codes":true,""" +
             """"enabled_barcode_formats":["AZTEC"]}}"""

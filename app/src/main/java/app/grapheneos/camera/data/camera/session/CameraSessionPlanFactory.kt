@@ -109,13 +109,18 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
             )
         }
 
-        return ImageCapture.Builder()
+        val imageCaptureBuilder = ImageCapture.Builder()
             .setCaptureMode(cameraXCaptureMode(captureMode))
             .setTargetRotation(request.imageCaptureTargetRotation)
             .setResolutionSelector(resolutionSelectorBuilder.build())
             .setFlashMode(cameraXConstantsMapper.map(request.flashMode))
             .setJpegQuality(request.photoQuality)
-            .build()
+
+        if (request.ultraHdr) {
+            imageCaptureBuilder.setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+        }
+
+        return imageCaptureBuilder.build()
     }
 
     private fun cameraXCaptureMode(captureMode: CaptureMode): Int {

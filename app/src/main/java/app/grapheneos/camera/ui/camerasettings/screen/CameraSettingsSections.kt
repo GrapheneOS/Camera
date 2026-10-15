@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.HdrOn
+import androidx.compose.material.icons.outlined.HdrStrong
 import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.LocationOn
@@ -216,6 +217,16 @@ private fun qualityRows(
     uiState: UiState,
     onAction: (Action) -> Unit,
 ): List<SettingsRow> {
+    return buildList {
+        addAll(photoQualityRows(uiState, onAction))
+        addAll(videoQualityRows(uiState, onAction))
+    }
+}
+
+private fun photoQualityRows(
+    uiState: UiState,
+    onAction: (Action) -> Unit,
+): List<SettingsRow> {
     return listOfNotNull(
         SettingsRow(key = "photo_quality") { shape, modifier ->
             SettingsClickableItem(
@@ -241,6 +252,28 @@ private fun qualityRows(
                 onClick = { onAction(Action.CaptureModeClicked) },
             )
         },
+        uiState.ultraHdr?.let { ultraHdr ->
+            SettingsRow(key = "ultra_hdr") { shape, modifier ->
+                SwitchSettingItem(
+                    setting = ultraHdr,
+                    title = stringResource(R.string.camera_settings_ultra_hdr),
+                    summary = stringResource(R.string.camera_settings_ultra_hdr_summary),
+                    label = stringResource(R.string.camera_settings_photo_only),
+                    icon = Icons.Outlined.HdrStrong,
+                    shape = shape,
+                    modifier = modifier,
+                    onCheckedChange = { onAction(Action.UltraHdrToggled(it)) },
+                )
+            }
+        },
+    )
+}
+
+private fun videoQualityRows(
+    uiState: UiState,
+    onAction: (Action) -> Unit,
+): List<SettingsRow> {
+    return listOfNotNull(
         SettingsRow(key = "video_stabilization") { shape, modifier ->
             val summary = when {
                 uiState.videoStabilization.enabled -> {

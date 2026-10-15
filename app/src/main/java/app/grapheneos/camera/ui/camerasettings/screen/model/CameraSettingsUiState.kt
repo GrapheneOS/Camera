@@ -22,6 +22,7 @@ internal data class CameraSettingsUiState(
         options = persistentListOf(),
     ),
     val videoStabilization: SwitchSettingUiModel = SwitchSettingUiModel(),
+    val ultraHdr: SwitchSettingUiModel? = null,
     val hdrVideo: SwitchSettingUiModel? = null,
     val cameraSounds: SwitchSettingUiModel = SwitchSettingUiModel(),
     val focusTimeout: ChoiceSettingUiModel<Long> = ChoiceSettingUiModel(

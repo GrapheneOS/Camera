@@ -84,8 +84,8 @@
         <error line="8" column="1" source="standard:no-consecutive-blank-lines" />
         <error line="15" column="5" source="standard:comment-spacing" />
         <error line="147" column="5" source="standard:comment-spacing" />
-        <error line="189" column="1" source="standard:comment-spacing" />
-        <error line="242" column="1" source="standard:comment-spacing" />
+        <error line="191" column="1" source="standard:comment-spacing" />
+        <error line="244" column="1" source="standard:comment-spacing" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/gallery/GSlideTransformer.kt">
         <error line="47" column="1" source="standard:final-newline" />

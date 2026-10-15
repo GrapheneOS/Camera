@@ -10,5 +10,6 @@ class CapturedImageExif(
     val shouldUseExifOrientation: Boolean,
     val metadata: CaptureMetadata,
     val removeExif: Boolean,
+    val isUltraHdr: Boolean,
     val captureTime: ZonedDateTime,
 )

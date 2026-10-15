@@ -257,6 +257,8 @@
     <string name="camera_settings_video_stabilization">Video stabilization</string>
     <string name="camera_settings_video_stabilization_summary">Reduces shake in videos</string>
     <string name="camera_settings_video_stabilization_unavailable">Not available for this camera</string>
+    <string name="camera_settings_ultra_hdr">Ultra HDR</string>
+    <string name="camera_settings_ultra_hdr_summary">Brighter highlights on HDR screens, a regular JPEG everywhere else</string>
     <string name="camera_settings_hdr_video">HDR video</string>
     <string name="camera_settings_hdr_video_summary">Brighter highlights and richer color, saved as HEVC</string>
     <string name="camera_settings_focus_timeout">Focus timeout</string>
