@@ -516,6 +516,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording = null
     }
 
+    fun abandonDeferredStart() {
+        cancelDeferredStart?.invoke()
+    }
+
     // Off the main thread for the same reason the output is created there
     private fun abandonOutput(recordingCtx: RecordingContext) {
         outputExecutor.execute {
