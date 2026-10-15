@@ -45,6 +45,7 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             photoQuality = photoQuality(state),
             captureMode = captureMode(state),
             videoStabilization = videoStabilization(state),
+            ultraHdr = ultraHdr(state),
             hdrVideo = hdrVideo(state),
             cameraSounds = switchSetting(
                 checked = settings.enableCameraSounds,
@@ -129,6 +130,15 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
             selected = selected,
             options = options.toImmutableList(),
             isChanged = selected.mode != SettingsDefaults.CAPTURE_MODE,
+        )
+    }
+
+    private fun ultraHdr(state: CameraSettingsState): SwitchSettingUiModel? {
+        if (!state.capabilities.isUltraHdrSupported) return null
+
+        return switchSetting(
+            checked = state.settings.ultraHdr,
+            default = SettingsDefaults.ULTRA_HDR,
         )
     }
 

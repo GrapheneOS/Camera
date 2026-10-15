@@ -62,6 +62,7 @@ class JpegExtractorTest {
             cropRect = cropRect,
             orientationDegrees = 0,
             shouldUseExifOrientation = false,
+            isUltraHdr = false,
         )
     }
 

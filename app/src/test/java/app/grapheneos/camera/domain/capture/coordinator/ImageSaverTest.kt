@@ -175,6 +175,7 @@ class ImageSaverTest {
             cropRect = null,
             orientationDegrees = 0,
             shouldUseExifOrientation = false,
+            isUltraHdr = false,
         )
     }
 }

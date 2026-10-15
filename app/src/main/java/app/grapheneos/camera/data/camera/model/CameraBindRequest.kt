@@ -15,6 +15,7 @@ data class CameraBindRequest(
     val photoQuality: Int,
     val captureMode: CaptureMode,
     val selectHighestResolution: Boolean,
+    val ultraHdr: Boolean,
     val videoQuality: VideoQuality,
     val mirrorVideoOnFrontCamera: Boolean,
     val featureGroup: FeatureGroupRequest,

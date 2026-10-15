@@ -40,6 +40,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             captureMode = captureMode(stored),
             selectHighestResolution = stored.selectHighestResolution
                 ?: SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
+            ultraHdr = stored.ultraHdr ?: SettingsDefaults.ULTRA_HDR,
             photoQuality = stored.photoQuality ?: SettingsDefaults.PHOTO_QUALITY,
             geoTagging = stored.geoTagging ?: SettingsDefaults.GEO_TAGGING,
             removeExifAfterCapture = stored.removeExifAfterCapture
@@ -86,6 +87,8 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
                 ?.let(::map),
             selectHighestResolution = settings.selectHighestResolution
                 .takeUnless { it == SettingsDefaults.SELECT_HIGHEST_RESOLUTION },
+            ultraHdr = settings.ultraHdr
+                .takeUnless { it == SettingsDefaults.ULTRA_HDR },
             photoQuality = settings.photoQuality
                 .takeUnless { it == SettingsDefaults.PHOTO_QUALITY },
             geoTagging = settings.geoTagging

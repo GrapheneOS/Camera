@@ -38,6 +38,8 @@ object SettingsDefaults {
 
     const val SELECT_HIGHEST_RESOLUTION = false
 
+    const val ULTRA_HDR = false
+
     const val PHOTO_QUALITY = 95
 
     const val REMOVE_EXIF_AFTER_CAPTURE = true

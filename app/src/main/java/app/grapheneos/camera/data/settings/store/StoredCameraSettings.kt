@@ -33,6 +33,8 @@ internal data class StoredCameraSettings(
     val waitForFocusLock: Boolean? = null,
     @SerialName("select_highest_resolution")
     val selectHighestResolution: Boolean? = null,
+    @SerialName("ultra_hdr")
+    val ultraHdr: Boolean? = null,
     @SerialName("photo_quality")
     val photoQuality: Int? = null,
     @SerialName("geo_tagging")

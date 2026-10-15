@@ -16,6 +16,7 @@ data class CameraSettings(
     val hdrVideo: Boolean = SettingsDefaults.HDR_VIDEO,
     val captureMode: CaptureMode = SettingsDefaults.CAPTURE_MODE,
     val selectHighestResolution: Boolean = SettingsDefaults.SELECT_HIGHEST_RESOLUTION,
+    val ultraHdr: Boolean = SettingsDefaults.ULTRA_HDR,
     val photoQuality: Int = SettingsDefaults.PHOTO_QUALITY,
     val geoTagging: Boolean = SettingsDefaults.GEO_TAGGING,
     val removeExifAfterCapture: Boolean = SettingsDefaults.REMOVE_EXIF_AFTER_CAPTURE,

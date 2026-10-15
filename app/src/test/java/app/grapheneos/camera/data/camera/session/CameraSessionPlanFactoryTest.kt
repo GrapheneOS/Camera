@@ -44,6 +44,15 @@ class CameraSessionPlanFactoryTest {
     }
 
     @Test
+    fun create_ultraHdr_reachesTheImageCapture() {
+        val plain = buildPlan(request())
+        val ultraHdr = buildPlan(request(ultraHdr = true))
+
+        assertEquals(ImageCapture.OUTPUT_FORMAT_JPEG, plain.imageCapture?.outputFormat)
+        assertEquals(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR, ultraHdr.imageCapture?.outputFormat)
+    }
+
+    @Test
     fun create_eachCaptureMode_reachesTheImageCapture() {
         mapOf(
             CaptureMode.SPEED to ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
@@ -175,6 +184,7 @@ class CameraSessionPlanFactoryTest {
         flashMode: FlashMode = FlashMode.OFF,
         imageCaptureTargetRotation: Int = 0,
         captureMode: CaptureMode = CaptureMode.SPEED,
+        ultraHdr: Boolean = false,
         featureGroup: FeatureGroupRequest = FeatureGroupRequest.Unused,
     ): CameraBindRequest {
         return CameraBindRequest(
@@ -187,6 +197,7 @@ class CameraSessionPlanFactoryTest {
             photoQuality = 90,
             captureMode = captureMode,
             selectHighestResolution = false,
+            ultraHdr = ultraHdr,
             videoQuality = VideoQuality.UHD,
             mirrorVideoOnFrontCamera = false,
             featureGroup = featureGroup,

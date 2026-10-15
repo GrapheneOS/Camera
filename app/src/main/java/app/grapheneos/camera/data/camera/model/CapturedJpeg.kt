@@ -5,6 +5,7 @@ class CapturedJpeg(
     val cropRect: CapturedJpegCropRect?,
     val orientationDegrees: Int,
     val shouldUseExifOrientation: Boolean,
+    val isUltraHdr: Boolean,
 )
 
 data class CapturedJpegCropRect(

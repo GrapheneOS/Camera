@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.ImageFormat
 import android.graphics.Rect
+import android.os.Build
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.utils.ImageUtil
@@ -42,12 +43,13 @@ internal class JpegExtractorImpl @Inject constructor() : JpegExtractor {
                 else -> null
             }
 
-            val jpegBytes = when (val imageFormat = image.format) {
-                ImageFormat.JPEG -> {
+            val imageFormat = image.format
+            val jpegBytes = when {
+                ImageUtil.isJpegFormats(imageFormat) -> {
                     ImageUtil.jpegImageToJpegByteArray(image)
                 }
 
-                ImageFormat.YUV_420_888 -> {
+                imageFormat == ImageFormat.YUV_420_888 -> {
                     ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)
                 }
 
@@ -69,6 +71,7 @@ internal class JpegExtractorImpl @Inject constructor() : JpegExtractor {
                 orientationDegrees = image.imageInfo.rotationDegrees,
                 shouldUseExifOrientation = ExifRotationAvailability()
                     .shouldUseExifOrientation(image),
+                isUltraHdr = isUltraHdr(imageFormat),
             )
         }
     }
@@ -104,6 +107,11 @@ internal class JpegExtractorImpl @Inject constructor() : JpegExtractor {
         }
 
         return output.toByteArray()
+    }
+
+    private fun isUltraHdr(imageFormat: Int): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            imageFormat == ImageFormat.JPEG_R
     }
 
     @Suppress("DEPRECATION")

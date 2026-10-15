@@ -179,8 +179,10 @@ fun ExifInterface.fixExif(captureTime: ZonedDateTime) {
     setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
 }
 
-fun ExifInterface.clearExif() {
+fun ExifInterface.clearExif(keepXmp: Boolean) {
     for (exifTag in exifAttributes) {
+        if (keepXmp && exifTag == ExifInterface.TAG_XMP) continue
+
         removeAttribute(exifTag)
     }
 }

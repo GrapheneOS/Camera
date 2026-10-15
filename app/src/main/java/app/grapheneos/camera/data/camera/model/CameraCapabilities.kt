@@ -10,6 +10,7 @@ data class CameraCapabilities(
     val isZslSupported: Boolean = false,
     val isVideoStabilizationSupported: Boolean = false,
     val isHdrVideoSupported: Boolean = false,
+    val isUltraHdrSupported: Boolean = false,
     val photoMegapixels: Int? = null,
     val photoResolutions: PhotoResolutions? = null,
     val videoBitrates: Map<VideoQuality, VideoBitrates> = emptyMap(),

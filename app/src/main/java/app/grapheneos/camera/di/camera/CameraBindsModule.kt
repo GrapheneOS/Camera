@@ -26,8 +26,12 @@ import app.grapheneos.camera.data.camera.session.PhotoResolutionSupport
 import app.grapheneos.camera.data.camera.session.PhotoResolutionSupportImpl
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCacheImpl
+import app.grapheneos.camera.data.camera.session.UltraHdrSupport
+import app.grapheneos.camera.data.camera.session.UltraHdrSupportImpl
 import app.grapheneos.camera.data.camera.session.VideoBitrateSupport
 import app.grapheneos.camera.data.camera.session.VideoBitrateSupportImpl
+import app.grapheneos.camera.data.camera.session.VideoStabilizationSupport
+import app.grapheneos.camera.data.camera.session.VideoStabilizationSupportImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModesImpl
 import dagger.Binds
@@ -73,9 +77,21 @@ internal abstract class CameraBindsModule {
 
     @Binds
     @Reusable
+    abstract fun bindVideoStabilizationSupport(
+        impl: VideoStabilizationSupportImpl,
+    ): VideoStabilizationSupport
+
+    @Binds
+    @Reusable
     abstract fun bindHdrVideoSupport(
         impl: HdrVideoSupportImpl,
     ): HdrVideoSupport
+
+    @Binds
+    @Reusable
+    abstract fun bindUltraHdrSupport(
+        impl: UltraHdrSupportImpl,
+    ): UltraHdrSupport
 
     @Binds
     @Reusable

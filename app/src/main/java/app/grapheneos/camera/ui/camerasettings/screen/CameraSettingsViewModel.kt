@@ -143,6 +143,10 @@ internal class CameraSettingsViewModel @Inject constructor(
                 updateSettings { it.copy(enableEis = enabled) }
             }
 
+            is Action.UltraHdrToggled -> {
+                updateSettings { it.copy(ultraHdr = enabled) }
+            }
+
             is Action.HdrVideoToggled -> {
                 updateSettings { it.copy(hdrVideo = enabled) }
             }

@@ -109,7 +109,9 @@ internal class CameraSessionImpl @Inject constructor(
     private val featureCombinationSupport: FeatureCombinationSupport,
     private val photoResolutionSupport: PhotoResolutionSupport,
     private val videoBitrateSupport: VideoBitrateSupport,
+    private val videoStabilizationSupport: VideoStabilizationSupport,
     private val hdrVideoSupport: HdrVideoSupport,
+    private val ultraHdrSupport: UltraHdrSupport,
     private val cameraSessionPlanFactory: CameraSessionPlanFactory,
     private val videoQualityFeatureMapper: VideoQualityFeatureMapper,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
@@ -506,6 +508,14 @@ internal class CameraSessionImpl @Inject constructor(
             FeatureGroupRequest.Unused -> null
         }
 
+        val requiredHdrFeature = when (featureGroup) {
+            is FeatureGroupRequest.Requested -> {
+                GroupableFeature.HDR_HLG10.takeIf { featureGroup.hdr }
+            }
+
+            FeatureGroupRequest.Unused -> null
+        }
+
         val bindRequest = CameraBindRequest(
             includesVideoCapture = !settings.isQrMode && settings.isVideoMode,
             includesImageCapture = !settings.isQrMode && !settings.requiresVideoModeOnly,
@@ -516,6 +526,7 @@ internal class CameraSessionImpl @Inject constructor(
             photoQuality = settings.photoQuality,
             captureMode = settings.captureMode,
             selectHighestResolution = settings.selectHighestResolution,
+            ultraHdr = settings.ultraHdr && !settings.isVideoMode && canApplyUltraHdr(),
             videoQuality = settings.videoQuality,
             mirrorVideoOnFrontCamera = settings.mirrorVideoOnFrontCamera,
             featureGroup = featureGroup,
@@ -603,7 +614,7 @@ internal class CameraSessionImpl @Inject constructor(
                 snapshotProbeCache[probeKey] = inVideoSnapshotSupportResolver.resolve(
                     selectedFeatures = setOfNotNull(
                         requiredQualityFeature,
-                        GroupableFeature.HDR_HLG10.takeIf { requestsHdr },
+                        requiredHdrFeature,
                     ),
                     probe = { withSnapshots, features ->
                         val probedUseCases = when {
@@ -822,6 +833,7 @@ internal class CameraSessionImpl @Inject constructor(
             isZslSupported = cameraInfo.isZslSupported,
             isVideoStabilizationSupported = canApplyVideoStabilization(),
             isHdrVideoSupported = canApplyHdrVideo(),
+            isUltraHdrSupported = canApplyUltraHdr(),
             photoMegapixels = photoResolutionSupport.standardMegapixels(cameraInfo),
             photoResolutions = photoResolutionSupport.resolutions(cameraInfo),
             videoBitrates = videoBitrateSupport.bitrates(cameraInfo),
@@ -834,7 +846,8 @@ internal class CameraSessionImpl @Inject constructor(
     // group cannot be used nothing applies EIS, and offering the toggle there is offering a
     // control that does nothing.
     private fun canApplyVideoStabilization(): Boolean {
-        return canVerifyFeatureCombinations() && isVideoStabilizationSupported()
+        return canVerifyFeatureCombinations() &&
+            videoStabilizationSupport.isSupported(getCurrentCameraInfo())
     }
 
     private fun canApplyHdrVideo(): Boolean {
@@ -842,37 +855,27 @@ internal class CameraSessionImpl @Inject constructor(
             hdrVideoSupport.isSupported(getCurrentCameraInfo())
     }
 
+    // Asked of the selector the session binds with, extensions included: an extension mode
+    // decides for itself whether it can produce Ultra HDR.
+    private fun canApplyUltraHdr(): Boolean {
+        val cameraInfo = currentCameraInfoOrNull() ?: return false
+
+        return ultraHdrSupport.isSupported(cameraInfo)
+    }
+
     private fun canVerifyFeatureCombinations(): Boolean {
-        val cameraInfo = try {
+        val cameraInfo = currentCameraInfoOrNull() ?: return false
+
+        return featureCombinationSupport.canVerify(cameraInfo)
+    }
+
+    private fun currentCameraInfoOrNull(): CameraInfo? {
+        return try {
             cameraProvider?.getCameraInfo(cameraSelector)
         } catch (exception: IllegalArgumentException) {
-            Log.w(TAG, "Unable to resolve camera info for feature combination gate", exception)
+            Log.w(TAG, "Unable to resolve camera info", exception)
             null
         }
-
-        return when (cameraInfo) {
-            null -> false
-            else -> featureCombinationSupport.canVerify(cameraInfo)
-        }
-    }
-
-    private fun isVideoStabilizationSupported(): Boolean {
-        // The toggle asks for both kinds of stabilization (see the preferred feature group in
-        // bind), preferring the preview kind and falling back to the recording-only kind,
-        // so it is meaningful whenever either one is available. Testing only the recorder
-        // capability both hid the toggle on cameras that can stabilize the preview but not the
-        // recording, and offered it on cameras where only the recorder can stabilize - where
-        // the bind used to ask exclusively for preview stabilization, leaving the toggle with
-        // nothing to do.
-        return isPreviewStabilizationSupported() || isRecorderStabilizationSupported()
-    }
-
-    private fun isPreviewStabilizationSupported(): Boolean {
-        return Preview.getPreviewCapabilities(getCurrentCameraInfo()).isStabilizationSupported
-    }
-
-    private fun isRecorderStabilizationSupported(): Boolean {
-        return Recorder.getVideoCapabilities(getCurrentCameraInfo()).isStabilizationSupported
     }
 
     private fun getCurrentCameraInfo(): CameraInfo {
