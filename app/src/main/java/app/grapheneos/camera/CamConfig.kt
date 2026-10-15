@@ -2052,6 +2052,14 @@ class CamConfig(private val mActivity: MainActivity) {
                     }
                     false
                 }
+                // A tap has committed its tab on the finger's lift, and still holds it pressed
+                // when it clicks it. A click from an accessibility service or a key has no touch
+                // to do that, and on its own would only select the tab.
+                tab.view.setOnClickListener {
+                    if (!it.isPressed) {
+                        mActivity.finalizeMode(tab)
+                    }
+                }
                 tab.tag = mode
 
                 // Highlight the mode the camera is really in, not the default one: the tabs are
