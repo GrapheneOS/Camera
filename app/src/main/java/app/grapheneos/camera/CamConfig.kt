@@ -738,6 +738,26 @@ class CamConfig(private val mActivity: MainActivity) {
         lastCapturedItem = item
     }
 
+    /**
+     * Swaps a last captured item that is gone for [item], or for none. Only a screen that sees
+     * every item may [save] it, as the saved one has to be the newest of them all.
+     */
+    fun replaceLastCapturedItem(item: CapturedItem?, save: Boolean) {
+        if (save) {
+            commonPref.edit {
+                if (item != null) {
+                    saveLastCapturedItem(item, this)
+                } else {
+                    remove(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE)
+                    remove(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING)
+                    remove(SettingValues.Key.LAST_CAPTURED_ITEM_URI)
+                }
+            }
+        }
+
+        lastCapturedItem = item
+    }
+
     var requireLocation: Boolean = false
         get() {
             return mActivity.settingsDialog.locToggle.isChecked
