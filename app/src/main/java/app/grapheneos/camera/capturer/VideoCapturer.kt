@@ -63,6 +63,10 @@ class VideoCapturer(private val mActivity: MainActivity) {
     // sound.
     private var cancelDeferredStart: (() -> Unit)? = null
 
+    // Recording, but still waiting on the output or the record-start sound
+    val isStartPending: Boolean
+        get() = cancelDeferredStart != null
+
     var isMuted = false
         private set
 
