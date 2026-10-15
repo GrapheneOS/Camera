@@ -218,6 +218,21 @@ class ViewfinderCaptureDelegateTest {
     }
 
     @Test
+    fun aPictureThatCannotBeDecoded_stillFinishesTheSaveWithoutAThumbnail() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectEvents(delegate)
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.Captured)
+            emitCaptureEvent(CapturedImageEvent.ThumbnailReady(thumbnail = null))
+
+            assertFalse(capture().isSavingPicture)
+            assertEquals(listOf(ViewfinderCaptureEvent.ThumbnailReady(thumbnail = null)), events)
+        }
+    }
+
+    @Test
     fun savedAndStorageLocationNotFound_areHandedOn() {
         runTest {
             val delegate = createDelegate()

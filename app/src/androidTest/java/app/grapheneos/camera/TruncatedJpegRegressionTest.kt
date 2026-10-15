@@ -1,34 +1,43 @@
 package app.grapheneos.camera
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.graphics.ImageFormat
-import android.graphics.Rect
-import android.graphics.drawable.BitmapDrawable
-import android.media.Image
 import android.net.Uri
-import android.view.View
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageInfo
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.impl.TagBundle
-import androidx.camera.core.impl.utils.ExifData
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.GrantPermissionRule
-import app.grapheneos.camera.capturer.ImageSaver
+import app.grapheneos.camera.data.camera.model.CapturedJpeg
+import app.grapheneos.camera.data.camera.session.JpegExtractor
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.domain.capture.coordinator.CapturedImagePipeline
+import app.grapheneos.camera.domain.capture.coordinator.ImageSaver
+import app.grapheneos.camera.domain.capture.mapper.CapturedImageExifMapperImpl
+import app.grapheneos.camera.domain.capture.model.CaptureImageRequest
+import app.grapheneos.camera.domain.capture.model.CaptureMetadata
+import app.grapheneos.camera.domain.capture.model.CapturedImageEvent
+import app.grapheneos.camera.domain.capture.model.StoreCapturedImageResult
+import app.grapheneos.camera.domain.capture.usecase.StoreCapturedImage
+import io.mockk.CapturingSlot
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Rule
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -39,14 +48,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TruncatedJpegRegressionTest {
 
-    @get:Rule
-    val grantPermissions: GrantPermissionRule = GrantPermissionRule.grant(
-        Manifest.permission.CAMERA,
-    )
-
-    /** The capture UI that the saver reports to needs a resumed, visible activity. */
-    @get:Rule
-    val screenAwake = ScreenAwakeRule()
+    private val pipelineThread = Executors.newSingleThreadExecutor()
 
     /** Decoding runs out of input part way through the image ("Input was incomplete."). */
     @Test
@@ -67,77 +69,96 @@ class TruncatedJpegRegressionTest {
         val whole = noiseJpeg()
         val jpeg = whole.copyOf(cutAt(whole))
 
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            waitUntil(scenario, "camera is bound") { it.session.camera != null }
+        val crash = AtomicReference<Throwable>()
+        val scope = CoroutineScope(
+            SupervisorJob() + CoroutineExceptionHandler { _, e -> crash.set(e) },
+        )
+        val events = CopyOnWriteArrayList<CapturedImageEvent>()
+        val thumbnailStageOver = CountDownLatch(1)
+        val stored = slot<ByteArray>()
 
-            // Stands in for the thumbnail of the capture before this one
-            val previousThumbnail = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-            var capturedBefore: Uri? = null
-            lateinit var saver: ImageSaver
-            scenario.onActivity { activity ->
-                capturedBefore = activity.capturedItemSession.lastCapturedItem?.uri
-                activity.imagePreview.setImageBitmap(previousThumbnail)
-
-                // What ImageCapturer.takePicture() sets up, saving to MediaStore so that the
-                // capture can be read back and deleted
-                saver = ImageSaver(
-                    activity.imageCapturer,
-                    activity.applicationContext,
-                    jpegQuality = 95,
-                    CapturedItemRepository.MEDIA_STORE_LOCATION,
-                    ".jpg",
-                    ImageCapture.Metadata(),
-                    removeExifAfterCapture = false,
-                    targetThumbnailWidth = activity.imagePreview.width,
-                    targetThumbnailHeight = activity.imagePreview.height,
-                )
+        val saver = imageSaver(jpeg = jpeg, scope = scope, stored = stored) { event ->
+            events += event
+            if (event is CapturedImageEvent.ThumbnailReady) {
+                thumbnailStageOver.countDown()
             }
+        }
 
-            // An uncaught exception on any thread kills the process, which would end the whole run
-            // rather than fail this test
-            val crash = AtomicReference<Throwable>()
-            val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-            Thread.setDefaultUncaughtExceptionHandler { _, e -> crash.set(e) }
-            try {
-                ImageSaver.imageCaptureCallbackExecutor.execute {
-                    saver.onCaptureSuccess(JpegImageProxy(jpeg, WIDTH, HEIGHT))
-                }
+        try {
+            saver.onCaptureSuccess(mockk<ImageProxy>(relaxed = true))
 
-                // The loader is shown before the capture is saved, so once the capture is saved a
-                // hidden loader means the thumbnail stage is over
-                waitUntil(scenario, "the thumbnail stage is over") { activity ->
-                    val isSaved = activity.capturedItemSession.lastCapturedItem?.uri != capturedBefore
-                    crash.get() != null
-                            || (isSaved && activity.previewLoader.visibility == View.GONE)
-                }
-                crash.get()?.let {
-                    throw AssertionError("the thumbnail stage crashed the process", it)
-                }
+            val isOver = thumbnailStageOver.await(TIMEOUT_S, TimeUnit.SECONDS)
+            crash.get()?.let { throw AssertionError("the thumbnail stage crashed", it) }
+            assertTrue("the thumbnail stage never finished", isOver)
 
-                var saved: Uri? = null
-                var shownThumbnail: Bitmap? = null
-                scenario.onActivity { activity ->
-                    saved = activity.capturedItemSession.lastCapturedItem?.uri
-                    shownThumbnail = (activity.imagePreview.drawable as? BitmapDrawable)?.bitmap
-                }
-                assertNull("a thumbnail is shown for a capture that has none", shownThumbnail)
+            assertEquals(1, events.filterIsInstance<CapturedImageEvent.Saved>().size)
+            val thumbnail = events.filterIsInstance<CapturedImageEvent.ThumbnailReady>().single()
+            assertNull("a thumbnail was made for a capture that has none", thumbnail.thumbnail)
 
-                val bytes = targetContext.contentResolver.openInputStream(saved!!)?.use {
-                    it.readBytes()
-                }
-                assertNotNull("the capture was deleted", bytes)
-                // Everything from the SOS marker on is written out exactly as the HAL produced it
-                val scan = jpeg.copyOfRange(startOfScan(jpeg), jpeg.size)
-                assertArrayEquals(scan, bytes!!.copyOfRange(bytes.size - scan.size, bytes.size))
-            } finally {
-                Thread.setDefaultUncaughtExceptionHandler(defaultHandler)
-                runCatching { deleteNewCapture(scenario, capturedBefore) }
-            }
+            // Everything from the SOS marker on is written out exactly as the HAL produced it
+            val scan = jpeg.copyOfRange(startOfScan(jpeg), jpeg.size)
+            val bytes = stored.captured
+            assertArrayEquals(scan, bytes.copyOfRange(bytes.size - scan.size, bytes.size))
+        } finally {
+            scope.cancel()
+            pipelineThread.shutdown()
         }
     }
 
-    private val targetContext
-        get() = InstrumentationRegistry.getInstrumentation().targetContext
+    private fun imageSaver(
+        jpeg: ByteArray,
+        scope: CoroutineScope,
+        stored: CapturingSlot<ByteArray>,
+        onEvent: (CapturedImageEvent) -> Unit,
+    ): ImageSaver {
+        val jpegExtractor = mockk<JpegExtractor>()
+        every { jpegExtractor.extract(any(), any()) } returns CapturedJpeg(
+            jpegBytes = jpeg,
+            cropRect = null,
+            orientationDegrees = 0,
+            shouldUseExifOrientation = false,
+        )
+        val storeCapturedImage = mockk<StoreCapturedImage>()
+        coEvery { storeCapturedImage(capture(stored), any(), any(), any()) } returns
+            StoreCapturedImageResult.Stored(Uri.EMPTY)
+
+        return ImageSaver(
+            request = CaptureImageRequest(
+                storageLocation = CapturedItemRepository.MEDIA_STORE_LOCATION,
+                includeLocation = false,
+                saveAsPreviewed = false,
+                removeExif = false,
+                targetThumbnailWidth = THUMBNAIL_SIZE,
+                targetThumbnailHeight = THUMBNAIL_SIZE,
+            ),
+            metadata = CaptureMetadata(),
+            jpegQuality = JPEG_QUALITY,
+            needsThumbnail = { true },
+            onEvent = onEvent,
+            storeCapturedImage = storeCapturedImage,
+            exifMapper = CapturedImageExifMapperImpl(),
+            jpegExtractor = jpegExtractor,
+            pipeline = backgroundPipeline(scope),
+            scope = scope,
+            mainDispatcher = Dispatchers.Main.immediate,
+        )
+    }
+
+    private fun backgroundPipeline(scope: CoroutineScope): CapturedImagePipeline {
+        return object : CapturedImagePipeline {
+            override fun enqueueExtraction(extraction: suspend () -> Unit) {
+                scope.launch(pipelineThread.asCoroutineDispatcher()) { extraction() }
+            }
+
+            override fun enqueueWrite(write: suspend () -> Unit) {
+                scope.launch(pipelineThread.asCoroutineDispatcher()) { write() }
+            }
+
+            override fun enqueueThumbnail(thumbnail: suspend () -> Unit) {
+                scope.launch(pipelineThread.asCoroutineDispatcher()) { thumbnail() }
+            }
+        }
+    }
 
     /** Noise keeps the scan data long, so that cutting it in half lands well inside it. */
     private fun noiseJpeg(): ByteArray {
@@ -145,7 +166,7 @@ class TruncatedJpegRegressionTest {
         val pixels = IntArray(WIDTH * HEIGHT) { random.nextInt() or (0xff shl 24) }
         val bitmap = Bitmap.createBitmap(pixels, WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
         return ByteArrayOutputStream().use {
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it)
             it.toByteArray()
         }
     }
@@ -158,51 +179,11 @@ class TruncatedJpegRegressionTest {
         throw AssertionError("no SOS marker")
     }
 
-    /** Keeps test runs from accumulating images on the device. */
-    private fun deleteNewCapture(scenario: ActivityScenario<MainActivity>, previous: Uri?) {
-        scenario.onActivity { activity ->
-            val item = activity.capturedItemSession.lastCapturedItem ?: return@onActivity
-            if (item.uri != previous) {
-                activity.contentResolver.delete(item.uri, null, null)
-            }
-        }
-    }
-
-    /** What ImageCapture hands the saver for a JPEG capture: the bytes the HAL produced. */
-    @SuppressLint("RestrictedApi")
-    private class JpegImageProxy(
-        private val jpeg: ByteArray,
-        private val width: Int,
-        private val height: Int,
-    ) : ImageProxy {
-        private var cropRect = Rect(0, 0, width, height)
-
-        override fun close() {}
-        override fun getCropRect() = Rect(cropRect)
-        override fun setCropRect(rect: Rect?) {
-            cropRect = rect ?: Rect(0, 0, width, height)
-        }
-        override fun getFormat() = ImageFormat.JPEG
-        override fun getWidth() = width
-        override fun getHeight() = height
-        override fun getPlanes(): Array<ImageProxy.PlaneProxy> = arrayOf(
-            object : ImageProxy.PlaneProxy {
-                override fun getRowStride() = 0
-                override fun getPixelStride() = 0
-                override fun getBuffer(): ByteBuffer = ByteBuffer.wrap(jpeg)
-            }
-        )
-        override fun getImageInfo(): ImageInfo = object : ImageInfo {
-            override fun getTagBundle(): TagBundle = TagBundle.emptyBundle()
-            override fun getTimestamp() = 0L
-            override fun getRotationDegrees() = 0
-            override fun populateExifData(exifBuilder: ExifData.Builder) {}
-        }
-        override fun getImage(): Image? = null
-    }
-
     private companion object {
         const val WIDTH = 640
         const val HEIGHT = 480
+        const val THUMBNAIL_SIZE = 64
+        const val JPEG_QUALITY = 90
+        const val TIMEOUT_S = 10L
     }
 }

@@ -1,7 +1,6 @@
 package app.grapheneos.camera
 
 import android.Manifest
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Color
@@ -10,7 +9,6 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.net.Uri
-import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
 import android.util.StateSet
@@ -534,21 +532,6 @@ class VideoCapturerRegressionTest {
         return targetContext.contentResolver
             .query(pendingUri, arrayOf(MediaColumns._ID), null, null, null)
             ?.use { it.count == 1 } ?: false
-    }
-
-    /** Pending entries are how in-flight and orphaned outputs appear in MediaStore. */
-    private fun pendingVideoCount(): Int {
-        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
-        val args = Bundle().apply {
-            putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
-            putString(
-                ContentResolver.QUERY_ARG_SQL_SELECTION,
-                "${MediaColumns.IS_PENDING} = 1" +
-                        " AND ${MediaColumns.DISPLAY_NAME} LIKE '${CapturedItemType.VIDEO.namePrefix}%'",
-            )
-        }
-        return resolver.query(videoCollectionUri, arrayOf(MediaColumns._ID), args, null)
-            ?.use { it.count } ?: 0
     }
 
     private fun <A : MainActivity> lastCapturedUri(scenario: ActivityScenario<A>): Uri? {

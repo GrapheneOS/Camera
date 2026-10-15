@@ -12,7 +12,10 @@ import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
 import java.util.concurrent.CountDownLatch
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -50,7 +53,7 @@ class PageDeletedUnderFingerRegressionTest {
     fun deletingTheLastItem_underARestingFinger_closesTheGallery() {
         // Keeps the device's own media out of the gallery, which then shows only this item
         app.registerActivityLifecycleCallbacks(stall)
-        val item = CapturedItem(ITEM_TYPE_IMAGE, "20261012_000000", insertImage())
+        val item = CapturedItem(CapturedItemType.IMAGE, "20261012_000000", insertImage())
 
         ActivityScenario.launch(InAppGallery::class.java).use { scenario ->
             scenario.onActivity { activity ->
@@ -91,7 +94,14 @@ class PageDeletedUnderFingerRegressionTest {
     }
 
     private fun touch(downTime: Long, action: Int, at: FloatArray) {
-        val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, at[0], at[1], 0)
+        val event = MotionEvent.obtain(
+            downTime,
+            SystemClock.uptimeMillis(),
+            action,
+            at[0],
+            at[1],
+            0,
+        )
         try {
             instrumentation.sendPointerSync(event)
         } finally {

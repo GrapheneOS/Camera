@@ -113,6 +113,18 @@ class ViewfinderGalleryDelegateTest {
     }
 
     @Test
+    fun showThumbnail_withoutOne_clearsTheThumbnailOfThePreviousCapture() {
+        runTest {
+            val delegate = createDelegate()
+            delegate.showThumbnail(THUMBNAIL)
+
+            delegate.showThumbnail(null)
+
+            assertNull(thumbnail())
+        }
+    }
+
+    @Test
     fun showThumbnail_winsOverALoadStillUnderway() {
         runTest {
             val loaded = CompletableDeferred<Bitmap?>()

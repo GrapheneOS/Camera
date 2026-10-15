@@ -369,6 +369,32 @@ class ViewfinderRecordingDelegateTest {
     }
 
     @Test
+    fun aSavedRecording_inACaptureSession_isNotShownOverTheNextOne() {
+        runTest {
+            val delegate = createDelegate()
+            val effects = collectEffects(stateHolder)
+            stateHolder.update { state -> state.copy(isCaptureSession = true) }
+
+            delegate.requestRecording()
+            recorderEvents.emit(RecordedVideoEvent.Saved(uri = Uri.EMPTY, item = null))
+
+            assertTrue(effects.none { it is Effect.Recording.ShowForReview })
+        }
+    }
+
+    @Test
+    fun aRecordingThatCannotBeSaved_isNoLongerSaving() {
+        runTest {
+            createDelegate()
+            recorderEvents.emit(RecordedVideoEvent.Finished(outcome = RecordingOutcome.Saved))
+
+            recorderEvents.emit(RecordedVideoEvent.SaveFailed)
+
+            assertFalse(recording().isSaving)
+        }
+    }
+
+    @Test
     fun recorderLocationAndSaveFailures_saySo() {
         runTest {
             createDelegate()

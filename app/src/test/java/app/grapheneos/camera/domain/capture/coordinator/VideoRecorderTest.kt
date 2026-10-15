@@ -10,7 +10,6 @@ import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.capture.model.CaptureLocation
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
-import app.grapheneos.camera.domain.capture.model.RecordingOutput
 import app.grapheneos.camera.domain.capture.usecase.CreateRecordingOutput
 import app.grapheneos.camera.domain.capture.usecase.DiscardRecording
 import app.grapheneos.camera.domain.capture.usecase.PublishRecording
@@ -120,10 +119,41 @@ class VideoRecorderTest {
             }
 
             recorder.stop()
+            assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
+
             outputCreated.complete(Unit)
 
             coVerify(exactly = 1) { discardRecording(output) }
             assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
+        }
+    }
+
+    @Test
+    fun stop_whileTheOutputIsCreated_isNotUndoneByTheNextRecording() {
+        runTest {
+            val outputCreated = CompletableDeferred<Unit>()
+            coEvery { createRecordingOutput(any(), any()) } coAnswers {
+                outputCreated.await()
+                output
+            }
+
+            val recorder = createRecorder()
+            val events = collectEvents(recorder)
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                recorder.prepare(REQUEST, isStillWanted = { true })
+            }
+            recorder.stop()
+
+            coEvery { createRecordingOutput(any(), any()) } returns nextOutput
+            recorder.prepare(REQUEST, isStillWanted = { true })
+            outputCreated.complete(Unit)
+
+            coVerify(exactly = 1) { discardRecording(output) }
+            coVerify(exactly = 0) { discardRecording(nextOutput) }
+            assertEquals(
+                listOf(RecordedVideoEvent.Abandoned, RecordedVideoEvent.ReadyToStart),
+                events,
+            )
         }
     }
 
@@ -271,29 +301,8 @@ class VideoRecorderTest {
 
             assertTrue(RecordedVideoEvent.SaveFailed in events)
             assertFalse(events.any { it is RecordedVideoEvent.Saved })
+            coVerify(exactly = 0) { capturedItemRepository.saveLastCapturedItem(any()) }
             coVerify(exactly = 0) { discardRecording(any()) }
-        }
-    }
-
-    @Test
-    fun stop_whileTheOutputIsCreated_abandonsTheStartAndThrowsTheOutputAway() {
-        runTest {
-            val created = CompletableDeferred<RecordingOutput>()
-            coEvery { createRecordingOutput(any(), any()) } coAnswers { created.await() }
-
-            val recorder = createRecorder(scope = backgroundScope)
-            val events = collectEvents(recorder)
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                recorder.prepare(REQUEST, isStillWanted = { true })
-            }
-
-            recorder.stop()
-            assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
-
-            created.complete(output)
-
-            coVerify(exactly = 1) { discardRecording(output) }
-            assertEquals(listOf(RecordedVideoEvent.Abandoned), events)
         }
     }
 
