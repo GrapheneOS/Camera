@@ -48,6 +48,13 @@ fun <A : MainActivity> awaitRecordingStarted(scenario: ActivityScenario<A>) {
     waitUntil(scenario, "the recording has started") { it.timerView.visibility == View.VISIBLE }
 }
 
+fun <A : MainActivity> recordASecond(scenario: ActivityScenario<A>) {
+    waitUntil(scenario, "a second of video is recorded") {
+        it.timerView.visibility == View.VISIBLE &&
+                it.timerView.text != it.getString(R.string.start_value_timer)
+    }
+}
+
 /**
  * A finished recording's output is saved or discarded off the main thread, and only published once
  * saved: waits for both, so that what the camera shows as captured is final.
