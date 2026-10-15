@@ -2016,38 +2016,46 @@ open class MainActivity : AppCompatActivity(),
 
         val ctx = applicationContext
         val side = preview.layoutParams.width
-        // What the gallery opened from here shows; a secure session shows only its own captures
+        // What the gallery opened from here shows; a secure session shows only its own captures,
+        // told apart by file since items equal by name
         val videosOnly = requiresVideoModeOnly
-        val sessionItems = when (this) {
-            is SecureMainActivity -> capturedItems.toHashSet()
+        val sessionFiles = when (this) {
+            is SecureMainActivity -> capturedItems.mapTo(HashSet()) { CapturedItems.fileKey(it.uri) }
             is SecureActivity -> emptySet()
             else -> null
         }
 
         thumbnailLoaderExecutor.executeIfAlive {
             var shown: CapturedItem? = item
+            var replaced = false
             var bitmap = loadThumbnail(ctx, item, side)
+            var listedEverywhere = true
 
-            if (bitmap == null) {
-                val items = try {
-                    CapturedItems.get(ctx)
+            // A file still there that fails to decode would otherwise be listed for on every resume
+            if (bitmap == null && !CapturedItems.isPresent(ctx, item)) {
+                val listing = try {
+                    CapturedItems.list(ctx)
                 } catch (_: InterruptedException) {
                     return@executeIfAlive
                 }
                 // Deleted or moved away since, in the gallery or by another app
-                if (item !in items) {
-                    shown = items.filter {
-                        (sessionItems == null || it in sessionItems) &&
+                if (listing.lacks(item)) {
+                    shown = listing.files.filter {
+                        (sessionFiles == null || CapturedItems.fileKey(it.uri) in sessionFiles) &&
                                 (!videosOnly || it.type == ITEM_TYPE_VIDEO)
                     }.maxByOrNull { it.dateString }
+                    // Possibly by a file of the same name, which equals it
+                    replaced = true
                     bitmap = shown?.let { loadThumbnail(ctx, it, side) }
+                    // A location that could not be listed may hold a newer one
+                    listedEverywhere = listing.isComplete
                 }
             }
 
             mainExecutor.execute {
                 if (isStarted && camConfig.lastCapturedItem == item) {
-                    if (shown != item) {
-                        val seesEveryItem = sessionItems == null && !videosOnly
+                    if (replaced) {
+                        val seesEveryItem = sessionFiles == null && !videosOnly && listedEverywhere
                         camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
                     }
                     if (bitmap != null) {
