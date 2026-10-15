@@ -42,6 +42,12 @@ class GSlideTransformer : ViewPager2.PageTransformer {
                     alpha = 0f
                 }
             }
+
+            // A page faded out entirely still takes touches
+            visibility = when {
+                alpha == 0f -> View.INVISIBLE
+                else -> View.VISIBLE
+            }
         }
     }
 }
