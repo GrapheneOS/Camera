@@ -246,6 +246,47 @@ class StalledMediaProviderRegressionTest {
     }
 
     /**
+     * Resuming binds the camera again, even after a pause that never stopped it, and a start still
+     * waiting on its output then went to the recorder the rebind had unbound: the recording never
+     * ran, yet the camera counted as recording and took the next press of the record button for a
+     * stop.
+     */
+    @Test
+    fun resumingTheCamera_whileMediaProviderStalls_cancelsTheRecording() {
+        stalledRecordingTest { scenario, camera, mediaProvider ->
+            val pendingBefore = pendingVideoCount()
+
+            onMainThread { camera.videoCapturer.startRecording() }
+            assertTrue(
+                "The recording never asked for its output",
+                mediaProvider.insertStall.awaitCall()
+            )
+
+            var videoCaptureBefore: Any? = null
+            scenario.onActivity { videoCaptureBefore = it.camConfig.videoCapture }
+            // Paused but not stopped, as by a dialog over the camera
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            waitUntil(scenario, "the camera is bound again") {
+                it.camConfig.camera != null && it.camConfig.videoCapture !== videoCaptureBefore
+            }
+
+            mediaProvider.recover()
+            assertTrue("The output was never created", mediaProvider.awaitInsert())
+            awaitOutputSettled(scenario)
+            scenario.onActivity {
+                assertFalse("The camera still counts as recording", it.videoCapturer.isRecording)
+            }
+            waitUntil(scenario, "the abandoned output is deleted") {
+                pendingVideoCount() == pendingBefore
+            }
+
+            scenario.onActivity { it.videoCapturer.startRecording() }
+            awaitRecordingStarted(scenario)
+        }
+    }
+
+    /**
      * A finished recording only becomes visible to other apps with one more call into
      * MediaProvider, which was made on the main thread, so a stall froze the camera from the press
      * of the stop button and a key pressed meanwhile was reported as an ANR.

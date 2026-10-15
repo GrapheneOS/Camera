@@ -1489,6 +1489,8 @@ class CamConfig(private val mActivity: MainActivity) {
         // the camera that is being currently used gets unbind
         mActivity.updateLastFrame()
 
+        mActivity.videoCapturer.abandonDeferredStart()
+
         // Unbind/close all other camera(s) [if any]
         cameraProvider?.unbindAll()
 
