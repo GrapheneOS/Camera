@@ -47,6 +47,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.editCapturedItem
 import app.grapheneos.camera.shareCapturedItem
+import app.grapheneos.camera.util.OneAtATimeStarter
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
@@ -69,6 +70,8 @@ class InAppGallery : AppCompatActivity() {
 
     val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
     val asyncImageLoader = Executors.newSingleThreadExecutor()
+
+    val playerStarter = OneAtATimeStarter(this)
 
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
