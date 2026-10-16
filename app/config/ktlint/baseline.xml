@@ -91,18 +91,10 @@
         <error line="47" column="1" source="standard:final-newline" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/gallery/GallerySliderAdapter.kt">
-        <error line="21" column="39" source="standard:trailing-comma-on-declaration-site" />
-        <error line="70" column="38" source="standard:statement-wrapping" />
-        <error line="70" column="43" source="standard:statement-wrapping" />
-        <error line="95" column="28" source="standard:no-multi-spaces" />
-        <error line="100" column="34" source="standard:statement-wrapping" />
-        <error line="100" column="62" source="standard:statement-wrapping" />
-        <error line="140" column="34" source="standard:parameter-list-wrapping" />
-        <error line="140" column="34" source="standard:wrapping" />
-        <error line="141" column="39" source="standard:parameter-list-wrapping" />
-        <error line="141" column="65" source="standard:wrapping" />
-        <error line="141" column="66" source="standard:parameter-list-wrapping" />
-        <error line="141" column="66" source="standard:trailing-comma-on-declaration-site" />
+        <error line="18" column="39" source="standard:trailing-comma-on-declaration-site" />
+        <error line="84" column="24" source="standard:no-multi-spaces" />
+        <error line="89" column="30" source="standard:statement-wrapping" />
+        <error line="89" column="58" source="standard:statement-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/moresettings/NumInputFilter.kt">
         <error line="8" column="22" source="standard:class-signature" />
@@ -266,11 +258,11 @@
         <error line="327" column="11" source="standard:multiline-if-else" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/gallery/GalleryActivity.kt">
-        <error line="145" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="295" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="300" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="321" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="424" column="21" source="standard:argument-list-wrapping" />
+        <error line="142" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="292" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="297" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="318" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="421" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="630" column="100" source="standard:max-line-length" />
@@ -328,12 +320,12 @@
         <error line="11" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/Utils.kt">
-        <error line="25" column="44" source="standard:no-semi" />
-        <error line="83" column="66" source="standard:argument-list-wrapping" />
-        <error line="83" column="71" source="standard:argument-list-wrapping" />
-        <error line="83" column="101" source="standard:max-line-length" />
-        <error line="83" column="107" source="standard:argument-list-wrapping" />
-        <error line="83" column="110" source="standard:argument-list-wrapping" />
-        <error line="83" column="111" source="standard:argument-list-wrapping" />
+        <error line="24" column="44" source="standard:no-semi" />
+        <error line="74" column="66" source="standard:argument-list-wrapping" />
+        <error line="74" column="71" source="standard:argument-list-wrapping" />
+        <error line="74" column="101" source="standard:max-line-length" />
+        <error line="74" column="107" source="standard:argument-list-wrapping" />
+        <error line="74" column="110" source="standard:argument-list-wrapping" />
+        <error line="74" column="111" source="standard:argument-list-wrapping" />
     </file>
 </baseline>

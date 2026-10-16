@@ -1,20 +1,17 @@
 package app.grapheneos.camera.ui.gallery
 
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.databinding.GallerySlideBinding
 import app.grapheneos.camera.ui.gallery.components.ZoomableImageView
-import app.grapheneos.camera.util.executeIfAlive
-import app.grapheneos.camera.util.getVideoThumbnail
-import kotlin.math.max
+import kotlinx.coroutines.launch
 
 class GallerySliderAdapter(
     private val gActivity: GalleryActivity,
@@ -59,52 +56,43 @@ class GallerySliderAdapter(
 
         holder.currentPostion = position
 
-        gActivity.asyncImageLoader.executeIfAlive {
-            val bitmap: Bitmap? = try {
-                if (item.type == CapturedItemType.VIDEO) {
-                    getVideoThumbnail(gActivity, item.uri)
-                } else {
-                    val source = ImageDecoder.createSource(gActivity.contentResolver, item.uri)
-                    ImageDecoder.decodeBitmap(source, ImageDownscaler)
-                }
-            } catch (e: Exception) { null }
+        gActivity.lifecycleScope.launch(gActivity.mainDispatcher) {
+            val bitmap = gActivity.capturedItemRepository.loadPreview(item)
 
-            gActivity.mainExecutor.execute {
-                if (holder.currentPostion == position) {
-                    if (bitmap != null) {
-                        placeholderText.visibility = View.GONE
-                        mediaPreview.visibility = View.VISIBLE
-                        mediaPreview.setImageBitmap(bitmap)
+            if (holder.currentPostion == position) {
+                if (bitmap != null) {
+                    placeholderText.visibility = View.GONE
+                    mediaPreview.visibility = View.VISIBLE
+                    mediaPreview.setImageBitmap(bitmap)
 
-                        if (item.type == CapturedItemType.VIDEO) {
-                            playButton.visibility = View.VISIBLE
-                            // Tapping the preview is what opens the player; the button drawn over
-                            // it is only the affordance, so the preview carries the label
-                            mediaPreview.contentDescription =
-                                gActivity.getString(R.string.play_video)
+                    if (item.type == CapturedItemType.VIDEO) {
+                        playButton.visibility = View.VISIBLE
+                        // Tapping the preview is what opens the player; the button drawn over
+                        // it is only the affordance, so the preview carries the label
+                        mediaPreview.contentDescription =
+                            gActivity.getString(R.string.play_video)
 
-                            mediaPreview.setOnClickListener {
-                                val curItem = getCurrentItem() ?: return@setOnClickListener
-                                if (curItem.type == CapturedItemType.VIDEO) {
-                                    gActivity.videoPlayerLauncher.open(gActivity, curItem.uri)
-                                }
+                        mediaPreview.setOnClickListener {
+                            val curItem = getCurrentItem() ?: return@setOnClickListener
+                            if (curItem.type == CapturedItemType.VIDEO) {
+                                gActivity.videoPlayerLauncher.open(gActivity, curItem.uri)
                             }
-                        } else if (item.type == CapturedItemType.IMAGE) {
-                            mediaPreview.enableZooming()
                         }
-                    } else  {
-                        mediaPreview.visibility = View.INVISIBLE
-
-                        val resId = if (item.type == CapturedItemType.IMAGE) {
-                            R.string.inaccessible_image
-                        } else { R.string.inaccessible_video }
-
-                        placeholderText.visibility = View.VISIBLE
-                        placeholderText.setText(gActivity.getString(resId, item.dateString))
+                    } else if (item.type == CapturedItemType.IMAGE) {
+                        mediaPreview.enableZooming()
                     }
-                } else {
-                    bitmap?.recycle()
+                } else  {
+                    mediaPreview.visibility = View.INVISIBLE
+
+                    val resId = if (item.type == CapturedItemType.IMAGE) {
+                        R.string.inaccessible_image
+                    } else { R.string.inaccessible_video }
+
+                    placeholderText.visibility = View.VISIBLE
+                    placeholderText.setText(gActivity.getString(resId, item.dateString))
                 }
+            } else {
+                bitmap?.recycle()
             }
         }
     }
@@ -133,23 +121,5 @@ class GallerySliderAdapter(
 
     override fun getItemCount(): Int {
         return items.size
-    }
-}
-
-object ImageDownscaler : ImageDecoder.OnHeaderDecodedListener {
-    override fun onHeaderDecoded(decoder: ImageDecoder,
-        info: ImageDecoder.ImageInfo, source: ImageDecoder.Source) {
-        val size = info.size
-        val w = size.width
-        val h = size.height
-        // limit the max size of the bitmap to avoid bumping into bitmap size limit
-        // (100 MB)
-        val largerSide = max(w, h)
-        val maxSide = 4500
-
-        if (largerSide > maxSide) {
-            val ratio = maxSide.toDouble() / largerSide
-            decoder.setTargetSize((ratio * w).toInt(), (ratio * h).toInt())
-        }
     }
 }

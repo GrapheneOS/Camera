@@ -6,7 +6,9 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.database.MatrixCursor
+import android.graphics.Bitmap
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
@@ -25,6 +27,7 @@ import io.mockk.Called
 import io.mockk.mockk
 import io.mockk.verify
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,6 +47,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.GraphicsMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -71,11 +75,11 @@ class CapturedItemRepositoryTest {
     @Test
     fun lastCapturedItem_afterRestart_returnsTheStoredItem() {
         runTest {
-            repository().saveLastCapturedItem(item(DATE_STRING))
+            repository().saveLastCapturedItem(item())
 
             val reloaded = repository().lastCapturedItem.first()
 
-            assertEquals(item(DATE_STRING), reloaded)
+            assertEquals(item(), reloaded)
             assertEquals(CapturedItemType.IMAGE, reloaded?.type)
         }
     }
@@ -99,17 +103,17 @@ class CapturedItemRepositoryTest {
             }
             val session = repository(session = lockscreenPrefs(), media = durableMedia)
 
-            session.saveLastCapturedItem(item(DATE_STRING))
+            session.saveLastCapturedItem(item())
             session.setStorageLocation(treeUri("treeA").toString())
 
             val onDisk = mediaPrefsSerializer.readFrom(file.inputStream())
 
-            assertEquals(item(DATE_STRING), session.lastCapturedItem.first())
+            assertEquals(item(), session.lastCapturedItem.first())
             assertEquals(
                 StoredCapturedItem(
                     type = StoredCapturedItem.TYPE_IMAGE,
                     dateString = DATE_STRING,
-                    uri = item(DATE_STRING).uri.toString(),
+                    uri = item().uri.toString(),
                 ),
                 onDisk.lastCapturedItem,
             )
@@ -241,7 +245,7 @@ class CapturedItemRepositoryTest {
     @Test
     fun migrateStoredCaptures_legacyUris_reportTheMostRecentAsTheLastCapturedItem() {
         runTest {
-            Robolectric.buildContentProvider(FakeDocumentsProvider::class.java).create(AUTHORITY)
+            documents()
             writeLegacyMediaUris(listOf("treeA"))
 
             val reported = repository().migrateStoredCaptures()
@@ -254,6 +258,54 @@ class CapturedItemRepositoryTest {
                 ),
                 reported,
             )
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun loadPreview_photoBeyondTheLimit_isScaledDownToIt() {
+        runTest {
+            documents().file = jpeg(width = 9000, height = 10)
+
+            val preview = requireNotNull(repository().loadPreview(photo()))
+
+            assertEquals(4500, preview.width)
+            assertEquals(5, preview.height)
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun loadPreview_photoWithinTheLimit_keepsItsSize() {
+        runTest {
+            documents().file = jpeg(width = 40, height = 20)
+
+            val preview = requireNotNull(repository().loadPreview(photo()))
+
+            assertEquals(40, preview.width)
+            assertEquals(20, preview.height)
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun loadPreview_truncatedPhoto_isNull() {
+        runTest {
+            val whole = jpeg(width = 40, height = 20)
+            documents().file = temporaryFolder.newFile().apply {
+                writeBytes(whole.readBytes().copyOf(whole.length().toInt() / 2))
+            }
+
+            assertNull(repository().loadPreview(photo()))
+        }
+    }
+
+    @Test
+    fun loadPreview_unreadablePhoto_isNull() {
+        runTest {
+            documents()
+
+            assertNull(repository().loadPreview(photo()))
         }
     }
 
@@ -286,11 +338,40 @@ class CapturedItemRepositoryTest {
         return InMemoryDataStore(stored())
     }
 
-    private fun item(dateString: String): CapturedItem {
+    private fun item(): CapturedItem {
         return CapturedItem(
             type = CapturedItemType.IMAGE,
-            dateString = dateString,
+            dateString = DATE_STRING,
             uri = Uri.parse("content://media/external/images/media/1"),
+        )
+    }
+
+    private fun documents(): FakeDocumentsProvider {
+        return Robolectric
+            .buildContentProvider(FakeDocumentsProvider::class.java)
+            .create(AUTHORITY)
+            .get()
+    }
+
+    private fun jpeg(width: Int, height: Int): File {
+        val file = temporaryFolder.newFile()
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        file.outputStream().use { stream ->
+            bitmap.compress(
+                Bitmap.CompressFormat.JPEG,
+                JPEG_QUALITY,
+                stream,
+            )
+        }
+
+        return file
+    }
+
+    private fun photo(): CapturedItem {
+        return CapturedItem(
+            type = CapturedItemType.IMAGE,
+            dateString = DATE_STRING,
+            uri = documentUri("tree"),
         )
     }
 
@@ -313,8 +394,16 @@ class CapturedItemRepositoryTest {
 
     private class FakeDocumentsProvider : ContentProvider() {
 
+        var file: File? = null
+
         override fun onCreate(): Boolean {
             return true
+        }
+
+        override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
+            val target = file ?: throw FileNotFoundException("no file for $uri")
+
+            return ParcelFileDescriptor.open(target, ParcelFileDescriptor.MODE_READ_ONLY)
         }
 
         override fun query(
@@ -329,8 +418,8 @@ class CapturedItemRepositoryTest {
             return cursor
         }
 
-        override fun getType(uri: Uri): String? {
-            return null
+        override fun getType(uri: Uri): String {
+            return "image/jpeg"
         }
 
         override fun insert(uri: Uri, values: ContentValues?): Uri? {
@@ -358,6 +447,7 @@ class CapturedItemRepositoryTest {
     private companion object {
         const val AUTHORITY = "com.example.documents"
         const val DATE_STRING = "20260724_153012_345"
+        const val JPEG_QUALITY = 90
         const val LEGACY_MEDIA_URI_SEPARATOR = ";"
     }
 }

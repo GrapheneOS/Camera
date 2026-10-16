@@ -22,7 +22,6 @@
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val contentResolver = appContext.contentResolver</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val mainThreadExecutor = appContext.mainExecutor</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver.Companion$val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()</ID>
-    <ID>HasPlatformType:GalleryActivity.kt:GalleryActivity$val asyncImageLoader = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:MainActivity.kt:MainActivity$val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is IllegalArgumentException</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is UnsupportedOperationException</ID>
@@ -139,7 +138,6 @@
     <ID>ReturnCount:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$private fun onSwipeRight</ID>
     <ID>SwallowedException:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
     <ID>SwallowedException:CapturedItemIntents.kt:e: ActivityNotFoundException</ID>
-    <ID>SwallowedException:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
     <ID>SwallowedException:SettingsDialog.kt:SettingsDialog$exception: Exception</ID>
     <ID>SwallowedException:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$exception: Exception</ID>
     <ID>SwallowedException:VideoCapturer.kt:VideoCapturer$e: Exception</ID>
@@ -147,7 +145,6 @@
     <ID>ThrowsCount:ImageSaver.kt:ImageSaver$@Throws(ImageSaverException::class) private fun saveImageInner</ID>
     <ID>TooGenericExceptionCaught:CameraSession.kt:CameraSessionImpl$exception: RuntimeException</ID>
     <ID>TooGenericExceptionCaught:CaptureActivity.kt:CaptureActivity$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:GallerySliderAdapter.kt:GallerySliderAdapter$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageSaver.kt:ImageSaver$deleteException: Exception</ID>
     <ID>TooGenericExceptionCaught:ImageSaver.kt:ImageSaver$e: Exception</ID>
     <ID>TooGenericExceptionCaught:GalleryActivity.kt:GalleryActivity$e: Exception</ID>
