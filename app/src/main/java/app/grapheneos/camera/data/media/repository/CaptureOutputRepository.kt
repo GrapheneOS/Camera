@@ -48,7 +48,7 @@ interface CaptureOutputRepository {
 
     suspend fun publish(uri: Uri): Result<Unit>
 
-    suspend fun delete(uri: Uri)
+    suspend fun delete(uri: Uri): Result<Unit>
 
     suspend fun deleteStalePendingVideos(olderThan: Duration)
 }
@@ -119,8 +119,8 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun delete(uri: Uri) {
-        onStorage {
+    override suspend fun delete(uri: Uri): Result<Unit> {
+        return onStorage {
             when (uri.host) {
                 MediaStore.AUTHORITY -> {
                     val deletedRows = contentResolver.delete(uri, null, null)

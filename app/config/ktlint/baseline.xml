@@ -266,12 +266,11 @@
         <error line="327" column="11" source="standard:multiline-if-else" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/gallery/GalleryActivity.kt">
-        <error line="134" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="207" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="292" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="297" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="318" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="421" column="21" source="standard:argument-list-wrapping" />
+        <error line="137" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="287" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="292" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="313" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="416" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="630" column="100" source="standard:max-line-length" />
