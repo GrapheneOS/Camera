@@ -7,7 +7,6 @@ import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.videoplayer.VideoPlayerActivity
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -23,12 +22,9 @@ class VideoCaptureActivity : CaptureActivity() {
         playPreview = findViewById(R.id.play_preview)
 
         playPreview.setOnClickListener {
-            val i = Intent(
-                this@VideoCaptureActivity,
-                VideoPlayerActivity::class.java
-            )
-            i.putExtra("videoUri", savedUri)
-            startActivity(i)
+            savedUri?.let { uri ->
+                videoPlayerLauncher.open(this, uri)
+            }
         }
 
         imagePreview.visibility = View.GONE

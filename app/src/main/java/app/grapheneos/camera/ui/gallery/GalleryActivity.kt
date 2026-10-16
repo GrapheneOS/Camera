@@ -43,8 +43,8 @@ import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.editCapturedItem
 import app.grapheneos.camera.ui.activities.shareCapturedItem
-import app.grapheneos.camera.ui.common.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.gallery.components.formatted
+import app.grapheneos.camera.ui.mediaviewer.VideoPlayerLauncher
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra

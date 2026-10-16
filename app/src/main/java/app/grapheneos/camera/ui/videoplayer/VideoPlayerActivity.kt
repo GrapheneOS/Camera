@@ -1,176 +1,26 @@
 package app.grapheneos.camera.ui.videoplayer
 
-import android.graphics.drawable.ColorDrawable
-import android.media.AudioManager
-import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
-import android.widget.FrameLayout
-import android.widget.MediaController
-import android.widget.RelativeLayout
-import android.widget.Toast
-import android.widget.VideoView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Lifecycle
-import app.grapheneos.camera.R
-import app.grapheneos.camera.databinding.VideoPlayerBinding
-import app.grapheneos.camera.util.getParcelableExtra
-import kotlin.concurrent.thread
+import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.videoplayer.screen.VideoPlayerScreen
+import dagger.hilt.android.AndroidEntryPoint
 
-
-open class VideoPlayerActivity : AppCompatActivity() {
-
-    companion object {
-        const val TAG = "VideoPlayerActivity"
-        const val VIDEO_URI = "videoUri"
-    }
-
-    private lateinit var binding: VideoPlayerBinding
+@AndroidEntryPoint
+open class VideoPlayerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController.isAppearanceLightStatusBars = false
-        windowInsetsController.isAppearanceLightNavigationBars = false
-        windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-
-        val intent = this.intent
-
-        binding = VideoPlayerBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        supportActionBar?.let {
-            it.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.appbar)))
-            it.setDisplayShowTitleEnabled(false)
-            it.setDisplayHomeAsUpEnabled(true)
-        }
-
-        val uri = getParcelableExtra<Uri>(intent, VIDEO_URI)!!
-
-        val videoView = binding.videoPlayer
-
-        val mediaController = object : MediaController(this) {
-            override fun show() {
-                super.show()
-                showActionBar()
-                windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-            }
-
-            override fun hide() {
-                super.hide()
-                hideActionBar()
-                windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-            }
-        }
-
-        supportActionBar?.setBackgroundDrawable(null)
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.shade) { view, insets ->
-            val systemBars = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())
-            val actionBarHeight = resources.getDimensionPixelSize(R.dimen.action_bar_height)
-            view.layoutParams =
-                FrameLayout.LayoutParams(
-                    RelativeLayout.LayoutParams.MATCH_PARENT,
-                    systemBars.top + actionBarHeight
+        setContent {
+            CameraTheme {
+                VideoPlayerScreen(
+                    onNavigateBack = ::finish,
                 )
-            view.background = ContextCompat.getDrawable(this@VideoPlayerActivity, R.drawable.shade)
-            insets
-        }
-
-        thread {
-            var hasAudio = true
-            try {
-                MediaMetadataRetriever().use {
-                    it.setDataSource(this, uri)
-                    hasAudio = it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO) != null
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "", e)
             }
-
-            mainExecutor.execute {
-                if (lifecycle.currentState == Lifecycle.State.DESTROYED) {
-                    return@execute
-                }
-
-                val audioFocus = if (hasAudio) AudioManager.AUDIOFOCUS_GAIN else AudioManager.AUDIOFOCUS_NONE
-                videoView.setAudioFocusRequest(audioFocus)
-
-                videoView.setOnPreparedListener { _ ->
-                    videoView.setMediaController(mediaController)
-
-                    if (lifecycle.currentState == Lifecycle.State.RESUMED) {
-                        videoView.start()
-                    }
-
-                    showActionBar()
-                    mediaController.show(0)
-                }
-
-                playVideo(videoView, uri)
-            }
-        }
-    }
-
-    // When the media service dies during setup, VideoView lets prepareAsync()'s
-    // IllegalStateException escape instead of routing it to its error dialog
-    internal fun playVideo(videoView: VideoView, uri: Uri) {
-        try {
-            videoView.setVideoURI(uri)
-        } catch (e: IllegalStateException) {
-            Log.e(TAG, "Unable to play video", e)
-            Toast.makeText(applicationContext, R.string.unable_to_play_video, Toast.LENGTH_SHORT).show()
-            finish()
-        }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
-    }
-
-    override fun onResume() {
-        super.onResume()
-        showActionBar()
-    }
-
-    private fun hideActionBar() {
-        supportActionBar?.hide()
-        animateShadeToTransparent()
-    }
-
-    private fun showActionBar() {
-        supportActionBar?.show()
-        animateShadeToOriginal()
-    }
-
-    private fun animateShadeToTransparent() {
-        if (binding.shade.alpha == 0f) {
-            return
-        }
-
-        binding.shade.animate().apply {
-            duration = 300
-            alpha(0f)
-        }
-    }
-
-    private fun animateShadeToOriginal() {
-        if (binding.shade.alpha == 1f) {
-            return
-        }
-
-        binding.shade.animate().apply {
-            duration = 300
-            alpha(1f)
         }
     }
 }

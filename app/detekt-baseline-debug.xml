@@ -36,7 +36,6 @@
     <ID>LongMethod:MoreSettings.kt:MoreSettings$override fun onCreate</ID>
     <ID>LongMethod:SettingsDialog.kt:SettingsDialog$fun selfIllumination</ID>
     <ID>LongMethod:VideoCapturer.kt:VideoCapturer$fun startRecording</ID>
-    <ID>LongMethod:VideoPlayerActivity.kt:VideoPlayerActivity$override fun onCreate</ID>
     <ID>MagicNumber:App.kt:App$2000</ID>
     <ID>MagicNumber:BlurBitmap.kt:BlurBitmap$0x0000ff</ID>
     <ID>MagicNumber:BlurBitmap.kt:BlurBitmap$0x00ff00</ID>
@@ -89,7 +88,6 @@
     <ID>MagicNumber:SettingsDialog.kt:SettingsDialog$300</ID>
     <ID>MagicNumber:VideoCapturer.kt:VideoCapturer$1_000_000_000</ID>
     <ID>MagicNumber:VideoCapturer.kt:VideoCapturer$300</ID>
-    <ID>MagicNumber:VideoPlayerActivity.kt:VideoPlayerActivity$300</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$270f</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$360f</ID>
     <ID>MagicNumber:ViewfinderOrientationHandler.kt:ViewfinderOrientationHandler$4</ID>
@@ -154,7 +152,6 @@
     <ID>TooGenericExceptionCaught:VideoCapturer.kt:VideoCapturer$e: Exception</ID>
     <ID>TooGenericExceptionCaught:VideoCapturer.kt:VideoCapturer$exception: Exception</ID>
     <ID>TooGenericExceptionCaught:VideoCapturer.kt:e: Exception</ID>
-    <ID>TooGenericExceptionCaught:VideoPlayerActivity.kt:VideoPlayerActivity$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewfinderGestureHandler.kt:ViewfinderGestureHandler$exception: Exception</ID>
     <ID>TopLevelPropertyNaming:ImageCapturer.kt:private const val imageFileFormat = ".jpg"</ID>
     <ID>UnsafeCallOnNullableType:BlurBitmap.kt:BlurBitmap$sentBitmap.config!!</ID>
@@ -172,7 +169,6 @@
     <ID>UnsafeCallOnNullableType:SettingsDialog.kt:SettingsDialog$Looper.myLooper()!!</ID>
     <ID>UnsafeCallOnNullableType:SettingsDialog.kt:SettingsDialog.&lt;no name provided&gt;$ev!!</ID>
     <ID>UnsafeCallOnNullableType:VideoCapturer.kt:VideoCapturer$createRecordingContext(recorder, fileName)!!</ID>
-    <ID>UnsafeCallOnNullableType:VideoPlayerActivity.kt:VideoPlayerActivity$getParcelableExtra&lt;Uri&gt;(intent, VIDEO_URI)!!</ID>
     <ID>UnsafeCallOnNullableType:ZoomableImageView.kt:ZoomableImageView$currentInstance.mScaleDetector!!</ID>
     <ID>UnusedPrivateProperty:AutoFinishOnSleep.kt:AutoFinishOnSleep.Companion$private const val TAG = "AutoFinishOnSleep"</ID>
     <ID>UnusedUnaryOperator:BlurBitmap.kt:BlurBitmap$-0x1000000</ID>
