@@ -6,7 +6,7 @@ import android.widget.VideoView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import app.grapheneos.camera.ui.activities.VideoPlayer
+import app.grapheneos.camera.ui.videoplayer.VideoPlayerActivity
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertFalse
@@ -30,10 +30,10 @@ class VideoPlayerRegressionTest {
     fun videoLoad_whenMediaServiceDies_closesPlayerInsteadOfCrashing() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val uri = Uri.parse("content://media/external/video/media/0")
-        val intent = Intent(context, VideoPlayer::class.java)
-            .putExtra(VideoPlayer.VIDEO_URI, uri)
+        val intent = Intent(context, VideoPlayerActivity::class.java)
+            .putExtra(VideoPlayerActivity.VIDEO_URI, uri)
 
-        ActivityScenario.launch<VideoPlayer>(intent).use { scenario ->
+        ActivityScenario.launch<VideoPlayerActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 assertFalse(activity.isFinishing)
 

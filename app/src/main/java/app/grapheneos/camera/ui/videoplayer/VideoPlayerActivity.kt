@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.activities
+package app.grapheneos.camera.ui.videoplayer
 
 import android.graphics.drawable.ColorDrawable
 import android.media.AudioManager
@@ -24,19 +24,14 @@ import app.grapheneos.camera.util.getParcelableExtra
 import kotlin.concurrent.thread
 
 
-class VideoPlayer : AppCompatActivity() {
+open class VideoPlayerActivity : AppCompatActivity() {
 
     companion object {
-        const val TAG = "VideoPlayer"
-        const val IN_SECURE_MODE = "isInSecureMode"
+        const val TAG = "VideoPlayerActivity"
         const val VIDEO_URI = "videoUri"
     }
 
     private lateinit var binding: VideoPlayerBinding
-
-    private val autoFinisher = AutoFinishOnSleep(this)
-
-    private var isSecureMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,14 +43,6 @@ class VideoPlayer : AppCompatActivity() {
         windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
 
         val intent = this.intent
-
-        isSecureMode = intent.getBooleanExtra(IN_SECURE_MODE, false)
-
-        if (isSecureMode) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-            autoFinisher.start()
-        }
 
         binding = VideoPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -94,7 +81,7 @@ class VideoPlayer : AppCompatActivity() {
                     RelativeLayout.LayoutParams.MATCH_PARENT,
                     systemBars.top + actionBarHeight
                 )
-            view.background = ContextCompat.getDrawable(this@VideoPlayer, R.drawable.shade)
+            view.background = ContextCompat.getDrawable(this@VideoPlayerActivity, R.drawable.shade)
             insets
         }
 
@@ -184,13 +171,6 @@ class VideoPlayer : AppCompatActivity() {
         binding.shade.animate().apply {
             duration = 300
             alpha(1f)
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (isSecureMode) {
-            this.autoFinisher.stop()
         }
     }
 }

@@ -14,7 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
-import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
 import java.util.concurrent.CountDownLatch
 import org.junit.After
@@ -55,7 +55,7 @@ class PageDeletedUnderFingerRegressionTest {
         app.registerActivityLifecycleCallbacks(stall)
         val item = CapturedItem(CapturedItemType.IMAGE, "20261012_000000", insertImage())
 
-        ActivityScenario.launch(InAppGallery::class.java).use { scenario ->
+        ActivityScenario.launch(GalleryActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 GallerySliderAdapter(activity, arrayListOf(item)).let {
                     activity.gallerySliderAdapter = it

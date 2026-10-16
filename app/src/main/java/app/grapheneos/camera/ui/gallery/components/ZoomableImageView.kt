@@ -14,7 +14,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import androidx.appcompat.widget.AppCompatImageView
-import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GalleryActivity
 import kotlin.math.abs
 
 class ZoomableImageView @JvmOverloads constructor(
@@ -48,13 +48,13 @@ class ZoomableImageView @JvmOverloads constructor(
 
     private var scaleAnimator : ValueAnimator? = null
 
-    lateinit var gActivity: InAppGallery
+    lateinit var gActivity: GalleryActivity
 
     init {
         sharedConstructing()
     }
 
-    fun setGalleryActivity(gActivity: InAppGallery) {
+    fun setGalleryActivity(gActivity: GalleryActivity) {
         this.gActivity = gActivity
     }
 

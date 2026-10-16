@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.activities
+package app.grapheneos.camera.ui.gallery
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
@@ -42,8 +42,10 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
-import app.grapheneos.camera.ui.gallery.GSlideTransformer
-import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
+import app.grapheneos.camera.ui.activities.SecureActivity
+import app.grapheneos.camera.ui.activities.editCapturedItem
+import app.grapheneos.camera.ui.activities.shareCapturedItem
+import app.grapheneos.camera.ui.common.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getLongOrNull
 import app.grapheneos.camera.util.getParcelableArrayListExtra
@@ -64,13 +66,16 @@ import kotlin.properties.Delegates
 import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
-class InAppGallery : AppCompatActivity() {
+open class GalleryActivity : AppCompatActivity() {
 
     @Inject
     lateinit var captureTimeMapper: CaptureTimeMapper
 
     @Inject
     lateinit var capturedItemRepository: CapturedItemRepository
+
+    @Inject
+    lateinit var videoPlayerLauncher: VideoPlayerLauncher
 
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
@@ -82,19 +87,13 @@ class InAppGallery : AppCompatActivity() {
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
 
-    var isSecureMode = false
-        private set
-
     private lateinit var rootView: View
-
-    private val autoFinisher = AutoFinishOnSleep(this)
 
     private var lastViewedMediaItem: CapturedItem? = null
 
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
     companion object {
-        const val INTENT_KEY_SECURE_MODE = "is_secure_mode"
         const val INTENT_KEY_VIDEO_ONLY_MODE = "video_only_mode"
         const val INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS = "secure_mode_items"
         const val INTENT_KEY_LAST_CAPTURED_ITEM = "last_captured_item"
@@ -211,7 +210,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun editCurrentMedia(withDefault: Boolean = true) {
-        if (isSecureMode) {
+        if (this is SecureActivity) {
             showMessage(getString(R.string.edit_not_allowed))
             return
         }
@@ -587,7 +586,7 @@ class InAppGallery : AppCompatActivity() {
     }
 
     private fun shareCurrentMedia() {
-        if (isSecureMode) {
+        if (this is SecureActivity) {
             showMessage(getString(R.string.sharing_not_allowed))
             return
         }
@@ -600,20 +599,12 @@ class InAppGallery : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        isSecureMode = intent.getBooleanExtra(INTENT_KEY_SECURE_MODE, false)
-
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         windowInsetsController = WindowCompat.getInsetsController(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
             show(WindowInsetsCompat.Type.systemBars())
-        }
-
-        if (isSecureMode) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-            autoFinisher.start()
         }
 
         ogColor = ContextCompat.getColor(this, R.color.system_neutral1_900)
@@ -720,7 +711,7 @@ class InAppGallery : AppCompatActivity() {
                     RelativeLayout.LayoutParams.MATCH_PARENT,
                     systemBars.top + actionBarHeight
                 )
-            view.background = ContextCompat.getDrawable(this@InAppGallery, R.drawable.shade)
+            view.background = ContextCompat.getDrawable(this@GalleryActivity, R.drawable.shade)
             insets
         }
     }
@@ -816,9 +807,6 @@ class InAppGallery : AppCompatActivity() {
         super.onDestroy()
         asyncLoaderOfCapturedItems.shutdownNow()
         asyncImageLoader.shutdownNow()
-        if (isSecureMode) {
-            autoFinisher.stop()
-        }
     }
 
     fun vibrateDevice() {
