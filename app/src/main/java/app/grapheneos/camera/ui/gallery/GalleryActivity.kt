@@ -53,7 +53,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.ZoneId
-import java.util.concurrent.Executors
 import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
@@ -89,8 +88,6 @@ open class GalleryActivity : AppCompatActivity() {
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
     var gallerySliderAdapter: GallerySliderAdapter? = null
-
-    val asyncImageLoader = Executors.newSingleThreadExecutor()
 
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
@@ -550,11 +547,6 @@ open class GalleryActivity : AppCompatActivity() {
         }
         animateShadeToTransparent()
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        asyncImageLoader.shutdownNow()
     }
 
     fun vibrateDevice() {

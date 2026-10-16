@@ -24,7 +24,7 @@ import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.di.core.IoDispatcher
-import app.grapheneos.camera.util.ImageResizer
+import app.grapheneos.camera.util.ImageDownscaler
 import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.getVideoThumbnail
 import app.grapheneos.camera.util.queryFirstRowOrNull
@@ -64,6 +64,8 @@ interface CapturedItemRepository {
         targetWidth: Int,
         targetHeight: Int,
     ): Bitmap?
+
+    suspend fun loadPreview(item: CapturedItem): Bitmap?
 
     companion object {
         const val MEDIA_STORE_LOCATION = ""
@@ -166,6 +168,19 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
+    internal suspend fun trackedSafTrees(): List<Uri> {
+        val prefs = storagePrefs.data.first()
+        val trees = ArrayList<Uri>()
+
+        prefs.storageLocation
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { trees.add(it.toUri()) }
+
+        prefs.previousSafTrees.mapTo(trees) { it.toUri() }
+
+        return trees.distinct()
+    }
+
     override suspend fun migrateStoredCaptures(): CapturedItem? {
         return withContext(ioDispatcher) {
             val joinedUris = storagePrefs.data.first().legacyMediaUris
@@ -192,6 +207,59 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
+    private fun legacyCapturedItem(uri: Uri): CapturedItem? {
+        val columnName = when (uri.authority) {
+            MediaStore.AUTHORITY -> MediaStore.MediaColumns.DISPLAY_NAME
+            else -> DocumentsContract.Document.COLUMN_DISPLAY_NAME
+        }
+
+        val fileName = contentResolver.queryFirstRowOrNull(
+            uri = uri,
+            projection = arrayOf(columnName)
+        ) { cursor ->
+            cursor.getStringOrNull(columnName)
+        }
+
+        return fileName?.let { name ->
+            capturedItemNameMapper.map(name, uri)
+        }
+    }
+
+    /** Unbounded, unlike the tracked list: a tree left out here loses its grant for good. */
+    private suspend fun legacyTrees(uris: List<Uri>): List<Uri> {
+        val currentTreeUri = storageLocation
+            .first()
+            .takeIf { it != CapturedItemRepository.MEDIA_STORE_LOCATION }
+            ?.toUri()
+
+        val trees = ArrayList<Uri>()
+
+        uris.forEach { uri ->
+            val authority = uri.authority ?: return@forEach
+
+            if (authority == MediaStore.AUTHORITY) {
+                return@forEach
+            }
+
+            val treeUri = DocumentsContract.buildTreeDocumentUri(
+                authority,
+                DocumentsContract.getTreeDocumentId(uri),
+            )
+
+            val skip = treeUri == currentTreeUri ||
+                trees.contains(treeUri) ||
+                treeUri.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)
+
+            if (skip) {
+                return@forEach
+            }
+
+            trees.add(treeUri)
+        }
+
+        return trees
+    }
+
     override suspend fun capturedItems(): List<CapturedItem> {
         return withContext(ioDispatcher) {
             val items = ArrayList<CapturedItem>()
@@ -205,19 +273,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
             items.distinct()
         }
-    }
-
-    internal suspend fun trackedSafTrees(): List<Uri> {
-        val prefs = storagePrefs.data.first()
-        val trees = ArrayList<Uri>()
-
-        prefs.storageLocation
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { trees.add(it.toUri()) }
-
-        prefs.previousSafTrees.mapTo(trees) { it.toUri() }
-
-        return trees.distinct()
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -280,59 +335,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
-    /** Unbounded, unlike the tracked list: a tree left out here loses its grant for good. */
-    private suspend fun legacyTrees(uris: List<Uri>): List<Uri> {
-        val currentTreeUri = storageLocation
-            .first()
-            .takeIf { it != CapturedItemRepository.MEDIA_STORE_LOCATION }
-            ?.toUri()
-
-        val trees = ArrayList<Uri>()
-
-        uris.forEach { uri ->
-            val authority = uri.authority ?: return@forEach
-
-            if (authority == MediaStore.AUTHORITY) {
-                return@forEach
-            }
-
-            val treeUri = DocumentsContract.buildTreeDocumentUri(
-                authority,
-                DocumentsContract.getTreeDocumentId(uri),
-            )
-
-            val skip = treeUri == currentTreeUri ||
-                trees.contains(treeUri) ||
-                treeUri.toString().contains(StoragePrefsMigration.SAF_TREE_SEPARATOR)
-
-            if (skip) {
-                return@forEach
-            }
-
-            trees.add(treeUri)
-        }
-
-        return trees
-    }
-
-    private fun legacyCapturedItem(uri: Uri): CapturedItem? {
-        val columnName = when (uri.authority) {
-            MediaStore.AUTHORITY -> MediaStore.MediaColumns.DISPLAY_NAME
-            else -> DocumentsContract.Document.COLUMN_DISPLAY_NAME
-        }
-
-        val fileName = contentResolver.queryFirstRowOrNull(
-            uri = uri,
-            projection = arrayOf(columnName)
-        ) { cursor ->
-            cursor.getStringOrNull(columnName)
-        }
-
-        return fileName?.let { name ->
-            capturedItemNameMapper.map(name, uri)
-        }
-    }
-
     @Suppress("TooGenericExceptionCaught")
     override suspend fun loadThumbnail(
         item: CapturedItem,
@@ -342,31 +344,30 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return withContext(ioDispatcher) {
             try {
                 when (item.type) {
-                    CapturedItemType.VIDEO -> {
-                        getVideoThumbnail(context, item.uri)?.let { frame ->
-                            scaleToFit(
-                                frame = frame,
-                                targetWidth = targetWidth,
-                                targetHeight = targetHeight,
-                            )
-                        }
-                    }
-
-                    else -> {
-                        ImageDecoder.decodeBitmap(
-                            ImageDecoder.createSource(contentResolver, item.uri),
-                            ImageResizer(targetWidth, targetHeight),
+                    CapturedItemType.VIDEO -> getVideoThumbnail(context, item.uri)?.let { frame ->
+                        scaleDownToFit(
+                            frame = frame,
+                            targetWidth = targetWidth,
+                            targetHeight = targetHeight,
                         )
                     }
+
+                    CapturedItemType.IMAGE -> ImageDecoder.decodeBitmap(
+                        ImageDecoder.createSource(contentResolver, item.uri),
+                        ImageDownscaler(
+                            maxWidth = targetWidth,
+                            maxHeight = targetHeight,
+                        ),
+                    )
                 }
             } catch (e: Exception) {
-                Log.d(TAG, "unable to load the thumbnail of ${item.uri}", e)
+                Log.d(TAG, "unable to decode ${item.uri}", e)
                 null
             }
         }
     }
 
-    private fun scaleToFit(
+    private fun scaleDownToFit(
         frame: Bitmap,
         targetWidth: Int,
         targetHeight: Int,
@@ -374,6 +375,10 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         val width = frame.width.toDouble()
         val height = frame.height.toDouble()
         val ratio = max(width / targetWidth, height / targetHeight)
+
+        if (ratio <= 1) {
+            return frame
+        }
 
         val scaled = frame.scale(
             width = (width / ratio).toInt(),
@@ -384,11 +389,22 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return scaled
     }
 
+    override suspend fun loadPreview(item: CapturedItem): Bitmap? {
+        return loadThumbnail(
+            item = item,
+            targetWidth = PREVIEW_MAX_SIDE,
+            targetHeight = PREVIEW_MAX_SIDE,
+        )
+    }
+
     companion object {
         // Recent storage locations stay tracked so the gallery can still show their contents.
         const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
 
         private const val TAG = "CapturedItemRepository"
+
+        // Keeps a decoded photo clear of the bitmap size limit (100 MB)
+        private const val PREVIEW_MAX_SIDE = 4500
         private const val LEGACY_MEDIA_URI_SEPARATOR = ";"
     }
 }
