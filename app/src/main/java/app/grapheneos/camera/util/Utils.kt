@@ -79,20 +79,19 @@ fun storageLocationToUiString(ctx: Context, sl: String): String {
         return "$volumeName/$path"
     }
 
-    try {
+    val documentName = try {
         val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
 
         val column = DocumentsContract.Document.COLUMN_DISPLAY_NAME
-        ctx.contentResolver.query(docUri, arrayOf(column), null, null)?.use {
-            if (it.moveToFirst()) {
-                it.getStringOrNull(column)?.let { name ->
-                    return name
-                }
-            }
-        }
-    } catch (ignored: Exception) {}
+        ctx.contentResolver.queryFirstRow(
+            uri = docUri,
+            projection = arrayOf(column)
+        ) { it.getStringOrNull(column) }
+    } catch (ignored: Exception) {
+        null
+    }
 
-    return locationId
+    return documentName ?: locationId
 }
 
 @Throws(IOException::class)

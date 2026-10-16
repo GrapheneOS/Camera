@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.media.repository
 
 import android.content.ContentProvider
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
@@ -119,17 +120,17 @@ class CapturedItemRepositoryTest {
     @Test
     fun releaseUntrackedSafTrees_lockscreenSession_touchesNoPersistedGrant() {
         runTest {
-            val lockscreenContext = mockk<Context>()
+            val lockscreenResolver = mockk<ContentResolver>()
             val repository = LockscreenCapturedItemRepository(
                 repository(
                     session = lockscreenPrefs(),
-                    context = lockscreenContext,
+                    contentResolver = lockscreenResolver,
                 ),
             )
 
             repository.releaseUntrackedSafTrees()
 
-            verify { lockscreenContext wasNot Called }
+            verify { lockscreenResolver wasNot Called }
         }
     }
 
@@ -259,7 +260,7 @@ class CapturedItemRepositoryTest {
     private fun TestScope.repository(
         session: DataStore<StoragePrefs> = storagePrefs,
         media: DataStore<MediaPrefs> = mediaPrefs,
-        context: Context = this@CapturedItemRepositoryTest.context,
+        contentResolver: ContentResolver = context.contentResolver,
     ): CapturedItemRepositoryImpl {
         return CapturedItemRepositoryImpl(
             storagePrefs = session,
@@ -267,6 +268,7 @@ class CapturedItemRepositoryTest {
             capturedItemNameMapper = CapturedItemNameMapperImpl(),
             storedCapturedItemMapper = StoredCapturedItemMapperImpl(),
             safTreeReleaseFlagsMapper = SafTreeReleaseFlagsMapperImpl(),
+            contentResolver = contentResolver,
             context = context,
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
         )

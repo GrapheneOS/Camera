@@ -266,20 +266,12 @@
         <error line="327" column="11" source="standard:multiline-if-else" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/gallery/GalleryActivity.kt">
-        <error line="125" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="137" column="19" source="standard:wrapping" />
-        <error line="137" column="20" source="standard:argument-list-wrapping" />
-        <error line="181" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="254" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="317" column="1" source="standard:indent" />
-        <error line="318" column="1" source="standard:indent" />
-        <error line="319" column="1" source="standard:indent" />
-        <error line="408" column="56" source="standard:argument-list-wrapping" />
-        <error line="459" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="520" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="525" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="546" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="649" column="21" source="standard:argument-list-wrapping" />
+        <error line="152" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="225" column="1" source="standard:no-blank-line-before-rbrace" />
+        <error line="310" column="1" source="standard:no-consecutive-blank-lines" />
+        <error line="327" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="348" column="1" source="standard:no-empty-first-line-in-method-block" />
+        <error line="451" column="21" source="standard:argument-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="630" column="100" source="standard:max-line-length" />

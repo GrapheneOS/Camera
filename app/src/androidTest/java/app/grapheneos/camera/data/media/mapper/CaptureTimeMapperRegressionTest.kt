@@ -4,9 +4,9 @@ import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -27,7 +27,6 @@ class CaptureTimeMapperRegressionTest {
 
     private val uri = Uri.parse("content://media/external/images/media/0")
 
-    /** The instant the app would have named a capture after, in the zone it names captures in. */
     private fun wallClock(
         year: Int,
         month: Int,
@@ -36,12 +35,8 @@ class CaptureTimeMapperRegressionTest {
         minute: Int,
         second: Int,
         millis: Int = 0,
-    ): Long {
-        val calendar = Calendar.getInstance()
-        calendar.clear()
-        calendar.set(year, month - 1, day, hour, minute, second)
-        calendar.set(Calendar.MILLISECOND, millis)
-        return calendar.timeInMillis
+    ): LocalDateTime {
+        return LocalDateTime.of(year, month, day, hour, minute, second, millis * 1_000_000)
     }
 
     @Test
@@ -60,19 +55,22 @@ class CaptureTimeMapperRegressionTest {
         assertEquals(wallClock(2026, 7, 24, 15, 30, 12), mapper.map(item))
     }
 
-    /** Whatever the device's zone is, what the capturers write has to read back unchanged. */
     @Test
     fun captureTime_roundTripsTheNamesTheCapturersWrite() {
-        val captured = Date(wallClock(2026, 2, 29, 23, 59, 59, 999))
+        val captured = wallClock(2028, 2, 29, 23, 59, 59, 999)
 
-        val imageName = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(captured)
+        val imageName = DateTimeFormatter
+            .ofPattern("yyyyMMdd_HHmmss_SSS", Locale.US)
+            .format(captured)
         val imageItem = CapturedItem(CapturedItemType.IMAGE, imageName, uri)
-        assertEquals(captured.time, mapper.map(imageItem))
+        assertEquals(captured, mapper.map(imageItem))
 
-        val videoName = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(captured)
+        val videoName = DateTimeFormatter
+            .ofPattern("yyyyMMdd_HHmmss", Locale.US)
+            .format(captured)
         val videoItem = CapturedItem(CapturedItemType.VIDEO, videoName, uri)
         // The video name has no milliseconds to give back
-        assertEquals(captured.time / 1000 * 1000, mapper.map(videoItem))
+        assertEquals(captured.truncatedTo(ChronoUnit.SECONDS), mapper.map(videoItem))
     }
 
     /** A timestamp is only reported when the name really holds one. */

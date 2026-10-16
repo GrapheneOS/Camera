@@ -27,6 +27,7 @@ import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.ImageResizer
 import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.getVideoThumbnail
+import app.grapheneos.camera.util.queryFirstRowOrNull
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlin.math.max
@@ -74,6 +75,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     private val capturedItemNameMapper: CapturedItemNameMapper,
     private val storedCapturedItemMapper: StoredCapturedItemMapper,
     private val safTreeReleaseFlagsMapper: SafTreeReleaseFlagsMapper,
+    private val contentResolver: ContentResolver,
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
@@ -127,7 +129,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
     override suspend fun persistSafTreeAccess(tree: Uri) {
         withContext(ioDispatcher) {
-            context.contentResolver.takePersistableUriPermission(
+            contentResolver.takePersistableUriPermission(
                 tree,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
             )
@@ -138,9 +140,8 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     override suspend fun releaseUntrackedSafTrees() {
         withContext(ioDispatcher) {
             val tracked = trackedSafTrees()
-            val resolver = context.contentResolver
 
-            resolver.persistedUriPermissions.forEach { permission ->
+            contentResolver.persistedUriPermissions.forEach { permission ->
                 val uri = permission.uri
                 val flags = safTreeReleaseFlagsMapper.map(
                     uri = uri,
@@ -154,7 +155,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                 }
 
                 try {
-                    resolver.releasePersistableUriPermission(uri, flags)
+                    contentResolver.releasePersistableUriPermission(uri, flags)
                 } catch (e: Exception) {
                     if (BuildConfig.DEBUG) {
                         Log.d(TAG, "unable to release the grant for $uri", e)
@@ -191,16 +192,15 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     override suspend fun capturedItems(): List<CapturedItem> {
-        val resolver = context.contentResolver
         val items = ArrayList<CapturedItem>()
 
-        collectMediaStoreItems(resolver, MediaStore.VOLUME_EXTERNAL_PRIMARY, items)
+        collectMediaStoreItems(MediaStore.VOLUME_EXTERNAL_PRIMARY, items)
 
         trackedSafTrees().forEach {
             if (Thread.interrupted()) {
                 throw InterruptedException()
             }
-            collectSafItems(resolver, it, items)
+            collectSafItems(it, items)
         }
 
         return items.distinct()
@@ -221,7 +221,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
     @Suppress("TooGenericExceptionCaught")
     private fun collectMediaStoreItems(
-        resolver: ContentResolver,
         volumeName: String,
         dest: ArrayList<CapturedItem>,
     ) {
@@ -231,7 +230,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         val nameColumn = 1
 
         try {
-            resolver.query(volumeUri, columns, null, null)?.use {
+            contentResolver.query(volumeUri, columns, null, null)?.use {
                 dest.ensureCapacity(it.count)
 
                 while (it.moveToNext()) {
@@ -250,7 +249,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
     @Suppress("TooGenericExceptionCaught")
     private fun collectSafItems(
-        resolver: ContentResolver,
         treeUri: Uri,
         dest: ArrayList<CapturedItem>,
     ) {
@@ -264,7 +262,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         val nameColumn = 1
 
         try {
-            resolver.query(childDocumentsUri, columns, null, null)?.use {
+            contentResolver.query(childDocumentsUri, columns, null, null)?.use {
                 dest.ensureCapacity(it.count)
 
                 while (it.moveToNext()) {
@@ -319,30 +317,17 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return trees
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun legacyCapturedItem(uri: Uri): CapturedItem? {
         val columnName = when (uri.authority) {
             MediaStore.AUTHORITY -> MediaStore.MediaColumns.DISPLAY_NAME
             else -> DocumentsContract.Document.COLUMN_DISPLAY_NAME
         }
 
-        var fileName: String? = null
-
-        try {
-            context.contentResolver.query(
-                uri,
-                arrayOf(columnName),
-                null,
-                null,
-            )?.use {
-                if (it.moveToFirst()) {
-                    fileName = it.getStringOrNull(columnName)
-                }
-            }
-        } catch (e: Exception) {
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "unable to read the name of $uri", e)
-            }
+        val fileName = contentResolver.queryFirstRowOrNull(
+            uri = uri,
+            projection = arrayOf(columnName)
+        ) { cursor ->
+            cursor.getStringOrNull(columnName)
         }
 
         return fileName?.let { name ->
@@ -371,7 +356,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
                     else -> {
                         ImageDecoder.decodeBitmap(
-                            ImageDecoder.createSource(context.contentResolver, item.uri),
+                            ImageDecoder.createSource(contentResolver, item.uri),
                             ImageResizer(targetWidth, targetHeight),
                         )
                     }

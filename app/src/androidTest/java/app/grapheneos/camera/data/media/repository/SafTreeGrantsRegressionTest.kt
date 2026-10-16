@@ -53,6 +53,7 @@ class SafTreeGrantsRegressionTest {
             capturedItemNameMapper = CapturedItemNameMapperImpl(),
             storedCapturedItemMapper = StoredCapturedItemMapperImpl(),
             safTreeReleaseFlagsMapper = releaseFlagsMapper,
+            contentResolver = context.contentResolver,
             context = context,
             ioDispatcher = UnconfinedTestDispatcher(),
         )
