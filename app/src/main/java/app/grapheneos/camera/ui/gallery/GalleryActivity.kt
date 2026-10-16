@@ -10,8 +10,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.provider.DocumentsContract
-import android.provider.MediaStore
 import android.text.format.Formatter
 import android.view.Menu
 import android.view.MenuItem
@@ -38,6 +36,8 @@ import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
+import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.editCapturedItem
 import app.grapheneos.camera.ui.activities.shareCapturedItem
@@ -63,6 +63,9 @@ open class GalleryActivity : AppCompatActivity() {
 
     @Inject
     lateinit var capturedItemDetailsRepository: CapturedItemDetailsRepository
+
+    @Inject
+    lateinit var deleteCapturedItem: DeleteCapturedItem
 
     @Inject
     @MainImmediateDispatcher
@@ -182,29 +185,21 @@ open class GalleryActivity : AppCompatActivity() {
             .setTitle(R.string.delete_title)
             .setMessage(getString(R.string.delete_description, curItem.uiName()))
             .setPositiveButton(R.string.delete) { _, _ ->
-                var res = false
+                lifecycleScope.launch(mainDispatcher) {
+                    when (deleteCapturedItem(curItem)) {
+                        CapturedItemDeletion.Deleted -> {
+                            showMessage(getString(R.string.deleted_successfully))
+                            gallerySliderAdapter?.removeItem(curItem)
+                        }
 
-                val uri = curItem.uri
-                try {
-                    if (uri.authority == MediaStore.AUTHORITY) {
-                        res = contentResolver.delete(uri, null, null) > 0
-                    } else {
-                        res = DocumentsContract.deleteDocument(contentResolver, uri)
+                        CapturedItemDeletion.Failed -> {
+                            showMessage(getString(R.string.deleting_unexpected_error))
+                        }
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-                if (res) {
-                    showMessage(getString(R.string.deleted_successfully))
-                    gallerySliderAdapter?.removeItem(curItem)
-                } else {
-                    showMessage(getString(R.string.deleting_unexpected_error))
                 }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
-
     }
 
     private fun showCurrentMediaDetails() {

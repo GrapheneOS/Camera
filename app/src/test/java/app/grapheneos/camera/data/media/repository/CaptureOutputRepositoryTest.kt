@@ -14,6 +14,7 @@ import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.io.IOException
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -138,9 +139,21 @@ class CaptureOutputRepositoryTest {
     @Test
     fun delete_mediaStoreItem_removesTheRow() {
         runTest {
-            repository().delete(INSERTED_URI)
+            val deleted = repository().delete(INSERTED_URI)
 
+            assertTrue(deleted.isSuccess)
             assertEquals(listOf(INSERTED_URI), mediaProvider.deletedUris)
+        }
+    }
+
+    @Test
+    fun delete_mediaStoreItemThatIsAlreadyGone_reportsTheFailure() {
+        runTest {
+            mediaProvider.deletedRows = 0
+
+            val deleted = repository().delete(INSERTED_URI)
+
+            assertTrue(deleted.exceptionOrNull() is IOException)
         }
     }
 
