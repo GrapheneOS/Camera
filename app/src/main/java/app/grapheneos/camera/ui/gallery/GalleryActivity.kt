@@ -17,6 +17,7 @@ import android.view.View
 import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
@@ -36,6 +37,7 @@ import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.domain.gallery.mapper.GalleryItemsMapper
 import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
 import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.ui.activities.SecureActivity
@@ -56,7 +58,6 @@ import javax.inject.Inject
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 open class GalleryActivity : AppCompatActivity() {
@@ -68,6 +69,9 @@ open class GalleryActivity : AppCompatActivity() {
     lateinit var deleteCapturedItem: DeleteCapturedItem
 
     @Inject
+    lateinit var galleryItemsMapper: GalleryItemsMapper
+
+    @Inject
     @MainImmediateDispatcher
     lateinit var mainDispatcher: CoroutineDispatcher
 
@@ -77,11 +81,15 @@ open class GalleryActivity : AppCompatActivity() {
     @Inject
     lateinit var videoPlayerLauncher: VideoPlayerLauncher
 
+    @set:VisibleForTesting
+    var scanCapturedItems: suspend () -> List<CapturedItem> = {
+        capturedItemRepository.capturedItems()
+    }
+
     lateinit var binding: GalleryBinding
     lateinit var gallerySlider: ViewPager2
     var gallerySliderAdapter: GallerySliderAdapter? = null
 
-    val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
     val asyncImageLoader = Executors.newSingleThreadExecutor()
 
     private lateinit var snackBar: Snackbar
@@ -416,37 +424,6 @@ open class GalleryActivity : AppCompatActivity() {
             intent, INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS
         )
 
-        asyncLoaderOfCapturedItems.execute {
-            val unprocessedItems: List<CapturedItem> = try {
-                runBlocking { capturedItemRepository.capturedItems() }
-            } catch (_: InterruptedException) {
-                // activity was destroyed and exectutor.shutdownNow() was called, which interrupts
-                // executor threads
-                return@execute
-            }
-            val setOfSecureModeCapturedItems = listOfSecureModeCapturedItems?.toHashSet()
-            val items = ArrayList<CapturedItem>(unprocessedItems.size)
-
-            unprocessedItems.forEach { item ->
-                if (showVideosOnly) {
-                    if (item.type != CapturedItemType.VIDEO) {
-                        return@forEach
-                    }
-                }
-
-                setOfSecureModeCapturedItems?.let {
-                    if (!it.contains(item)) {
-                        return@forEach
-                    }
-                }
-
-                items.add(item)
-            }
-            items.sortByDescending { it.dateString }
-
-            mainExecutor.execute { asyncResultReady(items) }
-        }
-
         if (lastViewedMediaItem == null) {
             val lastCapturedItem =
                 getParcelableExtra<CapturedItem>(intent, INTENT_KEY_LAST_CAPTURED_ITEM)
@@ -465,6 +442,15 @@ open class GalleryActivity : AppCompatActivity() {
                     }
                 }, 500)
             }
+        }
+
+        lifecycleScope.launch(mainDispatcher) {
+            val items = galleryItemsMapper.map(
+                items = scanCapturedItems(),
+                videoOnly = showVideosOnly,
+                sessionItems = listOfSecureModeCapturedItems,
+            )
+            asyncResultReady(items)
         }
 
         supportActionBar?.setBackgroundDrawable(null)
@@ -488,11 +474,7 @@ open class GalleryActivity : AppCompatActivity() {
         showUI()
     }
 
-    fun asyncResultReady(items: ArrayList<CapturedItem>) {
-        if (isDestroyed) {
-            return
-        }
-
+    fun asyncResultReady(items: List<CapturedItem>) {
         if (items.isEmpty()) {
             Toast.makeText(applicationContext, R.string.empty_gallery, Toast.LENGTH_SHORT).show()
             finish()
@@ -515,7 +497,7 @@ open class GalleryActivity : AppCompatActivity() {
         val existingAdapter = gallerySliderAdapter
 
         if (existingAdapter == null) {
-            GallerySliderAdapter(this, items).let {
+            GallerySliderAdapter(this, ArrayList(items)).let {
                 gallerySliderAdapter = it
                 gallerySlider.adapter = it
             }
@@ -572,7 +554,6 @@ open class GalleryActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        asyncLoaderOfCapturedItems.shutdownNow()
         asyncImageLoader.shutdownNow()
     }
 

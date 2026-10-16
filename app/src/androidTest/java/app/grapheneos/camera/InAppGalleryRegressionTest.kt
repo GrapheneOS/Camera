@@ -10,7 +10,6 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
-import java.util.concurrent.CountDownLatch
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -28,12 +27,10 @@ class InAppGalleryRegressionTest {
 
     private val app = InstrumentationRegistry.getInstrumentation()
         .targetContext.applicationContext as Application
-    private val scanGate = CountDownLatch(1)
-    private val stall = stalledMediaScan(scanGate)
+    private val stall = stalledMediaScan()
 
     @After
-    fun releaseScan() {
-        scanGate.countDown()
+    fun stopStalling() {
         app.unregisterActivityLifecycleCallbacks(stall)
     }
 

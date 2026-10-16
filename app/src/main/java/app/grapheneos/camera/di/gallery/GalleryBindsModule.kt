@@ -1,5 +1,7 @@
 package app.grapheneos.camera.di.gallery
 
+import app.grapheneos.camera.domain.gallery.mapper.GalleryItemsMapper
+import app.grapheneos.camera.domain.gallery.mapper.GalleryItemsMapperImpl
 import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItemImpl
 import dagger.Binds
@@ -17,4 +19,10 @@ internal abstract class GalleryBindsModule {
     abstract fun bindDeleteCapturedItem(
         impl: DeleteCapturedItemImpl,
     ): DeleteCapturedItem
+
+    @Binds
+    @Reusable
+    abstract fun bindGalleryItemsMapper(
+        impl: GalleryItemsMapperImpl,
+    ): GalleryItemsMapper
 }

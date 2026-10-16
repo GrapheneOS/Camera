@@ -32,6 +32,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -192,18 +193,18 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     override suspend fun capturedItems(): List<CapturedItem> {
-        val items = ArrayList<CapturedItem>()
+        return withContext(ioDispatcher) {
+            val items = ArrayList<CapturedItem>()
 
-        collectMediaStoreItems(MediaStore.VOLUME_EXTERNAL_PRIMARY, items)
+            collectMediaStoreItems(items)
 
-        trackedSafTrees().forEach {
-            if (Thread.interrupted()) {
-                throw InterruptedException()
+            trackedSafTrees().forEach {
+                ensureActive()
+                collectSafItems(it, items)
             }
-            collectSafItems(it, items)
-        }
 
-        return items.distinct()
+            items.distinct()
+        }
     }
 
     internal suspend fun trackedSafTrees(): List<Uri> {
@@ -220,11 +221,8 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun collectMediaStoreItems(
-        volumeName: String,
-        dest: ArrayList<CapturedItem>,
-    ) {
-        val volumeUri = MediaStore.Files.getContentUri(volumeName)
+    private fun collectMediaStoreItems(dest: ArrayList<CapturedItem>) {
+        val volumeUri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         val columns = arrayOf(BaseColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
         val idColumn = 0
         val nameColumn = 1
@@ -243,7 +241,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.d(TAG, "unable to collect MediaStore items, volume $volumeName", e)
+            Log.d(TAG, "unable to collect MediaStore items", e)
         }
     }
 
