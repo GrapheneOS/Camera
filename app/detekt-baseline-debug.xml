@@ -23,7 +23,6 @@
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver$val mainThreadExecutor = appContext.mainExecutor</ID>
     <ID>HasPlatformType:ImageSaver.kt:ImageSaver.Companion$val imageCaptureCallbackExecutor = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:GalleryActivity.kt:GalleryActivity$val asyncImageLoader = Executors.newSingleThreadExecutor()</ID>
-    <ID>HasPlatformType:GalleryActivity.kt:GalleryActivity$val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()</ID>
     <ID>HasPlatformType:MainActivity.kt:MainActivity$val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is IllegalArgumentException</ID>
     <ID>InstanceOfCheckForException:CameraSession.kt:CameraSessionImpl$exception !is UnsupportedOperationException</ID>
