@@ -10,6 +10,8 @@ import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapper
 import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
+import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
+import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepositoryImpl
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepositoryImpl
 import dagger.Binds
@@ -27,6 +29,12 @@ internal abstract class MediaBindsModule {
     abstract fun bindCaptureOutputRepository(
         impl: CaptureOutputRepositoryImpl,
     ): CaptureOutputRepository
+
+    @Binds
+    @Reusable
+    abstract fun bindCapturedItemDetailsRepository(
+        impl: CapturedItemDetailsRepositoryImpl,
+    ): CapturedItemDetailsRepository
 
     @Binds
     @Reusable

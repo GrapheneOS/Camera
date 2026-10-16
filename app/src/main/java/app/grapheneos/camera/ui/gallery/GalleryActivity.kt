@@ -4,10 +4,8 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -15,10 +13,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.DocumentsContract
 import android.provider.MediaStore
-import android.provider.MediaStore.MediaColumns
-import android.provider.OpenableColumns
-import android.util.Log
-import android.util.Size
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -34,42 +28,49 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.get
 import androidx.core.view.size
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
-import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.media.mapper.CaptureTimeMapper
 import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.editCapturedItem
 import app.grapheneos.camera.ui.activities.shareCapturedItem
 import app.grapheneos.camera.ui.common.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.util.formatVideoDuration
-import app.grapheneos.camera.util.getLongOrNull
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
-import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.Executors
 import javax.inject.Inject
 import kotlin.properties.Delegates
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 open class GalleryActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var captureTimeMapper: CaptureTimeMapper
+    lateinit var capturedItemDetailsRepository: CapturedItemDetailsRepository
+
+    @Inject
+    @MainImmediateDispatcher
+    lateinit var mainDispatcher: CoroutineDispatcher
 
     @Inject
     lateinit var capturedItemRepository: CapturedItemRepository
@@ -112,36 +113,6 @@ open class GalleryActivity : AppCompatActivity() {
             )
             format.timeZone = TimeZone.getDefault()
             return format.format(date)
-        }
-
-        fun convertTimeForVideo(time: String): String {
-            val dateFormat = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'", Locale.US)
-            dateFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val parsedDate = dateFormat.parse(time)
-            return convertTime(parsedDate?.time ?: 0)
-        }
-
-        fun convertTimeForPhoto(time: String, offset: String? = null): String {
-
-            val timestamp = if (offset != null) {
-                "$time $offset"
-            } else {
-                time
-            }
-
-            val dateFormat = SimpleDateFormat(
-                if (offset == null) {
-                    "yyyy:MM:dd HH:mm:ss"
-                } else {
-                    "yyyy:MM:dd HH:mm:ss Z"
-                }, Locale.US
-            )
-
-            if (offset == null) {
-                dateFormat.timeZone = TimeZone.getDefault()
-            }
-            val parsedDate = dateFormat.parse(timestamp)
-            return convertTime(parsedDate?.time ?: 0, offset != null)
         }
 
         fun getRelativePath(ctx: Context, uri: Uri, path: String?, fileName: String): String {
@@ -254,208 +225,27 @@ open class GalleryActivity : AppCompatActivity() {
 
     }
 
-    /**
-     * Best-effort creation and modification timestamps, in milliseconds, for media whose Exif
-     * has been stripped. MediaStore and the Storage Access Framework disagree both on the column
-     * names and on the unit, and each provider rejects the columns it does not know, so the two
-     * are queried separately and every failure just leaves the value unknown.
-     */
-    private fun queryStoredTimestamps(uri: Uri): Pair<Long?, Long?> {
-        var created: Long? = null
-        var modified: Long? = null
-
-        try {
-            val projection = arrayOf(MediaColumns.DATE_ADDED, MediaColumns.DATE_MODIFIED)
-            contentResolver.query(uri, projection, null, null)?.use {
-                if (it.moveToFirst()) {
-                    // Seconds since the epoch, and 0 stands for "not set"
-                    created = it.getLongOrNull(MediaColumns.DATE_ADDED)
-                        ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
-                    modified = it.getLongOrNull(MediaColumns.DATE_MODIFIED)
-                        ?.takeIf { seconds -> seconds > 0 }?.times(1000L)
-                }
-            }
-        } catch (e: Exception) {
-            Log.d("queryStoredTimestamps", "no MediaStore timestamps from ${uri.authority}", e)
-        }
-
-        if (modified == null) {
-            try {
-                val projection = arrayOf(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
-                contentResolver.query(uri, projection, null, null)?.use {
-                    if (it.moveToFirst()) {
-                        // Already in milliseconds here
-                        modified = it.getLongOrNull(DocumentsContract.Document.COLUMN_LAST_MODIFIED)
-                            ?.takeIf { millis -> millis > 0 }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.d("queryStoredTimestamps", "no document timestamp from ${uri.authority}", e)
-            }
-        }
-
-        return Pair(created, modified)
-    }
-
-    /**
-     * The dimensions a photo presents at, which is the stored frame with its Exif orientation
-     * applied. Only the header is read, so the full bitmap is never decoded.
-     */
-    private fun readImageResolution(uri: Uri, orientation: Int): Size? {
-        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        contentResolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, options)
-        }
-
-        val width = options.outWidth
-        val height = options.outHeight
-        if (width <= 0 || height <= 0) {
-            return null
-        }
-
-        val quarterTurned = orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
-                orientation == ExifInterface.ORIENTATION_ROTATE_270 ||
-                orientation == ExifInterface.ORIENTATION_TRANSPOSE ||
-                orientation == ExifInterface.ORIENTATION_TRANSVERSE
-
-        return if (quarterTurned) Size(height, width) else Size(width, height)
-    }
-
     private fun showCurrentMediaDetails() {
         val curItem = getCurrentItem() ?: return
 
-        var relativePath: String? = null
-        var fileName: String? = null
-        // Absent rather than zero: a provider that reports no size at all used to be rendered as
-        // "Loading…", which is not what was happening and never resolved
-        var size: Long? = null
-
-        var dateAdded: String? = null
-        var dateModified: String? = null
-
-        var resolution: Size? = null
-        var durationMillis: Long? = null
-
-        try {
-            // note that RELATIVE_PATH is undefined for SAF Uris, which the by-name lookups below
-            // report as absent rather than as whatever column happened to land in that position
-            val projection = arrayOf(
-                MediaColumns.RELATIVE_PATH,
-                OpenableColumns.DISPLAY_NAME,
-                OpenableColumns.SIZE
-            )
-
-            contentResolver.query(curItem.uri, projection, null, null)?.use {
-                if (it.moveToFirst()) {
-                    relativePath = it.getStringOrNull(MediaColumns.RELATIVE_PATH)
-                    fileName = it.getStringOrNull(OpenableColumns.DISPLAY_NAME)
-                    size = it.getLongOrNull(OpenableColumns.SIZE)
-                }
-            }
-
-            if (fileName == null) {
+        lifecycleScope.launch(mainDispatcher) {
+            val details = capturedItemDetailsRepository.details(curItem)
+            if (details == null) {
                 showMessage(getString(R.string.unable_to_obtain_file_details))
-                return
-            }
-
-            if (curItem.type == CapturedItemType.VIDEO) {
-                MediaMetadataRetriever().use { retriever ->
-                    retriever.setDataSource(this, curItem.uri)
-                    // Not every container carries a creation date, and one that is missing or
-                    // malformed must not take the whole dialog down with it
-                    val date = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
-                    if (date != null) {
-                        try {
-                            dateAdded = convertTimeForVideo(date)
-                            dateModified = dateAdded
-                        } catch (e: ParseException) {
-                            Log.d("showCurrentMediaDetails", "unparseable video date: $date", e)
-                        }
-                    }
-
-                    durationMillis = retriever
-                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-                        ?.toLongOrNull()?.takeIf { millis -> millis > 0 }
-
-                    val width = retriever
-                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                        ?.toIntOrNull()
-
-                    val height = retriever
-                        .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                        ?.toIntOrNull()
-
-                    if (width != null && height != null && width > 0 && height > 0) {
-                        // A track holds its frames as encoded plus the rotation a player has to
-                        // apply, so a recording taken in portrait is stored landscape
-                        val rotation = retriever
-                            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
-                            ?.toIntOrNull() ?: 0
-                        resolution = if (rotation == 90 || rotation == 270) {
-                            Size(height, width)
-                        } else {
-                            Size(width, height)
-                        }
-                    }
-                }
             } else {
-                var orientation = ExifInterface.ORIENTATION_NORMAL
-
-                contentResolver.openInputStream(curItem.uri)?.use { stream ->
-                    val eInterface = ExifInterface(stream)
-
-                    orientation = eInterface.getAttributeInt(
-                        ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
-                    )
-
-                    val offset = eInterface.getAttribute(ExifInterface.TAG_OFFSET_TIME)
-
-                    if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)) {
-                        dateAdded = convertTimeForPhoto(
-                            eInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)!!,
-                            offset
-                        )
-                    }
-
-                    if (eInterface.hasAttribute(ExifInterface.TAG_DATETIME)) {
-                        dateModified = convertTimeForPhoto(
-                            eInterface.getAttribute(ExifInterface.TAG_DATETIME)!!,
-                            offset
-                        )
-                    }
-                }
-
-                resolution = readImageResolution(curItem.uri, orientation)
+                showDetailsDialog(curItem, details)
             }
-
-            // Photos carry no Exif dates when "Remove Exif data after capture" is on, which is
-            // the default, so fall back to the timestamps the storage layer keeps.
-            if (dateAdded == null || dateModified == null) {
-                val (created, modified) = queryStoredTimestamps(curItem.uri)
-                if (dateAdded == null && created != null) {
-                    dateAdded = convertTime(created)
-                }
-                if (dateModified == null && modified != null) {
-                    dateModified = convertTime(modified)
-                }
-            }
-
-            // Neither source has a creation time to give for a stripped photo kept through the
-            // Storage Access Framework, but the app named the file after the moment it captured it.
-            // A name records wall-clock time and not the zone it was read in, so this one is shown
-            // without a zone: after the device travels, the digits are still the time the camera
-            // showed at capture, but naming a zone for them would assert the wrong one.
-            if (dateAdded == null) {
-                captureTimeMapper.map(curItem)?.let { captureTime ->
-                    dateAdded = convertTime(captureTime, showTimeZone = false)
-                }
-            }
-        } catch (e: Exception) {
-            Log.d("showCurrentMediaDetails", "unable to obtain file details", e)
-            showMessage(getString(R.string.unable_to_obtain_file_details))
-            return
         }
+    }
 
+    private fun showDetailsDialog(curItem: CapturedItem, details: CapturedItemDetails) {
+        val fileName = details.fileName
+        val relativePath = details.relativePath
+        val size = details.sizeBytes
+        val resolution = details.resolution
+        val duration = details.duration
+        val dateAdded = details.created?.let(::formatTimestamp)
+        val dateModified = details.modified?.let(::formatTimestamp)
 
         val alertDialog = MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.file_details))
@@ -489,8 +279,8 @@ open class GalleryActivity : AppCompatActivity() {
 
             detailsBuilder.append(getString(R.string.duration), "\n")
             detailsBuilder.append(
-                durationMillis
-                    ?.let { formatVideoDuration(it / 1000) }
+                duration
+                    ?.let { formatVideoDuration(it.inWholeSeconds) }
                     ?: getString(R.string.not_found_generic)
             )
         }
@@ -519,6 +309,18 @@ open class GalleryActivity : AppCompatActivity() {
 
 
         alertDialog.show()
+    }
+
+    private fun formatTimestamp(timestamp: MediaTimestamp): String {
+        return when (timestamp) {
+            is MediaTimestamp.Absolute -> convertTime(timestamp.instant.toEpochMilli())
+            // A name records wall-clock time and not the zone it was read in, so naming a zone for
+            // it would assert the wrong one after the device travels
+            is MediaTimestamp.WallClock -> convertTime(
+                time = timestamp.dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                showTimeZone = false,
+            )
+        }
     }
 
     private fun animateBackgroundToBlack() {
