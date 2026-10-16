@@ -86,6 +86,7 @@ import app.grapheneos.camera.ktx.SystemSettingsObserver
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
+import app.grapheneos.camera.ui.FoldTabMode
 import app.grapheneos.camera.ui.CountDownTimerUI
 import app.grapheneos.camera.ui.CustomGrid
 import app.grapheneos.camera.ui.QROverlay
@@ -130,6 +131,42 @@ open class MainActivity : AppCompatActivity(),
 
     private lateinit var binding: ActivityMainBinding
     private var rearSelfieController: RearDisplaySelfieController? = null
+
+    // PR779_FOLD_TABS_UI_V1: UI state only; camera stays in CameraMode.CAMERA.
+    private var foldRearSupported = false
+    private var foldDualSupported = false
+    internal var foldSelectedMode: FoldTabMode? = null
+        private set
+
+    internal fun availableFoldTabModes(): List<FoldTabMode> = buildList {
+        if (foldDualSupported) add(FoldTabMode.DUAL)
+        if (foldRearSupported) add(FoldTabMode.REAR)
+    }
+
+    internal fun updateFoldTabState(
+        rearSupported: Boolean, rearChecked: Boolean,
+        dualSupported: Boolean, dualChecked: Boolean,
+    ) {
+        val newSelection = when {
+            rearChecked -> FoldTabMode.REAR
+            dualChecked -> FoldTabMode.DUAL
+            else -> null
+        }
+        val capabilitiesChanged = foldRearSupported != rearSupported || foldDualSupported != dualSupported
+        val selectionChanged = foldSelectedMode != newSelection
+        foldRearSupported = rearSupported
+        foldDualSupported = dualSupported
+        foldSelectedMode = newSelection
+        if (capabilitiesChanged) {
+            tabLayout.post {
+                if (!isFinishing && !isDestroyed) camConfig.refreshFoldModeTabs()
+            }
+        } else if (selectionChanged && tabLayout.tabCount > 0) {
+            val target = newSelection?.let(tabLayout::getTabForFoldMode)
+                ?: tabLayout.getTabForMode(camConfig.currentMode)
+            target?.let { tabLayout.goToTab(it) }
+        }
+    }
     internal fun foldSecondaryPreviewView(): PreviewView? = rearSelfieController?.secondaryPreviewView
     internal fun onFoldSecondaryPreviewBindFailure() { rearSelfieController?.onPreviewBindFailed() }
     internal fun closeFoldDualForModeChange() { rearSelfieController?.stopDualForModeChange() }
@@ -1093,7 +1130,7 @@ open class MainActivity : AppCompatActivity(),
                     }
                 }
             }
-            rearSelfieController?.let { settingsDialog.bindFoldDisplayControls(it) }
+            // Controls moved to the camera mode strip.
         }
 
         SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
@@ -1224,7 +1261,30 @@ open class MainActivity : AppCompatActivity(),
 
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
-            val mode = selectedTab.tag as CameraMode
+            val foldMode = selectedTab.tag as? FoldTabMode
+            if (foldMode != null) {
+                if (foldMode !in availableFoldTabModes() || rearSelfieController == null) {
+                    tabLayout.getTabForMode(camConfig.currentMode)?.let(tabLayout::goToTab)
+                    return
+                }
+                // Choose a fold function in the existing Camera pipeline, not a new CameraX mode.
+                if (camConfig.currentMode != CameraMode.CAMERA) camConfig.switchMode(CameraMode.CAMERA)
+                tabLayout.goToTab(selectedTab) {
+                    when (foldMode) {
+                        FoldTabMode.DUAL -> rearSelfieController?.toggleDualPreview()
+                        FoldTabMode.REAR -> rearSelfieController?.toggleRearSelfie()
+                    }
+                }
+                resetAutoSleep()
+                return
+            }
+            val mode = selectedTab.tag as? CameraMode ?: return
+            // Exiting a fold tab via a standard mode must end the active fold session.
+            when (foldSelectedMode) {
+                FoldTabMode.DUAL -> if (mode == CameraMode.CAMERA) rearSelfieController?.toggleDualPreview()
+                FoldTabMode.REAR -> rearSelfieController?.toggleRearSelfie()
+                null -> Unit
+            }
 
             // Blurred while the strip is still gliding, not once the camera has gone: the rebind
             // holds the main thread for half a second, so a transition left to the stream state
@@ -1922,6 +1982,11 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onDestroy() {
+        // A fold transfer can recreate the Activity while Settings is visible.
+        // Never leave its Dialog window attached to the old Activity.
+        if (::settingsDialog.isInitialized && settingsDialog.isShowing) {
+            settingsDialog.dismiss()
+        }
         rearSelfieController?.dispose()
         rearSelfieController = null
         super.onDestroy()

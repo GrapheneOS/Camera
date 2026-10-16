@@ -236,4 +236,6 @@
     <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
     <string name="rear_camera_selfie">Rear Camera Selfie</string>
     <string name="dual_screen_preview">Dual Screen Preview</string>
+    <string name="fold_tab_dual">Dual</string>
+    <string name="fold_tab_rear">Rear Selfie</string>
 </resources>

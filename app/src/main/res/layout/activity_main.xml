@@ -485,6 +485,7 @@
             app:tabIndicatorFullWidth="false"
             app:tabIndicatorAnimationMode="linear"
             app:tabMode="auto"
+            app:tabInlineLabel="true"
             app:tabIndicator="@drawable/mode_indicator"
             android:overScrollMode="never"
             app:tabIndicatorHeight="30dp"

@@ -53,6 +53,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.applyPreviewRatio
+import app.grapheneos.camera.ui.FoldTabMode
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -2054,12 +2055,15 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    fun refreshFoldModeTabs() = buildTabs()
+
     @SuppressLint("ClickableViewAccessibility")
     private fun buildTabs() {
         val tabLayout = mActivity.tabLayout
         val availableModes = availableModes()
 
-        if (availableModes == tabLayout.getAllModes()) {
+        if (availableModes == tabLayout.getAllModes() &&
+            mActivity.availableFoldTabModes() == tabLayout.getFoldModes()) {
             return
         }
 
@@ -2081,7 +2085,28 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 // Highlight the mode the camera is really in, not the default one: the tabs are
                 // also rebuilt long after startup, once the extension probes report back.
-                tabLayout.addTab(tab, mode == currentMode)
+                tabLayout.addTab(tab, mode == currentMode && mActivity.foldSelectedMode == null)
+            }
+        }
+        // Fold functions are UI-only tabs, not extra CameraMode enum cases.
+        mActivity.availableFoldTabModes().forEach { foldMode ->
+            tabLayout.newTab().let { tab ->
+                when (foldMode) {
+                    FoldTabMode.DUAL -> {
+                        tab.setText(R.string.fold_tab_dual)
+                        tab.setIcon(R.drawable.fold_mode_dual)
+                    }
+                    FoldTabMode.REAR -> {
+                        tab.setText(R.string.fold_tab_rear)
+                        tab.setIcon(R.drawable.fold_mode_selfie)
+                    }
+                }
+                tab.tag = foldMode
+                tab.view.setOnTouchListener { _, e ->
+                    if (e.action == MotionEvent.ACTION_UP) mActivity.finalizeMode(tab)
+                    false
+                }
+                tabLayout.addTab(tab, foldMode == mActivity.foldSelectedMode)
             }
         }
     }
