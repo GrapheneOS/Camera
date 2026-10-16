@@ -2,7 +2,9 @@ package app.grapheneos.camera.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Rect
 import android.util.AttributeSet
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
@@ -49,18 +51,29 @@ class BottomTabLayout @JvmOverloads constructor(
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-            cancelSettle()
+            holdSettle()
         }
 
         val isHandled = super.dispatchTouchEvent(ev)
 
-        // Only a lifted finger commits a mode, so nothing else would put the strip back.
+        // Only a lifted finger commits a mode, so nothing else would put the strip back, or apply
+        // a mode committed before this touch stopped the strip gliding to it.
         if (ev.actionMasked == MotionEvent.ACTION_CANCEL) {
-            selectedTab?.let(::goToTab)
+            selectedTab?.let { goToTab(it, onSettled) }
         }
 
         return isHandled
     }
+
+    // Only a committed mode moves the strip: bringing a tab into view, for focus or an
+    // accessibility service, a key or a mouse wheel would glide it to a mode the camera never
+    // enters
+    override fun computeScrollDeltaToGetChildRectOnScreen(rect: Rect) = 0
+
+    override fun executeKeyEvent(event: KeyEvent) = false
+
+    override fun onGenericMotionEvent(event: MotionEvent) =
+        event.actionMasked != MotionEvent.ACTION_SCROLL && super.onGenericMotionEvent(event)
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         super.onLayout(changed, l, t, r, b)
@@ -146,6 +159,12 @@ class BottomTabLayout @JvmOverloads constructor(
         removeCallbacks(settled)
 
         settled.run()
+    }
+
+    // Stops the strip for a finger that has caught it mid-glide
+    private fun holdSettle() {
+        scroller.cancel()
+        onSettled?.let { removeCallbacks(it) }
     }
 
     private fun cancelSettle() {

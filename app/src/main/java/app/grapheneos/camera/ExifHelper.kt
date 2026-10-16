@@ -5,6 +5,7 @@ import java.util.TimeZone
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 
 private val exifAttributes = arrayOf(
@@ -164,19 +165,7 @@ private val exifAttributes = arrayOf(
 )
 
 fun ExifInterface.fixExif(captureTime: Date) {
-    val millis = TimeZone.getDefault().getOffset(captureTime.time)
-
-    val totalMins = (millis / (1000 * 60))
-
-    val hours = (totalMins / 60)
-    var hoursStrRep = hours.toString().padStart(2, '0')
-
-    if (hours >= 0)
-        hoursStrRep = "+${hoursStrRep}"
-
-    val mins = (totalMins % 60).toString().padEnd(2, '0')
-
-    val offsetTime = "$hoursStrRep:$mins"
+    val offsetTime = exifOffsetTime(TimeZone.getDefault().getOffset(captureTime.time))
 
     setAttribute(ExifInterface.TAG_OFFSET_TIME, offsetTime)
     setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, offsetTime)
@@ -186,6 +175,12 @@ fun ExifInterface.fixExif(captureTime: Date) {
 
     setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, nowStrRep)
     setAttribute(ExifInterface.TAG_DATETIME, nowStrRep)
+}
+
+private fun exifOffsetTime(offsetMillis: Int): String {
+    val sign = if (offsetMillis < 0) '-' else '+'
+    val totalMins = abs(offsetMillis) / (1000 * 60)
+    return String.format(Locale.US, "%c%02d:%02d", sign, totalMins / 60, totalMins % 60)
 }
 
 fun ExifInterface.clearExif() {

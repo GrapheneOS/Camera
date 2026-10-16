@@ -103,7 +103,7 @@ class ImageSaver(
             val imageFormat = image.format
 
             origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
-                ImageUtil.jpegImageToJpegByteArray(image)
+                withoutTrailingPadding(ImageUtil.jpegImageToJpegByteArray(image))
             } else if (imageFormat == ImageFormat.YUV_420_888) {
                 ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)
             } else {
@@ -121,6 +121,25 @@ class ImageSaver(
              */
             image.close()
         }
+    }
+
+    private fun withoutTrailingPadding(jpeg: ByteArray): ByteArray {
+        val length = jpeg.indexOfLast { it != 0.toByte() } + 1
+        if (length == jpeg.size) {
+            return jpeg
+        }
+
+        // Only zeros straight after the EOI marker are padding. Without the marker right before
+        // them they may be image data, e.g. of a JPEG that ends early
+        if (!endsWithEoiMarker(jpeg, length)) {
+            return jpeg
+        }
+
+        return jpeg.copyOf(length)
+    }
+
+    private fun endsWithEoiMarker(jpeg: ByteArray, length: Int): Boolean {
+        return length >= 2 && jpeg[length - 2] == 0xff.toByte() && jpeg[length - 1] == 0xd9.toByte()
     }
 
     private fun saveImage() {

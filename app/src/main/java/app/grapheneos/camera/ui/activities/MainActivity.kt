@@ -38,6 +38,7 @@ import android.view.View
 import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.accessibility.AccessibilityNodeInfo.AccessibilityAction
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
@@ -53,6 +54,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.FocusMeteringAction
@@ -72,6 +74,8 @@ import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -242,6 +246,9 @@ open class MainActivity : AppCompatActivity(),
     }
 
     val thumbnailLoaderExecutor = Executors.newSingleThreadExecutor()
+
+    @set:VisibleForTesting
+    lateinit var mediaContext: Context
 
     private val runnable = Runnable {
         val factory: MeteringPointFactory = SurfaceOrientedMeteringPointFactory(
@@ -676,7 +683,10 @@ open class MainActivity : AppCompatActivity(),
             KeyEvent.KEYCODE_VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_CAMERA -> {
-                captureButton.performClick()
+                // performClick() ignores both, so check them: a key may only do what a tap could
+                if (captureButton.isShown && captureButton.isEnabled) {
+                    captureButton.performClick()
+                }
             }
             KeyEvent.KEYCODE_FOCUS -> {
                 // cancel any manual focus
@@ -768,6 +778,7 @@ open class MainActivity : AppCompatActivity(),
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mediaContext = applicationContext
         binding = ActivityMainBinding.inflate(layoutInflater)
         snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_LONG)
 
@@ -797,6 +808,33 @@ open class MainActivity : AppCompatActivity(),
             }
 
             return@setOnTouchListener false
+        }
+
+        // An accessibility action would scroll the strip like any HorizontalScrollView, gliding the
+        // highlight to a mode nothing commits. Step it one mode that way instead, as a drag would.
+        tabLayout.accessibilityDelegate = object : View.AccessibilityDelegate() {
+            override fun performAccessibilityAction(
+                host: View, action: Int, args: Bundle?
+            ): Boolean {
+                val step = when (action) {
+                    AccessibilityAction.ACTION_SCROLL_FORWARD.id,
+                    AccessibilityAction.ACTION_SCROLL_RIGHT.id -> 1
+                    AccessibilityAction.ACTION_SCROLL_BACKWARD.id,
+                    AccessibilityAction.ACTION_SCROLL_LEFT.id -> -1
+                    else -> return super.performAccessibilityAction(host, action, args)
+                }
+
+                // Scrolling right brings in the tabs before the selected one in a rtl layout
+                val isRtl = host.layoutDirection == View.LAYOUT_DIRECTION_RTL
+                val tab = tabLayout
+                    .getTabAt(
+                        tabLayout.selectedTabPosition + if (isRtl) -step else step
+                    )
+                    ?: return false
+
+                finalizeMode(tab)
+                return true
+            }
         }
 
         timerView = binding.timer
@@ -1891,6 +1929,7 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onDestroy() {
         super.onDestroy()
+        camConfig.stopAwaitingCameraReturn()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         frameCopyThread?.quitSafely()
@@ -2009,40 +2048,73 @@ open class MainActivity : AppCompatActivity(),
             return
         }
 
-        val ctx = applicationContext
+        val ctx = mediaContext
+        val side = preview.layoutParams.width
+        // What the gallery opened from here shows; a secure session shows only its own captures
+        val videosOnly = requiresVideoModeOnly
+        val sessionItems = when (this) {
+            is SecureMainActivity -> capturedItems.toHashSet()
+            is SecureActivity -> emptySet()
+            else -> null
+        }
 
         thumbnailLoaderExecutor.executeIfAlive {
-            var bitmap: Bitmap? = null
-            try {
-                val side = preview.layoutParams.width
+            var shown: CapturedItem? = item
+            var bitmap = loadThumbnail(ctx, item, side)
+            var listedEverywhere = true
 
-                if (item.type == ITEM_TYPE_VIDEO) {
-                    val origBitmap = getVideoThumbnail(ctx, item.uri)
-                    origBitmap?.let {
-                        val w = it.width.toDouble()
-                        val h = it.height.toDouble()
-                        val ratio = max(w / side, h / side)
-
-                        bitmap = it.scale((w / ratio).toInt(), (h / ratio).toInt())
-                        origBitmap.recycle()
-                    }
-                } else if (item.type == ITEM_TYPE_IMAGE) {
-                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
-                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+            if (bitmap == null) {
+                val listing = try {
+                    CapturedItems.list(ctx)
+                } catch (_: InterruptedException) {
+                    return@executeIfAlive
                 }
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to update preview", e)
+                // Deleted or moved away since, in the gallery or by another app
+                if (listing.lacks(item)) {
+                    shown = listing.items.filter {
+                        (sessionItems == null || it in sessionItems) &&
+                                (!videosOnly || it.type == ITEM_TYPE_VIDEO)
+                    }.maxByOrNull { it.dateString }
+                    bitmap = shown?.let { loadThumbnail(ctx, it, side) }
+                    // A location that could not be listed may hold a newer one
+                    listedEverywhere = listing.isComplete
+                }
             }
 
-            if (bitmap != null) {
-                mainExecutor.execute {
-                    if (isStarted && camConfig.lastCapturedItem == item) {
+            mainExecutor.execute {
+                if (isStarted && camConfig.lastCapturedItem == item) {
+                    if (shown != item) {
+                        val seesEveryItem = sessionItems == null && !videosOnly && listedEverywhere
+                        camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
+                    }
+                    if (bitmap != null) {
                         preview.setImageBitmap(bitmap)
                         isThumbnailLoaded = true
                     }
                 }
             }
         }
+    }
+
+    private fun loadThumbnail(ctx: Context, item: CapturedItem, side: Int): Bitmap? {
+        try {
+            if (item.type == ITEM_TYPE_VIDEO) {
+                val origBitmap = getVideoThumbnail(ctx, item.uri) ?: return null
+                val w = origBitmap.width.toDouble()
+                val h = origBitmap.height.toDouble()
+                val ratio = max(w / side, h / side)
+
+                val bitmap = origBitmap.scale((w / ratio).toInt(), (h / ratio).toInt())
+                origBitmap.recycle()
+                return bitmap
+            } else if (item.type == ITEM_TYPE_IMAGE) {
+                val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
+                return ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "unable to update preview", e)
+        }
+        return null
     }
 
     open fun shouldShowCameraModeTabs() = true

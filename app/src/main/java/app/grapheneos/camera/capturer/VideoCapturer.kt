@@ -17,6 +17,8 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.system.ErrnoException
+import android.system.Os
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
@@ -86,16 +88,29 @@ class VideoCapturer(private val mActivity: MainActivity) {
     @set:VisibleForTesting
     var contentResolver: ContentResolver = mActivity.contentResolver
 
+    // What CameraX leaves free on storage it can see: room for what is still being encoded when
+    // the recording stops, and for the index the file needs to play
+    @set:VisibleForTesting
+    var requiredFreeStorageBytes = 50L * 1024 * 1024
+
     private fun updateTimerTime(timeInNanos: Long) {
         mActivity.timerView.text = formatVideoDuration(timeInNanos / 1_000_000_000)
     }
 
     private class RecordingContext(
         val uri: Uri,
+        // Open until the recording ends: how much room is left for it is read through this
         val fileDescriptor: ParcelFileDescriptor,
         val shouldAddToGallery: Boolean,
         val isPendingMediaStoreUri: Boolean,
-    )
+    ) {
+        var isFinalized = false
+
+        // The free storage is read again once the recording has grown to this many bytes
+        var nextStorageCheckBytes = 0L
+
+        var isCheckingStorage = false
+    }
 
     // Runs on outputExecutor: each step is a call into another process, MediaProvider or the app
     // the video is for, and can take seconds to answer.
@@ -260,14 +275,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (isPaused) {
                         recording?.pause()
                     }
-
-                    try {
-                        // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
-                        // caller, and that it's safe to do so as soon as pendingRecording.start() returns
-                        recordingCtx.fileDescriptor.close()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
                 }
             }
         }
@@ -282,9 +289,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         if (event is VideoRecordEvent.Status) {
             updateTimerTime(event.recordingStats.recordedDurationNanos)
+            checkFreeStorage(recordingCtx, event.recordingStats.numBytesRecorded)
         }
 
         if (event is VideoRecordEvent.Finalize) {
+            recordingCtx.isFinalized = true
+
             afterRecordingStops()
 
             camConfig.mPlayer.playVRStopSound()
@@ -299,8 +309,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
                     VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
                     VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
-                        abandonOutput(recordingCtx)
-                        ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
+                        // These cut the recording off without finishing its file the way a stop
+                        // does. A muxer that runs out of storage still writes the index into the
+                        // room it kept for it, and an encoder that dies leaves the muxer to stop
+                        // normally, so what was recorded up to then often plays.
+                        saveOutput(recordingCtx, dateString, failedWithError = event.error)
                         return
                     }
                     else -> {
@@ -320,17 +333,61 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
     }
 
-    // A video in MediaStore stays pending, hidden from other apps and left to be deleted, until
-    // MediaProvider is told to make it visible: only then is it saved.
-    private fun saveOutput(recordingCtx: RecordingContext, dateString: String) {
-        if (!recordingCtx.isPendingMediaStoreUri) {
-            onOutputSaved(recordingCtx, dateString)
+    // CameraX only stops a recording before it fills up its storage when it can tell what that
+    // storage is, and a file descriptor doesn't tell it. A recording that fills it up ends on a
+    // failed write instead, leaving a file that only plays if the muxer had kept room for its
+    // index.
+    private fun checkFreeStorage(recordingCtx: RecordingContext, recordedBytes: Long) {
+        if (recordingCtx.isCheckingStorage || recordedBytes < recordingCtx.nextStorageCheckBytes) {
             return
         }
+        recordingCtx.isCheckingStorage = true
 
+        // Off the main thread: MediaProvider answers for the storage behind its descriptors
+        outputExecutor.execute {
+            val freeBytes = freeStorageBytes(recordingCtx.fileDescriptor)
+
+            handler.post {
+                recordingCtx.isCheckingStorage = false
+                if (recordingCtx.isFinalized) {
+                    return@post
+                }
+
+                val spareBytes = freeBytes - requiredFreeStorageBytes
+                if (spareBytes <= 0) {
+                    stopRecording()
+                    mActivity.showMessage(R.string.recording_stopped_storage_almost_full)
+                    return@post
+                }
+                // Rare while there is plenty left, and closer together as it runs out
+                recordingCtx.nextStorageCheckBytes = recordedBytes + spareBytes / 2
+            }
+        }
+    }
+
+    // A video in MediaStore stays pending, hidden from other apps and left to be deleted, until
+    // MediaProvider is told to make it visible: only then is it saved. A recording cut off by an
+    // error is only saved if what it left plays.
+    private fun saveOutput(
+        recordingCtx: RecordingContext,
+        dateString: String,
+        failedWithError: Int? = null,
+    ) {
         // Off the main thread for the same reason the output is created there
         outputExecutor.execute {
-            val saved = try {
+            closeOutputFile(recordingCtx)
+
+            if (failedWithError != null && !isPlayable(recordingCtx.uri)) {
+                discardUnusedOutput(recordingCtx)
+                handler.post {
+                    mActivity.showMessage(
+                        mActivity.getString(R.string.unable_to_save_video_verbose, failedWithError)
+                    )
+                }
+                return@execute
+            }
+
+            val saved = !recordingCtx.isPendingMediaStoreUri || try {
                 removePendingFlagFromUri(contentResolver, recordingCtx.uri)
                 true
             } catch (e: Exception) {
@@ -339,13 +396,29 @@ class VideoCapturer(private val mActivity: MainActivity) {
             }
 
             handler.post {
-                if (saved) {
-                    onOutputSaved(recordingCtx, dateString)
-                } else {
+                if (!saved) {
                     mActivity.showMessage(R.string.unable_to_save_video)
+                    return@post
                 }
+                failedWithError?.let {
+                    mActivity.showMessage(mActivity.getString(R.string.error_during_recording, it))
+                }
+                onOutputSaved(recordingCtx, dateString)
             }
         }
+    }
+
+    // Runs on outputExecutor. A file the muxer never wrote an index into can't be read at all.
+    private fun isPlayable(uri: Uri): Boolean = try {
+        contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+            MediaMetadataRetriever().use {
+                it.setDataSource(pfd.fileDescriptor)
+                it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO) == "yes"
+            }
+        } ?: false
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
     }
 
     private fun onOutputSaved(recordingCtx: RecordingContext, dateString: String) {
@@ -516,16 +589,25 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording = null
     }
 
+    fun abandonDeferredStart() {
+        cancelDeferredStart?.invoke()
+    }
+
     // Off the main thread for the same reason the output is created there
     private fun abandonOutput(recordingCtx: RecordingContext) {
         outputExecutor.execute {
-            try {
-                // A no-op once the recording has started: starting it closed this
-                recordingCtx.fileDescriptor.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            closeOutputFile(recordingCtx)
             discardUnusedOutput(recordingCtx)
+        }
+    }
+
+    // Runs on outputExecutor: the app the video is for may only take the file as done once it is
+    // closed. FileDescriptorOutputOptions leaves closing it to the caller, from the start on.
+    private fun closeOutputFile(recordingCtx: RecordingContext) {
+        try {
+            recordingCtx.fileDescriptor.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -586,6 +668,15 @@ fun deleteStalePendingRecordings(
     } catch (e: Exception) {
         e.printStackTrace()
     }
+}
+
+// Long.MAX_VALUE when the descriptor doesn't tell: one from a provider that serves the file itself
+// reports no storage at all
+private fun freeStorageBytes(fd: ParcelFileDescriptor): Long = try {
+    val stat = Os.fstatvfs(fd.fileDescriptor)
+    if (stat.f_blocks > 0) stat.f_bavail * stat.f_frsize else Long.MAX_VALUE
+} catch (e: ErrnoException) {
+    Long.MAX_VALUE
 }
 
 @Throws(Exception::class)

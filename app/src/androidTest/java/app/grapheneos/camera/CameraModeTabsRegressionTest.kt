@@ -1,12 +1,10 @@
 package app.grapheneos.camera
 
 import android.Manifest
-import android.content.Intent
 import android.provider.MediaStore
 import android.view.ViewTreeObserver
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -152,14 +150,6 @@ class CameraModeTabsRegressionTest {
         scenario.onActivity {
             assertEquals("${it.javaClass.simpleName} built mode tabs", 0, it.tabLayout.tabCount)
         }
-    }
-
-    private fun <A : MainActivity> launchCaptureSession(
-        activityClass: Class<A>,
-        action: String,
-    ): ActivityScenario<A> {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        return ActivityScenario.launch(Intent(context, activityClass).setAction(action))
     }
 
     private companion object {
