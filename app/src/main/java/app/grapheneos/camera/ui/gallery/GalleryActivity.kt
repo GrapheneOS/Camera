@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.gallery
 
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -13,6 +12,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.text.format.Formatter
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -34,7 +34,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
-import app.grapheneos.camera.data.media.model.MediaTimestamp
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.databinding.GalleryBinding
@@ -43,6 +42,7 @@ import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.editCapturedItem
 import app.grapheneos.camera.ui.activities.shareCapturedItem
 import app.grapheneos.camera.ui.common.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.gallery.components.formatted
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
@@ -50,11 +50,7 @@ import app.grapheneos.camera.util.storageLocationToUiString
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import java.text.SimpleDateFormat
 import java.time.ZoneId
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import java.util.concurrent.Executors
 import javax.inject.Inject
 import kotlin.properties.Delegates
@@ -100,20 +96,6 @@ open class GalleryActivity : AppCompatActivity() {
         const val INTENT_KEY_LAST_CAPTURED_ITEM = "last_captured_item"
 
         const val LAST_VIEWED_ITEM_KEY = "LAST_VIEWED_ITEM_KEY"
-
-        @SuppressLint("SimpleDateFormat")
-        fun convertTime(time: Long, showTimeZone: Boolean = true): String {
-            val date = Date(time)
-            val format = SimpleDateFormat(
-                if (showTimeZone) {
-                    "yyyy-MM-dd HH:mm:ss z"
-                } else {
-                    "yyyy-MM-dd HH:mm:ss"
-                }
-            )
-            format.timeZone = TimeZone.getDefault()
-            return format.format(date)
-        }
 
         fun getRelativePath(ctx: Context, uri: Uri, path: String?, fileName: String): String {
             if (path == null) {
@@ -244,8 +226,10 @@ open class GalleryActivity : AppCompatActivity() {
         val size = details.sizeBytes
         val resolution = details.resolution
         val duration = details.duration
-        val dateAdded = details.created?.let(::formatTimestamp)
-        val dateModified = details.modified?.let(::formatTimestamp)
+        val locale = resources.configuration.locales[0]
+        val zone = ZoneId.systemDefault()
+        val dateAdded = details.created?.formatted(locale, zone)
+        val dateModified = details.modified?.formatted(locale, zone)
 
         val alertDialog = MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.file_details))
@@ -263,9 +247,7 @@ open class GalleryActivity : AppCompatActivity() {
         detailsBuilder.append(getString(R.string.file_size), "\n")
         detailsBuilder.append(
             size
-                ?.let {
-                    String.format(Locale.getDefault(), "%.2f MB", it / (1000f * 1000f))
-                }
+                ?.let { Formatter.formatFileSize(this, it) }
                 ?: getString(R.string.not_found_generic)
         )
 
@@ -309,18 +291,6 @@ open class GalleryActivity : AppCompatActivity() {
 
 
         alertDialog.show()
-    }
-
-    private fun formatTimestamp(timestamp: MediaTimestamp): String {
-        return when (timestamp) {
-            is MediaTimestamp.Absolute -> convertTime(timestamp.instant.toEpochMilli())
-            // A name records wall-clock time and not the zone it was read in, so naming a zone for
-            // it would assert the wrong one after the device travels
-            is MediaTimestamp.WallClock -> convertTime(
-                time = timestamp.dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                showTimeZone = false,
-            )
-        }
     }
 
     private fun animateBackgroundToBlack() {
