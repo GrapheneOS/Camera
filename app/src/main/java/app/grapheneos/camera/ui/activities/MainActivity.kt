@@ -61,6 +61,7 @@ import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.common.dialog.SettingsDialog
 import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
+import app.grapheneos.camera.ui.mediaviewer.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -118,6 +119,9 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var vibrator: Vibrator
+
+    @Inject
+    lateinit var videoPlayerLauncher: VideoPlayerLauncher
 
     internal lateinit var binding: ActivityMainBinding
 

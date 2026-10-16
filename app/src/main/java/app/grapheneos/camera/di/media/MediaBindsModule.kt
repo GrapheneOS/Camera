@@ -8,6 +8,8 @@ import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapper
 import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapperImpl
 import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapper
 import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
+import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
+import app.grapheneos.camera.data.media.player.VideoPlaybackFactoryImpl
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.data.media.repository.CaptureOutputRepositoryImpl
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
@@ -41,6 +43,12 @@ internal abstract class MediaBindsModule {
     abstract fun bindStorageSpaceRepository(
         impl: StorageSpaceRepositoryImpl,
     ): StorageSpaceRepository
+
+    @Binds
+    @Reusable
+    abstract fun bindVideoPlaybackFactory(
+        impl: VideoPlaybackFactoryImpl,
+    ): VideoPlaybackFactory
 
     @Binds
     @Reusable

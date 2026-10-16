@@ -176,14 +176,14 @@
 
         <activity
             android:name=".ui.videoplayer.VideoPlayerActivity"
-            android:theme="@style/Theme.Viewer"
+            android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.VideoPlayer"
             android:excludeFromRecents="true"
             android:exported="false"/>
 
         <activity
             android:name=".ui.videoplayer.SecureVideoPlayerActivity"
-            android:theme="@style/Theme.Viewer"
+            android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.VideoPlayer"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"

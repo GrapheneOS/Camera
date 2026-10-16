@@ -228,6 +228,10 @@ dependencies {
     implementation(libs.zxing.core)
     // endregion
 
+    // region Playback
+    implementation(libs.androidx.media3.exoplayer)
+    // endregion
+
     // region Unit tests
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.test.core.ktx)

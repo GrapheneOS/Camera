@@ -4,18 +4,22 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import app.grapheneos.camera.ui.activities.SecureActivity
-import app.grapheneos.camera.ui.common.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.mediaviewer.VideoPlayerLauncher
+import app.grapheneos.camera.ui.videoplayer.screen.videoPlayerArguments
 import javax.inject.Inject
 
 internal class VideoPlayerLauncherImpl @Inject constructor() : VideoPlayerLauncher {
 
-    override fun open(activity: Activity, uri: Uri) {
+    override fun open(
+        activity: Activity,
+        uri: Uri,
+    ) {
         val player = when (activity) {
             is SecureActivity -> SecureVideoPlayerActivity::class.java
             else -> VideoPlayerActivity::class.java
         }
         val intent = Intent(activity, player)
-            .putExtra(VideoPlayerActivity.VIDEO_URI, uri)
+            .putExtras(videoPlayerArguments(uri))
 
         activity.startActivity(intent)
     }

@@ -2,15 +2,11 @@ package app.grapheneos.camera
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.VideoView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.ui.videoplayer.VideoPlayerActivity
-import io.mockk.every
-import io.mockk.mockk
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import app.grapheneos.camera.ui.videoplayer.screen.videoPlayerArguments
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,37 +19,18 @@ class VideoPlayerRegressionTest {
     val screenAwake = ScreenAwakeRule()
 
     /**
-     * Regression test for the production crash: an IllegalStateException out of
-     * VideoView.setVideoURI took down the process instead of closing the player.
+     * Regression test for the production crash: a video the media stack could not load took down
+     * the process instead of closing the player.
      */
     @Test
-    fun videoLoad_whenMediaServiceDies_closesPlayerInsteadOfCrashing() {
+    fun videoLoad_whenPlaybackFails_closesPlayerInsteadOfCrashing() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val uri = Uri.parse("content://media/external/video/media/0")
         val intent = Intent(context, VideoPlayerActivity::class.java)
-            .putExtra(VideoPlayerActivity.VIDEO_URI, uri)
+            .putExtras(videoPlayerArguments(uri))
 
         ActivityScenario.launch<VideoPlayerActivity>(intent).use { scenario ->
-            scenario.onActivity { activity ->
-                assertFalse(activity.isFinishing)
-
-                activity.playVideo(deadMediaServiceVideoView(), uri)
-
-                assertTrue(activity.isFinishing)
-            }
-        }
-    }
-
-    /**
-     * Behaves like VideoView when the media service dies during playback setup: openVideo()
-     * catches IOException and IllegalArgumentException but lets prepareAsync()'s
-     * IllegalStateException escape to the caller.
-     */
-    private fun deadMediaServiceVideoView(): VideoView {
-        return mockk {
-            every {
-                setVideoURI(any<Uri>())
-            } throws IllegalStateException("prepareAsync called in state 0")
+            waitUntilDestroyed(scenario, "the player closed")
         }
     }
 }

@@ -28,6 +28,7 @@ kotlinxSerialization = "1.11.0"
 datastore = "1.2.1"
 
 camerax = { strictly = "1.6.2" }
+media3 = "1.11.1"
 zxing = "3.5.4"
 
 androidxTestCore = "1.7.0"
@@ -75,6 +76,7 @@ androidx-camera-extensions = { module = "androidx.camera:camera-extensions", ver
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
