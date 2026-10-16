@@ -175,17 +175,33 @@
         </activity>
 
         <activity
-            android:name=".ui.activities.VideoPlayer"
+            android:name=".ui.videoplayer.VideoPlayerActivity"
             android:theme="@style/Theme.Viewer"
             android:taskAffinity=".ui.activities.VideoPlayer"
             android:excludeFromRecents="true"
             android:exported="false"/>
 
         <activity
-            android:name=".ui.activities.InAppGallery"
+            android:name=".ui.videoplayer.SecureVideoPlayerActivity"
+            android:theme="@style/Theme.Viewer"
+            android:taskAffinity=".ui.activities.VideoPlayer"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.gallery.GalleryActivity"
             android:theme="@style/Theme.Viewer"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.gallery.SecureGalleryActivity"
+            android:theme="@style/Theme.Viewer"
+            android:taskAffinity=".ui.activities.InAppGallery"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
             android:exported="false"/>
 
         <activity

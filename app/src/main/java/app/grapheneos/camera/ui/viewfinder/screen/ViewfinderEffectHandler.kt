@@ -22,7 +22,6 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.ui.activities.CaptureActivity
-import app.grapheneos.camera.ui.activities.InAppGallery
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
@@ -37,6 +36,8 @@ import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
 import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
 import app.grapheneos.camera.ui.common.dialog.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.common.videoQualityTitle
+import app.grapheneos.camera.ui.gallery.GalleryActivity
+import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -247,8 +248,8 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun openGallery(effect: Effect.Gallery.Open) {
-        val intent = Intent(activity, InAppGallery::class.java)
-            .putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, effect.videoOnly)
+        val intent = Intent(activity, GalleryActivity::class.java)
+            .putExtra(GalleryActivity.INTENT_KEY_VIDEO_ONLY_MODE, effect.videoOnly)
 
         startGallery(
             intent = intent,
@@ -257,10 +258,9 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun openSecureGallery(effect: Effect.Gallery.OpenSecure) {
-        val intent = Intent(activity, InAppGallery::class.java)
-            .putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
+        val intent = Intent(activity, SecureGalleryActivity::class.java)
             .putParcelableArrayListExtra(
-                InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
+                GalleryActivity.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
                 ArrayList(effect.capturedItems),
             )
 
@@ -275,7 +275,7 @@ internal class ViewfinderEffectHandlerImpl(
         lastCapturedItem: CapturedItem?,
     ) {
         lastCapturedItem?.let { item ->
-            intent.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, item)
+            intent.putExtra(GalleryActivity.INTENT_KEY_LAST_CAPTURED_ITEM, item)
         }
 
         activity.startActivity(intent)

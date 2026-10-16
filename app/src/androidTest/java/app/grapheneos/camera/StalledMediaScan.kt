@@ -1,7 +1,7 @@
 package app.grapheneos.camera
 
 import android.app.Application
-import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GalleryActivity
 import io.mockk.every
 import io.mockk.mockk
 import java.util.concurrent.CountDownLatch
@@ -12,8 +12,8 @@ import java.util.concurrent.CountDownLatch
  */
 fun stalledMediaScan(gate: CountDownLatch): Application.ActivityLifecycleCallbacks {
     return mockk(relaxed = true) {
-        every { onActivityPreCreated(ofType<InAppGallery>(), any()) } answers {
-            firstArg<InAppGallery>().asyncLoaderOfCapturedItems.execute {
+        every { onActivityPreCreated(ofType<GalleryActivity>(), any()) } answers {
+            firstArg<GalleryActivity>().asyncLoaderOfCapturedItems.execute {
                 // Interrupted by shutdownNow() when the activity is destroyed
                 try {
                     gate.await()

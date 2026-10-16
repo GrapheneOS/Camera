@@ -145,6 +145,31 @@ class EntryPointContractTest {
     }
 
     @Test
+    fun onlyTheSecureViewersShowOverTheKeyguard() {
+        mapOf(
+            "ui.gallery.GalleryActivity" to false,
+            "ui.gallery.SecureGalleryActivity" to true,
+            "ui.videoplayer.VideoPlayerActivity" to false,
+            "ui.videoplayer.SecureVideoPlayerActivity" to true,
+        ).forEach { (activity, showsWhenLocked) ->
+            val info = packageManager.getActivityInfo(
+                ComponentName(context.packageName, "$PACKAGE.$activity"),
+                PackageManager.MATCH_ALL,
+            )
+
+            assertEquals(
+                "$activity must show over the keyguard only when it is the secure variant",
+                showsWhenLocked,
+                info.flags and FLAG_SHOW_WHEN_LOCKED != 0,
+            )
+            assertTrue(
+                "$activity must be excluded from recents",
+                info.flags and ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS != 0,
+            )
+        }
+    }
+
+    @Test
     fun qrTileKeepsTheNameAndFlagsSystemUiDependsOn() {
         val info = packageManager.getActivityInfo(
             ComponentName(context.packageName, "$PACKAGE.ui.activities.QrTile"),

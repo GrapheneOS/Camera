@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery
 
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.view.LayoutInflater
@@ -12,15 +11,13 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.databinding.GallerySlideBinding
-import app.grapheneos.camera.ui.activities.InAppGallery
-import app.grapheneos.camera.ui.activities.VideoPlayer
 import app.grapheneos.camera.ui.gallery.components.ZoomableImageView
 import app.grapheneos.camera.util.executeIfAlive
 import app.grapheneos.camera.util.getVideoThumbnail
 import kotlin.math.max
 
 class GallerySliderAdapter(
-    private val gActivity: InAppGallery,
+    private val gActivity: GalleryActivity,
     val items: ArrayList<CapturedItem>
 ) : RecyclerView.Adapter<GallerySlide>() {
 
@@ -89,13 +86,7 @@ class GallerySliderAdapter(
                             mediaPreview.setOnClickListener {
                                 val curItem = getCurrentItem() ?: return@setOnClickListener
                                 if (curItem.type == CapturedItemType.VIDEO) {
-                                    val intent = Intent(gActivity, VideoPlayer::class.java)
-                                    intent.putExtra(VideoPlayer.VIDEO_URI, curItem.uri)
-                                    intent.putExtra(
-                                        VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode
-                                    )
-
-                                    gActivity.startActivity(intent)
+                                    gActivity.videoPlayerLauncher.open(gActivity, curItem.uri)
                                 }
                             }
                         } else if (item.type == CapturedItemType.IMAGE) {

@@ -8,7 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
-import app.grapheneos.camera.ui.activities.InAppGallery
+import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.GallerySliderAdapter
 import java.util.concurrent.CountDownLatch
 import org.junit.After
@@ -44,7 +44,7 @@ class InAppGalleryRegressionTest {
     @Test
     fun mediaActions_beforeMediaScanCompletes_doNotCrash() {
         app.registerActivityLifecycleCallbacks(stall)
-        ActivityScenario.launch(InAppGallery::class.java).use { scenario ->
+        ActivityScenario.launch(GalleryActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 assertNull(activity.gallerySliderAdapter)
 
@@ -70,7 +70,7 @@ class InAppGalleryRegressionTest {
     @Test
     fun mediaActionsMenu_hiddenUntilMediaScanCompletes() {
         app.registerActivityLifecycleCallbacks(stall)
-        ActivityScenario.launch(InAppGallery::class.java).use { scenario ->
+        ActivityScenario.launch(GalleryActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val menu = PopupMenu(activity, activity.window.decorView).menu
                 activity.onCreateOptionsMenu(menu)

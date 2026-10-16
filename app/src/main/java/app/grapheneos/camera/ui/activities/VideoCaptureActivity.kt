@@ -7,6 +7,7 @@ import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
 import android.widget.ImageView
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.videoplayer.VideoPlayerActivity
 
 class VideoCaptureActivity : CaptureActivity() {
 
@@ -24,7 +25,7 @@ class VideoCaptureActivity : CaptureActivity() {
         playPreview.setOnClickListener {
             val i = Intent(
                 this@VideoCaptureActivity,
-                VideoPlayer::class.java
+                VideoPlayerActivity::class.java
             )
             i.putExtra("videoUri", savedUri)
             startActivity(i)
