@@ -19,7 +19,7 @@ import androidx.window.core.ExperimentalWindowApi
 import androidx.window.java.area.WindowAreaControllerCallbackAdapter
 
 /**
- * Unmodified rear-camera activity transfer plus direct CameraX dual display preview.
+ * Rear-camera selfie transfer and dual-screen CameraX preview on foldable devices.
  *
  * Dual mode exposes a second PreviewView in WindowAreaSessionPresenter. CamConfig binds TWO
  * CameraX Preview use cases to the SAME camera: one feeds the inner viewfinder, one the cover
@@ -125,7 +125,7 @@ internal class RearDisplaySelfieController(
         override fun onSessionEnded(t: Throwable?) {
             val handingOffToRear = pendingRearAfterDualAcrossRecreation
             if (handingOffToRear) {
-                // AUTO_SWITCH_COOLDOWN_2000_V1: let Android finish its system transition.
+                // Allow the display transition to finish before starting rear selfie.
                 pendingRearNotBeforeUptimeMs = android.os.SystemClock.uptimeMillis() + 2000L
                 Log.i(TAG, "Waiting 2s after Dual session end before Rear transfer")
             }
@@ -333,22 +333,12 @@ internal class RearDisplaySelfieController(
             rearStatus == WindowAreaCapability.Status.WINDOW_AREA_STATUS_ACTIVE
         val dualActive = dualSession != null ||
             dualStatus == WindowAreaCapability.Status.WINDOW_AREA_STATUS_ACTIVE
-        val dualBusy = dualTeardownPendingAcrossRecreation || dualStartPending || dualActive ||
-            activeSessionIfAvailable(info, dualOperation) != null
-        activity.settingsDialog.updateFoldDisplayControls(
+        activity.updateFoldTabState(
             rearSupported = rearStatus != null &&
                 rearStatus != WindowAreaCapability.Status.WINDOW_AREA_STATUS_UNSUPPORTED,
-            // Allow one-tap handoff from Dual Screen Preview to Rear Camera Selfie.
-            // The transfer itself still waits for onSessionEnded and AVAILABLE.
-            rearEnabled = rearActive ||
-                (rearStatus == WindowAreaCapability.Status.WINDOW_AREA_STATUS_AVAILABLE && !dualBusy) ||
-                (dualActive && !pendingRearAfterDualAcrossRecreation && !rearActive),
             rearChecked = rearActive || pendingRearAfterDualAcrossRecreation,
             dualSupported = dualStatus != null &&
                 dualStatus != WindowAreaCapability.Status.WINDOW_AREA_STATUS_UNSUPPORTED,
-            dualEnabled = dualActive ||
-                (dualStatus == WindowAreaCapability.Status.WINDOW_AREA_STATUS_AVAILABLE &&
-                    !rearActive && !dualTeardownPendingAcrossRecreation && !dualStartPending),
             dualChecked = dualActive && !pendingRearAfterDualAcrossRecreation,
         )
     }
