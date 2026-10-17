@@ -2092,14 +2092,8 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.availableFoldTabModes().forEach { foldMode ->
             tabLayout.newTab().let { tab ->
                 when (foldMode) {
-                    FoldTabMode.DUAL -> {
-                        tab.setText(R.string.fold_tab_dual)
-                        tab.setIcon(R.drawable.fold_mode_dual)
-                    }
-                    FoldTabMode.REAR -> {
-                        tab.setText(R.string.fold_tab_rear)
-                        tab.setIcon(R.drawable.fold_mode_selfie)
-                    }
+                    FoldTabMode.DUAL -> tab.setText(R.string.fold_tab_dual)
+                    FoldTabMode.REAR -> tab.setText(R.string.fold_tab_rear)
                 }
                 tab.tag = foldMode
                 tab.view.setOnTouchListener { _, e ->
