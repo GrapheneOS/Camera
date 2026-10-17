@@ -1108,8 +1108,7 @@ open class MainActivity : AppCompatActivity(),
         val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
         settingsDialog = SettingsDialog(this, themedContext)
 
-        // The foldable display controls belong to the settings panel, never to the viewfinder.
-        // Exclude intent capture and secure/lockscreen camera activities.
+        // Foldable display actions are unavailable to intent and lockscreen activities.
         if (javaClass == MainActivity::class.java) {
             rearSelfieController = RearDisplaySelfieController(this) {
                 when {
@@ -1129,7 +1128,6 @@ open class MainActivity : AppCompatActivity(),
                     }
                 }
             }
-            // Controls moved to the camera mode strip.
         }
 
         SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
