@@ -45,7 +45,6 @@ import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.RearDisplaySelfieController
 import app.grapheneos.camera.ui.activities.MoreSettings
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -492,14 +491,6 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
                 mScrollView.layoutParams = lp
             }
         })
-    }
-
-    /** Fold modes are now bottom-tab actions; retain controller callback interface. */
-    internal fun updateFoldDisplayControls(
-        rearSupported: Boolean, rearEnabled: Boolean, rearChecked: Boolean,
-        dualSupported: Boolean, dualEnabled: Boolean, dualChecked: Boolean,
-    ) {
-        mActivity.updateFoldTabState(rearSupported, rearChecked, dualSupported, dualChecked)
     }
 
     fun showOnlyRelevantSettings() {
