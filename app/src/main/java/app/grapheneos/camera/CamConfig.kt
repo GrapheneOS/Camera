@@ -53,6 +53,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.applyPreviewRatio
+import app.grapheneos.camera.ui.FoldTabMode
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -1674,6 +1675,24 @@ class CamConfig(private val mActivity: MainActivity) {
             it.surfaceProvider = mActivity.previewView.surfaceProvider
         }
 
+        // A second direct CameraX preview for the outer display, not a captured bitmap.
+        // Bound to the SAME camera and SAME activity lifecycle as the inner preview.
+        // Only plain Camera mode is used to avoid vendor extension/recording conflicts.
+        val foldOuterPreview = mActivity.foldSecondaryPreviewView()?.takeIf {
+            currentMode == CameraMode.CAMERA
+        }?.let { outer ->
+            Preview.Builder()
+                .setTargetRotation(outer.display?.rotation ?: rotation)
+                .setResolutionSelector(
+                    ResolutionSelector.Builder()
+                        .setAspectRatioStrategy(aspectRatioStrategy).build()
+                )
+                .build().also { second ->
+                    second.surfaceProvider = outer.surfaceProvider
+                    useCasesList.add(second)
+                }
+        }
+
         mActivity.forceUpdateOrientationSensor()
 
         // The list ordering encodes priority (highest priority first): CameraX walks the subsets
@@ -1795,6 +1814,15 @@ class CamConfig(private val mActivity: MainActivity) {
                 sessionConfig
             )
         } catch (exception: RuntimeException) {
+            if (foldOuterPreview != null &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException)) {
+                // Not all Camera2 device configurations permit Preview + Preview + JPEG.
+                // Undo the extra stream, then rebind the ordinary camera without crashing.
+                Log.e(TAG, "Two CameraX previews not supported; reverting to normal preview", exception)
+                mActivity.onFoldSecondaryPreviewBindFailure()
+                startCamera(true)
+                return
+            }
             // A vendor extension can still fail to initialize at bind time even though the
             // pre-flight probe in isExtensionUsable() passed. When one was applied, record the
             // failure so the mode stops being offered, rather than letting the exception kill the
@@ -2027,12 +2055,15 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
+    fun refreshFoldModeTabs() = buildTabs()
+
     @SuppressLint("ClickableViewAccessibility")
     private fun buildTabs() {
         val tabLayout = mActivity.tabLayout
         val availableModes = availableModes()
 
-        if (availableModes == tabLayout.getAllModes()) {
+        if (availableModes == tabLayout.getAllModes() &&
+            mActivity.availableFoldTabModes() == tabLayout.getFoldModes()) {
             return
         }
 
@@ -2054,7 +2085,22 @@ class CamConfig(private val mActivity: MainActivity) {
 
                 // Highlight the mode the camera is really in, not the default one: the tabs are
                 // also rebuilt long after startup, once the extension probes report back.
-                tabLayout.addTab(tab, mode == currentMode)
+                tabLayout.addTab(tab, mode == currentMode && mActivity.foldSelectedMode == null)
+            }
+        }
+        // Fold functions are UI-only tabs, not extra CameraMode enum cases.
+        mActivity.availableFoldTabModes().forEach { foldMode ->
+            tabLayout.newTab().let { tab ->
+                when (foldMode) {
+                    FoldTabMode.DUAL -> tab.setText(R.string.fold_tab_dual)
+                    FoldTabMode.REAR -> tab.setText(R.string.fold_tab_rear)
+                }
+                tab.tag = foldMode
+                tab.view.setOnTouchListener { _, e ->
+                    if (e.action == MotionEvent.ACTION_UP) mActivity.finalizeMode(tab)
+                    false
+                }
+                tabLayout.addTab(tab, foldMode == mActivity.foldSelectedMode)
             }
         }
     }
@@ -2064,6 +2110,7 @@ class CamConfig(private val mActivity: MainActivity) {
             return
         }
 
+        mActivity.closeFoldDualForModeChange()
         currentMode = mode
 
         mActivity.cancelFocusTimer()

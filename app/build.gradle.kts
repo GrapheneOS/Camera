@@ -98,6 +98,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 
     implementation(libs.bundles.camerax)
+    implementation("androidx.window:window:1.5.1")
+    implementation("androidx.window:window-java:1.5.1")
 
     implementation(libs.zxing.core)
 
