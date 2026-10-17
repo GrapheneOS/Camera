@@ -132,7 +132,6 @@ open class MainActivity : AppCompatActivity(),
     private lateinit var binding: ActivityMainBinding
     private var rearSelfieController: RearDisplaySelfieController? = null
 
-    // PR779_FOLD_TABS_UI_V1: UI state only; camera stays in CameraMode.CAMERA.
     private var foldRearSupported = false
     private var foldDualSupported = false
     internal var foldSelectedMode: FoldTabMode? = null
