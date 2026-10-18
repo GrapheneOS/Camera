@@ -8,10 +8,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.geometry.isSpecified
 
 private const val MIN_SCALE = 1f
 private const val MAX_SCALE = 3f
-private const val DOUBLE_TAP_SCALE = 1.75f
+private const val DOUBLE_TAP_SCALE = 2.5f
 
 @Stable
 internal class ZoomGestureState {
@@ -45,79 +46,80 @@ internal class ZoomGestureState {
     }
 
     fun applyTransform(
+        centroid: Offset,
         zoomChange: Float,
         panChange: Offset,
-    ): Boolean {
+    ) {
+        if (!centroid.isSpecified) return
+
         isZoomAnimationEnabled = false
-        val nextScale = (scale * zoomChange).coerceIn(
-            minimumValue = MIN_SCALE,
-            maximumValue = MAX_SCALE,
+        zoomAround(
+            focus = centroid,
+            nextScale = (scale * zoomChange).coerceIn(
+                minimumValue = MIN_SCALE,
+                maximumValue = MAX_SCALE,
+            ),
+            panChange = panChange,
         )
-
-        scale = nextScale
-        offset = coerceOffset(
-            candidateOffset = offset + panChange,
-            candidateScale = nextScale,
-        )
-
-        return zoomChange != 1f
     }
 
     fun applyDoubleTap(tapOffset: Offset) {
         isZoomAnimationEnabled = true
-        val nextScale = when {
-            isZoomed() -> MIN_SCALE
-            else -> DOUBLE_TAP_SCALE
-        }
-
-        scale = nextScale
-        offset = doubleTapOffset(
-            tapOffset = tapOffset,
-            nextScale = nextScale,
+        zoomAround(
+            focus = tapOffset,
+            nextScale = when {
+                isZoomed() -> MIN_SCALE
+                else -> DOUBLE_TAP_SCALE
+            },
         )
     }
 
-    fun reset() {
-        isZoomAnimationEnabled = false
-        scale = MIN_SCALE
-        offset = Offset.Zero
+    private fun zoomAround(
+        focus: Offset,
+        nextScale: Float,
+        panChange: Offset = Offset.Zero,
+    ) {
+        val focusFromCenter = focus - containerSize.center
+        val focusKeepingOffset = focusFromCenter - (focusFromCenter - offset) * (nextScale / scale)
+
+        offset = coerceOffset(
+            candidateOffset = focusKeepingOffset + panChange,
+            candidateScale = nextScale,
+        )
+        scale = nextScale
     }
 
     private fun coerceOffset(
         candidateOffset: Offset,
         candidateScale: Float,
     ): Offset {
-        val maxX = overflow(contentSize.width * candidateScale, containerSize.width)
-        val maxY = overflow(contentSize.height * candidateScale, containerSize.height)
-
         return Offset(
-            x = candidateOffset.x.coerceIn(
-                minimumValue = -maxX,
-                maximumValue = maxX,
+            x = coerceWithinOverflow(
+                value = candidateOffset.x,
+                scaledContent = contentSize.width * candidateScale,
+                container = containerSize.width,
             ),
-            y = candidateOffset.y.coerceIn(
-                minimumValue = -maxY,
-                maximumValue = maxY,
+            y = coerceWithinOverflow(
+                value = candidateOffset.y,
+                scaledContent = contentSize.height * candidateScale,
+                container = containerSize.height,
             ),
         )
     }
 
-    private fun overflow(
+    private fun coerceWithinOverflow(
+        value: Float,
         scaledContent: Float,
         container: Float,
     ): Float {
-        return ((scaledContent - container) / 2f).coerceAtLeast(0f)
-    }
+        val overflow = (scaledContent - container) / 2f
 
-    private fun doubleTapOffset(
-        tapOffset: Offset,
-        nextScale: Float,
-    ): Offset {
-        val tapOffsetFromCenter = tapOffset - containerSize.center
-
-        return coerceOffset(
-            candidateOffset = -tapOffsetFromCenter * (nextScale - MIN_SCALE),
-            candidateScale = nextScale,
-        )
+        return when {
+            overflow <= 0f -> 0f
+            else -> value.coerceIn(
+                minimumValue = -overflow,
+                maximumValue = overflow,
+            )
+        }
     }
 }

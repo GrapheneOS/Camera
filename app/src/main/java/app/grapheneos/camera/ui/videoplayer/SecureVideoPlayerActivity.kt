@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.videoplayer
 
-import app.grapheneos.camera.ui.activities.SecureActivity
+import app.grapheneos.camera.ui.core.SecureActivity
 
 class SecureVideoPlayerActivity :
     VideoPlayerActivity(),

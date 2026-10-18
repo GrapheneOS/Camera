@@ -15,7 +15,7 @@ import androidx.media3.extractor.text.SubtitleParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-interface VideoPlaybackFactory {
+internal interface VideoPlaybackFactory {
     fun create(uri: Uri): VideoPlayback
 }
 

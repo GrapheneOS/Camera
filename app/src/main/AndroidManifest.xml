@@ -25,6 +25,10 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="*" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_GALLERY" />
+        </intent>
     </queries>
 
     <application
@@ -191,14 +195,14 @@
 
         <activity
             android:name=".ui.gallery.GalleryActivity"
-            android:theme="@style/Theme.Viewer"
+            android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
             android:exported="false"/>
 
         <activity
             android:name=".ui.gallery.SecureGalleryActivity"
-            android:theme="@style/Theme.Viewer"
+            android:theme="@style/Theme.App"
             android:taskAffinity=".ui.activities.InAppGallery"
             android:excludeFromRecents="true"
             android:showWhenLocked="true"

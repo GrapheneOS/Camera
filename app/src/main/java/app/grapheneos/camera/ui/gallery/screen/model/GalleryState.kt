@@ -1,0 +1,20 @@
+package app.grapheneos.camera.ui.gallery.screen.model
+
+import app.grapheneos.camera.data.media.model.CapturedItem
+
+internal data class GalleryState(
+    val items: List<CapturedItem> = emptyList(),
+    val thumbnails: Map<CapturedItem, GalleryPreview> = emptyMap(),
+    val previews: Map<CapturedItem, GalleryPreview> = emptyMap(),
+    val currentIndex: Int = 0,
+    val isSecureSession: Boolean = false,
+    val hasSystemGallery: Boolean = false,
+    val areControlsVisible: Boolean = true,
+    val isZoomed: Boolean = false,
+    val dialog: GalleryDialog? = null,
+) {
+
+    fun currentItem(): CapturedItem? {
+        return items.getOrNull(currentIndex)
+    }
+}

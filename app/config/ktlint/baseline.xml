@@ -87,15 +87,6 @@
         <error line="191" column="1" source="standard:comment-spacing" />
         <error line="244" column="1" source="standard:comment-spacing" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/gallery/GSlideTransformer.kt">
-        <error line="47" column="1" source="standard:final-newline" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/gallery/GallerySliderAdapter.kt">
-        <error line="18" column="39" source="standard:trailing-comma-on-declaration-site" />
-        <error line="84" column="24" source="standard:no-multi-spaces" />
-        <error line="89" column="30" source="standard:statement-wrapping" />
-        <error line="89" column="58" source="standard:statement-wrapping" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/ui/moresettings/NumInputFilter.kt">
         <error line="8" column="22" source="standard:class-signature" />
         <error line="8" column="56" source="standard:class-signature" />
@@ -222,62 +213,12 @@
         <error line="67" column="16" source="standard:mixed-condition-operators" />
         <error line="80" column="1" source="standard:final-newline" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/gallery/components/ZoomableImageView.kt">
-        <error line="21" column="23" source="standard:parameter-list-wrapping" />
-        <error line="21" column="23" source="standard:class-signature" />
-        <error line="21" column="50" source="standard:trailing-comma-on-declaration-site" />
-        <error line="49" column="31" source="standard:colon-spacing" />
-        <error line="101" column="33" source="standard:argument-list-wrapping" />
-        <error line="101" column="54" source="standard:argument-list-wrapping" />
-        <error line="105" column="33" source="standard:argument-list-wrapping" />
-        <error line="105" column="55" source="standard:argument-list-wrapping" />
-        <error line="129" column="38" source="standard:colon-spacing" />
-        <error line="131" column="35" source="standard:parameter-list-spacing" />
-        <error line="131" column="36" source="standard:colon-spacing" />
-        <error line="155" column="46" source="standard:colon-spacing" />
-        <error line="163" column="25" source="standard:multiline-if-else" />
-        <error line="171" column="1" source="standard:no-blank-line-before-rbrace" />
-        <error line="194" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="208" column="13" source="standard:chain-wrapping" />
-        <error line="209" column="11" source="standard:multiline-if-else" />
-        <error line="210" column="22" source="standard:argument-list-wrapping" />
-        <error line="210" column="31" source="standard:argument-list-wrapping" />
-        <error line="212" column="16" source="standard:multiline-if-else" />
-        <error line="213" column="22" source="standard:argument-list-wrapping" />
-        <error line="214" column="21" source="standard:argument-list-wrapping" />
-        <error line="262" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="274" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="284" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="290" column="21" source="standard:argument-list-wrapping" />
-        <error line="290" column="42" source="standard:wrapping" />
-        <error line="290" column="43" source="standard:argument-list-wrapping" />
-        <error line="291" column="1" source="standard:indent" />
-        <error line="297" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="314" column="16" source="standard:multiline-if-else" />
-        <error line="324" column="13" source="standard:mixed-condition-operators" />
-        <error line="327" column="11" source="standard:multiline-if-else" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/gallery/GalleryActivity.kt">
-        <error line="142" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="292" column="1" source="standard:no-consecutive-blank-lines" />
-        <error line="297" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="318" column="1" source="standard:no-empty-first-line-in-method-block" />
-        <error line="421" column="21" source="standard:argument-list-wrapping" />
-    </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
         <error line="634" column="100" source="standard:max-line-length" />
         <error line="773" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/QrTile.kt">
         <error line="28" column="64" source="standard:no-semi" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/activities/SecureCaptureActivity.kt">
-        <error line="3" column="31" source="standard:class-signature" />
-        <error line="3" column="50" source="standard:class-signature" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/gallery/GallerySlide.kt">
-        <error line="6" column="20" source="standard:class-signature" />
-        <error line="6" column="52" source="standard:class-signature" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/ExposureBar.kt">
         <error line="81" column="66" source="standard:argument-list-wrapping" />
@@ -298,9 +239,6 @@
         <error line="7" column="87" source="standard:parameter-list-wrapping" />
         <error line="7" column="101" source="standard:max-line-length" />
         <error line="7" column="114" source="standard:parameter-list-wrapping" />
-    </file>
-    <file name="src/main/java/app/grapheneos/camera/util/IntentUtils.kt">
-        <error line="11" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/Utils.kt">
         <error line="24" column="44" source="standard:no-semi" />

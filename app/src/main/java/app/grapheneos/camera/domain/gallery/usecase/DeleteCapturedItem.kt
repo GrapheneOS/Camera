@@ -5,7 +5,7 @@ import app.grapheneos.camera.data.media.repository.CaptureOutputRepository
 import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
 import javax.inject.Inject
 
-interface DeleteCapturedItem {
+internal interface DeleteCapturedItem {
     suspend operator fun invoke(item: CapturedItem): CapturedItemDeletion
 }
 

@@ -75,7 +75,6 @@ sealed interface ViewfinderScreenEffect {
 
         data class Open(
             val lastCapturedItem: CapturedItem?,
-            val videoOnly: Boolean,
         ) : Gallery
 
         data class OpenSecure(

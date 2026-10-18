@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
@@ -23,9 +24,7 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import app.grapheneos.camera.ui.activities.shareCapturedItem
 import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
@@ -36,8 +35,11 @@ import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
 import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
 import app.grapheneos.camera.ui.common.dialog.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.common.videoQualityTitle
+import app.grapheneos.camera.ui.core.SecureActivity
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
+import app.grapheneos.camera.ui.gallery.screen.galleryArguments
+import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -248,35 +250,32 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun openGallery(effect: Effect.Gallery.Open) {
-        val intent = Intent(activity, GalleryActivity::class.java)
-            .putExtra(GalleryActivity.INTENT_KEY_VIDEO_ONLY_MODE, effect.videoOnly)
-
         startGallery(
-            intent = intent,
-            lastCapturedItem = effect.lastCapturedItem,
+            screen = GalleryActivity::class.java,
+            arguments = galleryArguments(
+                sessionItems = null,
+                lastCapturedItem = effect.lastCapturedItem,
+            ),
         )
     }
 
     private fun openSecureGallery(effect: Effect.Gallery.OpenSecure) {
-        val intent = Intent(activity, SecureGalleryActivity::class.java)
-            .putParcelableArrayListExtra(
-                GalleryActivity.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS,
-                ArrayList(effect.capturedItems),
-            )
-
         startGallery(
-            intent = intent,
-            lastCapturedItem = effect.lastCapturedItem,
+            screen = SecureGalleryActivity::class.java,
+            arguments = galleryArguments(
+                sessionItems = effect.capturedItems,
+                lastCapturedItem = effect.lastCapturedItem,
+            ),
         )
     }
 
     private fun startGallery(
-        intent: Intent,
-        lastCapturedItem: CapturedItem?,
+        screen: Class<out GalleryActivity>,
+        arguments: Bundle,
     ) {
-        lastCapturedItem?.let { item ->
-            intent.putExtra(GalleryActivity.INTENT_KEY_LAST_CAPTURED_ITEM, item)
-        }
+        val intent = Intent(activity, screen)
+            .putExtras(cameraEntryPointArguments(activity.cameraEntryPoint))
+            .putExtras(arguments)
 
         activity.startActivity(intent)
     }

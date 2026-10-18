@@ -1,8 +1,8 @@
-package app.grapheneos.camera.ui.mediaviewer
+package app.grapheneos.camera.ui.mediaviewer.navigation
 
 import android.app.Activity
 import android.net.Uri
 
-interface VideoPlayerLauncher {
+internal interface VideoPlayerLauncher {
     fun open(activity: Activity, uri: Uri)
 }

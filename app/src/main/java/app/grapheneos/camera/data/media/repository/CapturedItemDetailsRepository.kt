@@ -35,7 +35,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-interface CapturedItemDetailsRepository {
+internal interface CapturedItemDetailsRepository {
 
     suspend fun details(item: CapturedItem): CapturedItemDetails?
 }
