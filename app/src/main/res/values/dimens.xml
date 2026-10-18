@@ -15,8 +15,6 @@
 
     <dimen name="settings_dialog_horizontal_margin">12dp</dimen>
 
-    <dimen name="action_bar_height">60dp</dimen>
-
     <dimen name="settings_dialog_switch_height">24dp</dimen>
 
     <item name="settings_dialog_switch_scale" format="float" type="integer">0.8</item>

@@ -138,10 +138,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
 
         val effect = when {
             !entryPoint.isSecureSession -> {
-                Effect.Gallery.Open(
-                    lastCapturedItem = lastCapturedItem,
-                    videoOnly = entryPoint.requiresVideoModeOnly,
-                )
+                Effect.Gallery.Open(lastCapturedItem = lastCapturedItem)
             }
 
             gallery.secureCapturedItems.isEmpty() -> {

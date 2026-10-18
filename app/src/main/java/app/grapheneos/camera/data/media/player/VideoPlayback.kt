@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-interface VideoPlayback {
+internal interface VideoPlayback {
 
     val state: StateFlow<VideoPlaybackState>
 

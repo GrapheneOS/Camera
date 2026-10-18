@@ -4,7 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import app.grapheneos.camera.ui.activities.AutoFinishOnSleep
-import app.grapheneos.camera.ui.activities.SecureActivity
+import app.grapheneos.camera.ui.core.SecureActivity
 
 class ActivityLifeCycleHelper(
     private val onSecureActivityCreated: () -> Unit,

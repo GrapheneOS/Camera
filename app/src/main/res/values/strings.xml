@@ -45,10 +45,8 @@
     <string name="optimize_for">Optimize for</string>
     <string name="quality">Quality</string>
     <string name="latency">Latency</string>
-    <string name="preview">Preview</string>
     <string name="play_video">Play video</string>
     <string name="file_info">File Info</string>
-    <string name="delete_file">Delete file</string>
     <string name="edit">Edit</string>
     <string name="self_illumination">Self Illumination</string>
     <string name="timer">Timer</string>
@@ -65,7 +63,6 @@
     <string name="qr_scan_mode">QR SCAN</string>
     <string name="aspect_ratio_16_9">16:9</string>
     <string name="aspect_ratio_4_3">4:3</string>
-    <string name="share_media">Share Media</string>
     <string name="edit_with">Edit with</string>
     <string name="rec_without_audio">Start recording without audio</string>
     <string name="qr_scan">QR Code</string>
@@ -100,17 +97,15 @@
     <string name="unable_to_obtain_file_details">Unable to obtain file details</string>
 
     <string name="no_editor_app_error">You may not have a proper app for editing this content</string>
-    <string name="edit_not_allowed">Editing images in secure mode is not allowed.</string>
     <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
     <string name="edit_image">Edit Image</string>
     <string name="share_image">Share Image</string>
     <string name="unable_to_share_media">Unable to share this file</string>
     <string name="unable_to_edit_media">Unable to edit this file</string>
     <string name="delete">Delete</string>
-    <string name="delete_title">Are you sure?</string>
     <string name="deleted_successfully">File deleted successfully</string>
     <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
-    <string name="delete_description">"Do you really want to delete this file (%s)?"</string>
+    <string name="delete_description">Delete from this device? This can\'t be undone.</string>
     <string name="cancel">Cancel</string>
     <string name="no_image">Please capture a photo/video before trying to view them.</string>
 
@@ -183,8 +178,11 @@
     <string name="file_created_on">File Created On: </string>
     <string name="last_modified_on">Last Modified On: </string>
 
-    <string name="inaccessible_image">Photo %s is inaccessible</string>
-    <string name="inaccessible_video">Video %s is inaccessible</string>
+    <string name="inaccessible_image">This photo can\'t be opened</string>
+    <string name="inaccessible_video">This video can\'t be opened</string>
+    <string name="gallery_photo">Photo</string>
+    <string name="gallery_share">Share</string>
+    <string name="gallery_back_to_camera">Back to camera</string>
 
     <string name="main_storage">Main storage</string>
 

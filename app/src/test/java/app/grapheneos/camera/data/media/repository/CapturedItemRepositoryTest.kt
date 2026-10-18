@@ -8,6 +8,7 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import androidx.datastore.core.DataStore
@@ -47,6 +48,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -263,6 +265,7 @@ class CapturedItemRepositoryTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [IMAGE_DECODER_SDK])
     fun loadPreview_photoBeyondTheLimit_isScaledDownToIt() {
         runTest {
             documents().file = jpeg(width = 9000, height = 10)
@@ -276,6 +279,7 @@ class CapturedItemRepositoryTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [IMAGE_DECODER_SDK])
     fun loadPreview_photoWithinTheLimit_keepsItsSize() {
         runTest {
             documents().file = jpeg(width = 40, height = 20)
@@ -289,6 +293,7 @@ class CapturedItemRepositoryTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [IMAGE_DECODER_SDK])
     fun loadPreview_truncatedPhoto_isNull() {
         runTest {
             val whole = jpeg(width = 40, height = 20)
@@ -449,5 +454,9 @@ class CapturedItemRepositoryTest {
         const val DATE_STRING = "20260724_153012_345"
         const val JPEG_QUALITY = 90
         const val LEGACY_MEDIA_URI_SEPARATOR = ";"
+
+        // Robolectric 4.17 decodes from a file descriptor only up to API 34; on 35 ImageDecoder
+        // throws "Only supported on Android" and loadPreview reads every photo as unreadable
+        const val IMAGE_DECODER_SDK = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
     }
 }

@@ -145,9 +145,7 @@ class ViewfinderGalleryDelegateTest {
         runTest {
             every { capturedItemSession.lastCapturedItem } returns ITEM
             val effects = collectEffects(stateHolder)
-            val delegate = createDelegate(
-                entryPoint = cameraEntryPoint(requiresVideoModeOnly = true),
-            )
+            val delegate = createDelegate()
 
             delegate.openGallery()
             delegate.showThumbnail(THUMBNAIL)
@@ -155,8 +153,8 @@ class ViewfinderGalleryDelegateTest {
 
             assertEquals(
                 listOf(
-                    Effect.Gallery.Open(lastCapturedItem = null, videoOnly = true),
-                    Effect.Gallery.Open(lastCapturedItem = ITEM, videoOnly = true),
+                    Effect.Gallery.Open(lastCapturedItem = null),
+                    Effect.Gallery.Open(lastCapturedItem = ITEM),
                 ),
                 effects,
             )

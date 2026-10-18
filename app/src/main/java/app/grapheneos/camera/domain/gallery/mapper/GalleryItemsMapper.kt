@@ -4,7 +4,7 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import javax.inject.Inject
 
-interface GalleryItemsMapper {
+internal interface GalleryItemsMapper {
     fun map(
         items: List<CapturedItem>,
         videoOnly: Boolean,

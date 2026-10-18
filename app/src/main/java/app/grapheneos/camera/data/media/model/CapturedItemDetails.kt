@@ -3,7 +3,7 @@ package app.grapheneos.camera.data.media.model
 import android.util.Size
 import kotlin.time.Duration
 
-data class CapturedItemDetails(
+internal data class CapturedItemDetails(
     val fileName: String,
     val relativePath: String?,
     val sizeBytes: Long?,

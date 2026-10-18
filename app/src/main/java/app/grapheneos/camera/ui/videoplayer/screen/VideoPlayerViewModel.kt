@@ -52,6 +52,7 @@ internal class VideoPlayerViewModel @Inject constructor(
 
     private var isSeeking = false
     private var resumesAfterSeek = false
+    private var holdsSeekPosition = false
 
     init {
         viewModelScope.launch(mainDispatcher) {
@@ -101,7 +102,7 @@ internal class VideoPlayerViewModel @Inject constructor(
 
     private suspend fun followShownPosition() {
         playback.shownPosition.collect { position ->
-            if (!isSeeking) {
+            if (!holdsSeekPosition) {
                 _uiState.update { it.copy(position = position) }
             }
         }
@@ -114,13 +115,19 @@ internal class VideoPlayerViewModel @Inject constructor(
     private fun togglePlayback() {
         when {
             _uiState.value.isPlaying -> playback.pause()
-            else -> playback.play()
+            else -> play()
         }
+    }
+
+    private fun play() {
+        holdsSeekPosition = false
+        playback.play()
     }
 
     private fun seekTo(position: Duration) {
         if (!isSeeking) {
             isSeeking = true
+            holdsSeekPosition = true
             resumesAfterSeek = _uiState.value.isPlaying
             playback.pause()
             playback.setScrubbing(true)
@@ -136,7 +143,7 @@ internal class VideoPlayerViewModel @Inject constructor(
         playback.seekTo(_uiState.value.position)
 
         if (resumesAfterSeek) {
-            playback.play()
+            play()
         }
     }
 }

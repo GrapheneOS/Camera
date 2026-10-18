@@ -4,10 +4,10 @@ import android.content.Context
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.QrTile
-import app.grapheneos.camera.ui.activities.SecureActivity
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.core.SecureActivity
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -1,3 +1,7 @@
 package app.grapheneos.camera.ui.activities
 
-class SecureCaptureActivity : CaptureActivity(), SecureActivity
+import app.grapheneos.camera.ui.core.SecureActivity
+
+class SecureCaptureActivity :
+    CaptureActivity(),
+    SecureActivity

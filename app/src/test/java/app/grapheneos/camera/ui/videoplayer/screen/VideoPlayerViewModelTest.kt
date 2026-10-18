@@ -14,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -230,6 +231,35 @@ class VideoPlayerViewModelTest {
             viewModel.onAction(Action.SeekReleased)
 
             verify(exactly = 0) { playback.play() }
+        }
+    }
+
+    @Test
+    fun seekReleased_whilePaused_keepsTheThumbWhereTheFingerLifted() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.SeekDragged(3.seconds))
+            viewModel.onAction(Action.SeekReleased)
+
+            shownPosition.value = 3.seconds + 20.milliseconds
+
+            assertEquals(3.seconds, viewModel.uiState.value.position)
+        }
+    }
+
+    @Test
+    fun playing_afterSeekingWhilePaused_followsTheShownFrameAgain() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.SeekDragged(3.seconds))
+            viewModel.onAction(Action.SeekReleased)
+            viewModel.onAction(Action.PlayPauseClicked)
+
+            shownPosition.value = 4.seconds
+
+            assertEquals(4.seconds, viewModel.uiState.value.position)
         }
     }
 
