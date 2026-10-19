@@ -887,19 +887,49 @@
         },
         {
             "name": "Media3 common module",
-            "coordinates": "androidx.media3:media3-common:1.9.0",
+            "coordinates": "androidx.media3:media3-common:1.11.1",
             "url": "https://github.com/androidx/media",
             "license": "Apache-2.0"
         },
         {
             "name": "Media3 Container module",
-            "coordinates": "androidx.media3:media3-container:1.9.0",
+            "coordinates": "androidx.media3:media3-container:1.11.1",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 database module",
+            "coordinates": "androidx.media3:media3-database:1.11.1",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 DataSource module",
+            "coordinates": "androidx.media3:media3-datasource:1.11.1",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 decoder module",
+            "coordinates": "androidx.media3:media3-decoder:1.11.1",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 ExoPlayer module",
+            "coordinates": "androidx.media3:media3-exoplayer:1.11.1",
+            "url": "https://github.com/androidx/media",
+            "license": "Apache-2.0"
+        },
+        {
+            "name": "Media3 Extractor module",
+            "coordinates": "androidx.media3:media3-extractor:1.11.1",
             "url": "https://github.com/androidx/media",
             "license": "Apache-2.0"
         },
         {
             "name": "Media3 Muxer module",
-            "coordinates": "androidx.media3:media3-muxer:1.9.0",
+            "coordinates": "androidx.media3:media3-muxer:1.11.1",
             "url": "https://github.com/androidx/media",
             "license": "Apache-2.0"
         },
