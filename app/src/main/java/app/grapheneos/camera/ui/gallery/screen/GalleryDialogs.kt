@@ -2,7 +2,7 @@ package app.grapheneos.camera.ui.gallery.screen
 
 import androidx.compose.runtime.Composable
 import app.grapheneos.camera.ui.gallery.components.DeleteConfirmationSheet
-import app.grapheneos.camera.ui.gallery.components.DetailsDialog
+import app.grapheneos.camera.ui.gallery.components.DetailsSheet
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 
@@ -17,7 +17,7 @@ internal fun GalleryDialogs(
             onDismiss = { onAction(Action.DialogDismissed) },
         )
 
-        is Dialog.Details -> DetailsDialog(
+        is Dialog.Details -> DetailsSheet(
             item = dialog.item,
             details = dialog.details,
             onDismiss = { onAction(Action.DialogDismissed) },
