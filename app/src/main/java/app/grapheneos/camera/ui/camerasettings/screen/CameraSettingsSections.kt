@@ -45,7 +45,7 @@ import app.grapheneos.camera.ui.camerasettings.components.groupedItemShape
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsAction as Action
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState as UiState
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
-import app.grapheneos.camera.ui.components.motion.SETTLE_SIZE_SPEC
+import app.grapheneos.camera.ui.core.animation.SETTLE_SIZE_SPEC
 import app.grapheneos.camera.util.storageLocationToUiString
 
 private val FOOTER_TOP_PADDING = 4.dp

@@ -37,7 +37,7 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MediaTimestamp
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.storageLocationToUiString
 import java.time.LocalDateTime
