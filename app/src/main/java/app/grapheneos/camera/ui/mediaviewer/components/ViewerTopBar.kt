@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 private val BAR_HORIZONTAL_PADDING = 2.dp
 private val BAR_VERTICAL_PADDING = 6.dp

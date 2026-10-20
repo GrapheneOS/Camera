@@ -7,7 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.gallery.screen.GalleryScreen
 import app.grapheneos.camera.ui.gallery.screen.GalleryScreenModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel

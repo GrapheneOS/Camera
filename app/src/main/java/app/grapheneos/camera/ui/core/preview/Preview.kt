@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.core
+package app.grapheneos.camera.ui.core.preview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,6 +19,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 
 internal const val PREVIEW_ASPECT_RATIO = 3f / 4f
 internal const val PREVIEW_TALL_ASPECT_RATIO = 9f / 16f

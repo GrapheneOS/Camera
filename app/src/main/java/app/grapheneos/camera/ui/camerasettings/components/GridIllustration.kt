@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.compositiongrid.CompositionGrid
 import app.grapheneos.camera.ui.components.compositiongrid.CompositionGridColors
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private val ILLUSTRATION_WIDTH = 48.dp
 private val ILLUSTRATION_HEIGHT = 36.dp

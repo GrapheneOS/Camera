@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.core
+package app.grapheneos.camera.ui.core.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable

@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
-import app.grapheneos.camera.ui.core.cameraColors
+import app.grapheneos.camera.ui.core.theme.cameraColors
 
 @Immutable
 internal data class ModeSelectorColors(

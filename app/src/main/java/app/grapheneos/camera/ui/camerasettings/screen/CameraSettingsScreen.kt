@@ -36,8 +36,8 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiStat
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageLocationUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.StorageSpaceUiModel
 import app.grapheneos.camera.ui.camerasettings.screen.model.SwitchSettingUiModel
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
-import app.grapheneos.camera.ui.core.CollectEvents
+import app.grapheneos.camera.ui.core.effect.CollectEvents
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 @Composable
 internal fun CameraSettingsScreen(

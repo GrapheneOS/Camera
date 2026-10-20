@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LOCK_ICON
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

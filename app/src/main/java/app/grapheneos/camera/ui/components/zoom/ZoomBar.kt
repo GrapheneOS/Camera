@@ -30,8 +30,8 @@ import app.grapheneos.camera.ui.components.ruler.rememberRulerMetrics
 import app.grapheneos.camera.ui.components.ruler.rulerInput
 import app.grapheneos.camera.ui.components.zoom.gesture.ZoomBarState
 import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomBarState
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.TABULAR_FIGURES
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.theme.TABULAR_FIGURES
 
 private val LABEL_SIZE = 14.dp
 

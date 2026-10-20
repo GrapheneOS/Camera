@@ -6,11 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_TINT
-import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_HIGH_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_TINT
+import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_TINT
 import com.android.tools.screenshot.PreviewTest
 
 @PreviewTest

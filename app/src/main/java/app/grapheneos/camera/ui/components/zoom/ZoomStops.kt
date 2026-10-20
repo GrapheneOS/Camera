@@ -35,8 +35,8 @@ import app.grapheneos.camera.ui.components.pillselector.PillSelector
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorItemScope
 import app.grapheneos.camera.ui.components.text.inkCenteringOffsetY
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.TABULAR_FIGURES
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.theme.TABULAR_FIGURES
 
 private val STOP_SIZE = 48.dp
 private val LABEL_SIZE = 16.dp

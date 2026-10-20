@@ -32,9 +32,9 @@ import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.MORPH_SPEC
 import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
 import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.CameraPreviewViewfinder
-import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LOCK_ICON
 
 private val RING_WIDTH = 1.5.dp
 private val LOCK_ICON_SIZE = 26.dp

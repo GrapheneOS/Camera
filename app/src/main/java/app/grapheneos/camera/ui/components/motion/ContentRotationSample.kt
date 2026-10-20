@@ -25,15 +25,15 @@ import app.grapheneos.camera.ui.components.segmentedicontoggle.model.SegmentedIc
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
 import app.grapheneos.camera.ui.components.zoom.ZoomStops
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PREVIEW_LENS_SWITCH_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_PHOTO_CAMERA_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_SCENE
-import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_VIDEOCAM_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
-import app.grapheneos.camera.ui.core.PreviewRotation
-import app.grapheneos.camera.ui.core.previewShot
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LENS_SWITCH_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_PHOTO_CAMERA_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.PREVIEW_TIMER_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_VIDEOCAM_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_ICON
+import app.grapheneos.camera.ui.core.preview.PreviewRotation
+import app.grapheneos.camera.ui.core.preview.previewShot
 
 private val SAMPLE_STOPS = listOf(0.5f, 1f, 2f)
 private val SAMPLE_MODES = listOf(

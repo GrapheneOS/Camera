@@ -19,11 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
-import app.grapheneos.camera.ui.core.CollectEvents
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_SCENE
-import app.grapheneos.camera.ui.core.previewShot
+import app.grapheneos.camera.ui.core.effect.CollectEvents
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.gallery.components.GalleryActionBar
 import app.grapheneos.camera.ui.gallery.components.GalleryPager
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action

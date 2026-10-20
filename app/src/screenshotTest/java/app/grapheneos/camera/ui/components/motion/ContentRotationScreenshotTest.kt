@@ -23,17 +23,17 @@ import app.grapheneos.camera.ui.components.squarebutton.model.SquareButtonMark
 import app.grapheneos.camera.ui.components.thumbnailbutton.ThumbnailButton
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.components.zoom.ZoomStops
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_PAUSE_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_PHOTO_CAMERA_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_SCENE
-import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_VIDEOCAM_ICON
-import app.grapheneos.camera.ui.core.cameraColors
-import app.grapheneos.camera.ui.core.previewShot
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_HIGH_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_PAUSE_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_PHOTO_CAMERA_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.PREVIEW_TIMER_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_VIDEOCAM_ICON
+import app.grapheneos.camera.ui.core.preview.previewShot
+import app.grapheneos.camera.ui.core.theme.cameraColors
 import com.android.tools.screenshot.PreviewTest
 
 private val MODES = listOf(

@@ -38,7 +38,7 @@ import app.grapheneos.camera.ui.components.zoom.gesture.ZoomBarState
 import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomBarState
 import app.grapheneos.camera.ui.components.zoom.gesture.rememberZoomControlExpander
 import app.grapheneos.camera.ui.components.zoom.gesture.zoomControlInput
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 /**
  * Collapsed, it shows [stops], and a tap on one reports it through [onStopClick]. A horizontal

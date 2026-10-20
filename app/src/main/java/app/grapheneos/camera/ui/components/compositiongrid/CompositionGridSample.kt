@@ -13,10 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
-import app.grapheneos.camera.ui.core.CameraPreviewControl
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PREVIEW_ASPECT_RATIO
-import app.grapheneos.camera.ui.core.PREVIEW_TALL_ASPECT_RATIO
+import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PREVIEW_ASPECT_RATIO
+import app.grapheneos.camera.ui.core.preview.PREVIEW_TALL_ASPECT_RATIO
 
 private val GRID_OPTIONS = listOf(
     null,

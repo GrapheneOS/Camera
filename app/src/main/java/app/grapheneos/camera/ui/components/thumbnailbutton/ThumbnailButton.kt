@@ -16,11 +16,11 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.components.squarebutton.SQUARE_BUTTON_SHAPE
 import app.grapheneos.camera.ui.components.squarebutton.SquareButton
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_SCENE
-import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
-import app.grapheneos.camera.ui.core.previewShot
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_ICON
+import app.grapheneos.camera.ui.core.preview.previewShot
 
 /**
  * @param image the latest shot. A new instance slides in from the top and pushes the shown one out

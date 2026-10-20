@@ -35,7 +35,7 @@ import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
 import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
 import app.grapheneos.camera.ui.common.dialog.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.common.videoQualityTitle
-import app.grapheneos.camera.ui.core.SecureActivity
+import app.grapheneos.camera.ui.core.activity.SecureActivity
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
 import app.grapheneos.camera.ui.gallery.screen.galleryArguments

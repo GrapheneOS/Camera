@@ -23,7 +23,7 @@ import androidx.compose.ui.test.requestFocus
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonSize
 import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrigger
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
-import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_CLOSE_ICON
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -17,8 +17,8 @@ import app.grapheneos.camera.ui.components.squarebutton.SquareButton
 import app.grapheneos.camera.ui.components.squarebutton.SquareButtonColors
 import app.grapheneos.camera.ui.components.squarebutton.SquareButtonMarkContent
 import app.grapheneos.camera.ui.components.squarebutton.model.SquareButtonMark
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_LENS_SWITCH_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LENS_SWITCH_ICON
 
 /**
  * @param flipped which camera is in use. Every change turns the icon half a turn

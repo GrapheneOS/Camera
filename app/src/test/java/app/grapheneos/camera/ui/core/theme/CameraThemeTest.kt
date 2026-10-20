@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.core
+package app.grapheneos.camera.ui.core.theme
 
 import android.content.Context
 import android.os.Build

@@ -27,9 +27,9 @@ import app.grapheneos.camera.ui.components.pillselector.PillSelector
 import app.grapheneos.camera.ui.components.pillselector.PillSelectorColors
 import app.grapheneos.camera.ui.components.pillselector.model.PillSelectorSpacing
 import app.grapheneos.camera.ui.components.segmentedicontoggle.model.SegmentedIconToggleOption
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_PHOTO_CAMERA_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_VIDEOCAM_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_PHOTO_CAMERA_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_VIDEOCAM_ICON
 
 private val OPTION_SIZE = 48.dp
 private val ICON_SIZE = 24.dp

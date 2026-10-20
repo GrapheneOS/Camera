@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
 import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import kotlin.math.roundToInt
 
 private val TILE_HORIZONTAL_PADDING = 16.dp

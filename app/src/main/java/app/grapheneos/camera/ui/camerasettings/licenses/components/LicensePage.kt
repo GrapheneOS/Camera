@@ -27,7 +27,7 @@ import app.grapheneos.camera.ui.camerasettings.components.linkedText
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarNestedScroll
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarScrollBehavior
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LicenseUiModel
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 private val HEADER_HORIZONTAL_PADDING = 8.dp
 private val HEADER_TOP_PADDING = 24.dp

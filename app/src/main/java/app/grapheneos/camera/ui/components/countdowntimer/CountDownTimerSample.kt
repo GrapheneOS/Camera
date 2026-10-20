@@ -16,12 +16,12 @@ import app.grapheneos.camera.ui.components.capturebutton.CaptureButton
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
-import app.grapheneos.camera.ui.core.CameraPreviewControl
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_TIMER_ICON
-import app.grapheneos.camera.ui.core.PreviewCountdown
-import app.grapheneos.camera.ui.core.PreviewRotation
+import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PREVIEW_CLOSE_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_TIMER_ICON
+import app.grapheneos.camera.ui.core.preview.PreviewCountdown
+import app.grapheneos.camera.ui.core.preview.PreviewRotation
 
 private val TIMER_OPTIONS = listOf(3, 5, 10)
 

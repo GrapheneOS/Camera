@@ -32,10 +32,10 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_SCENE
-import app.grapheneos.camera.ui.core.previewShot
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.gallery.components.gesture.ZoomGestureState
 import app.grapheneos.camera.ui.gallery.components.gesture.zoomTransformInput
 import kotlin.math.min

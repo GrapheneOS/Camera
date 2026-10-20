@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
 import app.grapheneos.camera.ui.components.motion.crossfadeResizing
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private const val TITLE_PLACEHOLDER_WIDTH = 0.4f
 private const val SUMMARY_PLACEHOLDER_WIDTH = 0.7f

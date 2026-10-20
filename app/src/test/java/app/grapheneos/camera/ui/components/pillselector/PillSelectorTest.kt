@@ -32,7 +32,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.pillselector.model.PillSelectorSpacing
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import kotlin.math.sign
 import org.junit.Assert.assertEquals
 import org.junit.Rule

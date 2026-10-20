@@ -25,8 +25,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
-import app.grapheneos.camera.ui.core.CollectEvents
+import app.grapheneos.camera.ui.core.effect.CollectEvents
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.mediaviewer.components.SystemBarsVisibilityEffect
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState

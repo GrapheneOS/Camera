@@ -39,7 +39,7 @@ import app.grapheneos.camera.ui.components.pillselector.gesture.PillSelectorSele
 import app.grapheneos.camera.ui.components.pillselector.gesture.pillSelectorInput
 import app.grapheneos.camera.ui.components.pillselector.gesture.rememberPillSelectorSelection
 import app.grapheneos.camera.ui.components.pillselector.model.PillSelectorSpacing
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private val CONTAINER_PADDING = 2.dp
 

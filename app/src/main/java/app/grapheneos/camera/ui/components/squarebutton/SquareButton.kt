@@ -22,8 +22,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_RESTART_ICON
 
 internal val SQUARE_BUTTON_SIZE = 60.dp
 internal val SQUARE_BUTTON_SHAPE = RoundedCornerShape(size = 12.dp)
