@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.text.inkBounds
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.cameraColors
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.theme.cameraColors
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt

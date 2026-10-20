@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.core
+package app.grapheneos.camera.ui.core.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable

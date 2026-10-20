@@ -7,7 +7,7 @@ import app.grapheneos.camera.ui.activities.QrTile
 import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
-import app.grapheneos.camera.ui.core.SecureActivity
+import app.grapheneos.camera.ui.core.activity.SecureActivity
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

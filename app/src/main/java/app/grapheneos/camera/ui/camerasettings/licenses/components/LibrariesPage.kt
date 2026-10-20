@@ -25,7 +25,7 @@ import app.grapheneos.camera.ui.camerasettings.components.groupedItemShape
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarNestedScroll
 import app.grapheneos.camera.ui.camerasettings.components.rememberSettingsTopAppBarScrollBehavior
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LibraryUiModel
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 

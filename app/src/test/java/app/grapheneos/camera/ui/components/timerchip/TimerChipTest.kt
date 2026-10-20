@@ -5,7 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Rule
 import org.junit.Test

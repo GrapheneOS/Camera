@@ -14,9 +14,9 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
-import app.grapheneos.camera.ui.core.CameraTheme
-import app.grapheneos.camera.ui.core.PREVIEW_MIC_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_MIC_OFF_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_MIC_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_MIC_OFF_ICON
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

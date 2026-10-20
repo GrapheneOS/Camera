@@ -21,9 +21,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.motion.crossfade
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_MIC_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_MIC_OFF_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_MIC_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_MIC_OFF_ICON
 
 @Composable
 internal fun OverlayIconToggleButton(

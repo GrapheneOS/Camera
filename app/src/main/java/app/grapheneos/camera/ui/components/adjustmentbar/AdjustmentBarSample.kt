@@ -33,18 +33,18 @@ import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.overlayiconbutton.OVERLAY_ICON_BUTTON_SIZE
 import app.grapheneos.camera.ui.components.overlayiconbutton.OverlayIconButton
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
-import app.grapheneos.camera.ui.core.CameraPreviewControl
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_TINT
-import app.grapheneos.camera.ui.core.PREVIEW_RESTART_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_THERMOMETER_ADD_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_THERMOMETER_MINUS_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_WARM_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
-import app.grapheneos.camera.ui.core.PreviewRotation
+import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_HIGH_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_TINT
+import app.grapheneos.camera.ui.core.preview.PREVIEW_RESTART_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_THERMOMETER_ADD_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_THERMOMETER_MINUS_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_TINT
+import app.grapheneos.camera.ui.core.preview.PreviewRotation
 import kotlin.math.roundToLong
 
 private const val AUTO_TEMPERATURE = 5_000f

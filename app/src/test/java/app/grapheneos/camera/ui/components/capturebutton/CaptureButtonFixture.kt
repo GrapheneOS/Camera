@@ -22,7 +22,7 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTrig
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 
 internal class CaptureButtonFixture(
     private val composeRule: ComposeContentTestRule,

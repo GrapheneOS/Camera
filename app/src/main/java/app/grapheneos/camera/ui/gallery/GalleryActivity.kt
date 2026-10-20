@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.gallery.screen.GalleryScreen
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher

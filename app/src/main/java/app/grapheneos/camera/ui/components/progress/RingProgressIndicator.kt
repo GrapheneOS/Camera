@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private val DIAMETER = 40.dp
 private val GAP_SIZE = 4.dp

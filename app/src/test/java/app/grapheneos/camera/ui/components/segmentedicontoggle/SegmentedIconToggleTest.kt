@@ -17,9 +17,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.segmentedicontoggle.model.SegmentedIconToggleOption
-import app.grapheneos.camera.ui.core.CameraTheme
-import app.grapheneos.camera.ui.core.PREVIEW_PHOTO_CAMERA_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_VIDEOCAM_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_PHOTO_CAMERA_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_VIDEOCAM_ICON
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

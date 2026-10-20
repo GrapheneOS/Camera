@@ -8,10 +8,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.compositiongrid.model.CompositionGridPattern
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.CameraPreviewViewfinder
-import app.grapheneos.camera.ui.core.PREVIEW_ASPECT_RATIO
-import app.grapheneos.camera.ui.core.PREVIEW_TALL_ASPECT_RATIO
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
+import app.grapheneos.camera.ui.core.preview.PREVIEW_ASPECT_RATIO
+import app.grapheneos.camera.ui.core.preview.PREVIEW_TALL_ASPECT_RATIO
 import com.android.tools.screenshot.PreviewTest
 
 @PreviewTest

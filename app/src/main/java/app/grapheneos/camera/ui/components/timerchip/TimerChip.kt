@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.motion.crossfadeResizing
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
 import app.grapheneos.camera.ui.components.valuechip.ValueChipColors
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes

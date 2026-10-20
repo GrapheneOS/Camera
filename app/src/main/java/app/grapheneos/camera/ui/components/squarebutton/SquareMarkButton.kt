@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
 import app.grapheneos.camera.ui.components.squarebutton.model.SquareButtonMark
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_PAUSE_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_PAUSE_ICON
 
 private val PREVIEW_PAUSE = SquareButtonMark.Icon(
     icon = PREVIEW_PAUSE_ICON,

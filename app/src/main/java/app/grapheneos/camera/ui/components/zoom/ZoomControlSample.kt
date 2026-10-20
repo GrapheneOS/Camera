@@ -24,9 +24,9 @@ import app.grapheneos.camera.ui.components.motion.POP_IN
 import app.grapheneos.camera.ui.components.motion.POP_OUT
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.valuechip.ValueChip
-import app.grapheneos.camera.ui.core.CameraPreviewControl
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PreviewRotation
+import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PreviewRotation
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 

@@ -32,11 +32,11 @@ import app.grapheneos.camera.ui.components.ruler.RulerMetrics
 import app.grapheneos.camera.ui.components.ruler.rememberRulerBindings
 import app.grapheneos.camera.ui.components.ruler.rememberRulerMetrics
 import app.grapheneos.camera.ui.components.ruler.rulerInput
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_TINT
-import app.grapheneos.camera.ui.core.PREVIEW_WARM_TINT
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_HIGH_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_TINT
+import app.grapheneos.camera.ui.core.preview.PREVIEW_WARM_TINT
 
 /**
  * The indicator stays in the center and the scale moves under it. [onValueChange] is called for

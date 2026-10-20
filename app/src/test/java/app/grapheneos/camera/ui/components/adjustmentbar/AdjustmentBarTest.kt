@@ -27,9 +27,9 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.CameraTheme
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_HIGH_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_HIGH_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_BRIGHTNESS_LOW_ICON
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import kotlin.math.sign
 import org.junit.Assert.assertEquals
 import org.junit.Rule

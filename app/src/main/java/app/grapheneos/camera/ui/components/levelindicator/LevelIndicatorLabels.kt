@@ -15,7 +15,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.text.CenteredText
-import app.grapheneos.camera.ui.core.TABULAR_FIGURES
+import app.grapheneos.camera.ui.core.theme.TABULAR_FIGURES
 
 private val LABEL_SIZE = 12.dp
 

@@ -27,7 +27,7 @@ import app.grapheneos.camera.ui.components.modeselector.gesture.ModeSelectorStat
 import app.grapheneos.camera.ui.components.modeselector.gesture.modeSelectorInput
 import app.grapheneos.camera.ui.components.modeselector.gesture.rememberModeSelectorState
 import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 /**
  * [onModeSelected] is called once the strip has settled on another mode after a release or a tap;

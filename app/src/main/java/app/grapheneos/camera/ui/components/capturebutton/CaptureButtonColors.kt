@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 import app.grapheneos.camera.ui.components.shuttercore.ShutterCoreColors
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
-import app.grapheneos.camera.ui.core.cameraColors
+import app.grapheneos.camera.ui.core.theme.cameraColors
 
 @Immutable
 internal data class CaptureButtonColors(

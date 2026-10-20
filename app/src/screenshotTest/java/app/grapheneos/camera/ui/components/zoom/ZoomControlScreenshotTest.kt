@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import com.android.tools.screenshot.PreviewTest
 
 private val THREE_STOPS = listOf(0.5f, 1f, 2f)

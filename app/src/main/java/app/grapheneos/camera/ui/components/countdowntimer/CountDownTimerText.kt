@@ -16,7 +16,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import app.grapheneos.camera.ui.core.TABULAR_FIGURES
+import app.grapheneos.camera.ui.core.theme.TABULAR_FIGURES
 import kotlin.math.roundToInt
 
 @Composable

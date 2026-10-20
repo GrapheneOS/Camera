@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 private val NAVIGATION_ICON_START_PADDING = 20.dp
 private val TITLE_START_PADDING = 8.dp

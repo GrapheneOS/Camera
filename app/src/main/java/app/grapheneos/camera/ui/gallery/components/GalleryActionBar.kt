@@ -30,7 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 private val BAR_HEIGHT = 60.dp
 private val ITEM_TOP_PADDING = 12.dp

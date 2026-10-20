@@ -18,9 +18,9 @@ import app.grapheneos.camera.ui.components.capturebutton.model.CaptureButtonTarg
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_CLOSE_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LOCK_ICON
 import com.android.tools.screenshot.PreviewTest
 
 private val HOLD_TARGET = CaptureButtonTarget(

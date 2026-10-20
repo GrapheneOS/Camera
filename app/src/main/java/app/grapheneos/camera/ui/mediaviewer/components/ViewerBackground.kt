@@ -5,7 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Color
-import app.grapheneos.camera.ui.core.cameraColors
+import app.grapheneos.camera.ui.core.theme.cameraColors
 
 @Composable
 internal fun animateViewerBackgroundAsState(areControlsVisible: Boolean): State<Color> {

@@ -4,7 +4,7 @@ import android.content.Context
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepositoryImpl
 import app.grapheneos.camera.data.media.repository.LockscreenCapturedItemRepository
-import app.grapheneos.camera.ui.core.SecureActivity
+import app.grapheneos.camera.ui.core.activity.SecureActivity
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

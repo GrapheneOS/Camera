@@ -11,7 +11,7 @@ import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

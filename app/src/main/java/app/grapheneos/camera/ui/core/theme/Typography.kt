@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.core
+package app.grapheneos.camera.ui.core.theme
 
 /** OpenType feature that gives every digit the same width, so a changing number does not shift. */
 internal const val TABULAR_FIGURES = "tnum"

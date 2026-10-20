@@ -21,11 +21,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
-import app.grapheneos.camera.ui.core.PREVIEW_COOL_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_SCENE
-import app.grapheneos.camera.ui.core.cameraColors
-import app.grapheneos.camera.ui.core.previewShot
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.previewShot
+import app.grapheneos.camera.ui.core.theme.cameraColors
 
 private val PLAY_BADGE_SIZE = 64.dp
 private val PLAY_ICON_SIZE = 40.dp

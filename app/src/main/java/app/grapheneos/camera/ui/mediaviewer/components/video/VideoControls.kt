@@ -31,9 +31,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewTheme
-import app.grapheneos.camera.ui.core.TABULAR_FIGURES
-import app.grapheneos.camera.ui.core.cameraColors
+import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.theme.TABULAR_FIGURES
+import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.util.formatVideoDuration
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

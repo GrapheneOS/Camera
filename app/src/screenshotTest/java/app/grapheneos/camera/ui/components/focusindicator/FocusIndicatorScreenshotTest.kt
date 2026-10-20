@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.CameraPreviewViewfinder
-import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewViewfinder
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LOCK_ICON
 import com.android.tools.screenshot.PreviewTest
 
 private val LOCK_ICON_ROOM = 34.dp

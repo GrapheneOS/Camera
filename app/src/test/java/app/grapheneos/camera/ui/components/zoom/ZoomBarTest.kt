@@ -21,7 +21,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.CameraTheme
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import kotlin.math.pow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

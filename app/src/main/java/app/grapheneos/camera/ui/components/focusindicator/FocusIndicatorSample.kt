@@ -20,9 +20,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.focusindicator.model.FocusIndicatorAppearance
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
-import app.grapheneos.camera.ui.core.PreviewRotation
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.preview.PreviewRotation
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay

@@ -14,8 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.CameraPreviewControl
-import app.grapheneos.camera.ui.core.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.CameraPreviewControl
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 

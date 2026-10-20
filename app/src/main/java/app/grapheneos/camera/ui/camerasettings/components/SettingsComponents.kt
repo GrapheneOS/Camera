@@ -48,7 +48,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private const val DISABLED_ALPHA = 0.38f
 private const val CHANGED_MARK_ID = "changed_mark"

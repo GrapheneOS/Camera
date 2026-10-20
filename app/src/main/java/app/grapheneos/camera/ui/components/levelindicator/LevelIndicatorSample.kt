@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.components.adjustmentbar.AdjustmentBar
 import app.grapheneos.camera.ui.components.motion.ProvideContentRotation
 import app.grapheneos.camera.ui.components.motion.rotateLayout
-import app.grapheneos.camera.ui.core.CameraPreviewSample
-import app.grapheneos.camera.ui.core.PreviewRotation
+import app.grapheneos.camera.ui.core.preview.CameraPreviewSample
+import app.grapheneos.camera.ui.core.preview.PreviewRotation
 
 private val ROLL_RANGE = -30f..30f
 private val PITCH_RANGE = -90f..90f

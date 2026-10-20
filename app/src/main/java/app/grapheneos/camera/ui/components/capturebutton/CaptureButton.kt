@@ -37,9 +37,9 @@ import app.grapheneos.camera.ui.components.motion.animateEnabledAlpha
 import app.grapheneos.camera.ui.components.progress.model.RingProgress
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterCore
 import app.grapheneos.camera.ui.components.shuttercore.model.ShutterTone
-import app.grapheneos.camera.ui.core.CameraPreviewColumn
-import app.grapheneos.camera.ui.core.PREVIEW_CLOSE_ICON
-import app.grapheneos.camera.ui.core.PREVIEW_LOCK_ICON
+import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
+import app.grapheneos.camera.ui.core.preview.PREVIEW_CLOSE_ICON
+import app.grapheneos.camera.ui.core.preview.PREVIEW_LOCK_ICON
 
 /**
  * Passing [onHoldStart] lets the button be held. While held, its core can be dragged out to
