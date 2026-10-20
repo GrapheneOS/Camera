@@ -217,14 +217,38 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.ZoomChanged(isZoomed = true))
+            zoomPage(viewModel = viewModel, page = 0, isZoomed = true)
 
             assertTrue(viewModel.uiState.value.isZoomed)
             assertFalse(viewModel.uiState.value.areControlsVisible)
 
-            viewModel.onAction(Action.ZoomChanged(isZoomed = false))
+            zoomPage(viewModel = viewModel, page = 0, isZoomed = false)
 
             assertTrue(viewModel.uiState.value.areControlsVisible)
+        }
+    }
+
+    @Test
+    fun anUnchangedZoom_keepsTheControlsAsTheyAre() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.ScreenTapped)
+            zoomPage(viewModel = viewModel, page = 0, isZoomed = false)
+
+            assertFalse(viewModel.uiState.value.areControlsVisible)
+        }
+    }
+
+    @Test
+    fun anotherPagesZoom_keepsTheCurrentPageZoomed() {
+        runTest {
+            val viewModel = viewModel()
+
+            zoomPage(viewModel = viewModel, page = 0, isZoomed = true)
+            zoomPage(viewModel = viewModel, page = 1, isZoomed = false)
+
+            assertTrue(viewModel.uiState.value.isZoomed)
         }
     }
 
@@ -245,6 +269,19 @@ class GalleryViewModelTest {
             assertEquals(listOf(THUMBNAIL), shown.subList(2, 6).distinct())
             assertEquals(listOf(PREVIEW), shown.drop(6).distinct())
         }
+    }
+
+    private fun zoomPage(
+        viewModel: GalleryViewModel,
+        page: Int,
+        isZoomed: Boolean,
+    ) {
+        viewModel.onAction(
+            Action.ZoomChanged(
+                pageKey = viewModel.uiState.value.pages[page].key,
+                isZoomed = isZoomed,
+            ),
+        )
     }
 
     private fun pageKeys(viewModel: GalleryViewModel): List<String> {

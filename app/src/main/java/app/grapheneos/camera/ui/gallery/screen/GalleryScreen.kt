@@ -99,7 +99,14 @@ private fun GalleryContent(
             onPageSelected = { page -> onAction(Action.PageSelected(page)) },
             onTap = { onAction(Action.ScreenTapped) },
             onVideoClick = { onAction(Action.VideoClicked) },
-            onZoomChanged = { isZoomed -> onAction(Action.ZoomChanged(isZoomed)) },
+            onZoomChanged = { pageKey, isZoomed ->
+                onAction(
+                    Action.ZoomChanged(
+                        pageKey = pageKey,
+                        isZoomed = isZoomed,
+                    ),
+                )
+            },
             modifier = Modifier.fillMaxSize(),
         )
 

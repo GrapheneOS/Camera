@@ -1,26 +1,32 @@
 package app.grapheneos.camera.ui.gallery.components.gesture
 
+import android.os.Parcelable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.geometry.isSpecified
+import kotlinx.parcelize.Parcelize
 
 private const val MIN_SCALE = 1f
 private const val MAX_SCALE = 3f
 private const val DOUBLE_TAP_SCALE = 2.5f
 
 @Stable
-internal class ZoomGestureState {
+internal class ZoomGestureState(
+    initialScale: Float = MIN_SCALE,
+    initialOffset: Offset = Offset.Zero,
+) {
 
-    var scale by mutableFloatStateOf(MIN_SCALE)
+    var scale by mutableFloatStateOf(initialScale)
         private set
 
-    var offset by mutableStateOf(Offset.Zero)
+    var offset by mutableStateOf(initialOffset)
         private set
 
     var isZoomAnimationEnabled by mutableStateOf(false)
@@ -121,5 +127,35 @@ internal class ZoomGestureState {
                 maximumValue = overflow,
             )
         }
+    }
+
+    private fun toSavedState(): SavedState {
+        return SavedState(
+            scale = scale,
+            offsetX = offset.x,
+            offsetY = offset.y,
+        )
+    }
+
+    @Parcelize
+    internal data class SavedState(
+        val scale: Float,
+        val offsetX: Float,
+        val offsetY: Float,
+    ) : Parcelable
+
+    companion object {
+        val Saver: Saver<ZoomGestureState, SavedState> = Saver(
+            save = { state -> state.toSavedState() },
+            restore = { savedState ->
+                ZoomGestureState(
+                    initialScale = savedState.scale,
+                    initialOffset = Offset(
+                        x = savedState.offsetX,
+                        y = savedState.offsetY,
+                    ),
+                )
+            },
+        )
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -38,7 +39,6 @@ import app.grapheneos.camera.ui.core.previewShot
 import app.grapheneos.camera.ui.gallery.components.gesture.ZoomGestureState
 import app.grapheneos.camera.ui.gallery.components.gesture.zoomTransformInput
 import kotlin.math.min
-import kotlinx.coroutines.flow.drop
 
 private const val DOUBLE_TAP_ANIMATION_MILLIS = 200
 
@@ -50,7 +50,7 @@ internal fun ZoomableImage(
     modifier: Modifier = Modifier,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val gestureState = remember { ZoomGestureState() }
+    val gestureState = rememberSaveable(saver = ZoomGestureState.Saver) { ZoomGestureState() }
     val onZoomedOut = remember(hapticFeedback) {
         { hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick) }
     }
@@ -113,6 +113,8 @@ private fun ZoomEffects(
         image.width,
         image.height,
     ) {
+        if (containerSize == IntSize.Zero) return@LaunchedEffect
+
         gestureState.updateLayout(
             containerSize = containerSize.toSize(),
             contentSize = fittedSize(
@@ -124,7 +126,6 @@ private fun ZoomEffects(
 
     LaunchedEffect(gestureState) {
         snapshotFlow { gestureState.isZoomed() }
-            .drop(1)
             .collect { isZoomed -> currentOnZoomChanged(isZoomed) }
     }
 }
