@@ -23,6 +23,7 @@ internal sealed interface GalleryAction {
     data object DialogDismissed : GalleryAction
 
     data class ZoomChanged(
+        val pageKey: String,
         val isZoomed: Boolean,
     ) : GalleryAction
 

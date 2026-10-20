@@ -84,7 +84,6 @@ internal class GalleryViewModel @Inject constructor(
         when (action) {
             is Action.PageSelected -> selectPage(action.page)
             is Action.ScreenTapped -> toggleControls()
-            is Action.ZoomChanged -> onZoomChanged(action.isZoomed)
             is Action.VideoClicked -> openVideo()
             is Action.SystemGalleryClicked -> openSystemGallery()
             is Action.EditClicked -> edit(usesDefaultEditor = true)
@@ -94,6 +93,11 @@ internal class GalleryViewModel @Inject constructor(
             is Action.InfoClicked -> showDetails()
             is Action.ShareClicked -> share()
             is Action.DialogDismissed -> update { it.copy(dialog = null) }
+
+            is Action.ZoomChanged -> onZoomChanged(
+                pageKey = action.pageKey,
+                isZoomed = action.isZoomed,
+            )
         }
     }
 
@@ -124,13 +128,24 @@ internal class GalleryViewModel @Inject constructor(
         update { it.copy(areControlsVisible = !it.areControlsVisible) }
     }
 
-    private fun onZoomChanged(isZoomed: Boolean) {
+    private fun onZoomChanged(
+        pageKey: String,
+        isZoomed: Boolean,
+    ) {
+        if (!isCurrentPage(pageKey) || state.isZoomed == isZoomed) return
+
         update {
             it.copy(
                 isZoomed = isZoomed,
                 areControlsVisible = !isZoomed,
             )
         }
+    }
+
+    private fun isCurrentPage(pageKey: String): Boolean {
+        val shownState = _uiState.value
+
+        return shownState.pages.getOrNull(shownState.currentPage)?.key == pageKey
     }
 
     private fun openVideo() {

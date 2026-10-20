@@ -26,7 +26,7 @@ internal fun GalleryPager(
     onPageSelected: (Int) -> Unit,
     onTap: () -> Unit,
     onVideoClick: () -> Unit,
-    onZoomChanged: (Boolean) -> Unit,
+    onZoomChanged: (pageKey: String, isZoomed: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(
@@ -52,11 +52,15 @@ internal fun GalleryPager(
         userScrollEnabled = !isZoomed,
         modifier = modifier,
     ) { page ->
+        val pageModel = pages[page]
+
         GalleryPage(
-            page = pages[page],
+            page = pageModel,
             onTap = onTap,
             onVideoClick = onVideoClick,
-            onZoomChanged = onZoomChanged,
+            onZoomChanged = { isPageZoomed ->
+                onZoomChanged(pageModel.key, isPageZoomed)
+            },
         )
     }
 }
