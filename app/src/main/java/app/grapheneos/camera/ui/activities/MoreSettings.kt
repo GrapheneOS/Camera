@@ -41,6 +41,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     private lateinit var rootView: View
 
     private lateinit var pQField: EditText
+    private lateinit var mleField: EditText
 
     private val dirPickerHandler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -149,6 +150,10 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         pQField.filters = arrayOf(NumInputFilter(this))
         pQField.setOnEditorActionListener(this)
 
+        mleField = binding.maxLongEdge
+        mleField.setText(camConfig.maxImageLongEdge.toString())
+        mleField.setOnEditorActionListener(this)
+
         val exifToggle = binding.removeExifToggle
         val exifToggleSetting = binding.removeExifSetting
 
@@ -241,11 +246,21 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         highResToggle.isChecked = camConfig.selectHighestResolution
 
         highResToggle.setOnClickListener {
-            camConfig.selectHighestResolution = !camConfig.selectHighestResolution
+            camConfig.selectHighestResolution = highResToggle.isChecked
+            // "Highest resolution" and the resolution cap contradict each other; keep them
+            // mutually exclusive by clearing the cap when the highest-res mode is enabled.
+            if (highResToggle.isChecked && camConfig.maxImageLongEdge > 0) {
+                camConfig.maxImageLongEdge = 0
+                mleField.setText("0")
+            }
+            syncResolutionControls()
         }
 
         highResSetting.setOnClickListener {
-            highResToggle.performClick()
+            // Ignore taps while a resolution cap keeps this row disabled.
+            if (camConfig.maxImageLongEdge == 0) {
+                highResToggle.performClick()
+            }
         }
 
         if (!showStorageSettings) {
@@ -268,6 +283,8 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             v.setPadding(cutouts.left, 0, cutouts.right, 0)
             insets
         }
+
+        syncResolutionControls()
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -327,6 +344,37 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
         } else {
             camConfig.photoQuality = quality
         }
+
+        // Dump state of max image resolution (long edge). 0 = no cap; empty/invalid -> revert.
+        val longEdge = mleField.text.toString().toIntOrNull()
+        if (longEdge == null || longEdge < 0) {
+            mleField.setText(camConfig.maxImageLongEdge.toString())
+            if (notifyOnInvalidValue) {
+                showMessage(getString(R.string.invalid_max_long_edge_value))
+            }
+        } else {
+            camConfig.maxImageLongEdge = longEdge
+            // Mutually exclusive with "highest resolution": a cap takes precedence.
+            if (longEdge > 0 && camConfig.selectHighestResolution) {
+                camConfig.selectHighestResolution = false
+                binding.highestResSettingToggle.isChecked = false
+            }
+        }
+
+        syncResolutionControls()
+    }
+
+    // "Highest resolution" and the resolution cap are mutually exclusive; reflect that by
+    // disabling whichever control the other one currently overrides.
+    private fun syncResolutionControls() {
+        val capActive = camConfig.maxImageLongEdge > 0
+        val highestActive = camConfig.selectHighestResolution
+
+        mleField.isEnabled = !highestActive
+        binding.maxLongEdgeSetting.alpha = if (highestActive) 0.5f else 1f
+
+        binding.highestResSettingToggle.isEnabled = !capActive
+        binding.highestResSetting.alpha = if (capActive) 0.5f else 1f
     }
 
     override fun onEditorAction(p0: TextView?, id: Int, p2: KeyEvent?): Boolean {
