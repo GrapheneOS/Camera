@@ -43,8 +43,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.motion.SETTLE_COLOR_SPEC
-import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
+import app.grapheneos.camera.ui.core.animation.SETTLE_COLOR_SPEC
+import app.grapheneos.camera.ui.core.animation.SETTLE_SPEC
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 import kotlin.math.roundToInt
 

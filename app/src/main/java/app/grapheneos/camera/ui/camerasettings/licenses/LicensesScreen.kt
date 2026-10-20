@@ -14,7 +14,7 @@ import app.grapheneos.camera.ui.camerasettings.licenses.components.LibrariesPage
 import app.grapheneos.camera.ui.camerasettings.licenses.components.LicensePage
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LicensesAction as Action
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LicensesUiState as UiState
-import app.grapheneos.camera.ui.components.motion.crossfade
+import app.grapheneos.camera.ui.core.animation.crossfade
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 
 @Composable

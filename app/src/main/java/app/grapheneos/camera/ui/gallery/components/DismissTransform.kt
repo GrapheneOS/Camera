@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.core.follow
+import app.grapheneos.camera.ui.core.animation.follow
 import app.grapheneos.camera.ui.gallery.components.gesture.DismissGestureState
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch

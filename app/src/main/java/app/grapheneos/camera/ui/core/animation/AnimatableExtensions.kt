@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.core
+package app.grapheneos.camera.ui.core.animation
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec

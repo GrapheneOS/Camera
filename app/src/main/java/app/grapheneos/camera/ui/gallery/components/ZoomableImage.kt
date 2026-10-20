@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.core.follow
+import app.grapheneos.camera.ui.core.animation.follow
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
 import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
