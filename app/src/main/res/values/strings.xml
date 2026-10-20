@@ -168,21 +168,15 @@
     <string name="unable_to_access_output_file">Unable to access output file</string>
     <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
 
-    <string name="file_details">File Details</string>
-    <string name="file_name_generic">File Name: </string>
-    <string name="not_found_generic">Not Found</string>
-    <string name="file_size">File Size: </string>
-    <string name="file_path">File Path: </string>
-    <string name="resolution">Resolution: </string>
-    <string name="duration">Duration: </string>
-    <string name="file_created_on">File Created On: </string>
-    <string name="last_modified_on">Last Modified On: </string>
-
     <string name="inaccessible_image">This photo can\'t be opened</string>
     <string name="inaccessible_video">This video can\'t be opened</string>
     <string name="gallery_photo">Photo</string>
     <string name="gallery_share">Share</string>
     <string name="gallery_back_to_camera">Back to camera</string>
+    <string name="gallery_details">Details</string>
+    <string name="gallery_details_modified">Modified %s</string>
+    <string name="gallery_details_resolution">%1$d × %2$d</string>
+    <string name="gallery_details_joined">%1$s · %2$s</string>
 
     <string name="main_storage">Main storage</string>
 

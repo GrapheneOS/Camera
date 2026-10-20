@@ -18,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -31,13 +32,15 @@ private val BAR_VERTICAL_PADDING = 6.dp
 @Composable
 internal fun ViewerTopBar(
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     navigation: @Composable RowScope.() -> Unit = {},
     title: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
+        color = containerColor,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Box(
             modifier = Modifier

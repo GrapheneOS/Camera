@@ -1,10 +1,9 @@
 package app.grapheneos.camera.ui.gallery.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateOffsetAsState
-import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -19,7 +18,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -32,6 +33,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.core.follow
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
 import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
@@ -39,6 +41,8 @@ import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.gallery.components.gesture.ZoomGestureState
 import app.grapheneos.camera.ui.gallery.components.gesture.zoomTransformInput
 import kotlin.math.min
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 private const val DOUBLE_TAP_ANIMATION_MILLIS = 200
 
@@ -56,14 +60,7 @@ internal fun ZoomableImage(
     }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val currentOnTap by rememberUpdatedState(onTap)
-    val scale by animateFloatAsState(
-        targetValue = gestureState.scale,
-        animationSpec = zoomAnimationSpec(isEnabled = gestureState.isZoomAnimationEnabled),
-    )
-    val offset by animateOffsetAsState(
-        targetValue = gestureState.offset,
-        animationSpec = zoomAnimationSpec(isEnabled = gestureState.isZoomAnimationEnabled),
-    )
+    val zoomTransform = rememberZoomTransform(gestureState)
 
     ZoomEffects(
         gestureState = gestureState,
@@ -89,13 +86,21 @@ internal fun ZoomableImage(
                 gestureState = gestureState,
                 onZoomedOut = onZoomedOut,
             )
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationX = offset.x
-                translationY = offset.y
-            },
+            .graphicsLayer(zoomTransform::applyTo),
     )
+}
+
+@Composable
+private fun rememberZoomTransform(
+    gestureState: ZoomGestureState,
+): ZoomTransform {
+    val zoomTransform = remember(gestureState) { ZoomTransform(gestureState) }
+
+    LaunchedEffect(zoomTransform) {
+        zoomTransform.followGesture()
+    }
+
+    return zoomTransform
 }
 
 @Composable
@@ -145,13 +150,46 @@ private fun fittedSize(
     )
 }
 
-private fun <T> zoomAnimationSpec(isEnabled: Boolean): AnimationSpec<T> {
-    return when {
-        isEnabled -> tween(
+private class ZoomTransform(
+    private val gestureState: ZoomGestureState,
+) {
+
+    private val scale = Animatable(gestureState.scale)
+    private val offset = Animatable(gestureState.offset, Offset.VectorConverter)
+
+    fun applyTo(layer: GraphicsLayerScope) {
+        layer.scaleX = scale.value
+        layer.scaleY = scale.value
+        layer.translationX = offset.value.x
+        layer.translationY = offset.value.y
+    }
+
+    suspend fun followGesture() {
+        val isAnimated = { gestureState.isZoomAnimationEnabled }
+
+        coroutineScope {
+            launch {
+                scale.follow(
+                    target = { gestureState.scale },
+                    isAnimated = isAnimated,
+                    animationSpec = doubleTapSpec(),
+                )
+            }
+            launch {
+                offset.follow(
+                    target = { gestureState.offset },
+                    isAnimated = isAnimated,
+                    animationSpec = doubleTapSpec(),
+                )
+            }
+        }
+    }
+
+    private fun <T> doubleTapSpec(): AnimationSpec<T> {
+        return tween(
             durationMillis = DOUBLE_TAP_ANIMATION_MILLIS,
             easing = FastOutSlowInEasing,
         )
-        else -> snap()
     }
 }
 

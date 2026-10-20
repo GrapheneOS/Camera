@@ -5,7 +5,10 @@ import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.gallery.components.CaptureTimeTitle
@@ -19,8 +22,12 @@ internal fun GalleryTopBar(
     uiState: UiState,
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     ViewerTopBar(
+        modifier = modifier,
+        containerColor = containerColor,
         navigation = {
             IconButton(onClick = onNavigateBack) {
                 Icon(
