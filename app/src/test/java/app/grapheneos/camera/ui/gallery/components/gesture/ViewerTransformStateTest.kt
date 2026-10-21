@@ -25,7 +25,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingOut_stopsAtTheLargestZoom() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 10f)
@@ -35,7 +39,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingOut_keepsThePinchCentroidInPlace() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         state.applyTransform(
@@ -50,7 +58,11 @@ class ViewerTransformStateTest {
     @Test
     fun panningWhileZoomed_staysWithinTheScaledPhoto() {
         val tall = Size(width = 100f, height = 200f)
-        state.updateLayout(containerSize = tall, imageSize = tall)
+        state.updateLayout(
+            containerSize = tall,
+            imageSize = tall,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = tall, zoomChange = 3f)
@@ -67,6 +79,7 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = LETTERBOX_CONTAINER,
             imageSize = Size(width = 100f, height = 50f),
+            canZoom = true,
         )
         state.startTransform()
 
@@ -81,7 +94,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingOut_doesNotRotateThePhoto() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(
@@ -96,7 +113,11 @@ class ViewerTransformStateTest {
     @Test
     fun updateLayout_keepsTheZoomedPhotoWithinTheNewSize() {
         val large = Size(width = 200f, height = 200f)
-        state.updateLayout(containerSize = large, imageSize = large)
+        state.updateLayout(
+            containerSize = large,
+            imageSize = large,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = large, zoomChange = 3f)
@@ -106,14 +127,22 @@ class ViewerTransformStateTest {
         )
 
         state.release()
-        state.updateLayout(containerSize = SQUARE, imageSize = large)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = large,
+            canZoom = true,
+        )
 
         assertEquals(Offset(x = 100f, y = 100f), state.offset)
     }
 
     @Test
     fun applyTransform_whenTheLastFingerLifts_keepsTheTransform() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
@@ -129,7 +158,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun applyDoubleTap_whenFitted_zoomsInAroundTheTap() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.applyDoubleTap(position = Offset(x = 75f, y = 25f))
 
         assertEquals(2.5f, state.scale)
@@ -138,7 +171,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun applyDoubleTap_whenZoomed_zoomsBackOut() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.applyDoubleTap(position = Offset(x = 75f, y = 25f))
         state.applyDoubleTap(position = Offset(x = 50f, y = 50f))
 
@@ -148,7 +185,26 @@ class ViewerTransformStateTest {
 
     @Test
     fun withoutAnImage_neitherPinchNorDoubleTapZoomsIn() {
-        state.updateLayout(containerSize = SQUARE, imageSize = null)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = null,
+            canZoom = true,
+        )
+        state.applyDoubleTap(position = SQUARE.center)
+        state.startTransform()
+
+        pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
+
+        assertEquals(1f, state.scale)
+    }
+
+    @Test
+    fun whenZoomIsOff_neitherPinchNorDoubleTapZoomsIn() {
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = false,
+        )
         state.applyDoubleTap(position = SQUARE.center)
         state.startTransform()
 
@@ -221,7 +277,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingInFromFit_shrinksAndRotatesThePhoto() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(
@@ -236,7 +296,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingInThenOut_zoomsInKeepingTheAngle() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(
@@ -252,7 +316,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingOutThenIn_stopsAtFit() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
@@ -266,7 +334,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingInWhileZoomed_stopsAtFit() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.applyDoubleTap(position = SQUARE.center)
         state.startTransform()
 
@@ -280,7 +352,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun pinchingInThenOutThenIn_shrinksBelowFitAgain() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 0.8f)
@@ -292,7 +368,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun fadeProgress_holdsTheDeepestShrinkWhilePinchingBackOut() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 0.9f)
@@ -327,7 +407,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun fadeProgress_whileZooming_isNone() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
@@ -338,7 +422,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun isZoomStoppedAtFit_onlyWhenAZoomReachesFit() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
@@ -350,7 +438,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun isZoomStoppedAtFit_neverWhileTheGestureCanClose() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 0.8f)
@@ -361,7 +453,11 @@ class ViewerTransformStateTest {
 
     @Test
     fun release_whileZoomedAfterPinchingIn_keepsTheZoomAndStraightensThePhoto() {
-        state.updateLayout(containerSize = SQUARE, imageSize = SQUARE)
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
         state.startTransform()
 
         pinchAroundTheCenter(

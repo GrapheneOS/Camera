@@ -15,6 +15,7 @@ import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItems
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapper
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
@@ -83,15 +84,16 @@ internal class GalleryViewModel @Inject constructor(
     override fun onAction(action: Action) {
         when (action) {
             is Action.PageSelected -> selectPage(action.page)
-            is Action.ScreenTapped -> toggleControls()
+            is Action.ScreenTapped -> onScreenTapped()
+            is Action.InfoClicked -> openDetails()
+            is Action.DetailsShownChanged -> showDetails(action.isShown)
             is Action.VideoClicked -> openVideo()
             is Action.SystemGalleryClicked -> openSystemGallery()
             is Action.EditClicked -> edit(usesDefaultEditor = true)
             is Action.EditWithClicked -> edit(usesDefaultEditor = false)
+            is Action.ShareClicked -> share()
             is Action.DeleteClicked -> confirmDeletion()
             is Action.DeleteConfirmed -> deleteCurrentItem()
-            is Action.InfoClicked -> showDetails()
-            is Action.ShareClicked -> share()
             is Action.DialogDismissed -> update { it.copy(dialog = null) }
 
             is Action.ZoomChanged -> onZoomChanged(
@@ -122,6 +124,17 @@ internal class GalleryViewModel @Inject constructor(
         update { it.copy(currentIndex = page) }
         state.currentItem()?.let { saveViewedItem(arguments, it) }
         loadPreviewsAround(page)
+
+        if (state.showsDetails) {
+            loadDetailsAround(page)
+        }
+    }
+
+    private fun onScreenTapped() {
+        when {
+            state.showsDetails -> update { it.copy(showsDetails = false) }
+            else -> toggleControls()
+        }
     }
 
     private fun toggleControls() {
@@ -146,6 +159,48 @@ internal class GalleryViewModel @Inject constructor(
         val shownState = _uiState.value
 
         return shownState.pages.getOrNull(shownState.currentPage)?.key == pageKey
+    }
+
+    private fun showDetails(isShown: Boolean) {
+        when {
+            isShown -> openDetails()
+            else -> update { it.copy(showsDetails = false) }
+        }
+    }
+
+    private fun openDetails() {
+        if (state.showsDetails || state.currentItem() == null) return
+
+        update { it.copy(showsDetails = true) }
+        loadDetailsAround(state.currentIndex)
+    }
+
+    private fun loadDetailsAround(page: Int) {
+        val items = itemsAround(
+            page = page,
+            radius = DETAILS_RADIUS,
+        )
+
+        update { it.copy(details = it.details.filterKeys(items::contains)) }
+
+        items
+            .filterNot(state.details::containsKey)
+            .forEach(::loadDetails)
+    }
+
+    private fun loadDetails(item: CapturedItem) {
+        update { it.copy(details = it.details + (item to GalleryDetails.Loading)) }
+
+        viewModelScope.launch(mainDispatcher) {
+            val details = when (val loaded = capturedItemDetailsRepository.details(item)) {
+                null -> GalleryDetails.Unavailable
+                else -> GalleryDetails.Loaded(loaded)
+            }
+
+            if (item in state.details) {
+                update { it.copy(details = it.details + (item to details)) }
+            }
+        }
     }
 
     private fun openVideo() {
@@ -211,23 +266,13 @@ internal class GalleryViewModel @Inject constructor(
                 items = items,
                 thumbnails = it.thumbnails - item,
                 previews = it.previews - item,
+                details = it.details - item,
                 currentIndex = it.currentIndex.coerceAtMost(items.lastIndex),
                 isZoomed = false,
             )
         }
         _effects.trySend(Effect.ItemDeleted)
         loadPreviewsAround(state.currentIndex)
-    }
-
-    private fun showDetails() {
-        val item = state.currentItem() ?: return
-
-        viewModelScope.launch(mainDispatcher) {
-            when (val details = capturedItemDetailsRepository.details(item)) {
-                null -> _effects.trySend(Effect.DetailsUnavailable)
-                else -> update { it.copy(dialog = Dialog.Details(item = item, details = details)) }
-            }
-        }
     }
 
     private fun loadPreviewsAround(page: Int) {
@@ -305,5 +350,6 @@ internal class GalleryViewModel @Inject constructor(
         const val PREVIEW_RADIUS = 1
         const val THUMBNAIL_RADIUS = 5
         const val THUMBNAIL_SIDE = 512
+        const val DETAILS_RADIUS = 1
     }
 }

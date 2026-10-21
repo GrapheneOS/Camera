@@ -12,6 +12,8 @@ internal val SETTLE_SPEC = settleSpring<Float>()
 internal val SETTLE_SIZE_SPEC = settleSpring<IntSize>()
 internal val SETTLE_COLOR_SPEC = settleSpring<Color>()
 
+internal val CONTROLS_SPEC = spring<Float>(stiffness = Spring.StiffnessMediumLow)
+
 private fun <T> settleSpring(): SpringSpec<T> {
     return spring(
         dampingRatio = Spring.DampingRatioNoBouncy,

@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.gallery.components
 
 import android.content.Context
-import android.net.Uri
 import android.text.format.Formatter
 import android.util.Size
 import androidx.compose.foundation.layout.Arrangement
@@ -16,13 +15,10 @@ import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Movie
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -33,9 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
-import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MediaTimestamp
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.util.formatVideoDuration
@@ -44,45 +38,25 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
-private val SHEET_HORIZONTAL_PADDING = 24.dp
-private val SHEET_BOTTOM_PADDING = 24.dp
+private val HORIZONTAL_PADDING = 24.dp
+private val BOTTOM_PADDING = 24.dp
 private val ROW_SPACING = 24.dp
 private val ICON_TEXT_SPACING = 16.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun DetailsSheet(
-    item: CapturedItem,
+internal fun FileDetails(
     details: CapturedItemDetails,
-    onDismiss: () -> Unit,
+    isVideo: Boolean,
+    uri: String,
     modifier: Modifier = Modifier,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        modifier = modifier,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ) {
-        DetailsContent(
-            item = item,
-            details = details,
-        )
-    }
-}
-
-@Composable
-private fun DetailsContent(
-    item: CapturedItem,
-    details: CapturedItemDetails,
-) {
-    val isVideo = item.type == CapturedItemType.VIDEO
-
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(
-                start = SHEET_HORIZONTAL_PADDING,
-                end = SHEET_HORIZONTAL_PADDING,
-                bottom = SHEET_BOTTOM_PADDING,
+                start = HORIZONTAL_PADDING,
+                end = HORIZONTAL_PADDING,
+                bottom = BOTTOM_PADDING,
             ),
         verticalArrangement = Arrangement.spacedBy(ROW_SPACING),
     ) {
@@ -107,7 +81,7 @@ private fun DetailsContent(
             icon = Icons.Outlined.Folder,
             title = filePath(
                 context = LocalContext.current,
-                uri = item.uri,
+                uri = uri,
                 details = details,
             ),
         )
@@ -172,7 +146,9 @@ private fun fileFacts(
         details.resolution?.let {
             stringResource(R.string.gallery_details_resolution, it.width, it.height)
         },
-        details.sizeBytes?.let { Formatter.formatFileSize(context, it) },
+        details.sizeBytes?.let {
+            Formatter.formatFileSize(context, it)
+        },
         details.duration
             ?.takeIf { isVideo }
             ?.let { formatVideoDuration(it.inWholeSeconds) },
@@ -185,28 +161,23 @@ private fun fileFacts(
 
 private fun filePath(
     context: Context,
-    uri: Uri,
+    uri: String,
     details: CapturedItemDetails,
 ): String {
     return when (val relativePath = details.relativePath) {
-        null -> storageLocationToUiString(context, uri.toString())
+        null -> storageLocationToUiString(context, uri)
         else -> "${context.getString(R.string.main_storage)}/$relativePath${details.fileName}"
     }
 }
 
 @PreviewLightDark
 @Composable
-private fun DetailsContentPreview() {
+private fun FileDetailsPreview() {
     val dateTime = LocalDateTime.of(2023, 10, 16, 12, 0)
 
     CameraPreviewTheme {
         Surface {
-            DetailsContent(
-                item = CapturedItem(
-                    type = CapturedItemType.VIDEO,
-                    dateString = "20231016_120000_000",
-                    uri = Uri.EMPTY,
-                ),
+            FileDetails(
                 details = CapturedItemDetails(
                     fileName = "VID_20231016_120000_000.mp4",
                     relativePath = "DCIM/Camera/",
@@ -216,6 +187,8 @@ private fun DetailsContentPreview() {
                     created = MediaTimestamp.WallClock(dateTime),
                     modified = MediaTimestamp.WallClock(dateTime.plusMinutes(5)),
                 ),
+                isVideo = true,
+                uri = "content://media/external/video/media/1",
             )
         }
     }

@@ -27,6 +27,10 @@ internal sealed interface GalleryAction {
         val isZoomed: Boolean,
     ) : GalleryAction
 
+    data class DetailsShownChanged(
+        val isShown: Boolean,
+    ) : GalleryAction
+
     data class PageSelected(
         val page: Int,
     ) : GalleryAction

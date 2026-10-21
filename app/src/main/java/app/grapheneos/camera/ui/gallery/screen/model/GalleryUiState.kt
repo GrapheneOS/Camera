@@ -14,5 +14,6 @@ internal data class GalleryUiState(
     val showsSystemGallery: Boolean = false,
     val areControlsVisible: Boolean = true,
     val isZoomed: Boolean = false,
+    val showsDetails: Boolean = false,
     val dialog: GalleryDialog? = null,
 )

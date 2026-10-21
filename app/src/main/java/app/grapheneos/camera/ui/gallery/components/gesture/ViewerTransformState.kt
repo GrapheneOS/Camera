@@ -98,15 +98,16 @@ internal class ViewerTransformState(
     fun updateLayout(
         containerSize: Size,
         imageSize: Size?,
+        canZoom: Boolean,
     ) {
         this.containerSize = containerSize
         contentSize = when (imageSize) {
             null -> containerSize
             else -> fittedSize(imageSize)
         }
-        maxScale = when (imageSize) {
-            null -> FIT_SCALE
-            else -> MAX_SCALE
+        maxScale = when {
+            canZoom && imageSize != null -> MAX_SCALE
+            else -> FIT_SCALE
         }
 
         if (!isTransforming) {

@@ -19,6 +19,7 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapperImpl
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
@@ -51,7 +52,9 @@ class GalleryViewModelTest {
         coEvery { loadThumbnail(any(), any(), any()) } returns THUMBNAIL
         coEvery { loadPreview(any()) } returns PREVIEW
     }
-    private val capturedItemDetailsRepository = mockk<CapturedItemDetailsRepository>()
+    private val capturedItemDetailsRepository = mockk<CapturedItemDetailsRepository> {
+        coEvery { details(any()) } returns null
+    }
     private val deleteCapturedItem = mockk<DeleteCapturedItem>()
 
     @Before
@@ -118,6 +121,7 @@ class GalleryViewModelTest {
 
             assertTrue(effects.isEmpty())
             assertNull(viewModel.uiState.value.dialog)
+            assertFalse(viewModel.uiState.value.showsDetails)
         }
     }
 
@@ -192,23 +196,90 @@ class GalleryViewModelTest {
 
             viewModel.onAction(Action.InfoClicked)
 
-            assertEquals(
-                Dialog.Details(item = NEWEST, details = details),
-                viewModel.uiState.value.dialog,
-            )
+            assertTrue(viewModel.uiState.value.showsDetails)
+            assertEquals(GalleryDetails.Loaded(details), detailsOf(viewModel, page = 0))
         }
     }
 
     @Test
-    fun infoClicked_whenTheDetailsCannotBeRead_saysSo() {
+    fun infoClicked_whenTheDetailsCannotBeRead_showsThemAsUnavailable() {
         runTest {
-            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns null
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
             viewModel.onAction(Action.InfoClicked)
 
-            assertEquals(listOf(Effect.DetailsUnavailable), effects)
+            assertTrue(viewModel.uiState.value.showsDetails)
+            assertEquals(GalleryDetails.Unavailable, detailsOf(viewModel, page = 0))
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun shownDetails_areLoadedForTheNeighbouringPagesToo() {
+        runTest {
+            val details = mockk<CapturedItemDetails>()
+            coEvery { capturedItemDetailsRepository.details(OLDER) } returns details
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+
+            assertEquals(GalleryDetails.Loaded(details), detailsOf(viewModel, page = 1))
+        }
+    }
+
+    @Test
+    fun detailsHidden_keepsTheLoadedDetailsForNextTime() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(Action.DetailsShownChanged(isShown = false))
+            viewModel.onAction(Action.InfoClicked)
+
+            assertTrue(viewModel.uiState.value.showsDetails)
+            coVerify(exactly = 1) { capturedItemDetailsRepository.details(NEWEST) }
+        }
+    }
+
+    @Test
+    fun detailsOfPagesFarAway_areDropped() {
+        runTest {
+            val items = (1..4).map { day -> image("2023101${day}_120000_000") }
+            coEvery { capturedItemRepository.capturedItems() } returns items
+            coEvery { capturedItemDetailsRepository.details(any()) } returns mockk()
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(Action.PageSelected(page = 3))
+
+            assertEquals(GalleryDetails.Loading, detailsOf(viewModel, page = 0))
+            assertTrue(detailsOf(viewModel, page = 3) is GalleryDetails.Loaded)
+        }
+    }
+
+    @Test
+    fun anotherPage_whileDetailsAreHidden_loadsNoDetails() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.PageSelected(page = 1))
+
+            assertEquals(GalleryDetails.Loading, detailsOf(viewModel, page = 1))
+            coVerify(exactly = 0) { capturedItemDetailsRepository.details(any()) }
+        }
+    }
+
+    @Test
+    fun screenTapped_whileDetailsAreShown_hidesThemAndKeepsTheControls() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.InfoClicked)
+            viewModel.onAction(Action.ScreenTapped)
+
+            assertFalse(viewModel.uiState.value.showsDetails)
+            assertTrue(viewModel.uiState.value.areControlsVisible)
         }
     }
 
@@ -286,6 +357,13 @@ class GalleryViewModelTest {
                 isZoomed = isZoomed,
             ),
         )
+    }
+
+    private fun detailsOf(
+        viewModel: GalleryViewModel,
+        page: Int,
+    ): GalleryDetails {
+        return viewModel.uiState.value.pages[page].details
     }
 
     private fun pageKeys(viewModel: GalleryViewModel): List<String> {
