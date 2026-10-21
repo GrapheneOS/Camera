@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
@@ -14,8 +15,8 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 internal fun GalleryPage(
     page: GalleryPageUiModel,
     onTap: () -> Unit,
+    onDoubleTap: (Offset) -> Unit,
     onVideoClick: () -> Unit,
-    onZoomChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -35,10 +36,10 @@ internal fun GalleryPage(
                     image = preview.image,
                     onClick = onVideoClick,
                 )
-                else -> ZoomableImage(
+                else -> GalleryPhoto(
                     image = preview.image,
                     onTap = onTap,
-                    onZoomChanged = onZoomChanged,
+                    onDoubleTap = onDoubleTap,
                 )
             }
 
@@ -60,8 +61,8 @@ private fun GalleryPageUnavailablePreview() {
                 preview = GalleryPreview.Unavailable,
             ),
             onTap = {},
+            onDoubleTap = {},
             onVideoClick = {},
-            onZoomChanged = {},
         )
     }
 }

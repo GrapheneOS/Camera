@@ -33,6 +33,7 @@ private val BAR_VERTICAL_PADDING = 6.dp
 internal fun ViewerTopBar(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
     navigation: @Composable RowScope.() -> Unit = {},
     title: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
@@ -40,7 +41,7 @@ internal fun ViewerTopBar(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = containerColor,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        contentColor = contentColor,
     ) {
         Box(
             modifier = Modifier
