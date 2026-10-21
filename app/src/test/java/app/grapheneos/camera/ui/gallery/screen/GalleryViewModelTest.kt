@@ -412,7 +412,6 @@ class GalleryViewModelTest {
             ),
             deleteCapturedItem = deleteCapturedItem,
             uiStateMapper = GalleryUiStateMapperImpl(captureTimeMapper = CaptureTimeMapperImpl()),
-            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 
