@@ -90,7 +90,6 @@ open class ViewfinderViewModelTestBase {
             cameraBindSettingsMapper = mockk(relaxed = true),
             swipeEffectMapper = SwipeEffectMapperImpl(),
             volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
-            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 
         val boundStateHolder = slot<ViewfinderStateHolder>()

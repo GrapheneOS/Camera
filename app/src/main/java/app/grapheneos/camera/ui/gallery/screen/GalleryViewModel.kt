@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
 import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
@@ -24,7 +23,6 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +50,6 @@ internal class GalleryViewModel @Inject constructor(
     private val loadGalleryItems: LoadGalleryItems,
     private val deleteCapturedItem: DeleteCapturedItem,
     private val uiStateMapper: GalleryUiStateMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     GalleryScreenModel {
 
@@ -71,7 +68,7 @@ internal class GalleryViewModel @Inject constructor(
     init {
         loadPreviewsAround(state.currentIndex)
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val items = loadGalleryItems(
                 videoOnly = entryPoint.requiresVideoModeOnly,
                 sessionItems = sessionItemsOf(arguments),
@@ -191,7 +188,7 @@ internal class GalleryViewModel @Inject constructor(
     private fun loadDetails(item: CapturedItem) {
         update { it.copy(details = it.details + (item to GalleryDetails.Loading)) }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val details = when (val loaded = capturedItemDetailsRepository.details(item)) {
                 null -> GalleryDetails.Unavailable
                 else -> GalleryDetails.Loaded(loaded)
@@ -245,7 +242,7 @@ internal class GalleryViewModel @Inject constructor(
         val item = state.currentItem() ?: return
 
         update { it.copy(dialog = null) }
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             when (deleteCapturedItem(item)) {
                 CapturedItemDeletion.Deleted -> removeItem(item)
                 CapturedItemDeletion.Failed -> _effects.trySend(Effect.DeletionFailed)
@@ -309,7 +306,7 @@ internal class GalleryViewModel @Inject constructor(
     private fun loadThumbnail(item: CapturedItem) {
         update { it.copy(thumbnails = it.thumbnails + (item to GalleryPreview.Loading)) }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val bitmap = capturedItemRepository.loadThumbnail(
                 item = item,
                 targetWidth = THUMBNAIL_SIDE,
@@ -325,7 +322,7 @@ internal class GalleryViewModel @Inject constructor(
     private fun loadPreview(item: CapturedItem) {
         update { it.copy(previews = it.previews + (item to GalleryPreview.Loading)) }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val bitmap = capturedItemRepository.loadPreview(item)
 
             if (item in state.previews) {

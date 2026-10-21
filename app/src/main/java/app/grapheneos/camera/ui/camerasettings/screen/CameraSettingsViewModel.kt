@@ -14,7 +14,6 @@ import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.media.usecase.ChangeStorageLocation
 import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
@@ -26,7 +25,6 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +53,6 @@ internal class CameraSettingsViewModel @Inject constructor(
     private val changeStorageLocation: ChangeStorageLocation,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
     private val uiStateMapper: CameraSettingsUiStateMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     CameraSettingsScreenModel {
 
@@ -77,13 +74,13 @@ internal class CameraSettingsViewModel @Inject constructor(
     override val effects: Flow<Effect> = _effects.receiveAsFlow()
 
     init {
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             settingsRepository.settings.collect { settings ->
                 update { it.copy(settings = settings) }
             }
         }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             capturedItemRepository.storageLocation.collect { location ->
                 update { it.copy(storageLocation = location) }
                 refreshStorageSpace()
@@ -221,13 +218,13 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun changeStorageLocation(tree: Uri?) {
         if (tree == null) return
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             changeStorageLocation.invoke(tree)
         }
     }
 
     private fun resetStorageLocation() {
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             revertToMediaStoreLocation()
         }
     }
@@ -235,7 +232,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun refreshStorageSpace() {
         val location = state.storageLocation.takeUnless { state.isSecureSession } ?: return
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val storageSpace = storageSpaceRepository.storageSpace(location)
 
             update {

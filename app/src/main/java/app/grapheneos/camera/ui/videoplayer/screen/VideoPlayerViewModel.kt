@@ -4,14 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerAction as Action
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerScreenEffect as Effect
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.time.Duration
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +36,6 @@ internal interface VideoPlayerScreenModel {
 internal class VideoPlayerViewModel @Inject constructor(
     arguments: SavedStateHandle,
     videoPlaybackFactory: VideoPlaybackFactory,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     VideoPlayerScreenModel {
 
@@ -55,7 +52,7 @@ internal class VideoPlayerViewModel @Inject constructor(
     private var holdsSeekPosition = false
 
     init {
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             playback.state.collect { state ->
                 _uiState.update {
                     it.copy(
@@ -67,7 +64,7 @@ internal class VideoPlayerViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             _uiState
                 .map { it.areControlsVisible }
                 .distinctUntilChanged()
@@ -78,7 +75,7 @@ internal class VideoPlayerViewModel @Inject constructor(
                 }
         }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             playback.state.first { it.hasFailed }
             _effects.send(Effect.PlaybackFailed)
         }

@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.camerasettings.licenses
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.licenses.repository.LicensesRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.camerasettings.licenses.mapper.LicensesUiStateMapper
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LicensesAction as Action
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LicensesScreenEffect as Effect
@@ -11,7 +10,6 @@ import app.grapheneos.camera.ui.camerasettings.licenses.model.LicensesState
 import app.grapheneos.camera.ui.camerasettings.licenses.model.LicensesUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +31,6 @@ internal interface LicensesScreenModel {
 internal class LicensesViewModel @Inject constructor(
     licensesRepository: LicensesRepository,
     private val uiStateMapper: LicensesUiStateMapper,
-    @MainImmediateDispatcher mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     LicensesScreenModel {
 
@@ -46,7 +43,7 @@ internal class LicensesViewModel @Inject constructor(
     override val effects: Flow<Effect> = _effects.receiveAsFlow()
 
     init {
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val licenses = licensesRepository.licenses()
 
             update { it.copy(licenses = licenses) }

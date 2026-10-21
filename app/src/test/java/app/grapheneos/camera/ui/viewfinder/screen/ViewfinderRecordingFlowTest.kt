@@ -241,7 +241,6 @@ class ViewfinderRecordingFlowTest {
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
             swipeEffectMapper = SwipeEffectMapperImpl(),
             volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
-            mainDispatcher = mainDispatcher,
         )
     }
 
