@@ -1,10 +1,8 @@
 package app.grapheneos.camera.ui.gallery.screen
 
 import androidx.compose.animation.core.EaseInOutSine
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +26,9 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
 import app.grapheneos.camera.ui.core.theme.cameraColors
+import app.grapheneos.camera.ui.gallery.components.DetailsBackButton
 import app.grapheneos.camera.ui.gallery.components.GalleryActionBar
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
@@ -37,20 +37,20 @@ private const val SCRIM_STEPS = 8
 
 private val SCRIM_OVERHANG = 48.dp
 
-private val BARS_FADE_SPEC = spring<Float>(stiffness = Spring.StiffnessMediumLow)
-
 @Composable
 internal fun BoxScope.GalleryBars(
     uiState: UiState,
     fadeProgress: () -> Float,
+    detailsProgress: () -> Float,
     backgroundColor: () -> Color,
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
+    val isPanelVisible by remember(detailsProgress) { derivedStateOf { detailsProgress() > 0f } }
     val visibility = animateBarsVisibilityAsState(
-        isVisible = uiState.areControlsVisible,
-        hidesInstantly = uiState.isZoomed,
+        isVisible = uiState.areControlsVisible && !isPanelVisible,
+        hidesInstantly = uiState.isZoomed || isPanelVisible,
     )
     val isShown by remember(visibility) { derivedStateOf { visibility.value > 0f } }
     val overPhoto = animateFloatAsState(
@@ -59,11 +59,7 @@ internal fun BoxScope.GalleryBars(
             else -> 0f
         },
     )
-    val contentColor = lerp(
-        start = MaterialTheme.colorScheme.onSurface,
-        stop = MaterialTheme.cameraColors.overlay,
-        fraction = overPhoto.value,
-    )
+    val contentColor = barsContentColor(overPhoto = overPhoto.value)
     val backgrounds = rememberBarBackgrounds(
         overPhoto = overPhoto,
         backgroundColor = backgroundColor,
@@ -83,6 +79,12 @@ internal fun BoxScope.GalleryBars(
             contentColor = contentColor,
         )
     }
+
+    DetailsBackButton(
+        progress = detailsProgress,
+        onClick = { onAction(Action.DetailsShownChanged(isShown = false)) },
+        modifier = Modifier.align(Alignment.TopCenter),
+    )
 
     Column(
         modifier = Modifier.align(Alignment.BottomCenter),
@@ -119,8 +121,17 @@ private fun animateBarsVisibilityAsState(
         },
         animationSpec = when {
             hidesInstantly && !isVisible -> snap()
-            else -> BARS_FADE_SPEC
+            else -> CONTROLS_SPEC
         },
+    )
+}
+
+@Composable
+private fun barsContentColor(overPhoto: Float): Color {
+    return lerp(
+        start = MaterialTheme.colorScheme.onSurface,
+        stop = MaterialTheme.cameraColors.overlay,
+        fraction = overPhoto,
     )
 }
 

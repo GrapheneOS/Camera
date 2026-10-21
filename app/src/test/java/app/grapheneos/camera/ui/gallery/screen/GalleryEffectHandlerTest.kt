@@ -97,13 +97,11 @@ class GalleryEffectHandlerTest {
     fun outcomes_thatKeepTheGalleryOpen_areReportedAsMessages() {
         effectHandler.handle(Effect.ItemDeleted)
         effectHandler.handle(Effect.DeletionFailed)
-        effectHandler.handle(Effect.DetailsUnavailable)
 
         assertEquals(
             listOf(
                 R.string.deleted_successfully,
                 R.string.deleting_unexpected_error,
-                R.string.unable_to_obtain_file_details,
             ),
             messages,
         )

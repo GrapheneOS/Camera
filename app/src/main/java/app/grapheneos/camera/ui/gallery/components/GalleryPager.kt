@@ -1,13 +1,11 @@
 package app.grapheneos.camera.ui.gallery.components
 
-import android.view.ViewConfiguration
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,16 +14,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
-import app.grapheneos.camera.ui.gallery.components.gesture.viewerTransformInput
+import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerGestures
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import kotlinx.collections.immutable.ImmutableList
@@ -40,33 +35,26 @@ internal fun GalleryPager(
     pages: ImmutableList<GalleryPageUiModel>,
     initialPage: Int,
     currentPage: Int,
+    showsDetails: Boolean,
     transformState: ViewerTransformState,
     viewerTransform: ViewerTransform,
+    detailsState: DetailsPanelState,
+    detailsProgress: () -> Float,
     onPageSelected: (Int) -> Unit,
+    onDetailsShownChange: (Boolean) -> Unit,
     onTap: () -> Unit,
     onVideoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val hapticFeedback = LocalHapticFeedback.current
     val pagerState = rememberPagerState(
         initialPage = initialPage,
         pageCount = { pages.size },
     )
-    val minScalingSpan = rememberMinScalingSpan()
-    val currentPageTransform = remember(
-        transformState,
-        viewerTransform,
-        minScalingSpan,
-        hapticFeedback,
-    ) {
-        Modifier.viewerTransform(
-            transformState = transformState,
-            viewerTransform = viewerTransform,
-            minScalingSpan = minScalingSpan,
-            hapticFeedback = hapticFeedback,
-        )
-    }
-    val isZoomed by remember(transformState) { derivedStateOf { transformState.isZoomed() } }
+    val gestures = rememberViewerGestures(
+        transformState = transformState,
+        detailsState = detailsState,
+        onDetailsShownChange = onDetailsShownChange,
+    )
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
     PageSelectedEffect(
@@ -77,8 +65,9 @@ internal fun GalleryPager(
 
     ViewerLayoutEffect(
         transformState = transformState,
+        detailsState = detailsState,
         containerSize = containerSize,
-        imageSize = pages.getOrNull(currentPage)?.let(::zoomableImageSize),
+        page = pages.getOrNull(currentPage),
     )
 
     HorizontalPager(
@@ -86,24 +75,17 @@ internal fun GalleryPager(
         key = { page -> pages[page].key },
         pageSpacing = PAGE_SPACING,
         beyondViewportPageCount = 1,
-        userScrollEnabled = !isZoomed,
         modifier = modifier.onSizeChanged { containerSize = it },
     ) { page ->
-        val isCurrentPage = page == currentPage
-
-        GalleryPage(
+        ViewerPage(
             page = pages[page],
+            isCurrentPage = page == currentPage,
+            showsDetails = showsDetails,
+            gestures = gestures,
+            viewerTransform = viewerTransform,
+            detailsProgress = detailsProgress,
             onTap = onTap,
-            onDoubleTap = { position ->
-                if (isCurrentPage) {
-                    transformState.applyDoubleTap(position)
-                }
-            },
             onVideoClick = onVideoClick,
-            modifier = when {
-                isCurrentPage -> currentPageTransform
-                else -> Modifier
-            },
         )
     }
 }
@@ -129,46 +111,36 @@ private fun PageSelectedEffect(
 @Composable
 private fun ViewerLayoutEffect(
     transformState: ViewerTransformState,
+    detailsState: DetailsPanelState,
     containerSize: IntSize,
-    imageSize: Size?,
+    page: GalleryPageUiModel?,
 ) {
-    LaunchedEffect(transformState, containerSize, imageSize) {
+    val imageSize = page?.let(::imageSize)
+    val canZoom = page?.isVideo == false
+
+    LaunchedEffect(
+        transformState,
+        detailsState,
+        containerSize,
+        imageSize,
+        canZoom,
+    ) {
         if (containerSize == IntSize.Zero) return@LaunchedEffect
 
         transformState.updateLayout(
             containerSize = containerSize.toSize(),
             imageSize = imageSize,
+            canZoom = canZoom,
         )
+        detailsState.updateLayout(containerSize.toSize())
     }
 }
 
-@Composable
-private fun rememberMinScalingSpan(): Float {
-    val context = LocalContext.current
-
-    return remember(context) {
-        ViewConfiguration.get(context).scaledMinimumScalingSpan.toFloat()
-    }
-}
-
-private fun Modifier.viewerTransform(
-    transformState: ViewerTransformState,
-    viewerTransform: ViewerTransform,
-    minScalingSpan: Float,
-    hapticFeedback: HapticFeedback,
-): Modifier {
-    return viewerTransformInput(
-        transformState = transformState,
-        minScalingSpan = minScalingSpan,
-        hapticFeedback = hapticFeedback,
-    ).graphicsLayer(viewerTransform::applyTo)
-}
-
-private fun zoomableImageSize(page: GalleryPageUiModel): Size? {
+private fun imageSize(page: GalleryPageUiModel): Size? {
     val preview = page.preview
 
     return when {
-        page.isVideo || preview !is GalleryPreview.Loaded -> null
+        preview !is GalleryPreview.Loaded -> null
         else -> Size(
             width = preview.image.width.toFloat(),
             height = preview.image.height.toFloat(),

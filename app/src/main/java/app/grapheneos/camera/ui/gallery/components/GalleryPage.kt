@@ -15,7 +15,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 internal fun GalleryPage(
     page: GalleryPageUiModel,
     onTap: () -> Unit,
-    onDoubleTap: (Offset) -> Unit,
+    onDoubleTap: ((Offset) -> Unit)?,
     onVideoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

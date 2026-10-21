@@ -9,35 +9,24 @@ import androidx.compose.foundation.gestures.calculateRotation
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import kotlin.math.abs
 import kotlin.math.min
 
-internal fun Modifier.viewerTransformInput(
-    transformState: ViewerTransformState,
-    minScalingSpan: Float,
-    hapticFeedback: HapticFeedback,
-): Modifier {
-    return pointerInput(transformState, minScalingSpan, hapticFeedback) {
-        detectViewerTransformGestures(
-            transformState = transformState,
-            minScalingSpan = minScalingSpan,
-            hapticFeedback = hapticFeedback,
-        )
+internal fun Modifier.viewerGestureInput(gestures: ViewerGestures): Modifier {
+    return pointerInput(gestures) {
+        detectViewerGestures(gestures)
     }
 }
 
-private suspend fun PointerInputScope.detectViewerTransformGestures(
-    transformState: ViewerTransformState,
-    minScalingSpan: Float,
-    hapticFeedback: HapticFeedback,
-) {
+private suspend fun PointerInputScope.detectViewerGestures(gestures: ViewerGestures) {
     val touchSlop = viewConfiguration.touchSlop
 
     awaitEachGesture {
@@ -47,8 +36,9 @@ private suspend fun PointerInputScope.detectViewerTransformGestures(
         )
         val tracker = GestureStartTracker(
             touchSlop = touchSlop,
-            minScalingSpan = minScalingSpan,
-            isZoomed = transformState.isZoomed(),
+            minScalingSpan = gestures.minScalingSpan,
+            isZoomed = gestures.transformState.isZoomed(),
+            showsDetails = gestures.detailsState.isShown(),
         )
         var event: PointerEvent
 
@@ -58,34 +48,37 @@ private suspend fun PointerInputScope.detectViewerTransformGestures(
         } while (tracker.isUndecided && event.changes.any { it.pressed })
 
         val start = tracker.start
-        if (start != null && !transformState.isDismissed) {
+        if (start != null && !gestures.transformState.isDismissed) {
             event.consumePositionChanges()
-            transform(
-                transformState = transformState,
-                start = start,
-                minScalingSpan = minScalingSpan,
-                hapticFeedback = hapticFeedback,
-            )
+
+            when (start) {
+                GestureStart.Details -> dragDetails(gestures)
+                else -> transformPhoto(
+                    gestures = gestures,
+                    start = start,
+                )
+            }
         }
     }
 }
 
-private suspend fun AwaitPointerEventScope.transform(
-    transformState: ViewerTransformState,
+private suspend fun AwaitPointerEventScope.transformPhoto(
+    gestures: ViewerGestures,
     start: GestureStart,
-    minScalingSpan: Float,
-    hapticFeedback: HapticFeedback,
 ) {
+    val transformState = gestures.transformState
+
     when (start) {
-        GestureStart.Drag -> transformState.startDrag()
-        GestureStart.Transform -> transformState.startTransform()
+        GestureStart.Dismiss -> transformState.startDrag()
+        else -> transformState.startTransform()
     }
 
     try {
         do {
             val event = awaitPointerEvent(pass = PointerEventPass.Initial)
             val wasZoomed = transformState.isZoomed()
-            val isScaling = event.hasScalingSpan(minScalingSpan)
+            val isScaling = event.hasScalingSpan(gestures.minScalingSpan)
+
             transformState.applyTransform(
                 centroid = event.calculateCentroid(useCurrent = false),
                 panChange = event.calculatePan(),
@@ -94,8 +87,9 @@ private suspend fun AwaitPointerEventScope.transform(
             )
 
             if (wasZoomed && transformState.isZoomStoppedAtFit()) {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                gestures.hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
             }
+
             event.consumePositionChanges()
         } while (event.changes.any { it.pressed })
 
@@ -107,15 +101,39 @@ private suspend fun AwaitPointerEventScope.transform(
     }
 }
 
+private suspend fun AwaitPointerEventScope.dragDetails(gestures: ViewerGestures) {
+    val detailsState = gestures.detailsState
+    val velocityTracker = VelocityTracker()
+
+    detailsState.startDrag()
+    gestures.onDetailsShownChange(true)
+
+    try {
+        do {
+            val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+
+            event.changes.firstOrNull()?.let(velocityTracker::addPointerInputChange)
+            detailsState.drag(event.calculatePan().y)
+            event.consumePositionChanges()
+        } while (event.changes.any { it.pressed })
+    } finally {
+        val opens = detailsState.release(velocity = velocityTracker.calculateVelocity().y)
+
+        gestures.onDetailsShownChange(opens)
+    }
+}
+
 private enum class GestureStart {
-    Drag,
+    Dismiss,
     Transform,
+    Details,
 }
 
 private class GestureStartTracker(
     private val touchSlop: Float,
     private val minScalingSpan: Float,
     private val isZoomed: Boolean,
+    private val showsDetails: Boolean,
 ) {
 
     var isUndecided = true
@@ -129,24 +147,43 @@ private class GestureStartTracker(
 
     fun track(event: PointerEvent) {
         val isPinch = event.changes.count { it.pressed } > 1
-        accumulatedPan += event.calculatePan()
 
+        accumulatedPan += event.calculatePan()
         if (event.hasScalingSpan(minScalingSpan)) {
             accumulatedZoom *= event.calculateZoom()
         }
 
-        val zoomMotion = abs(1f - accumulatedZoom) * event.calculateCentroidSize(useCurrent = false)
-        val isPinched = isPinch && zoomMotion > touchSlop
+        val isPinched = isPinch && zoomMotion(event) > touchSlop
         val isPanned = accumulatedPan.getDistance() > touchSlop
         val isDraggedWithOneFinger = isPanned && !isPinch
-        val isDraggedDown = isDraggedWithOneFinger && accumulatedPan.y >= abs(accumulatedPan.x)
 
-        start = when {
+        start = startOf(
+            isPinched = isPinched,
+            isPanned = isPanned,
+            isDraggedWithOneFinger = isDraggedWithOneFinger,
+        )
+        isUndecided = start == null && !isDraggedWithOneFinger
+    }
+
+    private fun startOf(
+        isPinched: Boolean,
+        isPanned: Boolean,
+        isDraggedWithOneFinger: Boolean,
+    ): GestureStart? {
+        val isVertical = abs(accumulatedPan.y) >= abs(accumulatedPan.x)
+        val isDraggedVertically = isDraggedWithOneFinger && isVertical
+
+        return when {
+            showsDetails -> GestureStart.Details.takeIf { isDraggedVertically }
             isPinched || (isPanned && isZoomed) -> GestureStart.Transform
-            isDraggedDown -> GestureStart.Drag
+            isDraggedVertically && accumulatedPan.y > 0f -> GestureStart.Dismiss
+            isDraggedVertically -> GestureStart.Details
             else -> null
         }
-        isUndecided = start == null && !isDraggedWithOneFinger
+    }
+
+    private fun zoomMotion(event: PointerEvent): Float {
+        return abs(1f - accumulatedZoom) * event.calculateCentroidSize(useCurrent = false)
     }
 }
 

@@ -57,7 +57,6 @@ internal class GalleryEffectHandlerImpl(
             is Effect.ItemDeleted -> showMessage(R.string.deleted_successfully)
             is Effect.LastItemDeleted -> close(R.string.existing_no_image)
             is Effect.DeletionFailed -> showMessage(R.string.deleting_unexpected_error)
-            is Effect.DetailsUnavailable -> showMessage(R.string.unable_to_obtain_file_details)
         }
     }
 

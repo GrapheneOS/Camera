@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.gallery.screen.mapper
 import app.grapheneos.camera.data.media.mapper.CaptureTimeMapper
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
@@ -28,6 +29,7 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             showsSystemGallery = state.hasSystemGallery && !state.isSecureSession,
             areControlsVisible = state.areControlsVisible,
             isZoomed = state.isZoomed,
+            showsDetails = state.showsDetails,
             dialog = state.dialog,
         )
     }
@@ -42,6 +44,7 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
                         state = state,
                         item = item,
                     ),
+                    details = state.details[item] ?: GalleryDetails.Loading,
                 )
             }
             .toImmutableList()

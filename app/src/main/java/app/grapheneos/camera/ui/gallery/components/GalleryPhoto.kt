@@ -23,11 +23,10 @@ import app.grapheneos.camera.ui.core.preview.previewShot
 internal fun GalleryPhoto(
     image: ImageBitmap,
     onTap: () -> Unit,
-    onDoubleTap: (Offset) -> Unit,
+    onDoubleTap: ((Offset) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val currentOnTap by rememberUpdatedState(onTap)
-    val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
 
     Image(
         bitmap = image,
@@ -35,10 +34,10 @@ internal fun GalleryPhoto(
         contentScale = ContentScale.Fit,
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
+            .pointerInput(onDoubleTap) {
                 detectTapGestures(
                     onTap = { currentOnTap() },
-                    onDoubleTap = { position -> currentOnDoubleTap(position) },
+                    onDoubleTap = onDoubleTap,
                 )
             },
     )

@@ -15,8 +15,6 @@ internal sealed interface GalleryScreenEffect {
 
     data object DeletionFailed : GalleryScreenEffect
 
-    data object DetailsUnavailable : GalleryScreenEffect
-
     data class OpenVideo(
         val uri: Uri,
     ) : GalleryScreenEffect
