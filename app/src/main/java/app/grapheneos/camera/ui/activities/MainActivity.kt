@@ -2005,11 +2005,26 @@ open class MainActivity : AppCompatActivity(),
 
     var isThumbnailLoaded = false
 
+    // The capture that the thumbnail shows
+    private var thumbnailItem: CapturedItem? = null
+
+    fun showThumbnail(item: CapturedItem?, bitmap: Bitmap?) {
+        imagePreview.setImageBitmap(bitmap)
+        thumbnailItem = if (bitmap != null) item else null
+    }
+
     fun updateThumbnail() {
         val item = camConfig.lastCapturedItem
         val preview = imagePreview
-        preview.setImageBitmap(null)
         isThumbnailLoaded = false
+
+        // The same capture keeps its thumbnail while it reloads, or it would flash empty on every
+        // return to this screen. Told apart by file, since items equal by name
+        val shownItem = thumbnailItem
+        if (item == null || shownItem == null ||
+            CapturedItems.fileKey(item.uri) != CapturedItems.fileKey(shownItem.uri)) {
+            showThumbnail(null, null)
+        }
 
         if (item == null) {
             return
@@ -2059,10 +2074,8 @@ open class MainActivity : AppCompatActivity(),
                         val seesEveryItem = sessionFiles == null && !videosOnly && listedEverywhere
                         camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
                     }
-                    if (bitmap != null) {
-                        preview.setImageBitmap(bitmap)
-                        isThumbnailLoaded = true
-                    }
+                    showThumbnail(shown, bitmap)
+                    isThumbnailLoaded = bitmap != null
                 }
             }
         }

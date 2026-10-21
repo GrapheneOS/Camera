@@ -143,14 +143,14 @@ class ImageSaver(
     }
 
     private fun saveImage() {
-        try {
+        val item = try {
             saveImageInner()
         } catch (e: ImageSaverException) {
             handleError(e)
             return
         }
 
-        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
+        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive { generateThumbnail(item) }
     }
 
     private var cropRect: Rect? = null
@@ -160,7 +160,7 @@ class ImageSaver(
     private var orientation = 0
 
     @Throws(ImageSaverException::class)
-    private fun saveImageInner() {
+    private fun saveImageInner(): CapturedItem {
         val uncroppedJpegBytes = origJpegBytes!!
         if (cropRect != null) {
             try {
@@ -226,6 +226,7 @@ class ImageSaver(
 
         val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
         mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem) }
+        return capturedItem
     }
 
     // based on EXIF update sequence in androidx.camera.core.ImageSaver#saveImageToTempFile(),
@@ -292,7 +293,7 @@ class ImageSaver(
         return res
     }
 
-    private fun generateThumbnail() {
+    private fun generateThumbnail(item: CapturedItem) {
         val source = ImageDecoder.createSource(ByteBuffer.wrap(processedJpegBytes))
         val bitmap = try {
             ImageDecoder.decodeBitmap(source, ImageResizer(targetThumbnailWidth, targetThumbnailHeight))
@@ -302,7 +303,7 @@ class ImageSaver(
             Log.w(TAG, "unable to generate a thumbnail", e)
             null
         }
-        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
+        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(item, bitmap) }
     }
 
     fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION

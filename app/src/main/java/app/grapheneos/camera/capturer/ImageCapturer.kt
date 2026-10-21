@@ -243,9 +243,9 @@ class ImageCapturer(val mActivity: MainActivity) {
         }
     }
 
-    fun onThumbnailGenerated(thumbnail: Bitmap?) {
+    fun onThumbnailGenerated(item: CapturedItem, thumbnail: Bitmap?) {
         mActivity.previewLoader.visibility = View.GONE
-        mActivity.imagePreview.setImageBitmap(thumbnail)
+        mActivity.showThumbnail(item, thumbnail)
     }
 
     companion object {
