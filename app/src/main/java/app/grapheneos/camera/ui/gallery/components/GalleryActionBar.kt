@@ -46,11 +46,12 @@ internal fun GalleryActionBar(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = containerColor,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        contentColor = contentColor,
     ) {
         Row(
             modifier = Modifier

@@ -24,10 +24,12 @@ internal fun GalleryTopBar(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     ViewerTopBar(
         modifier = modifier,
         containerColor = containerColor,
+        contentColor = contentColor,
         navigation = {
             IconButton(onClick = onNavigateBack) {
                 Icon(

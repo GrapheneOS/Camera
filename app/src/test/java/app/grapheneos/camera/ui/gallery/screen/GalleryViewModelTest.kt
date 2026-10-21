@@ -213,7 +213,7 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun zooming_hidesTheControls() {
+    fun zooming_hidesTheControlsUntilATap() {
         runTest {
             val viewModel = viewModel()
 
@@ -223,6 +223,10 @@ class GalleryViewModelTest {
             assertFalse(viewModel.uiState.value.areControlsVisible)
 
             zoomPage(viewModel = viewModel, page = 0, isZoomed = false)
+
+            assertFalse(viewModel.uiState.value.areControlsVisible)
+
+            viewModel.onAction(Action.ScreenTapped)
 
             assertTrue(viewModel.uiState.value.areControlsVisible)
         }

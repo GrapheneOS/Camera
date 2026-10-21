@@ -137,7 +137,7 @@ internal class GalleryViewModel @Inject constructor(
         update {
             it.copy(
                 isZoomed = isZoomed,
-                areControlsVisible = !isZoomed,
+                areControlsVisible = it.areControlsVisible && !isZoomed,
             )
         }
     }
