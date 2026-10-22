@@ -148,12 +148,15 @@
     <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
     <string name="edit">Edit</string>
     <string name="edit_with">Edit with</string>
-    <string name="empty_gallery">No photos or videos</string>
+    <string name="empty_gallery">No photos or videos yet</string>
+    <string name="empty_gallery_description">Photos and videos you take appear here</string>
     <string name="file_info">File Info</string>
     <string name="gallery_back_to_camera">Back to camera</string>
+    <string name="gallery_open_camera">Open camera</string>
     <string name="gallery_photo">Photo</string>
     <string name="gallery_share">Share</string>
     <string name="inaccessible_image">This photo can\'t be opened</string>
+    <string name="inaccessible_media_reason">It may have been moved, deleted or damaged</string>
     <string name="inaccessible_video">This video can\'t be opened</string>
     <string name="main_storage">Main storage</string>
     <string name="restoring_unexpected_error">Couldn\'t restore this file</string>

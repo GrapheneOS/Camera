@@ -52,6 +52,7 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
                 .map { item ->
                     GalleryPageUiModel(
                         key = pageKeyOf(item),
+                        name = item.uiName(),
                         isVideo = item.type == CapturedItemType.VIDEO,
                     )
                 }

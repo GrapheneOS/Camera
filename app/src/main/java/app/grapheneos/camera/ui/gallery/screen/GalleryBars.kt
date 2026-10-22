@@ -3,8 +3,12 @@ package app.grapheneos.camera.ui.gallery.screen
 import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -12,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -23,12 +29,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import app.grapheneos.camera.ui.common.components.bottomBar
 import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
 import app.grapheneos.camera.ui.core.theme.cameraColors
+import app.grapheneos.camera.ui.gallery.components.GALLERY_ACTION_BAR_HEIGHT
 import app.grapheneos.camera.ui.gallery.components.GalleryActionBar
 import app.grapheneos.camera.ui.gallery.components.details.DetailsBackButton
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
@@ -92,13 +101,38 @@ internal fun BoxScope.GalleryBars(
                 .zIndex(1f)
                 .modulatedAlpha { 1f - fadeProgress() },
         )
-        if (isShown && uiState.pages.isNotEmpty()) {
+        ActionBarSlot(
+            isShown = isShown && uiState.pages.isNotEmpty(),
+            showsExternalActions = uiState.showsExternalActions,
+            contentColor = contentColor,
+            onAction = onAction,
+            modifier = barsAlpha.then(backgrounds.bottom),
+        )
+    }
+}
+
+@Composable
+private fun ActionBarSlot(
+    isShown: Boolean,
+    showsExternalActions: Boolean,
+    contentColor: Color,
+    onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val density = LocalDensity.current
+    val bottomInset = WindowInsets.bottomBar.asPaddingValues().calculateBottomPadding()
+    var barHeight by remember { mutableStateOf(GALLERY_ACTION_BAR_HEIGHT + bottomInset) }
+
+    Box(modifier = modifier.heightIn(min = barHeight)) {
+        if (isShown) {
             GalleryActionBar(
-                showsExternalActions = uiState.showsExternalActions,
+                showsExternalActions = showsExternalActions,
                 onShareClick = { onAction(Action.ShareClicked) },
                 onEditClick = { onAction(Action.EditClicked) },
                 onDeleteClick = { onAction(Action.DeleteClicked) },
-                modifier = barsAlpha.then(backgrounds.bottom),
+                modifier = Modifier.onSizeChanged { size ->
+                    barHeight = with(density) { size.height.toDp() }
+                },
                 containerColor = Color.Transparent,
                 contentColor = contentColor,
             )
