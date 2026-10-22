@@ -17,7 +17,7 @@ import app.grapheneos.camera.domain.gallery.mapper.GalleryItemsMapperImpl
 import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
 import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.DeleteTrashedItemImpl
-import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItemsImpl
+import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItemsImpl
 import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItemImpl
 import app.grapheneos.camera.testutil.MainDispatcherRule
@@ -38,6 +38,7 @@ import io.mockk.mockk
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -58,8 +59,10 @@ class GalleryViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val capturedItemsChanges = MutableSharedFlow<Unit>()
     private val capturedItemRepository = mockk<CapturedItemRepository> {
         coEvery { capturedItems() } returns listOf(NEWEST, OLDER)
+        every { capturedItemsChanges() } returns capturedItemsChanges
         coEvery { loadThumbnail(any(), any(), any()) } returns THUMBNAIL
         coEvery { loadPreview(any()) } returns PREVIEW
     }
@@ -105,6 +108,34 @@ class GalleryViewModelTest {
             stallTheScan()
 
             assertFalse(viewModel().uiState.value.isEmpty)
+        }
+    }
+
+    @Test
+    fun itemsDeletedByAnotherApp_disappear() {
+        runTest {
+            val viewModel = viewModel()
+
+            coEvery { capturedItemRepository.capturedItems() } returns listOf(NEWEST)
+            capturedItemsChanges.emit(Unit)
+
+            assertEquals(keysOf(NEWEST), pageKeys(viewModel))
+        }
+    }
+
+    @Test
+    fun theShownItemDeletedByAnotherApp_leavesTheNextOneInItsPlace() {
+        runTest {
+            val newer = image("20231017_120000_000")
+            coEvery { capturedItemRepository.capturedItems() } returns listOf(newer, NEWEST, OLDER)
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.PageSelected(page = 1))
+            coEvery { capturedItemRepository.capturedItems() } returns listOf(newer, OLDER)
+            capturedItemsChanges.emit(Unit)
+
+            assertEquals(1, viewModel.uiState.value.currentPage)
+            assertEquals(keysOf(newer, OLDER), pageKeys(viewModel))
         }
     }
 
@@ -228,6 +259,18 @@ class GalleryViewModelTest {
             assertNull(viewModel.uiState.value.dialog)
             assertEquals(keysOf(OLDER), pageKeys(viewModel))
             assertEquals(listOf(Effect.ItemTrashed), effects)
+        }
+    }
+
+    @Test
+    fun aDeletion_listsTheItemsAgain() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.DeleteClicked)
+
+            coVerify(exactly = 2) { capturedItemRepository.capturedItems() }
         }
     }
 
@@ -566,7 +609,7 @@ class GalleryViewModelTest {
             arguments = arguments,
             entryPoint = entryPoint,
             systemGalleryLauncher = mockk(relaxed = true),
-            loadGalleryItems = LoadGalleryItemsImpl(
+            observeGalleryItems = ObserveGalleryItemsImpl(
                 capturedItemRepository = capturedItemRepository,
                 galleryItemsMapper = GalleryItemsMapperImpl(),
             ),

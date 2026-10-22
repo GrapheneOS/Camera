@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
-import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItems
+import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItems
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegate
@@ -17,7 +17,9 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -35,7 +37,7 @@ internal class GalleryViewModel @Inject constructor(
     private val arguments: SavedStateHandle,
     entryPoint: CameraEntryPoint,
     systemGalleryLauncher: SystemGalleryLauncher,
-    private val loadGalleryItems: LoadGalleryItems,
+    private val observeGalleryItems: ObserveGalleryItems,
     private val previewsDelegate: GalleryPreviewsDelegate,
     private val detailsDelegate: GalleryDetailsDelegate,
     private val deletionDelegate: GalleryDeletionDelegate,
@@ -59,6 +61,11 @@ internal class GalleryViewModel @Inject constructor(
     private val state: GalleryState
         get() = stateHolder.state.value
 
+    private val itemsRefreshes = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
     init {
         previewsDelegate.bind(stateHolder)
         detailsDelegate.bind(stateHolder)
@@ -73,12 +80,11 @@ internal class GalleryViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val items = loadGalleryItems(
+            observeGalleryItems(
                 videoOnly = entryPoint.requiresVideoModeOnly,
                 sessionItems = sessionItemsOf(arguments),
-            )
-
-            showItems(items)
+                refreshes = itemsRefreshes,
+            ).collect(::showItems)
         }
     }
 
@@ -118,10 +124,17 @@ internal class GalleryViewModel @Inject constructor(
 
     private fun onDeletionAction(action: Action.Deletion) {
         when (action) {
-            is Action.DeleteClicked -> viewModelScope.launch { deletionDelegate.delete() }
-            is Action.DeleteConfirmed -> viewModelScope.launch { deletionDelegate.confirm() }
-            is Action.UndoClicked -> viewModelScope.launch { deletionDelegate.undo() }
+            is Action.DeleteClicked -> changeItems { deletionDelegate.delete() }
+            is Action.DeleteConfirmed -> changeItems { deletionDelegate.confirm() }
+            is Action.UndoClicked -> changeItems { deletionDelegate.undo() }
             is Action.UndoDismissed -> deletionDelegate.finish()
+        }
+    }
+
+    private fun changeItems(change: suspend () -> Unit) {
+        viewModelScope.launch {
+            change()
+            itemsRefreshes.tryEmit(Unit)
         }
     }
 
@@ -129,7 +142,7 @@ internal class GalleryViewModel @Inject constructor(
         stateHolder.update {
             it.copy(
                 items = items,
-                currentIndex = items.indexOf(it.currentItem()).coerceAtLeast(0),
+                currentIndex = it.currentIndexIn(items),
                 isLoaded = true,
             )
         }

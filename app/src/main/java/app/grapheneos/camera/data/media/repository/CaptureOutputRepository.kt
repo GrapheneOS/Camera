@@ -8,7 +8,6 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.system.Os
 import androidx.core.net.toUri
-import app.grapheneos.camera.data.core.runStorageCall
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
@@ -17,6 +16,7 @@ import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
+import app.grapheneos.camera.util.runStorageCall
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration
