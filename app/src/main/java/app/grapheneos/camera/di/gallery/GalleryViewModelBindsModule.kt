@@ -10,6 +10,8 @@ import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegateImpl
+import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapper
+import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapperImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -44,6 +46,12 @@ internal abstract class GalleryViewModelBindsModule {
     abstract fun bindGalleryDeletionDelegate(
         impl: GalleryDeletionDelegateImpl,
     ): GalleryDeletionDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindGalleryUiStateMapper(
+        impl: GalleryUiStateMapperImpl,
+    ): GalleryUiStateMapper
 
     @Binds
     @Reusable

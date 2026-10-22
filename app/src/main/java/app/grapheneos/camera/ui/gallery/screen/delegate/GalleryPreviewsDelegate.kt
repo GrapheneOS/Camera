@@ -48,10 +48,11 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
         val items = state.itemsAround(THUMBNAIL_RADIUS)
         val missingItems = items.filterNot(state.thumbnails::containsKey)
 
-        stateHolder.update {
-            it.copy(
-                thumbnails = it.thumbnails.filterKeys(items::contains) +
-                    missingItems.associateWith { GalleryPreview.Loading },
+        stateHolder.update { current ->
+            current.copy(
+                thumbnails = items.associateWith { item ->
+                    current.thumbnails[item] ?: GalleryPreview.Loading
+                },
             )
         }
 
@@ -62,10 +63,11 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
         val items = state.itemsAround(PREVIEW_RADIUS)
         val missingItems = items.filterNot(state.previews::containsKey)
 
-        stateHolder.update {
-            it.copy(
-                previews = it.previews.filterKeys(items::contains) +
-                    missingItems.associateWith { GalleryPreview.Loading },
+        stateHolder.update { current ->
+            current.copy(
+                previews = items.associateWith { item ->
+                    current.previews[item] ?: GalleryPreview.Loading
+                },
             )
         }
 

@@ -46,6 +46,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -59,9 +60,10 @@ class GalleryViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private var storedItems = listOf(NEWEST, OLDER)
     private val capturedItemsChanges = MutableSharedFlow<Unit>()
     private val capturedItemRepository = mockk<CapturedItemRepository> {
-        coEvery { capturedItems() } returns listOf(NEWEST, OLDER)
+        coEvery { capturedItems() } coAnswers { storedItems }
         every { capturedItemsChanges() } returns capturedItemsChanges
         coEvery { loadThumbnail(any(), any(), any()) } returns THUMBNAIL
         coEvery { loadPreview(any()) } returns PREVIEW
@@ -72,14 +74,23 @@ class GalleryViewModelTest {
     private val deleteCapturedItem = mockk<DeleteCapturedItem>()
     private val capturedItemTrashRepository = mockk<CapturedItemTrashRepository> {
         every { canTrash(any()) } returns false
-        coEvery { trash(any()) } returns Result.success(Unit)
-        coEvery { restore(any()) } returns Result.success(Unit)
+        coEvery { trash(any()) } coAnswers {
+            storedItems = storedItems - firstArg<CapturedItem>()
+            Result.success(Unit)
+        }
+        coEvery { restore(any()) } coAnswers {
+            storedItems = storedItems + firstArg<CapturedItem>()
+            Result.success(Unit)
+        }
         coEvery { delete(any()) } returns Result.success(Unit)
     }
 
     @Before
     fun deleteSucceedsByDefault() {
-        coEvery { deleteCapturedItem(any()) } returns CapturedItemDeletion.Deleted
+        coEvery { deleteCapturedItem(any()) } coAnswers {
+            storedItems = storedItems - firstArg<CapturedItem>()
+            CapturedItemDeletion.Deleted
+        }
     }
 
     @Test
@@ -94,7 +105,7 @@ class GalleryViewModelTest {
     @Test
     fun anEmptyGallery_showsThatItIsEmpty() {
         runTest {
-            coEvery { capturedItemRepository.capturedItems() } returns emptyList()
+            storedItems = emptyList()
 
             val viewModel = viewModel()
 
@@ -116,7 +127,7 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            coEvery { capturedItemRepository.capturedItems() } returns listOf(NEWEST)
+            storedItems = listOf(NEWEST)
             capturedItemsChanges.emit(Unit)
 
             assertEquals(keysOf(NEWEST), pageKeys(viewModel))
@@ -124,18 +135,47 @@ class GalleryViewModelTest {
     }
 
     @Test
+    fun aRereadWithTheSameItems_keepsThePages() {
+        runTest {
+            val viewModel = viewModel()
+            val pages = viewModel.uiState.value.pages
+
+            capturedItemsChanges.emit(Unit)
+
+            assertSame(pages, viewModel.uiState.value.pages)
+        }
+    }
+
+    @Test
     fun theShownItemDeletedByAnotherApp_leavesTheNextOneInItsPlace() {
         runTest {
             val newer = image("20231017_120000_000")
-            coEvery { capturedItemRepository.capturedItems() } returns listOf(newer, NEWEST, OLDER)
+            storedItems = listOf(newer, NEWEST, OLDER)
             val viewModel = viewModel()
 
             viewModel.onAction(Action.PageSelected(page = 1))
-            coEvery { capturedItemRepository.capturedItems() } returns listOf(newer, OLDER)
+            storedItems = listOf(newer, OLDER)
             capturedItemsChanges.emit(Unit)
 
             assertEquals(1, viewModel.uiState.value.currentPage)
             assertEquals(keysOf(newer, OLDER), pageKeys(viewModel))
+        }
+    }
+
+    @Test
+    fun theLastCapturedItem_keepsItsPreviewOnceTheScanListsIt() {
+        runTest {
+            val listed = CapturedItem(
+                type = NEWEST.type,
+                dateString = NEWEST.dateString,
+                uri = Uri.parse("content://media/external/file/${NEWEST.dateString}"),
+            )
+            storedItems = listOf(listed, OLDER)
+
+            val uiState = viewModel(lastCapturedItem = NEWEST).uiState.value
+            val preview = uiState.previews[uiState.pages.first().key] as? GalleryPreview.Loaded
+
+            assertEquals(PREVIEW, preview?.image?.asAndroidBitmap())
         }
     }
 
@@ -221,7 +261,7 @@ class GalleryViewModelTest {
     @Test
     fun deletingTheLastItem_leavesAnEmptyGallery() {
         runTest {
-            coEvery { capturedItemRepository.capturedItems() } returns listOf(NEWEST)
+            storedItems = listOf(NEWEST)
             val viewModel = viewModel()
 
             viewModel.onAction(Action.DeleteClicked)
@@ -401,7 +441,7 @@ class GalleryViewModelTest {
     fun detailsOfPagesFarAway_areDropped() {
         runTest {
             val items = (1..4).map { day -> image("2023101${day}_120000_000") }
-            coEvery { capturedItemRepository.capturedItems() } returns items
+            storedItems = items
             coEvery { capturedItemDetailsRepository.details(any()) } returns mockk()
             val viewModel = viewModel()
 
@@ -541,13 +581,14 @@ class GalleryViewModelTest {
     fun aSelectedPage_showsFullPreviewsNearbyAndThumbnailsFurtherOut() {
         runTest {
             val items = (1..9).map { day -> image("2023101${day}_120000_000") }
-            coEvery { capturedItemRepository.capturedItems() } returns items
+            storedItems = items
             val viewModel = viewModel()
 
             viewModel.onAction(Action.PageSelected(page = 7))
 
-            val shown = viewModel.uiState.value.pages.map { page ->
-                (page.preview as? GalleryPreview.Loaded)?.image?.asAndroidBitmap()
+            val uiState = viewModel.uiState.value
+            val shown = uiState.pages.map { page ->
+                (uiState.previews[page.key] as? GalleryPreview.Loaded)?.image?.asAndroidBitmap()
             }
 
             assertEquals(listOf(null), shown.take(2).distinct())
@@ -577,7 +618,9 @@ class GalleryViewModelTest {
         viewModel: GalleryViewModel,
         page: Int,
     ): GalleryDetails {
-        return viewModel.uiState.value.pages[page].details
+        val uiState = viewModel.uiState.value
+
+        return uiState.details[uiState.pages[page].key] ?: GalleryDetails.Loading
     }
 
     private fun pageKeys(viewModel: GalleryViewModel): List<String> {
@@ -612,6 +655,7 @@ class GalleryViewModelTest {
             observeGalleryItems = ObserveGalleryItemsImpl(
                 capturedItemRepository = capturedItemRepository,
                 galleryItemsMapper = GalleryItemsMapperImpl(),
+                defaultDispatcher = mainDispatcherRule.testDispatcher,
             ),
             previewsDelegate = GalleryPreviewsDelegateImpl(capturedItemRepository),
             detailsDelegate = GalleryDetailsDelegateImpl(

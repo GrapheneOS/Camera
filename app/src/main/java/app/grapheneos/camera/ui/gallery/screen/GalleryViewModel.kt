@@ -17,10 +17,10 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 internal interface GalleryScreenModel {
@@ -61,10 +61,7 @@ internal class GalleryViewModel @Inject constructor(
     private val state: GalleryState
         get() = stateHolder.state.value
 
-    private val itemsRefreshes = MutableSharedFlow<Unit>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val itemsRefreshes = Channel<Unit>(capacity = Channel.CONFLATED)
 
     init {
         previewsDelegate.bind(stateHolder)
@@ -83,7 +80,7 @@ internal class GalleryViewModel @Inject constructor(
             observeGalleryItems(
                 videoOnly = entryPoint.requiresVideoModeOnly,
                 sessionItems = sessionItemsOf(arguments),
-                refreshes = itemsRefreshes,
+                refreshes = itemsRefreshes.receiveAsFlow(),
             ).collect(::showItems)
         }
     }
@@ -134,11 +131,13 @@ internal class GalleryViewModel @Inject constructor(
     private fun changeItems(change: suspend () -> Unit) {
         viewModelScope.launch {
             change()
-            itemsRefreshes.tryEmit(Unit)
+            itemsRefreshes.trySend(Unit)
         }
     }
 
     private fun showItems(items: List<CapturedItem>) {
+        if (state.isLoaded && items == state.items) return
+
         stateHolder.update {
             it.copy(
                 items = items,

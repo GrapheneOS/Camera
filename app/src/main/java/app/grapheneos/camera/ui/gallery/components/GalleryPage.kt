@@ -19,6 +19,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 @Composable
 internal fun GalleryPage(
     page: GalleryPageUiModel,
+    preview: GalleryPreview,
     onTap: () -> Unit,
     onDoubleTap: ((Offset) -> Unit)?,
     onVideoClick: () -> Unit,
@@ -33,7 +34,7 @@ internal fun GalleryPage(
                 onClick = onTap,
             ),
     ) {
-        when (val preview = page.preview) {
+        when (preview) {
             is GalleryPreview.Loading -> Unit
 
             is GalleryPreview.Loaded -> when {
@@ -70,8 +71,8 @@ private fun GalleryPageUnavailablePreview() {
             page = GalleryPageUiModel(
                 key = "content://media/external/video/media/1",
                 isVideo = true,
-                preview = GalleryPreview.Unavailable,
             ),
+            preview = GalleryPreview.Unavailable,
             onTap = {},
             onDoubleTap = {},
             onVideoClick = {},

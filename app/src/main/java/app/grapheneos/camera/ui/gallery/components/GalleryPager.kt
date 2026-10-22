@@ -22,9 +22,11 @@ import androidx.compose.ui.unit.toSize
 import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerGestures
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
@@ -34,6 +36,8 @@ private val PAGE_SPACING = 24.dp
 @Composable
 internal fun GalleryPager(
     pages: ImmutableList<GalleryPageUiModel>,
+    previews: ImmutableMap<String, GalleryPreview>,
+    details: ImmutableMap<String, GalleryDetails>,
     initialPage: Int,
     currentPage: Int,
     showsDetails: Boolean,
@@ -77,6 +81,7 @@ internal fun GalleryPager(
         detailsState = detailsState,
         containerSize = containerSize,
         page = pages.getOrNull(currentPage),
+        preview = pages.getOrNull(currentPage)?.let { previews[it.key] },
     )
 
     HorizontalPager(
@@ -85,10 +90,14 @@ internal fun GalleryPager(
         pageSpacing = PAGE_SPACING,
         beyondViewportPageCount = 1,
         modifier = modifier.onSizeChanged { containerSize = it },
-    ) { page ->
+    ) { index ->
+        val page = pages[index]
+
         ViewerPage(
-            page = pages[page],
-            isCurrentPage = page == currentPage,
+            page = page,
+            preview = previews[page.key] ?: GalleryPreview.Loading,
+            details = details[page.key] ?: GalleryDetails.Loading,
+            isCurrentPage = index == currentPage,
             showsDetails = showsDetails,
             gestures = gestures,
             viewerTransform = viewerTransform,
@@ -146,8 +155,9 @@ private fun ViewerLayoutEffect(
     detailsState: DetailsPanelState,
     containerSize: IntSize,
     page: GalleryPageUiModel?,
+    preview: GalleryPreview?,
 ) {
-    val imageSize = page?.let(::imageSize)
+    val imageSize = preview?.let(::imageSize)
     val canZoom = page?.isVideo == false
 
     LaunchedEffect(
@@ -168,9 +178,7 @@ private fun ViewerLayoutEffect(
     }
 }
 
-private fun imageSize(page: GalleryPageUiModel): Size? {
-    val preview = page.preview
-
+private fun imageSize(preview: GalleryPreview): Size? {
     return when {
         preview !is GalleryPreview.Loaded -> null
         else -> Size(

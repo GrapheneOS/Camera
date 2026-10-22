@@ -84,10 +84,11 @@ internal class GalleryDetailsDelegateImpl @Inject constructor(
         val items = state.itemsAround(DETAILS_RADIUS)
         val missingItems = items.filterNot(state.details::containsKey)
 
-        stateHolder.update {
-            it.copy(
-                details = it.details.filterKeys(items::contains) +
-                    missingItems.associateWith { GalleryDetails.Loading },
+        stateHolder.update { current ->
+            current.copy(
+                details = items.associateWith { item ->
+                    current.details[item] ?: GalleryDetails.Loading
+                },
             )
         }
 

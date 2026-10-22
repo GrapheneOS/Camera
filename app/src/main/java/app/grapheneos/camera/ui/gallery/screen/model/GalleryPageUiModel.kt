@@ -6,6 +6,4 @@ import androidx.compose.runtime.Immutable
 internal data class GalleryPageUiModel(
     val key: String,
     val isVideo: Boolean,
-    val preview: GalleryPreview,
-    val details: GalleryDetails = GalleryDetails.Loading,
 )

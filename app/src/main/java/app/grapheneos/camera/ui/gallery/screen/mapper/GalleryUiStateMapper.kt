@@ -10,7 +10,10 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import javax.inject.Inject
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
 
 internal interface GalleryUiStateMapper {
     fun map(state: GalleryState): GalleryUiState
@@ -20,9 +23,14 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
     private val captureTimeMapper: CaptureTimeMapper,
 ) : GalleryUiStateMapper {
 
+    private var pagedItems: List<CapturedItem>? = null
+    private var pages: ImmutableList<GalleryPageUiModel> = persistentListOf()
+
     override fun map(state: GalleryState): GalleryUiState {
         return GalleryUiState(
-            pages = pages(state),
+            pages = pagesOf(state.items),
+            previews = previews(state),
+            details = details(state),
             currentPage = state.currentIndex,
             isEmpty = state.isLoaded && state.items.isEmpty(),
             capturedAt = state.currentItem()?.let(captureTimeMapper::map),
@@ -35,20 +43,31 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
         )
     }
 
-    private fun pages(state: GalleryState): ImmutableList<GalleryPageUiModel> {
-        return state.items
-            .map { item ->
-                GalleryPageUiModel(
-                    key = item.uri.toString(),
-                    isVideo = item.type == CapturedItemType.VIDEO,
-                    preview = preview(
-                        state = state,
-                        item = item,
-                    ),
-                    details = state.details[item] ?: GalleryDetails.Loading,
+    private fun pagesOf(items: List<CapturedItem>): ImmutableList<GalleryPageUiModel> {
+        if (items !== pagedItems) {
+            pages = items
+                .map { item ->
+                    GalleryPageUiModel(
+                        key = pageKeyOf(item),
+                        isVideo = item.type == CapturedItemType.VIDEO,
+                    )
+                }
+                .toImmutableList()
+            pagedItems = items
+        }
+
+        return pages
+    }
+
+    private fun previews(state: GalleryState): ImmutableMap<String, GalleryPreview> {
+        return (state.thumbnails.keys + state.previews.keys)
+            .associate { item ->
+                pageKeyOf(item) to preview(
+                    state = state,
+                    item = item,
                 )
             }
-            .toImmutableList()
+            .toImmutableMap()
     }
 
     private fun preview(
@@ -63,5 +82,15 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             thumbnail is GalleryPreview.Loaded -> thumbnail
             else -> preview ?: thumbnail ?: GalleryPreview.Loading
         }
+    }
+
+    private fun details(state: GalleryState): ImmutableMap<String, GalleryDetails> {
+        return state.details.entries
+            .associate { (item, details) -> pageKeyOf(item) to details }
+            .toImmutableMap()
+    }
+
+    private fun pageKeyOf(item: CapturedItem): String {
+        return item.uri.toString()
     }
 }
