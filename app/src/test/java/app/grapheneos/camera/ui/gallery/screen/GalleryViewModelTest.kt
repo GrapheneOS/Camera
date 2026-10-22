@@ -18,6 +18,9 @@ import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItemsImpl
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegateImpl
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegateImpl
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapperImpl
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
@@ -449,13 +452,20 @@ class GalleryViewModelTest {
             arguments = arguments,
             entryPoint = entryPoint,
             systemGalleryLauncher = mockk(relaxed = true),
-            capturedItemRepository = capturedItemRepository,
-            capturedItemDetailsRepository = capturedItemDetailsRepository,
             loadGalleryItems = LoadGalleryItemsImpl(
                 capturedItemRepository = capturedItemRepository,
                 galleryItemsMapper = GalleryItemsMapperImpl(),
             ),
-            deleteCapturedItem = deleteCapturedItem,
+            previewsDelegate = GalleryPreviewsDelegateImpl(
+                capturedItemRepository = capturedItemRepository,
+                mainDispatcher = mainDispatcherRule.testDispatcher,
+            ),
+            detailsDelegate = GalleryDetailsDelegateImpl(
+                arguments = arguments,
+                capturedItemDetailsRepository = capturedItemDetailsRepository,
+                mainDispatcher = mainDispatcherRule.testDispatcher,
+            ),
+            deletionDelegate = GalleryDeletionDelegateImpl(deleteCapturedItem),
             uiStateMapper = GalleryUiStateMapperImpl(captureTimeMapper = CaptureTimeMapperImpl()),
         )
     }
