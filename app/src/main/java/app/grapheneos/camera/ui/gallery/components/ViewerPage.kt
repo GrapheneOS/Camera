@@ -57,15 +57,6 @@ internal fun ViewerPage(
             onVideoClick = onVideoClick,
             modifier = Modifier
                 .offset { detailsState.photoShiftAt(detailsPosition()).round() }
-                .graphicsLayer {
-                    val scale = detailsState.photoScaleAt(
-                        position = detailsPosition(),
-                        imageSize = preview.imageSize(),
-                    )
-
-                    scaleX = scale
-                    scaleY = scale
-                }
                 .then(photoTransform),
         )
         DetailsPanel(

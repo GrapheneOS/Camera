@@ -1,12 +1,12 @@
 package app.grapheneos.camera.ui.gallery.screen.mapper
 
 import android.net.Uri
-import androidx.compose.ui.graphics.ImageBitmap
 import app.grapheneos.camera.data.media.mapper.CaptureTimeMapperImpl
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
@@ -49,7 +49,7 @@ class GalleryUiStateMapperTest {
     @Test
     fun anHdrPhoto_isShownInHdrOnlyOnItsPage() {
         val hdr = GalleryPreview.Loaded(
-            image = ImageBitmap(width = 1, height = 1),
+            image = mockk(),
             isHdr = true,
         )
         val previews = mapOf(NEWER to hdr)

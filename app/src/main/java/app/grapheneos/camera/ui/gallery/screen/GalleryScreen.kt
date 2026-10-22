@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
@@ -115,8 +117,12 @@ private fun GalleryContent(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
-    val currentPageKey = uiState.pages.getOrNull(uiState.currentPage)?.key
-    val transformState = rememberViewerTransformState(pageKey = currentPageKey)
+    val pagerState = rememberPagerState(
+        initialPage = uiState.currentPage,
+        pageCount = { uiState.pages.size },
+    )
+    val settledPageKey = uiState.pages.getOrNull(pagerState.settledPage)?.key
+    val transformState = rememberViewerTransformState(pageKey = settledPageKey)
     val detailsState = rememberDetailsPanelState(isShown = uiState.showsDetails)
     val detailsPosition = animateDetailsPositionAsState(detailsState)
     val viewerTransform = rememberViewerTransform(
@@ -129,7 +135,7 @@ private fun GalleryContent(
     )
 
     GalleryViewerEffects(
-        pageKey = currentPageKey,
+        pageKey = settledPageKey,
         transformState = transformState,
         detailsState = detailsState,
         showsDetails = uiState.showsDetails,
@@ -143,6 +149,7 @@ private fun GalleryContent(
     ) {
         GalleryViewerPager(
             uiState = uiState,
+            pagerState = pagerState,
             transformState = transformState,
             viewerTransform = viewerTransform,
             detailsState = detailsState,
@@ -177,6 +184,7 @@ private fun GalleryContent(
 @Composable
 private fun GalleryViewerPager(
     uiState: UiState,
+    pagerState: PagerState,
     transformState: ViewerTransformState,
     viewerTransform: ViewerTransform,
     detailsState: DetailsPanelState,
@@ -189,7 +197,7 @@ private fun GalleryViewerPager(
         pages = uiState.pages,
         previews = uiState.previews,
         details = uiState.details,
-        initialPage = uiState.currentPage,
+        pagerState = pagerState,
         currentPage = uiState.currentPage,
         showsDetails = uiState.showsDetails,
         transformState = transformState,

@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.gallery.components
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -14,6 +13,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -37,7 +37,7 @@ internal fun GalleryPager(
     pages: ImmutableList<GalleryPageUiModel>,
     previews: ImmutableMap<String, GalleryPreview>,
     details: ImmutableMap<String, GalleryDetails>,
-    initialPage: Int,
+    pagerState: PagerState,
     currentPage: Int,
     showsDetails: Boolean,
     transformState: ViewerTransformState,
@@ -52,10 +52,7 @@ internal fun GalleryPager(
     onCopy: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = initialPage,
-        pageCount = { pages.size },
-    )
+    val settledPage = pagerState.settledPage
     val gestures = rememberViewerGestures(
         transformState = transformState,
         detailsState = detailsState,
@@ -79,8 +76,8 @@ internal fun GalleryPager(
         transformState = transformState,
         detailsState = detailsState,
         containerSize = containerSize,
-        page = pages.getOrNull(currentPage),
-        preview = pages.getOrNull(currentPage)?.let { previews[it.key] },
+        page = pages.getOrNull(settledPage),
+        preview = pages.getOrNull(settledPage)?.let { previews[it.key] },
     )
 
     HorizontalPager(
@@ -96,7 +93,7 @@ internal fun GalleryPager(
             page = page,
             preview = previews[page.key] ?: GalleryPreview.Loading,
             details = details[page.key] ?: GalleryDetails.Loading,
-            isCurrentPage = index == currentPage,
+            isCurrentPage = index == settledPage,
             showsDetails = showsDetails,
             gestures = gestures,
             viewerTransform = viewerTransform,
@@ -156,7 +153,7 @@ private fun ViewerLayoutEffect(
     page: GalleryPageUiModel?,
     preview: GalleryPreview?,
 ) {
-    val imageSize = preview?.imageSize()
+    val imageSize = preview?.let(::imageSize)
     val canZoom = page?.isVideo == false
 
     LaunchedEffect(
@@ -174,6 +171,16 @@ private fun ViewerLayoutEffect(
             canZoom = canZoom,
         )
         detailsState.updateLayout(containerSize.toSize())
+    }
+}
+
+private fun imageSize(preview: GalleryPreview): Size? {
+    return when {
+        preview !is GalleryPreview.Loaded -> null
+        else -> Size(
+            width = preview.image.width.toFloat(),
+            height = preview.image.height.toFloat(),
+        )
     }
 }
 
