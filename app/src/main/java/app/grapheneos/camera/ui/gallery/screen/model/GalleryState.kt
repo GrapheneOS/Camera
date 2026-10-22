@@ -19,4 +19,11 @@ internal data class GalleryState(
     fun currentItem(): CapturedItem? {
         return items.getOrNull(currentIndex)
     }
+
+    fun itemsAround(
+        page: Int,
+        radius: Int,
+    ): List<CapturedItem> {
+        return (page - radius..page + radius).mapNotNull(items::getOrNull)
+    }
 }
