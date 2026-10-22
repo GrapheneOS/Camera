@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.media.mapper.CaptureTimeMapperImpl
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -25,6 +26,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.toList
@@ -114,9 +116,9 @@ class GalleryViewModelTest {
                 Action.EditWithClicked,
                 Action.DeleteClicked,
                 Action.DeleteConfirmed,
-                Action.InfoClicked,
                 Action.ShareClicked,
                 Action.VideoClicked,
+                Action.DetailsShownChanged(isShown = true),
             ).forEach(viewModel::onAction)
 
             assertTrue(effects.isEmpty())
@@ -131,9 +133,12 @@ class GalleryViewModelTest {
             val viewModel = viewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
             val effects = effectsOf(viewModel)
 
+            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns detailsAt(LOCATION)
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
             viewModel.onAction(Action.ShareClicked)
             viewModel.onAction(Action.EditClicked)
             viewModel.onAction(Action.SystemGalleryClicked)
+            viewModel.onAction(Action.OpenMapClicked)
 
             assertFalse(viewModel.uiState.value.showsExternalActions)
             assertFalse(viewModel.uiState.value.showsSystemGallery)
@@ -188,43 +193,33 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun infoClicked_showsTheDetails() {
+    fun detailsShown_loadTheCurrentAndTheNeighbouringPages() {
         runTest {
-            val details = mockk<CapturedItemDetails>()
-            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns details
-            val viewModel = viewModel()
-
-            viewModel.onAction(Action.InfoClicked)
-
-            assertTrue(viewModel.uiState.value.showsDetails)
-            assertEquals(GalleryDetails.Loaded(details), detailsOf(viewModel, page = 0))
-        }
-    }
-
-    @Test
-    fun infoClicked_whenTheDetailsCannotBeRead_showsThemAsUnavailable() {
-        runTest {
-            val viewModel = viewModel()
-            val effects = effectsOf(viewModel)
-
-            viewModel.onAction(Action.InfoClicked)
-
-            assertTrue(viewModel.uiState.value.showsDetails)
-            assertEquals(GalleryDetails.Unavailable, detailsOf(viewModel, page = 0))
-            assertTrue(effects.isEmpty())
-        }
-    }
-
-    @Test
-    fun shownDetails_areLoadedForTheNeighbouringPagesToo() {
-        runTest {
-            val details = mockk<CapturedItemDetails>()
-            coEvery { capturedItemDetailsRepository.details(OLDER) } returns details
+            val newest = mockk<CapturedItemDetails>()
+            val older = mockk<CapturedItemDetails>()
+            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns newest
+            coEvery { capturedItemDetailsRepository.details(OLDER) } returns older
             val viewModel = viewModel()
 
             viewModel.onAction(Action.DetailsShownChanged(isShown = true))
 
-            assertEquals(GalleryDetails.Loaded(details), detailsOf(viewModel, page = 1))
+            assertTrue(viewModel.uiState.value.showsDetails)
+            assertEquals(GalleryDetails.Loaded(newest), detailsOf(viewModel, page = 0))
+            assertEquals(GalleryDetails.Loaded(older), detailsOf(viewModel, page = 1))
+        }
+    }
+
+    @Test
+    fun detailsShown_whenTheyCannotBeRead_showThemAsUnavailable() {
+        runTest {
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+
+            assertTrue(viewModel.uiState.value.showsDetails)
+            assertEquals(GalleryDetails.Unavailable, detailsOf(viewModel, page = 0))
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -235,7 +230,7 @@ class GalleryViewModelTest {
 
             viewModel.onAction(Action.DetailsShownChanged(isShown = true))
             viewModel.onAction(Action.DetailsShownChanged(isShown = false))
-            viewModel.onAction(Action.InfoClicked)
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
 
             assertTrue(viewModel.uiState.value.showsDetails)
             coVerify(exactly = 1) { capturedItemDetailsRepository.details(NEWEST) }
@@ -271,11 +266,66 @@ class GalleryViewModelTest {
     }
 
     @Test
+    fun shownDetails_areShownAgainAfterTheProcessIsRecreated() {
+        runTest {
+            val details = mockk<CapturedItemDetails>()
+            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns details
+            val arguments = savedStateOf(lastCapturedItem = null)
+            viewModel(arguments = arguments).onAction(Action.DetailsShownChanged(isShown = true))
+
+            val recreated = viewModel(arguments = arguments)
+
+            assertTrue(recreated.uiState.value.showsDetails)
+            assertEquals(GalleryDetails.Loaded(details), detailsOf(recreated, page = 0))
+        }
+    }
+
+    @Test
+    fun openMapClicked_opensTheMapAtTheShownLocation() {
+        runTest {
+            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns detailsAt(LOCATION)
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(Action.OpenMapClicked)
+
+            assertEquals(listOf(Effect.OpenMap(LOCATION)), effects)
+        }
+    }
+
+    @Test
+    fun openMapClicked_withoutALocation_doesNothing() {
+        runTest {
+            coEvery { capturedItemDetailsRepository.details(NEWEST) } returns detailsAt(null)
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(Action.OpenMapClicked)
+
+            assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun detailLongPressed_copiesItsText() {
+        runTest {
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DetailLongPressed(text = "Google Pixel 8a"))
+
+            assertEquals(listOf(Effect.CopyText("Google Pixel 8a")), effects)
+        }
+    }
+
+    @Test
     fun screenTapped_whileDetailsAreShown_hidesThemAndKeepsTheControls() {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.InfoClicked)
+            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
             viewModel.onAction(Action.ScreenTapped)
 
             assertFalse(viewModel.uiState.value.showsDetails)
@@ -359,6 +409,10 @@ class GalleryViewModelTest {
         )
     }
 
+    private fun detailsAt(location: GeoCoordinates?): CapturedItemDetails {
+        return mockk { every { this@mockk.location } returns location }
+    }
+
     private fun detailsOf(
         viewModel: GalleryViewModel,
         page: Int,
@@ -389,19 +443,10 @@ class GalleryViewModelTest {
     private fun viewModel(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
         lastCapturedItem: CapturedItem? = null,
+        arguments: SavedStateHandle = savedStateOf(lastCapturedItem),
     ): GalleryViewModel {
-        val arguments = galleryArguments(
-            sessionItems = null,
-            lastCapturedItem = lastCapturedItem,
-        )
-
         return GalleryViewModel(
-            arguments = SavedStateHandle(
-                arguments.keySet().associateWith { key ->
-                    @Suppress("DEPRECATION")
-                    arguments.get(key)
-                },
-            ),
+            arguments = arguments,
             entryPoint = entryPoint,
             systemGalleryLauncher = mockk(relaxed = true),
             capturedItemRepository = capturedItemRepository,
@@ -415,11 +460,29 @@ class GalleryViewModelTest {
         )
     }
 
+    private fun savedStateOf(lastCapturedItem: CapturedItem?): SavedStateHandle {
+        val arguments = galleryArguments(
+            sessionItems = null,
+            lastCapturedItem = lastCapturedItem,
+        )
+
+        return SavedStateHandle(
+            arguments.keySet().associateWith { key ->
+                @Suppress("DEPRECATION")
+                arguments.get(key)
+            },
+        )
+    }
+
     private companion object {
         val THUMBNAIL = mockk<Bitmap>()
         val PREVIEW = mockk<Bitmap>()
         val NEWEST = image("20231016_120000_000")
         val OLDER = image("20231015_120000_000")
+        val LOCATION = GeoCoordinates(
+            latitude = 47.5,
+            longitude = -122.25,
+        )
 
         fun image(dateString: String): CapturedItem {
             return CapturedItem(

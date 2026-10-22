@@ -11,4 +11,6 @@ internal data class CapturedItemDetails(
     val duration: Duration?,
     val created: MediaTimestamp?,
     val modified: MediaTimestamp?,
+    val camera: CameraParameters? = null,
+    val location: GeoCoordinates? = null,
 )

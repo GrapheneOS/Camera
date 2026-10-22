@@ -15,9 +15,11 @@ import android.util.Size
 import androidx.test.core.app.ApplicationProvider
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.data.media.mapper.CaptureTimeMapperImpl
+import app.grapheneos.camera.data.media.model.CameraParameters
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
 import io.mockk.every
 import io.mockk.mockk
@@ -193,6 +195,66 @@ class CapturedItemDetailsRepositoryTest {
     }
 
     @Test
+    fun details_ofAPhotoWithCameraExif_readTheCameraAndItsLocation() {
+        runTest {
+            serve(
+                columns = MEDIA_STORE_COLUMNS,
+                file = jpeg {
+                    setAttribute(ExifInterface.TAG_MAKE, "Google")
+                    setAttribute(ExifInterface.TAG_MODEL, "Pixel 8 Pro")
+                    setAttribute(ExifInterface.TAG_F_NUMBER, "168/100")
+                    setAttribute(ExifInterface.TAG_EXPOSURE_TIME, "1/120")
+                    setAttribute(ExifInterface.TAG_FOCAL_LENGTH, "690/100")
+                    setAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, "52")
+                    setLatLong(47.5, -122.25)
+                },
+            )
+
+            val details = detailsOf(CapturedItemType.IMAGE)
+
+            assertEquals(
+                CameraParameters(
+                    make = "Google",
+                    model = "Pixel 8 Pro",
+                    fNumber = 1.68,
+                    exposureSeconds = 1.0 / 120,
+                    focalLengthMillimeters = 6.9,
+                    iso = 52,
+                ),
+                details.camera,
+            )
+            assertEquals(47.5, requireNotNull(details.location).latitude, COORDINATE_TOLERANCE)
+            assertEquals(-122.25, requireNotNull(details.location).longitude, COORDINATE_TOLERANCE)
+        }
+    }
+
+    @Test
+    fun details_ofAStrippedPhoto_haveNoCameraOrLocation() {
+        runTest {
+            serve(columns = MEDIA_STORE_COLUMNS, file = jpeg())
+
+            val details = detailsOf(CapturedItemType.IMAGE)
+
+            assertNull(details.camera)
+            assertNull(details.location)
+        }
+    }
+
+    @Test
+    fun details_ofAVideoWithALocation_readItsCoordinates() {
+        runTest {
+            serve(columns = MEDIA_STORE_COLUMNS)
+            videoMetadata(
+                MediaMetadataRetriever.METADATA_KEY_LOCATION to "+47.5000-122.2500/",
+            )
+
+            val details = detailsOf(CapturedItemType.VIDEO)
+
+            assertEquals(GeoCoordinates(latitude = 47.5, longitude = -122.25), details.location)
+        }
+    }
+
+    @Test
     fun details_ofAnItemItsProviderDoesNotName_areNull() {
         runTest {
             serve(columns = mapOf(OpenableColumns.SIZE to SIZE_BYTES), file = jpeg())
@@ -277,6 +339,7 @@ class CapturedItemDetailsRepositoryTest {
     }
 
     private companion object {
+        const val COORDINATE_TOLERANCE = 0.000_01
         const val DATE_STRING = "20231015_123456_789"
         const val FILE_NAME = "IMG_$DATE_STRING.jpg"
         const val RELATIVE_PATH = "DCIM/Camera/"

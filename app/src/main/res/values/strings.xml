@@ -1,129 +1,116 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="camera_permission_dialog_title">Camera permission required</string>
+    <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record a video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just disable it (and enable it back later in the settings).</string>
+    <string name="audio_permission_dialog_title">Audio permission required</string>
     <string name="camera_permission_dialog_message">
         The app needs permission to access the camera to function. Please provide the required permission via Settings in order to use this app.
     </string>
+    <string name="camera_permission_dialog_title">Camera permission required</string>
+    <string name="disable_audio">Disable Audio</string>
 
-    <string name="audio_permission_dialog_title">Audio permission required</string>
-    <string name="audio_permission_dialog_message">The app needs permission to access the microphone to record a video that contains audio. Please provide the required permission via Settings in order to proceed with this configuration. If you do not require your video to contain audio, you could just disable it (and enable it back later in the settings).</string>
+    <string name="back">Back</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="copy_to_clipboard">Copy to clipboard</string>
+    <string name="done">Done</string>
+    <string name="enable">Enable</string>
+    <string name="more_options">More Options</string>
+    <string name="ok">OK</string>
+    <string name="open_with">Open with</string>
+    <string name="settings">Settings</string>
+    <string name="show_details">Show details</string>
 
+    <string name="auto_mode">AUTO</string>
+    <string name="camera">CAMERA</string>
+    <string name="face_retouch_mode">FACE RETOUCH</string>
+    <string name="hdr_mode">HDR</string>
+    <string name="night_mode">NIGHT</string>
+    <string name="portrait_mode">PORTRAIT</string>
+    <string name="qr_scan_mode">QR SCAN</string>
+    <string name="video">VIDEO</string>
+
+    <string name="cancel_timer">Cancel Timer</string>
+    <string name="capture">Capture</string>
+    <string name="degree_format">%d°</string>
+    <string name="exposure_compensation">Exposure compensation</string>
     <string name="flip_camera">Flip Camera</string>
     <string name="loading_camera">Loading camera</string>
-    <string name="flash_mode">Flash Mode</string>
-    <string name="start_value_timer">00:00</string>
-    <string name="zoom">Zoom</string>
-    <string name="exposure_compensation">Exposure compensation</string>
-    <string name="torch">Torch</string>
-    <string name="scan_result">Scan Result</string>
-    <string name="share_qr_text">Share QR Text</string>
-    <string name="open_with">Open with</string>
-    <string name="copy_to_clipboard">Copy to clipboard</string>
-    <string name="retake">Retake</string>
-    <string name="capture">Capture</string>
-    <string name="confirm">Confirm</string>
+    <string name="mute_audio">Mute audio</string>
     <string name="open_gallery">Open gallery</string>
     <string name="pause_recording">Pause recording</string>
+    <string name="play_preview">Play Preview</string>
+    <string name="rec_without_audio">Start recording without audio</string>
     <string name="resume_recording">Resume recording</string>
+    <string name="retake">Retake</string>
     <string name="start_recording">Start recording</string>
+    <string name="start_value_timer">00:00</string>
     <string name="stop_recording">Stop recording</string>
-    <string name="turn_torch_on">Turn torch on</string>
+    <string name="tap_to_mute_audio">Tap to mute audio</string>
+    <string name="tap_to_unmute_audio">Tap to unmute audio</string>
     <string name="turn_torch_off">Turn torch off</string>
-    <string name="mute_audio">Mute audio</string>
+    <string name="turn_torch_on">Turn torch on</string>
     <string name="unmute_audio">Unmute audio</string>
+    <string name="video_capture_label">Record Video</string>
+    <string name="zoom">Zoom</string>
+
     <!-- The flash control cycles through several states rather than toggling between two, so
          its labels name the state it is currently in; naming the next action instead would
          leave a screen reader user unable to tell where in the cycle they are. -->
+    <string name="flash_auto">Flash auto</string>
     <string name="flash_off">Flash off</string>
     <string name="flash_on">Flash on</string>
-    <string name="flash_auto">Flash auto</string>
-    <string name="scan_all_formats">Scan all barcode formats</string>
-    <string name="stop_scanning_all_formats">Stop scanning all barcode formats</string>
-    <string name="play_preview">Play Preview</string>
-    <string name="aspect_ratio">Aspect Ratio</string>
-    <string name="include_audio">Include Audio</string>
-    <string name="video_quality">Video Quality</string>
-    <string name="optimize_for">Optimize for</string>
-    <string name="quality">Quality</string>
-    <string name="latency">Latency</string>
-    <string name="play_video">Play video</string>
-    <string name="file_info">File Info</string>
-    <string name="edit">Edit</string>
-    <string name="self_illumination">Self Illumination</string>
-    <string name="timer">Timer</string>
-    <string name="cancel_timer">Cancel Timer</string>
-    <string name="video_capture_label">Record Video</string>
 
-    <string name="camera">CAMERA</string>
-    <string name="video">VIDEO</string>
-    <string name="portrait_mode">PORTRAIT</string>
-    <string name="hdr_mode">HDR</string>
-    <string name="night_mode">NIGHT</string>
-    <string name="face_retouch_mode">FACE RETOUCH</string>
-    <string name="auto_mode">AUTO</string>
-    <string name="qr_scan_mode">QR SCAN</string>
+    <string name="aspect_ratio">Aspect Ratio</string>
     <string name="aspect_ratio_16_9">16:9</string>
     <string name="aspect_ratio_4_3">4:3</string>
-    <string name="edit_with">Edit with</string>
-    <string name="rec_without_audio">Start recording without audio</string>
-    <string name="qr_scan">QR Code</string>
-    <string name="data_matrix">Data Matrix</string>
+    <string name="flash_mode">Flash Mode</string>
+    <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
+    <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
+    <string name="include_audio">Include Audio</string>
+    <string name="latency">Latency</string>
+    <string name="optimize_for">Optimize for</string>
+    <string name="quality">Quality</string>
+    <string name="self_illumination">Self Illumination</string>
+    <string name="timer">Timer</string>
+    <string name="torch">Torch</string>
+    <string name="unexpected_error_while_setting_timer_duration">An unexpected error occurred while setting the self-timer duration</string>
+    <string name="video_quality">Video Quality</string>
+
+    <string name="video_quality_fhd">1080p (FHD)</string>
+    <string name="video_quality_hd">720p (HD)</string>
+    <string name="video_quality_sd">480p (SD)</string>
+    <string name="video_quality_uhd">2160p (UHD)</string>
+    <string name="video_quality_unknown">Unknown</string>
+
     <string name="aztec_code">Aztec Code</string>
-    <string name="more_options">More Options</string>
-    <string name="pdf_417">PDF 417</string>
-    <string name="camera_settings">Camera settings</string>
-
-    <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
-    <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
-
-    <string name="camera_sounds">Camera Sounds</string>
-    <string name="camera_sounds_desc">Shutter sound and other audio cues</string>
-
-    <string name="storage">Storage</string>
-    <string name="storage_location">Storage Location</string>
-
-    <string name="image_quality">Image Quality</string>
-    <string name="remove_exif_title">Remove EXIF data after capture</string>
-    <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
-    <string name="degree_format">%d°</string>
-
-    <string name="location_is_disabled">Location is disabled</string>
-    <string name="settings">Settings</string>
-    <string name="enable">Enable</string>
-    <string name="ok">OK</string>
-    <string name="disable_audio">Disable Audio</string>
     <string name="copied_text_to_clipboard">Copied text to clipboard</string>
+    <string name="couldnt_exclude_qr_format">Couldn\'t exclude %s format. Please ensure at least one format is selected in manual mode.</string>
+    <string name="data_matrix">Data Matrix</string>
+    <string name="no_barcode_selected">Please ensure that at least one barcode is selected in manual mode</string>
+    <string name="pdf_417">PDF 417</string>
+    <string name="qr_scan">QR Code</string>
+    <string name="scan_all_formats">Scan all barcode formats</string>
+    <string name="scan_result">Scan Result</string>
+    <string name="share_qr_text">Share QR Text</string>
     <string name="share_text_via">Share text via</string>
-
-    <string name="unable_to_obtain_file_details">Unable to obtain file details</string>
-
-    <string name="no_editor_app_error">You may not have a proper app for editing this content</string>
-    <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
-    <string name="edit_image">Edit Image</string>
-    <string name="share_image">Share Image</string>
-    <string name="unable_to_share_media">Unable to share this file</string>
-    <string name="unable_to_edit_media">Unable to edit this file</string>
-    <string name="delete">Delete</string>
-    <string name="deleted_successfully">File deleted successfully</string>
-    <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
-    <string name="delete_description">Delete from this device? This can\'t be undone.</string>
-    <string name="cancel">Cancel</string>
-    <string name="no_image">Please capture a photo/video before trying to view them.</string>
-
-    <string name="empty_gallery">Captured photos/videos not found</string>
+    <string name="stop_scanning_all_formats">Stop scanning all barcode formats</string>
 
     <string name="bind_failure">Failed to open camera due to an OS or hardware issue. Try rebooting.</string>
+    <string name="camera_provider_init_failure">Failed to load camera provider due to OS or hardware issue. Try rebooting.</string>
     <!-- Shown after a camera-extension mode (e.g. Night) is applied but its vendor implementation
          fails to bind: the mode is disabled and the camera falls back to a normal mode. Unlike
          bind_failure this is a handled, mode-specific recovery, not an OS/hardware failure, so it
          does not suggest rebooting. -->
     <string name="extension_mode_unavailable">This mode is unavailable on this device.</string>
+    <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
+    <string name="front_camera_unavailable">Could not detect front camera. Please try again later!</string>
+    <string name="qr_rear_camera_unavailable">The rear camera seems to be unavailable. Using front camera for QR mode instead.</string>
+    <string name="rear_camera_unavailable">Could not detect rear camera. Please try again later!</string>
 
-    <string name="video_quality_uhd">2160p (UHD)</string>
-    <string name="video_quality_fhd">1080p (FHD)</string>
-    <string name="video_quality_hd">720p (HD)</string>
-    <string name="video_quality_sd">480p (SD)</string>
-    <string name="video_quality_unknown">Unknown</string>
-
+    <string name="camera_settings_unavailable_during_recording">Cannot switch activities when recording</string>
+    <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
+    <string name="flash_unavailable_in_selected_mode">Flash is unavailable for the current mode.</string>
+    <string name="location_is_disabled">Location is disabled</string>
+    <string name="location_unavailable">Couldn\'t attach location to image/video since it\'s  currently unavailable</string>
     <!-- Shown when the camera can't record at the video quality the settings currently ask for,
          so that the settings screen doesn't keep claiming a quality that isn't actually in effect.
          %1$s is a quality such as "2160p (UHD)". A dropped quality is described as "a different
@@ -131,25 +118,7 @@
          then 720p, then 480p), which is higher than the requested quality if 480p was what got
          dropped. Stabilization outcomes are deliberately never surfaced (see onFeaturesSelected). -->
     <string name="quality_unsupported">%1$s isn\'t supported on this camera. Recording at a different quality.</string>
-    <string name="camera_provider_init_failure">Failed to load camera provider due to OS or hardware issue. Try rebooting.</string>
-    <string name="extensions_manager_init_failure">Failed to load extensions manager due to OS or hardware issue. Extensions modes are unavailable. Try rebooting.</string>
     <string name="unsupported_taking_picture_while_recording">Your device doesn\'t support taking pictures while recording video with the current settings.</string>
-    <string name="location_unavailable">Couldn\'t attach location to image/video since it\'s  currently unavailable</string>
-    <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
-    <string name="no_barcode_selected">Please ensure that at least one barcode is selected in manual mode</string>
-    <string name="flash_unavailable_in_selected_mode">Flash is unavailable for the current mode.</string>
-    <string name="front_camera_unavailable">Could not detect front camera. Please try again later!</string>
-    <string name="rear_camera_unavailable">Could not detect rear camera. Please try again later!</string>
-    <string name="qr_rear_camera_unavailable">The rear camera seems to be unavailable. Using front camera for QR mode instead.</string>
-    <string name="folder_not_found">Storage location not found</string>
-    <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
-    <string name="camera_settings_unavailable_during_recording">Cannot switch activities when recording</string>
-    <string name="flash_switch_unsupported">Cannot switch flash mode in this mode</string>
-    <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
-    <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
-    <string name="unexpected_error_while_setting_timer_duration">An unexpected error occurred while setting the self-timer duration</string>
-    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
-    <string name="couldnt_exclude_qr_format">Couldn\'t exclude %s format. Please ensure at least one format is selected in manual mode.</string>
 
     <string name="capturing_image">Capturing Image…</string>
     <string name="image_captured_successfully">Image captured successfully</string>
@@ -157,116 +126,168 @@
     <string name="unable_to_capture_image_verbose">Unable to capture image, error code: %d</string>
     <string name="unable_to_save_image">Unable to save the image</string>
     <string name="unable_to_save_image_verbose">Unable to save the image, error occurred during: %s</string>
-    <string name="show_details">Show details</string>
+
+    <string name="error_during_recording">A error has occurred finishing the current recording, error code: %d</string>
     <string name="recording_too_short_to_be_saved">Recording too short to be saved</string>
+    <string name="unable_to_access_output_file">Unable to access output file</string>
     <string name="unable_to_save_video">Unable to save this video</string>
     <string name="unable_to_save_video_verbose">Unable to save this video, error code: %d</string>
-    <string name="unable_to_play_video">Unable to play this video</string>
-    <string name="pause_video">Pause video</string>
-    <string name="video_position">%1$s / %2$s</string>
-    <string name="error_during_recording">A error has occurred finishing the current recording, error code: %d</string>
-    <string name="unable_to_access_output_file">Unable to access output file</string>
-    <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
-
-    <string name="inaccessible_image">This photo can\'t be opened</string>
-    <string name="inaccessible_video">This video can\'t be opened</string>
-    <string name="gallery_photo">Photo</string>
-    <string name="gallery_share">Share</string>
-    <string name="gallery_back_to_camera">Back to camera</string>
-    <string name="gallery_details">Details</string>
-    <string name="gallery_details_modified">Modified %s</string>
-    <string name="gallery_details_resolution">%1$d × %2$d</string>
-    <string name="gallery_details_joined">%1$s · %2$s</string>
-
-    <string name="main_storage">Main storage</string>
-
-    <string name="tap_to_mute_audio">Tap to mute audio</string>
-    <string name="tap_to_unmute_audio">Tap to unmute audio</string>
-
     <string name="video_audio_recording_muted">The video\'s audio recording has been muted</string>
     <string name="video_audio_recording_unmuted">The video\'s audio recording has been unmuted</string>
 
-    <string name="back">Back</string>
-    <string name="done">Done</string>
+    <string name="no_image">Please capture a photo/video before trying to view them.</string>
+    <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
+    <string name="sharing_not_allowed">Sharing images in secure mode is not allowed.</string>
 
+    <string name="folder_not_found">Storage location not found</string>
+    <string name="reverting_to_default_folder">Reverting back to default DCIM directory since the custom storage location that was previously selected seems to have been deleted. Please change the storage location to another folder (if required).</string>
+
+    <string name="delete">Delete</string>
+    <string name="delete_description">Delete from this device? This can\'t be undone.</string>
+    <string name="deleted_successfully">File deleted successfully</string>
+    <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
+    <string name="edit">Edit</string>
+    <string name="edit_with">Edit with</string>
+    <string name="empty_gallery">Captured photos/videos not found</string>
+    <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
+    <string name="file_info">File Info</string>
+    <string name="gallery_back_to_camera">Back to camera</string>
+    <string name="gallery_photo">Photo</string>
+    <string name="gallery_share">Share</string>
+    <string name="inaccessible_image">This photo can\'t be opened</string>
+    <string name="inaccessible_video">This video can\'t be opened</string>
+    <string name="main_storage">Main storage</string>
+
+    <string name="gallery_details">Details</string>
+    <string name="gallery_details_4k">4K</string>
+    <string name="gallery_details_aperture">ƒ/%s</string>
+    <string name="gallery_details_camera">%1$s %2$s</string>
+    <string name="gallery_details_coordinates">%1$s, %2$s</string>
+    <string name="gallery_details_date_time">%1$s • %2$s</string>
+    <string name="gallery_details_exposure_fraction">1/%ds</string>
+    <string name="gallery_details_exposure_seconds">%ss</string>
+    <string name="gallery_details_focal_length">%s mm</string>
+    <string name="gallery_details_full_hd">FHD</string>
+    <string name="gallery_details_hd">HD</string>
+    <string name="gallery_details_iso">ISO%d</string>
+    <string name="gallery_details_megapixels">%s MP</string>
+    <string name="gallery_details_modified">Modified %s</string>
+    <string name="gallery_details_no_map_app">No app can show this location</string>
+    <string name="gallery_details_open_in_maps">Open in maps</string>
+    <string name="gallery_details_resolution">%1$d × %2$d</string>
+    <string name="gallery_details_show_less">Show fewer details</string>
+    <string name="gallery_details_show_more">Show more details</string>
+    <string name="unable_to_obtain_file_details">Unable to obtain file details</string>
+
+    <string name="edit_image">Edit Image</string>
+    <string name="no_editor_app_error">You may not have a proper app for editing this content</string>
+    <string name="share_image">Share Image</string>
+    <string name="unable_to_edit_media">Unable to edit this file</string>
+    <string name="unable_to_share_media">Unable to share this file</string>
+
+    <string name="pause_video">Pause video</string>
+    <string name="play_video">Play video</string>
+    <string name="unable_to_play_video">Unable to play this video</string>
+    <string name="video_position">%1$s / %2$s</string>
+
+    <string name="camera_settings">Camera settings</string>
+    <string name="camera_sounds">Camera Sounds</string>
+    <string name="camera_sounds_desc">Shutter sound and other audio cues</string>
+    <string name="gyroscope_setting_desc">Occasionally get visual suggestions for straight/well-angled images</string>
+    <string name="gyroscope_suggestions">Gyroscope Suggestions</string>
+    <string name="image_quality">Image Quality</string>
+    <string name="image_taken_in_this_mode_does_not_contain_extra_data">Images taken in this mode don\'t contain extra EXIF data</string>
+    <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
+    <string name="remove_exif_title">Remove EXIF data after capture</string>
+    <string name="storage">Storage</string>
+    <string name="storage_location">Storage Location</string>
+
+    <string name="camera_settings_changed">Changed from default</string>
+    <string name="camera_settings_licenses">Open source licenses</string>
+    <string name="camera_settings_licenses_summary">License details for open source software</string>
+    <string name="camera_settings_open_settings">Open settings</string>
+    <string name="camera_settings_reset">Reset</string>
+    <string name="camera_settings_reset_all_settings">Reset all settings</string>
+    <string name="camera_settings_reset_settings_message">Every setting on this screen goes back to its default, except the storage location.</string>
+    <string name="camera_settings_reset_settings_title">Reset camera settings?</string>
     <string name="camera_settings_secure_session_banner">The camera was opened from the lock screen. Changes made here are not kept.</string>
-    <string name="camera_settings_section_privacy">Privacy</string>
+
+    <string name="camera_settings_section_about">About</string>
     <string name="camera_settings_section_composition">Composition</string>
+    <string name="camera_settings_section_controls">Controls</string>
+    <string name="camera_settings_section_privacy">Privacy</string>
     <string name="camera_settings_section_quality">Quality</string>
     <string name="camera_settings_section_sound">Sound</string>
-    <string name="camera_settings_section_controls">Controls</string>
-    <string name="camera_settings_section_about">About</string>
+
     <string name="camera_settings_geo_tagging">Save location</string>
-    <string name="camera_settings_geo_tagging_summary">Add where photos and videos were taken</string>
     <string name="camera_settings_geo_tagging_access_off">Location access is off</string>
     <string name="camera_settings_geo_tagging_locked">Location access can only be allowed when the device is unlocked</string>
-    <string name="camera_settings_photo_only">Photo only</string>
-    <string name="camera_settings_video_only">Video only</string>
-    <string name="camera_settings_rear_camera_label">%1$s · Rear camera</string>
-    <string name="camera_settings_front_camera_label">%1$s · Front camera</string>
-    <string name="camera_settings_open_settings">Open settings</string>
-    <string name="camera_settings_changed">Changed from default</string>
-    <string name="camera_settings_reset">Reset</string>
-    <string name="camera_settings_reset_storage_location">Reset storage location</string>
+    <string name="camera_settings_geo_tagging_summary">Add where photos and videos were taken</string>
+
     <string name="camera_settings_free_space">%1$s free</string>
     <string name="camera_settings_free_space_estimate">About %1$s</string>
-    <string name="camera_settings_photos_or_video">%1$s or %2$s</string>
+    <string name="camera_settings_front_camera_label">%1$s · Front camera</string>
     <plurals name="camera_settings_photo_count">
         <item quantity="one">%s photo</item>
         <item quantity="other">%s photos</item>
     </plurals>
+    <string name="camera_settings_photo_only">Photo only</string>
+    <string name="camera_settings_photos_or_video">%1$s or %2$s</string>
+    <string name="camera_settings_rear_camera_label">%1$s · Rear camera</string>
+    <string name="camera_settings_reset_storage_location">Reset storage location</string>
     <plurals name="camera_settings_video_minute_count">
         <item quantity="one">%s minute of video</item>
         <item quantity="other">%s minutes of video</item>
     </plurals>
-    <string name="camera_settings_licenses">Open source licenses</string>
-    <string name="camera_settings_licenses_summary">License details for open source software</string>
-    <string name="camera_settings_reset_all_settings">Reset all settings</string>
-    <string name="camera_settings_reset_settings_title">Reset camera settings?</string>
-    <string name="camera_settings_reset_settings_message">Every setting on this screen goes back to its default, except the storage location.</string>
-    <string name="camera_settings_photo_quality_maximum">Maximum</string>
-    <string name="camera_settings_photo_quality_high">High</string>
-    <string name="camera_settings_photo_quality_standard">Standard</string>
+    <string name="camera_settings_video_only">Video only</string>
+
+    <string name="camera_settings_compression">Compression</string>
+    <string name="camera_settings_megapixels">%d MP</string>
     <string name="camera_settings_photo_quality_custom">Custom</string>
-    <string name="camera_settings_photo_quality_summary">%1$s · %2$s</string>
     <string name="camera_settings_photo_quality_full_resolution">Full resolution</string>
+    <string name="camera_settings_photo_quality_high">High</string>
+    <string name="camera_settings_photo_quality_maximum">Maximum</string>
+    <string name="camera_settings_photo_quality_standard">Standard</string>
+    <string name="camera_settings_photo_quality_summary">%1$s · %2$s</string>
     <string name="camera_settings_photo_quality_summary_with_resolution">%1$s · %2$s · %3$s</string>
     <string name="camera_settings_resolution">Resolution</string>
     <string name="camera_settings_resolution_default">Default</string>
     <string name="camera_settings_resolution_full">Full</string>
-    <string name="camera_settings_megapixels">%d MP</string>
-    <string name="camera_settings_compression">Compression</string>
+
     <string name="camera_settings_capture_mode">Capture mode</string>
-    <string name="camera_settings_capture_mode_speed">Speed</string>
-    <string name="camera_settings_capture_mode_speed_summary">Takes the photo as soon as you press the shutter</string>
     <string name="camera_settings_capture_mode_quality">Quality</string>
     <string name="camera_settings_capture_mode_quality_summary">Waits for focus before taking the photo</string>
+    <string name="camera_settings_capture_mode_speed">Speed</string>
+    <string name="camera_settings_capture_mode_speed_summary">Takes the photo as soon as you press the shutter</string>
     <string name="camera_settings_capture_mode_zero_shutter_lag">Zero shutter lag</string>
     <string name="camera_settings_capture_mode_zero_shutter_lag_summary">Fastest shutter, uses more battery</string>
-    <string name="camera_settings_keep_selfies_as_seen">Keep selfies as seen</string>
-    <string name="camera_settings_keep_selfies_as_seen_summary">Save selfies as they appear on screen</string>
+
     <string name="camera_settings_grid">Grid</string>
-    <string name="camera_settings_grid_none">None</string>
     <string name="camera_settings_grid_3x3">3 × 3</string>
     <string name="camera_settings_grid_4x4">4 × 4</string>
     <string name="camera_settings_grid_golden_ratio">Golden ratio</string>
-    <string name="camera_settings_video_stabilization">Video stabilization</string>
-    <string name="camera_settings_video_stabilization_summary">Reduces shake in videos</string>
-    <string name="camera_settings_ultra_hdr">Ultra HDR</string>
-    <string name="camera_settings_ultra_hdr_summary">Brighter highlights on HDR screens, a regular JPEG everywhere else</string>
+    <string name="camera_settings_grid_none">None</string>
+    <string name="camera_settings_keep_selfies_as_seen">Keep selfies as seen</string>
+    <string name="camera_settings_keep_selfies_as_seen_summary">Save selfies as they appear on screen</string>
+
     <string name="camera_settings_hdr_video">HDR video</string>
     <string name="camera_settings_hdr_video_summary">Brighter highlights and richer color, saved as HEVC</string>
+    <string name="camera_settings_ultra_hdr">Ultra HDR</string>
+    <string name="camera_settings_ultra_hdr_summary">Brighter highlights on HDR screens, a regular JPEG everywhere else</string>
+    <string name="camera_settings_video_stabilization">Video stabilization</string>
+    <string name="camera_settings_video_stabilization_summary">Reduces shake in videos</string>
+
     <string name="camera_settings_focus_timeout">Focus timeout</string>
-    <string name="camera_settings_timer_light">Timer light</string>
-    <string name="camera_settings_timer_light_summary">Blink the flash while the timer counts down</string>
-    <string name="camera_settings_volume_key_action">Volume key action</string>
-    <string name="camera_settings_volume_key_action_shutter">Shutter</string>
-    <string name="camera_settings_volume_key_action_zoom">Zoom</string>
-    <string name="camera_settings_volume_key_action_volume">Volume</string>
-    <string name="camera_settings_volume_key_action_off">Off</string>
     <string name="camera_settings_focus_timeout_off">Off</string>
     <plurals name="camera_settings_seconds">
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
+    <string name="camera_settings_timer_light">Timer light</string>
+    <string name="camera_settings_timer_light_summary">Blink the flash while the timer counts down</string>
+    <string name="camera_settings_volume_key_action">Volume key action</string>
+    <string name="camera_settings_volume_key_action_off">Off</string>
+    <string name="camera_settings_volume_key_action_shutter">Shutter</string>
+    <string name="camera_settings_volume_key_action_volume">Volume</string>
+    <string name="camera_settings_volume_key_action_zoom">Zoom</string>
 </resources>

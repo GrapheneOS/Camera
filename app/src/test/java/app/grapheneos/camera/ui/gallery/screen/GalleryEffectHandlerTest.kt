@@ -1,11 +1,13 @@
 package app.grapheneos.camera.ui.gallery.screen
 
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
@@ -26,11 +28,13 @@ class GalleryEffectHandlerTest {
     private val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
     private val videoPlayerLauncher = mockk<VideoPlayerLauncher>(relaxed = true)
     private val systemGalleryLauncher = mockk<SystemGalleryLauncher>(relaxed = true)
+    private val clipboardManager = activity.getSystemService(ClipboardManager::class.java)
     private val messages = mutableListOf<Int>()
     private val effectHandler = GalleryEffectHandlerImpl(
         activity = activity,
         videoPlayerLauncher = videoPlayerLauncher,
         systemGalleryLauncher = systemGalleryLauncher,
+        clipboardManager = clipboardManager,
         showMessage = { message -> messages += message },
     )
 
@@ -91,6 +95,32 @@ class GalleryEffectHandlerTest {
         effectHandler.handle(Effect.Share(ITEM))
 
         assertEquals(Intent.ACTION_CHOOSER, nextStartedActivity().action)
+    }
+
+    @Test
+    fun openMap_showsTheLocationInAMapApp() {
+        effectHandler.handle(
+            Effect.OpenMap(
+                GeoCoordinates(
+                    latitude = 47.5,
+                    longitude = -122.25,
+                ),
+            ),
+        )
+
+        val intent = nextStartedActivity()
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("geo:47.5,-122.25?q=47.5,-122.25", intent.dataString)
+    }
+
+    @Test
+    fun copyText_putsTheTextOnTheClipboard() {
+        effectHandler.handle(Effect.CopyText("47.50000, -122.25000"))
+
+        assertEquals(
+            "47.50000, -122.25000",
+            clipboardManager.primaryClip?.getItemAt(0)?.text,
+        )
     }
 
     @Test
