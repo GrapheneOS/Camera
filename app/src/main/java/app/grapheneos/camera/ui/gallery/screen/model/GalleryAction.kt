@@ -6,6 +6,16 @@ internal sealed interface GalleryAction {
 
     data object OpenMapClicked : Details
 
+    sealed interface Deletion : GalleryAction
+
+    data object DeleteClicked : Deletion
+
+    data object DeleteConfirmed : Deletion
+
+    data object UndoClicked : Deletion
+
+    data object UndoDismissed : Deletion
+
     data object ScreenTapped : GalleryAction
 
     data object VideoClicked : GalleryAction
@@ -15,10 +25,6 @@ internal sealed interface GalleryAction {
     data object EditClicked : GalleryAction
 
     data object EditWithClicked : GalleryAction
-
-    data object DeleteClicked : GalleryAction
-
-    data object DeleteConfirmed : GalleryAction
 
     data object ShareClicked : GalleryAction
 

@@ -148,8 +148,7 @@
     <string name="deleting_unexpected_error">An unexpected error occurred while deleting this file</string>
     <string name="edit">Edit</string>
     <string name="edit_with">Edit with</string>
-    <string name="empty_gallery">Captured photos/videos not found</string>
-    <string name="existing_no_image">No image found. Exiting in-app gallery.</string>
+    <string name="empty_gallery">No photos or videos</string>
     <string name="file_info">File Info</string>
     <string name="gallery_back_to_camera">Back to camera</string>
     <string name="gallery_photo">Photo</string>
@@ -157,6 +156,8 @@
     <string name="inaccessible_image">This photo can\'t be opened</string>
     <string name="inaccessible_video">This video can\'t be opened</string>
     <string name="main_storage">Main storage</string>
+    <string name="restoring_unexpected_error">Couldn\'t restore this file</string>
+    <string name="undo">Undo</string>
 
     <string name="gallery_details">Details</string>
     <string name="gallery_details_4k">4K</string>

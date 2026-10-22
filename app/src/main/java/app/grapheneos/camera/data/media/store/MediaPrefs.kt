@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class MediaPrefs(
     @SerialName("last_captured_item") val lastCapturedItem: StoredCapturedItem? = null,
+    @SerialName("trashed_items") val trashedItems: List<String> = emptyList(),
 )
 
 @Serializable

@@ -35,22 +35,8 @@ class GalleryEffectHandlerTest {
         videoPlayerLauncher = videoPlayerLauncher,
         systemGalleryLauncher = systemGalleryLauncher,
         clipboardManager = clipboardManager,
-        showMessage = { message -> messages += message },
+        showMessage = { message -> messages += message.text },
     )
-
-    @Test
-    fun nothingToShow_closesTheGallery() {
-        effectHandler.handle(Effect.NothingToShow)
-
-        assertTrue(activity.isFinishing)
-    }
-
-    @Test
-    fun deletingTheLastItem_closesTheGallery() {
-        effectHandler.handle(Effect.LastItemDeleted)
-
-        assertTrue(activity.isFinishing)
-    }
 
     @Test
     fun openVideo_opensTheVideoPlayer() {

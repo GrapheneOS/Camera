@@ -6,6 +6,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +66,12 @@ internal fun GalleryPager(
         onPageSelected = onPageSelected,
     )
 
+    PageListChangedEffect(
+        pagerState = pagerState,
+        pages = pages,
+        currentPage = currentPage,
+    )
+
     ViewerLayoutEffect(
         transformState = transformState,
         detailsState = detailsState,
@@ -112,6 +119,27 @@ private fun PageSelectedEffect(
     }
 }
 
+// Keys would keep the pager on the page it showed, off an item restored before it.
+@Composable
+private fun PageListChangedEffect(
+    pagerState: PagerState,
+    pages: ImmutableList<GalleryPageUiModel>,
+    currentPage: Int,
+) {
+    val pageKeys = remember(pages) { pages.map { it.key } }
+    val shownPageKeys = remember { ShownPageKeys(pageKeys) }
+
+    SideEffect {
+        if (shownPageKeys.keys != pageKeys) {
+            shownPageKeys.keys = pageKeys
+
+            if (!pagerState.isScrollInProgress) {
+                pagerState.requestScrollToPage(currentPage)
+            }
+        }
+    }
+}
+
 @Composable
 private fun ViewerLayoutEffect(
     transformState: ViewerTransformState,
@@ -151,3 +179,7 @@ private fun imageSize(page: GalleryPageUiModel): Size? {
         )
     }
 }
+
+private class ShownPageKeys(
+    var keys: List<String>,
+)

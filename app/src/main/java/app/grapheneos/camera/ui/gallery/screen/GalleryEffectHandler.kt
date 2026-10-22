@@ -6,7 +6,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
@@ -16,6 +15,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.core.net.toUri
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.GeoCoordinates
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
@@ -27,7 +27,7 @@ internal fun rememberGalleryEffectHandler(
     videoPlayerLauncher: VideoPlayerLauncher,
     systemGalleryLauncher: SystemGalleryLauncher,
     clipboardManager: ClipboardManager,
-    onShowMessage: (Int) -> Unit,
+    onShowMessage: (GalleryMessage) -> Unit,
 ): GalleryEffectHandler {
     val currentOnShowMessage by rememberUpdatedState(onShowMessage)
     val activity = requireNotNull(LocalActivity.current) {
@@ -54,21 +54,21 @@ internal class GalleryEffectHandlerImpl(
     private val videoPlayerLauncher: VideoPlayerLauncher,
     private val systemGalleryLauncher: SystemGalleryLauncher,
     private val clipboardManager: ClipboardManager,
-    private val showMessage: (Int) -> Unit,
+    private val showMessage: (GalleryMessage) -> Unit,
 ) : GalleryEffectHandler {
 
     override fun handle(effect: Effect) {
         when (effect) {
-            is Effect.NothingToShow -> close(R.string.empty_gallery)
             is Effect.OpenVideo -> videoPlayerLauncher.open(activity, effect.uri)
             is Effect.OpenSystemGallery -> systemGalleryLauncher.open(activity)
             is Effect.Edit -> edit(effect)
             is Effect.Share -> share(effect)
             is Effect.OpenMap -> openMap(effect.location)
             is Effect.CopyText -> copy(effect.text)
-            is Effect.ItemDeleted -> showMessage(R.string.deleted_successfully)
-            is Effect.LastItemDeleted -> close(R.string.existing_no_image)
-            is Effect.DeletionFailed -> showMessage(R.string.deleting_unexpected_error)
+            is Effect.ItemDeleted -> showText(R.string.deleted_successfully)
+            is Effect.ItemTrashed -> showUndoableText(R.string.deleted_successfully)
+            is Effect.DeletionFailed -> showText(R.string.deleting_unexpected_error)
+            is Effect.RestoreFailed -> showText(R.string.restoring_unexpected_error)
         }
     }
 
@@ -79,7 +79,7 @@ internal class GalleryEffectHandlerImpl(
             useDefaultEditor = effect.usesDefaultEditor,
         )
 
-        error?.let(showMessage)
+        error?.let(::showText)
     }
 
     private fun share(effect: Effect.Share) {
@@ -88,7 +88,7 @@ internal class GalleryEffectHandlerImpl(
             item = effect.item,
         )
 
-        error?.let(showMessage)
+        error?.let(::showText)
     }
 
     private fun openMap(location: GeoCoordinates) {
@@ -98,7 +98,7 @@ internal class GalleryEffectHandlerImpl(
         try {
             activity.startActivity(intent)
         } catch (_: ActivityNotFoundException) {
-            showMessage(R.string.gallery_details_no_map_app)
+            showText(R.string.gallery_details_no_map_app)
         }
     }
 
@@ -106,18 +106,20 @@ internal class GalleryEffectHandlerImpl(
         clipboardManager.setPrimaryClip(ClipData.newPlainText(null, text))
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            showMessage(R.string.copied_text_to_clipboard)
+            showText(R.string.copied_text_to_clipboard)
         }
     }
 
-    private fun close(@StringRes message: Int) {
-        Toast
-            .makeText(
-                activity.applicationContext,
-                message,
-                Toast.LENGTH_SHORT,
-            )
-            .show()
-        activity.finish()
+    private fun showText(@StringRes text: Int) {
+        showMessage(GalleryMessage(text))
+    }
+
+    private fun showUndoableText(@StringRes text: Int) {
+        showMessage(
+            GalleryMessage(
+                text = text,
+                offersUndo = true,
+            ),
+        )
     }
 }
