@@ -2,11 +2,18 @@ package app.grapheneos.camera.ui.gallery.screen
 
 import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -144,7 +151,9 @@ private fun GalleryContent(
         )
 
         if (uiState.isEmpty) {
-            EmptyGalleryPlaceholder()
+            EmptyGalleryPlaceholder(
+                onOpenCameraClick = onNavigateBack,
+            )
         }
 
         GalleryBars(
@@ -198,10 +207,24 @@ private fun GalleryViewerPager(
 }
 
 @Composable
-private fun EmptyGalleryPlaceholder() {
+private fun EmptyGalleryPlaceholder(
+    onOpenCameraClick: () -> Unit,
+) {
     GalleryPlaceholder(
         icon = Icons.Outlined.PhotoLibrary,
-        text = stringResource(R.string.empty_gallery),
+        title = stringResource(R.string.empty_gallery),
+        description = stringResource(R.string.empty_gallery_description),
+        action = {
+            Button(onClick = onOpenCameraClick) {
+                Icon(
+                    imageVector = Icons.Outlined.PhotoCamera,
+                    contentDescription = null,
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                )
+                Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                Text(text = stringResource(R.string.gallery_open_camera))
+            }
+        },
     )
 }
 
@@ -236,6 +259,7 @@ private fun GalleryContentPreview() {
                 pages = persistentListOf(
                     GalleryPageUiModel(
                         key = PREVIEW_PAGE_KEY,
+                        name = "IMG_20231016_120000_000",
                         isVideo = false,
                     ),
                 ),

@@ -49,18 +49,27 @@ internal fun GalleryPage(
                 )
             }
 
-            is GalleryPreview.Unavailable -> when {
-                page.isVideo -> GalleryPlaceholder(
-                    icon = Icons.Outlined.VideocamOff,
-                    text = stringResource(R.string.inaccessible_video),
-                )
-                else -> GalleryPlaceholder(
-                    icon = Icons.Outlined.BrokenImage,
-                    text = stringResource(R.string.inaccessible_image),
-                )
-            }
+            is GalleryPreview.Unavailable -> UnavailablePlaceholder(page)
         }
     }
+}
+
+@Composable
+private fun UnavailablePlaceholder(page: GalleryPageUiModel) {
+    GalleryPlaceholder(
+        icon = when {
+            page.isVideo -> Icons.Outlined.VideocamOff
+            else -> Icons.Outlined.BrokenImage
+        },
+        title = stringResource(
+            when {
+                page.isVideo -> R.string.inaccessible_video
+                else -> R.string.inaccessible_image
+            },
+        ),
+        description = stringResource(R.string.inaccessible_media_reason),
+        fileName = page.name,
+    )
 }
 
 @PreviewLightDark
@@ -70,6 +79,7 @@ private fun GalleryPageUnavailablePreview() {
         GalleryPage(
             page = GalleryPageUiModel(
                 key = "content://media/external/video/media/1",
+                name = "VID_20231016_120000_000",
                 isVideo = true,
             ),
             preview = GalleryPreview.Unavailable,

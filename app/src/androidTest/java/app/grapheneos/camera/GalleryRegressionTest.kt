@@ -91,6 +91,7 @@ class GalleryRegressionTest {
             pages = persistentListOf(
                 GalleryPageUiModel(
                     key = IMAGE_KEY,
+                    name = "IMG_20231016_120000_000",
                     isVideo = false,
                 ),
             ),

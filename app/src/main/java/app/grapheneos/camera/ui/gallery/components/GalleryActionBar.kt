@@ -33,7 +33,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.common.components.bottomBar
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
-private val BAR_HEIGHT = 60.dp
+internal val GALLERY_ACTION_BAR_HEIGHT = 60.dp
 private val ITEM_TOP_PADDING = 12.dp
 private val ICON_LABEL_SPACING = 4.dp
 
@@ -55,7 +55,7 @@ internal fun GalleryActionBar(
         Row(
             modifier = Modifier
                 .windowInsetsPadding(WindowInsets.bottomBar)
-                .heightIn(min = BAR_HEIGHT),
+                .heightIn(min = GALLERY_ACTION_BAR_HEIGHT),
         ) {
             if (showsExternalActions) {
                 ActionItem(
