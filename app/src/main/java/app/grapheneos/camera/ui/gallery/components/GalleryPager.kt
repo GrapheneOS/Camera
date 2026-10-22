@@ -14,7 +14,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -157,7 +156,7 @@ private fun ViewerLayoutEffect(
     page: GalleryPageUiModel?,
     preview: GalleryPreview?,
 ) {
-    val imageSize = preview?.let(::imageSize)
+    val imageSize = preview?.imageSize()
     val canZoom = page?.isVideo == false
 
     LaunchedEffect(
@@ -175,16 +174,6 @@ private fun ViewerLayoutEffect(
             canZoom = canZoom,
         )
         detailsState.updateLayout(containerSize.toSize())
-    }
-}
-
-private fun imageSize(preview: GalleryPreview): Size? {
-    return when {
-        preview !is GalleryPreview.Loaded -> null
-        else -> Size(
-            width = preview.image.width.toFloat(),
-            height = preview.image.height.toFloat(),
-        )
     }
 }
 

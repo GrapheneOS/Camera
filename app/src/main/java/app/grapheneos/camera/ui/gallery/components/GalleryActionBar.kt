@@ -3,14 +3,12 @@ package app.grapheneos.camera.ui.gallery.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -32,13 +30,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.common.components.bottomBar
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 private val BAR_HEIGHT = 60.dp
 private val ITEM_TOP_PADDING = 12.dp
 private val ICON_LABEL_SPACING = 4.dp
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun GalleryActionBar(
     showsExternalActions: Boolean,
@@ -56,7 +54,7 @@ internal fun GalleryActionBar(
     ) {
         Row(
             modifier = Modifier
-                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
+                .windowInsetsPadding(WindowInsets.bottomBar)
                 .heightIn(min = BAR_HEIGHT),
         ) {
             if (showsExternalActions) {

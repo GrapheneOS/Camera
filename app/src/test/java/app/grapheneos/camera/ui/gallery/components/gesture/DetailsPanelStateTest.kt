@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.gallery.components.gesture
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,6 +22,7 @@ class DetailsPanelStateTest {
         val unlaid = DetailsPanelState(
             cornerRadius = CORNER_RADIUS,
             settleVelocity = SETTLE_VELOCITY,
+            sidePanelWidth = SIDE_PANEL_WIDTH,
         )
 
         assertFalse(unlaid.isLaidOut())
@@ -38,9 +40,9 @@ class DetailsPanelStateTest {
     fun photoShift_centersThePhotoInTheWindowAndStaysWhileExpanding() {
         val centered = 675f / 2f - SCREEN.height / 2f
 
-        assertEquals(0f, state.photoShiftAt(position = 0f))
-        assertEquals(centered, state.photoShiftAt(position = 1f))
-        assertEquals(centered, state.photoShiftAt(position = 2f))
+        assertEquals(Offset.Zero, state.photoShiftAt(position = 0f))
+        assertEquals(Offset(x = 0f, y = centered), state.photoShiftAt(position = 1f))
+        assertEquals(Offset(x = 0f, y = centered), state.photoShiftAt(position = 2f))
     }
 
     @Test
@@ -207,6 +209,66 @@ class DetailsPanelStateTest {
         assertEquals(2f, state.targetPosition())
     }
 
+    @Test
+    fun inLandscape_thePanelSlidesInFromTheEndAndMovesThePhotoAside() {
+        state.updateLayout(LANDSCAPE)
+
+        assertTrue(state.isSidePanel())
+        assertEquals(Offset(x = SIDE_PANEL_WIDTH, y = 0f), state.panelOffsetAt(position = 0f))
+        assertEquals(Offset.Zero, state.panelOffsetAt(position = 1f))
+        assertEquals(Offset(x = -SIDE_PANEL_WIDTH / 2f, y = 0f), state.photoShiftAt(position = 1f))
+    }
+
+    @Test
+    fun inLandscape_aWidePhotoShrinksToTheWindowBesideThePanel() {
+        state.updateLayout(LANDSCAPE)
+        val panorama = Size(width = 4000f, height = 1000f)
+
+        assertEquals(1f, state.photoScaleAt(position = 0f, imageSize = panorama))
+        assertEquals(0.7f, state.photoScaleAt(position = 1f, imageSize = panorama))
+        assertEquals(1f, state.photoScaleAt(position = 1f, imageSize = Size(1000f, 900f)))
+    }
+
+    @Test
+    fun inPortrait_thePhotoKeepsItsSize() {
+        assertEquals(1f, state.photoScaleAt(position = 1f, imageSize = Size(4000f, 1000f)))
+    }
+
+    @Test
+    fun inLandscape_aSwipeUpAsLongAsThePanelIsWide_opensIt() {
+        state.updateLayout(LANDSCAPE)
+        state.startDrag()
+        state.drag(panChange = -SIDE_PANEL_WIDTH / 2f)
+
+        assertEquals(0.5f, state.targetPosition())
+    }
+
+    @Test
+    fun inLandscape_thePanelNeverExpands() {
+        state.updateLayout(LANDSCAPE)
+        state.updateContentHeight(LANDSCAPE.height * 2f)
+        state.startDrag()
+        state.drag(panChange = -LANDSCAPE.height)
+
+        assertEquals(1f, state.targetPosition())
+    }
+
+    @Test
+    fun rotatingAnExpandedPanel_leavesItOpen() {
+        expand()
+
+        state.updateLayout(LANDSCAPE)
+
+        assertEquals(DetailsAnchor.Open, state.anchor)
+    }
+
+    @Test
+    fun inANarrowLandscapeWindow_thePanelTakesAtMostHalfTheWidth() {
+        state.updateLayout(Size(width = 500f, height = 400f))
+
+        assertEquals(250f, state.panelWidth())
+    }
+
     private fun expand() {
         state.updateContentHeight(SCREEN.height)
         state.show(isShown = true)
@@ -219,6 +281,7 @@ class DetailsPanelStateTest {
         return DetailsPanelState(
             cornerRadius = CORNER_RADIUS,
             settleVelocity = SETTLE_VELOCITY,
+            sidePanelWidth = SIDE_PANEL_WIDTH,
             isShown = isShown,
         ).apply {
             updateLayout(SCREEN)
@@ -228,8 +291,10 @@ class DetailsPanelStateTest {
     private companion object {
         const val CORNER_RADIUS = 60f
         const val SETTLE_VELOCITY = 300f
+        const val SIDE_PANEL_WIDTH = 600f
         const val OPEN_TOP = 675f - CORNER_RADIUS
         val SCREEN = Size(width = 900f, height = 2000f)
+        val LANDSCAPE = Size(width = 2000f, height = 900f)
         val OPEN_TRAVEL = SCREEN.height - OPEN_TOP
     }
 }

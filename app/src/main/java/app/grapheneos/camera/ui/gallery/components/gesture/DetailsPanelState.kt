@@ -1,18 +1,25 @@
 package app.grapheneos.camera.ui.gallery.components.gesture
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
+import app.grapheneos.camera.ui.core.animation.follow
 import kotlin.math.abs
+import kotlin.math.min
 
 private const val PHOTO_WINDOW_HEIGHT_TO_WIDTH = 0.75f
 private const val EXPANDED_TOP = 0f
@@ -21,6 +28,7 @@ private const val OPEN_POSITION = 1f
 private const val EXPANDED_POSITION = 2f
 
 private val SETTLE_VELOCITY = 125.dp
+private val SIDE_PANEL_WIDTH = 360.dp
 
 @Composable
 internal fun rememberDetailsPanelState(isShown: Boolean): DetailsPanelState {
@@ -30,20 +38,40 @@ internal fun rememberDetailsPanelState(isShown: Boolean): DetailsPanelState {
         density = density,
     )
     val settleVelocity = with(density) { SETTLE_VELOCITY.toPx() }
+    val sidePanelWidth = with(density) { SIDE_PANEL_WIDTH.toPx() }
 
-    return remember(cornerRadius, settleVelocity) {
+    return remember(cornerRadius, settleVelocity, sidePanelWidth) {
         DetailsPanelState(
             cornerRadius = cornerRadius,
             settleVelocity = settleVelocity,
+            sidePanelWidth = sidePanelWidth,
             isShown = isShown,
         )
     }
+}
+
+@Composable
+internal fun animateDetailsPositionAsState(
+    detailsState: DetailsPanelState,
+): State<Float> {
+    val position = remember(detailsState) { Animatable(detailsState.targetPosition()) }
+
+    LaunchedEffect(position) {
+        position.follow(
+            target = detailsState::targetPosition,
+            isAnimated = { !detailsState.isDragging },
+            animationSpec = CONTROLS_SPEC,
+        )
+    }
+
+    return position.asState()
 }
 
 @Stable
 internal class DetailsPanelState(
     private val cornerRadius: Float,
     private val settleVelocity: Float,
+    private val sidePanelWidth: Float,
     isShown: Boolean = false,
 ) {
 
@@ -61,12 +89,24 @@ internal class DetailsPanelState(
         return containerSize != Size.Zero
     }
 
+    fun isSidePanel(): Boolean {
+        return containerSize.width > containerSize.height
+    }
+
+    fun panelWidth(): Float {
+        return min(sidePanelWidth, containerSize.width / 2f)
+    }
+
     fun isShown(): Boolean {
         return targetPosition() > CLOSED_POSITION
     }
 
     fun updateLayout(containerSize: Size) {
         this.containerSize = containerSize
+
+        if (isSidePanel() && anchor == DetailsAnchor.Expanded) {
+            anchor = DetailsAnchor.Open
+        }
     }
 
     fun updateContentHeight(contentHeight: Float) {
@@ -140,14 +180,47 @@ internal class DetailsPanelState(
         }
     }
 
-    fun photoShiftAt(position: Float): Float {
-        val windowCenter = photoWindowHeight() / 2f
+    fun panelOffsetAt(position: Float): Offset {
+        return when {
+            isSidePanel() -> Offset(
+                x = panelWidth() * (1f - openingAt(position)),
+                y = 0f,
+            )
+            else -> Offset(
+                x = 0f,
+                y = topAt(position),
+            )
+        }
+    }
 
-        return lerp(
-            start = 0f,
-            stop = windowCenter - containerSize.height / 2f,
-            fraction = openingAt(position),
+    fun photoShiftAt(position: Float): Offset {
+        val opening = openingAt(position)
+
+        return when {
+            isSidePanel() -> Offset(
+                x = -panelWidth() / 2f * opening,
+                y = 0f,
+            )
+            else -> Offset(
+                x = 0f,
+                y = (photoWindowHeight() - containerSize.height) / 2f * opening,
+            )
+        }
+    }
+
+    fun photoScaleAt(
+        position: Float,
+        imageSize: Size?,
+    ): Float {
+        if (!isSidePanel() || imageSize == null) return 1f
+
+        val fitScale = min(
+            containerSize.width / imageSize.width,
+            containerSize.height / imageSize.height,
         )
+        val windowWidth = containerSize.width - panelWidth() * openingAt(position)
+
+        return min(1f, windowWidth / (imageSize.width * fitScale))
     }
 
     fun openingAt(position: Float): Float {
@@ -171,7 +244,7 @@ internal class DetailsPanelState(
     private fun canExpand(): Boolean {
         val isOverflowing = contentHeight > containerSize.height - openTop()
 
-        return isOverflowing || anchor == DetailsAnchor.Expanded
+        return !isSidePanel() && (isOverflowing || anchor == DetailsAnchor.Expanded)
     }
 
     private fun anchors(): List<DetailsAnchor> {
@@ -233,7 +306,10 @@ internal class DetailsPanelState(
     }
 
     private fun openTop(): Float {
-        return photoWindowHeight() - cornerRadius
+        return when {
+            isSidePanel() -> closedTop() - panelWidth()
+            else -> photoWindowHeight() - cornerRadius
+        }
     }
 
     private fun photoWindowHeight(): Float {

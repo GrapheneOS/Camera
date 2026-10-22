@@ -30,9 +30,9 @@ import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.gallery.components.GalleryPager
 import app.grapheneos.camera.ui.gallery.components.GalleryPlaceholder
 import app.grapheneos.camera.ui.gallery.components.ViewerTransform
-import app.grapheneos.camera.ui.gallery.components.details.animateDetailsPositionAsState
 import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
+import app.grapheneos.camera.ui.gallery.components.gesture.animateDetailsPositionAsState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberDetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.rememberViewerTransform
