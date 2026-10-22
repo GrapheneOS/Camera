@@ -2,11 +2,13 @@ package app.grapheneos.camera.ui.gallery.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.round
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanel
 import app.grapheneos.camera.ui.gallery.components.gesture.ViewerGestures
 import app.grapheneos.camera.ui.gallery.components.gesture.viewerGestureInput
@@ -54,7 +56,16 @@ internal fun ViewerPage(
             },
             onVideoClick = onVideoClick,
             modifier = Modifier
-                .graphicsLayer { translationY = detailsState.photoShiftAt(detailsPosition()) }
+                .offset { detailsState.photoShiftAt(detailsPosition()).round() }
+                .graphicsLayer {
+                    val scale = detailsState.photoScaleAt(
+                        position = detailsPosition(),
+                        imageSize = preview.imageSize(),
+                    )
+
+                    scaleX = scale
+                    scaleY = scale
+                }
                 .then(photoTransform),
         )
         DetailsPanel(
@@ -67,7 +78,7 @@ internal fun ViewerPage(
             onShownChange = gestures.onDetailsShownChange,
             onOpenMapClick = onOpenMapClick,
             onCopy = onCopy,
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier.align(Alignment.BottomEnd),
         )
     }
 }

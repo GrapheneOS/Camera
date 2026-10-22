@@ -1,23 +1,23 @@
 package app.grapheneos.camera.ui.gallery.components.details
 
 import android.util.Size as AndroidSize
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,27 +27,24 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.R
+import androidx.compose.ui.unit.round
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.MediaTimestamp
-import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
-import app.grapheneos.camera.ui.core.animation.follow
+import app.grapheneos.camera.ui.common.components.systemBarsAndCutout
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import java.time.LocalDateTime
 
-private val PLACEHOLDER_PADDING = 24.dp
 private val PREVIEW_WIDTH = 360.dp
 private val PREVIEW_HEIGHT = 720.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DetailsPanel(
     detailsState: DetailsPanelState,
@@ -83,89 +80,72 @@ internal fun DetailsPanel(
     }
 
     if (isShown) {
+        val isSidePanel = detailsState.isSidePanel()
+
         Surface(
             modifier = modifier
-                .fillMaxSize()
-                .graphicsLayer { translationY = detailsState.topAt(position()) }
+                .panelBounds(detailsState)
+                .offset { detailsState.panelOffsetAt(position()).round() }
                 .nestedScroll(scrollConnection),
-            shape = MaterialTheme.shapes.extraLarge.copy(
-                bottomStart = ZeroCornerSize,
-                bottomEnd = ZeroCornerSize,
-            ),
+            shape = panelShape(isSidePanel),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .windowInsetsPadding(panelInsets(isSidePanel)),
             ) {
-                Column(
+                DetailsPanelContent(
+                    details = details,
+                    isVideo = isVideo,
+                    uri = uri,
+                    showsDragHandle = !isSidePanel,
+                    dragHandleAlpha = { 1f - detailsState.expansionAt(position()) },
+                    onOpenMapClick = onOpenMapClick,
+                    onCopy = onCopy,
                     modifier = Modifier.onSizeChanged { size ->
                         contentHeight.intValue = size.height
                     },
-                ) {
-                    BottomSheetDefaults.DragHandle(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .graphicsLayer {
-                                alpha = 1f - detailsState.expansionAt(position())
-                            },
-                    )
-                    DetailsPanelContent(
-                        details = details,
-                        isVideo = isVideo,
-                        uri = uri,
-                        onOpenMapClick = onOpenMapClick,
-                        onCopy = onCopy,
-                    )
-                }
+                )
             }
         }
     }
 }
 
 @Composable
-internal fun animateDetailsPositionAsState(
-    detailsState: DetailsPanelState,
-): State<Float> {
-    val position = remember(detailsState) { Animatable(detailsState.targetPosition()) }
+private fun Modifier.panelBounds(detailsState: DetailsPanelState): Modifier {
+    val panelWidth = with(LocalDensity.current) { detailsState.panelWidth().toDp() }
 
-    LaunchedEffect(position) {
-        position.follow(
-            target = detailsState::targetPosition,
-            isAnimated = { !detailsState.isDragging },
-            animationSpec = CONTROLS_SPEC,
-        )
+    return when {
+        detailsState.isSidePanel() -> fillMaxHeight().width(panelWidth)
+        else -> fillMaxSize()
     }
-
-    return position.asState()
 }
 
 @Composable
-private fun DetailsPanelContent(
-    details: GalleryDetails,
-    isVideo: Boolean,
-    uri: String,
-    onOpenMapClick: (() -> Unit)?,
-    onCopy: (String) -> Unit,
-) {
-    when (details) {
-        is GalleryDetails.Loading -> Unit
+private fun panelShape(isSidePanel: Boolean): Shape {
+    val shape = MaterialTheme.shapes.extraLarge
 
-        is GalleryDetails.Loaded -> FileDetails(
-            details = details.details,
-            isVideo = isVideo,
-            uri = uri,
-            onOpenMapClick = onOpenMapClick,
-            onCopy = onCopy,
+    return when {
+        isSidePanel -> shape.copy(
+            topEnd = ZeroCornerSize,
+            bottomEnd = ZeroCornerSize,
         )
-
-        is GalleryDetails.Unavailable -> Text(
-            text = stringResource(R.string.unable_to_obtain_file_details),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(PLACEHOLDER_PADDING),
+        else -> shape.copy(
+            bottomStart = ZeroCornerSize,
+            bottomEnd = ZeroCornerSize,
         )
     }
+}
+
+@Composable
+private fun panelInsets(isSidePanel: Boolean): WindowInsets {
+    val sides = when {
+        isSidePanel -> WindowInsetsSides.Top + WindowInsetsSides.End + WindowInsetsSides.Bottom
+        else -> WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+    }
+
+    return WindowInsets.systemBarsAndCutout(sides)
 }
 
 @PreviewLightDark
@@ -188,6 +168,7 @@ private fun DetailsPanelPreview() {
                 DetailsPanelState(
                     cornerRadius = 0f,
                     settleVelocity = 0f,
+                    sidePanelWidth = 0f,
                     isShown = true,
                 ).apply { updateLayout(containerSize) }
             }

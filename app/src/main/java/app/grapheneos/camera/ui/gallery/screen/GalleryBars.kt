@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
@@ -54,12 +55,7 @@ internal fun BoxScope.GalleryBars(
         hidesInstantly = uiState.isZoomed || isPanelVisible,
     )
     val isShown by remember(visibility) { derivedStateOf { visibility.value > 0f } }
-    val overPhoto = animateFloatAsState(
-        targetValue = when {
-            uiState.isZoomed -> 1f
-            else -> 0f
-        },
-    )
+    val overPhoto = animateOverPhotoAsState(isZoomed = uiState.isZoomed)
     val contentColor = barsContentColor(overPhoto = overPhoto.value)
     val backgrounds = rememberBarBackgrounds(
         overPhoto = overPhoto,
@@ -123,6 +119,19 @@ private fun animateBarsVisibilityAsState(
         animationSpec = when {
             hidesInstantly && !isVisible -> snap()
             else -> CONTROLS_SPEC
+        },
+    )
+}
+
+@Composable
+private fun animateOverPhotoAsState(isZoomed: Boolean): State<Float> {
+    val windowSize = LocalWindowInfo.current.containerSize
+    val isLandscape = windowSize.width > windowSize.height
+
+    return animateFloatAsState(
+        targetValue = when {
+            isZoomed || isLandscape -> 1f
+            else -> 0f
         },
     )
 }
