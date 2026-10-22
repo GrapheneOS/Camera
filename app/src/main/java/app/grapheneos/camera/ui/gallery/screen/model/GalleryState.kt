@@ -20,10 +20,11 @@ internal data class GalleryState(
         return items.getOrNull(currentIndex)
     }
 
-    fun itemsAround(
-        page: Int,
-        radius: Int,
-    ): List<CapturedItem> {
-        return (page - radius..page + radius).mapNotNull(items::getOrNull)
+    fun itemsAround(radius: Int): List<CapturedItem> {
+        return (currentIndex - radius..currentIndex + radius).mapNotNull(items::getOrNull)
+    }
+
+    fun showsSamePageAs(other: GalleryState): Boolean {
+        return currentIndex == other.currentIndex && items == other.items
     }
 }

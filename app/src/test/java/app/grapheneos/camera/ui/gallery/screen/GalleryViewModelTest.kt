@@ -456,14 +456,10 @@ class GalleryViewModelTest {
                 capturedItemRepository = capturedItemRepository,
                 galleryItemsMapper = GalleryItemsMapperImpl(),
             ),
-            previewsDelegate = GalleryPreviewsDelegateImpl(
-                capturedItemRepository = capturedItemRepository,
-                mainDispatcher = mainDispatcherRule.testDispatcher,
-            ),
+            previewsDelegate = GalleryPreviewsDelegateImpl(capturedItemRepository),
             detailsDelegate = GalleryDetailsDelegateImpl(
                 arguments = arguments,
                 capturedItemDetailsRepository = capturedItemDetailsRepository,
-                mainDispatcher = mainDispatcherRule.testDispatcher,
             ),
             deletionDelegate = GalleryDeletionDelegateImpl(deleteCapturedItem),
             uiStateMapper = GalleryUiStateMapperImpl(captureTimeMapper = CaptureTimeMapperImpl()),

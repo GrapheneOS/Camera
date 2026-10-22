@@ -16,8 +16,7 @@ internal interface GalleryDeletionDelegate {
 
     fun dismiss()
 
-    /** Returns whether the item was removed and the gallery still has items to show. */
-    suspend fun deleteCurrentItem(): Boolean
+    suspend fun deleteCurrentItem()
 }
 
 internal class GalleryDeletionDelegateImpl @Inject constructor(
@@ -42,21 +41,18 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(dialog = null) }
     }
 
-    override suspend fun deleteCurrentItem(): Boolean {
-        val item = stateHolder.state.value.currentItem() ?: return false
+    override suspend fun deleteCurrentItem() {
+        val item = stateHolder.state.value.currentItem() ?: return
 
         dismiss()
 
-        return when (deleteCapturedItem(item)) {
+        when (deleteCapturedItem(item)) {
             CapturedItemDeletion.Deleted -> remove(item)
-            CapturedItemDeletion.Failed -> {
-                stateHolder.send(Effect.DeletionFailed)
-                false
-            }
+            CapturedItemDeletion.Failed -> stateHolder.send(Effect.DeletionFailed)
         }
     }
 
-    private fun remove(item: CapturedItem): Boolean {
+    private fun remove(item: CapturedItem) {
         val items = stateHolder.state.value.items - item
 
         when {
@@ -65,9 +61,6 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
                 stateHolder.update {
                     it.copy(
                         items = items,
-                        thumbnails = it.thumbnails - item,
-                        previews = it.previews - item,
-                        details = it.details - item,
                         currentIndex = it.currentIndex.coerceAtMost(items.lastIndex),
                         isZoomed = false,
                     )
@@ -75,7 +68,5 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
                 stateHolder.send(Effect.ItemDeleted)
             }
         }
-
-        return items.isNotEmpty()
     }
 }

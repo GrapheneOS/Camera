@@ -4,97 +4,94 @@ import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 internal interface GalleryPreviewsDelegate {
 
-    fun bind(
-        scope: CoroutineScope,
-        stateHolder: GalleryStateHolder,
-    )
+    fun bind(stateHolder: GalleryStateHolder)
 
-    fun loadAround(page: Int)
+    suspend fun trackPreviews()
 }
 
 internal class GalleryPreviewsDelegateImpl @Inject constructor(
     private val capturedItemRepository: CapturedItemRepository,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : GalleryPreviewsDelegate {
 
-    private lateinit var scope: CoroutineScope
     private lateinit var stateHolder: GalleryStateHolder
 
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: GalleryStateHolder,
-    ) {
-        this.scope = scope
+    override fun bind(stateHolder: GalleryStateHolder) {
         this.stateHolder = stateHolder
     }
 
-    override fun loadAround(page: Int) {
-        val state = stateHolder.state.value
-        val thumbnailItems = state.itemsAround(
-            page = page,
-            radius = THUMBNAIL_RADIUS,
-        )
-        val previewItems = state.itemsAround(
-            page = page,
-            radius = PREVIEW_RADIUS,
-        )
+    override suspend fun trackPreviews() {
+        coroutineScope {
+            stateHolder.state
+                .distinctUntilChanged(GalleryState::showsSamePageAs)
+                .collect { state ->
+                    keepThumbnailsAround(state).forEach { item ->
+                        this@coroutineScope.launch { loadThumbnail(item) }
+                    }
+                    keepPreviewsAround(state).forEach { item ->
+                        this@coroutineScope.launch { loadPreview(item) }
+                    }
+                }
+        }
+    }
+
+    private fun keepThumbnailsAround(state: GalleryState): List<CapturedItem> {
+        val items = state.itemsAround(THUMBNAIL_RADIUS)
+        val missingItems = items.filterNot(state.thumbnails::containsKey)
 
         stateHolder.update {
             it.copy(
-                thumbnails = it.thumbnails.filterKeys(thumbnailItems::contains),
-                previews = it.previews.filterKeys(previewItems::contains),
+                thumbnails = it.thumbnails.filterKeys(items::contains) +
+                    missingItems.associateWith { GalleryPreview.Loading },
             )
         }
-        thumbnailItems
-            .filterNot(stateHolder.state.value.thumbnails::containsKey)
-            .forEach(::loadThumbnail)
-        previewItems
-            .filterNot(stateHolder.state.value.previews::containsKey)
-            .forEach(::loadPreview)
+
+        return missingItems
     }
 
-    private fun loadThumbnail(item: CapturedItem) {
+    private fun keepPreviewsAround(state: GalleryState): List<CapturedItem> {
+        val items = state.itemsAround(PREVIEW_RADIUS)
+        val missingItems = items.filterNot(state.previews::containsKey)
+
         stateHolder.update {
-            it.copy(thumbnails = it.thumbnails + (item to GalleryPreview.Loading))
+            it.copy(
+                previews = it.previews.filterKeys(items::contains) +
+                    missingItems.associateWith { GalleryPreview.Loading },
+            )
         }
 
-        scope.launch(mainDispatcher) {
-            val bitmap = capturedItemRepository.loadThumbnail(
-                item = item,
-                targetWidth = THUMBNAIL_SIDE,
-                targetHeight = THUMBNAIL_SIDE,
-            )
+        return missingItems
+    }
 
-            if (item in stateHolder.state.value.thumbnails) {
-                stateHolder.update {
-                    it.copy(thumbnails = it.thumbnails + (item to previewOf(bitmap)))
-                }
+    private suspend fun loadThumbnail(item: CapturedItem) {
+        val bitmap = capturedItemRepository.loadThumbnail(
+            item = item,
+            targetWidth = THUMBNAIL_SIDE,
+            targetHeight = THUMBNAIL_SIDE,
+        )
+
+        if (item in stateHolder.state.value.thumbnails) {
+            stateHolder.update {
+                it.copy(thumbnails = it.thumbnails + (item to previewOf(bitmap)))
             }
         }
     }
 
-    private fun loadPreview(item: CapturedItem) {
-        stateHolder.update {
-            it.copy(previews = it.previews + (item to GalleryPreview.Loading))
-        }
+    private suspend fun loadPreview(item: CapturedItem) {
+        val bitmap = capturedItemRepository.loadPreview(item)
 
-        scope.launch(mainDispatcher) {
-            val bitmap = capturedItemRepository.loadPreview(item)
-
-            if (item in stateHolder.state.value.previews) {
-                stateHolder.update {
-                    it.copy(previews = it.previews + (item to previewOf(bitmap)))
-                }
+        if (item in stateHolder.state.value.previews) {
+            stateHolder.update {
+                it.copy(previews = it.previews + (item to previewOf(bitmap)))
             }
         }
     }
