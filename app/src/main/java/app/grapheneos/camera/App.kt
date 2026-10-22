@@ -5,6 +5,7 @@ import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.DefaultDispatcher
 import app.grapheneos.camera.di.preferences.SecureSessionPreferences
 import app.grapheneos.camera.domain.capture.usecase.DeleteStalePendingRecordings
+import app.grapheneos.camera.domain.gallery.usecase.FinishInterruptedDeletions
 import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -20,6 +21,9 @@ class App : Application() {
 
     @Inject
     internal lateinit var deleteStalePendingRecordings: DeleteStalePendingRecordings
+
+    @Inject
+    internal lateinit var finishInterruptedDeletions: FinishInterruptedDeletions
 
     @Inject
     @ApplicationScope
@@ -47,6 +51,7 @@ class App : Application() {
 
         applicationScope.launch(defaultDispatcher) {
             deleteStalePendingRecordings()
+            finishInterruptedDeletions()
         }
     }
 

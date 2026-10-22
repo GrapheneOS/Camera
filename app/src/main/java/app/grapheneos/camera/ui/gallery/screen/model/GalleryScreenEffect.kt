@@ -12,11 +12,11 @@ internal sealed interface GalleryScreenEffect {
      */
     sealed interface OtherApp : GalleryScreenEffect
 
-    data object NothingToShow : GalleryScreenEffect
-
     data object ItemDeleted : GalleryScreenEffect
 
-    data object LastItemDeleted : GalleryScreenEffect
+    data object ItemTrashed : GalleryScreenEffect
+
+    data object RestoreFailed : GalleryScreenEffect
 
     data object DeletionFailed : GalleryScreenEffect
 

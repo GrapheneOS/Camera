@@ -3,10 +3,15 @@ package app.grapheneos.camera.ui.gallery.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BrokenImage
+import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
@@ -43,9 +48,16 @@ internal fun GalleryPage(
                 )
             }
 
-            is GalleryPreview.Unavailable -> GalleryPlaceholder(
-                isVideo = page.isVideo,
-            )
+            is GalleryPreview.Unavailable -> when {
+                page.isVideo -> GalleryPlaceholder(
+                    icon = Icons.Outlined.VideocamOff,
+                    text = stringResource(R.string.inaccessible_video),
+                )
+                else -> GalleryPlaceholder(
+                    icon = Icons.Outlined.BrokenImage,
+                    text = stringResource(R.string.inaccessible_image),
+                )
+            }
         }
     }
 }

@@ -7,8 +7,8 @@ import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.system.Os
-import android.util.Log
 import androidx.core.net.toUri
+import app.grapheneos.camera.data.core.runStorageCall
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.MEDIA_STORE_CAPTURE_PATH
 import app.grapheneos.camera.data.media.model.SAF_URI_HOST_EXTERNAL_STORAGE
@@ -21,7 +21,6 @@ import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.withContext
 
 interface CaptureOutputRepository {
 
@@ -198,17 +197,12 @@ internal class CaptureOutputRepositoryImpl @Inject constructor(
         return contentResolver.insert(collection, values)
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun <T> onStorage(block: () -> T): Result<T> {
-        return withContext(ioDispatcher) {
-            try {
-                Result.success(block())
-            } catch (exception: Exception) {
-                Log.w(TAG, "the capture storage refused the request", exception)
-
-                Result.failure(exception)
-            }
-        }
+        return runStorageCall(
+            dispatcher = ioDispatcher,
+            tag = TAG,
+            block = block,
+        )
     }
 
     private fun shouldFsync(uri: Uri): Boolean {

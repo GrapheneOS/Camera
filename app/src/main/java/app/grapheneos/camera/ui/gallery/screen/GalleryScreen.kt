@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui.gallery.screen
 import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -14,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
@@ -24,11 +28,13 @@ import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.gallery.components.GalleryPager
+import app.grapheneos.camera.ui.gallery.components.GalleryPlaceholder
 import app.grapheneos.camera.ui.gallery.components.details.animateDetailsPositionAsState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberDetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.rememberViewerTransform
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
@@ -55,7 +61,7 @@ internal fun GalleryScreen(
         videoPlayerLauncher = videoPlayerLauncher,
         systemGalleryLauncher = systemGalleryLauncher,
         clipboardManager = clipboardManager,
-        onShowMessage = { text -> message = GalleryMessage(text) },
+        onShowMessage = { shownMessage -> message = shownMessage },
     )
 
     CollectEvents(
@@ -66,6 +72,8 @@ internal fun GalleryScreen(
     GalleryMessageEffect(
         message = message,
         snackbarHostState = snackbarHostState,
+        onUndoClick = { screenModel.onAction(Action.UndoClicked) },
+        onUndoDismiss = { screenModel.onAction(Action.UndoDismissed) },
     )
 
     SystemBarsVisibilityEffect(
@@ -134,6 +142,8 @@ private fun GalleryContent(
             modifier = Modifier.fillMaxSize(),
         )
 
+        EmptyGalleryPlaceholder(isShown = uiState.isEmpty)
+
         GalleryBars(
             uiState = uiState,
             fadeProgress = viewerTransform::fadeProgress,
@@ -150,6 +160,16 @@ private fun GalleryContent(
         dialog = uiState.dialog,
         onAction = onAction,
     )
+}
+
+@Composable
+private fun EmptyGalleryPlaceholder(isShown: Boolean) {
+    if (isShown) {
+        GalleryPlaceholder(
+            icon = Icons.Outlined.PhotoLibrary,
+            text = stringResource(R.string.empty_gallery),
+        )
+    }
 }
 
 @Composable

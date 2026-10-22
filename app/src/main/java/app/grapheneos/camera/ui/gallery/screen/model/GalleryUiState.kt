@@ -9,6 +9,7 @@ import kotlinx.collections.immutable.persistentListOf
 internal data class GalleryUiState(
     val pages: ImmutableList<GalleryPageUiModel> = persistentListOf(),
     val currentPage: Int = 0,
+    val isEmpty: Boolean = false,
     val capturedAt: LocalDateTime? = null,
     val showsExternalActions: Boolean = true,
     val showsSystemGallery: Boolean = false,

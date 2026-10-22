@@ -8,12 +8,14 @@ internal data class GalleryState(
     val previews: Map<CapturedItem, GalleryPreview> = emptyMap(),
     val details: Map<CapturedItem, GalleryDetails> = emptyMap(),
     val currentIndex: Int = 0,
+    val isLoaded: Boolean = false,
     val isSecureSession: Boolean = false,
     val hasSystemGallery: Boolean = false,
     val areControlsVisible: Boolean = true,
     val isZoomed: Boolean = false,
     val showsDetails: Boolean = false,
     val dialog: GalleryDialog? = null,
+    val trashedItem: GalleryTrashedItem? = null,
 ) {
 
     fun currentItem(): CapturedItem? {

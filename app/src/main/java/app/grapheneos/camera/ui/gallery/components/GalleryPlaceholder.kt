@@ -7,18 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BrokenImage
-import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 private val PLACEHOLDER_PADDING = 24.dp
@@ -27,7 +25,8 @@ private val ICON_SIZE = 48.dp
 
 @Composable
 internal fun GalleryPlaceholder(
-    isVideo: Boolean,
+    icon: ImageVector,
+    text: String,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -41,21 +40,13 @@ internal fun GalleryPlaceholder(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            imageVector = when {
-                isVideo -> Icons.Outlined.VideocamOff
-                else -> Icons.Outlined.BrokenImage
-            },
+            imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(ICON_SIZE),
         )
         Text(
-            text = stringResource(
-                when {
-                    isVideo -> R.string.inaccessible_video
-                    else -> R.string.inaccessible_image
-                },
-            ),
+            text = text,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
@@ -67,6 +58,9 @@ internal fun GalleryPlaceholder(
 @Composable
 private fun GalleryPlaceholderPreview() {
     CameraPreviewTheme {
-        GalleryPlaceholder(isVideo = false)
+        GalleryPlaceholder(
+            icon = Icons.Outlined.BrokenImage,
+            text = "Can't open this file",
+        )
     }
 }

@@ -24,6 +24,7 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
         return GalleryUiState(
             pages = pages(state),
             currentPage = state.currentIndex,
+            isEmpty = state.isLoaded && state.items.isEmpty(),
             capturedAt = state.currentItem()?.let(captureTimeMapper::map),
             showsExternalActions = !state.isSecureSession,
             showsSystemGallery = state.hasSystemGallery && !state.isSecureSession,

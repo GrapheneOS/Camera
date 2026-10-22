@@ -82,6 +82,10 @@ internal class GalleryViewModel @Inject constructor(
         }
     }
 
+    override fun onCleared() {
+        deletionDelegate.finish()
+    }
+
     override fun onAction(action: Action) {
         when (action) {
             is Action.PageSelected -> selectPage(action.page)
@@ -99,8 +103,7 @@ internal class GalleryViewModel @Inject constructor(
             is Action.EditWithClicked -> edit(usesDefaultEditor = false)
             is Action.ShareClicked -> share()
 
-            is Action.DeleteClicked -> deletionDelegate.confirm()
-            is Action.DeleteConfirmed -> deleteCurrentItem()
+            is Action.Deletion -> onDeletionAction(action)
             is Action.DialogDismissed -> deletionDelegate.dismiss()
         }
     }
@@ -113,16 +116,21 @@ internal class GalleryViewModel @Inject constructor(
         }
     }
 
-    private fun showItems(items: List<CapturedItem>) {
-        if (items.isEmpty()) {
-            stateHolder.send(Effect.NothingToShow)
-            return
+    private fun onDeletionAction(action: Action.Deletion) {
+        when (action) {
+            is Action.DeleteClicked -> viewModelScope.launch { deletionDelegate.delete() }
+            is Action.DeleteConfirmed -> viewModelScope.launch { deletionDelegate.confirm() }
+            is Action.UndoClicked -> viewModelScope.launch { deletionDelegate.undo() }
+            is Action.UndoDismissed -> deletionDelegate.finish()
         }
+    }
 
+    private fun showItems(items: List<CapturedItem>) {
         stateHolder.update {
             it.copy(
                 items = items,
                 currentIndex = items.indexOf(it.currentItem()).coerceAtLeast(0),
+                isLoaded = true,
             )
         }
     }
@@ -189,9 +197,5 @@ internal class GalleryViewModel @Inject constructor(
         state.currentItem()?.let { item ->
             stateHolder.send(effect(item))
         }
-    }
-
-    private fun deleteCurrentItem() {
-        viewModelScope.launch { deletionDelegate.deleteCurrentItem() }
     }
 }

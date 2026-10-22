@@ -11,11 +11,15 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.data.media.repository.CapturedItemTrashRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.GalleryItemsMapperImpl
 import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
 import app.grapheneos.camera.domain.gallery.usecase.DeleteCapturedItem
+import app.grapheneos.camera.domain.gallery.usecase.DeleteTrashedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItemsImpl
+import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItemImpl
+import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItemImpl
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegateImpl
@@ -31,6 +35,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import java.io.IOException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -61,6 +67,12 @@ class GalleryViewModelTest {
         coEvery { details(any()) } returns null
     }
     private val deleteCapturedItem = mockk<DeleteCapturedItem>()
+    private val capturedItemTrashRepository = mockk<CapturedItemTrashRepository> {
+        every { canTrash(any()) } returns false
+        coEvery { trash(any()) } returns Result.success(Unit)
+        coEvery { restore(any()) } returns Result.success(Unit)
+        coEvery { delete(any()) } returns Result.success(Unit)
+    }
 
     @Before
     fun deleteSucceedsByDefault() {
@@ -77,13 +89,22 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun anEmptyGallery_closes() {
+    fun anEmptyGallery_showsThatItIsEmpty() {
         runTest {
             coEvery { capturedItemRepository.capturedItems() } returns emptyList()
 
-            val effects = effectsOf(viewModel())
+            val viewModel = viewModel()
 
-            assertEquals(listOf(Effect.NothingToShow), effects)
+            assertTrue(viewModel.uiState.value.isEmpty)
+        }
+    }
+
+    @Test
+    fun aGalleryStillLoading_isNotEmpty() {
+        runTest {
+            stallTheScan()
+
+            assertFalse(viewModel().uiState.value.isEmpty)
         }
     }
 
@@ -167,16 +188,15 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun deletingTheLastItem_closesTheGallery() {
+    fun deletingTheLastItem_leavesAnEmptyGallery() {
         runTest {
             coEvery { capturedItemRepository.capturedItems() } returns listOf(NEWEST)
             val viewModel = viewModel()
-            val effects = effectsOf(viewModel)
 
             viewModel.onAction(Action.DeleteClicked)
             viewModel.onAction(Action.DeleteConfirmed)
 
-            assertEquals(listOf(Effect.LastItemDeleted), effects)
+            assertTrue(viewModel.uiState.value.isEmpty)
         }
     }
 
@@ -192,6 +212,100 @@ class GalleryViewModelTest {
 
             assertEquals(2, viewModel.uiState.value.pages.size)
             assertEquals(listOf(Effect.DeletionFailed), effects)
+        }
+    }
+
+    @Test
+    fun deleteClicked_onATrashableItem_trashesItWithoutAsking() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DeleteClicked)
+
+            coVerify { capturedItemTrashRepository.trash(NEWEST) }
+            assertNull(viewModel.uiState.value.dialog)
+            assertEquals(keysOf(OLDER), pageKeys(viewModel))
+            assertEquals(listOf(Effect.ItemTrashed), effects)
+        }
+    }
+
+    @Test
+    fun undoClicked_putsTheItemBackOnItsPage() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.PageSelected(page = 1))
+            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(Action.UndoClicked)
+
+            coVerify { capturedItemTrashRepository.restore(OLDER) }
+            assertEquals(keysOf(NEWEST, OLDER), pageKeys(viewModel))
+            assertEquals(1, viewModel.uiState.value.currentPage)
+        }
+    }
+
+    @Test
+    fun undoDismissed_deletesTheItemForGood() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(Action.UndoDismissed)
+            viewModel.onAction(Action.UndoClicked)
+
+            coVerify { capturedItemTrashRepository.delete(NEWEST) }
+            coVerify(exactly = 0) { capturedItemTrashRepository.restore(any()) }
+            assertEquals(keysOf(OLDER), pageKeys(viewModel))
+        }
+    }
+
+    @Test
+    fun anotherDelete_deletesThePreviousItemForGood() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(Action.DeleteClicked)
+
+            coVerify { capturedItemTrashRepository.delete(NEWEST) }
+            coVerify { capturedItemTrashRepository.trash(OLDER) }
+            assertTrue(viewModel.uiState.value.isEmpty)
+        }
+    }
+
+    @Test
+    fun aFailedTrash_keepsTheItem() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            coEvery { capturedItemTrashRepository.trash(any()) } returns STORAGE_FAILURE
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DeleteClicked)
+
+            assertEquals(keysOf(NEWEST, OLDER), pageKeys(viewModel))
+            assertEquals(listOf(Effect.DeletionFailed), effects)
+        }
+    }
+
+    @Test
+    fun aFailedRestore_leavesTheItemDeleted() {
+        runTest {
+            every { capturedItemTrashRepository.canTrash(any()) } returns true
+            coEvery { capturedItemTrashRepository.restore(any()) } returns STORAGE_FAILURE
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(Action.UndoClicked)
+
+            assertEquals(keysOf(OLDER), pageKeys(viewModel))
+            assertEquals(listOf(Effect.ItemTrashed, Effect.RestoreFailed), effects)
         }
     }
 
@@ -461,7 +575,14 @@ class GalleryViewModelTest {
                 arguments = arguments,
                 capturedItemDetailsRepository = capturedItemDetailsRepository,
             ),
-            deletionDelegate = GalleryDeletionDelegateImpl(deleteCapturedItem),
+            deletionDelegate = GalleryDeletionDelegateImpl(
+                trashCapturedItem = TrashCapturedItemImpl(capturedItemTrashRepository),
+                restoreCapturedItem = RestoreCapturedItemImpl(capturedItemTrashRepository),
+                deleteTrashedItem = DeleteTrashedItemImpl(capturedItemTrashRepository),
+                deleteCapturedItem = deleteCapturedItem,
+                applicationScope = CoroutineScope(mainDispatcherRule.testDispatcher),
+                defaultDispatcher = mainDispatcherRule.testDispatcher,
+            ),
             uiStateMapper = GalleryUiStateMapperImpl(captureTimeMapper = CaptureTimeMapperImpl()),
         )
     }
@@ -483,6 +604,7 @@ class GalleryViewModelTest {
     private companion object {
         val THUMBNAIL = mockk<Bitmap>()
         val PREVIEW = mockk<Bitmap>()
+        val STORAGE_FAILURE = Result.failure<Unit>(IOException())
         val NEWEST = image("20231016_120000_000")
         val OLDER = image("20231015_120000_000")
         val LOCATION = GeoCoordinates(
