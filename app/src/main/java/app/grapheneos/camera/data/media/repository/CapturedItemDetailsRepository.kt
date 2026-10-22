@@ -13,9 +13,11 @@ import android.util.Log
 import android.util.Size
 import androidxc.exifinterface.media.ExifInterface
 import app.grapheneos.camera.data.media.mapper.CaptureTimeMapper
+import app.grapheneos.camera.data.media.model.CameraParameters
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.getLongOrNull
@@ -81,6 +83,8 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
                 ?: stored.created
                 ?: captureTimeMapper.map(item)?.let(MediaTimestamp::WallClock),
             modified = media.modified ?: stored.modified,
+            camera = media.camera,
+            location = media.location,
         )
     }
 
@@ -112,7 +116,35 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
                 dateTimeTag = ExifInterface.TAG_DATETIME,
                 offsetTag = ExifInterface.TAG_OFFSET_TIME,
             ),
+            camera = exif?.cameraParameters(),
+            location = exif?.latLong?.let { (latitude, longitude) ->
+                GeoCoordinates(
+                    latitude = latitude,
+                    longitude = longitude,
+                )
+            },
         )
+    }
+
+    private fun ExifInterface.cameraParameters(): CameraParameters? {
+        val parameters = CameraParameters(
+            make = text(ExifInterface.TAG_MAKE),
+            model = text(ExifInterface.TAG_MODEL),
+            fNumber = positiveDouble(ExifInterface.TAG_F_NUMBER),
+            exposureSeconds = positiveDouble(ExifInterface.TAG_EXPOSURE_TIME),
+            focalLengthMillimeters = positiveDouble(ExifInterface.TAG_FOCAL_LENGTH),
+            iso = getAttributeInt(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, 0).takeIf { it > 0 },
+        )
+
+        return parameters.takeUnless { it.isEmpty() }
+    }
+
+    private fun ExifInterface.text(tag: String): String? {
+        return getAttribute(tag)?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun ExifInterface.positiveDouble(tag: String): Double? {
+        return getAttributeDouble(tag, 0.0).takeIf { it > 0.0 }
     }
 
     private fun readImageResolution(
@@ -182,6 +214,10 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
                     ?.milliseconds,
                 created = recorded,
                 modified = recorded,
+                camera = null,
+                location = retriever
+                    .extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION)
+                    ?.let(::parseIso6709),
             )
         }
     }
@@ -204,6 +240,16 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
             rotation in QUARTER_TURN_DEGREES -> Size(height.toInt(), width.toInt())
             else -> Size(width.toInt(), height.toInt())
         }
+    }
+
+    private fun parseIso6709(location: String): GeoCoordinates? {
+        val match = ISO_6709_COORDINATES.find(location) ?: return null
+        val (latitude, longitude) = match.destructured
+
+        return GeoCoordinates(
+            latitude = latitude.toDouble(),
+            longitude = longitude.toDouble(),
+        )
     }
 
     private fun MediaMetadataRetriever.extractPositiveLong(key: Int): Long? {
@@ -270,6 +316,8 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
         val duration: Duration?,
         val created: MediaTimestamp?,
         val modified: MediaTimestamp?,
+        val camera: CameraParameters?,
+        val location: GeoCoordinates?,
     )
 
     private data class StoredTimestamps(
@@ -280,6 +328,7 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
     private companion object {
         const val TAG = "CapturedItemDetails"
 
+        val ISO_6709_COORDINATES = Regex("([+-]\\d+(?:\\.\\d+)?)([+-]\\d+(?:\\.\\d+)?)")
         val EXIF_DATE_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter
             .ofPattern("yyyy:MM:dd HH:mm:ss", Locale.US)
         val VIDEO_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter

@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
 import app.grapheneos.camera.ui.core.theme.cameraColors
-import app.grapheneos.camera.ui.gallery.components.DetailsBackButton
 import app.grapheneos.camera.ui.gallery.components.GalleryActionBar
+import app.grapheneos.camera.ui.gallery.components.details.DetailsBackButton
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
 
@@ -41,13 +41,14 @@ private val SCRIM_OVERHANG = 48.dp
 internal fun BoxScope.GalleryBars(
     uiState: UiState,
     fadeProgress: () -> Float,
-    detailsProgress: () -> Float,
+    detailsPosition: () -> Float,
+    backButtonVisibility: () -> Float,
     backgroundColor: () -> Color,
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
-    val isPanelVisible by remember(detailsProgress) { derivedStateOf { detailsProgress() > 0f } }
+    val isPanelVisible by remember(detailsPosition) { derivedStateOf { detailsPosition() > 0f } }
     val visibility = animateBarsVisibilityAsState(
         isVisible = uiState.areControlsVisible && !isPanelVisible,
         hidesInstantly = uiState.isZoomed || isPanelVisible,
@@ -81,7 +82,7 @@ internal fun BoxScope.GalleryBars(
     }
 
     DetailsBackButton(
-        progress = detailsProgress,
+        visibility = backButtonVisibility,
         onClick = { onAction(Action.DetailsShownChanged(isShown = false)) },
         modifier = Modifier.align(Alignment.TopCenter),
     )

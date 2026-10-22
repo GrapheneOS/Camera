@@ -39,11 +39,13 @@ internal fun GalleryPager(
     transformState: ViewerTransformState,
     viewerTransform: ViewerTransform,
     detailsState: DetailsPanelState,
-    detailsProgress: () -> Float,
+    detailsPosition: () -> Float,
     onPageSelected: (Int) -> Unit,
     onDetailsShownChange: (Boolean) -> Unit,
     onTap: () -> Unit,
     onVideoClick: () -> Unit,
+    onOpenMapClick: (() -> Unit)?,
+    onCopy: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState(
@@ -83,9 +85,11 @@ internal fun GalleryPager(
             showsDetails = showsDetails,
             gestures = gestures,
             viewerTransform = viewerTransform,
-            detailsProgress = detailsProgress,
+            detailsPosition = detailsPosition,
             onTap = onTap,
             onVideoClick = onVideoClick,
+            onOpenMapClick = onOpenMapClick,
+            onCopy = onCopy,
         )
     }
 }

@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.details
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,16 +29,16 @@ private val BUTTON_START_PADDING = 8.dp
 
 @Composable
 internal fun DetailsBackButton(
-    progress: () -> Float,
+    visibility: () -> Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isShown by remember(progress) { derivedStateOf { progress() > 0f } }
+    val isShown by remember(visibility) { derivedStateOf { visibility() > 0f } }
 
     if (isShown) {
         ViewerTopBar(
             modifier = modifier.graphicsLayer {
-                alpha = progress()
+                alpha = visibility()
                 compositingStrategy = CompositingStrategy.ModulateAlpha
             },
             containerColor = Color.Transparent,
@@ -69,7 +69,7 @@ internal fun DetailsBackButton(
 private fun DetailsBackButtonPreview() {
     CameraPreviewTheme {
         DetailsBackButton(
-            progress = { 1f },
+            visibility = { 1f },
             onClick = {},
         )
     }

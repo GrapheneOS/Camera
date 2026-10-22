@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import app.grapheneos.camera.ui.gallery.components.details.DetailsPanel
 import app.grapheneos.camera.ui.gallery.components.gesture.ViewerGestures
 import app.grapheneos.camera.ui.gallery.components.gesture.viewerGestureInput
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
@@ -18,9 +19,11 @@ internal fun ViewerPage(
     showsDetails: Boolean,
     gestures: ViewerGestures,
     viewerTransform: ViewerTransform,
-    detailsProgress: () -> Float,
+    detailsPosition: () -> Float,
     onTap: () -> Unit,
     onVideoClick: () -> Unit,
+    onOpenMapClick: (() -> Unit)?,
+    onCopy: (String) -> Unit,
 ) {
     val detailsState = gestures.detailsState
     val photoTransform = when {
@@ -46,16 +49,19 @@ internal fun ViewerPage(
             },
             onVideoClick = onVideoClick,
             modifier = Modifier
-                .graphicsLayer { translationY = detailsState.photoShift(detailsProgress()) }
+                .graphicsLayer { translationY = detailsState.photoShiftAt(detailsPosition()) }
                 .then(photoTransform),
         )
         DetailsPanel(
             detailsState = detailsState,
-            progress = detailsProgress,
+            position = detailsPosition,
             details = page.details,
             isVideo = page.isVideo,
             uri = page.key,
+            isCurrentPage = isCurrentPage,
             onShownChange = gestures.onDetailsShownChange,
+            onOpenMapClick = onOpenMapClick,
+            onCopy = onCopy,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }

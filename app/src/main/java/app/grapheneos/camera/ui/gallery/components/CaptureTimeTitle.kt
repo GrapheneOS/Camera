@@ -22,13 +22,9 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private const val DATE_SKELETON = "MMMd"
 private const val DATE_WITH_YEAR_SKELETON = "yMMMd"
-private const val TIME_SKELETON = "hm"
-private const val TIME_24_HOUR_SKELETON = "Hm"
 
 private val TITLE_HORIZONTAL_PADDING = 16.dp
 
@@ -46,22 +42,15 @@ internal fun CaptureTimeTitle(
             else -> DATE_WITH_YEAR_SKELETON
         }
 
-        formatted(
-            dateTime = capturedAt,
+        capturedAt.formatted(
             locale = locale,
             skeleton = skeleton,
         )
     }
     val time = remember(capturedAt, locale, is24Hour) {
-        val skeleton = when {
-            is24Hour -> TIME_24_HOUR_SKELETON
-            else -> TIME_SKELETON
-        }
-
-        formatted(
-            dateTime = capturedAt,
+        capturedAt.formattedTime(
             locale = locale,
-            skeleton = skeleton,
+            is24Hour = is24Hour,
         )
     }
     val clickModifier = when (onClick) {
@@ -90,18 +79,6 @@ internal fun CaptureTimeTitle(
             style = MaterialTheme.typography.bodySmall,
         )
     }
-}
-
-private fun formatted(
-    dateTime: LocalDateTime,
-    locale: Locale,
-    skeleton: String,
-): String {
-    val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
-
-    return DateTimeFormatter
-        .ofPattern(pattern, locale)
-        .format(dateTime)
 }
 
 @PreviewLightDark

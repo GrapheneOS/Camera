@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.gallery.screen
 
+import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +24,7 @@ import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.gallery.components.GalleryPager
-import app.grapheneos.camera.ui.gallery.components.animateDetailsProgressAsState
+import app.grapheneos.camera.ui.gallery.components.details.animateDetailsPositionAsState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberDetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.rememberViewerTransform
@@ -42,6 +43,7 @@ import kotlinx.collections.immutable.persistentListOf
 internal fun GalleryScreen(
     videoPlayerLauncher: VideoPlayerLauncher,
     systemGalleryLauncher: SystemGalleryLauncher,
+    clipboardManager: ClipboardManager,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     screenModel: GalleryScreenModel = hiltViewModel<GalleryViewModel>(),
@@ -52,6 +54,7 @@ internal fun GalleryScreen(
     val effectHandler = rememberGalleryEffectHandler(
         videoPlayerLauncher = videoPlayerLauncher,
         systemGalleryLauncher = systemGalleryLauncher,
+        clipboardManager = clipboardManager,
         onShowMessage = { text -> message = GalleryMessage(text) },
     )
 
@@ -89,7 +92,8 @@ private fun GalleryContent(
     val currentPageKey = uiState.pages.getOrNull(uiState.currentPage)?.key
     val transformState = rememberViewerTransformState(pageKey = currentPageKey)
     val detailsState = rememberDetailsPanelState(isShown = uiState.showsDetails)
-    val detailsProgress = animateDetailsProgressAsState(detailsState)
+    val detailsPosition = animateDetailsPositionAsState(detailsState)
+    val openMap = { onAction(Action.OpenMapClicked) }
     val viewerTransform = rememberViewerTransform(
         transformState = transformState,
         onDismissed = onNavigateBack,
@@ -120,18 +124,21 @@ private fun GalleryContent(
             transformState = transformState,
             viewerTransform = viewerTransform,
             detailsState = detailsState,
-            detailsProgress = { detailsProgress.value },
+            detailsPosition = { detailsPosition.value },
             onPageSelected = { page -> onAction(Action.PageSelected(page)) },
             onDetailsShownChange = { isShown -> onAction(Action.DetailsShownChanged(isShown)) },
             onTap = { onAction(Action.ScreenTapped) },
             onVideoClick = { onAction(Action.VideoClicked) },
+            onOpenMapClick = openMap.takeIf { uiState.showsExternalActions },
+            onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
             modifier = Modifier.fillMaxSize(),
         )
 
         GalleryBars(
             uiState = uiState,
             fadeProgress = viewerTransform::fadeProgress,
-            detailsProgress = { detailsProgress.value },
+            detailsPosition = { detailsPosition.value },
+            backButtonVisibility = { detailsState.backButtonVisibilityAt(detailsPosition.value) },
             backgroundColor = backgroundColor,
             onAction = onAction,
             onNavigateBack = onNavigateBack,

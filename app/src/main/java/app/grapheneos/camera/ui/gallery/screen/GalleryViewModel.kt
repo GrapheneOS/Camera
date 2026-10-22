@@ -57,6 +57,7 @@ internal class GalleryViewModel @Inject constructor(
         items = listOfNotNull(viewedItemOf(arguments) ?: lastCapturedItemOf(arguments)),
         isSecureSession = entryPoint.isSecureSession,
         hasSystemGallery = systemGalleryLauncher.canOpen(),
+        showsDetails = showsDetailsOf(arguments),
     )
 
     private val _uiState = MutableStateFlow(uiStateMapper.map(state))
@@ -66,7 +67,7 @@ internal class GalleryViewModel @Inject constructor(
     override val effects: Flow<Effect> = _effects.receiveAsFlow()
 
     init {
-        loadPreviewsAround(state.currentIndex)
+        loadAround(state.currentIndex)
 
         viewModelScope.launch {
             val items = loadGalleryItems(
@@ -82,8 +83,7 @@ internal class GalleryViewModel @Inject constructor(
         when (action) {
             is Action.PageSelected -> selectPage(action.page)
             is Action.ScreenTapped -> onScreenTapped()
-            is Action.InfoClicked -> openDetails()
-            is Action.DetailsShownChanged -> showDetails(action.isShown)
+            is Action.Details -> onDetailsAction(action)
             is Action.VideoClicked -> openVideo()
             is Action.SystemGalleryClicked -> openSystemGallery()
             is Action.EditClicked -> edit(usesDefaultEditor = true)
@@ -102,7 +102,7 @@ internal class GalleryViewModel @Inject constructor(
 
     private fun showItems(items: List<CapturedItem>) {
         if (items.isEmpty()) {
-            _effects.trySend(Effect.NothingToShow)
+            send(Effect.NothingToShow)
             return
         }
 
@@ -114,12 +114,16 @@ internal class GalleryViewModel @Inject constructor(
                 currentIndex = currentIndex,
             )
         }
-        loadPreviewsAround(currentIndex)
+        loadAround(currentIndex)
     }
 
     private fun selectPage(page: Int) {
         update { it.copy(currentIndex = page) }
         state.currentItem()?.let { saveViewedItem(arguments, it) }
+        loadAround(page)
+    }
+
+    private fun loadAround(page: Int) {
         loadPreviewsAround(page)
 
         if (state.showsDetails) {
@@ -156,6 +160,14 @@ internal class GalleryViewModel @Inject constructor(
         val shownState = _uiState.value
 
         return shownState.pages.getOrNull(shownState.currentPage)?.key == pageKey
+    }
+
+    private fun onDetailsAction(action: Action.Details) {
+        when (action) {
+            is Action.DetailsShownChanged -> showDetails(action.isShown)
+            is Action.OpenMapClicked -> openMap()
+            is Action.DetailLongPressed -> send(Effect.CopyText(action.text))
+        }
     }
 
     private fun showDetails(isShown: Boolean) {
@@ -200,16 +212,21 @@ internal class GalleryViewModel @Inject constructor(
         }
     }
 
+    private fun openMap() {
+        val details = state.currentItem()?.let(state.details::get) as? GalleryDetails.Loaded
+        val location = details?.details?.location ?: return
+
+        send(Effect.OpenMap(location))
+    }
+
     private fun openVideo() {
         val item = state.currentItem() ?: return
 
-        _effects.trySend(Effect.OpenVideo(item.uri))
+        send(Effect.OpenVideo(item.uri))
     }
 
     private fun openSystemGallery() {
-        if (state.isSecureSession) return
-
-        _effects.trySend(Effect.OpenSystemGallery)
+        send(Effect.OpenSystemGallery)
     }
 
     private fun edit(usesDefaultEditor: Boolean) {
@@ -225,11 +242,10 @@ internal class GalleryViewModel @Inject constructor(
         sendToOtherApp { item -> Effect.Share(item) }
     }
 
-    private fun sendToOtherApp(effect: (CapturedItem) -> Effect) {
+    private fun sendToOtherApp(effect: (CapturedItem) -> Effect.OtherApp) {
         val item = state.currentItem() ?: return
-        if (state.isSecureSession) return
 
-        _effects.trySend(effect(item))
+        send(effect(item))
     }
 
     private fun confirmDeletion() {
@@ -242,10 +258,11 @@ internal class GalleryViewModel @Inject constructor(
         val item = state.currentItem() ?: return
 
         update { it.copy(dialog = null) }
+
         viewModelScope.launch {
             when (deleteCapturedItem(item)) {
                 CapturedItemDeletion.Deleted -> removeItem(item)
-                CapturedItemDeletion.Failed -> _effects.trySend(Effect.DeletionFailed)
+                CapturedItemDeletion.Failed -> send(Effect.DeletionFailed)
             }
         }
     }
@@ -254,7 +271,7 @@ internal class GalleryViewModel @Inject constructor(
         val items = state.items - item
 
         if (items.isEmpty()) {
-            _effects.trySend(Effect.LastItemDeleted)
+            send(Effect.LastItemDeleted)
             return
         }
 
@@ -268,8 +285,9 @@ internal class GalleryViewModel @Inject constructor(
                 isZoomed = false,
             )
         }
-        _effects.trySend(Effect.ItemDeleted)
-        loadPreviewsAround(state.currentIndex)
+
+        send(Effect.ItemDeleted)
+        loadAround(state.currentIndex)
     }
 
     private fun loadPreviewsAround(page: Int) {
@@ -338,9 +356,21 @@ internal class GalleryViewModel @Inject constructor(
         }
     }
 
+    private fun send(effect: Effect) {
+        if (effect is Effect.OtherApp && state.isSecureSession) return
+
+        _effects.trySend(effect)
+    }
+
     private fun update(transform: (GalleryState) -> GalleryState) {
+        val showedDetails = state.showsDetails
+
         state = transform(state)
         _uiState.value = uiStateMapper.map(state)
+
+        if (state.showsDetails != showedDetails) {
+            saveShowsDetails(arguments, state.showsDetails)
+        }
     }
 
     private companion object {

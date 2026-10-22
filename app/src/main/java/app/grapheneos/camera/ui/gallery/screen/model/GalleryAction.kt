@@ -2,6 +2,10 @@ package app.grapheneos.camera.ui.gallery.screen.model
 
 internal sealed interface GalleryAction {
 
+    sealed interface Details : GalleryAction
+
+    data object OpenMapClicked : Details
+
     data object ScreenTapped : GalleryAction
 
     data object VideoClicked : GalleryAction
@@ -16,8 +20,6 @@ internal sealed interface GalleryAction {
 
     data object DeleteConfirmed : GalleryAction
 
-    data object InfoClicked : GalleryAction
-
     data object ShareClicked : GalleryAction
 
     data object DialogDismissed : GalleryAction
@@ -27,11 +29,15 @@ internal sealed interface GalleryAction {
         val isZoomed: Boolean,
     ) : GalleryAction
 
-    data class DetailsShownChanged(
-        val isShown: Boolean,
-    ) : GalleryAction
-
     data class PageSelected(
         val page: Int,
     ) : GalleryAction
+
+    data class DetailsShownChanged(
+        val isShown: Boolean,
+    ) : Details
+
+    data class DetailLongPressed(
+        val text: String,
+    ) : Details
 }

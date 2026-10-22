@@ -1,12 +1,10 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.details
 
 import android.util.Size as AndroidSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -22,20 +20,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
@@ -55,31 +51,42 @@ private val PREVIEW_HEIGHT = 720.dp
 @Composable
 internal fun DetailsPanel(
     detailsState: DetailsPanelState,
-    progress: () -> Float,
+    position: () -> Float,
     details: GalleryDetails,
     isVideo: Boolean,
     uri: String,
+    isCurrentPage: Boolean,
     onShownChange: (Boolean) -> Unit,
+    onOpenMapClick: (() -> Unit)?,
+    onCopy: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isShown by remember(detailsState, progress) {
-        derivedStateOf { progress() > 0f || detailsState.isDragging }
-    }
+    val contentHeight = remember { mutableIntStateOf(0) }
     val currentOnShownChange by rememberUpdatedState(onShownChange)
+    val isShown by remember(detailsState, position) {
+        derivedStateOf {
+            detailsState.isDragging || (position() > 0f && detailsState.isLaidOut())
+        }
+    }
     val scrollConnection = remember(detailsState) {
         DetailsPanelScrollConnection(
             detailsState = detailsState,
             onShownChange = { isShown -> currentOnShownChange(isShown) },
         )
     }
-    val panelHeight = with(LocalDensity.current) { detailsState.panelHeight().toDp() }
+
+    LaunchedEffect(detailsState, isCurrentPage) {
+        if (isCurrentPage) {
+            snapshotFlow { contentHeight.intValue }
+                .collect { height -> detailsState.updateContentHeight(height.toFloat()) }
+        }
+    }
 
     if (isShown) {
         Surface(
             modifier = modifier
-                .fillMaxWidth()
-                .height(panelHeight)
-                .graphicsLayer { translationY = detailsState.panelShift(progress()) }
+                .fillMaxSize()
+                .graphicsLayer { translationY = detailsState.topAt(position()) }
                 .nestedScroll(scrollConnection),
             shape = MaterialTheme.shapes.extraLarge.copy(
                 bottomStart = ZeroCornerSize,
@@ -91,34 +98,46 @@ internal fun DetailsPanel(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()),
             ) {
-                BottomSheetDefaults.DragHandle(
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-                DetailsPanelContent(
-                    details = details,
-                    isVideo = isVideo,
-                    uri = uri,
-                )
+                Column(
+                    modifier = Modifier.onSizeChanged { size ->
+                        contentHeight.intValue = size.height
+                    },
+                ) {
+                    BottomSheetDefaults.DragHandle(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .graphicsLayer {
+                                alpha = 1f - detailsState.expansionAt(position())
+                            },
+                    )
+                    DetailsPanelContent(
+                        details = details,
+                        isVideo = isVideo,
+                        uri = uri,
+                        onOpenMapClick = onOpenMapClick,
+                        onCopy = onCopy,
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-internal fun animateDetailsProgressAsState(
+internal fun animateDetailsPositionAsState(
     detailsState: DetailsPanelState,
 ): State<Float> {
-    val progress = remember(detailsState) { Animatable(detailsState.progress) }
+    val position = remember(detailsState) { Animatable(detailsState.targetPosition()) }
 
-    LaunchedEffect(progress) {
-        progress.follow(
-            target = { detailsState.progress },
+    LaunchedEffect(position) {
+        position.follow(
+            target = detailsState::targetPosition,
             isAnimated = { !detailsState.isDragging },
             animationSpec = CONTROLS_SPEC,
         )
     }
 
-    return progress.asState()
+    return position.asState()
 }
 
 @Composable
@@ -126,6 +145,8 @@ private fun DetailsPanelContent(
     details: GalleryDetails,
     isVideo: Boolean,
     uri: String,
+    onOpenMapClick: (() -> Unit)?,
+    onCopy: (String) -> Unit,
 ) {
     when (details) {
         is GalleryDetails.Loading -> Unit
@@ -134,6 +155,8 @@ private fun DetailsPanelContent(
             details = details.details,
             isVideo = isVideo,
             uri = uri,
+            onOpenMapClick = onOpenMapClick,
+            onCopy = onCopy,
         )
 
         is GalleryDetails.Unavailable -> Text(
@@ -141,55 +164,6 @@ private fun DetailsPanelContent(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(PLACEHOLDER_PADDING),
-        )
-    }
-}
-
-private class DetailsPanelScrollConnection(
-    private val detailsState: DetailsPanelState,
-    private val onShownChange: (Boolean) -> Unit,
-) : NestedScrollConnection {
-
-    override fun onPreScroll(
-        available: Offset,
-        source: NestedScrollSource,
-    ): Offset {
-        return when {
-            detailsState.isDragging -> drag(available)
-            else -> Offset.Zero
-        }
-    }
-
-    override fun onPostScroll(
-        consumed: Offset,
-        available: Offset,
-        source: NestedScrollSource,
-    ): Offset {
-        return when {
-            source == NestedScrollSource.UserInput && available.y != 0f -> {
-                detailsState.startDrag()
-                drag(available)
-            }
-            else -> Offset.Zero
-        }
-    }
-
-    override suspend fun onPreFling(available: Velocity): Velocity {
-        return when {
-            detailsState.isDragging -> {
-                onShownChange(detailsState.release(available.y))
-                available
-            }
-            else -> Velocity.Zero
-        }
-    }
-
-    private fun drag(available: Offset): Offset {
-        detailsState.drag(available.y)
-
-        return Offset(
-            x = 0f,
-            y = available.y,
         )
     }
 }
@@ -220,7 +194,7 @@ private fun DetailsPanelPreview() {
 
             DetailsPanel(
                 detailsState = detailsState,
-                progress = { 1f },
+                position = { 1f },
                 details = GalleryDetails.Loaded(
                     CapturedItemDetails(
                         fileName = "IMG_20231016_120000_000.jpg",
@@ -234,7 +208,10 @@ private fun DetailsPanelPreview() {
                 ),
                 isVideo = false,
                 uri = "content://media/external/images/media/1",
+                isCurrentPage = true,
                 onShownChange = {},
+                onOpenMapClick = {},
+                onCopy = {},
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
