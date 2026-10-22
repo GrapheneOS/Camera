@@ -17,6 +17,8 @@ internal data class GalleryUiState(
     val capturedAt: LocalDateTime? = null,
     val showsExternalActions: Boolean = true,
     val showsSystemGallery: Boolean = false,
+    val showsUseAs: Boolean = false,
+    val showsHdr: Boolean = false,
     val areControlsVisible: Boolean = true,
     val isZoomed: Boolean = false,
     val showsDetails: Boolean = false,

@@ -105,6 +105,7 @@ internal class GalleryViewModel @Inject constructor(
             is Action.EditClicked -> edit(usesDefaultEditor = true)
             is Action.EditWithClicked -> edit(usesDefaultEditor = false)
             is Action.ShareClicked -> share()
+            is Action.UseAsClicked -> useAs()
 
             is Action.Deletion -> onDeletionAction(action)
             is Action.DialogDismissed -> deletionDelegate.dismiss()
@@ -203,6 +204,10 @@ internal class GalleryViewModel @Inject constructor(
 
     private fun share() {
         sendToOtherApp { item -> Effect.Share(item) }
+    }
+
+    private fun useAs() {
+        sendToOtherApp { item -> Effect.UseAs(item) }
     }
 
     private fun sendToOtherApp(effect: (CapturedItem) -> Effect.OtherApp) {

@@ -4,6 +4,7 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.core.content.IntentCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
@@ -81,6 +82,22 @@ class GalleryEffectHandlerTest {
         effectHandler.handle(Effect.Share(ITEM))
 
         assertEquals(Intent.ACTION_CHOOSER, nextStartedActivity().action)
+    }
+
+    @Test
+    fun useAs_offersTheAppsThatCanUseThePhoto() {
+        effectHandler.handle(Effect.UseAs(ITEM))
+
+        val chooser = nextStartedActivity()
+        val target = IntentCompat.getParcelableExtra(
+            chooser,
+            Intent.EXTRA_INTENT,
+            Intent::class.java,
+        )
+
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        assertEquals(Intent.ACTION_ATTACH_DATA, target?.action)
+        assertEquals(ITEM.uri, target?.data)
     }
 
     @Test

@@ -212,6 +212,7 @@ class GalleryViewModelTest {
                 Action.DeleteClicked,
                 Action.DeleteConfirmed,
                 Action.ShareClicked,
+                Action.UseAsClicked,
                 Action.VideoClicked,
                 Action.DetailsShownChanged(isShown = true),
             ).forEach(viewModel::onAction)
@@ -231,13 +232,37 @@ class GalleryViewModelTest {
             coEvery { capturedItemDetailsRepository.details(NEWEST) } returns detailsAt(LOCATION)
             viewModel.onAction(Action.DetailsShownChanged(isShown = true))
             viewModel.onAction(Action.ShareClicked)
+            viewModel.onAction(Action.UseAsClicked)
             viewModel.onAction(Action.EditClicked)
             viewModel.onAction(Action.SystemGalleryClicked)
             viewModel.onAction(Action.OpenMapClicked)
 
             assertFalse(viewModel.uiState.value.showsExternalActions)
             assertFalse(viewModel.uiState.value.showsSystemGallery)
+            assertFalse(viewModel.uiState.value.showsUseAs)
             assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun useAsClicked_offersThePhotoToOtherApps() {
+        runTest {
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.UseAsClicked)
+
+            assertTrue(viewModel.uiState.value.showsUseAs)
+            assertEquals(listOf(Effect.UseAs(NEWEST)), effects)
+        }
+    }
+
+    @Test
+    fun aVideo_offersNoUseAs() {
+        runTest {
+            storedItems = listOf(VIDEO)
+
+            assertFalse(viewModel().uiState.value.showsUseAs)
         }
     }
 
@@ -689,11 +714,16 @@ class GalleryViewModelTest {
     }
 
     private companion object {
-        val THUMBNAIL = mockk<Bitmap>()
-        val PREVIEW = mockk<Bitmap>()
+        val THUMBNAIL = mockk<Bitmap>(relaxed = true)
+        val PREVIEW = mockk<Bitmap>(relaxed = true)
         val STORAGE_FAILURE = Result.failure<Unit>(IOException())
         val NEWEST = image("20231016_120000_000")
         val OLDER = image("20231015_120000_000")
+        val VIDEO = CapturedItem(
+            type = CapturedItemType.VIDEO,
+            dateString = "20231014_120000_000",
+            uri = Uri.parse("content://media/external/video/media/20231014_120000_000"),
+        )
         val LOCATION = GeoCoordinates(
             latitude = 47.5,
             longitude = -122.25,

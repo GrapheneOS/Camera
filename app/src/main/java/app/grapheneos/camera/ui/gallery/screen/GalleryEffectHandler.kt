@@ -21,6 +21,7 @@ import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.editCapturedItem
 import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
+import app.grapheneos.camera.ui.mediaviewer.navigation.useCapturedItemAs
 
 @Composable
 internal fun rememberGalleryEffectHandler(
@@ -63,6 +64,7 @@ internal class GalleryEffectHandlerImpl(
             is Effect.OpenSystemGallery -> systemGalleryLauncher.open(activity)
             is Effect.Edit -> edit(effect)
             is Effect.Share -> share(effect)
+            is Effect.UseAs -> useAs(effect)
             is Effect.OpenMap -> openMap(effect.location)
             is Effect.CopyText -> copy(effect.text)
             is Effect.ItemDeleted -> showText(R.string.deleted_successfully)
@@ -84,6 +86,15 @@ internal class GalleryEffectHandlerImpl(
 
     private fun share(effect: Effect.Share) {
         val error = shareCapturedItem(
+            activity = activity,
+            item = effect.item,
+        )
+
+        error?.let(::showText)
+    }
+
+    private fun useAs(effect: Effect.UseAs) {
+        val error = useCapturedItemAs(
             activity = activity,
             item = effect.item,
         )
