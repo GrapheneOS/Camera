@@ -198,29 +198,22 @@ internal class DetailsPanelState(
 
         return when {
             isSidePanel() -> Offset(
-                x = -panelWidth() / 2f * opening,
+                x = lerp(
+                    start = 0f,
+                    stop = -panelWidth() / 2f,
+                    fraction = opening,
+                ),
                 y = 0f,
             )
             else -> Offset(
                 x = 0f,
-                y = (photoWindowHeight() - containerSize.height) / 2f * opening,
+                y = lerp(
+                    start = 0f,
+                    stop = (photoWindowHeight() - containerSize.height) / 2f,
+                    fraction = opening,
+                ),
             )
         }
-    }
-
-    fun photoScaleAt(
-        position: Float,
-        imageSize: Size?,
-    ): Float {
-        if (!isSidePanel() || imageSize == null) return 1f
-
-        val fitScale = min(
-            containerSize.width / imageSize.width,
-            containerSize.height / imageSize.height,
-        )
-        val windowWidth = containerSize.width - panelWidth() * openingAt(position)
-
-        return min(1f, windowWidth / (imageSize.width * fitScale))
     }
 
     fun openingAt(position: Float): Float {

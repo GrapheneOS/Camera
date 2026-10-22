@@ -220,21 +220,6 @@ class DetailsPanelStateTest {
     }
 
     @Test
-    fun inLandscape_aWidePhotoShrinksToTheWindowBesideThePanel() {
-        state.updateLayout(LANDSCAPE)
-        val panorama = Size(width = 4000f, height = 1000f)
-
-        assertEquals(1f, state.photoScaleAt(position = 0f, imageSize = panorama))
-        assertEquals(0.7f, state.photoScaleAt(position = 1f, imageSize = panorama))
-        assertEquals(1f, state.photoScaleAt(position = 1f, imageSize = Size(1000f, 900f)))
-    }
-
-    @Test
-    fun inPortrait_thePhotoKeepsItsSize() {
-        assertEquals(1f, state.photoScaleAt(position = 1f, imageSize = Size(4000f, 1000f)))
-    }
-
-    @Test
     fun inLandscape_aSwipeUpAsLongAsThePanelIsWide_opensIt() {
         state.updateLayout(LANDSCAPE)
         state.startDrag()
