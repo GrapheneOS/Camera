@@ -41,6 +41,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
+import app.grapheneos.camera.ui.mediaviewer.components.HdrColorModeEffect
 import app.grapheneos.camera.ui.mediaviewer.components.SystemBarsVisibilityEffect
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
@@ -84,6 +85,10 @@ internal fun GalleryScreen(
 
     SystemBarsVisibilityEffect(
         visible = uiState.areControlsVisible || uiState.showsDetails,
+    )
+
+    HdrColorModeEffect(
+        isHdr = uiState.showsHdr,
     )
 
     GalleryContent(

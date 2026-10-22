@@ -63,8 +63,10 @@ internal fun GalleryTopBar(
             if (uiState.pages.isNotEmpty()) {
                 GalleryMenu(
                     showsExternalActions = uiState.showsExternalActions,
+                    showsUseAs = uiState.showsUseAs,
                     onInfoClick = { onAction(Action.DetailsShownChanged(isShown = true)) },
                     onEditWithClick = { onAction(Action.EditWithClicked) },
+                    onUseAsClick = { onAction(Action.UseAsClicked) },
                 )
             }
         },

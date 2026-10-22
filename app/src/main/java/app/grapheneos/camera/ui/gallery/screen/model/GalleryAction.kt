@@ -28,6 +28,8 @@ internal sealed interface GalleryAction {
 
     data object ShareClicked : GalleryAction
 
+    data object UseAsClicked : GalleryAction
+
     data object DialogDismissed : GalleryAction
 
     data class ZoomChanged(

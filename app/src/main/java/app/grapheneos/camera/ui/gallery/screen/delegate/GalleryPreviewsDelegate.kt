@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.gallery.screen.delegate
 
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.compose.ui.graphics.asImageBitmap
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -101,8 +102,15 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
     private fun previewOf(bitmap: Bitmap?): GalleryPreview {
         return when (bitmap) {
             null -> GalleryPreview.Unavailable
-            else -> GalleryPreview.Loaded(bitmap.asImageBitmap())
+            else -> GalleryPreview.Loaded(
+                image = bitmap.asImageBitmap(),
+                isHdr = hasGainmap(bitmap),
+            )
         }
+    }
+
+    private fun hasGainmap(bitmap: Bitmap): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && bitmap.hasGainmap()
     }
 
     private companion object {

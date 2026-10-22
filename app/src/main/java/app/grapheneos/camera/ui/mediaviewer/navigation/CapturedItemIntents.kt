@@ -65,3 +65,21 @@ internal fun editCapturedItem(
         R.string.unable_to_edit_media
     }
 }
+
+// Fails like sharing when the item is no longer accessible. Returns the error message to show, or
+// null on success
+@StringRes
+internal fun useCapturedItemAs(activity: Activity, item: CapturedItem): Int? {
+    val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
+        setDataAndType(item.uri, item.mimeType())
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    return try {
+        activity.startActivity(Intent.createChooser(intent, activity.getString(R.string.use_as)))
+        null
+    } catch (e: SecurityException) {
+        Log.e(TAG, "unable to use ${item.uiName()} as something else", e)
+        R.string.unable_to_use_media
+    }
+}

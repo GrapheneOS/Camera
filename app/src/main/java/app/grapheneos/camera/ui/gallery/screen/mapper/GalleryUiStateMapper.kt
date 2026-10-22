@@ -36,6 +36,9 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             capturedAt = state.currentItem()?.let(captureTimeMapper::map),
             showsExternalActions = !state.isSecureSession,
             showsSystemGallery = state.hasSystemGallery && !state.isSecureSession,
+            showsUseAs = !state.isSecureSession &&
+                state.currentItem()?.type == CapturedItemType.IMAGE,
+            showsHdr = showsHdr(state),
             areControlsVisible = state.areControlsVisible,
             isZoomed = state.isZoomed,
             showsDetails = state.showsDetails,
@@ -82,6 +85,17 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             thumbnail is GalleryPreview.Loaded -> thumbnail
             else -> preview ?: thumbnail ?: GalleryPreview.Loading
         }
+    }
+
+    private fun showsHdr(state: GalleryState): Boolean {
+        val shown = state.currentItem()?.let { item ->
+            preview(
+                state = state,
+                item = item,
+            )
+        }
+
+        return (shown as? GalleryPreview.Loaded)?.isHdr == true
     }
 
     private fun details(state: GalleryState): ImmutableMap<String, GalleryDetails> {

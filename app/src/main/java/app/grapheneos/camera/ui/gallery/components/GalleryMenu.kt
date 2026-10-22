@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
@@ -34,8 +35,10 @@ private val ICON_END_PADDING = 4.dp
 @Composable
 internal fun GalleryMenu(
     showsExternalActions: Boolean,
+    showsUseAs: Boolean,
     onInfoClick: () -> Unit,
     onEditWithClick: () -> Unit,
+    onUseAsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isExpanded by rememberSaveable { mutableStateOf(false) }
@@ -67,6 +70,16 @@ internal fun GalleryMenu(
                     onClick = {
                         isExpanded = false
                         onEditWithClick()
+                    },
+                )
+            }
+            if (showsUseAs) {
+                MenuItem(
+                    icon = Icons.AutoMirrored.Outlined.OpenInNew,
+                    label = stringResource(R.string.use_as),
+                    onClick = {
+                        isExpanded = false
+                        onUseAsClick()
                     },
                 )
             }
@@ -105,8 +118,10 @@ private fun GalleryMenuPreview() {
     CameraPreviewTheme {
         GalleryMenu(
             showsExternalActions = true,
+            showsUseAs = true,
             onInfoClick = {},
             onEditWithClick = {},
+            onUseAsClick = {},
         )
     }
 }

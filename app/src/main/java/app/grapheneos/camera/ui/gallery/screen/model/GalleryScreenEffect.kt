@@ -42,4 +42,8 @@ internal sealed interface GalleryScreenEffect {
     data class Share(
         val item: CapturedItem,
     ) : OtherApp
+
+    data class UseAs(
+        val item: CapturedItem,
+    ) : OtherApp
 }
