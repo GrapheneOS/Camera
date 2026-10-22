@@ -22,6 +22,15 @@ internal data class GalleryState(
         return items.getOrNull(currentIndex)
     }
 
+    fun currentIndexIn(items: List<CapturedItem>): Int {
+        val index = items.indexOf(currentItem())
+
+        return when {
+            index >= 0 -> index
+            else -> currentIndex.coerceAtMost(items.lastIndex).coerceAtLeast(0)
+        }
+    }
+
     fun itemsAround(radius: Int): List<CapturedItem> {
         return (currentIndex - radius..currentIndex + radius).mapNotNull(items::getOrNull)
     }

@@ -131,7 +131,7 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
         stateHolder.update {
             it.copy(
                 items = items,
-                currentIndex = it.currentIndex.coerceAtMost(items.lastIndex).coerceAtLeast(0),
+                currentIndex = it.currentIndexIn(items),
                 isZoomed = false,
             )
         }

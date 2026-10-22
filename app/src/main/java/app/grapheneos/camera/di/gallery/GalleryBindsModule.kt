@@ -8,8 +8,8 @@ import app.grapheneos.camera.domain.gallery.usecase.DeleteTrashedItem
 import app.grapheneos.camera.domain.gallery.usecase.DeleteTrashedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.FinishInterruptedDeletions
 import app.grapheneos.camera.domain.gallery.usecase.FinishInterruptedDeletionsImpl
-import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItems
-import app.grapheneos.camera.domain.gallery.usecase.LoadGalleryItemsImpl
+import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItems
+import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItemsImpl
 import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItem
 import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItem
@@ -58,9 +58,9 @@ internal abstract class GalleryBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindLoadGalleryItems(
-        impl: LoadGalleryItemsImpl,
-    ): LoadGalleryItems
+    abstract fun bindObserveGalleryItems(
+        impl: ObserveGalleryItemsImpl,
+    ): ObserveGalleryItems
 
     @Binds
     @Reusable

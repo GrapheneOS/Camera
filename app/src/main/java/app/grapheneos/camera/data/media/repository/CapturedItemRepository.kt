@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
+import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -32,9 +33,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -57,6 +61,9 @@ interface CapturedItemRepository {
     suspend fun migrateStoredCaptures(): CapturedItem?
 
     suspend fun capturedItems(): List<CapturedItem>
+
+    /** Emits whenever the items [capturedItems] lists may have changed. */
+    fun capturedItemsChanges(): Flow<Unit>
 
     /** Decodes [item] to fit within the given size, or returns null when it can't be read. */
     suspend fun loadThumbnail(
@@ -275,6 +282,40 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun capturedItemsChanges(): Flow<Unit> {
+        return callbackFlow {
+            val observer = object : ContentObserver(null) {
+                override fun onChange(selfChange: Boolean) {
+                    trySend(Unit)
+                }
+            }
+
+            contentResolver.registerContentObserver(MediaStore.AUTHORITY_URI, true, observer)
+
+            trackedSafTrees().forEach { tree ->
+                observeSafTree(
+                    tree = tree,
+                    observer = observer,
+                )
+            }
+
+            awaitClose {
+                contentResolver.unregisterContentObserver(observer)
+            }
+        }.flowOn(ioDispatcher)
+    }
+
+    private fun observeSafTree(
+        tree: Uri,
+        observer: ContentObserver,
+    ) {
+        try {
+            contentResolver.registerContentObserver(childDocumentsUri(tree), true, observer)
+        } catch (e: SecurityException) {
+            Log.d(TAG, "unable to observe $tree", e)
+        }
+    }
+
     @Suppress("TooGenericExceptionCaught")
     private fun collectMediaStoreItems(dest: ArrayList<CapturedItem>) {
         val volumeUri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
@@ -305,8 +346,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         treeUri: Uri,
         dest: ArrayList<CapturedItem>,
     ) {
-        val treeId = DocumentsContract.getTreeDocumentId(treeUri)
-        val childDocumentsUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeId)
+        val childDocumentsUri = childDocumentsUri(treeUri)
         val columns = arrayOf(
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,
@@ -333,6 +373,12 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
                 Log.d(TAG, "unable to collect SAF items, treeUri $treeUri", e)
             }
         }
+    }
+
+    private fun childDocumentsUri(tree: Uri): Uri {
+        val treeId = DocumentsContract.getTreeDocumentId(tree)
+
+        return DocumentsContract.buildChildDocumentsUriUsingTree(tree, treeId)
     }
 
     @Suppress("TooGenericExceptionCaught")
