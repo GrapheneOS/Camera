@@ -9,6 +9,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -37,7 +37,10 @@ class ObserveGalleryItemsTest {
                 listOf(OLDER),
             )
 
-            val emissions = galleryItems(refreshes = emptyFlow()).toList()
+            val emissions = galleryItems(
+                refreshes = emptyFlow(),
+                dispatcher = StandardTestDispatcher(testScheduler),
+            ).toList()
 
             assertEquals(listOf(listOf(NEWER, OLDER), listOf(OLDER)), emissions)
         }
@@ -53,23 +56,33 @@ class ObserveGalleryItemsTest {
             coEvery { repository.capturedItems() } coAnswers { staleRead.await() } andThen
                 listOf(OLDER)
 
-            backgroundScope.launch(StandardTestDispatcher(testScheduler)) {
-                galleryItems(refreshes).toList(emissions)
+            val dispatcher = StandardTestDispatcher(testScheduler)
+
+            backgroundScope.launch(dispatcher) {
+                galleryItems(
+                    refreshes = refreshes,
+                    dispatcher = dispatcher,
+                ).toList(emissions)
             }
-            runCurrent()
+
+            testScheduler.runCurrent()
             refreshes.emit(Unit)
-            runCurrent()
+            testScheduler.runCurrent()
             staleRead.complete(listOf(NEWER, OLDER))
-            runCurrent()
+            testScheduler.runCurrent()
 
             assertEquals(listOf(listOf(OLDER)), emissions)
         }
     }
 
-    private fun galleryItems(refreshes: Flow<Unit>): Flow<List<CapturedItem>> {
+    private fun galleryItems(
+        refreshes: Flow<Unit>,
+        dispatcher: CoroutineDispatcher,
+    ): Flow<List<CapturedItem>> {
         val observeGalleryItems = ObserveGalleryItemsImpl(
             capturedItemRepository = repository,
             galleryItemsMapper = GalleryItemsMapperImpl(),
+            defaultDispatcher = dispatcher,
         )
 
         return observeGalleryItems.invoke(

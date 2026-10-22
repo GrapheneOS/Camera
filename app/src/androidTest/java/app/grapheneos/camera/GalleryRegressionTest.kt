@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Rule
@@ -76,6 +77,7 @@ class GalleryRegressionTest {
                 GalleryScreen(
                     videoPlayerLauncher = mockk(relaxed = true),
                     systemGalleryLauncher = mockk(relaxed = true),
+                    clipboardManager = mockk(relaxed = true),
                     onNavigateBack = {},
                     screenModel = screenModel,
                 )
@@ -84,13 +86,16 @@ class GalleryRegressionTest {
     }
 
     private companion object {
+        const val IMAGE_KEY = "content://media/external/images/media/0"
         val IMAGE_SHOWN = GalleryUiState(
             pages = persistentListOf(
                 GalleryPageUiModel(
-                    key = "content://media/external/images/media/0",
+                    key = IMAGE_KEY,
                     isVideo = false,
-                    preview = GalleryPreview.Loaded(ImageBitmap(width = 64, height = 48)),
                 ),
+            ),
+            previews = persistentMapOf(
+                IMAGE_KEY to GalleryPreview.Loaded(ImageBitmap(width = 64, height = 48)),
             ),
         )
     }

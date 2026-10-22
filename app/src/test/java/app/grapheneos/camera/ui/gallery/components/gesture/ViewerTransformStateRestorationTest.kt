@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import org.junit.Assert.assertEquals
@@ -27,7 +28,14 @@ class ViewerTransformStateRestorationTest {
         restorationTester.setContent {
             transformState = rememberViewerTransformState(pageKey = pageKey)
         }
-        composeRule.runOnIdle { transformState.applyDoubleTap(position = Offset.Zero) }
+        composeRule.runOnIdle {
+            transformState.updateLayout(
+                containerSize = SCREEN,
+                imageSize = SCREEN,
+                canZoom = true,
+            )
+            transformState.applyDoubleTap(position = Offset.Zero)
+        }
 
         restorationTester.emulateSavedInstanceStateRestore()
 
@@ -39,7 +47,14 @@ class ViewerTransformStateRestorationTest {
         composeRule.setContent {
             transformState = rememberViewerTransformState(pageKey = pageKey)
         }
-        composeRule.runOnIdle { transformState.applyDoubleTap(position = Offset.Zero) }
+        composeRule.runOnIdle {
+            transformState.updateLayout(
+                containerSize = SCREEN,
+                imageSize = SCREEN,
+                canZoom = true,
+            )
+            transformState.applyDoubleTap(position = Offset.Zero)
+        }
 
         pageKey = SECOND_PAGE
 
@@ -49,5 +64,6 @@ class ViewerTransformStateRestorationTest {
     private companion object {
         const val FIRST_PAGE = "content://media/external/images/media/1"
         const val SECOND_PAGE = "content://media/external/images/media/2"
+        val SCREEN = Size(width = 100f, height = 100f)
     }
 }

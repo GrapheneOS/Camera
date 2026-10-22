@@ -24,6 +24,8 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
 import app.grapheneos.camera.data.media.store.StoragePrefsMigration
+import app.grapheneos.camera.data.media.store.imageCollectionUri
+import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.ImageDownscaler
 import app.grapheneos.camera.util.getStringOrNull
@@ -34,12 +36,14 @@ import javax.inject.Inject
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 
 interface CapturedItemRepository {
@@ -175,19 +179,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
-    internal suspend fun trackedSafTrees(): List<Uri> {
-        val prefs = storagePrefs.data.first()
-        val trees = ArrayList<Uri>()
-
-        prefs.storageLocation
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { trees.add(it.toUri()) }
-
-        prefs.previousSafTrees.mapTo(trees) { it.toUri() }
-
-        return trees.distinct()
-    }
-
     override suspend fun migrateStoredCaptures(): CapturedItem? {
         return withContext(ioDispatcher) {
             val joinedUris = storagePrefs.data.first().legacyMediaUris
@@ -212,6 +203,113 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
             migrated
         }
+    }
+
+    override suspend fun capturedItems(): List<CapturedItem> {
+        return withContext(ioDispatcher) {
+            val items = ArrayList<CapturedItem>()
+
+            collectMediaStoreItems(
+                collection = imageCollectionUri,
+                dest = items,
+            )
+            collectMediaStoreItems(
+                collection = videoCollectionUri,
+                dest = items,
+            )
+
+            trackedSafTrees().forEach {
+                ensureActive()
+                collectSafItems(it, items)
+            }
+
+            items.distinct()
+        }
+    }
+
+    override fun capturedItemsChanges(): Flow<Unit> {
+        return callbackFlow {
+            val observer = object : ContentObserver(null) {
+                override fun onChange(selfChange: Boolean) {
+                    trySend(Unit)
+                }
+            }
+
+            contentResolver.registerContentObserver(
+                MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                true,
+                observer,
+            )
+            contentResolver.registerContentObserver(
+                MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                true,
+                observer,
+            )
+
+            trackedSafTrees().forEach { tree ->
+                observeSafTree(
+                    tree = tree,
+                    observer = observer,
+                )
+            }
+
+            awaitClose {
+                contentResolver.unregisterContentObserver(observer)
+            }
+        }.flowOn(ioDispatcher)
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun loadThumbnail(
+        item: CapturedItem,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap? {
+        return withContext(ioDispatcher) {
+            try {
+                when (item.type) {
+                    CapturedItemType.VIDEO -> getVideoThumbnail(context, item.uri)?.let { frame ->
+                        scaleDownToFit(
+                            frame = frame,
+                            targetWidth = targetWidth,
+                            targetHeight = targetHeight,
+                        )
+                    }
+
+                    CapturedItemType.IMAGE -> ImageDecoder.decodeBitmap(
+                        ImageDecoder.createSource(contentResolver, item.uri),
+                        ImageDownscaler(
+                            maxWidth = targetWidth,
+                            maxHeight = targetHeight,
+                        ),
+                    )
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "unable to decode ${item.uri}", e)
+                null
+            }
+        }
+    }
+
+    override suspend fun loadPreview(item: CapturedItem): Bitmap? {
+        return loadThumbnail(
+            item = item,
+            targetWidth = PREVIEW_MAX_SIDE,
+            targetHeight = PREVIEW_MAX_SIDE,
+        )
+    }
+
+    internal suspend fun trackedSafTrees(): List<Uri> {
+        val prefs = storagePrefs.data.first()
+        val trees = ArrayList<Uri>()
+
+        prefs.storageLocation
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { trees.add(it.toUri()) }
+
+        prefs.previousSafTrees.mapTo(trees) { it.toUri() }
+
+        return trees.distinct()
     }
 
     private fun legacyCapturedItem(uri: Uri): CapturedItem? {
@@ -267,44 +365,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return trees
     }
 
-    override suspend fun capturedItems(): List<CapturedItem> {
-        return withContext(ioDispatcher) {
-            val items = ArrayList<CapturedItem>()
-
-            collectMediaStoreItems(items)
-
-            trackedSafTrees().forEach {
-                ensureActive()
-                collectSafItems(it, items)
-            }
-
-            items.distinct()
-        }
-    }
-
-    override fun capturedItemsChanges(): Flow<Unit> {
-        return callbackFlow {
-            val observer = object : ContentObserver(null) {
-                override fun onChange(selfChange: Boolean) {
-                    trySend(Unit)
-                }
-            }
-
-            contentResolver.registerContentObserver(MediaStore.AUTHORITY_URI, true, observer)
-
-            trackedSafTrees().forEach { tree ->
-                observeSafTree(
-                    tree = tree,
-                    observer = observer,
-                )
-            }
-
-            awaitClose {
-                contentResolver.unregisterContentObserver(observer)
-            }
-        }.flowOn(ioDispatcher)
-    }
-
     private fun observeSafTree(
         tree: Uri,
         observer: ContentObserver,
@@ -317,19 +377,22 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun collectMediaStoreItems(dest: ArrayList<CapturedItem>) {
-        val volumeUri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        val columns = arrayOf(BaseColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
-        val idColumn = 0
-        val nameColumn = 1
-
+    private suspend fun collectMediaStoreItems(
+        collection: Uri,
+        dest: ArrayList<CapturedItem>,
+    ) {
         try {
-            contentResolver.query(volumeUri, columns, null, null)?.use {
-                dest.ensureCapacity(it.count)
+            contentResolver.query(
+                collection,
+                MEDIA_STORE_COLUMNS,
+                null,
+                null,
+            )?.use {
+                dest.ensureCapacity(dest.size + it.count)
 
-                while (it.moveToNext()) {
-                    val name = it.getString(nameColumn)
-                    val uri = ContentUris.withAppendedId(volumeUri, it.getLong(idColumn))
+                while (currentCoroutineContext().isActive && it.moveToNext()) {
+                    val name = it.getString(NAME_COLUMN)
+                    val uri = ContentUris.withAppendedId(collection, it.getLong(ID_COLUMN))
 
                     capturedItemNameMapper.map(name, uri)?.let { item ->
                         dest.add(item)
@@ -342,25 +405,24 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun collectSafItems(
+    private suspend fun collectSafItems(
         treeUri: Uri,
         dest: ArrayList<CapturedItem>,
     ) {
         val childDocumentsUri = childDocumentsUri(treeUri)
-        val columns = arrayOf(
-            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-        )
-        val idColumn = 0
-        val nameColumn = 1
 
         try {
-            contentResolver.query(childDocumentsUri, columns, null, null)?.use {
-                dest.ensureCapacity(it.count)
+            contentResolver.query(
+                childDocumentsUri,
+                DOCUMENT_COLUMNS,
+                null,
+                null,
+            )?.use {
+                dest.ensureCapacity(dest.size + it.count)
 
-                while (it.moveToNext()) {
-                    val name = it.getString(nameColumn)
-                    val id = it.getString(idColumn)
+                while (currentCoroutineContext().isActive && it.moveToNext()) {
+                    val name = it.getString(NAME_COLUMN)
+                    val id = it.getString(ID_COLUMN)
                     val uri = DocumentsContract.buildDocumentUriUsingTree(treeUri, id)
 
                     capturedItemNameMapper.map(name, uri)?.let { item ->
@@ -379,38 +441,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         val treeId = DocumentsContract.getTreeDocumentId(tree)
 
         return DocumentsContract.buildChildDocumentsUriUsingTree(tree, treeId)
-    }
-
-    @Suppress("TooGenericExceptionCaught")
-    override suspend fun loadThumbnail(
-        item: CapturedItem,
-        targetWidth: Int,
-        targetHeight: Int,
-    ): Bitmap? {
-        return withContext(ioDispatcher) {
-            try {
-                when (item.type) {
-                    CapturedItemType.VIDEO -> getVideoThumbnail(context, item.uri)?.let { frame ->
-                        scaleDownToFit(
-                            frame = frame,
-                            targetWidth = targetWidth,
-                            targetHeight = targetHeight,
-                        )
-                    }
-
-                    CapturedItemType.IMAGE -> ImageDecoder.decodeBitmap(
-                        ImageDecoder.createSource(contentResolver, item.uri),
-                        ImageDownscaler(
-                            maxWidth = targetWidth,
-                            maxHeight = targetHeight,
-                        ),
-                    )
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to decode ${item.uri}", e)
-                null
-            }
-        }
     }
 
     private fun scaleDownToFit(
@@ -435,14 +465,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return scaled
     }
 
-    override suspend fun loadPreview(item: CapturedItem): Bitmap? {
-        return loadThumbnail(
-            item = item,
-            targetWidth = PREVIEW_MAX_SIDE,
-            targetHeight = PREVIEW_MAX_SIDE,
-        )
-    }
-
     companion object {
         // Recent storage locations stay tracked so the gallery can still show their contents.
         const val MAX_NUMBER_OF_TRACKED_PREVIOUS_SAF_TREES = 5
@@ -452,6 +474,18 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         // Keeps a decoded photo clear of the bitmap size limit (100 MB)
         private const val PREVIEW_MAX_SIDE = 4500
         private const val LEGACY_MEDIA_URI_SEPARATOR = ";"
+
+        private const val ID_COLUMN = 0
+        private const val NAME_COLUMN = 1
+
+        private val MEDIA_STORE_COLUMNS = arrayOf(
+            BaseColumns._ID,
+            MediaStore.MediaColumns.DISPLAY_NAME,
+        )
+        private val DOCUMENT_COLUMNS = arrayOf(
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+        )
     }
 }
 

@@ -29,7 +29,10 @@ import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.gallery.components.GalleryPager
 import app.grapheneos.camera.ui.gallery.components.GalleryPlaceholder
+import app.grapheneos.camera.ui.gallery.components.ViewerTransform
 import app.grapheneos.camera.ui.gallery.components.details.animateDetailsPositionAsState
+import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
+import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberDetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.rememberViewerTransform
@@ -44,6 +47,9 @@ import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import java.time.LocalDateTime
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+
+private const val PREVIEW_PAGE_KEY = "content://media/external/images/media/1"
 
 @Composable
 internal fun GalleryScreen(
@@ -101,7 +107,6 @@ private fun GalleryContent(
     val transformState = rememberViewerTransformState(pageKey = currentPageKey)
     val detailsState = rememberDetailsPanelState(isShown = uiState.showsDetails)
     val detailsPosition = animateDetailsPositionAsState(detailsState)
-    val openMap = { onAction(Action.OpenMapClicked) }
     val viewerTransform = rememberViewerTransform(
         transformState = transformState,
         onDismissed = onNavigateBack,
@@ -124,25 +129,18 @@ private fun GalleryContent(
             .fillMaxSize()
             .drawBehind { drawRect(backgroundColor()) },
     ) {
-        GalleryPager(
-            pages = uiState.pages,
-            initialPage = uiState.currentPage,
-            currentPage = uiState.currentPage,
-            showsDetails = uiState.showsDetails,
+        GalleryViewerPager(
+            uiState = uiState,
             transformState = transformState,
             viewerTransform = viewerTransform,
             detailsState = detailsState,
             detailsPosition = { detailsPosition.value },
-            onPageSelected = { page -> onAction(Action.PageSelected(page)) },
-            onDetailsShownChange = { isShown -> onAction(Action.DetailsShownChanged(isShown)) },
-            onTap = { onAction(Action.ScreenTapped) },
-            onVideoClick = { onAction(Action.VideoClicked) },
-            onOpenMapClick = openMap.takeIf { uiState.showsExternalActions },
-            onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
-            modifier = Modifier.fillMaxSize(),
+            onAction = onAction,
         )
 
-        EmptyGalleryPlaceholder(isShown = uiState.isEmpty)
+        if (uiState.isEmpty) {
+            EmptyGalleryPlaceholder()
+        }
 
         GalleryBars(
             uiState = uiState,
@@ -163,13 +161,43 @@ private fun GalleryContent(
 }
 
 @Composable
-private fun EmptyGalleryPlaceholder(isShown: Boolean) {
-    if (isShown) {
-        GalleryPlaceholder(
-            icon = Icons.Outlined.PhotoLibrary,
-            text = stringResource(R.string.empty_gallery),
-        )
-    }
+private fun GalleryViewerPager(
+    uiState: UiState,
+    transformState: ViewerTransformState,
+    viewerTransform: ViewerTransform,
+    detailsState: DetailsPanelState,
+    detailsPosition: () -> Float,
+    onAction: (Action) -> Unit,
+) {
+    val openMap = { onAction(Action.OpenMapClicked) }
+
+    GalleryPager(
+        pages = uiState.pages,
+        previews = uiState.previews,
+        details = uiState.details,
+        initialPage = uiState.currentPage,
+        currentPage = uiState.currentPage,
+        showsDetails = uiState.showsDetails,
+        transformState = transformState,
+        viewerTransform = viewerTransform,
+        detailsState = detailsState,
+        detailsPosition = detailsPosition,
+        onPageSelected = { page -> onAction(Action.PageSelected(page)) },
+        onDetailsShownChange = { isShown -> onAction(Action.DetailsShownChanged(isShown)) },
+        onTap = { onAction(Action.ScreenTapped) },
+        onVideoClick = { onAction(Action.VideoClicked) },
+        onOpenMapClick = openMap.takeIf { uiState.showsExternalActions },
+        onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+@Composable
+private fun EmptyGalleryPlaceholder() {
+    GalleryPlaceholder(
+        icon = Icons.Outlined.PhotoLibrary,
+        text = stringResource(R.string.empty_gallery),
+    )
 }
 
 @Composable
@@ -202,13 +230,15 @@ private fun GalleryContentPreview() {
             uiState = UiState(
                 pages = persistentListOf(
                     GalleryPageUiModel(
-                        key = "content://media/external/images/media/1",
+                        key = PREVIEW_PAGE_KEY,
                         isVideo = false,
-                        preview = GalleryPreview.Loaded(
-                            previewShot(
-                                top = PREVIEW_COOL_ICON,
-                                bottom = PREVIEW_SCENE,
-                            ),
+                    ),
+                ),
+                previews = persistentMapOf(
+                    PREVIEW_PAGE_KEY to GalleryPreview.Loaded(
+                        previewShot(
+                            top = PREVIEW_COOL_ICON,
+                            bottom = PREVIEW_SCENE,
                         ),
                     ),
                 ),

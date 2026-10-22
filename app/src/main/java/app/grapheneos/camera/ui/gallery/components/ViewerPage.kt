@@ -10,11 +10,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanel
 import app.grapheneos.camera.ui.gallery.components.gesture.ViewerGestures
 import app.grapheneos.camera.ui.gallery.components.gesture.viewerGestureInput
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 
 @Composable
 internal fun ViewerPage(
     page: GalleryPageUiModel,
+    preview: GalleryPreview,
+    details: GalleryDetails,
     isCurrentPage: Boolean,
     showsDetails: Boolean,
     gestures: ViewerGestures,
@@ -42,6 +46,7 @@ internal fun ViewerPage(
     ) {
         GalleryPage(
             page = page,
+            preview = preview,
             onTap = onTap,
             onDoubleTap = when {
                 isCurrentPage && !showsDetails -> gestures.transformState::applyDoubleTap
@@ -55,7 +60,7 @@ internal fun ViewerPage(
         DetailsPanel(
             detailsState = detailsState,
             position = detailsPosition,
-            details = page.details,
+            details = details,
             isVideo = page.isVideo,
             uri = page.key,
             isCurrentPage = isCurrentPage,

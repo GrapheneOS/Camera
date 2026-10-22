@@ -36,6 +36,6 @@ internal data class GalleryState(
     }
 
     fun showsSamePageAs(other: GalleryState): Boolean {
-        return currentIndex == other.currentIndex && items == other.items
+        return currentIndex == other.currentIndex && items === other.items
     }
 }
