@@ -60,17 +60,17 @@ internal class GalleryViewModel @Inject constructor(
         get() = stateHolder.state.value
 
     init {
-        previewsDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
-        detailsDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
+        previewsDelegate.bind(stateHolder)
+        detailsDelegate.bind(stateHolder)
         deletionDelegate.bind(stateHolder)
 
-        loadAround(state.currentIndex)
+        viewModelScope.launch {
+            previewsDelegate.trackPreviews()
+        }
+
+        viewModelScope.launch {
+            detailsDelegate.trackDetails()
+        }
 
         viewModelScope.launch {
             val items = loadGalleryItems(
@@ -86,20 +86,30 @@ internal class GalleryViewModel @Inject constructor(
         when (action) {
             is Action.PageSelected -> selectPage(action.page)
             is Action.ScreenTapped -> onScreenTapped()
-            is Action.Details -> detailsDelegate.onAction(action)
+            is Action.ZoomChanged -> onZoomChanged(
+                pageKey = action.pageKey,
+                isZoomed = action.isZoomed,
+            )
+
+            is Action.Details -> onDetailsAction(action)
+
             is Action.VideoClicked -> openVideo()
             is Action.SystemGalleryClicked -> stateHolder.send(Effect.OpenSystemGallery)
             is Action.EditClicked -> edit(usesDefaultEditor = true)
             is Action.EditWithClicked -> edit(usesDefaultEditor = false)
             is Action.ShareClicked -> share()
+
             is Action.DeleteClicked -> deletionDelegate.confirm()
             is Action.DeleteConfirmed -> deleteCurrentItem()
             is Action.DialogDismissed -> deletionDelegate.dismiss()
+        }
+    }
 
-            is Action.ZoomChanged -> onZoomChanged(
-                pageKey = action.pageKey,
-                isZoomed = action.isZoomed,
-            )
+    private fun onDetailsAction(action: Action.Details) {
+        when (action) {
+            is Action.DetailsShownChanged -> showDetails(action.isShown)
+            is Action.OpenMapClicked -> detailsDelegate.openMap()
+            is Action.DetailLongPressed -> stateHolder.send(Effect.CopyText(action.text))
         }
     }
 
@@ -109,27 +119,17 @@ internal class GalleryViewModel @Inject constructor(
             return
         }
 
-        val currentIndex = items.indexOf(state.currentItem()).coerceAtLeast(0)
-
         stateHolder.update {
             it.copy(
                 items = items,
-                currentIndex = currentIndex,
+                currentIndex = items.indexOf(it.currentItem()).coerceAtLeast(0),
             )
         }
-
-        loadAround(currentIndex)
     }
 
     private fun selectPage(page: Int) {
         stateHolder.update { it.copy(currentIndex = page) }
         state.currentItem()?.let { saveViewedItem(arguments, it) }
-        loadAround(page)
-    }
-
-    private fun loadAround(page: Int) {
-        previewsDelegate.loadAround(page)
-        detailsDelegate.loadAround(page)
     }
 
     private fun onScreenTapped() {
@@ -159,6 +159,13 @@ internal class GalleryViewModel @Inject constructor(
         return shownState.pages.getOrNull(shownState.currentPage)?.key == pageKey
     }
 
+    private fun showDetails(isShown: Boolean) {
+        when {
+            isShown -> detailsDelegate.show()
+            else -> detailsDelegate.hide()
+        }
+    }
+
     private fun openVideo() {
         state.currentItem()?.let { item ->
             stateHolder.send(Effect.OpenVideo(item.uri))
@@ -185,10 +192,6 @@ internal class GalleryViewModel @Inject constructor(
     }
 
     private fun deleteCurrentItem() {
-        viewModelScope.launch {
-            if (deletionDelegate.deleteCurrentItem()) {
-                loadAround(state.currentIndex)
-            }
-        }
+        viewModelScope.launch { deletionDelegate.deleteCurrentItem() }
     }
 }

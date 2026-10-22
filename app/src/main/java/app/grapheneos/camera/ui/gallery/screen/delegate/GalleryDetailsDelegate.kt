@@ -3,53 +3,57 @@ package app.grapheneos.camera.ui.gallery.screen.delegate
 import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
-import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import app.grapheneos.camera.ui.gallery.screen.saveShowsDetails
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 internal interface GalleryDetailsDelegate {
 
-    fun bind(
-        scope: CoroutineScope,
-        stateHolder: GalleryStateHolder,
-    )
+    fun bind(stateHolder: GalleryStateHolder)
 
-    fun onAction(action: Action.Details)
+    suspend fun trackDetails()
+
+    fun show()
 
     fun hide()
 
-    fun loadAround(page: Int)
+    fun openMap()
 }
 
 internal class GalleryDetailsDelegateImpl @Inject constructor(
     private val arguments: SavedStateHandle,
     private val capturedItemDetailsRepository: CapturedItemDetailsRepository,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : GalleryDetailsDelegate {
 
-    private lateinit var scope: CoroutineScope
     private lateinit var stateHolder: GalleryStateHolder
 
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: GalleryStateHolder,
-    ) {
-        this.scope = scope
+    override fun bind(stateHolder: GalleryStateHolder) {
         this.stateHolder = stateHolder
     }
 
-    override fun onAction(action: Action.Details) {
-        when (action) {
-            is Action.DetailsShownChanged -> show(action.isShown)
-            is Action.OpenMapClicked -> openMap()
-            is Action.DetailLongPressed -> stateHolder.send(Effect.CopyText(action.text))
+    override suspend fun trackDetails() {
+        coroutineScope {
+            stateHolder.state
+                .filter { it.showsDetails }
+                .distinctUntilChanged(GalleryState::showsSamePageAs)
+                .collect { state ->
+                    keepDetailsAround(state).forEach { item ->
+                        this@coroutineScope.launch { load(item) }
+                    }
+                }
+        }
+    }
+
+    override fun show() {
+        if (stateHolder.state.value.currentItem() != null) {
+            setShown(true)
         }
     }
 
@@ -57,34 +61,12 @@ internal class GalleryDetailsDelegateImpl @Inject constructor(
         setShown(false)
     }
 
-    override fun loadAround(page: Int) {
+    override fun openMap() {
         val state = stateHolder.state.value
-        if (!state.showsDetails) return
+        val details = state.currentItem()?.let(state.details::get) as? GalleryDetails.Loaded
 
-        val items = state.itemsAround(
-            page = page,
-            radius = DETAILS_RADIUS,
-        )
-
-        stateHolder.update {
-            it.copy(details = it.details.filterKeys(items::contains))
-        }
-
-        items
-            .filterNot(stateHolder.state.value.details::containsKey)
-            .forEach(::load)
-    }
-
-    private fun show(isShown: Boolean) {
-        val state = stateHolder.state.value
-        val canShow = state.currentItem() != null
-
-        when {
-            !isShown -> setShown(false)
-            canShow && !state.showsDetails -> {
-                setShown(true)
-                loadAround(state.currentIndex)
-            }
+        details?.details?.location?.let { location ->
+            stateHolder.send(Effect.OpenMap(location))
         }
     }
 
@@ -98,31 +80,30 @@ internal class GalleryDetailsDelegateImpl @Inject constructor(
         saveShowsDetails(arguments, isShown)
     }
 
-    private fun load(item: CapturedItem) {
+    private fun keepDetailsAround(state: GalleryState): List<CapturedItem> {
+        val items = state.itemsAround(DETAILS_RADIUS)
+        val missingItems = items.filterNot(state.details::containsKey)
+
         stateHolder.update {
-            it.copy(details = it.details + (item to GalleryDetails.Loading))
+            it.copy(
+                details = it.details.filterKeys(items::contains) +
+                    missingItems.associateWith { GalleryDetails.Loading },
+            )
         }
 
-        scope.launch(mainDispatcher) {
-            val details = when (val loaded = capturedItemDetailsRepository.details(item)) {
-                null -> GalleryDetails.Unavailable
-                else -> GalleryDetails.Loaded(loaded)
-            }
-
-            if (item in stateHolder.state.value.details) {
-                stateHolder.update {
-                    it.copy(details = it.details + (item to details))
-                }
-            }
-        }
+        return missingItems
     }
 
-    private fun openMap() {
-        val state = stateHolder.state.value
-        val details = state.currentItem()?.let(state.details::get) as? GalleryDetails.Loaded
+    private suspend fun load(item: CapturedItem) {
+        val details = when (val loaded = capturedItemDetailsRepository.details(item)) {
+            null -> GalleryDetails.Unavailable
+            else -> GalleryDetails.Loaded(loaded)
+        }
 
-        details?.details?.location?.let { location ->
-            stateHolder.send(Effect.OpenMap(location))
+        if (item in stateHolder.state.value.details) {
+            stateHolder.update {
+                it.copy(details = it.details + (item to details))
+            }
         }
     }
 
