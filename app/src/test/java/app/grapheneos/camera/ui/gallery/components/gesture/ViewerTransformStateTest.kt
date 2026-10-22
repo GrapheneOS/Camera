@@ -24,7 +24,7 @@ class ViewerTransformStateTest {
     }
 
     @Test
-    fun pinchingOut_stopsAtTheLargestZoom() {
+    fun pinchingOut_ofALowResolutionPhoto_stopsAtTheSmallestLimit() {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
@@ -34,7 +34,21 @@ class ViewerTransformStateTest {
 
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 10f)
 
-        assertEquals(3f, state.scale)
+        assertEquals(4f, state.scale)
+    }
+
+    @Test
+    fun pinchingOut_ofAHighResolutionPhoto_stopsAtThreeTimesItsActualSize() {
+        state.updateLayout(
+            containerSize = LETTERBOX_CONTAINER,
+            imageSize = Size(width = 1000f, height = 500f),
+            canZoom = true,
+        )
+        state.startTransform()
+
+        pinchAroundTheCenter(containerSize = LETTERBOX_CONTAINER, zoomChange = 100f)
+
+        assertEquals(30f, state.scale)
     }
 
     @Test
@@ -211,6 +225,7 @@ class ViewerTransformStateTest {
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
 
         assertEquals(1f, state.scale)
+        assertFalse(state.isZoomStoppedAtLimit())
     }
 
     @Test
@@ -434,6 +449,24 @@ class ViewerTransformStateTest {
         pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 0.4f)
 
         assertTrue(state.isZoomStoppedAtFit())
+    }
+
+    @Test
+    fun isZoomStoppedAtLimit_onlyWhileAZoomRestsOnTheLimit() {
+        state.updateLayout(
+            containerSize = SQUARE,
+            imageSize = SQUARE,
+            canZoom = true,
+        )
+        state.startTransform()
+
+        pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
+        assertFalse(state.isZoomStoppedAtLimit())
+        pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 10f)
+        assertTrue(state.isZoomStoppedAtLimit())
+        pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 0.5f)
+
+        assertFalse(state.isZoomStoppedAtLimit())
     }
 
     @Test

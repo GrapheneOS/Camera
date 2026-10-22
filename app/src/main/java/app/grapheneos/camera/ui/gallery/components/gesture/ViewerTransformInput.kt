@@ -77,6 +77,7 @@ private suspend fun AwaitPointerEventScope.transformPhoto(
         do {
             val event = awaitPointerEvent(pass = PointerEventPass.Initial)
             val wasZoomed = transformState.isZoomed()
+            val wasAtLimit = transformState.isZoomStoppedAtLimit()
             val isScaling = event.hasScalingSpan(gestures.minScalingSpan)
 
             transformState.applyTransform(
@@ -86,7 +87,10 @@ private suspend fun AwaitPointerEventScope.transformPhoto(
                 rotationChange = event.calculateRotation().takeIf { isScaling } ?: 0f,
             )
 
-            if (wasZoomed && transformState.isZoomStoppedAtFit()) {
+            val reachesFit = wasZoomed && transformState.isZoomStoppedAtFit()
+            val reachesLimit = !wasAtLimit && transformState.isZoomStoppedAtLimit()
+
+            if (reachesFit || reachesLimit) {
                 gestures.hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
             }
 

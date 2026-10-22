@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sign
 import kotlin.math.sin
@@ -24,7 +25,8 @@ import kotlinx.parcelize.Parcelize
 
 private const val FIT_SCALE = 1f
 private const val MIN_SCALE = 0.3f
-private const val MAX_SCALE = 3f
+private const val MIN_ZOOM_LIMIT = 4f
+private const val ZOOM_LIMIT_TO_ACTUAL_SIZE = 3f
 private const val DOUBLE_TAP_SCALE = 2.5f
 private const val MIN_DRAG_SCALE = 0.85f
 private const val CLOSE_PROGRESS = 0.5f
@@ -71,7 +73,7 @@ internal class ViewerTransformState(
 
     private var containerSize by mutableStateOf(Size.Zero)
     private var contentSize by mutableStateOf(Size.Zero)
-    private var maxScale by mutableFloatStateOf(MAX_SCALE)
+    private var maxScale by mutableFloatStateOf(FIT_SCALE)
     private var smallestScale by mutableFloatStateOf(FIT_SCALE)
 
     private var canDismiss = false
@@ -85,6 +87,10 @@ internal class ViewerTransformState(
 
     fun isZoomStoppedAtFit(): Boolean {
         return isTransforming && !canDismiss && scale == FIT_SCALE
+    }
+
+    fun isZoomStoppedAtLimit(): Boolean {
+        return isTransforming && maxScale > FIT_SCALE && scale == maxScale
     }
 
     fun fadeProgress(): Float {
@@ -106,7 +112,7 @@ internal class ViewerTransformState(
             else -> fittedSize(imageSize)
         }
         maxScale = when {
-            canZoom && imageSize != null -> MAX_SCALE
+            canZoom && imageSize != null -> zoomLimit(imageSize)
             else -> FIT_SCALE
         }
 
@@ -205,6 +211,12 @@ internal class ViewerTransformState(
             minimumValue = 0f,
             maximumValue = 1f,
         )
+    }
+
+    private fun zoomLimit(imageSize: Size): Float {
+        val actualSizeScale = imageSize.width / contentSize.width
+
+        return max(MIN_ZOOM_LIMIT, ZOOM_LIMIT_TO_ACTUAL_SIZE * actualSizeScale)
     }
 
     private fun fittedSize(imageSize: Size): Size {
