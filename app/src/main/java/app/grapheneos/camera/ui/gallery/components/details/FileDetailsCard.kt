@@ -239,7 +239,7 @@ private fun FactChips(facts: List<String>) {
     ) {
         facts.forEach { fact ->
             Surface(
-                shape = MaterialTheme.shapes.small,
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
             ) {
                 Text(
@@ -364,7 +364,7 @@ private fun segmentShape(
     isFirst: Boolean,
     isLast: Boolean,
 ): CornerBasedShape {
-    val outer = MaterialTheme.shapes.medium
+    val outer = MaterialTheme.shapes.large
     val inner = MaterialTheme.shapes.extraSmall
     val top = when {
         isFirst -> outer

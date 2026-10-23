@@ -54,6 +54,7 @@ internal fun GalleryMenu(
             expanded = isExpanded,
             onDismissRequest = { isExpanded = false },
             modifier = Modifier.width(MENU_WIDTH),
+            shape = MaterialTheme.shapes.medium,
         ) {
             MenuItem(
                 icon = Icons.Outlined.Info,

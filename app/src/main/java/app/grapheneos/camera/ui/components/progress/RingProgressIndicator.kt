@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerBasedShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -32,6 +32,7 @@ import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private val DIAMETER = 40.dp
 private val GAP_SIZE = 4.dp
+private val PREVIEW_ROUNDED_SHAPE = RoundedCornerShape(size = 12.dp)
 
 private const val INDETERMINATE_LAP_MILLIS = 1_000
 private const val FULL_TURN = 360f
@@ -111,7 +112,7 @@ private fun RingProgressIndicatorPreview() {
             verticalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
             PreviewRingProgressRow(shape = CircleShape)
-            PreviewRingProgressRow(shape = MaterialTheme.shapes.extraSmall)
+            PreviewRingProgressRow(shape = PREVIEW_ROUNDED_SHAPE)
         }
     }
 }

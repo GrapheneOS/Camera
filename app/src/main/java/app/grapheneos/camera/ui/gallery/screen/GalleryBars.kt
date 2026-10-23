@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -100,7 +101,12 @@ internal fun BoxScope.GalleryBars(
             modifier = Modifier
                 .zIndex(1f)
                 .modulatedAlpha { 1f - fadeProgress() },
-        )
+        ) { snackbarData ->
+            Snackbar(
+                snackbarData = snackbarData,
+                shape = MaterialTheme.shapes.medium,
+            )
+        }
         ActionBarSlot(
             isShown = isShown && uiState.pages.isNotEmpty(),
             showsExternalActions = uiState.showsExternalActions,

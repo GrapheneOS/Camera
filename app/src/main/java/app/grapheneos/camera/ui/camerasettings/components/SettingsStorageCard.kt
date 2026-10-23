@@ -47,7 +47,7 @@ internal fun SettingsStorageCard(
     usedFraction: Float?,
     modifier: Modifier = Modifier,
     summary: String? = null,
-    shape: Shape = MaterialTheme.shapes.small,
+    shape: Shape = MaterialTheme.shapes.large,
 ) {
     val progress by animateFloatAsState(
         targetValue = usedFraction ?: 0f,

@@ -159,7 +159,7 @@ private fun LocationRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = LOCATION_TOP_PADDING)
-            .clip(MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.large)
             .copyOnLongClick(
                 text = coordinates,
                 copyLabel = stringResource(R.string.copy_to_clipboard),

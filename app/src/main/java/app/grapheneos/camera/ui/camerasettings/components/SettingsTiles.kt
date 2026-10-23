@@ -151,7 +151,7 @@ private fun SettingsTileLayout(
 
     Box(
         modifier = modifier
-            .clip(MaterialTheme.shapes.small)
+            .clip(MaterialTheme.shapes.large)
             .background(containerColor)
             .then(
                 when (fill) {
