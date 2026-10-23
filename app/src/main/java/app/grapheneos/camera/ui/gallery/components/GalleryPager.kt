@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.gallery.components
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -29,8 +30,39 @@ import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+private const val CAMERA_PAGE = 0
+private const val FIRST_ITEM_PAGE = 1
+private const val CAMERA_PAGE_KEY = "camera"
 
 private val PAGE_SPACING = 24.dp
+
+internal val PagerState.settledItemIndex: Int
+    get() = settledPage - FIRST_ITEM_PAGE
+
+internal val PagerState.cameraPageProgress: Float
+    get() = when (pageCount) {
+        0 -> 0f
+        else -> (FIRST_ITEM_PAGE - currentPage - currentPageOffsetFraction).coerceIn(0f, 1f)
+    }
+
+@Composable
+internal fun rememberGalleryPagerState(
+    currentPage: Int,
+    itemCount: () -> Int,
+): PagerState {
+    return rememberPagerState(
+        initialPage = currentPage + FIRST_ITEM_PAGE,
+        pageCount = {
+            when (val count = itemCount()) {
+                0 -> 0
+                else -> count + FIRST_ITEM_PAGE
+            }
+        },
+    )
+}
 
 @Composable
 internal fun GalleryPager(
@@ -50,15 +82,18 @@ internal fun GalleryPager(
     onVideoClick: () -> Unit,
     onOpenMapClick: (() -> Unit)?,
     onCopy: (String) -> Unit,
+    onCameraPageReached: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val settledPage = pagerState.settledPage
+    val settledItem = pages.getOrNull(pagerState.settledItemIndex)
     val gestures = rememberViewerGestures(
         transformState = transformState,
         detailsState = detailsState,
         onDetailsShownChange = onDetailsShownChange,
     )
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    var isLeavingToCamera by remember { mutableStateOf(false) }
 
     PageSelectedEffect(
         pagerState = pagerState,
@@ -72,22 +107,39 @@ internal fun GalleryPager(
         currentPage = currentPage,
     )
 
+    CameraPageEffect(
+        pagerState = pagerState,
+        onLeavingToCamera = { isLeavingToCamera = true },
+        onCameraPageReached = onCameraPageReached,
+    )
+
     ViewerLayoutEffect(
         transformState = transformState,
         detailsState = detailsState,
         containerSize = containerSize,
-        page = pages.getOrNull(settledPage),
-        preview = pages.getOrNull(settledPage)?.let { previews[it.key] },
+        page = settledItem,
+        preview = settledItem?.let { previews[it.key] },
     )
 
     HorizontalPager(
         state = pagerState,
-        key = { page -> pages[page].key },
+        key = { page ->
+            when (page) {
+                CAMERA_PAGE -> CAMERA_PAGE_KEY
+                else -> pages[page - FIRST_ITEM_PAGE].key
+            }
+        },
         pageSpacing = PAGE_SPACING,
         beyondViewportPageCount = 1,
+        userScrollEnabled = !isLeavingToCamera,
         modifier = modifier.onSizeChanged { containerSize = it },
     ) { index ->
-        val page = pages[index]
+        if (index == CAMERA_PAGE) {
+            CameraPage()
+            return@HorizontalPager
+        }
+
+        val page = pages[index - FIRST_ITEM_PAGE]
 
         ViewerPage(
             page = page,
@@ -118,6 +170,7 @@ private fun PageSelectedEffect(
     LaunchedEffect(pagerState, pageCount) {
         snapshotFlow { pagerState.targetPage.takeUnless { isDragged } }
             .filterNotNull()
+            .map { page -> page - FIRST_ITEM_PAGE }
             .distinctUntilChanged()
             .filter { it in 0 until pageCount }
             .collect { page -> currentOnPageSelected(page) }
@@ -139,9 +192,34 @@ private fun PageListChangedEffect(
             shownPageKeys.keys = pageKeys
 
             if (!pagerState.isScrollInProgress) {
-                pagerState.requestScrollToPage(currentPage)
+                pagerState.requestScrollToPage(currentPage + FIRST_ITEM_PAGE)
             }
         }
+    }
+}
+
+@Composable
+private fun CameraPageEffect(
+    pagerState: PagerState,
+    onLeavingToCamera: () -> Unit,
+    onCameraPageReached: () -> Unit,
+) {
+    val currentOnLeavingToCamera by rememberUpdatedState(onLeavingToCamera)
+    val currentOnCameraPageReached by rememberUpdatedState(onCameraPageReached)
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+
+    LaunchedEffect(pagerState) {
+        val isReleasedTowardsCamera = snapshotFlow {
+            pagerState.isScrollInProgress && !isDragged && pagerState.targetPage == CAMERA_PAGE
+        }
+        val isScrolling = snapshotFlow { pagerState.isScrollInProgress }
+
+        isReleasedTowardsCamera.first { it }
+        currentOnLeavingToCamera()
+
+        isScrolling.first { !it }
+        pagerState.animateScrollToPage(CAMERA_PAGE)
+        currentOnCameraPageReached()
     }
 }
 
