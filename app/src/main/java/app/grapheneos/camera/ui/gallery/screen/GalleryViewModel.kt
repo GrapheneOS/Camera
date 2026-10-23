@@ -137,6 +137,8 @@ internal class GalleryViewModel @Inject constructor(
             is Action.MuteClicked -> playbackDelegate.toggleMute()
             is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
             is Action.SeekReleased -> playbackDelegate.finishSeek()
+            is Action.VideoHoldStarted -> playbackDelegate.startFastForward()
+            is Action.VideoHoldEnded -> playbackDelegate.stopFastForward()
         }
     }
 

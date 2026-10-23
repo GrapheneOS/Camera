@@ -20,45 +20,70 @@ import androidx.compose.ui.input.pointer.util.addPointerInputChange
 import kotlin.math.abs
 import kotlin.math.min
 
-internal fun Modifier.viewerGestureInput(gestures: ViewerGestures): Modifier {
-    return pointerInput(gestures) {
-        detectViewerGestures(gestures)
+internal fun Modifier.viewerGestureInput(
+    gestures: ViewerGestures,
+    holdsVideo: Boolean,
+): Modifier {
+    return pointerInput(gestures, holdsVideo) {
+        detectViewerGestures(
+            gestures = gestures,
+            holdsVideo = holdsVideo,
+        )
     }
 }
 
-private suspend fun PointerInputScope.detectViewerGestures(gestures: ViewerGestures) {
+private suspend fun PointerInputScope.detectViewerGestures(
+    gestures: ViewerGestures,
+    holdsVideo: Boolean,
+) {
     val touchSlop = viewConfiguration.touchSlop
+    val longPressTimeout = viewConfiguration.longPressTimeoutMillis
 
     awaitEachGesture {
         awaitFirstDown(
             requireUnconsumed = false,
             pass = PointerEventPass.Initial,
         )
+        val showsDetails = gestures.detailsState.isShown()
         val tracker = GestureStartTracker(
             touchSlop = touchSlop,
             minScalingSpan = gestures.minScalingSpan,
             isZoomed = gestures.transformState.isZoomed(),
-            showsDetails = gestures.detailsState.isShown(),
+            showsDetails = showsDetails,
         )
-        var event: PointerEvent
-
-        do {
-            event = awaitPointerEvent(pass = PointerEventPass.Initial)
-            tracker.track(event)
-        } while (tracker.isUndecided && event.changes.any { it.pressed })
-
-        val start = tracker.start
-        if (start != null && !gestures.transformState.isDismissed) {
-            event.consumePositionChanges()
-
-            when (start) {
-                GestureStart.Details -> dragDetails(gestures)
-                else -> transformPhoto(
-                    gestures = gestures,
-                    start = start,
-                )
-            }
+        val holdTimeout = when {
+            holdsVideo && !showsDetails -> longPressTimeout
+            else -> Long.MAX_VALUE
         }
+        val isHeld = withTimeoutOrNull(holdTimeout) { awaitGestureStart(tracker) } == null
+        val start = when {
+            isHeld -> GestureStart.Hold
+            gestures.transformState.isDismissed -> null
+            else -> tracker.start
+        }
+
+        when (start) {
+            null -> Unit
+            GestureStart.Dismiss, GestureStart.Transform -> transformPhoto(
+                gestures = gestures,
+                start = start,
+            )
+            GestureStart.Details -> dragDetails(gestures)
+            GestureStart.Hold -> holdVideo(gestures)
+        }
+    }
+}
+
+private suspend fun AwaitPointerEventScope.awaitGestureStart(tracker: GestureStartTracker) {
+    var event: PointerEvent
+
+    do {
+        event = awaitPointerEvent(pass = PointerEventPass.Initial)
+        tracker.track(event)
+    } while (tracker.isUndecided && event.changes.any { it.pressed })
+
+    if (tracker.start != null) {
+        event.consumePositionChanges()
     }
 }
 
@@ -127,10 +152,25 @@ private suspend fun AwaitPointerEventScope.dragDetails(gestures: ViewerGestures)
     }
 }
 
+private suspend fun AwaitPointerEventScope.holdVideo(gestures: ViewerGestures) {
+    gestures.onVideoHoldChange(true)
+
+    try {
+        do {
+            val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+
+            event.changes.forEach { it.consume() }
+        } while (event.changes.any { it.pressed })
+    } finally {
+        gestures.onVideoHoldChange(false)
+    }
+}
+
 private enum class GestureStart {
     Dismiss,
     Transform,
     Details,
+    Hold,
 }
 
 private class GestureStartTracker(

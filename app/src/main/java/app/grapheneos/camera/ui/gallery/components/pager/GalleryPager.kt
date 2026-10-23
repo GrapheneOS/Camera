@@ -53,13 +53,14 @@ internal fun GalleryPager(
     detailsState: DetailsPanelState,
     detailsPosition: () -> Float,
     video: GalleryVideoUiModel?,
-    videoControls: @Composable BoxScope.() -> Unit,
+    videoOverlay: @Composable BoxScope.() -> Unit,
     onPageSelected: (Int) -> Unit,
     onPageSettled: (Int) -> Unit,
     onDetailsShownChange: (Boolean) -> Unit,
     onTap: () -> Unit,
     onVideoSurfaceCreated: (Surface) -> Unit,
     onVideoSurfaceDestroyed: () -> Unit,
+    onVideoHoldChange: (Boolean) -> Unit,
     onOpenMapClick: (() -> Unit)?,
     onCopy: (String) -> Unit,
     onCameraPageReached: () -> Unit,
@@ -71,6 +72,7 @@ internal fun GalleryPager(
         transformState = transformState,
         detailsState = detailsState,
         onDetailsShownChange = onDetailsShownChange,
+        onVideoHoldChange = onVideoHoldChange,
     )
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     var isLeavingToCamera by remember { mutableStateOf(false) }
@@ -117,7 +119,7 @@ internal fun GalleryPager(
                 viewerTransform = viewerTransform,
                 detailsPosition = detailsPosition,
                 video = video?.playback.takeIf { video?.pageKey == page.key },
-                videoControls = videoControls.takeIf { video?.pageKey == page.key },
+                videoOverlay = videoOverlay.takeIf { video?.pageKey == page.key },
                 onTap = onTap,
                 onVideoSurfaceCreated = onVideoSurfaceCreated,
                 onVideoSurfaceDestroyed = onVideoSurfaceDestroyed,

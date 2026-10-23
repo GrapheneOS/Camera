@@ -228,16 +228,15 @@ private fun GalleryViewerPager(
         detailsState = detailsState,
         detailsPosition = detailsPosition,
         video = uiState.video,
-        videoControls = {
+        videoOverlay = {
             uiState.video?.let { video ->
-                GalleryVideoControls(
+                GalleryVideoOverlay(
                     video = video,
                     position = videoPosition,
-                    isVisible = uiState.areControlsVisible && !uiState.showsDetails,
+                    areControlsVisible = uiState.areControlsVisible && !uiState.showsDetails,
                     contentPadding = contentPadding,
                     fadeProgress = viewerTransform::fadeProgress,
                     onAction = onAction,
-                    modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
         },
@@ -247,6 +246,14 @@ private fun GalleryViewerPager(
         onTap = { onAction(Action.ScreenTapped) },
         onVideoSurfaceCreated = { surface -> onAction(Action.VideoSurfaceCreated(surface)) },
         onVideoSurfaceDestroyed = { onAction(Action.VideoSurfaceDestroyed) },
+        onVideoHoldChange = { isHeld ->
+            onAction(
+                when {
+                    isHeld -> Action.VideoHoldStarted
+                    else -> Action.VideoHoldEnded
+                },
+            )
+        },
         onOpenMapClick = openMap.takeIf { uiState.pager.canOpenMap },
         onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
         onCameraPageReached = onNavigateBack,

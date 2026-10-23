@@ -44,6 +44,10 @@ internal sealed interface GalleryAction {
 
     data object SeekReleased : Video
 
+    data object VideoHoldStarted : Video
+
+    data object VideoHoldEnded : Video
+
     sealed interface Details : GalleryAction
 
     data class DetailsShownChanged(

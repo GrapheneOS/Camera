@@ -35,6 +35,10 @@ internal interface GalleryPlaybackDelegate {
 
     fun finishSeek()
 
+    fun startFastForward()
+
+    fun stopFastForward()
+
     fun pause()
 }
 
@@ -82,6 +86,14 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
 
     override fun finishSeek() {
         controller?.finishSeek()
+    }
+
+    override fun startFastForward() {
+        controller?.startFastForward()
+    }
+
+    override fun stopFastForward() {
+        controller?.stopFastForward()
     }
 
     override fun pause() {

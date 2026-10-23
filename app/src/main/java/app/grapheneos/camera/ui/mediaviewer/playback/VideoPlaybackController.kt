@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -23,13 +24,18 @@ internal class VideoPlaybackController(
     private val _position = MutableStateFlow(Duration.ZERO)
     val position: StateFlow<Duration> = _position.asStateFlow()
 
-    private var seek: Seek = Seek.None
+    private val seek = MutableStateFlow<Seek>(Seek.None)
+    private val isFastForwarding = MutableStateFlow(false)
 
     suspend fun track(followsPosition: Flow<Boolean>) {
         coroutineScope {
             launch {
-                playback.state.collect { playbackState ->
-                    _state.value = uiModelOf(playbackState)
+                combine(
+                    playback.state,
+                    isFastForwarding,
+                    ::uiModelOf,
+                ).collect { uiModel ->
+                    _state.value = uiModel
                 }
             }
 
@@ -37,7 +43,7 @@ internal class VideoPlaybackController(
                 .distinctUntilChanged()
                 .collectLatest { follows ->
                     if (follows) {
-                        followShownPosition()
+                        followPosition()
                     }
                 }
         }
@@ -63,42 +69,60 @@ internal class VideoPlaybackController(
     }
 
     fun seekTo(position: Duration) {
-        if (seek !is Seek.Dragging) {
-            seek = Seek.Dragging(resumesPlayback = isPlaying())
-            playback.pause()
-            playback.setScrubbing(true)
+        seek.value = when (val current = seek.value) {
+            is Seek.Dragging -> current.copy(target = position)
+            else -> startDragging(target = position)
         }
-
         playback.seekTo(position)
-        _position.value = position
     }
 
     fun finishSeek() {
-        val dragging = seek as? Seek.Dragging ?: return
+        val dragging = seek.value as? Seek.Dragging ?: return
 
-        seek = Seek.Held
+        seek.value = Seek.Held(target = dragging.target)
         playback.setScrubbing(false)
-        playback.seekTo(_position.value)
+        playback.seekTo(dragging.target)
 
         if (dragging.resumesPlayback) {
             play()
         }
     }
 
+    fun startFastForward() {
+        playback.setSpeed(FAST_FORWARD_SPEED)
+        play()
+        isFastForwarding.value = true
+    }
+
+    fun stopFastForward() {
+        playback.setSpeed(NORMAL_SPEED)
+        isFastForwarding.value = false
+    }
+
     fun release() {
         playback.release()
     }
 
-    private suspend fun followShownPosition() {
-        playback.shownPosition.collect { position ->
-            if (seek == Seek.None) {
-                _position.value = position
-            }
+    private suspend fun followPosition() {
+        combine(playback.shownPosition, seek, ::positionOf).collect { position ->
+            _position.value = position
         }
     }
 
+    private fun startDragging(target: Duration): Seek.Dragging {
+        val resumesPlayback = isPlaying()
+
+        playback.pause()
+        playback.setScrubbing(true)
+
+        return Seek.Dragging(
+            target = target,
+            resumesPlayback = resumesPlayback,
+        )
+    }
+
     private fun play() {
-        seek = Seek.None
+        seek.value = Seek.None
         playback.play()
     }
 
@@ -106,15 +130,31 @@ internal class VideoPlaybackController(
         return (_state.value as? VideoPlaybackUiModel.Active)?.isPlaying == true
     }
 
-    private fun uiModelOf(playbackState: VideoPlaybackState): VideoPlaybackUiModel {
+    private fun uiModelOf(
+        playbackState: VideoPlaybackState,
+        isFastForwarding: Boolean,
+    ): VideoPlaybackUiModel {
         return when {
             playbackState.hasFailed -> VideoPlaybackUiModel.Failed
+
             else -> VideoPlaybackUiModel.Active(
                 isPlaying = playbackState.isPlaying,
                 duration = playbackState.duration ?: Duration.ZERO,
                 aspectRatio = playbackState.aspectRatio,
                 hasRenderedFrame = playbackState.hasRenderedFrame,
+                isFastForwarding = isFastForwarding,
             )
+        }
+    }
+
+    private fun positionOf(
+        shownPosition: Duration,
+        seek: Seek,
+    ): Duration {
+        return when (seek) {
+            Seek.None -> shownPosition
+            is Seek.Dragging -> seek.target
+            is Seek.Held -> seek.target
         }
     }
 
@@ -123,9 +163,17 @@ internal class VideoPlaybackController(
         data object None : Seek
 
         data class Dragging(
+            val target: Duration,
             val resumesPlayback: Boolean,
         ) : Seek
 
-        data object Held : Seek
+        data class Held(
+            val target: Duration,
+        ) : Seek
+    }
+
+    private companion object {
+        const val NORMAL_SPEED = 1f
+        const val FAST_FORWARD_SPEED = 2f
     }
 }

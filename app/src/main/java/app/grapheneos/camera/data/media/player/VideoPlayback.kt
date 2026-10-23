@@ -39,6 +39,8 @@ internal interface VideoPlayback {
 
     fun setMuted(isMuted: Boolean)
 
+    fun setSpeed(speed: Float)
+
     fun release()
 }
 
@@ -122,6 +124,10 @@ internal class VideoPlaybackImpl(
             else -> 1f
         }
         updateAudioFocus()
+    }
+
+    override fun setSpeed(speed: Float) {
+        player.setPlaybackSpeed(speed)
     }
 
     override fun release() {
