@@ -18,6 +18,8 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 
+enum class FoldTabMode { DUAL, REAR }
+
 class BottomTabLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
 ) : TabLayout(context, attrs) {
@@ -239,11 +241,16 @@ class BottomTabLayout @JvmOverloads constructor(
         return tabCenters.lastIndex.toFloat()
     }
 
-    fun getAllModes(): Set<CameraMode> {
-        return IntRange(0, tabCount - 1).map {
-            getTabAt(it)!!.tag as CameraMode
-        }.toSet()
+    fun getAllModes(): Set<CameraMode> = (0 until tabCount).mapNotNull {
+        getTabAt(it)?.tag as? CameraMode
+    }.toSet()
+
+    fun getFoldModes(): List<FoldTabMode> = (0 until tabCount).mapNotNull {
+        getTabAt(it)?.tag as? FoldTabMode
     }
+
+    fun getTabForFoldMode(mode: FoldTabMode): Tab? = (0 until tabCount)
+        .mapNotNull { getTabAt(it) }.firstOrNull { it.tag == mode }
 
     private companion object {
         private const val SETTLE_DURATION_MS = 300L

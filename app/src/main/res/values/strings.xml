@@ -237,4 +237,6 @@
 
     <string name="wait_for_focus_lock">Wait for Focus Lock</string>
     <string name="invalid_photo_quality_value">Invalid value set for photo quality</string>
+    <string name="fold_tab_dual">Dual Screen</string>
+    <string name="fold_tab_rear">Rear Selfie</string>
 </resources>
