@@ -215,7 +215,7 @@ internal class GalleryViewModel @Inject constructor(
         sendToOtherApp { item -> Effect.UseAs(item) }
     }
 
-    private fun sendToOtherApp(effect: (CapturedItem) -> Effect.OtherApp) {
+    private fun sendToOtherApp(effect: (CapturedItem) -> Effect.OutsideSession) {
         state.currentItem()?.let { item ->
             stateHolder.send(effect(item))
         }

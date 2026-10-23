@@ -7,10 +7,10 @@ import app.grapheneos.camera.data.media.model.GeoCoordinates
 internal sealed interface GalleryScreenEffect {
 
     /**
-     * Hands the item or its data to another app. A secure session must never send one: the other
-     * app would open over the lock screen with the owner's apps and data behind it.
+     * Opens a screen outside the secure session. A secure session must never send one: it would
+     * open over the lock screen with the owner's apps and data behind it.
      */
-    sealed interface OtherApp : GalleryScreenEffect
+    sealed interface OutsideSession : GalleryScreenEffect
 
     data object ItemDeleted : GalleryScreenEffect
 
@@ -18,7 +18,7 @@ internal sealed interface GalleryScreenEffect {
 
     data object DeletionFailed : GalleryScreenEffect
 
-    data object OpenSystemGallery : OtherApp
+    data object OpenSystemGallery : OutsideSession
 
     data class CopyText(
         val text: String,
@@ -30,22 +30,22 @@ internal sealed interface GalleryScreenEffect {
 
     data class ShowInSystemGallery(
         val item: CapturedItem,
-    ) : OtherApp
+    ) : OutsideSession
 
     data class Edit(
         val item: CapturedItem,
         val usesDefaultEditor: Boolean,
-    ) : OtherApp
+    ) : OutsideSession
 
     data class OpenMap(
         val location: GeoCoordinates,
-    ) : OtherApp
+    ) : OutsideSession
 
     data class Share(
         val item: CapturedItem,
-    ) : OtherApp
+    ) : OutsideSession
 
     data class UseAs(
         val item: CapturedItem,
-    ) : OtherApp
+    ) : OutsideSession
 }

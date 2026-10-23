@@ -9,7 +9,7 @@ internal class GalleryStateHolder(
 ) : ScreenStateHolder<GalleryState, Effect>(initial) {
 
     override fun send(effect: Effect) {
-        if (effect is Effect.OtherApp && state.value.isSecureSession) return
+        if (effect is Effect.OutsideSession && state.value.isSecureSession) return
 
         super.send(effect)
     }

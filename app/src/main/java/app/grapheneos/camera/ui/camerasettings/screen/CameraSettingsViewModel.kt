@@ -23,7 +23,6 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsDialog
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
-import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -53,7 +52,7 @@ internal class CameraSettingsViewModel @Inject constructor(
 ) : ViewModel(),
     CameraSettingsScreenModel {
 
-    private val stateHolder = ScreenStateHolder<CameraSettingsState, Effect>(
+    private val stateHolder = CameraSettingsStateHolder(
         cameraCapabilitiesOf(arguments).let { capabilities ->
             CameraSettingsState(
                 isSecureSession = entryPoint.isSecureSession,

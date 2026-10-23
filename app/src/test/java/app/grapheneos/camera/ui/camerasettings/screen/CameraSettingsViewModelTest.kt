@@ -105,6 +105,20 @@ class CameraSettingsViewModelTest {
     }
 
     @Test
+    fun aSecureSession_opensNothingOutsideIt() {
+        runTest {
+            val viewModel = createViewModel(entryPoint = cameraEntryPoint(isSecureSession = true))
+
+            viewModel.onAction(Action.LocationSettingsClicked)
+            viewModel.onAction(Action.StorageLocationClicked)
+            viewModel.onAction(Action.LicensesClicked)
+            viewModel.onAction(Action.GeoTaggingToggled(enabled = true))
+
+            assertEquals(Effect.RequestLocationPermission, viewModel.effects.first())
+        }
+    }
+
+    @Test
     fun locationSettingsClicked_opensTheAppSettings() {
         runTest {
             val viewModel = createViewModel()
