@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components.gesture
+package app.grapheneos.camera.ui.gallery.components.pager.gesture
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size

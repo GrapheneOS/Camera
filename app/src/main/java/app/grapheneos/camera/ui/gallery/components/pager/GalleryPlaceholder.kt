@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.pager
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

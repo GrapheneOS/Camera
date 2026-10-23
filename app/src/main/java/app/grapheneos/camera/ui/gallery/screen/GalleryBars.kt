@@ -38,8 +38,8 @@ import androidx.compose.ui.zIndex
 import app.grapheneos.camera.ui.common.components.bottomBar
 import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
 import app.grapheneos.camera.ui.core.theme.cameraColors
-import app.grapheneos.camera.ui.gallery.components.GALLERY_ACTION_BAR_HEIGHT
-import app.grapheneos.camera.ui.gallery.components.GalleryActionBar
+import app.grapheneos.camera.ui.gallery.components.bars.GALLERY_ACTION_BAR_HEIGHT
+import app.grapheneos.camera.ui.gallery.components.bars.GalleryActionBar
 import app.grapheneos.camera.ui.gallery.components.details.DetailsBackButton
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState

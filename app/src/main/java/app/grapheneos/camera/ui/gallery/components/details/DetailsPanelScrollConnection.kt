@@ -4,7 +4,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.Velocity
-import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
 
 internal class DetailsPanelScrollConnection(
     private val detailsState: DetailsPanelState,

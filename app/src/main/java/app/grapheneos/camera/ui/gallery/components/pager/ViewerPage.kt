@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.pager
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,8 +10,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.round
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanel
-import app.grapheneos.camera.ui.gallery.components.gesture.ViewerGestures
-import app.grapheneos.camera.ui.gallery.components.gesture.viewerGestureInput
+import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerGestures
+import app.grapheneos.camera.ui.gallery.components.pager.gesture.viewerGestureInput
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview

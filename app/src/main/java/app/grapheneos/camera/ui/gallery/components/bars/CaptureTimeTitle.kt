@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.bars
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
@@ -20,6 +20,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.gallery.components.formatted
+import app.grapheneos.camera.ui.gallery.components.formattedTime
 import java.time.LocalDate
 import java.time.LocalDateTime
 

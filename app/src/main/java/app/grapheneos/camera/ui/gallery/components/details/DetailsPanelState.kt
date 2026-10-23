@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components.gesture
+package app.grapheneos.camera.ui.gallery.components.details
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.MaterialTheme
