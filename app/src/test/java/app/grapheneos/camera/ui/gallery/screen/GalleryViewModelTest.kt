@@ -109,7 +109,7 @@ class GalleryViewModelTest {
 
             val viewModel = viewModel()
 
-            assertTrue(viewModel.uiState.value.isEmpty)
+            assertTrue(viewModel.uiState.value.pager.isEmpty)
         }
     }
 
@@ -118,7 +118,7 @@ class GalleryViewModelTest {
         runTest {
             stallTheScan()
 
-            assertFalse(viewModel().uiState.value.isEmpty)
+            assertFalse(viewModel().uiState.value.pager.isEmpty)
         }
     }
 
@@ -138,11 +138,11 @@ class GalleryViewModelTest {
     fun aRereadWithTheSameItems_keepsThePages() {
         runTest {
             val viewModel = viewModel()
-            val pages = viewModel.uiState.value.pages
+            val pages = viewModel.uiState.value.pager.pages
 
             capturedItemsChanges.emit(Unit)
 
-            assertSame(pages, viewModel.uiState.value.pages)
+            assertSame(pages, viewModel.uiState.value.pager.pages)
         }
     }
 
@@ -157,7 +157,7 @@ class GalleryViewModelTest {
             storedItems = listOf(newer, OLDER)
             capturedItemsChanges.emit(Unit)
 
-            assertEquals(1, viewModel.uiState.value.currentPage)
+            assertEquals(1, viewModel.uiState.value.pager.currentPage)
             assertEquals(keysOf(newer, OLDER), pageKeys(viewModel))
         }
     }
@@ -172,8 +172,8 @@ class GalleryViewModelTest {
             )
             storedItems = listOf(listed, OLDER)
 
-            val uiState = viewModel(lastCapturedItem = NEWEST).uiState.value
-            val preview = uiState.previews[uiState.pages.first().key] as? GalleryPreview.Loaded
+            val pager = viewModel(lastCapturedItem = NEWEST).uiState.value.pager
+            val preview = pager.previews[pager.pages.first().key] as? GalleryPreview.Loaded
 
             assertEquals(PREVIEW, preview?.image?.asAndroidBitmap())
         }
@@ -195,7 +195,7 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel(lastCapturedItem = OLDER)
 
-            assertEquals(1, viewModel.uiState.value.currentPage)
+            assertEquals(1, viewModel.uiState.value.pager.currentPage)
         }
     }
 
@@ -213,7 +213,6 @@ class GalleryViewModelTest {
                 Action.DeleteConfirmed,
                 Action.ShareClicked,
                 Action.UseAsClicked,
-                Action.VideoClicked,
                 Action.CaptureTimeClicked,
                 Action.DetailsShownChanged(isShown = true),
             ).forEach(viewModel::onAction)
@@ -239,9 +238,9 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.CaptureTimeClicked)
             viewModel.onAction(Action.OpenMapClicked)
 
-            assertFalse(viewModel.uiState.value.showsExternalActions)
-            assertFalse(viewModel.uiState.value.showsSystemGallery)
-            assertFalse(viewModel.uiState.value.showsUseAs)
+            assertFalse(viewModel.uiState.value.bars.showsExternalActions)
+            assertFalse(viewModel.uiState.value.bars.showsSystemGallery)
+            assertFalse(viewModel.uiState.value.bars.showsUseAs)
             assertTrue(effects.isEmpty())
         }
     }
@@ -266,7 +265,7 @@ class GalleryViewModelTest {
 
             viewModel.onAction(Action.UseAsClicked)
 
-            assertTrue(viewModel.uiState.value.showsUseAs)
+            assertTrue(viewModel.uiState.value.bars.showsUseAs)
             assertEquals(listOf(Effect.UseAs(NEWEST)), effects)
         }
     }
@@ -276,7 +275,7 @@ class GalleryViewModelTest {
         runTest {
             storedItems = listOf(VIDEO)
 
-            assertFalse(viewModel().uiState.value.showsUseAs)
+            assertFalse(viewModel().uiState.value.bars.showsUseAs)
         }
     }
 
@@ -306,7 +305,7 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.DeleteClicked)
             viewModel.onAction(Action.DeleteConfirmed)
 
-            assertTrue(viewModel.uiState.value.isEmpty)
+            assertTrue(viewModel.uiState.value.pager.isEmpty)
         }
     }
 
@@ -320,7 +319,7 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.DeleteClicked)
             viewModel.onAction(Action.DeleteConfirmed)
 
-            assertEquals(2, viewModel.uiState.value.pages.size)
+            assertEquals(2, viewModel.uiState.value.pager.pages.size)
             assertEquals(listOf(Effect.DeletionFailed), effects)
         }
     }
@@ -366,7 +365,7 @@ class GalleryViewModelTest {
 
             coVerify { capturedItemTrashRepository.restore(OLDER) }
             assertEquals(keysOf(NEWEST, OLDER), pageKeys(viewModel))
-            assertEquals(1, viewModel.uiState.value.currentPage)
+            assertEquals(1, viewModel.uiState.value.pager.currentPage)
             assertNull(viewModel.uiState.value.trashedPageKey)
         }
     }
@@ -399,7 +398,7 @@ class GalleryViewModelTest {
 
             coVerify { capturedItemTrashRepository.delete(NEWEST) }
             coVerify { capturedItemTrashRepository.trash(OLDER) }
-            assertTrue(viewModel.uiState.value.isEmpty)
+            assertTrue(viewModel.uiState.value.pager.isEmpty)
         }
     }
 
@@ -628,9 +627,9 @@ class GalleryViewModelTest {
 
             viewModel.onAction(Action.PageSelected(page = 7))
 
-            val uiState = viewModel.uiState.value
-            val shown = uiState.pages.map { page ->
-                (uiState.previews[page.key] as? GalleryPreview.Loaded)?.image?.asAndroidBitmap()
+            val pager = viewModel.uiState.value.pager
+            val shown = pager.pages.map { page ->
+                (pager.previews[page.key] as? GalleryPreview.Loaded)?.image?.asAndroidBitmap()
             }
 
             assertEquals(listOf(null), shown.take(2).distinct())
@@ -646,7 +645,7 @@ class GalleryViewModelTest {
     ) {
         viewModel.onAction(
             Action.ZoomChanged(
-                pageKey = viewModel.uiState.value.pages[page].key,
+                pageKey = viewModel.uiState.value.pager.pages[page].key,
                 isZoomed = isZoomed,
             ),
         )
@@ -662,11 +661,11 @@ class GalleryViewModelTest {
     ): GalleryDetails {
         val uiState = viewModel.uiState.value
 
-        return uiState.details[uiState.pages[page].key] ?: GalleryDetails.Loading
+        return uiState.pager.details[uiState.pager.pages[page].key] ?: GalleryDetails.Loading
     }
 
     private fun pageKeys(viewModel: GalleryViewModel): List<String> {
-        return viewModel.uiState.value.pages.map { it.key }
+        return viewModel.uiState.value.pager.pages.map { it.key }
     }
 
     private fun keysOf(vararg items: CapturedItem): List<String> {
@@ -712,6 +711,7 @@ class GalleryViewModelTest {
                 applicationScope = CoroutineScope(mainDispatcherRule.testDispatcher),
                 defaultDispatcher = mainDispatcherRule.testDispatcher,
             ),
+            playbackDelegate = mockk(relaxed = true),
             uiStateMapper = GalleryUiStateMapperImpl(captureTimeMapper = CaptureTimeMapperImpl()),
         )
     }

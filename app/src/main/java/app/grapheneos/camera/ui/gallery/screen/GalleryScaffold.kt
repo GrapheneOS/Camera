@@ -4,12 +4,14 @@ import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -20,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -49,7 +50,7 @@ private const val SCRIM_STEPS = 8
 private val SCRIM_OVERHANG = 48.dp
 
 @Composable
-internal fun BoxScope.GalleryBars(
+internal fun GalleryScaffold(
     uiState: UiState,
     fadeProgress: () -> Float,
     detailsPosition: () -> Float,
@@ -58,6 +59,8 @@ internal fun BoxScope.GalleryBars(
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
     snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     val isPanelVisible by remember(detailsPosition) { derivedStateOf { detailsPosition() > 0f } }
     val visibility = animateBarsVisibilityAsState(
@@ -73,46 +76,63 @@ internal fun BoxScope.GalleryBars(
     )
     val barsAlpha = Modifier.modulatedAlpha { visibility.value * (1f - fadeProgress()) }
 
-    if (isShown) {
-        GalleryTopBar(
-            uiState = uiState,
-            onAction = onAction,
-            onNavigateBack = onNavigateBack,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .then(barsAlpha)
-                .then(backgrounds.top),
-            containerColor = Color.Transparent,
-            contentColor = contentColor,
-        )
-    }
-
-    DetailsBackButton(
-        visibility = backButtonVisibility,
-        onClick = { onAction(Action.DetailsShownChanged(isShown = false)) },
-        modifier = Modifier.align(Alignment.TopCenter),
-    )
-
-    Column(
-        modifier = Modifier.align(Alignment.BottomCenter),
-    ) {
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .zIndex(1f)
-                .modulatedAlpha { 1f - fadeProgress() },
-        ) { snackbarData ->
-            Snackbar(
-                snackbarData = snackbarData,
-                shape = MaterialTheme.shapes.medium,
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (isShown) {
+                    GalleryTopBar(
+                        bars = uiState.bars,
+                        onAction = onAction,
+                        onNavigateBack = onNavigateBack,
+                        modifier = barsAlpha.then(backgrounds.top),
+                        containerColor = Color.Transparent,
+                        contentColor = contentColor,
+                    )
+                }
+                DetailsBackButton(
+                    visibility = backButtonVisibility,
+                    onClick = { onAction(Action.DetailsShownChanged(isShown = false)) },
+                )
+            }
+        },
+        bottomBar = {
+            ActionBarSlot(
+                isShown = isShown && uiState.bars.showsItemActions,
+                showsExternalActions = uiState.bars.showsExternalActions,
+                contentColor = contentColor,
+                onAction = onAction,
+                modifier = barsAlpha.then(backgrounds.bottom),
             )
+        },
+        snackbarHost = {
+            GallerySnackbarHost(
+                hostState = snackbarHostState,
+                fadeProgress = fadeProgress,
+            )
+        },
+        containerColor = Color.Transparent,
+    ) { contentPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            content(contentPadding)
         }
-        ActionBarSlot(
-            isShown = isShown && uiState.pages.isNotEmpty(),
-            showsExternalActions = uiState.showsExternalActions,
-            contentColor = contentColor,
-            onAction = onAction,
-            modifier = barsAlpha.then(backgrounds.bottom),
+    }
+}
+
+@Composable
+private fun GallerySnackbarHost(
+    hostState: SnackbarHostState,
+    fadeProgress: () -> Float,
+) {
+    SnackbarHost(
+        hostState = hostState,
+        modifier = Modifier
+            .zIndex(1f)
+            .modulatedAlpha { 1f - fadeProgress() },
+    ) { snackbarData ->
+        Snackbar(
+            snackbarData = snackbarData,
+            shape = MaterialTheme.shapes.medium,
         )
     }
 }
@@ -129,7 +149,9 @@ private fun ActionBarSlot(
     val bottomInset = WindowInsets.bottomBar.asPaddingValues().calculateBottomPadding()
     var barHeight by remember { mutableStateOf(GALLERY_ACTION_BAR_HEIGHT + bottomInset) }
 
-    Box(modifier = modifier.heightIn(min = barHeight)) {
+    Box(
+        modifier = modifier.heightIn(min = barHeight),
+    ) {
         if (isShown) {
             GalleryActionBar(
                 showsExternalActions = showsExternalActions,

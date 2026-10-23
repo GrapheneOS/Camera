@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery.screen.model
 
-import android.net.Uri
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 
@@ -22,10 +21,6 @@ internal sealed interface GalleryScreenEffect {
 
     data class CopyText(
         val text: String,
-    ) : GalleryScreenEffect
-
-    data class OpenVideo(
-        val uri: Uri,
     ) : GalleryScreenEffect
 
     data class ShowInSystemGallery(

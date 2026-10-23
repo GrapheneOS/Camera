@@ -11,7 +11,6 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
-import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Assert.assertEquals
@@ -27,24 +26,15 @@ import org.robolectric.Shadows.shadowOf
 class GalleryEffectHandlerTest {
 
     private val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
-    private val videoPlayerLauncher = mockk<VideoPlayerLauncher>(relaxed = true)
     private val systemGalleryLauncher = mockk<SystemGalleryLauncher>(relaxed = true)
     private val clipboardManager = activity.getSystemService(ClipboardManager::class.java)
     private val messages = mutableListOf<Int>()
     private val effectHandler = GalleryEffectHandlerImpl(
         activity = activity,
-        videoPlayerLauncher = videoPlayerLauncher,
         systemGalleryLauncher = systemGalleryLauncher,
         clipboardManager = clipboardManager,
         showMessage = { message -> messages += message.text },
     )
-
-    @Test
-    fun openVideo_opensTheVideoPlayer() {
-        effectHandler.handle(Effect.OpenVideo(ITEM.uri))
-
-        verify { videoPlayerLauncher.open(activity, ITEM.uri) }
-    }
 
     @Test
     fun openSystemGallery_opensTheSystemGallery() {

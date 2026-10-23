@@ -8,6 +8,7 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItems
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegate
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPlaybackDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegate
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapper
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
@@ -17,6 +18,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.time.Duration
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +30,8 @@ internal interface GalleryScreenModel {
     val uiState: StateFlow<GalleryUiState>
 
     val effects: Flow<Effect>
+
+    val videoPosition: StateFlow<Duration>
 
     fun onAction(action: Action)
 }
@@ -41,6 +45,7 @@ internal class GalleryViewModel @Inject constructor(
     private val previewsDelegate: GalleryPreviewsDelegate,
     private val detailsDelegate: GalleryDetailsDelegate,
     private val deletionDelegate: GalleryDeletionDelegate,
+    private val playbackDelegate: GalleryPlaybackDelegate,
     uiStateMapper: GalleryUiStateMapper,
 ) : ViewModel(),
     GalleryScreenModel {
@@ -58,6 +63,8 @@ internal class GalleryViewModel @Inject constructor(
 
     override val effects: Flow<Effect> = stateHolder.effects
 
+    override val videoPosition: StateFlow<Duration> = playbackDelegate.position
+
     private val state: GalleryState
         get() = stateHolder.state.value
 
@@ -67,6 +74,7 @@ internal class GalleryViewModel @Inject constructor(
         previewsDelegate.bind(stateHolder)
         detailsDelegate.bind(stateHolder)
         deletionDelegate.bind(stateHolder)
+        playbackDelegate.bind(stateHolder)
 
         viewModelScope.launch {
             previewsDelegate.trackPreviews()
@@ -74,6 +82,10 @@ internal class GalleryViewModel @Inject constructor(
 
         viewModelScope.launch {
             detailsDelegate.trackDetails()
+        }
+
+        viewModelScope.launch {
+            playbackDelegate.trackPlayback()
         }
 
         viewModelScope.launch {
@@ -91,25 +103,40 @@ internal class GalleryViewModel @Inject constructor(
 
     override fun onAction(action: Action) {
         when (action) {
-            is Action.PageSelected -> selectPage(action.page)
             is Action.ScreenTapped -> onScreenTapped()
+            is Action.ScreenStopped -> playbackDelegate.pause()
+            is Action.DialogDismissed -> deletionDelegate.dismiss()
+            is Action.Page -> onPageAction(action)
+            is Action.Video -> onVideoAction(action)
+            is Action.Details -> onDetailsAction(action)
+            is Action.OtherApp -> onOtherAppAction(action)
+            is Action.Deletion -> onDeletionAction(action)
+        }
+    }
+
+    private fun onPageAction(action: Action.Page) {
+        when (action) {
+            is Action.PageSelected -> selectPage(action.page)
+
+            is Action.PageSettled -> stateHolder.update {
+                it.copy(settledIndex = action.page)
+            }
+
             is Action.ZoomChanged -> onZoomChanged(
                 pageKey = action.pageKey,
                 isZoomed = action.isZoomed,
             )
+        }
+    }
 
-            is Action.Details -> onDetailsAction(action)
-
-            is Action.VideoClicked -> openVideo()
-            is Action.SystemGalleryClicked -> stateHolder.send(Effect.OpenSystemGallery)
-            is Action.CaptureTimeClicked -> showInSystemGallery()
-            is Action.EditClicked -> edit(usesDefaultEditor = true)
-            is Action.EditWithClicked -> edit(usesDefaultEditor = false)
-            is Action.ShareClicked -> share()
-            is Action.UseAsClicked -> useAs()
-
-            is Action.Deletion -> onDeletionAction(action)
-            is Action.DialogDismissed -> deletionDelegate.dismiss()
+    private fun onVideoAction(action: Action.Video) {
+        when (action) {
+            is Action.VideoSurfaceCreated -> playbackDelegate.setSurface(action.surface)
+            is Action.VideoSurfaceDestroyed -> playbackDelegate.setSurface(null)
+            is Action.PlayPauseClicked -> playbackDelegate.togglePlayback()
+            is Action.MuteClicked -> playbackDelegate.toggleMute()
+            is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
+            is Action.SeekReleased -> playbackDelegate.finishSeek()
         }
     }
 
@@ -118,6 +145,17 @@ internal class GalleryViewModel @Inject constructor(
             is Action.DetailsShownChanged -> showDetails(action.isShown)
             is Action.OpenMapClicked -> detailsDelegate.openMap()
             is Action.DetailLongPressed -> stateHolder.send(Effect.CopyText(action.text))
+        }
+    }
+
+    private fun onOtherAppAction(action: Action.OtherApp) {
+        when (action) {
+            is Action.SystemGalleryClicked -> stateHolder.send(Effect.OpenSystemGallery)
+            is Action.CaptureTimeClicked -> showInSystemGallery()
+            is Action.EditClicked -> edit(usesDefaultEditor = true)
+            is Action.EditWithClicked -> edit(usesDefaultEditor = false)
+            is Action.ShareClicked -> share()
+            is Action.UseAsClicked -> useAs()
         }
     }
 
@@ -176,21 +214,15 @@ internal class GalleryViewModel @Inject constructor(
     }
 
     private fun isCurrentPage(pageKey: String): Boolean {
-        val shownState = uiState.value
+        val pager = uiState.value.pager
 
-        return shownState.pages.getOrNull(shownState.currentPage)?.key == pageKey
+        return pager.pages.getOrNull(pager.currentPage)?.key == pageKey
     }
 
     private fun showDetails(isShown: Boolean) {
         when {
             isShown -> detailsDelegate.show()
             else -> detailsDelegate.hide()
-        }
-    }
-
-    private fun openVideo() {
-        state.currentItem()?.let { item ->
-            stateHolder.send(Effect.OpenVideo(item.uri))
         }
     }
 

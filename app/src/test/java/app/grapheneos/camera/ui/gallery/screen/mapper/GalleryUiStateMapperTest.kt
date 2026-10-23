@@ -24,26 +24,27 @@ class GalleryUiStateMapperTest {
 
     @Test
     fun anUpdateThatKeepsTheItems_keepsThePages() {
-        val pages = mapper.map(state).pages
+        val pages = mapper.map(state).pager.pages
         val loaded = mapper.map(state.copy(previews = mapOf(NEWER to GalleryPreview.Unavailable)))
 
-        assertSame(pages, loaded.pages)
+        assertSame(pages, loaded.pager.pages)
     }
 
     @Test
     fun newItems_rebuildThePages() {
-        val pages = mapper.map(state).pages
+        val pages = mapper.map(state).pager.pages
         val reloaded = mapper.map(state.copy(items = listOf(OLDER)))
 
-        assertNotSame(pages, reloaded.pages)
-        assertEquals(listOf(OLDER.uri.toString()), reloaded.pages.map { it.key })
+        assertNotSame(pages, reloaded.pager.pages)
+        assertEquals(listOf(OLDER.uri.toString()), reloaded.pager.pages.map { it.key })
     }
 
     @Test
     fun previews_areKeyedByPage() {
-        val uiState = mapper.map(state.copy(previews = mapOf(NEWER to GalleryPreview.Unavailable)))
+        val previews = mapOf(NEWER to GalleryPreview.Unavailable)
+        val pager = mapper.map(state.copy(previews = previews)).pager
 
-        assertEquals(mapOf(NEWER.uri.toString() to GalleryPreview.Unavailable), uiState.previews)
+        assertEquals(mapOf(NEWER.uri.toString() to GalleryPreview.Unavailable), pager.previews)
     }
 
     @Test

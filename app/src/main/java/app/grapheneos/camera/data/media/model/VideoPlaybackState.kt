@@ -6,5 +6,6 @@ internal data class VideoPlaybackState(
     val isPlaying: Boolean = false,
     val duration: Duration? = null,
     val aspectRatio: Float? = null,
+    val hasRenderedFrame: Boolean = false,
     val hasFailed: Boolean = false,
 )

@@ -10,11 +10,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.gallery.screen.GalleryScreen
 import app.grapheneos.camera.ui.gallery.screen.GalleryScreenModel
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryPagerUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.time.Duration
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +40,7 @@ class GalleryRegressionTest {
     private val screenModel = mockk<GalleryScreenModel>(relaxed = true) {
         every { uiState } returns this@GalleryRegressionTest.uiState
         every { effects } returns emptyFlow()
+        every { videoPosition } returns MutableStateFlow(Duration.ZERO)
     }
 
     /**
@@ -75,7 +79,6 @@ class GalleryRegressionTest {
         composeRule.setContent {
             CameraTheme {
                 GalleryScreen(
-                    videoPlayerLauncher = mockk(relaxed = true),
                     systemGalleryLauncher = mockk(relaxed = true),
                     clipboardManager = mockk(relaxed = true),
                     onNavigateBack = {},
@@ -88,16 +91,19 @@ class GalleryRegressionTest {
     private companion object {
         const val IMAGE_KEY = "content://media/external/images/media/0"
         val IMAGE_SHOWN = GalleryUiState(
-            pages = persistentListOf(
-                GalleryPageUiModel(
-                    key = IMAGE_KEY,
-                    name = "IMG_20231016_120000_000",
-                    isVideo = false,
+            pager = GalleryPagerUiModel(
+                pages = persistentListOf(
+                    GalleryPageUiModel(
+                        key = IMAGE_KEY,
+                        name = "IMG_20231016_120000_000",
+                        isVideo = false,
+                    ),
+                ),
+                previews = persistentMapOf(
+                    IMAGE_KEY to GalleryPreview.Loaded(ImageBitmap(width = 64, height = 48)),
                 ),
             ),
-            previews = persistentMapOf(
-                IMAGE_KEY to GalleryPreview.Loaded(ImageBitmap(width = 64, height = 48)),
-            ),
+            bars = GalleryBarsUiModel(showsItemActions = true),
         )
     }
 }
