@@ -52,7 +52,7 @@ internal fun GalleryTopBar(
                     capturedAt = it,
                     onClick = when {
                         uiState.showsSystemGallery -> {
-                            { onAction(Action.SystemGalleryClicked) }
+                            { onAction(Action.CaptureTimeClicked) }
                         }
                         else -> null
                     },

@@ -54,6 +54,18 @@ class GalleryEffectHandlerTest {
     }
 
     @Test
+    fun showInSystemGallery_opensTheItemInTheSystemGallery() {
+        effectHandler.handle(Effect.ShowInSystemGallery(ITEM))
+
+        verify {
+            systemGalleryLauncher.openItem(
+                activity = activity,
+                item = ITEM,
+            )
+        }
+    }
+
+    @Test
     fun edit_withTheDefaultEditor_startsTheEditor() {
         effectHandler.handle(
             Effect.Edit(

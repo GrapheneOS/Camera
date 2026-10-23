@@ -61,11 +61,17 @@ internal class GalleryEffectHandlerImpl(
     override fun handle(effect: Effect) {
         when (effect) {
             is Effect.OpenVideo -> videoPlayerLauncher.open(activity, effect.uri)
-            is Effect.OpenSystemGallery -> systemGalleryLauncher.open(activity)
+
             is Effect.Edit -> edit(effect)
             is Effect.Share -> share(effect)
             is Effect.UseAs -> useAs(effect)
             is Effect.OpenMap -> openMap(effect.location)
+            is Effect.OpenSystemGallery -> systemGalleryLauncher.open(activity)
+            is Effect.ShowInSystemGallery -> systemGalleryLauncher.openItem(
+                activity = activity,
+                item = effect.item,
+            )
+
             is Effect.CopyText -> copy(effect.text)
             is Effect.ItemDeleted -> showText(R.string.deleted_successfully)
             is Effect.ItemTrashed -> showUndoableText(R.string.deleted_successfully)

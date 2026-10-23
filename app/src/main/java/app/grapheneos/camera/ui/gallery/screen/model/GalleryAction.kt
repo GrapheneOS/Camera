@@ -22,6 +22,8 @@ internal sealed interface GalleryAction {
 
     data object SystemGalleryClicked : GalleryAction
 
+    data object CaptureTimeClicked : GalleryAction
+
     data object EditClicked : GalleryAction
 
     data object EditWithClicked : GalleryAction

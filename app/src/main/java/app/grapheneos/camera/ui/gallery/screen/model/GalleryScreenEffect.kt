@@ -30,6 +30,10 @@ internal sealed interface GalleryScreenEffect {
         val uri: Uri,
     ) : GalleryScreenEffect
 
+    data class ShowInSystemGallery(
+        val item: CapturedItem,
+    ) : OtherApp
+
     data class Edit(
         val item: CapturedItem,
         val usesDefaultEditor: Boolean,
