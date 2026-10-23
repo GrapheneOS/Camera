@@ -37,6 +37,8 @@ internal interface VideoPlayback {
 
     fun setScrubbing(isScrubbing: Boolean)
 
+    fun setMuted(isMuted: Boolean)
+
     fun release()
 }
 
@@ -59,8 +61,7 @@ internal class VideoPlaybackImpl(
     private val listener = object : Player.Listener {
 
         override fun onTracksChanged(tracks: Tracks) {
-            val takesAudioFocus = tracks.containsType(C.TRACK_TYPE_AUDIO)
-            player.setAudioAttributes(MOVIE_AUDIO, takesAudioFocus)
+            updateAudioFocus()
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -111,10 +112,24 @@ internal class VideoPlaybackImpl(
         player.isScrubbingModeEnabled = isScrubbing
     }
 
+    override fun setMuted(isMuted: Boolean) {
+        player.volume = when {
+            isMuted -> 0f
+            else -> 1f
+        }
+        updateAudioFocus()
+    }
+
     override fun release() {
         player.removeListener(listener)
         player.clearVideoFrameMetadataListener(frameListener)
         player.release()
+    }
+
+    private fun updateAudioFocus() {
+        val hasAudio = player.currentTracks.containsType(C.TRACK_TYPE_AUDIO)
+
+        player.setAudioAttributes(MOVIE_AUDIO, hasAudio && player.volume > 0f)
     }
 
     private fun currentState(): VideoPlaybackState {

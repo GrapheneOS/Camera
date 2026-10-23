@@ -87,6 +87,7 @@ internal class VideoPlayerViewModel @Inject constructor(
             is Action.SurfaceDestroyed -> playback.setSurface(null)
             is Action.ScreenTapped -> toggleControls()
             is Action.PlayPauseClicked -> togglePlayback()
+            is Action.MuteClicked -> toggleMute()
             is Action.SeekDragged -> seekTo(action.position)
             is Action.SeekReleased -> finishSeek()
             is Action.ScreenStopped -> playback.pause()
@@ -114,6 +115,11 @@ internal class VideoPlayerViewModel @Inject constructor(
             _uiState.value.isPlaying -> playback.pause()
             else -> play()
         }
+    }
+
+    private fun toggleMute() {
+        _uiState.update { it.copy(isMuted = !it.isMuted) }
+        playback.setMuted(_uiState.value.isMuted)
     }
 
     private fun play() {

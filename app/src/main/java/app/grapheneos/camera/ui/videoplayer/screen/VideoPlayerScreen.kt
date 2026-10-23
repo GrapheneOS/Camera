@@ -115,9 +115,11 @@ private fun VideoPlayerContent(
                 Spacer(modifier = Modifier.weight(1f))
                 VideoControls(
                     isPlaying = uiState.isPlaying,
+                    isMuted = uiState.isMuted,
                     position = uiState.position,
                     duration = uiState.duration,
                     onPlayPauseClick = { onAction(Action.PlayPauseClicked) },
+                    onMuteClick = { onAction(Action.MuteClicked) },
                     onSeek = { position -> onAction(Action.SeekDragged(position)) },
                     onSeekFinished = { onAction(Action.SeekReleased) },
                 )

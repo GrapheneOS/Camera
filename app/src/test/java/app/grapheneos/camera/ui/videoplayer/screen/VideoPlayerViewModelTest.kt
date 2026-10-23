@@ -87,6 +87,21 @@ class VideoPlayerViewModelTest {
     }
 
     @Test
+    fun muteClicked_mutesAndUnmutesThePlayback() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.MuteClicked)
+            assertTrue(viewModel.uiState.value.isMuted)
+            verify { playback.setMuted(true) }
+
+            viewModel.onAction(Action.MuteClicked)
+            assertFalse(viewModel.uiState.value.isMuted)
+            verify { playback.setMuted(false) }
+        }
+    }
+
+    @Test
     fun position_followsTheShownFrame() {
         runTest {
             val viewModel = viewModel()

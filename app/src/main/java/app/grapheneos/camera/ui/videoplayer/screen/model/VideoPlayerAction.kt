@@ -15,6 +15,8 @@ internal sealed interface VideoPlayerAction {
 
     data object PlayPauseClicked : VideoPlayerAction
 
+    data object MuteClicked : VideoPlayerAction
+
     data class SeekDragged(
         val position: Duration,
     ) : VideoPlayerAction
