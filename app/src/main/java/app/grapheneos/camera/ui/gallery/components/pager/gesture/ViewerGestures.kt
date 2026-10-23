@@ -16,10 +16,12 @@ internal fun rememberViewerGestures(
     transformState: ViewerTransformState,
     detailsState: DetailsPanelState,
     onDetailsShownChange: (Boolean) -> Unit,
+    onVideoHoldChange: (Boolean) -> Unit,
 ): ViewerGestures {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val currentOnDetailsShownChange by rememberUpdatedState(onDetailsShownChange)
+    val currentOnVideoHoldChange by rememberUpdatedState(onVideoHoldChange)
 
     return remember(
         transformState,
@@ -33,6 +35,7 @@ internal fun rememberViewerGestures(
             minScalingSpan = ViewConfiguration.get(context).scaledMinimumScalingSpan.toFloat(),
             hapticFeedback = hapticFeedback,
             onDetailsShownChange = { isShown -> currentOnDetailsShownChange(isShown) },
+            onVideoHoldChange = { isHeld -> currentOnVideoHoldChange(isHeld) },
         )
     }
 }
@@ -44,4 +47,5 @@ internal class ViewerGestures(
     val minScalingSpan: Float,
     val hapticFeedback: HapticFeedback,
     val onDetailsShownChange: (Boolean) -> Unit,
+    val onVideoHoldChange: (Boolean) -> Unit,
 )

@@ -30,7 +30,7 @@ internal fun ViewerPage(
     viewerTransform: ViewerTransform,
     detailsPosition: () -> Float,
     video: VideoPlaybackUiModel?,
-    videoControls: (@Composable BoxScope.() -> Unit)?,
+    videoOverlay: (@Composable BoxScope.() -> Unit)?,
     onTap: () -> Unit,
     onVideoSurfaceCreated: (Surface) -> Unit,
     onVideoSurfaceDestroyed: () -> Unit,
@@ -41,7 +41,10 @@ internal fun ViewerPage(
     val photoTransform = when {
         isCurrentPage -> {
             Modifier
-                .viewerGestureInput(gestures)
+                .viewerGestureInput(
+                    gestures = gestures,
+                    holdsVideo = video is VideoPlaybackUiModel.Active,
+                )
                 .graphicsLayer(viewerTransform::applyTo)
         }
         else -> Modifier
@@ -67,7 +70,7 @@ internal fun ViewerPage(
                 .offset { detailsState.photoShiftAt(detailsPosition()).round() }
                 .then(photoTransform),
         )
-        videoControls?.invoke(this)
+        videoOverlay?.invoke(this)
         DetailsPanel(
             detailsState = detailsState,
             position = detailsPosition,

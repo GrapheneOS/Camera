@@ -11,6 +11,7 @@ internal sealed interface VideoPlaybackUiModel {
         val duration: Duration = Duration.ZERO,
         val aspectRatio: Float? = null,
         val hasRenderedFrame: Boolean = false,
+        val isFastForwarding: Boolean = false,
     ) : VideoPlaybackUiModel
 
     data object Failed : VideoPlaybackUiModel

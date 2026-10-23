@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.media.player.VideoPlayback
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -123,6 +124,26 @@ class GalleryPlaybackDelegateTest {
     }
 
     @Test
+    fun holdingAPausedVideo_playsItFastUntilReleasedThenKeepsPlaying() {
+        runTest {
+            val delegate = createDelegate()
+
+            settle(page = 1)
+            delegate.startFastForward()
+
+            verify { playbacks.single().setSpeed(2f) }
+            verify { playbacks.single().play() }
+            assertTrue(playback().isFastForwarding)
+
+            delegate.stopFastForward()
+
+            verify { playbacks.single().setSpeed(1f) }
+            verify(exactly = 0) { playbacks.single().pause() }
+            assertFalse(playback().isFastForwarding)
+        }
+    }
+
+    @Test
     fun pause_pausesTheVideo() {
         runTest {
             val delegate = createDelegate()
@@ -132,6 +153,12 @@ class GalleryPlaybackDelegateTest {
 
             verify { playbacks.single().pause() }
         }
+    }
+
+    private fun playback(): VideoPlaybackUiModel.Active {
+        val playback = stateHolder.state.value.video?.playback
+
+        return requireNotNull(playback as? VideoPlaybackUiModel.Active)
     }
 
     private fun settle(page: Int) {
