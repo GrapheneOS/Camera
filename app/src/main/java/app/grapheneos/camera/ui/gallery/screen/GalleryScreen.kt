@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
@@ -37,6 +36,7 @@ import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
 import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.gallery.components.GalleryPager
+import app.grapheneos.camera.ui.gallery.components.cameraPageProgress
 import app.grapheneos.camera.ui.gallery.components.GalleryPlaceholder
 import app.grapheneos.camera.ui.gallery.components.ViewerTransform
 import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
@@ -44,7 +44,9 @@ import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.gesture.animateDetailsPositionAsState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberDetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerTransformState
+import app.grapheneos.camera.ui.gallery.components.rememberGalleryPagerState
 import app.grapheneos.camera.ui.gallery.components.rememberViewerTransform
+import app.grapheneos.camera.ui.gallery.components.settledItemIndex
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
@@ -56,6 +58,7 @@ import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAs
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import java.time.LocalDateTime
+import kotlin.math.max
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 
@@ -117,11 +120,11 @@ private fun GalleryContent(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = uiState.currentPage,
-        pageCount = { uiState.pages.size },
+    val pagerState = rememberGalleryPagerState(
+        currentPage = uiState.currentPage,
+        itemCount = { uiState.pages.size },
     )
-    val settledPageKey = uiState.pages.getOrNull(pagerState.settledPage)?.key
+    val settledPageKey = uiState.pages.getOrNull(pagerState.settledItemIndex)?.key
     val transformState = rememberViewerTransformState(pageKey = settledPageKey)
     val detailsState = rememberDetailsPanelState(isShown = uiState.showsDetails)
     val detailsPosition = animateDetailsPositionAsState(detailsState)
@@ -155,6 +158,7 @@ private fun GalleryContent(
             detailsState = detailsState,
             detailsPosition = { detailsPosition.value },
             onAction = onAction,
+            onNavigateBack = onNavigateBack,
         )
 
         if (uiState.isEmpty) {
@@ -165,7 +169,7 @@ private fun GalleryContent(
 
         GalleryBars(
             uiState = uiState,
-            fadeProgress = viewerTransform::fadeProgress,
+            fadeProgress = { max(viewerTransform.fadeProgress(), pagerState.cameraPageProgress) },
             detailsPosition = { detailsPosition.value },
             backButtonVisibility = { detailsState.backButtonVisibilityAt(detailsPosition.value) },
             backgroundColor = backgroundColor,
@@ -190,6 +194,7 @@ private fun GalleryViewerPager(
     detailsState: DetailsPanelState,
     detailsPosition: () -> Float,
     onAction: (Action) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     val openMap = { onAction(Action.OpenMapClicked) }
 
@@ -210,6 +215,7 @@ private fun GalleryViewerPager(
         onVideoClick = { onAction(Action.VideoClicked) },
         onOpenMapClick = openMap.takeIf { uiState.showsExternalActions },
         onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
+        onCameraPageReached = onNavigateBack,
         modifier = Modifier.fillMaxSize(),
     )
 }
