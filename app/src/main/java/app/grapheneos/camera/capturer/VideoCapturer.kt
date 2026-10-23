@@ -17,8 +17,6 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
-import android.system.ErrnoException
-import android.system.Os
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.MediaStore.MediaColumns
@@ -31,6 +29,7 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoRecordEvent
 import app.grapheneos.camera.App
+import app.grapheneos.camera.CameraMode
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
@@ -42,11 +41,12 @@ import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getTreeDocumentUri
 import app.grapheneos.camera.util.removePendingFlagFromUri
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 class VideoCapturer(private val mActivity: MainActivity) {
 
@@ -58,14 +58,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
     private val videoFileFormat = ".mp4"
 
     private var recording: Recording? = null
+    private var slowAudio: SlowMotionModule? = null
+    private var slowAudioWanted = false
+    private var slowRecordingFps = 120
+    private var stopRequested = false
 
     // Invoking this abandons a start still waiting on its output or queued behind the record-start
     // sound.
     private var cancelDeferredStart: (() -> Unit)? = null
-
-    // Recording, but still waiting on the output or the record-start sound
-    val isStartPending: Boolean
-        get() = cancelDeferredStart != null
 
     var isMuted = false
         private set
@@ -92,29 +92,17 @@ class VideoCapturer(private val mActivity: MainActivity) {
     @set:VisibleForTesting
     var contentResolver: ContentResolver = mActivity.contentResolver
 
-    // What CameraX leaves free on storage it can see: room for what is still being encoded when
-    // the recording stops, and for the index the file needs to play
-    @set:VisibleForTesting
-    var requiredFreeStorageBytes = 50L * 1024 * 1024
-
     private fun updateTimerTime(timeInNanos: Long) {
         mActivity.timerView.text = formatVideoDuration(timeInNanos / 1_000_000_000)
     }
 
     private class RecordingContext(
         val uri: Uri,
-        // Open until the recording ends: how much room is left for it is read through this
         val fileDescriptor: ParcelFileDescriptor,
         val shouldAddToGallery: Boolean,
         val isPendingMediaStoreUri: Boolean,
-    ) {
-        var isFinalized = false
-
-        // The free storage is read again once the recording has grown to this many bytes
-        var nextStorageCheckBytes = 0L
-
-        var isCheckingStorage = false
-    }
+        val mode: CameraMode,
+    )
 
     // Runs on outputExecutor: each step is a call into another process, MediaProvider or the app
     // the video is for, and can take seconds to answer.
@@ -122,6 +110,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         fileName: String,
         foreignUri: Uri?,
         storageLocation: String,
+        mode: CameraMode,
     ): RecordingContext? {
         val mimeType =
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(videoFileFormat) ?: "video/mp4"
@@ -138,7 +127,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 val contentValues = ContentValues().apply {
                     put(MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaColumns.RELATIVE_PATH, DEFAULT_MEDIA_STORE_CAPTURE_PATH)
+                    val directory = when (mode) {
+                        CameraMode.SLOW_MOTION -> "DCIM/SlowMotion"
+                        else -> DEFAULT_MEDIA_STORE_CAPTURE_PATH
+                    }
+                    put(MediaColumns.RELATIVE_PATH, directory)
                     put(MediaColumns.IS_PENDING, 1)
                 }
                 uri = contentResolver.insert(CamConfig.videoCollectionUri, contentValues)
@@ -158,7 +151,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         return contentResolver
             .openFileDescriptor(uri, "w")
             ?.let {
-                RecordingContext(uri, it, shouldAddToGallery, isPendingMediaStoreUri)
+                RecordingContext(uri, it, shouldAddToGallery, isPendingMediaStoreUri, mode)
             }
     }
 
@@ -181,17 +174,28 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val recorder = camConfig.videoCapture?.output ?: return
         if (isRecording) return
         isRecording = true
+        stopRequested = false
+        slowAudio?.discard()
+        slowAudio = null
 
         val dateString = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val fileName = VIDEO_NAME_PREFIX + dateString + videoFileFormat
+        val mode = camConfig.currentMode
+        val prefix = when (mode) {
+            CameraMode.SLOW_MOTION -> "SLOMO_"
+            else -> VIDEO_NAME_PREFIX
+        }
+        val fileName = prefix + dateString + videoFileFormat
 
         includeAudio = false
+        slowAudioWanted = false
+        slowRecordingFps = camConfig.activeSlowMotionFps
 
         val ctx = mActivity
-
-        if (ctx.settingsDialog.includeAudioToggle.isChecked) {
+        val audioRequested = ctx.settingsDialog.includeAudioToggle.isChecked
+        if (audioRequested) {
             if (ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PERMISSION_GRANTED) {
-                includeAudio = true
+                if (mode == CameraMode.SLOW_MOTION) slowAudioWanted = true
+                else includeAudio = true
             } else {
                 ctx.restartRecordingWithMicPermission()
                 isRecording = false
@@ -204,7 +208,9 @@ class VideoCapturer(private val mActivity: MainActivity) {
         } else {
             null
         }
-        val storageLocation = camConfig.storageLocation
+        val storageLocation = if (mode == CameraMode.SLOW_MOTION) {
+            CamConfig.SettingValues.Default.STORAGE_LOCATION
+        } else camConfig.storageLocation
 
         beforeRecordingStarts()
 
@@ -223,7 +229,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         outputExecutor.execute {
             val recordingCtx = try {
-                createRecordingContext(fileName, foreignUri, storageLocation)
+                createRecordingContext(fileName, foreignUri, storageLocation, mode)
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
@@ -279,6 +285,14 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     if (isPaused) {
                         recording?.pause()
                     }
+
+                    try {
+                        // FileDescriptorOutputOptions doc says that the file descriptor should be closed by the
+                        // caller, and that it's safe to do so as soon as pendingRecording.start() returns
+                        recordingCtx.fileDescriptor.close()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }
@@ -288,22 +302,30 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val ctx = mActivity
 
         if (event is VideoRecordEvent.Start) {
+            if (recordingCtx.mode == CameraMode.SLOW_MOTION && slowAudioWanted && !stopRequested) {
+                try {
+                    val session = SlowMotionModule(mActivity)
+                    if (session.start()) slowAudio = session else session.discard()
+                } catch (e: Exception) {
+                    e.printStackTrace() // Video must remain usable without the microphone.
+                }
+            }
             onRecordingStart()
         }
 
         if (event is VideoRecordEvent.Status) {
             updateTimerTime(event.recordingStats.recordedDurationNanos)
-            checkFreeStorage(recordingCtx, event.recordingStats.numBytesRecorded)
         }
 
         if (event is VideoRecordEvent.Finalize) {
-            recordingCtx.isFinalized = true
-
+            slowAudio?.stop()
             afterRecordingStops()
 
             camConfig.mPlayer.playVRStopSound()
 
             if (event.hasError()) {
+                slowAudio?.discard()
+                slowAudio = null
                 when (event.error) {
                     VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA -> {
                         abandonOutput(recordingCtx)
@@ -313,11 +335,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
                     VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED,
                     VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR,
                     VideoRecordEvent.Finalize.ERROR_UNKNOWN -> {
-                        // These cut the recording off without finishing its file the way a stop
-                        // does. A muxer that runs out of storage still writes the index into the
-                        // room it kept for it, and an encoder that dies leaves the muxer to stop
-                        // normally, so what was recorded up to then often plays.
-                        saveOutput(recordingCtx, dateString, failedWithError = event.error)
+                        abandonOutput(recordingCtx)
+                        ctx.showMessage(ctx.getString(R.string.unable_to_save_video_verbose, event.error))
                         return
                     }
                     else -> {
@@ -333,65 +352,88 @@ class VideoCapturer(private val mActivity: MainActivity) {
                 }
             }
 
-            saveOutput(recordingCtx, dateString)
+            val audioSession = slowAudio
+            slowAudio = null
+            if (recordingCtx.mode == CameraMode.SLOW_MOTION && audioSession != null &&
+                recordingCtx.isPendingMediaStoreUri) {
+                finishSlowMotionWithAudio(recordingCtx, dateString, audioSession, slowRecordingFps)
+            } else {
+                audioSession?.discard()
+                saveOutput(recordingCtx, dateString)
+            }
         }
     }
 
-    // CameraX only stops a recording before it fills up its storage when it can tell what that
-    // storage is, and a file descriptor doesn't tell it. A recording that fills it up ends on a
-    // failed write instead, leaving a file that only plays if the muxer had kept room for its
-    // index.
-    private fun checkFreeStorage(recordingCtx: RecordingContext, recordedBytes: Long) {
-        if (recordingCtx.isCheckingStorage || recordedBytes < recordingCtx.nextStorageCheckBytes) {
-            return
-        }
-        recordingCtx.isCheckingStorage = true
-
-        // Off the main thread: MediaProvider answers for the storage behind its descriptors
+    /** Create a new pending MediaStore entry. The silent original is ONLY deleted once
+     * the new MP4 has been completely written and published. If any step fails, publish
+     * the original instead; never replace it in-place or risk losing a recording.
+     */
+    private fun finishSlowMotionWithAudio(
+        original: RecordingContext, dateString: String,
+        session: SlowMotionModule, fps: Int
+    ) {
+        mActivity.showMessage(R.string.slow_motion_audio_processing)
         outputExecutor.execute {
-            val freeBytes = freeStorageBytes(recordingCtx.fileDescriptor)
-
+            val pcm = session.finish()
+            val remuxed = pcm?.let {
+                SlowMotionMuxer.combine(mActivity, original.uri, it, fps)
+            }
+            var replacement: RecordingContext? = null
+            try {
+                if (remuxed != null) {
+                    val newName = "SLOMO_${dateString}_AUDIO.mp4"
+                    val target = createRecordingContext(
+                        newName, null, CamConfig.SettingValues.Default.STORAGE_LOCATION, CameraMode.SLOW_MOTION
+                    )
+                    if (target != null) {
+                        try {
+                            FileInputStream(remuxed).use { input ->
+                                FileOutputStream(target.fileDescriptor.fileDescriptor).use { output ->
+                                    input.copyTo(output, 256 * 1024)
+                                    output.flush()
+                                }
+                            }
+                            replacement = target
+                        } catch (error: Exception) {
+                            error.printStackTrace()
+                            abandonOutput(target)
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                error.printStackTrace()
+            } finally {
+                pcm?.delete()
+                remuxed?.delete()
+                session.discard()
+            }
+            val ready = replacement
             handler.post {
-                recordingCtx.isCheckingStorage = false
-                if (recordingCtx.isFinalized) {
-                    return@post
-                }
-
-                val spareBytes = freeBytes - requiredFreeStorageBytes
-                if (spareBytes <= 0) {
-                    stopRecording()
-                    mActivity.showMessage(R.string.recording_stopped_storage_almost_full)
-                    return@post
-                }
-                // Rare while there is plenty left, and closer together as it runs out
-                recordingCtx.nextStorageCheckBytes = recordedBytes + spareBytes / 2
+                if (ready != null) publishOutput(ready, dateString, original)
+                else saveOutput(original, dateString)
             }
         }
     }
 
     // A video in MediaStore stays pending, hidden from other apps and left to be deleted, until
-    // MediaProvider is told to make it visible: only then is it saved. A recording cut off by an
-    // error is only saved if what it left plays.
-    private fun saveOutput(
-        recordingCtx: RecordingContext,
-        dateString: String,
-        failedWithError: Int? = null,
+    // MediaProvider is told to make it visible: only then is it saved.
+    private fun saveOutput(recordingCtx: RecordingContext, dateString: String) {
+        publishOutput(recordingCtx, dateString)
+    }
+
+    private fun publishOutput(
+        recordingCtx: RecordingContext, dateString: String,
+        fallback: RecordingContext? = null
     ) {
+        if (!recordingCtx.isPendingMediaStoreUri) {
+            onOutputSaved(recordingCtx, dateString)
+            if (fallback != null) abandonOutput(fallback)
+            return
+        }
+
         // Off the main thread for the same reason the output is created there
         outputExecutor.execute {
-            closeOutputFile(recordingCtx)
-
-            if (failedWithError != null && !isPlayable(recordingCtx.uri)) {
-                discardUnusedOutput(recordingCtx)
-                handler.post {
-                    mActivity.showMessage(
-                        mActivity.getString(R.string.unable_to_save_video_verbose, failedWithError)
-                    )
-                }
-                return@execute
-            }
-
-            val saved = !recordingCtx.isPendingMediaStoreUri || try {
+            val saved = try {
                 removePendingFlagFromUri(contentResolver, recordingCtx.uri)
                 true
             } catch (e: Exception) {
@@ -400,29 +442,17 @@ class VideoCapturer(private val mActivity: MainActivity) {
             }
 
             handler.post {
-                if (!saved) {
+                if (saved) {
+                    onOutputSaved(recordingCtx, dateString)
+                    if (fallback != null) abandonOutput(fallback)
+                } else if (fallback != null) {
+                    abandonOutput(recordingCtx)
+                    saveOutput(fallback, dateString)
+                } else {
                     mActivity.showMessage(R.string.unable_to_save_video)
-                    return@post
                 }
-                failedWithError?.let {
-                    mActivity.showMessage(mActivity.getString(R.string.error_during_recording, it))
-                }
-                onOutputSaved(recordingCtx, dateString)
             }
         }
-    }
-
-    // Runs on outputExecutor. A file the muxer never wrote an index into can't be read at all.
-    private fun isPlayable(uri: Uri): Boolean = try {
-        contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-            MediaMetadataRetriever().use {
-                it.setDataSource(pfd.fileDescriptor)
-                it.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO) != null
-            }
-        } ?: false
-    } catch (e: Exception) {
-        e.printStackTrace()
-        false
     }
 
     private fun onOutputSaved(recordingCtx: RecordingContext, dateString: String) {
@@ -430,7 +460,11 @@ class VideoCapturer(private val mActivity: MainActivity) {
         val uri = recordingCtx.uri
 
         if (recordingCtx.shouldAddToGallery) {
-            val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri)
+            val displayName = when (recordingCtx.mode) {
+                CameraMode.SLOW_MOTION -> "SLOMO_$dateString"
+                else -> null
+            }
+            val item = CapturedItem(ITEM_TYPE_VIDEO, dateString, uri, displayName)
             camConfig.updateLastCapturedItem(item)
 
             ctx.updateThumbnail()
@@ -489,11 +523,12 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     private fun onRecordingStart() {
-        // TODO: Uncomment this once the main indicator UI gets implemented
-        // mActivity.micOffIcon.visibility = View.GONE
-
         animateCaptureButtonCorners(dp16, dp8)
 
+        // High-speed microphone capture is continuous; do not allow pause (A/V drift).
+        if (camConfig.currentMode == CameraMode.SLOW_MOTION) {
+            mActivity.flipCameraCircle.visibility = View.INVISIBLE
+        }
         // The user may have paused before the recording actually started.
         if (isPaused) {
             mActivity.setFlipCameraIcon(R.drawable.play, R.string.resume_recording)
@@ -511,12 +546,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         // While recording, the gallery button turns into a shutter for stills
-        mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
+        if (camConfig.currentMode != CameraMode.SLOW_MOTION) {
+            mActivity.setThirdCircleIcon(R.drawable.camera_shutter, R.string.capture)
+        } else {
+            mActivity.thirdOption.visibility = View.INVISIBLE
+        }
         mActivity.tabLayout.visibility = View.INVISIBLE
         mActivity.timerView.setText(R.string.start_value_timer)
         mActivity.timerView.visibility = View.VISIBLE
 
-        if (camConfig.includeAudio) {
+        if (camConfig.currentMode != CameraMode.SLOW_MOTION && camConfig.includeAudio) {
             mActivity.setMuteToggleState(muted = isMuted)
             mActivity.muteToggle.visibility = View.VISIBLE
         }
@@ -527,6 +566,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
 
         mActivity.timerView.visibility = View.GONE
         mActivity.setFlipCameraIcon(R.drawable.flip_camera, R.string.flip_camera)
+        mActivity.flipCameraCircle.visibility = View.VISIBLE
         mActivity.captureButton.contentDescription =
             mActivity.getString(R.string.start_recording)
 
@@ -541,12 +581,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
             mActivity.settingsDialog.waitForFocusLockSwitch.isEnabled = true
         }
 
-        // Always restore the third-circle icon and its accessibility label to the gallery button:
-        // at record start it was repurposed into an in-video shutter ("Capture") unconditionally,
-        // so restoring it only for non-VideoCaptureActivity would strand a stale "Capture" label
-        // there. The non-recording third-circle click opens the gallery in every activity, so
-        // open_gallery is the accurate label. Cancel/tab visibility stays guarded, as those don't
-        // apply to VideoCaptureActivity.
+        // Restore the gallery button after recording ends.
         mActivity.setThirdCircleIcon(R.drawable.option_circle, R.string.open_gallery)
 
         if (mActivity !is VideoCaptureActivity) {
@@ -555,10 +590,6 @@ class VideoCapturer(private val mActivity: MainActivity) {
         }
 
         mActivity.previewView.keepScreenOn = false
-
-        // TODO: Uncomment this once the main indicator UI gets implemented
-        // if (!mActivity.config.includeAudio)
-        //   mActivity.micOffIcon.visibility = View.VISIBLE
 
         mActivity.settingsDialog.includeAudioToggle.isEnabled = true
         mActivity.muteToggle.visibility = View.GONE
@@ -583,6 +614,8 @@ class VideoCapturer(private val mActivity: MainActivity) {
     }
 
     fun stopRecording() {
+        stopRequested = true
+        slowAudio?.stop()
         cancelDeferredStart?.let {
             it()
             return
@@ -593,25 +626,16 @@ class VideoCapturer(private val mActivity: MainActivity) {
         recording = null
     }
 
-    fun abandonDeferredStart() {
-        cancelDeferredStart?.invoke()
-    }
-
     // Off the main thread for the same reason the output is created there
     private fun abandonOutput(recordingCtx: RecordingContext) {
         outputExecutor.execute {
-            closeOutputFile(recordingCtx)
+            try {
+                // A no-op once the recording has started: starting it closed this
+                recordingCtx.fileDescriptor.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
             discardUnusedOutput(recordingCtx)
-        }
-    }
-
-    // Runs on outputExecutor: the app the video is for may only take the file as done once it is
-    // closed. FileDescriptorOutputOptions leaves closing it to the caller, from the start on.
-    private fun closeOutputFile(recordingCtx: RecordingContext) {
-        try {
-            recordingCtx.fileDescriptor.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -636,33 +660,24 @@ class VideoCapturer(private val mActivity: MainActivity) {
         // one per press
         private val outputExecutor = Executors.newSingleThreadExecutor()
 
-        /**
-         * Returns once the output work queued so far is done, and has posted back what it posts
-         */
-        @VisibleForTesting
-        fun awaitOutputWork(timeoutS: Long) {
-            outputExecutor.submit {}.get(timeoutS, TimeUnit.SECONDS)
-        }
+
     }
 }
 
 private const val STALE_PENDING_RECORDING_AGE = 60 * 60 * 1000L
 
-// A recording that dies with its process (swipe-away from Recents, OOM kill, crash) never reaches
-// the Finalize callback that clears IS_PENDING, so it leaves a half-written file that is invisible
-// to the user until MediaProvider expires it a week later, and unplayable in the meantime since it
-// has no moov atom. Deleting is the honest outcome. Pending rows are only visible to the app that
-// owns them, so this can never reach another app's in-flight write, and the age cutoff keeps it
-// clear of a recording that is still being muxed.
+// Delete old pending video rows left by interrupted recordings.
 fun deleteStalePendingRecordings(
     context: Context,
     maxAge: Long = STALE_PENDING_RECORDING_AGE,
 ) {
     val selection = "${MediaColumns.IS_PENDING} = 1" +
-            " AND ${MediaColumns.DISPLAY_NAME} LIKE ?" +
+            " AND (${MediaColumns.DISPLAY_NAME} LIKE ?" +
+            " OR ${MediaColumns.DISPLAY_NAME} LIKE ?" +
+            " OR ${MediaColumns.DISPLAY_NAME} LIKE ?)" +
             " AND ${MediaColumns.DATE_ADDED} < ?"
     val cutoffSeconds = (System.currentTimeMillis() - maxAge) / 1000L
-    val args = arrayOf("$VIDEO_NAME_PREFIX%", cutoffSeconds.toString())
+    val args = arrayOf("$VIDEO_NAME_PREFIX%", "SLOMO_%", "HYPER_%", cutoffSeconds.toString())
 
     try {
         // Pending rows are filtered out of every operation unless they are explicitly asked for.
@@ -672,15 +687,6 @@ fun deleteStalePendingRecordings(
     } catch (e: Exception) {
         e.printStackTrace()
     }
-}
-
-// Long.MAX_VALUE when the descriptor doesn't tell: one from a provider that serves the file itself
-// reports no storage at all
-private fun freeStorageBytes(fd: ParcelFileDescriptor): Long = try {
-    val stat = Os.fstatvfs(fd.fileDescriptor)
-    if (stat.f_blocks > 0) stat.f_bavail * stat.f_frsize else Long.MAX_VALUE
-} catch (e: ErrnoException) {
-    Long.MAX_VALUE
 }
 
 @Throws(Exception::class)

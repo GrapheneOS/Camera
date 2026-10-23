@@ -35,8 +35,6 @@ open class CaptureActivity : MainActivity() {
 
     var bitmap: Bitmap? = null
 
-    private var isTakingPicture = false
-
     private lateinit var retakeIcon: ImageView
 
     private lateinit var flipCameraContent: ImageView
@@ -75,7 +73,7 @@ open class CaptureActivity : MainActivity() {
         }, CAPTURE_BUTTON_APPEARANCE_DELAY)
 
         // Redundant now that no tabs get built here (see shouldShowCameraModeTabs), but kept so a
-        // regression in that override cannot hand the user a mode switcher mid-capture
+        // this override cannot hand the user a mode switcher mid-capture
         tabLayout.visibility = View.INVISIBLE
 
         // Remove the margin so that that the previewView can take some more space
@@ -134,24 +132,17 @@ open class CaptureActivity : MainActivity() {
     override fun shouldShowCameraModeTabs() = false
 
     fun takePicture() {
-        // A second press would fail once the first one's preview unbinds the camera
-        if (isTakingPicture) {
-            return
-        }
-        val imageCapture = camConfig.imageCapture ?: return
-        isTakingPicture = true
 
         showMessage(
             getString(R.string.capturing_image)
         )
 
         previewLoader.visibility = View.VISIBLE
-        imageCapture.takePicture(
+        camConfig.imageCapture?.takePicture(
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
                     super.onCaptureSuccess(image)
-                    isTakingPicture = false
                     bitmap = imageProxyToBitmap(image, image.imageInfo.rotationDegrees.toFloat())
                     showPreview()
                     previewLoader.visibility = View.GONE
@@ -162,13 +153,12 @@ open class CaptureActivity : MainActivity() {
 
                 override fun onError(exception: ImageCaptureException) {
                     super.onError(exception)
-                    isTakingPicture = false
                     exception.printStackTrace()
-                    // Stays so that the user can retry, or cancel for RESULT_CANCELED
-                    previewLoader.visibility = View.GONE
                     showMessage(
                         getString(R.string.unable_to_capture_image)
                     )
+
+                    finishActivity(RESULT_CANCELED)
                 }
             }
 

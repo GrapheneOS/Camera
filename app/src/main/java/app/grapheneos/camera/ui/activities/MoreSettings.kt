@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.KeyEvent
@@ -16,7 +15,6 @@ import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.grapheneos.camera.CamConfig
@@ -174,6 +172,27 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
             camConfig.removeExifAfterCapture = exifToggle.isChecked
         }
 
+        // Do not change the already-persisted grid, gyroscope and other camera settings.
+        val reopenToggle = binding.reopenLastModeSwitch
+        val reopenRow = binding.reopenLastModeSetting
+        if (this is MoreSettingsSecure) {
+            reopenRow.visibility = View.GONE
+        } else {
+            reopenToggle.isChecked = camConfig.reopenLastUsedMode
+            reopenToggle.setOnCheckedChangeListener { _, checked ->
+                camConfig.reopenLastUsedMode = checked
+            }
+            reopenRow.setOnClickListener { reopenToggle.isChecked = !reopenToggle.isChecked }
+        }
+
+        // Capture feedback is independent of the sound toggle and phone ringer mode.
+        val hapticSwitch = binding.captureHapticsSwitch
+        hapticSwitch.isChecked = camConfig.captureHaptics
+        hapticSwitch.setOnCheckedChangeListener { _, checked -> camConfig.captureHaptics = checked }
+        binding.captureHapticsSetting.setOnClickListener {
+            hapticSwitch.isChecked = !hapticSwitch.isChecked
+        }
+
         val gSwitch = binding.gyroscopeSettingSwitch
         gSwitch.isChecked = camConfig.gSuggestions
         gSwitch.setOnClickListener {
@@ -297,13 +316,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     override fun onPause() {
-        // dispatchTouchEvent and onEditorAction only fire when the user taps outside the field
-        // or presses the IME action key. Leaving the screen any other way (Back, gesture back,
-        // the up arrow, Home, task switch) used to drop whatever had been typed, silently.
-        // Commit here so that every exit path persists; a snackbar would be pointless on a
-        // screen that is going away, so the invalid-value complaint is suppressed.
-        // onCreate() can bail out before the views exist (no CamConfig in the intent) and the
-        // lifecycle still runs through onPause, hence the initialization check.
+        // Save editable settings when the user leaves the screen, including with Back.
         if (this::pQField.isInitialized) {
             dumpData(notifyOnInvalidValue = false)
         }
@@ -314,10 +327,7 @@ open class MoreSettings : AppCompatActivity(), TextView.OnEditorActionListener {
 
         // Dump state of photo quality
         val quality = pQField.text.toString().toIntOrNull()
-        // NumInputFilter keeps out-of-range values from being typed, but it cannot stop them being
-        // deleted into place: the empty replacement it returns to reject an edit is the very edit a
-        // deletion asks for, so deleting the leading digit of "10" leaves "0" behind. Committing
-        // that made ImageCapture reject the quality and crash the next bind.
+        // Restore the saved value if an input field is left empty.
         if (quality == null || quality !in NumInputFilter.min..NumInputFilter.max) {
             // Revert back to the original value if invalid number was found
             pQField.setText(camConfig.photoQuality.toString())

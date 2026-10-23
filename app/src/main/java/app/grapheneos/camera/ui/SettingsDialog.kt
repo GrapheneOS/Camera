@@ -25,7 +25,6 @@ import android.widget.ArrayAdapter
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.ToggleButton
@@ -42,13 +41,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.ui.CameraShortcutMode
 import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.radiobutton.MaterialRadioButton
 import java.util.Collections
 import kotlin.math.max
 
@@ -182,7 +181,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         flashToggle = binding.flashToggleOption
         flashToggle.setOnClickListener {
-            if (mActivity.requiresVideoModeOnly) {
+            val dual = mActivity.dualSettingsController()
+            if (dual != null) {
+                dual.cyclePhotoFlashMode()
+            } else if (mActivity.requiresVideoModeOnly) {
                 mActivity.showMessage(
                     getString(R.string.flash_switch_unsupported)
                 )
@@ -206,7 +208,10 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
-            if (camConfig.isFlashAvailable) {
+            val dual = mActivity.dualSettingsController()
+            if (dual != null) {
+                dual.toggleTorch()
+            } else if (camConfig.isFlashAvailable) {
                 camConfig.toggleTorchState()
             } else {
                 torchToggle.isChecked = false
@@ -260,7 +265,12 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
         selfIlluminationToggle.setOnCheckedChangeListener { _, isChecked ->
-            camConfig.selfIlluminate = isChecked
+            val dual = mActivity.dualSettingsController()
+            if (dual != null && mActivity.integratedDualMode == CameraShortcutMode.DUAL_PHOTO) {
+                dual.selfIlluminationEnabled = isChecked
+            } else if (dual == null) {
+                camConfig.selfIlluminate = isChecked
+            }
         }
         binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
             event.setLocation(0f, 0f)
@@ -493,8 +503,19 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         })
     }
 
+    /** Update fold-device controls in the camera mode bar. */
+    internal fun updateFoldDisplayControls(
+        rearSupported: Boolean, rearEnabled: Boolean, rearChecked: Boolean,
+        dualSupported: Boolean, dualEnabled: Boolean, dualChecked: Boolean,
+    ) {
+        mActivity.updateFoldTabState(rearSupported, rearChecked, dualSupported, dualChecked)
+    }
+
     fun showOnlyRelevantSettings() {
-        if (camConfig.isVideoMode) {
+        val dualMode = mActivity.integratedDualMode
+        val videoMode = dualMode == CameraShortcutMode.DUAL_VIDEO ||
+            (dualMode == null && camConfig.isVideoMode)
+        if (videoMode) {
             includeAudioSetting.visibility = View.VISIBLE
             videoQualitySetting.visibility = View.VISIBLE
             enableEISSetting.visibility = if (camConfig.canApplyVideoStabilization()) {
@@ -509,13 +530,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         }
 
         selfIlluminationSetting.visibility =
-            if (camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            if (dualMode == CameraShortcutMode.DUAL_PHOTO ||
+                (dualMode == null && camConfig.lensFacing == CameraSelector.LENS_FACING_FRONT)) {
                 View.VISIBLE
             } else {
                 View.GONE
             }
 
-        timerSetting.visibility = if (camConfig.isVideoMode) {
+        timerSetting.visibility = if (videoMode) {
             View.GONE
         } else {
             View.VISIBLE
@@ -824,7 +846,16 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun updateFlashMode() {
-        val (icon, description) = if (camConfig.isFlashAvailable) {
+        val dual = mActivity.dualSettingsController()
+        val (icon, description) = if (dual != null) {
+            if (mActivity.integratedDualMode != CameraShortcutMode.DUAL_PHOTO) {
+                R.drawable.flash_off_circle to R.string.flash_off
+            } else when (dual.photoFlashMode) {
+                ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
+                ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
+                else -> R.drawable.flash_off_circle to R.string.flash_off
+            }
+        } else if (camConfig.isFlashAvailable) {
             when (camConfig.flashMode) {
                 ImageCapture.FLASH_MODE_ON -> R.drawable.flash_on_circle to R.string.flash_on
                 ImageCapture.FLASH_MODE_AUTO -> R.drawable.flash_auto_circle to R.string.flash_auto
@@ -850,7 +881,13 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     override fun show() {
 
         this.resize()
-
+        showOnlyRelevantSettings()
+        val dual = mActivity.dualSettingsController()
+        if (dual != null) {
+            selfIlluminationToggle.isChecked = dual.selfIlluminationEnabled
+        } else {
+            selfIlluminationToggle.isChecked = camConfig.selfIlluminate
+        }
         updateFlashMode()
 
         if (camConfig.isVideoMode) {
@@ -859,7 +896,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
             updateAspectRatioToggle(camConfig.aspectRatio == AspectRatio.RATIO_16_9)
         }
 
-        torchToggle.isChecked = camConfig.isTorchOn
+        torchToggle.isChecked = dual?.isTorchEnabled ?: camConfig.isTorchOn
 
         updateGridToggleUI()
 

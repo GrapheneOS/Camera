@@ -36,7 +36,6 @@ class GallerySliderAdapter(
 
     override fun onBindViewHolder(holder: GallerySlide, position: Int) {
         val mediaPreview: ZoomableImageView = holder.binding.slidePreview
-//        Log.d("GallerySliderAdapter", "postiion $position, preview ${System.identityHashCode(mediaPreview)}")
         val playButton: ImageView = holder.binding.playButton
         val item = items[position]
 
@@ -93,7 +92,7 @@ class GallerySliderAdapter(
                                         VideoPlayer.IN_SECURE_MODE, gActivity.isSecureMode
                                     )
 
-                                    gActivity.playerStarter.start(intent)
+                                    gActivity.startActivity(intent)
                                 }
                             }
                         } else if (item.type == ITEM_TYPE_IMAGE) {

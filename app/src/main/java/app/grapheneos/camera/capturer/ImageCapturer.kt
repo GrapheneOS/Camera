@@ -17,6 +17,10 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import app.grapheneos.camera.App
+import app.grapheneos.camera.IMAGE_NAME_PREFIX
+import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.portrait.PortraitEngine
+import app.grapheneos.camera.portrait.PortraitProgressNotifier
 import app.grapheneos.camera.CapturedItem
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.activities.MainActivity
@@ -35,13 +39,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     private var currentImageSaver : ImageSaver? = null
 
-    private var isCaptureButtonFaded = false
-
     private fun fadeCaptureButton() {
-        // The shutter stops the recording a snapshot is taken from, so it stays live for one
-        if (mActivity.videoCapturer.isRecording) return
-
-        isCaptureButtonFaded = true
         mActivity.captureButton.isEnabled = false
 
         val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
@@ -53,9 +51,6 @@ class ImageCapturer(val mActivity: MainActivity) {
     }
 
     private fun unfadeCaptureButton() {
-        if (!isCaptureButtonFaded) return
-
-        isCaptureButtonFaded = false
         mActivity.captureButton.isEnabled = true
 
         val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 1f)
@@ -108,6 +103,9 @@ class ImageCapturer(val mActivity: MainActivity) {
             camConfig.removeExifAfterCapture,
             targetThumbnailWidth = preview.width,
             targetThumbnailHeight = preview.height,
+            portraitRequested = camConfig.currentMode == CameraMode.PORTRAIT,
+            portraitStrength = PortraitEngine.blurPercent,
+            fileNamePrefix = mActivity.proImagePrefix() ?: IMAGE_NAME_PREFIX,
         )
 
         currentImageSaver = imageSaver
@@ -167,6 +165,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
         unfadeCaptureButton()
         currentImageSaver = null
+        mActivity.onProImageFailed()
         mActivity.previewLoader.visibility = View.GONE
 
         if (mActivity.isStarted) {
@@ -175,8 +174,15 @@ class ImageCapturer(val mActivity: MainActivity) {
         }
     }
 
-    fun onImageSaverSuccess(item: CapturedItem) {
+    fun onImageSaverSuccess(item: CapturedItem, portraitRequested: Boolean = false, portraitStrength: Int = 55) {
+        // Image processing must not modify camera preview, fold display, or CameraX binding.
+        // Original JPEG is fully committed before we schedule portrait processing.
+        if (portraitRequested && mActivity !is SecureMainActivity) {
+            PortraitProgressNotifier.requestPermissionIfNeeded(mActivity)
+            PortraitEngine.enqueue(mActivity.applicationContext, item.uri, portraitStrength)
+        }
         camConfig.updateLastCapturedItem(item)
+        mActivity.onProImageSaved()
 
         if (mActivity is SecureMainActivity) {
             mActivity.capturedItems.add(item)
@@ -189,6 +195,7 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     fun onImageSaverError(exception: ImageSaverException, skipErrorDialog: Boolean) {
         Log.e(TAG, "onImageSaverError", exception)
+        mActivity.onProImageFailed()
         mActivity.previewLoader.visibility = View.GONE
 
         if (!mActivity.isStarted) {
@@ -243,9 +250,9 @@ class ImageCapturer(val mActivity: MainActivity) {
         }
     }
 
-    fun onThumbnailGenerated(item: CapturedItem, thumbnail: Bitmap?) {
+    fun onThumbnailGenerated(thumbnail: Bitmap?) {
         mActivity.previewLoader.visibility = View.GONE
-        mActivity.showThumbnail(item, thumbnail)
+        mActivity.imagePreview.setImageBitmap(thumbnail)
     }
 
     companion object {

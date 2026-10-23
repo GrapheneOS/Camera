@@ -21,6 +21,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.SystemClock
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
@@ -46,8 +47,10 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.SeekBar
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
@@ -55,6 +58,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.MeteringPointFactory
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
@@ -71,12 +75,15 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
+import app.grapheneos.camera.ui.ProCameraModule
 import app.grapheneos.camera.CameraMode
-import app.grapheneos.camera.CapturedItem
-import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
+import app.grapheneos.camera.portrait.PortraitLiveController
+import app.grapheneos.camera.capturer.IntervalModule
+import app.grapheneos.camera.capturer.BurstModule
+import app.grapheneos.camera.capturer.PanoramaCapturer
 import app.grapheneos.camera.capturer.ImageCapturer
 import app.grapheneos.camera.capturer.VideoCapturer
 import app.grapheneos.camera.capturer.getVideoThumbnail
@@ -87,6 +94,9 @@ import app.grapheneos.camera.ktx.SystemSettingsObserver
 import app.grapheneos.camera.ktx.applyPreviewRatio
 import app.grapheneos.camera.notifier.SensorOrientationChangeNotifier
 import app.grapheneos.camera.ui.BottomTabLayout
+import app.grapheneos.camera.ui.FoldTabMode
+import app.grapheneos.camera.ui.CameraShortcutMode
+import app.grapheneos.camera.ui.ModeTabAction
 import app.grapheneos.camera.ui.CountDownTimerUI
 import app.grapheneos.camera.ui.CustomGrid
 import app.grapheneos.camera.ui.QROverlay
@@ -106,7 +116,6 @@ import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.zxing.BarcodeFormat
-import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -130,6 +139,146 @@ open class MainActivity : AppCompatActivity(),
         get() = applicationContext as App
 
     private lateinit var binding: ActivityMainBinding
+    private var restoreModeOnFirstResume = false
+    private var integratedDual: IntegratedDualController? = null
+    internal val integratedDualMode: CameraShortcutMode?
+        get() = integratedDual?.mode
+
+    /** Exactly one selected strip mode. CAMERA/PANORAMA are only the backing CameraX
+     * pipelines for the Dual/360° modes and must not steal their tab selection. */
+    internal fun activeModeTabTag(): Any {
+        integratedDualMode?.let { return it }
+        if (camConfig.currentMode == CameraMode.PANORAMA && isPanorama360Selected())
+            return CameraShortcutMode.PANORAMA_360
+        return foldSelectedMode ?: camConfig.currentMode
+    }
+
+    internal fun isIntegratedDualActive(): Boolean = integratedDual?.active == true
+    internal fun dualSettingsController(): IntegratedDualController? = integratedDual?.takeIf { it.active }
+    internal fun isIntegratedDualRecording(): Boolean = integratedDual?.recordingActive == true
+    internal fun leaveIntegratedDualForModeChange(restoreCamera: Boolean = false) {
+        integratedDual?.exit(restoreCamera)
+    }
+    internal fun openDualGallery() { openGallery() }
+
+    private var rearSelfieController: RearDisplaySelfieController? = null
+    private var portraitLiveController: PortraitLiveController? = null
+    private var proModeController: ProCameraModule? = null
+
+    internal fun onProCameraBound() { proModeController?.onCameraBound() }
+    internal fun onProAnalysisBindFailure(): Boolean =
+        proModeController?.disableAnalysisAfterBindFailure() == true
+    internal fun captureProBracketIfEnabled(): Boolean = proModeController?.tryStartBracket() == true
+    internal fun onProImageSaved() { proModeController?.onPictureSaved() }
+    internal fun onProImageFailed() { proModeController?.onPictureFailed() }
+    internal fun proImagePrefix(): String? = proModeController?.nextImagePrefix()
+    internal fun onProModeChanged() { proModeController?.onModeChanged() }
+    internal fun proAnalysisUseCase(): androidx.camera.core.ImageAnalysis? =
+        proModeController?.createAnalysis()
+
+    internal fun panoramaAnalysisUseCase(): androidx.camera.core.ImageAnalysis? =
+        if (::panoramaCapturer.isInitialized) panoramaCapturer.createAnalysis() else null
+    internal fun onPanoramaAnalysisBindFailure(): Boolean =
+        ::panoramaCapturer.isInitialized && panoramaCapturer.disableAnalysisAfterBindFailure()
+
+    private var foldRearSupported = false
+    private var foldDualSupported = false
+    internal var foldSelectedMode: FoldTabMode? = null
+        private set
+
+    internal fun availableFoldTabModes(): List<FoldTabMode> = buildList {
+        if (foldDualSupported) add(FoldTabMode.DUAL)
+        if (foldRearSupported) add(FoldTabMode.REAR)
+    }
+
+    internal fun updateFoldTabState(
+        rearSupported: Boolean, rearChecked: Boolean,
+        dualSupported: Boolean, dualChecked: Boolean,
+    ) {
+        val newSelection = when {
+            rearChecked -> FoldTabMode.REAR
+            dualChecked -> FoldTabMode.DUAL
+            else -> null
+        }
+        val capabilitiesChanged = foldRearSupported != rearSupported || foldDualSupported != dualSupported
+        val selectionChanged = foldSelectedMode != newSelection
+        foldRearSupported = rearSupported
+        foldDualSupported = dualSupported
+        foldSelectedMode = newSelection
+        if (capabilitiesChanged) {
+            tabLayout.post {
+                if (!isFinishing && !isDestroyed) camConfig.refreshFoldModeTabs()
+            }
+        } else if (selectionChanged && tabLayout.tabCount > 0) {
+            // Fold capability callbacks can arrive AFTER we enter a concurrent Dual
+            // session. Never let an asynchronous fold-state change move its tab
+            // back to CAMERA (or another unrelated position).
+            val target = tabLayout.getTabForTag(activeModeTabTag())
+                ?: tabLayout.getTabForAction(ModeTabAction.MORE)
+            target?.let { tabLayout.goToTab(it) }
+        }
+    }
+    internal fun foldSecondaryPreviewView(): PreviewView? = rearSelfieController?.secondaryPreviewView
+    internal fun onFoldSecondaryPreviewBindFailure() { rearSelfieController?.onPreviewBindFailed() }
+    internal fun closeFoldDualForModeChange() { rearSelfieController?.stopDualForModeChange() }
+
+    internal fun openCameraShortcut(shortcut: CameraShortcutMode) {
+        when (shortcut) {
+            CameraShortcutMode.DUAL_PHOTO -> openDualPhotoFromMore()
+            CameraShortcutMode.DUAL_VIDEO -> openDualVideoFromMore()
+            CameraShortcutMode.PANORAMA_360 -> openPanorama360FromMore()
+        }
+    }
+
+    /** Dual modes run INSIDE MainActivity; they never start a nested camera Activity. */
+    internal fun openDualPhotoFromMore() = enterIntegratedDual(CameraShortcutMode.DUAL_PHOTO)
+    internal fun openDualVideoFromMore() = enterIntegratedDual(CameraShortcutMode.DUAL_VIDEO)
+
+    private fun enterIntegratedDual(mode: CameraShortcutMode) {
+        if (this is SecureActivity) { showMessage(R.string.dual_secure_unavailable); return }
+        if (videoCapturer.isRecording || isIntegratedDualRecording() || isIntervalCaptureBusy() ||
+            (::panoramaCapturer.isInitialized && panoramaCapturer.isCaptureInProgress)) {
+            showMessage(R.string.dual_busy); return
+        }
+        // Do not keep the Fold rear-display controller alive alongside concurrent cameras.
+        when (foldSelectedMode) {
+            FoldTabMode.DUAL -> rearSelfieController?.toggleDualPreview()
+            FoldTabMode.REAR -> rearSelfieController?.toggleRearSelfie()
+            null -> Unit
+        }
+        if (camConfig.currentMode != CameraMode.CAMERA) camConfig.switchMode(CameraMode.CAMERA)
+        if (integratedDual == null) integratedDual = IntegratedDualController(this)
+        integratedDual?.enter(mode)
+        resetAutoSleep()
+    }
+
+    internal fun openPanorama360FromMore() {
+        if (isIntegratedDualRecording()) { showMessage(R.string.dual_busy); return }
+        leaveIntegratedDualForModeChange()
+        if (this is SecureActivity) { showMessage(getString(R.string.dual_secure_unavailable)); return }
+        if (videoCapturer.isRecording || isIntegratedDualRecording() || isIntervalCaptureBusy()) {
+            showMessage(getString(R.string.dual_busy)); return
+        }
+        if (camConfig.currentMode != CameraMode.PANORAMA)
+            camConfig.switchMode(CameraMode.PANORAMA)
+        if (!panoramaCapturer.configureFullCircle(true)) {
+            showMessage("Finish the current panorama before changing 180° / 360°")
+        } else {
+            camConfig.refreshFoldModeTabs()
+            showMessage("360° panorama — rotate all the way around")
+        }
+    }
+
+    /** Open a hidden fold feature from More without putting its tab back on the strip. */
+    internal fun openFoldModeFromMore(mode: FoldTabMode) {
+        if (videoCapturer.isRecording || isIntegratedDualRecording() || isIntervalCaptureBusy()) return
+        leaveIntegratedDualForModeChange()
+        if (camConfig.currentMode != CameraMode.CAMERA) camConfig.switchMode(CameraMode.CAMERA)
+        when (mode) {
+            FoldTabMode.DUAL -> if (foldSelectedMode != mode) rearSelfieController?.toggleDualPreview()
+            FoldTabMode.REAR -> if (foldSelectedMode != mode) rearSelfieController?.toggleRearSelfie()
+        }
+    }
 
     private val cameraPermission = arrayOf(Manifest.permission.CAMERA)
 
@@ -173,6 +322,34 @@ open class MainActivity : AppCompatActivity(),
 
     lateinit var imageCapturer: ImageCapturer
     lateinit var videoCapturer: VideoCapturer
+    private lateinit var burstCapturer: BurstModule
+    private lateinit var panoramaCapturer: PanoramaCapturer
+    private lateinit var intervalCapturer: IntervalModule
+
+    fun isIntervalCaptureBusy(): Boolean =
+        ::intervalCapturer.isInitialized && intervalCapturer.isBusy
+
+    private val continueBurstCapture = Runnable {
+        if (::burstCapturer.isInitialized) burstCapturer.enableContinuous()
+    }
+
+    internal fun isPanorama360Selected(): Boolean =
+        ::panoramaCapturer.isInitialized && panoramaCapturer.isFullCircleSelected
+
+    fun stopPanoramaCapture() {
+        if (::panoramaCapturer.isInitialized) panoramaCapturer.onModeExit()
+    }
+
+    fun showPanoramaGuide() {
+        if (::panoramaCapturer.isInitialized) panoramaCapturer.onModeEnter()
+    }
+
+    fun stopBurstCapture(modeChanged: Boolean = false) {
+        if (::captureButton.isInitialized) captureButton.removeCallbacks(continueBurstCapture)
+        if (::burstCapturer.isInitialized) {
+            if (modeChanged) burstCapturer.onModeExit() else burstCapturer.stop()
+        }
+    }
 
     lateinit var flipCameraCircle: View
     lateinit var cancelButtonView: ImageView
@@ -234,6 +411,8 @@ open class MainActivity : AppCompatActivity(),
     lateinit var muteToggle: ShapeableImageView
 
     private var bottomNavigationBarPadding: Int = 0
+    private var regularModeTabsBottomMargin: Int? = null
+    private lateinit var modeEditorBackCallback: OnBackPressedCallback
 
     private var shouldGyroVibrate = true
     private var hasGyroVibrated = false
@@ -326,24 +505,6 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
-    // Used to request permission from the user
-    var dirPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
-    { result ->
-
-        val data: Uri? = result.data?.data
-
-        if (data?.encodedPath != null) {
-            val file = File(data.encodedPath!!)
-            if (file.exists()) {
-                showMessage(getString(R.string.file_already_exists, file.absolutePath))
-            } else {
-                showMessage(getString(R.string.file_does_not_exist, data.encodedPath))
-            }
-        }
-
-        Log.i(TAG, "Selected location: ${data?.encodedPath!!}")
-    }
-
     private fun showAudioPermissionDeniedDialog(onDisableAudio: () -> Unit = {}) {
         val builder = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.audio_permission_dialog_title)
@@ -377,10 +538,7 @@ open class MainActivity : AppCompatActivity(),
         val lastFrame = lastFrame
         if (lastFrame == null || this is CaptureActivity) return
 
-        // The still is of the camera being left behind, and the box under it takes the new camera's
-        // aspect ratio partway through the switch. Cropping keeps it covering that box; the layout's
-        // fitStart, which is there for the captured photo CaptureActivity shows in this same view,
-        // would leave a bar down the side of the preview until the new camera streams.
+        // Crop the cached preview during the camera transition to cover the new viewport.
         mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
         setBlurBitmapCompat(mainOverlay, lastFrame)
         settingsIcon.visibility = View.INVISIBLE
@@ -412,10 +570,7 @@ open class MainActivity : AppCompatActivity(),
         lastFrame = previewView.bitmap
     }
 
-    // Starts a copy of the preview for [updateLastFrame] to pick up. previewView.bitmap blocks the
-    // caller on a GPU readback for about a tenth of a second, and startCamera() reads it at the
-    // point where it can least afford to block; the same pixels copied asynchronously cost the main
-    // thread nothing, as long as the copy is started early enough.
+    // Copy the preview frame off the UI thread before switching cameras.
     fun prefetchLastFrame() {
         if (frameCopyPending || hasFreshPrefetch()) return
         if (previewView.width == 0 || previewView.height == 0) return
@@ -486,10 +641,7 @@ open class MainActivity : AppCompatActivity(),
         return HandlerThread("frame-copy").apply { start(); frameCopyThread = this }.looper
     }
 
-    // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
-    // handed a gesture once the scroll view has taken it back off the tab -- by which point a
-    // switch started by a plain tap has already happened. The freshness window keeps a touch that
-    // switches nothing from costing more than one copy every couple of seconds.
+    // Handle the gesture at the parent because tabs consume the initial touch event.
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             prefetchLastFrame()
@@ -565,30 +717,55 @@ open class MainActivity : AppCompatActivity(),
         return duration != 0f && transition != 0f
     }
 
+    private val galleryPermissionLauncher = registerForActivityResult(RequestMultiplePermissions()) {
+        launchGallery()
+    }
+
+    private fun galleryReadPermissions(): Array<String> = when {
+        Build.VERSION.SDK_INT >= 34 -> arrayOf(
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.READ_MEDIA_VIDEO,
+            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+        )
+        Build.VERSION.SDK_INT >= 33 -> arrayOf(
+            Manifest.permission.READ_MEDIA_IMAGES,
+            Manifest.permission.READ_MEDIA_VIDEO
+        )
+        else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+
     private fun openGallery() {
         check(this !is CaptureActivity)
+        if (this !is SecureMainActivity) {
+            val permissions = galleryReadPermissions()
+            if (permissions.none { ContextCompat.checkSelfPermission(this, it) ==
+                    PackageManager.PERMISSION_GRANTED }) {
+                galleryPermissionLauncher.launch(permissions)
+                return
+            }
+        }
+        launchGallery()
+    }
 
+    private fun launchGallery() {
         Intent(this, InAppGallery::class.java).let {
             if (this is SecureMainActivity) {
                 it.putExtra(InAppGallery.INTENT_KEY_SECURE_MODE, true)
-
                 val list = capturedItems
                 if (list.isEmpty()) {
                     showMessage(R.string.no_image)
                     return
                 }
-                it.putParcelableArrayListExtra(InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS, list)
+                it.putParcelableArrayListExtra(
+                    InAppGallery.INTENT_KEY_LIST_OF_SECURE_MODE_CAPTURED_ITEMS, list)
             } else {
                 it.putExtra(InAppGallery.INTENT_KEY_VIDEO_ONLY_MODE, requiresVideoModeOnly)
             }
-
-            if (isThumbnailLoaded) { // indicates that last captured item is accessible
+            if (isThumbnailLoaded) {
                 it.putExtra(InAppGallery.INTENT_KEY_LAST_CAPTURED_ITEM, camConfig.lastCapturedItem)
             }
-
             startActivity(it)
         }
-
     }
 
     private fun hasCameraPermission(): Boolean {
@@ -678,10 +855,7 @@ open class MainActivity : AppCompatActivity(),
             KeyEvent.KEYCODE_VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_CAMERA -> {
-                // performClick() ignores both, so check them: a key may only do what a tap could
-                if (captureButton.isShown && captureButton.isEnabled) {
-                    captureButton.performClick()
-                }
+                captureButton.performClick()
             }
             KeyEvent.KEYCODE_FOCUS -> {
                 // cancel any manual focus
@@ -708,6 +882,12 @@ open class MainActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
+        // Restore the last chosen mode only on a fresh, normal app launch. Returning from
+        // Settings, the gallery or a permission prompt must not unexpectedly change modes.
+        if (restoreModeOnFirstResume) {
+            restoreModeOnFirstResume = false
+            camConfig.restoreLastUsedMode()
+        }
         resumeOrientationSensor()
         // Check camera permission again if the user switches back to the app (maybe
         // after enabling/disabling the camera permission in Settings)
@@ -738,6 +918,13 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
         }
+        if (::intervalCapturer.isInitialized) intervalCapturer.offerRecovery()
+        rearSelfieController?.onActivityResumed()
+        portraitLiveController?.start()
+        integratedDual?.onResume()
+        if (::panoramaCapturer.isInitialized && camConfig.currentMode == CameraMode.PANORAMA) {
+            panoramaCapturer.onModeEnter()
+        }
     }
 
     val requiresVideoModeOnly: Boolean
@@ -745,7 +932,21 @@ open class MainActivity : AppCompatActivity(),
             return this is VideoOnlyActivity || this is VideoCaptureActivity
         }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 9132 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+            integratedDual?.beginVideoAfterPermission()
+    }
+
     override fun onPause() {
+        integratedDual?.onPause()
+        stopBurstCapture()
+        stopPanoramaCapture()
+        if (::intervalCapturer.isInitialized) intervalCapturer.stopAndSave()
+        portraitLiveController?.stop()
+        rearSelfieController?.onActivityPaused()
         super.onPause()
 
         // Leaving a mode switch waiting on an animation that will never finish would strand the
@@ -779,22 +980,61 @@ open class MainActivity : AppCompatActivity(),
         gestureDetector = GestureDetector(this, this)
 
         camConfig = CamConfig(this)
+        restoreModeOnFirstResume = savedInstanceState == null && javaClass == MainActivity::class.java
         cameraControl = CameraControl(camConfig)
         mainOverlay = binding.mainOverlay
         imageCapturer = ImageCapturer(this)
         videoCapturer = VideoCapturer(this)
+        burstCapturer = BurstModule(this)
+        panoramaCapturer = PanoramaCapturer(this)
+        intervalCapturer = IntervalModule(this)
         thirdOption = binding.thirdOption
         previewLoader = binding.previewLoading
         imagePreview = binding.imagePreview
         previewView = binding.preview
         previewView.scaleType = PreviewView.ScaleType.FIT_START
         previewContainer = binding.previewContainer
+        if (javaClass == MainActivity::class.java) proModeController = ProCameraModule(this)
         bottomOverlay = binding.bottomOverlay
+        portraitLiveController = PortraitLiveController(
+            this, previewView, binding.portraitLiveOverlay,
+            binding.portraitBlurControls, binding.portraitBlurSlider,
+            binding.portraitBlurLabel,
+        )
         scaleGestureDetector = ScaleGestureDetector(this, this)
 
         tabLayout = binding.cameraModeTabs
+        binding.modeEditorSaveButton.setOnClickListener { tabLayout.setModeEditing(false) }
+        binding.modeEditorScrollBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar:SeekBar, progress:Int, fromUser:Boolean) {
+                if (fromUser) tabLayout.scrollEditorToFraction(progress/1000f)
+            }
+            override fun onStartTrackingTouch(seekBar:SeekBar) {}
+            override fun onStopTrackingTouch(seekBar:SeekBar) {}
+        })
+        tabLayout.onEditorScrollChanged={ fraction ->
+            if (!binding.modeEditorScrollBar.isPressed)
+                binding.modeEditorScrollBar.progress=(fraction*1000).roundToInt().coerceIn(0,1000)
+        }
+        tabLayout.onEditorSelectionChanged={ selection ->
+            binding.modeEditorSelection.text=if (selection==null) "Scroll to browse modes" else
+                getString(R.string.mode_tab_selected, when(selection) {
+                    is CameraMode -> getString(selection.uiName)
+                    FoldTabMode.DUAL -> "DUAL SCREEN"
+                    FoldTabMode.REAR -> "REAR SELFIE"
+                    CameraShortcutMode.DUAL_PHOTO -> "DUAL PHOTO"
+                    CameraShortcutMode.DUAL_VIDEO -> "DUAL VIDEO"
+                    CameraShortcutMode.PANORAMA_360 -> "PANORAMA 360°"
+                    else -> selection.toString()
+                }) + "   ·   + Paste here"
+        }
+        modeEditorBackCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() { tabLayout.setModeEditing(false) }
+        }
+        onBackPressedDispatcher.addCallback(this, modeEditorBackCallback)
 
         tabLayout.setOnTouchListener { _, motionEvent ->
+            if (tabLayout.isEditingModes) return@setOnTouchListener true
             if (motionEvent.action == MotionEvent.ACTION_UP) {
                 val tab = tabLayout.getTabAtX(tabLayout.scrollX)
                 finalizeMode(tab)
@@ -846,12 +1086,14 @@ open class MainActivity : AppCompatActivity(),
             true
         }
         flipCameraCircle.setOnClickListener {
+            if (isIntegratedDualActive()) { integratedDual?.toggleSplit(); return@setOnClickListener }
             resetAutoSleep()
             if (camConfig.isQRMode) {
                 camConfig.scanAllCodes = !camConfig.scanAllCodes
                 return@setOnClickListener
             }
 
+            if (isIntervalCaptureBusy()) return@setOnClickListener
             if (videoCapturer.isRecording) {
                 videoCapturer.isPaused = !videoCapturer.isPaused
                 return@setOnClickListener
@@ -880,16 +1122,19 @@ open class MainActivity : AppCompatActivity(),
         }
         thirdCircle = binding.thirdCircle
         thirdCircle.setOnClickListener {
+            if (isIntegratedDualActive()) { integratedDual?.rightButton(); return@setOnClickListener }
             resetAutoSleep()
-            if (videoCapturer.isRecording) {
+            if (videoCapturer.isRecording && camConfig.currentMode != CameraMode.SLOW_MOTION) {
                 imageCapturer.takePicture()
-            } else {
+            } else if (!videoCapturer.isRecording && !isIntervalCaptureBusy()) {
                 openGallery()
                 Log.i(TAG, "Attempting to open gallery...")
             }
         }
 
         thirdCircle.setOnLongClickListener {
+            if (isIntegratedDualActive()) { integratedDual?.rightButton(); return@setOnLongClickListener true }
+            if (isIntervalCaptureBusy()) return@setOnLongClickListener true
             if (videoCapturer.isRecording) {
                 imageCapturer.takePicture()
             } else {
@@ -904,11 +1149,25 @@ open class MainActivity : AppCompatActivity(),
         captureButton.setOnClickListener {
             resetAutoSleep()
 
+            if (isIntegratedDualActive()) {
+                captureHaptic()
+                integratedDual?.shutter()
+                return@setOnClickListener
+            }
             // A mode the strip is still settling into has not reached the camera yet, and this
             // would otherwise capture in the mode being left behind.
             tabLayout.settleNow()
 
-            if (camConfig.isVideoMode) {
+            if (!camConfig.isQRMode) captureHaptic()
+
+            if (camConfig.currentMode == CameraMode.HYPERLAPSE ||
+                camConfig.currentMode == CameraMode.TIMELAPSE_PHOTO) {
+                intervalCapturer.toggle()
+            } else if (camConfig.currentMode == CameraMode.PANORAMA) {
+                panoramaCapturer.toggle()
+            } else if (camConfig.currentMode == CameraMode.BURST) {
+                burstCapturer.takeSingle()
+            } else if (camConfig.isVideoMode) {
                 if (videoCapturer.isRecording) {
                     videoCapturer.stopRecording()
                 } else {
@@ -922,6 +1181,7 @@ open class MainActivity : AppCompatActivity(),
                     setCaptureButtonIcon(R.drawable.torch_off_button, R.string.turn_torch_on)
                 }
             } else {
+                if (captureProBracketIfEnabled()) return@setOnClickListener
                 if (timerDuration == 0) {
                     imageCapturer.takePicture()
                 } else {
@@ -932,6 +1192,35 @@ open class MainActivity : AppCompatActivity(),
                     }
                 }
             }
+        }
+
+        captureButton.setOnLongClickListener {
+            if (isIntervalCaptureBusy()) {
+                intervalCapturer.confirmDiscard()
+                true
+            } else false
+        }
+
+        captureButton.setOnTouchListener { _, event ->
+            if (camConfig.currentMode != CameraMode.BURST) return@setOnTouchListener false
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    resetAutoSleep()
+                    tabLayout.settleNow()
+                    burstCapturer.start()
+                    captureButton.postDelayed(continueBurstCapture, 200L)
+                }
+                MotionEvent.ACTION_UP -> {
+                    captureButton.removeCallbacks(continueBurstCapture)
+                    captureButton.performClick()
+                    burstCapturer.stop()
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    captureButton.removeCallbacks(continueBurstCapture)
+                    burstCapturer.stop()
+                }
+            }
+            true
         }
 
         cancelButtonView = binding.cancelButton
@@ -951,6 +1240,7 @@ open class MainActivity : AppCompatActivity(),
         threeButtons = binding.threeButtons
         settingsIcon = binding.settingsOption
         settingsIcon.setOnClickListener {
+            if (isIntervalCaptureBusy()) return@setOnClickListener
             if (!camConfig.isQRMode)
                 settingsDialog.show()
         }
@@ -994,6 +1284,9 @@ open class MainActivity : AppCompatActivity(),
         previewGrid.setMainActivity(this)
 
         rootView = binding.root
+        rootView.addOnLayoutChangeListener { _, left, _, right, _, oldLeft, _, oldRight, _ ->
+            if (right - left != oldRight - oldLeft) repositionTabLayout()
+        }
 
         mainFrame = binding.mainFrame
 
@@ -1018,6 +1311,7 @@ open class MainActivity : AppCompatActivity(),
             zoomBarPanel.setPadding(0, 0, 0, insets.bottom)
             exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
             bottomNavigationBarPadding = insets.bottom
+            if (tabLayout.isEditingModes) updateModeEditorLayout() else repositionTabLayout()
 
             if (insets.top != 0 && !isInsetSet) {
                 mainFrame.layoutParams =
@@ -1069,6 +1363,30 @@ open class MainActivity : AppCompatActivity(),
 
         val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
         settingsDialog = SettingsDialog(this, themedContext)
+
+        // The foldable display controls belong to the settings panel, never to the viewfinder.
+        // Exclude intent capture and secure/lockscreen camera activities.
+        if (javaClass == MainActivity::class.java) {
+            rearSelfieController = RearDisplaySelfieController(this) {
+                when {
+                    camConfig.isQRMode -> {
+                        showMessage("Switch to Camera mode first")
+                        false
+                    }
+                    videoCapturer.isRecording || isIntervalCaptureBusy() -> {
+                        showMessage("Stop recording first")
+                        false
+                    }
+                    else -> {
+                        if (camConfig.lensFacing != CameraSelector.LENS_FACING_BACK) {
+                            camConfig.toggleCameraSelector()
+                        }
+                        true
+                    }
+                }
+            }
+            // Controls moved to the camera mode strip.
+        }
 
         SystemSettingsObserver(lifecycle,Settings.System.ACCELEROMETER_ROTATION,this) {
             forceUpdateOrientationSensor()
@@ -1124,6 +1442,7 @@ open class MainActivity : AppCompatActivity(),
 
         muteToggle = binding.muteToggle
         muteToggle.setOnClickListener {
+            if (isIntegratedDualActive()) { integratedDual?.toggleMic(); return@setOnClickListener }
             if (videoCapturer.isMuted) {
                 videoCapturer.unmuteRecording()
                 setMuteToggleState(muted = false)
@@ -1138,7 +1457,7 @@ open class MainActivity : AppCompatActivity(),
 
     private fun repositionTabLayout() {
 
-        threeButtons.visibility = View.VISIBLE
+        threeButtons.visibility = if (tabLayout.isEditingModes) View.INVISIBLE else View.VISIBLE
 
         tabLayout.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
@@ -1161,22 +1480,30 @@ open class MainActivity : AppCompatActivity(),
                     val shouldSnapAboveBottomNav = extraHeight169 < bottomNavigationBarPadding
                             || extraHeight169 >= (threeButtons.height + tabLayout.height + tabLayout.marginTop)
 
-                    tabLayout.layoutParams =
-                        (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
-
-                            it.setMargins(
-                                it.leftMargin,
-                                it.topMargin,
-                                it.rightMargin,
-                                if (shouldSnapAboveBottomNav) {
-                                    bottomNavigationBarPadding
-                                } else {
-                                    extraHeight169
-                                }
-                            )
-
-                            it
+                    val newMargin = if (shouldSnapAboveBottomNav) {
+                        bottomNavigationBarPadding
+                    } else {
+                        extraHeight169
+                    }
+                    // Preserve the original compact layout and its capture controls.
+                    // Only the expanded display needs a persistent black footer and
+                    // extra spacing above Android gesture navigation.
+                    val expanded = rootView.width / resources.displayMetrics.density >= 520f
+                    binding.unfoldedControlsBackground.visibility =
+                        if (expanded) View.VISIBLE else View.GONE
+                    if (tabLayout.isEditingModes) {
+                        updateModeEditorLayout()
+                    } else {
+                        val targetMargin = if (expanded) {
+                            bottomNavigationBarPadding +
+                                (24f * resources.displayMetrics.density).roundToInt()
+                        } else {
+                            newMargin
                         }
+                        tabLayout.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                            if (bottomMargin != targetMargin) bottomMargin = targetMargin
+                        }
+                    }
 
                     return true
                 }
@@ -1184,13 +1511,57 @@ open class MainActivity : AppCompatActivity(),
             })
     }
 
+    /** Keep the editor action clear of the system gesture bar on both foldable displays. */
+    private fun updateModeEditorLayout() {
+        val density = resources.displayMetrics.density
+        val gestureSpace = bottomNavigationBarPadding
+        val buttonMargin = gestureSpace + (16f * density).roundToInt()
+        binding.modeEditorSaveButton.updateLayoutParams<RelativeLayout.LayoutParams> {
+            bottomMargin = buttonMargin
+        }
+        binding.modeEditorScrollBar.updateLayoutParams<RelativeLayout.LayoutParams> {
+            bottomMargin = buttonMargin + (130f * density).roundToInt()
+        }
+        binding.modeEditorSelection.updateLayoutParams<RelativeLayout.LayoutParams> {
+            bottomMargin = buttonMargin + (161f * density).roundToInt()
+        }
+        tabLayout.updateLayoutParams<RelativeLayout.LayoutParams> {
+            bottomMargin = buttonMargin + (64f * density).roundToInt()
+        }
+    }
+
+    fun setModeEditorVisible(enabled: Boolean) {
+        if (enabled) {
+            regularModeTabsBottomMargin =
+                (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin
+        }
+        binding.modeEditorSaveButton.visibility = if (enabled) View.VISIBLE else View.GONE
+        binding.modeEditorScrollBar.visibility = if (enabled) View.VISIBLE else View.GONE
+        binding.modeEditorSelection.visibility = if (enabled) View.VISIBLE else View.GONE
+        threeButtons.visibility = if (enabled) View.INVISIBLE else View.VISIBLE
+        modeEditorBackCallback.isEnabled = enabled
+        if (enabled) {
+            updateModeEditorLayout()
+        } else {
+            regularModeTabsBottomMargin?.let { previousMargin ->
+                tabLayout.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = previousMargin
+                }
+            }
+            regularModeTabsBottomMargin = null
+        }
+    }
+
     fun finalizeMode(tab: TabLayout.Tab? = null) {
+        if (tabLayout.isEditingModes) return
 
         // The strip is untouchable during a recording but not while its start sound still plays, and
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
         // already have dragged the strip, so put it back on the mode the camera is really in.
-        if (videoCapturer.isRecording) {
-            tabLayout.getTabForMode(camConfig.currentMode)?.let {
+        if (videoCapturer.isRecording || isIntegratedDualRecording() || isIntervalCaptureBusy()) {
+            (integratedDualMode?.let { shortcut -> (0 until tabLayout.tabCount)
+                .mapNotNull(tabLayout::getTabAt).firstOrNull { it.tag == shortcut } }
+                ?: tabLayout.getTabForMode(camConfig.currentMode))?.let {
                 tabLayout.goToTab(it)
             }
             return
@@ -1198,19 +1569,60 @@ open class MainActivity : AppCompatActivity(),
 
         val selectedTab = tab ?: tabLayout.selectedTab
         if (selectedTab != null) {
-            val mode = selectedTab.tag as CameraMode
+            val dualShortcut = selectedTab.tag as? CameraShortcutMode
+            if (dualShortcut != null) {
+                openCameraShortcut(dualShortcut)
+                return
+            }
+            // Exit Dual before rebinding the ordinary camera. Re-fetch the Tab object:
+            // exit() rebuilds the tab strip and invalidates the originally touched Tab.
+            if (selectedTab.tag is ModeTabAction) return
+            val wasDual = isIntegratedDualActive()
+            if (wasDual) leaveIntegratedDualForModeChange(
+                restoreCamera = selectedTab.tag == camConfig.currentMode)
+            val targetTab = if (wasDual) (0 until tabLayout.tabCount)
+                .mapNotNull(tabLayout::getTabAt).firstOrNull { it.tag == selectedTab.tag }
+                ?: return else selectedTab
+            val foldMode = targetTab.tag as? FoldTabMode
+            if (foldMode != null) {
+                if (foldMode !in availableFoldTabModes() || rearSelfieController == null) {
+                    tabLayout.getTabForMode(camConfig.currentMode)?.let(tabLayout::goToTab)
+                    return
+                }
+                // Choose a fold function in the existing Camera pipeline, not a new CameraX mode.
+                if (camConfig.currentMode != CameraMode.CAMERA) camConfig.switchMode(CameraMode.CAMERA)
+                tabLayout.goToTab(targetTab) {
+                    when (foldMode) {
+                        FoldTabMode.DUAL -> rearSelfieController?.toggleDualPreview()
+                        FoldTabMode.REAR -> rearSelfieController?.toggleRearSelfie()
+                    }
+                }
+                resetAutoSleep()
+                return
+            }
+            val mode = targetTab.tag as? CameraMode ?: return
+            // A user explicitly choosing the ordinary PANORAMA tab exits the 360°
+            // variant selected from More. Switching via More does not call finalizeMode.
+            if (mode == CameraMode.PANORAMA && isPanorama360Selected()) {
+                panoramaCapturer.configureFullCircle(false)
+                // Refresh the label after the current tab gesture settles.
+                tabLayout.post { if (!tabLayout.isEditingModes) camConfig.refreshFoldModeTabs() }
+            }
+            // Exiting a fold tab via a standard mode must end the active fold session.
+            when (foldSelectedMode) {
+                FoldTabMode.DUAL -> if (mode == CameraMode.CAMERA) rearSelfieController?.toggleDualPreview()
+                FoldTabMode.REAR -> rearSelfieController?.toggleRearSelfie()
+                null -> Unit
+            }
 
-            // Blurred while the strip is still gliding, not once the camera has gone: the rebind
-            // holds the main thread for half a second, so a transition left to the stream state
-            // would only reach the screen after the wait it is there to explain. Guarded on the
-            // mode really changing, since nothing would rebind to take it back down again.
+            // Blur the previous preview during the camera rebind.
             if (mode != camConfig.currentMode) {
                 showPreviewTransition()
             }
 
             // switchMode() puts the strip on the mode the camera actually ended up in, which is a
             // different one when an extension fails to bind.
-            tabLayout.goToTab(selectedTab) {
+            tabLayout.goToTab(targetTab) {
                 if (mode != camConfig.currentMode) {
                     camConfig.switchMode(mode)
                 } else if (
@@ -1229,6 +1641,13 @@ open class MainActivity : AppCompatActivity(),
 
     /** Shows the pending self-timer duration on the capture button, where it applies at all. */
     fun updateSelfTimerBadge() {
+        if (camConfig.currentMode == CameraMode.BURST ||
+            camConfig.currentMode == CameraMode.PANORAMA ||
+            camConfig.currentMode == CameraMode.HYPERLAPSE ||
+            camConfig.currentMode == CameraMode.TIMELAPSE_PHOTO) {
+            cbText.visibility = View.INVISIBLE
+            return
+        }
         cbText.text = if (timerDuration == 0) "" else "${timerDuration}s"
         // isVideoMode covers the video-only activities too, whatever mode they are nominally in.
         val applies = timerDuration != 0 && !camConfig.isQRMode && !camConfig.isVideoMode
@@ -1388,6 +1807,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
+        if (isIntervalCaptureBusy()) return true
         scaleGestureDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
 
@@ -1409,10 +1829,16 @@ open class MainActivity : AppCompatActivity(),
             val x = event.x
             val y = event.y
 
-            val autoFocusPoint = previewView.meteringPointFactory.createPoint(x, y)
+            if (proModeController?.onPreviewTap(x, y) == true) return v.performClick()
+
+            val autoFocusPoint = previewView.meteringPointFactory.createPoint(
+                x, y, if (proModeController?.spotMeteringEnabled() == true) 0.08f else 0.15f)
             animateFocusRing(x, y)
 
             val focusBuilder = FocusMeteringAction.Builder(autoFocusPoint)
+            if (proModeController?.spotMeteringEnabled() == true) {
+                focusBuilder.addPoint(autoFocusPoint, FocusMeteringAction.FLAG_AE)
+            }
 
             if (!camConfig.isVideoMode) {
                 camConfig.mPlayer.playFocusStartSound()
@@ -1434,6 +1860,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onScale(detector: ScaleGestureDetector): Boolean {
+        if (isIntervalCaptureBusy()) return false
         isZooming = true
         val zoomState = camConfig.zoomState
         var scale = 1f
@@ -1445,7 +1872,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-        return true
+        return !isIntervalCaptureBusy()
     }
 
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
@@ -1479,11 +1906,12 @@ open class MainActivity : AppCompatActivity(),
             else -> Surface.ROTATION_0
         }
 
+        if (isIntervalCaptureBusy()) return
         camConfig.imageCapture?.targetRotation = tr
         camConfig.videoCapture?.targetRotation = tr
         camConfig.iAnalyzer?.targetRotation = tr
 
-        if (videoCapturer.isRecording) return
+        if (videoCapturer.isRecording || isIntervalCaptureBusy()) return
 
         var iconRotation = (360f - ((orientation - getRotation() + 360) % 360)) % 360
 
@@ -1595,7 +2023,7 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeBottom() {
-        if (isZooming || cdTimer.isRunning) return
+        if (isZooming || cdTimer.isRunning || isIntervalCaptureBusy()) return
         wasSwiping = true
         if (settingsDialog.isShowing) return
 
@@ -1611,8 +2039,9 @@ open class MainActivity : AppCompatActivity(),
     }
 
     private fun onSwipeRight() {
+        if (tabLayout.isEditingModes) return
 
-        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording)
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording || isIntervalCaptureBusy())
             return
 
         if (this is VideoOnlyActivity) return
@@ -1623,20 +2052,20 @@ open class MainActivity : AppCompatActivity(),
 
         val i = tabLayout.selectedTabPosition - 1
 
-        Log.i(TAG, "onSwipeRight $i")
         tabLayout.getTabAt(i)?.let {
             finalizeMode(it)
         }
     }
 
     private fun onSwipeTop() {
-        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording) return
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording || isIntervalCaptureBusy()) return
         wasSwiping = true
         settingsDialog.slideDialogUp()
     }
 
     private fun onSwipeLeft() {
-        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording) return
+        if (tabLayout.isEditingModes) return
+        if (isZooming || cdTimer.isRunning || videoCapturer.isRecording || isIntervalCaptureBusy()) return
 
         if (this is VideoOnlyActivity) return
 
@@ -1734,16 +2163,17 @@ open class MainActivity : AppCompatActivity(),
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
-        // The activity declares configChanges for orientation, so nothing else refreshes
-        // rotation-dependent state.
-        // The preview follows the window; the capture use cases follow the sensor and are updated
-        // by onOrientationChange.
+        // Update the preview and capture orientation after a display rotation.
         camConfig.preview?.targetRotation = previewView.display?.rotation ?: Surface.ROTATION_0
         camConfig.camera?.cameraInfo?.let {
             previewView.applyPreviewRatio(camConfig.aspectRatio, it)
         }
 
-        rootView.post { sensorNotifier?.notifyListeners() }
+        rootView.post {
+            sensorNotifier?.notifyListeners()
+            repositionTabLayout()
+        }
+        rearSelfieController?.onActivityWindowChanged()
     }
 
     private fun pauseOrientationSensor() {
@@ -1819,8 +2249,6 @@ open class MainActivity : AppCompatActivity(),
                 }
             }
 
-            Log.i(TAG, "zAngle: $zAngle")
-
             val lzAngle = when {
                 zAngle < -45 -> {
                     -45
@@ -1889,14 +2317,46 @@ open class MainActivity : AppCompatActivity(),
         }
     }
 
+    /** One short confirmation on a shutter press or a capture start/stop; no double taps. */
+    fun captureHaptic() {
+        if (!camConfig.captureHaptics) return
+        val vibrator = getSystemService(Vibrator::class.java) ?: return
+        if (!vibrator.hasVibrator()) return
+        try {
+            val tick = VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                vibrator.vibrate(tick, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_TOUCH))
+            } else {
+                vibrator.vibrate(tick)
+            }
+        } catch (_: RuntimeException) {
+            // Camera operation must never fail because a vibration service is unavailable.
+        }
+    }
+
     private fun vibrateDevice() {
         val vibrator = getSystemService(Vibrator::class.java)
         vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
     }
 
     override fun onDestroy() {
+        integratedDual?.onDestroy()
+        stopBurstCapture()
+        if (::intervalCapturer.isInitialized) intervalCapturer.dispose()
+        if (::panoramaCapturer.isInitialized) panoramaCapturer.close()
+        stopPanoramaCapture()
+        portraitLiveController?.stop()
+        portraitLiveController = null
+        proModeController?.dispose()
+        proModeController = null
+        // A fold transfer can recreate the Activity while Settings is visible.
+        // Never leave its Dialog window attached to the old Activity.
+        if (::settingsDialog.isInitialized && settingsDialog.isShowing) {
+            settingsDialog.dismiss()
+        }
+        rearSelfieController?.dispose()
+        rearSelfieController = null
         super.onDestroy()
-        camConfig.stopAwaitingCameraReturn()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         frameCopyThread?.quitSafely()
@@ -2005,101 +2465,50 @@ open class MainActivity : AppCompatActivity(),
 
     var isThumbnailLoaded = false
 
-    // The capture that the thumbnail shows
-    private var thumbnailItem: CapturedItem? = null
-
-    fun showThumbnail(item: CapturedItem?, bitmap: Bitmap?) {
-        imagePreview.setImageBitmap(bitmap)
-        thumbnailItem = if (bitmap != null) item else null
-    }
-
     fun updateThumbnail() {
         val item = camConfig.lastCapturedItem
         val preview = imagePreview
+        preview.setImageBitmap(null)
         isThumbnailLoaded = false
-
-        // The same capture keeps its thumbnail while it reloads, or it would flash empty on every
-        // return to this screen. Told apart by file, since items equal by name
-        val shownItem = thumbnailItem
-        if (item == null || shownItem == null ||
-            CapturedItems.fileKey(item.uri) != CapturedItems.fileKey(shownItem.uri)) {
-            showThumbnail(null, null)
-        }
 
         if (item == null) {
             return
         }
 
         val ctx = applicationContext
-        val side = preview.layoutParams.width
-        // What the gallery opened from here shows; a secure session shows only its own captures,
-        // told apart by file since items equal by name
-        val videosOnly = requiresVideoModeOnly
-        val sessionFiles = when (this) {
-            is SecureMainActivity -> capturedItems.mapTo(HashSet()) { CapturedItems.fileKey(it.uri) }
-            is SecureActivity -> emptySet()
-            else -> null
-        }
 
         thumbnailLoaderExecutor.executeIfAlive {
-            var shown: CapturedItem? = item
-            var replaced = false
-            var bitmap = loadThumbnail(ctx, item, side)
-            var listedEverywhere = true
+            var bitmap: Bitmap? = null
+            try {
+                val side = preview.layoutParams.width
 
-            // A file still there that fails to decode would otherwise be listed for on every resume
-            if (bitmap == null && !CapturedItems.isPresent(ctx, item)) {
-                val listing = try {
-                    CapturedItems.list(ctx)
-                } catch (_: InterruptedException) {
-                    return@executeIfAlive
-                }
-                // Deleted or moved away since, in the gallery or by another app
-                if (listing.lacks(item)) {
-                    shown = listing.files.filter {
-                        (sessionFiles == null || CapturedItems.fileKey(it.uri) in sessionFiles) &&
-                                (!videosOnly || it.type == ITEM_TYPE_VIDEO)
-                    }.maxByOrNull { it.dateString }
-                    // Possibly by a file of the same name, which equals it
-                    replaced = true
-                    bitmap = shown?.let { loadThumbnail(ctx, it, side) }
-                    // A location that could not be listed may hold a newer one
-                    listedEverywhere = listing.isComplete
-                }
-            }
+                if (item.type == ITEM_TYPE_VIDEO) {
+                    val origBitmap = getVideoThumbnail(ctx, item.uri)
+                    origBitmap?.let {
+                        val w = it.width.toDouble()
+                        val h = it.height.toDouble()
+                        val ratio = max(w / side, h / side)
 
-            mainExecutor.execute {
-                if (isStarted && camConfig.lastCapturedItem == item) {
-                    if (replaced) {
-                        val seesEveryItem = sessionFiles == null && !videosOnly && listedEverywhere
-                        camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
+                        bitmap = it.scale((w / ratio).toInt(), (h / ratio).toInt())
+                        origBitmap.recycle()
                     }
-                    showThumbnail(shown, bitmap)
-                    isThumbnailLoaded = bitmap != null
+                } else if (item.type == ITEM_TYPE_IMAGE) {
+                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
+                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "unable to update preview", e)
+            }
+
+            if (bitmap != null) {
+                mainExecutor.execute {
+                    if (isStarted && camConfig.lastCapturedItem == item) {
+                        preview.setImageBitmap(bitmap)
+                        isThumbnailLoaded = true
+                    }
                 }
             }
         }
-    }
-
-    private fun loadThumbnail(ctx: Context, item: CapturedItem, side: Int): Bitmap? {
-        try {
-            if (item.type == ITEM_TYPE_VIDEO) {
-                val origBitmap = getVideoThumbnail(ctx, item.uri) ?: return null
-                val w = origBitmap.width.toDouble()
-                val h = origBitmap.height.toDouble()
-                val ratio = max(w / side, h / side)
-
-                val bitmap = origBitmap.scale((w / ratio).toInt(), (h / ratio).toInt())
-                origBitmap.recycle()
-                return bitmap
-            } else if (item.type == ITEM_TYPE_IMAGE) {
-                val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
-                return ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
-            }
-        } catch (e: Exception) {
-            Log.d(TAG, "unable to update preview", e)
-        }
-        return null
     }
 
     open fun shouldShowCameraModeTabs() = true

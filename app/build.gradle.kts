@@ -1,3 +1,4 @@
+import java.security.MessageDigest
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -45,13 +46,14 @@ android {
     namespace = "app.grapheneos.camera"
 
     defaultConfig {
-        applicationId = "app.grapheneos.camera"
+        applicationId = "app.foldcamera"
         minSdk = 29
         targetSdk = 37
-        versionCode = 94
-        versionName = versionCode.toString()
+        versionCode = 150
+        versionName = "143.3.3"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Bundled native dependencies target ARM64.
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     buildTypes {
@@ -62,13 +64,11 @@ android {
             if (useKeystoreProperties) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            resValue("string", "app_name", "Camera")
+            resValue("string", "app_name", "Fold Camera")
         }
 
         getByName("debug") {
-            applicationIdSuffix = ".dev"
-            resValue("string", "app_name", "Camera d")
-            // isDebuggable = false
+            resValue("string", "app_name", "Fold Camera")
         }
 
         create("play") {
@@ -98,11 +98,41 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 
     implementation(libs.bundles.camerax)
+    implementation("androidx.window:window:1.5.1")
+    implementation("androidx.window:window-java:1.5.1")
 
     implementation(libs.zxing.core)
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.23.2")
+    // Official OpenCV Android AAR: native SIFT, matching and image processing.
+    implementation("org.opencv:opencv:4.13.0")
 
-    androidTestImplementation(libs.androidx.test.core.ktx)
-    androidTestImplementation(libs.androidx.test.ext.junit.ktx)
-    androidTestImplementation(libs.androidx.test.rules)
-    androidTestImplementation(libs.androidx.test.runner)
+}
+
+// Require the bundled, verified model weights for every application build.
+// Portrait inference runs entirely on the device.
+val portraitModels = mapOf(
+    "modnet_photographic_portrait_matting.onnx" to "07c308cf0fc7e6e8b2065a12ed7fc07e1de8febb7dc7839d7b7f15dd66584df9",
+    "depth_anything_v2_small_quantized.onnx" to "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d",
+)
+val verifyPortraitModels = tasks.register("verifyPortraitModels") {
+    doLast {
+        for ((fileName, expectedSha) in portraitModels) {
+            val model = file("src/main/assets/portrait/$fileName")
+            check(model.isFile) { "Missing bundled portrait model: $fileName" }
+            val digest = MessageDigest.getInstance("SHA-256")
+            model.inputStream().buffered().use { stream ->
+                val bytes = ByteArray(1024 * 1024)
+                while (true) {
+                    val count = stream.read(bytes)
+                    if (count < 0) break
+                    digest.update(bytes, 0, count)
+                }
+            }
+            val actual = digest.digest().joinToString("") { "%02x".format(it) }
+            check(actual == expectedSha) { "Model checksum mismatch: $fileName" }
+        }
+    }
+}
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(verifyPortraitModels)
 }
