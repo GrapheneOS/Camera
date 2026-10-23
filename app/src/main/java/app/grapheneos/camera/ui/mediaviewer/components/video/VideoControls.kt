@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,9 +52,11 @@ private val SEEK_BAR_TRACK_HEIGHT = 8.dp
 @Composable
 internal fun VideoControls(
     isPlaying: Boolean,
+    isMuted: Boolean,
     position: Duration,
     duration: Duration,
     onPlayPauseClick: () -> Unit,
+    onMuteClick: () -> Unit,
     onSeek: (Duration) -> Unit,
     onSeekFinished: () -> Unit,
     modifier: Modifier = Modifier,
@@ -76,9 +80,11 @@ internal fun VideoControls(
     ) {
         PlaybackRow(
             isPlaying = isPlaying,
+            isMuted = isMuted,
             position = position,
             duration = duration,
             onPlayPauseClick = onPlayPauseClick,
+            onMuteClick = onMuteClick,
         )
         Spacer(modifier = Modifier.height(SEEK_BAR_SPACING))
         SeekBar(
@@ -93,9 +99,11 @@ internal fun VideoControls(
 @Composable
 private fun PlaybackRow(
     isPlaying: Boolean,
+    isMuted: Boolean,
     position: Duration,
     duration: Duration,
     onPlayPauseClick: () -> Unit,
+    onMuteClick: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         PlayPauseButton(
@@ -107,6 +115,37 @@ private fun PlaybackRow(
             positionSeconds = position.inWholeSeconds,
             durationSeconds = duration.inWholeSeconds,
             modifier = Modifier.align(Alignment.Center),
+        )
+        MuteButton(
+            isMuted = isMuted,
+            onClick = onMuteClick,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
+    }
+}
+
+@Composable
+private fun MuteButton(
+    isMuted: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = when {
+                isMuted -> Icons.AutoMirrored.Filled.VolumeOff
+                else -> Icons.AutoMirrored.Filled.VolumeUp
+            },
+            contentDescription = stringResource(
+                when {
+                    isMuted -> R.string.unmute_audio
+                    else -> R.string.mute_audio
+                },
+            ),
+            tint = MaterialTheme.cameraColors.overlay,
         )
     }
 }
@@ -206,9 +245,11 @@ private fun VideoControlsPreview() {
     CameraPreviewTheme {
         VideoControls(
             isPlaying = true,
+            isMuted = false,
             position = 5.seconds,
             duration = 12.seconds,
             onPlayPauseClick = {},
+            onMuteClick = {},
             onSeek = {},
             onSeekFinished = {},
         )

@@ -6,6 +6,7 @@ import kotlin.time.Duration
 @Immutable
 internal data class VideoPlayerUiState(
     val isPlaying: Boolean = false,
+    val isMuted: Boolean = false,
     val position: Duration = Duration.ZERO,
     val duration: Duration = Duration.ZERO,
     val aspectRatio: Float? = null,
