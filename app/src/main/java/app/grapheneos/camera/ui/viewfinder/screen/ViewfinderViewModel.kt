@@ -13,7 +13,6 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -50,7 +49,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -87,7 +85,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
     uiStateMapper: ViewfinderUiStateMapper,
     zoomUiStateMapper: ZoomUiStateMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewModel(),
     ViewfinderScreenModel {
 
@@ -145,19 +142,19 @@ class ViewfinderViewModel @AssistedInject constructor(
             stateHolder = stateHolder,
         )
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             cameraDelegate.cameraEvents.collect { event ->
                 onCameraEvent(event)
             }
         }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             captureDelegate.captureEvents.collect { event ->
                 onCaptureEvent(event)
             }
         }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             recordingDelegate.recordingEvents.collect { event ->
                 onRecordingEvent(event)
             }
@@ -637,10 +634,10 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun startResumedWork() {
         resumedWork?.cancel()
-        resumedWork = viewModelScope.launch(mainDispatcher) {
-            launch(mainDispatcher) { orientationDelegate.trackOrientation() }
-            launch(mainDispatcher) { locationDelegate.trackLocation() }
-            launch(mainDispatcher) { screenWakeDelegate.keepScreenAwake() }
+        resumedWork = viewModelScope.launch {
+            launch { orientationDelegate.trackOrientation() }
+            launch { locationDelegate.trackLocation() }
+            launch { screenWakeDelegate.keepScreenAwake() }
         }
     }
 

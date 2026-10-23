@@ -318,7 +318,6 @@ class CameraSettingsViewModelTest {
             changeStorageLocation = changeStorageLocation,
             revertToMediaStoreLocation = revertToMediaStoreLocation,
             uiStateMapper = CameraSettingsUiStateMapperImpl(),
-            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 

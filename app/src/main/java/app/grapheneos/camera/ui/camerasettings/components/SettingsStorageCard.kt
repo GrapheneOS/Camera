@@ -29,8 +29,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import app.grapheneos.camera.ui.components.motion.SETTLE_SPEC
-import app.grapheneos.camera.ui.components.motion.crossfadeResizing
+import app.grapheneos.camera.ui.core.animation.SETTLE_SPEC
+import app.grapheneos.camera.ui.core.animation.crossfadeResizing
 import app.grapheneos.camera.ui.core.preview.CameraPreviewColumn
 
 private const val TITLE_PLACEHOLDER_WIDTH = 0.4f
@@ -47,7 +47,7 @@ internal fun SettingsStorageCard(
     usedFraction: Float?,
     modifier: Modifier = Modifier,
     summary: String? = null,
-    shape: Shape = MaterialTheme.shapes.small,
+    shape: Shape = MaterialTheme.shapes.large,
 ) {
     val progress by animateFloatAsState(
         targetValue = usedFraction ?: 0f,

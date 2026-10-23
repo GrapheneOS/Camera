@@ -3,12 +3,10 @@ package app.grapheneos.camera.ui.mediaviewer.components.video
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -31,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.common.components.bottomBar
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.theme.TABULAR_FIGURES
 import app.grapheneos.camera.ui.core.theme.cameraColors
@@ -48,7 +47,6 @@ private val SEEK_BAR_SPACING = 20.dp
 private val SEEK_BAR_INSET = 10.dp
 private val SEEK_BAR_TRACK_HEIGHT = 8.dp
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun VideoControls(
     isPlaying: Boolean,
@@ -68,7 +66,7 @@ internal fun VideoControls(
         modifier = modifier
             .fillMaxWidth()
             .background(scrim)
-            .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
+            .windowInsetsPadding(WindowInsets.bottomBar)
             .padding(
                 start = CONTROLS_HORIZONTAL_PADDING,
                 top = CONTROLS_TOP_PADDING,

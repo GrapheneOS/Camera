@@ -88,7 +88,7 @@ internal fun SettingsClickableItem(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     isChanged: Boolean = false,
-    shape: Shape = MaterialTheme.shapes.small,
+    shape: Shape = MaterialTheme.shapes.large,
     trailing: @Composable (() -> Unit)? = null,
 ) {
     SettingsItemLayout(
@@ -121,7 +121,7 @@ internal fun SettingsSwitchItem(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     isChanged: Boolean = false,
-    shape: Shape = MaterialTheme.shapes.small,
+    shape: Shape = MaterialTheme.shapes.large,
 ) {
     SettingsItemLayout(
         title = title,

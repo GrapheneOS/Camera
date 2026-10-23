@@ -8,6 +8,7 @@ internal sealed interface GalleryPreview {
 
     data class Loaded(
         val image: ImageBitmap,
+        val isHdr: Boolean = false,
     ) : GalleryPreview
 
     data object Unavailable : GalleryPreview

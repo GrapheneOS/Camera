@@ -1,36 +1,46 @@
 package app.grapheneos.camera.ui.gallery.screen
 
 import android.app.Activity
-import android.widget.Toast
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.LocalActivity
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.core.net.toUri
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.GeoCoordinates
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.editCapturedItem
 import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
+import app.grapheneos.camera.ui.mediaviewer.navigation.useCapturedItemAs
 
 @Composable
 internal fun rememberGalleryEffectHandler(
     videoPlayerLauncher: VideoPlayerLauncher,
     systemGalleryLauncher: SystemGalleryLauncher,
-    onShowMessage: (Int) -> Unit,
+    clipboardManager: ClipboardManager,
+    onShowMessage: (GalleryMessage) -> Unit,
 ): GalleryEffectHandler {
     val currentOnShowMessage by rememberUpdatedState(onShowMessage)
     val activity = requireNotNull(LocalActivity.current) {
         "The gallery needs a hosting activity"
     }
 
-    return remember(activity, videoPlayerLauncher, systemGalleryLauncher) {
+    return remember(activity, videoPlayerLauncher, systemGalleryLauncher, clipboardManager) {
         GalleryEffectHandlerImpl(
             activity = activity,
             videoPlayerLauncher = videoPlayerLauncher,
             systemGalleryLauncher = systemGalleryLauncher,
+            clipboardManager = clipboardManager,
             showMessage = { message -> currentOnShowMessage(message) },
         )
     }
@@ -44,20 +54,29 @@ internal class GalleryEffectHandlerImpl(
     private val activity: Activity,
     private val videoPlayerLauncher: VideoPlayerLauncher,
     private val systemGalleryLauncher: SystemGalleryLauncher,
-    private val showMessage: (Int) -> Unit,
+    private val clipboardManager: ClipboardManager,
+    private val showMessage: (GalleryMessage) -> Unit,
 ) : GalleryEffectHandler {
 
     override fun handle(effect: Effect) {
         when (effect) {
-            is Effect.NothingToShow -> close(R.string.empty_gallery)
             is Effect.OpenVideo -> videoPlayerLauncher.open(activity, effect.uri)
-            is Effect.OpenSystemGallery -> systemGalleryLauncher.open(activity)
+
             is Effect.Edit -> edit(effect)
             is Effect.Share -> share(effect)
-            is Effect.ItemDeleted -> showMessage(R.string.deleted_successfully)
-            is Effect.LastItemDeleted -> close(R.string.existing_no_image)
-            is Effect.DeletionFailed -> showMessage(R.string.deleting_unexpected_error)
-            is Effect.DetailsUnavailable -> showMessage(R.string.unable_to_obtain_file_details)
+            is Effect.UseAs -> useAs(effect)
+            is Effect.OpenMap -> openMap(effect.location)
+            is Effect.OpenSystemGallery -> systemGalleryLauncher.open(activity)
+            is Effect.ShowInSystemGallery -> systemGalleryLauncher.openItem(
+                activity = activity,
+                item = effect.item,
+            )
+
+            is Effect.CopyText -> copy(effect.text)
+            is Effect.ItemDeleted -> showText(R.string.deleted_successfully)
+            is Effect.ItemTrashed -> showUndoableText(R.string.deleted_successfully)
+            is Effect.DeletionFailed -> showText(R.string.deleting_unexpected_error)
+            is Effect.RestoreFailed -> showText(R.string.restoring_unexpected_error)
         }
     }
 
@@ -68,7 +87,7 @@ internal class GalleryEffectHandlerImpl(
             useDefaultEditor = effect.usesDefaultEditor,
         )
 
-        error?.let(showMessage)
+        error?.let(::showText)
     }
 
     private fun share(effect: Effect.Share) {
@@ -77,17 +96,47 @@ internal class GalleryEffectHandlerImpl(
             item = effect.item,
         )
 
-        error?.let(showMessage)
+        error?.let(::showText)
     }
 
-    private fun close(@StringRes message: Int) {
-        Toast
-            .makeText(
-                activity.applicationContext,
-                message,
-                Toast.LENGTH_SHORT,
-            )
-            .show()
-        activity.finish()
+    private fun useAs(effect: Effect.UseAs) {
+        val error = useCapturedItemAs(
+            activity = activity,
+            item = effect.item,
+        )
+
+        error?.let(::showText)
+    }
+
+    private fun openMap(location: GeoCoordinates) {
+        val coordinates = "${location.latitude},${location.longitude}"
+        val intent = Intent(Intent.ACTION_VIEW, "geo:$coordinates?q=$coordinates".toUri())
+
+        try {
+            activity.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+            showText(R.string.gallery_details_no_map_app)
+        }
+    }
+
+    private fun copy(text: String) {
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(null, text))
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            showText(R.string.copied_text_to_clipboard)
+        }
+    }
+
+    private fun showText(@StringRes text: Int) {
+        showMessage(GalleryMessage(text))
+    }
+
+    private fun showUndoableText(@StringRes text: Int) {
+        showMessage(
+            GalleryMessage(
+                text = text,
+                offersUndo = true,
+            ),
+        )
     }
 }

@@ -4,6 +4,14 @@ import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSessionImpl
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapperImpl
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegate
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegateImpl
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegate
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegateImpl
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegate
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegateImpl
+import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapper
+import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapperImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -20,6 +28,30 @@ internal abstract class GalleryViewModelBindsModule {
     abstract fun bindCapturedItemSession(
         impl: CapturedItemSessionImpl,
     ): CapturedItemSession
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindGalleryPreviewsDelegate(
+        impl: GalleryPreviewsDelegateImpl,
+    ): GalleryPreviewsDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindGalleryDetailsDelegate(
+        impl: GalleryDetailsDelegateImpl,
+    ): GalleryDetailsDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindGalleryDeletionDelegate(
+        impl: GalleryDeletionDelegateImpl,
+    ): GalleryDeletionDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindGalleryUiStateMapper(
+        impl: GalleryUiStateMapperImpl,
+    ): GalleryUiStateMapper
 
     @Binds
     @Reusable

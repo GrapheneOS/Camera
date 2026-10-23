@@ -284,7 +284,6 @@ class VideoPlayerViewModelTest {
                 },
             ),
             videoPlaybackFactory = videoPlaybackFactory,
-            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
     }
 

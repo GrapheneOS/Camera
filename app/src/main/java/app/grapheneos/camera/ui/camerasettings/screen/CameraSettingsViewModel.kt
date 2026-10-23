@@ -14,7 +14,6 @@ import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.media.usecase.ChangeStorageLocation
 import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
@@ -24,15 +23,11 @@ import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsDialog
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsState
 import app.grapheneos.camera.ui.camerasettings.screen.model.CameraSettingsUiState
+import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 internal interface CameraSettingsScreenModel {
@@ -54,38 +49,42 @@ internal class CameraSettingsViewModel @Inject constructor(
     private val storageSpaceRepository: StorageSpaceRepository,
     private val changeStorageLocation: ChangeStorageLocation,
     private val revertToMediaStoreLocation: RevertToMediaStoreLocation,
-    private val uiStateMapper: CameraSettingsUiStateMapper,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
+    uiStateMapper: CameraSettingsUiStateMapper,
 ) : ViewModel(),
     CameraSettingsScreenModel {
 
-    private var state = cameraCapabilitiesOf(arguments).let { capabilities ->
-        CameraSettingsState(
-            isSecureSession = entryPoint.isSecureSession,
-            isCaptureSession = entryPoint.isCaptureSession,
-            capabilities = capabilities,
-            isLocationPermissionGranted = permissionRepository.isGranted(AppPermission.LOCATION),
-            settings = settingsRepository.settings.value,
-            videoQuality = videoModeQuality(capabilities.lensFacing),
-        )
-    }
+    private val stateHolder = ScreenStateHolder<CameraSettingsState, Effect>(
+        cameraCapabilitiesOf(arguments).let { capabilities ->
+            CameraSettingsState(
+                isSecureSession = entryPoint.isSecureSession,
+                isCaptureSession = entryPoint.isCaptureSession,
+                capabilities = capabilities,
+                isLocationPermissionGranted = permissionRepository.isGranted(
+                    AppPermission.LOCATION,
+                ),
+                settings = settingsRepository.settings.value,
+                videoQuality = videoModeQuality(capabilities.lensFacing),
+            )
+        },
+    )
 
-    private val _uiState = MutableStateFlow(uiStateMapper.map(state))
-    override val uiState: StateFlow<CameraSettingsUiState> = _uiState.asStateFlow()
+    override val uiState: StateFlow<CameraSettingsUiState> = stateHolder.derive(uiStateMapper::map)
 
-    private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
-    override val effects: Flow<Effect> = _effects.receiveAsFlow()
+    override val effects: Flow<Effect> = stateHolder.effects
+
+    private val state: CameraSettingsState
+        get() = stateHolder.state.value
 
     init {
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             settingsRepository.settings.collect { settings ->
-                update { it.copy(settings = settings) }
+                stateHolder.update { it.copy(settings = settings) }
             }
         }
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             capturedItemRepository.storageLocation.collect { location ->
-                update { it.copy(storageLocation = location) }
+                stateHolder.update { it.copy(storageLocation = location) }
                 refreshStorageSpace()
             }
         }
@@ -95,15 +94,15 @@ internal class CameraSettingsViewModel @Inject constructor(
         when (action) {
             is Action.ScreenResumed -> onScreenResumed()
             is Action.LocationPermissionAnswered -> onLocationPermissionAnswered()
-            is Action.LocationSettingsClicked -> _effects.trySend(Effect.OpenAppSettings)
+            is Action.LocationSettingsClicked -> stateHolder.send(Effect.OpenAppSettings)
             is Action.DialogSettingClicked -> showDialog(action.dialog)
             is Action.SwitchToggled -> onSwitchToggled(action)
             is Action.DialogConfirmed -> onDialogConfirmed(action)
             is Action.DialogDismissed -> showDialog(null)
-            is Action.StorageLocationClicked -> _effects.trySend(Effect.PickStorageLocation)
+            is Action.StorageLocationClicked -> stateHolder.send(Effect.PickStorageLocation)
             is Action.StorageLocationPicked -> changeStorageLocation(action.tree)
             is Action.StorageLocationResetClicked -> resetStorageLocation()
-            is Action.LicensesClicked -> _effects.trySend(Effect.OpenLicenses)
+            is Action.LicensesClicked -> stateHolder.send(Effect.OpenLicenses)
         }
     }
 
@@ -115,7 +114,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun refreshLocationPermission() {
         val isGranted = permissionRepository.isGranted(AppPermission.LOCATION)
 
-        update { it.copy(isLocationPermissionGranted = isGranted) }
+        stateHolder.update { it.copy(isLocationPermissionGranted = isGranted) }
     }
 
     private fun onLocationPermissionAnswered() {
@@ -164,7 +163,7 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun setGeoTagging(enabled: Boolean) {
         when {
             enabled && !state.isLocationPermissionGranted -> {
-                _effects.trySend(Effect.RequestLocationPermission)
+                stateHolder.send(Effect.RequestLocationPermission)
             }
 
             else -> updateSettings { it.copy(geoTagging = enabled) }
@@ -221,13 +220,13 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun changeStorageLocation(tree: Uri?) {
         if (tree == null) return
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             changeStorageLocation.invoke(tree)
         }
     }
 
     private fun resetStorageLocation() {
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             revertToMediaStoreLocation()
         }
     }
@@ -235,10 +234,10 @@ internal class CameraSettingsViewModel @Inject constructor(
     private fun refreshStorageSpace() {
         val location = state.storageLocation.takeUnless { state.isSecureSession } ?: return
 
-        viewModelScope.launch(mainDispatcher) {
+        viewModelScope.launch {
             val storageSpace = storageSpaceRepository.storageSpace(location)
 
-            update {
+            stateHolder.update {
                 it.copy(
                     storageSpace = storageSpace,
                     isStorageSpaceLoaded = true,
@@ -257,15 +256,10 @@ internal class CameraSettingsViewModel @Inject constructor(
     }
 
     private fun showDialog(dialog: Dialog?) {
-        update { it.copy(dialog = dialog) }
+        stateHolder.update { it.copy(dialog = dialog) }
     }
 
     private fun updateSettings(transform: (CameraSettings) -> CameraSettings) {
         settingsRepository.update(transform)
-    }
-
-    private fun update(transform: (CameraSettingsState) -> CameraSettingsState) {
-        state = transform(state)
-        _uiState.value = uiStateMapper.map(state)
     }
 }

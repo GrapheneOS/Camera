@@ -4,26 +4,25 @@ import app.grapheneos.camera.data.media.model.MediaTimestamp
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MediaTimestampExtensionsTest {
 
     @Test
-    fun formatted_absolute_showsTheInstantInTheGivenZoneAndNamesIt() {
+    fun localDateTime_absolute_isTheInstantInTheGivenZone() {
         val timestamp = MediaTimestamp.Absolute(Instant.parse("2023-10-15T10:34:56Z"))
 
-        assertEquals("15.10.2023, 10:34:56 UTC", timestamp.formatted(Locale.GERMANY, UTC))
-        assertEquals("15.10.2023, 12:34:56 MESZ", timestamp.formatted(Locale.GERMANY, BERLIN))
+        assertEquals(LocalDateTime.parse("2023-10-15T10:34:56"), timestamp.localDateTime(UTC))
+        assertEquals(LocalDateTime.parse("2023-10-15T12:34:56"), timestamp.localDateTime(BERLIN))
     }
 
     @Test
-    fun formatted_wallClock_keepsItsDigitsAndNamesNoZone() {
+    fun localDateTime_wallClock_keepsItsDigitsInAnyZone() {
         val timestamp = MediaTimestamp.WallClock(LocalDateTime.parse("2023-10-15T12:34:56"))
 
-        assertEquals("15.10.2023, 12:34:56", timestamp.formatted(Locale.GERMANY, UTC))
-        assertEquals("15.10.2023, 12:34:56", timestamp.formatted(Locale.GERMANY, BERLIN))
+        assertEquals(LocalDateTime.parse("2023-10-15T12:34:56"), timestamp.localDateTime(UTC))
+        assertEquals(LocalDateTime.parse("2023-10-15T12:34:56"), timestamp.localDateTime(BERLIN))
     }
 
     private companion object {

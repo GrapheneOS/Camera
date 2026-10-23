@@ -5,11 +5,14 @@ import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.gallery.components.CaptureTimeTitle
-import app.grapheneos.camera.ui.gallery.components.GalleryMenu
+import app.grapheneos.camera.ui.gallery.components.bars.CaptureTimeTitle
+import app.grapheneos.camera.ui.gallery.components.bars.GalleryMenu
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
@@ -19,8 +22,14 @@ internal fun GalleryTopBar(
     uiState: UiState,
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     ViewerTopBar(
+        modifier = modifier,
+        containerColor = containerColor,
+        contentColor = contentColor,
         navigation = {
             IconButton(onClick = onNavigateBack) {
                 Icon(
@@ -43,7 +52,7 @@ internal fun GalleryTopBar(
                     capturedAt = it,
                     onClick = when {
                         uiState.showsSystemGallery -> {
-                            { onAction(Action.SystemGalleryClicked) }
+                            { onAction(Action.CaptureTimeClicked) }
                         }
                         else -> null
                     },
@@ -54,8 +63,10 @@ internal fun GalleryTopBar(
             if (uiState.pages.isNotEmpty()) {
                 GalleryMenu(
                     showsExternalActions = uiState.showsExternalActions,
-                    onInfoClick = { onAction(Action.InfoClicked) },
+                    showsUseAs = uiState.showsUseAs,
+                    onInfoClick = { onAction(Action.DetailsShownChanged(isShown = true)) },
                     onEditWithClick = { onAction(Action.EditWithClicked) },
+                    onUseAsClick = { onAction(Action.UseAsClicked) },
                 )
             }
         },

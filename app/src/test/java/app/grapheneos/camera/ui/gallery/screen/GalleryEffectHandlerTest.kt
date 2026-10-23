@@ -1,11 +1,14 @@
 package app.grapheneos.camera.ui.gallery.screen
 
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.core.content.IntentCompat
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
@@ -26,27 +29,15 @@ class GalleryEffectHandlerTest {
     private val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
     private val videoPlayerLauncher = mockk<VideoPlayerLauncher>(relaxed = true)
     private val systemGalleryLauncher = mockk<SystemGalleryLauncher>(relaxed = true)
+    private val clipboardManager = activity.getSystemService(ClipboardManager::class.java)
     private val messages = mutableListOf<Int>()
     private val effectHandler = GalleryEffectHandlerImpl(
         activity = activity,
         videoPlayerLauncher = videoPlayerLauncher,
         systemGalleryLauncher = systemGalleryLauncher,
-        showMessage = { message -> messages += message },
+        clipboardManager = clipboardManager,
+        showMessage = { message -> messages += message.text },
     )
-
-    @Test
-    fun nothingToShow_closesTheGallery() {
-        effectHandler.handle(Effect.NothingToShow)
-
-        assertTrue(activity.isFinishing)
-    }
-
-    @Test
-    fun deletingTheLastItem_closesTheGallery() {
-        effectHandler.handle(Effect.LastItemDeleted)
-
-        assertTrue(activity.isFinishing)
-    }
 
     @Test
     fun openVideo_opensTheVideoPlayer() {
@@ -60,6 +51,18 @@ class GalleryEffectHandlerTest {
         effectHandler.handle(Effect.OpenSystemGallery)
 
         verify { systemGalleryLauncher.open(activity) }
+    }
+
+    @Test
+    fun showInSystemGallery_opensTheItemInTheSystemGallery() {
+        effectHandler.handle(Effect.ShowInSystemGallery(ITEM))
+
+        verify {
+            systemGalleryLauncher.openItem(
+                activity = activity,
+                item = ITEM,
+            )
+        }
     }
 
     @Test
@@ -94,16 +97,56 @@ class GalleryEffectHandlerTest {
     }
 
     @Test
+    fun useAs_offersTheAppsThatCanUseThePhoto() {
+        effectHandler.handle(Effect.UseAs(ITEM))
+
+        val chooser = nextStartedActivity()
+        val target = IntentCompat.getParcelableExtra(
+            chooser,
+            Intent.EXTRA_INTENT,
+            Intent::class.java,
+        )
+
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        assertEquals(Intent.ACTION_ATTACH_DATA, target?.action)
+        assertEquals(ITEM.uri, target?.data)
+    }
+
+    @Test
+    fun openMap_showsTheLocationInAMapApp() {
+        effectHandler.handle(
+            Effect.OpenMap(
+                GeoCoordinates(
+                    latitude = 47.5,
+                    longitude = -122.25,
+                ),
+            ),
+        )
+
+        val intent = nextStartedActivity()
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("geo:47.5,-122.25?q=47.5,-122.25", intent.dataString)
+    }
+
+    @Test
+    fun copyText_putsTheTextOnTheClipboard() {
+        effectHandler.handle(Effect.CopyText("47.50000, -122.25000"))
+
+        assertEquals(
+            "47.50000, -122.25000",
+            clipboardManager.primaryClip?.getItemAt(0)?.text,
+        )
+    }
+
+    @Test
     fun outcomes_thatKeepTheGalleryOpen_areReportedAsMessages() {
         effectHandler.handle(Effect.ItemDeleted)
         effectHandler.handle(Effect.DeletionFailed)
-        effectHandler.handle(Effect.DetailsUnavailable)
 
         assertEquals(
             listOf(
                 R.string.deleted_successfully,
                 R.string.deleting_unexpected_error,
-                R.string.unable_to_obtain_file_details,
             ),
             messages,
         )
