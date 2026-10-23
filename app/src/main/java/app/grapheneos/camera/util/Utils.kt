@@ -98,6 +98,6 @@ fun removePendingFlagFromUri(contentResolver: ContentResolver, uri: Uri) {
 fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap? {
     MediaMetadataRetriever().use {
         it.setDataSource(context, uri)
-        return it.frameAtTime
+        return it.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
     }
 }

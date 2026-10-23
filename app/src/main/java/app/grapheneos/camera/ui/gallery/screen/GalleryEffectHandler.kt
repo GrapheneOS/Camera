@@ -18,14 +18,12 @@ import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
-import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.mediaviewer.navigation.editCapturedItem
 import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
 import app.grapheneos.camera.ui.mediaviewer.navigation.useCapturedItemAs
 
 @Composable
 internal fun rememberGalleryEffectHandler(
-    videoPlayerLauncher: VideoPlayerLauncher,
     systemGalleryLauncher: SystemGalleryLauncher,
     clipboardManager: ClipboardManager,
     onShowMessage: (GalleryMessage) -> Unit,
@@ -35,10 +33,9 @@ internal fun rememberGalleryEffectHandler(
         "The gallery needs a hosting activity"
     }
 
-    return remember(activity, videoPlayerLauncher, systemGalleryLauncher, clipboardManager) {
+    return remember(activity, systemGalleryLauncher, clipboardManager) {
         GalleryEffectHandlerImpl(
             activity = activity,
-            videoPlayerLauncher = videoPlayerLauncher,
             systemGalleryLauncher = systemGalleryLauncher,
             clipboardManager = clipboardManager,
             showMessage = { message -> currentOnShowMessage(message) },
@@ -52,7 +49,6 @@ internal interface GalleryEffectHandler {
 
 internal class GalleryEffectHandlerImpl(
     private val activity: Activity,
-    private val videoPlayerLauncher: VideoPlayerLauncher,
     private val systemGalleryLauncher: SystemGalleryLauncher,
     private val clipboardManager: ClipboardManager,
     private val showMessage: (GalleryMessage) -> Unit,
@@ -60,8 +56,6 @@ internal class GalleryEffectHandlerImpl(
 
     override fun handle(effect: Effect) {
         when (effect) {
-            is Effect.OpenVideo -> videoPlayerLauncher.open(activity, effect.uri)
-
             is Effect.Edit -> edit(effect)
             is Effect.Share -> share(effect)
             is Effect.UseAs -> useAs(effect)

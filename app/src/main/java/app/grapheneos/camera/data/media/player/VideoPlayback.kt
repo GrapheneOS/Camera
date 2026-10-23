@@ -64,6 +64,10 @@ internal class VideoPlaybackImpl(
             updateAudioFocus()
         }
 
+        override fun onRenderedFirstFrame() {
+            _state.value = _state.value.copy(hasRenderedFrame = true)
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             Log.w(TAG, "unable to play the video", error)
         }
@@ -89,7 +93,7 @@ internal class VideoPlaybackImpl(
     override fun setSurface(surface: Surface?) {
         when (surface) {
             null -> player.clearVideoSurface()
-            else -> player.setVideoSurface(surface)
+            else -> attach(surface)
         }
     }
 
@@ -126,6 +130,15 @@ internal class VideoPlaybackImpl(
         player.release()
     }
 
+    private fun attach(surface: Surface) {
+        player.setVideoSurface(surface)
+
+        // A paused player leaves a new surface black until a seek decodes the frame again.
+        if (_state.value.hasRenderedFrame && !player.isPlaying) {
+            player.seekTo(player.currentPosition)
+        }
+    }
+
     private fun updateAudioFocus() {
         val hasAudio = player.currentTracks.containsType(C.TRACK_TYPE_AUDIO)
 
@@ -137,6 +150,7 @@ internal class VideoPlaybackImpl(
             isPlaying = player.isPlaying,
             duration = player.duration.takeIf { it != C.TIME_UNSET }?.milliseconds,
             aspectRatio = aspectRatio(),
+            hasRenderedFrame = _state.value.hasRenderedFrame,
             hasFailed = player.playerError != null,
         )
     }

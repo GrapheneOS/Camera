@@ -3,11 +3,14 @@ package app.grapheneos.camera.ui.gallery.screen.mapper
 import app.grapheneos.camera.data.media.mapper.CaptureTimeMapper
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryPagerUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
 import javax.inject.Inject
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -28,23 +31,49 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
 
     override fun map(state: GalleryState): GalleryUiState {
         return GalleryUiState(
+            pager = pager(state),
+            bars = bars(state),
+            video = video(state),
+            areControlsVisible = state.areControlsVisible,
+            isZoomed = state.isZoomed,
+            showsDetails = state.showsDetails,
+            showsHdr = showsHdr(state),
+            dialog = state.dialog,
+            trashedPageKey = state.trashedItem?.item?.let(::pageKeyOf),
+        )
+    }
+
+    private fun pager(state: GalleryState): GalleryPagerUiModel {
+        return GalleryPagerUiModel(
             pages = pagesOf(state.items),
             previews = previews(state),
             details = details(state),
             currentPage = state.currentIndex,
             isEmpty = state.isLoaded && state.items.isEmpty(),
-            capturedAt = state.currentItem()?.let(captureTimeMapper::map),
+            canOpenMap = !state.isSecureSession,
+        )
+    }
+
+    private fun bars(state: GalleryState): GalleryBarsUiModel {
+        val currentItem = state.currentItem()
+
+        return GalleryBarsUiModel(
+            capturedAt = currentItem?.let(captureTimeMapper::map),
+            showsItemActions = state.items.isNotEmpty(),
             showsExternalActions = !state.isSecureSession,
             showsSystemGallery = state.hasSystemGallery && !state.isSecureSession,
-            showsUseAs = !state.isSecureSession &&
-                state.currentItem()?.type == CapturedItemType.IMAGE,
-            showsHdr = showsHdr(state),
-            areControlsVisible = state.areControlsVisible,
-            isZoomed = state.isZoomed,
-            showsDetails = state.showsDetails,
-            dialog = state.dialog,
-            trashedPageKey = state.trashedItem?.item?.let(::pageKeyOf),
+            showsUseAs = !state.isSecureSession && currentItem?.type == CapturedItemType.IMAGE,
         )
+    }
+
+    private fun video(state: GalleryState): GalleryVideoUiModel? {
+        return state.video?.let { video ->
+            GalleryVideoUiModel(
+                pageKey = pageKeyOf(video.item),
+                playback = video.playback,
+                isMuted = state.isMuted,
+            )
+        }
     }
 
     private fun pagesOf(items: List<CapturedItem>): ImmutableList<GalleryPageUiModel> {

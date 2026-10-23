@@ -14,12 +14,12 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.gallery.components.bars.CaptureTimeTitle
 import app.grapheneos.camera.ui.gallery.components.bars.GalleryMenu
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
-import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
 
 @Composable
 internal fun GalleryTopBar(
-    uiState: UiState,
+    bars: GalleryBarsUiModel,
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -37,7 +37,7 @@ internal fun GalleryTopBar(
                     contentDescription = stringResource(R.string.gallery_back_to_camera),
                 )
             }
-            if (uiState.showsSystemGallery) {
+            if (bars.showsSystemGallery) {
                 IconButton(onClick = { onAction(Action.SystemGalleryClicked) }) {
                     Icon(
                         imageVector = Icons.Outlined.PhotoLibrary,
@@ -47,11 +47,11 @@ internal fun GalleryTopBar(
             }
         },
         title = {
-            uiState.capturedAt?.let {
+            bars.capturedAt?.let {
                 CaptureTimeTitle(
                     capturedAt = it,
                     onClick = when {
-                        uiState.showsSystemGallery -> {
+                        bars.showsSystemGallery -> {
                             { onAction(Action.CaptureTimeClicked) }
                         }
                         else -> null
@@ -60,10 +60,10 @@ internal fun GalleryTopBar(
             }
         },
         actions = {
-            if (uiState.pages.isNotEmpty()) {
+            if (bars.showsItemActions) {
                 GalleryMenu(
-                    showsExternalActions = uiState.showsExternalActions,
-                    showsUseAs = uiState.showsUseAs,
+                    showsExternalActions = bars.showsExternalActions,
+                    showsUseAs = bars.showsUseAs,
                     onInfoClick = { onAction(Action.DetailsShownChanged(isShown = true)) },
                     onEditWithClick = { onAction(Action.EditWithClicked) },
                     onUseAsClick = { onAction(Action.UseAsClicked) },

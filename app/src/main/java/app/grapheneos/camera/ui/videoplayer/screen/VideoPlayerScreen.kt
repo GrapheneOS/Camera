@@ -32,6 +32,7 @@ import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState
 import app.grapheneos.camera.ui.mediaviewer.components.video.VideoControls
 import app.grapheneos.camera.ui.mediaviewer.components.video.VideoSurface
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerAction as Action
 import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerUiState as UiState
 import kotlin.time.Duration.Companion.seconds
@@ -72,6 +73,7 @@ private fun VideoPlayerContent(
     modifier: Modifier = Modifier,
 ) {
     val background by animateViewerBackgroundAsState(uiState.areControlsVisible)
+    val video = uiState.video as? VideoPlaybackUiModel.Active
 
     Box(
         modifier = modifier
@@ -84,17 +86,19 @@ private fun VideoPlayerContent(
             )
             .then(
                 when {
-                    uiState.isPlaying -> Modifier.keepScreenOn()
+                    video?.isPlaying == true -> Modifier.keepScreenOn()
                     else -> Modifier
                 },
             ),
         contentAlignment = Alignment.Center,
     ) {
-        VideoSurface(
-            aspectRatio = uiState.aspectRatio,
-            onSurfaceCreated = { surface -> onAction(Action.SurfaceCreated(surface)) },
-            onSurfaceDestroyed = { onAction(Action.SurfaceDestroyed) },
-        )
+        if (video != null) {
+            VideoSurface(
+                aspectRatio = video.aspectRatio,
+                onSurfaceCreated = { surface -> onAction(Action.SurfaceCreated(surface)) },
+                onSurfaceDestroyed = { onAction(Action.SurfaceDestroyed) },
+            )
+        }
 
         AnimatedVisibility(
             visible = uiState.areControlsVisible,
@@ -113,16 +117,18 @@ private fun VideoPlayerContent(
                     },
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                VideoControls(
-                    isPlaying = uiState.isPlaying,
-                    isMuted = uiState.isMuted,
-                    position = uiState.position,
-                    duration = uiState.duration,
-                    onPlayPauseClick = { onAction(Action.PlayPauseClicked) },
-                    onMuteClick = { onAction(Action.MuteClicked) },
-                    onSeek = { position -> onAction(Action.SeekDragged(position)) },
-                    onSeekFinished = { onAction(Action.SeekReleased) },
-                )
+                if (video != null) {
+                    VideoControls(
+                        isPlaying = video.isPlaying,
+                        isMuted = uiState.isMuted,
+                        position = uiState.position,
+                        duration = video.duration,
+                        onPlayPauseClick = { onAction(Action.PlayPauseClicked) },
+                        onMuteClick = { onAction(Action.MuteClicked) },
+                        onSeek = { position -> onAction(Action.SeekDragged(position)) },
+                        onSeekFinished = { onAction(Action.SeekReleased) },
+                    )
+                }
             }
         }
     }
@@ -134,10 +140,12 @@ private fun VideoPlayerContentPreview() {
     CameraPreviewTheme {
         VideoPlayerContent(
             uiState = UiState(
-                isPlaying = true,
+                video = VideoPlaybackUiModel.Active(
+                    isPlaying = true,
+                    duration = 12.seconds,
+                    aspectRatio = 16f / 9f,
+                ),
                 position = 5.seconds,
-                duration = 12.seconds,
-                aspectRatio = 16f / 9f,
             ),
             onAction = {},
             onNavigateBack = {},

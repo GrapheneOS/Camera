@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.gallery.screen.model
 
 import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 
 internal data class GalleryState(
     val items: List<CapturedItem> = emptyList(),
@@ -8,6 +9,7 @@ internal data class GalleryState(
     val previews: Map<CapturedItem, GalleryPreview> = emptyMap(),
     val details: Map<CapturedItem, GalleryDetails> = emptyMap(),
     val currentIndex: Int = 0,
+    val settledIndex: Int? = null,
     val isLoaded: Boolean = false,
     val isSecureSession: Boolean = false,
     val hasSystemGallery: Boolean = false,
@@ -16,10 +18,18 @@ internal data class GalleryState(
     val showsDetails: Boolean = false,
     val dialog: GalleryDialog? = null,
     val trashedItem: GalleryTrashedItem? = null,
+    val video: GalleryVideoState? = null,
+    val isMuted: Boolean = false,
 ) {
 
     fun currentItem(): CapturedItem? {
         return items.getOrNull(currentIndex)
+    }
+
+    fun settledVideo(): CapturedItem? {
+        return settledIndex
+            ?.let(items::getOrNull)
+            ?.takeIf { it.type == CapturedItemType.VIDEO }
     }
 
     fun currentIndexIn(items: List<CapturedItem>): Int {
