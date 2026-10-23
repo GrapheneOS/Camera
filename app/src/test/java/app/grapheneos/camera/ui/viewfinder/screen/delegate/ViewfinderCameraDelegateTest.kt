@@ -571,6 +571,9 @@ class ViewfinderCameraDelegateTest {
             stateHolder = stateHolder,
         )
         scope.launch(mainDispatcherRule.testDispatcher) {
+            delegate.trackSession()
+        }
+        scope.launch(mainDispatcherRule.testDispatcher) {
             stateHolder.effects.collect { effects += it }
         }
 

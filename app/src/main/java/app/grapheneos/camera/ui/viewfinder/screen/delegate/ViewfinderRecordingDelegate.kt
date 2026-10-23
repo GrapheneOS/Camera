@@ -27,10 +27,9 @@ interface ViewfinderRecordingDelegate {
 
     val recordingEvents: Flow<ViewfinderRecordingEvent>
 
-    fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    )
+    fun bind(stateHolder: ViewfinderStateHolder)
+
+    suspend fun trackRecorder()
 
     fun onScreenDestroyed()
 
@@ -61,24 +60,16 @@ internal class ViewfinderRecordingDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     private val _recordingEvents = Channel<ViewfinderRecordingEvent>(capacity = Channel.BUFFERED)
     override val recordingEvents: Flow<ViewfinderRecordingEvent> = _recordingEvents.receiveAsFlow()
 
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    ) {
-        if (isBound) return
-        isBound = true
-
+    override fun bind(stateHolder: ViewfinderStateHolder) {
         this.stateHolder = stateHolder
+    }
 
-        scope.launch(mainDispatcher) {
-            videoRecorder.events.collect { event ->
-                onRecordedVideoEvent(event)
-            }
+    override suspend fun trackRecorder() {
+        videoRecorder.events.collect { event ->
+            onRecordedVideoEvent(event)
         }
     }
 

@@ -432,19 +432,20 @@ class ViewfinderRecordingDelegateTest {
     private fun TestScope.createDelegate(): ViewfinderRecordingDelegate {
         every { videoRecorder.events } returns recorderEvents
 
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val delegate = ViewfinderRecordingDelegateImpl(
             videoRecorder = videoRecorder,
             capturedItemRepository = mockk {
                 every { storageLocation } returns flowOf(STORAGE_LOCATION)
             },
             applicationScope = backgroundScope,
-            mainDispatcher = UnconfinedTestDispatcher(testScheduler),
+            mainDispatcher = dispatcher,
         )
 
-        delegate.bind(
-            scope = backgroundScope,
-            stateHolder = stateHolder,
-        )
+        delegate.bind(stateHolder)
+        backgroundScope.launch(dispatcher) {
+            delegate.trackRecorder()
+        }
 
         return delegate
     }

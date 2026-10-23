@@ -116,16 +116,11 @@ class ViewfinderViewModel @AssistedInject constructor(
         permissionDelegate.bind(stateHolder)
         orientationDelegate.bind(stateHolder)
         screenWakeDelegate.bind(stateHolder)
+        settingsDelegate.bind(stateHolder)
+        locationDelegate.bind(stateHolder)
+        recordingDelegate.bind(stateHolder)
 
         cameraDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
-        settingsDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
-        locationDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
@@ -133,14 +128,16 @@ class ViewfinderViewModel @AssistedInject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
-        recordingDelegate.bind(
-            scope = viewModelScope,
-            stateHolder = stateHolder,
-        )
         galleryDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
+
+        viewModelScope.launch { cameraDelegate.trackSession() }
+        viewModelScope.launch { settingsDelegate.trackSettings() }
+        viewModelScope.launch { locationDelegate.trackGeoTagging() }
+        viewModelScope.launch { recordingDelegate.trackRecorder() }
+        viewModelScope.launch { galleryDelegate.trackLastCapturedItem() }
 
         viewModelScope.launch {
             cameraDelegate.cameraEvents.collect { event ->

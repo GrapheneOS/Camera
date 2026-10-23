@@ -9,20 +9,15 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 interface ViewfinderSettingsDelegate {
 
-    fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    )
+    fun bind(stateHolder: ViewfinderStateHolder)
+
+    suspend fun trackSettings()
 
     fun setSelfTimerDuration(seconds: Int)
     fun setAspectRatio(value: AspectRatio)
@@ -39,30 +34,21 @@ interface ViewfinderSettingsDelegate {
 
 internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderSettingsDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     private var slot: ModeSlot? = null
 
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    ) {
-        if (isBound) return
-        isBound = true
-
+    override fun bind(stateHolder: ViewfinderStateHolder) {
         this.stateHolder = stateHolder
 
         stateHolder.update { it.copy(settings = settingsRepository.settings.value) }
+    }
 
-        scope.launch(mainDispatcher) {
-            settingsRepository.settings.collect { settings ->
-                stateHolder.update { it.copy(settings = settings) }
-            }
+    override suspend fun trackSettings() {
+        settingsRepository.settings.collect { settings ->
+            stateHolder.update { it.copy(settings = settings) }
         }
     }
 

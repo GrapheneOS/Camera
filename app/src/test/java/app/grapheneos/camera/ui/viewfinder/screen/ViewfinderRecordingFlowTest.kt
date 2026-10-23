@@ -196,10 +196,7 @@ class ViewfinderRecordingFlowTest {
         return ViewfinderViewModel(
             outputUri = null,
             entryPoint = entryPoint,
-            settingsDelegate = ViewfinderSettingsDelegateImpl(
-                settingsRepository = settingsRepository,
-                mainDispatcher = mainDispatcher,
-            ),
+            settingsDelegate = ViewfinderSettingsDelegateImpl(settingsRepository),
             modeDelegate = ViewfinderModeDelegateImpl(),
             cameraDelegate = ViewfinderCameraDelegateImpl(
                 session = cameraSession,

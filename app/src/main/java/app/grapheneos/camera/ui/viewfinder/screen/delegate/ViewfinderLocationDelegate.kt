@@ -4,14 +4,12 @@ import android.annotation.SuppressLint
 import app.grapheneos.camera.data.location.model.LocationAvailability
 import app.grapheneos.camera.data.location.repository.LocationRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -22,10 +20,9 @@ import kotlinx.coroutines.launch
 
 interface ViewfinderLocationDelegate {
 
-    fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    )
+    fun bind(stateHolder: ViewfinderStateHolder)
+
+    suspend fun trackGeoTagging()
 
     suspend fun trackLocation()
 }
@@ -33,31 +30,24 @@ interface ViewfinderLocationDelegate {
 internal class ViewfinderLocationDelegateImpl @Inject constructor(
     private val locationRepository: LocationRepository,
     private val entryPoint: CameraEntryPoint,
-    @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderLocationDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
-    override fun bind(
-        scope: CoroutineScope,
-        stateHolder: ViewfinderStateHolder,
-    ) {
-        if (isBound) return
-        isBound = true
-
+    override fun bind(stateHolder: ViewfinderStateHolder) {
         this.stateHolder = stateHolder
+    }
 
-        scope.launch(mainDispatcher) {
-            stateHolder.state
-                .map { state -> state.includesLocation() }
-                .distinctUntilChanged()
-                .filterNot { includesLocation -> includesLocation }
-                .collect { locationRepository.forgetLocation() }
-        }
+    override suspend fun trackGeoTagging() {
+        coroutineScope {
+            launch {
+                stateHolder.state
+                    .map { state -> state.includesLocation() }
+                    .distinctUntilChanged()
+                    .filterNot { includesLocation -> includesLocation }
+                    .collect { locationRepository.forgetLocation() }
+            }
 
-        scope.launch(mainDispatcher) {
             stateHolder.state.first { state ->
                 needsPermission(state)
             }

@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -51,6 +52,8 @@ interface ViewfinderCameraDelegate {
         scope: CoroutineScope,
         stateHolder: ViewfinderStateHolder,
     )
+
+    suspend fun trackSession()
 
     fun onScreenCreated(host: ViewfinderHost)
     fun onScreenDestroyed()
@@ -99,8 +102,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     private var host: ViewfinderHost? = null
     private var zoomStepping: Job? = null
 
@@ -131,26 +132,25 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         scope: CoroutineScope,
         stateHolder: ViewfinderStateHolder,
     ) {
-        if (isBound) return
-        isBound = true
-
         this.scope = scope
         this.stateHolder = stateHolder
+    }
 
-        scope.launch(mainDispatcher) {
-            session.events.collect { event ->
-                onSessionEvent(event)
+    override suspend fun trackSession() {
+        coroutineScope {
+            launch {
+                session.events.collect { event ->
+                    onSessionEvent(event)
+                }
             }
-        }
 
-        scope.launch(mainDispatcher) {
-            stateHolder.state
-                .map { state -> state.barcodeFormats() }
-                .distinctUntilChanged()
-                .collect { barcodeFormats -> session.setBarcodeFormats(barcodeFormats) }
-        }
+            launch {
+                stateHolder.state
+                    .map { state -> state.barcodeFormats() }
+                    .distinctUntilChanged()
+                    .collect { barcodeFormats -> session.setBarcodeFormats(barcodeFormats) }
+            }
 
-        scope.launch(mainDispatcher) {
             stateHolder.state
                 .mapNotNull { state -> state.deviceOrientation }
                 .distinctUntilChanged()

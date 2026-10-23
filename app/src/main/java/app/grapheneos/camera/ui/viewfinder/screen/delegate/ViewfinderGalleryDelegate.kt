@@ -14,6 +14,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderGalleryState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -25,6 +26,8 @@ interface ViewfinderGalleryDelegate {
         scope: CoroutineScope,
         stateHolder: ViewfinderStateHolder,
     )
+
+    suspend fun trackLastCapturedItem()
 
     fun onScreenCreated(host: ViewfinderHost)
 
@@ -56,29 +59,23 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
+    private val prepared = CompletableDeferred<Unit>()
 
     private var host: ViewfinderHost? = null
-    private var preparation: Job? = null
     private var thumbnailLoad: Job? = null
 
     override fun bind(
         scope: CoroutineScope,
         stateHolder: ViewfinderStateHolder,
     ) {
-        if (isBound) return
-        isBound = true
-
         this.scope = scope
         this.stateHolder = stateHolder
+    }
 
-        preparation = scope.launch(mainDispatcher) {
-            capturedItemSession.prepare()
-        }
-
-        scope.launch(mainDispatcher) {
-            capturedItemSession.trackLastCapturedItem()
-        }
+    override suspend fun trackLastCapturedItem() {
+        capturedItemSession.prepare()
+        prepared.complete(Unit)
+        capturedItemSession.trackLastCapturedItem()
     }
 
     override fun onScreenCreated(host: ViewfinderHost) {
@@ -95,7 +92,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
 
         thumbnailLoad?.cancel()
         thumbnailLoad = scope.launch(mainDispatcher) {
-            preparation?.join()
+            prepared.await()
 
             val item = capturedItemSession.lastCapturedItem
             val thumbnail = item?.let {

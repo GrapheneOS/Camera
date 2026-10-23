@@ -20,6 +20,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -50,23 +51,6 @@ class ViewfinderSettingsDelegateTest {
             createDelegate()
 
             assertEquals(GridType.FOUR_BY_FOUR, stateHolder.state.value.settings.gridType)
-        }
-    }
-
-    @Test
-    fun bind_calledAgain_keepsTheFirstStateHolder() {
-        runTest {
-            val delegate = createDelegate()
-            val otherStateHolder = viewfinderStateHolder(mode = CameraMode.CAMERA)
-
-            delegate.bind(
-                scope = backgroundScope,
-                stateHolder = otherStateHolder,
-            )
-            storedSettings.value = CameraSettings(gridType = GridType.FOUR_BY_FOUR)
-
-            assertEquals(GridType.FOUR_BY_FOUR, stateHolder.state.value.settings.gridType)
-            assertEquals(CameraSettings(), otherStateHolder.state.value.settings)
         }
     }
 
@@ -180,15 +164,12 @@ class ViewfinderSettingsDelegateTest {
     }
 
     private fun TestScope.createDelegate(): ViewfinderSettingsDelegate {
-        val delegate = ViewfinderSettingsDelegateImpl(
-            settingsRepository = settingsRepository,
-            mainDispatcher = mainDispatcherRule.testDispatcher,
-        )
+        val delegate = ViewfinderSettingsDelegateImpl(settingsRepository)
 
-        delegate.bind(
-            scope = backgroundScope,
-            stateHolder = stateHolder,
-        )
+        delegate.bind(stateHolder)
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            delegate.trackSettings()
+        }
 
         return delegate
     }

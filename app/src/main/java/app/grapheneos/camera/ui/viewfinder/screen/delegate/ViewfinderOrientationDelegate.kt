@@ -43,15 +43,10 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     private val _levelUiState = MutableStateFlow(LevelUiState())
     override val levelUiState: StateFlow<LevelUiState> = _levelUiState.asStateFlow()
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
-        if (isBound) return
-        isBound = true
-
         this.stateHolder = stateHolder
     }
 
