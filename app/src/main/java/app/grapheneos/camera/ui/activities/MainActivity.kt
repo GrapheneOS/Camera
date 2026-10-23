@@ -2324,7 +2324,7 @@ open class MainActivity : AppCompatActivity(),
         if (!vibrator.hasVibrator()) return
         try {
             val tick = VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 vibrator.vibrate(tick, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_TOUCH))
             } else {
                 vibrator.vibrate(tick)
