@@ -15,7 +15,6 @@ object BlurBitmap {
         val w = bitmap.width
         val h = bitmap.height
         val pix = IntArray(w * h)
-        // Log.e("pix", w.toString() + " " + h + " " + pix.size)
         bitmap.getPixels(pix, 0, w, 0, 0, w, h)
         val wm = w - 1
         val hm = h - 1
@@ -209,7 +208,6 @@ object BlurBitmap {
             }
             x++
         }
-        // Log.e("pix", w.toString() + " " + h + " " + pix.size)
         bitmap.setPixels(pix, 0, w, 0, 0, w, h)
         return bitmap
     }

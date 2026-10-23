@@ -2,9 +2,18 @@ package app.grapheneos.camera
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
+import android.graphics.ImageFormat
+import android.graphics.drawable.GradientDrawable
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -13,7 +22,6 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.view.MotionEvent
-import android.view.SurfaceView
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -28,7 +36,6 @@ import androidx.camera.core.AspectRatio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.CameraState
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -45,6 +52,7 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.HighSpeedVideoSessionConfig
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -52,11 +60,14 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.internal.muxer.MediaMuxerImpl
 import androidx.core.content.ContextCompat
-import androidx.core.view.children
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import app.grapheneos.camera.analyzer.QRAnalyzer
 import app.grapheneos.camera.ktx.applyPreviewRatio
+import app.grapheneos.camera.portrait.PortraitFrontResolutionPreference
+import app.grapheneos.camera.ui.FoldTabMode
+import app.grapheneos.camera.ui.CameraShortcutMode
+import app.grapheneos.camera.ui.ModeTabAction
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.MoreSettings
@@ -77,11 +88,17 @@ enum class CameraMode(val extensionMode: Int, val uiName: Int) {
     QR_SCAN(ExtensionMode.NONE, R.string.qr_scan_mode),
     AUTO(ExtensionMode.AUTO, R.string.auto_mode),
     FACE_RETOUCH(ExtensionMode.FACE_RETOUCH, R.string.face_retouch_mode),
-    PORTRAIT(ExtensionMode.BOKEH, R.string.portrait_mode),
+    PORTRAIT(ExtensionMode.NONE, R.string.portrait_mode), // standalone offline Portrait AI
     NIGHT(ExtensionMode.NIGHT, R.string.night_mode),
     HDR(ExtensionMode.HDR, R.string.hdr_mode),
     CAMERA(ExtensionMode.NONE, R.string.camera),
+    PRO(ExtensionMode.NONE, R.string.pro_mode),
+    BURST(ExtensionMode.NONE, R.string.burst_mode),
+    PANORAMA(ExtensionMode.NONE, R.string.panorama_mode),
     VIDEO(ExtensionMode.NONE, R.string.video),
+    SLOW_MOTION(ExtensionMode.NONE, R.string.slow_motion_mode),
+    HYPERLAPSE(ExtensionMode.NONE, R.string.hyperlapse_mode),
+    TIMELAPSE_PHOTO(ExtensionMode.NONE, R.string.timelapse_photo_mode),
 }
 
 @SuppressLint("UnsafeOptInUsageError")
@@ -101,6 +118,8 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GEO_TAGGING = "geo_tagging"
             const val FLASH_MODE = "flash_mode"
             const val GRID = "grid"
+            const val REOPEN_LAST_USED_MODE = "reopen_last_used_mode"
+            const val LAST_USED_MODE = "last_used_mode"
 
             // obsolete, split into WAIT_FOR_FOCUS_LOCK and PHOTO_QUALITY
             const val EMPHASIS_ON_QUALITY = "emphasis_on_quality"
@@ -128,6 +147,7 @@ class CamConfig(private val mActivity: MainActivity) {
             const val GYROSCOPE_SUGGESTIONS = "gyroscope_suggestions"
 
             const val CAMERA_SOUNDS = "camera_sounds"
+            const val CAPTURE_HAPTICS = "capture_haptics"
 
             const val ENABLE_ZSL = "enable_zsl"
 
@@ -220,29 +240,11 @@ class CamConfig(private val mActivity: MainActivity) {
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
 
-        // Whether a vendor extension is usable, keyed by lens facing and extension mode (see
-        // probeExtension). A verdict describes the device rather than any one activity and costs
-        // binder round trips to reach, so it is kept for the process: every lock screen launch used
-        // to re-probe what the session underneath it had already answered.
+        // Cache camera extension availability by lens and extension mode.
         private val extensionUsability = HashMap<Pair<Int, Int>, Boolean>()
 
-        // Every setting that reaches one of the three probed SessionConfigs has to appear in the
-        // key. A setting added to the ImageCapture, Recorder or Preview builder without being added
-        // here would be answered from a verdict that predates it, which either takes in-video
-        // snapshots away for no reason or keeps them on a camera that cannot bind them.
+        // Include every relevant capture setting in the cached snapshot probe key.
         private val snapshotDropReason = HashMap<SnapshotProbeKey, String?>()
-
-        // A cache hit and a repeated probe reach the same verdict, so this is the only thing that
-        // tells them apart from the outside.
-        @VisibleForTesting
-        var snapshotProbeCount = 0
-            private set
-
-        @VisibleForTesting
-        fun clearSnapshotProbeCache() {
-            snapshotDropReason.clear()
-            snapshotProbeCount = 0
-        }
 
         // The provider the verdicts above were probed through. A different instance means the
         // camera stack was reinitialized and none of them describe it any more.
@@ -259,11 +261,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var camera: Camera? = null
 
-    // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
-    // extension is bound, because CameraX then queries the extension's zoom range through
-    // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
-    // of the camera on any path that runs more than once per bind. It is null from the moment a
-    // bind starts until attachZoomState has run, which is where that query was moved to.
+    // Cache zoom information; vendor extensions can make CameraInfo reads slow.
     var zoomState: ZoomState? = null
         private set
 
@@ -287,18 +285,6 @@ class CamConfig(private val mActivity: MainActivity) {
 
         zoomState = zoomStateSource?.value
     }
-
-    private var cameraStateSource: LiveData<CameraState>? = null
-
-    // A new bind is first told the error the camera last closed with, and a camera that keeps
-    // failing mustn't be rebound in a loop, so only one that opened under this bind can be lost
-    private var boundCameraOpened = false
-
-    private val cameraStateObserver = Observer<CameraState> { onCameraStateChanged(it) }
-
-    private var cameraReturnCallback: CameraManager.AvailabilityCallback? = null
-
-    private var replacePreviewSurface = false
 
     var cameraProvider: ProcessCameraProvider? = null
     private var extensionsManager: ExtensionsManager? = null
@@ -390,6 +376,36 @@ class CamConfig(private val mActivity: MainActivity) {
 
     var currentMode: CameraMode = DEFAULT_CAMERA_MODE
         private set
+
+    /** Independent of the existing per-mode camera setting persistence. */
+    /** Independent of ringer mode and of the existing shutter sound setting. */
+    var captureHaptics: Boolean
+        get() = commonPref.getBoolean(SettingValues.Key.CAPTURE_HAPTICS, true)
+        set(enabled) {
+            commonPref.edit().putBoolean(SettingValues.Key.CAPTURE_HAPTICS, enabled).apply()
+        }
+
+    var reopenLastUsedMode: Boolean
+        get() = commonPref.getBoolean(SettingValues.Key.REOPEN_LAST_USED_MODE, false)
+        set(enabled) {
+            commonPref.edit().putBoolean(SettingValues.Key.REOPEN_LAST_USED_MODE, enabled)
+                .apply()
+            if (enabled && mActivity.javaClass == MainActivity::class.java) {
+                saveCurrentModeForNextLaunch()
+            }
+        }
+
+    private fun saveCurrentModeForNextLaunch() {
+        commonPref.edit().putString(SettingValues.Key.LAST_USED_MODE, currentMode.name).apply()
+    }
+
+    /** Only called once for a normal cold launch, never for secure or external capture. */
+    fun restoreLastUsedMode() {
+        if (mActivity.javaClass != MainActivity::class.java || !reopenLastUsedMode) return
+        val modeName = commonPref.getString(SettingValues.Key.LAST_USED_MODE, null) ?: return
+        val mode = CameraMode.entries.firstOrNull { it.name == modeName } ?: return
+        if (mode != DEFAULT_CAMERA_MODE) switchMode(mode)
+    }
 
     var aspectRatio: Int
         get() {
@@ -680,13 +696,7 @@ class CamConfig(private val mActivity: MainActivity) {
     }
 
     private fun isVideoStabilizationSupported(): Boolean {
-        // The toggle asks for both kinds of stabilization (see the preferred feature group in
-        // startCamera), preferring the preview kind and falling back to the recording-only kind,
-        // so it is meaningful whenever either one is available. Testing only the recorder
-        // capability both hid the toggle on cameras that can stabilize the preview but not the
-        // recording, and offered it on cameras where only the recorder can stabilize - where
-        // the bind used to ask exclusively for preview stabilization, leaving the toggle with
-        // nothing to do.
+        // The setting is available when either preview or video stabilization is supported.
         return isPreviewStabilizationSupported() || isRecorderStabilizationSupported()
     }
 
@@ -732,26 +742,6 @@ class CamConfig(private val mActivity: MainActivity) {
                 Context.MODE_PRIVATE
             ).edit {
                 saveLastCapturedItem(item, this)
-            }
-        }
-
-        lastCapturedItem = item
-    }
-
-    /**
-     * Swaps a last captured item that is gone for [item], or for none. Only a screen that sees
-     * every item may [save] it, as the saved one has to be the newest of them all.
-     */
-    fun replaceLastCapturedItem(item: CapturedItem?, save: Boolean) {
-        if (save) {
-            commonPref.edit {
-                if (item != null) {
-                    saveLastCapturedItem(item, this)
-                } else {
-                    remove(SettingValues.Key.LAST_CAPTURED_ITEM_TYPE)
-                    remove(SettingValues.Key.LAST_CAPTURED_ITEM_DATE_STRING)
-                    remove(SettingValues.Key.LAST_CAPTURED_ITEM_URI)
-                }
             }
         }
 
@@ -878,15 +868,9 @@ class CamConfig(private val mActivity: MainActivity) {
             editor.putBoolean(SettingValues.Key.CAMERA_SOUNDS, SettingValues.Default.CAMERA_SOUNDS)
         }
 
-        // Note: This is a workaround to keep save image/video as previewed 'on' by 
-        // default starting from v73 and 'off' by default for versions before that
-        //
-        // If its not a fresh install (before v73)
+        // Preserve video-preview settings on installations created before this option existed.
         if (commonPref.contains(SettingValues.Key.SAVE_IMAGE_AS_PREVIEW)) {
-            // If save video as previewed was not previously set
             if (!commonPref.contains(SettingValues.Key.SAVE_VIDEO_AS_PREVIEW)) {
-                // Explicitly set the value for this setting as false for them
-                // to ensure consistent behavior
                 editor.putBoolean(
                     SettingValues.Key.SAVE_VIDEO_AS_PREVIEW,
                     false
@@ -1115,6 +1099,10 @@ class CamConfig(private val mActivity: MainActivity) {
 
     fun toggleCameraSelector() {
 
+        // A failed resolution negotiation on one camera must not disable max
+        // resolution when returning to another front camera.
+        portraitFrontTargetPreferenceEnabled = true
+
         // Manually switch to the opposite lens facing
         lensFacing =
             if (lensFacing == CameraSelector.LENS_FACING_BACK)
@@ -1177,12 +1165,7 @@ class CamConfig(private val mActivity: MainActivity) {
                 }
             }
 
-            // Despite the name, getInstanceAsync() runs its one-time initialization body
-            // synchronously on the calling thread, and that body asks the vendor's extensions
-            // proxy service for each camera's advertised extensions until it finds one that has
-            // any -- measured at a handful of binder round trips on the main thread during
-            // startup on a Pixel 7 Pro. Call it from a short-lived thread instead; only the
-            // listener has to run on the main thread, for the field write and startCamera().
+            // Initialize camera extensions off the UI thread; the vendor probe can block.
             thread {
                 try {
                     val extensionsManagerFuture =
@@ -1197,12 +1180,7 @@ class CamConfig(private val mActivity: MainActivity) {
                         startCamera(forced = forced)
                     }, ContextCompat.getMainExecutor(mActivity))
                 } catch (e: Exception) {
-                    // getInstanceAsync() runs its initialization synchronously (see above), so it
-                    // -- or addListener -- can throw right here on this background thread, where an
-                    // escaping exception would crash the process and, worse, leave the camera never
-                    // started because the listener never runs. Recover exactly as the future-failure
-                    // path does: report it and start the camera without extensions, on the main
-                    // thread.
+                    // If extension setup fails, start the camera without extensions on the main thread.
                     Log.e(TAG, "Extensions manager initialization failed", e)
                     ContextCompat.getMainExecutor(mActivity).execute {
                         mActivity.showMessage(mActivity.getString(R.string.extensions_manager_init_failure))
@@ -1214,46 +1192,15 @@ class CamConfig(private val mActivity: MainActivity) {
         }, ContextCompat.getMainExecutor(mActivity))
     }
 
-    // ExtensionsManager.isExtensionAvailable() answers from CameraExtensionCharacteristics'
-    // static advertisement data. Actually *binding* an advertised extension additionally makes
-    // CameraX initialize a Camera2ExtensionsVendorExtender, which calls into the vendor's
-    // advanced extender over binder. Some vendors advertise a mode there and then throw from
-    // that init - Pixels raise "Framework size list map not supported in pixel path"
-    // - which used to kill the process from inside bindToLifecycle(). CameraX 1.6 removed the
-    // legacy OEM extender path, so there is no longer a working fallback on those devices and the
-    // only safe option is to stop offering the mode.
-    //
-    // getCameraInfo() performs exactly the same vendor init that bindToLifecycle() does, so it is
-    // a faithful probe. Verdicts are cached (extensionUsability) because every step of the probe
-    // -- including the availability query, see probeExtension -- costs a binder round trip. A
-    // negative verdict is only cached when the failure is known to be persistent: caching a
-    // transient probe failure would make the mode's tab vanish for the rest of the process
-    // lifetime over a condition that clears seconds later.
-    //
-    // The cache is read and written on the main thread only, which is also what keeps the two
-    // activities that can share it (a secure session over a running one) from racing each other.
-    // probeExtension() itself also runs on the probe thread that loadTabs() spawns, but its
-    // results come back through the main executor.
-    //
-    // true/false is a verdict that is safe to cache; null is a failure that may be transient
-    // and must not be (see extensionUsability above). The provider and manager are parameters
-    // rather than the fields because this also runs off the main thread, where the fields could
-    // be swapped out mid-probe.
+    // Probe vendor extensions before offering a mode. Cache confirmed results, but retry transient errors.
+    // Updates to the cache return to the main thread.
     private fun probeExtension(
         provider: ProcessCameraProvider,
         em: ExtensionsManager,
         selector: CameraSelector,
         extensionMode: Int,
     ): Boolean? {
-        // What the vendor advertises is as static as the vendor init verdict below, so a
-        // negative answer is cached the same way -- notably, isExtensionAvailable() is *not*
-        // the cheap in-process lookup it appears to be: on Android 17 every call costs a round
-        // trip to the vendor's extensions proxy service, which is exactly the kind of work this
-        // probe exists to keep off the main thread (see loadTabs). It sits inside the try below so
-        // that a transient failure of that round trip is treated like any other -- returning null
-        // to retry later -- rather than propagating out: on the background probe thread an escaping
-        // exception would strand the round with extensionProbesInFlight still set, blocking every
-        // later tab refresh.
+        // Vendor extension checks use binder; treat query failures as retryable.
         return try {
             when {
                 !em.isExtensionAvailable(selector, extensionMode) -> false
@@ -1296,12 +1243,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
         if (!probeOnMiss) return false
 
-        // A background probe round (loadTabs) may already be asking the vendor about this very
-        // key. Probing inline here would run a second synchronous vendor round trip on the main
-        // thread and race that round's verdict write. While a round is in flight, treat the miss
-        // as "unusable for now"; the round fills the cache and the next rebind/tab refresh picks
-        // up the real verdict. The inline probe stays for the not-in-flight cold case, where it is
-        // the only path to a verdict.
+        // Do not duplicate a vendor probe while the background tab refresh is running.
         if (extensionProbesInFlight) return false
 
         val verdict = probeExtension(provider, em, selector, extensionMode) ?: return false
@@ -1309,25 +1251,8 @@ class CamConfig(private val mActivity: MainActivity) {
         return verdict
     }
 
-    // Whether CameraX's feature-group resolution can actually *verify* feature combinations on
-    // the current camera. The resolver (DefaultFeatureGroupResolver) keeps a candidate
-    // combination only when the platform confirms it, and it treats "could not check" exactly
-    // like "verified unsupported": below API 35 CameraX substitutes a no-op feature-combination
-    // query whose isSupported() is unconditionally false (CameraSurfaceAdapter), and on API 35+
-    // a HAL that does not implement the session-configuration query answers UNKNOWN, which is
-    // folded into false as well (camera-pipe ConfigQueryResult). On such a camera, combinations
-    // the device records fine every day resolve down to little or nothing: the stored video
-    // quality is silently ignored (setQualitySelector must not be called while a feature group
-    // is in use, see startCamera) and the divergence notice asserts unsupportedness that was
-    // never actually verified. So the feature-group path is only taken when the platform can
-    // genuinely answer, and startCamera otherwise falls back to the pre-1.6 configuration APIs,
-    // which never drop the chosen quality.
-    //
-    // The per-camera INFO_SESSION_CONFIGURATION_QUERY_VERSION characteristic is what the
-    // platform's answers ultimately hinge on (CameraDeviceSetup exists only for cameras
-    // reporting >= 35 there), so it is checked in addition to the API level. This deliberately
-    // mirrors CameraX's own SDK_INT >= 35 gate — which upstream may still move, see b/417839748
-    // — plus the HAL capability that gate cannot see; re-check both on CameraX updates.
+    // Use feature groups only when the API and camera HAL can verify combinations.
+    // Otherwise keep the selected video quality through the regular CameraX setters.
     @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun canVerifyFeatureCombinations(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return false
@@ -1385,8 +1310,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    // The quality labels shown in the settings spinner, so that a message about a quality can
-    // name it exactly the way the user picked it (see SettingsDialog.getTitleFor).
+    // Use the same quality labels as the settings screen.
     private fun describeQualityFeature(feature: GroupableFeature): String? = when (feature) {
         GroupableFeatures.UHD_RECORDING -> "2160p (UHD)"
         GroupableFeatures.FHD_RECORDING -> "1080p (FHD)"
@@ -1395,48 +1319,26 @@ class CamConfig(private val mActivity: MainActivity) {
         else -> null
     }
 
-    // Avoids repeating an unchanged notice: startCamera() runs again on every tab switch,
-    // settings change, camera flip and resume, and the outcome is usually the same each time.
-    // Keyed by lens facing so that alternating between a fully-supported camera and a limited
-    // one doesn't re-announce the limited camera's unchanged hardware fact on every flip: a
-    // fully-satisfied bind clears only its own camera's entry, so the next divergence on that
-    // camera is genuinely new information while the other camera's stays remembered.
+    // Show a feature warning only when the verdict changes for a camera.
     private val lastReportedDivergence = HashMap<Int, String>()
 
-    // CameraX resolves a preferred feature group by dropping features until what is left is a
-    // combination the camera actually supports, and it does so silently. This app only ever asks
-    // for the video quality and the stabilization that the user selected, so a dropped feature
-    // means a setting the UI still displays is not in effect. Say so rather than letting the
-    // recording quietly disagree with the settings screen.
-    //
-    // What was asked for -- including which camera it was asked of -- is passed in rather than
-    // read back from a field: the callback is delivered asynchronously, so a field could already
-    // describe a later bind by the time this runs, and the message would then name settings (or
-    // dedup against a camera) that this result never involved.
+    // Report unsupported user-selected options after CameraX resolves the feature group.
+    // Use the requested camera and settings, since this callback is asynchronous.
     private fun onFeaturesSelected(
         boundLensFacing: Int,
         requested: List<GroupableFeature>,
         qualityFeature: GroupableFeature?,
         selected: Set<GroupableFeature>,
     ) {
-        // The full request-vs-result picture (including which stabilization feature, if any,
-        // survived) is only ever logged, never shown: the lead wants EIS left silently in its
-        // known state -- 4K keeps priority and stabilization is given up without a notice.
+        // Log the resolved features. Only a video quality downgrade triggers a warning;
+        // stabilization may be dropped when CameraX prioritizes the selected quality.
         Log.i(TAG, "Requested $requested but got $selected")
 
         val qualityLabel = qualityFeature?.let { describeQualityFeature(it) }
-        // Only report a dropped quality that can be named: a message that can't say which
-        // quality it means would be worse than the log line above.
+        // Only warn about a rejected quality with a known user-facing label.
         val droppedQuality = qualityLabel?.takeIf { qualityFeature !in selected }
 
-        // A dropped quality is the only outcome worth a toast, and it is a genuine one: CameraX
-        // tries the quality on its own before it tries either stabilization, and the preflight in
-        // startCamera already gave up in-video snapshots wherever that would let the quality bind,
-        // so a quality reported dropped here is one this camera cannot record at in the minimal
-        // configuration either. Stabilization losses are deliberately not surfaced -- besides the
-        // lead's no-EIS-messaging wish, a "stabilization unsupported" message would misattribute
-        // the loss, because stabilization can be crowded out by the in-video snapshot stream
-        // rather than by the quality.
+        // Only notify the user when the requested video quality cannot be selected.
         val message = droppedQuality?.let {
             mActivity.getString(R.string.quality_unsupported, it)
         }
@@ -1476,85 +1378,47 @@ class CamConfig(private val mActivity: MainActivity) {
         return cameraProvider?.hasCamera(tCameraSelector) ?: false
     }
 
-    private fun onCameraStateChanged(state: CameraState) {
-        when {
-            state.type == CameraState.Type.OPEN -> boundCameraOpened = true
+    // Inspect the JPEG streams of the *selected* front camera. Sensor marketing megapixels
+    // are not guaranteed to be exposed as Camera2/CameraX JPEG sizes (especially on foldables).
+    // Log both the advertised choices and the eventual CameraX binding for device tests.
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
+    private fun preferredPortraitFrontJpegSize(): Size? {
+        val cameraInfo = try {
+            cameraProvider?.getCameraInfo(cameraSelector)
+        } catch (exception: RuntimeException) {
+            Log.w(TAG, "PortraitFrontRes: selected camera info unavailable", exception)
+            null
+        } ?: return null
 
-            // Closed on purpose
-            state.type == CameraState.Type.CLOSED && state.error == null -> {
-                boundCameraOpened = false
-            }
-
-            boundCameraOpened && state.error?.code == CameraState.ERROR_CAMERA_FATAL_ERROR -> {
-                boundCameraOpened = false
-                onCameraLost()
-            }
-        }
-    }
-
-    // Once a dead camera service is back, CameraX reopens the camera but can't stream into the old
-    // preview surface, so the camera stays dead until a rebind with a new one
-    private fun onCameraLost() {
-        val lostCamera = camera ?: return
-        Log.w(TAG, "Lost the camera, rebinding once it is available again")
-
-        mActivity.updateLastFrame()
-
-        if (mActivity.videoCapturer.isRecording) {
-            val message = if (mActivity.videoCapturer.isStartPending) {
-                R.string.recording_not_started_camera_lost
-            } else {
-                R.string.recording_stopped_camera_lost
-            }
-            mActivity.videoCapturer.stopRecording()
-            mActivity.showMessage(message)
-        }
-        mActivity.imageCapturer.cancelPendingCaptureRequest()
-
-        replacePreviewSurface = true
-
-        val cameraId = try {
-            Camera2CameraInfo.from(lostCamera.cameraInfo).cameraId
-        } catch (e: IllegalArgumentException) {
+        return try {
+            val c2 = Camera2CameraInfo.from(cameraInfo)
+            val available = c2.getCameraCharacteristic(
+                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
+            )?.getOutputSizes(ImageFormat.JPEG).orEmpty()
+            val selected = PortraitFrontResolutionPreference.chooseNativeJpegSize(
+                available.map { it.width to it.height }
+            )
+            val listing = available.sortedByDescending { it.width.toLong() * it.height }
+                .joinToString { "${it.width}x${it.height}" }
+            Log.i(TAG, "PortraitFrontRes cameraId=${c2.cameraId} nativeJPEG=[$listing] " +
+                "aspect=unrestricted(max native JPEG pixels) " +
+                "requested=${selected?.let { "${it.first}x${it.second}" } ?: "CameraX highest"}")
+            selected?.let { Size(it.first, it.second) }
+        } catch (exception: RuntimeException) {
+            Log.w(TAG, "PortraitFrontRes: cannot inspect native JPEG stream sizes", exception)
             null
         }
-        awaitCameraReturn(cameraId)
     }
 
-    // Waits for this camera rather than any: CameraManager can still be reporting the dead
-    // service's statuses, which have every camera available but the one that was open
-    private fun awaitCameraReturn(cameraId: String?) {
-        stopAwaitingCameraReturn()
-        val callback = object : CameraManager.AvailabilityCallback() {
-            override fun onCameraAvailable(id: String) {
-                if (cameraId != null && id != cameraId) return
-                stopAwaitingCameraReturn()
-                // Otherwise resuming, or whatever unbound the camera, rebinds it
-                val preview = preview ?: return
-                if (mActivity.isStarted && cameraProvider?.isBound(preview) == true) {
-                    startCamera(forced = true)
-                }
-            }
-        }
-        cameraReturnCallback = callback
-        mActivity.getSystemService(CameraManager::class.java)
-            .registerAvailabilityCallback(ContextCompat.getMainExecutor(mActivity), callback)
-    }
-
-    fun stopAwaitingCameraReturn() {
-        val callback = cameraReturnCallback ?: return
-        cameraReturnCallback = null
-        mActivity.getSystemService(CameraManager::class.java)
-            .unregisterAvailabilityCallback(callback)
-    }
+    private var portraitFrontTargetPreferenceEnabled = true
+    private var portraitFrontExplicitTargetActive = false
 
     // Start the camera with latest hard configuration
     @SuppressLint("RestrictedApi")
     fun startCamera(forced: Boolean = false) {
+        // Concurrent cameras own the EXISTING preview while Dual Photo/Video is selected.
+        if (mActivity.isIntegratedDualActive()) return
         if ((!forced && camera != null) || cameraProvider == null) return
-
-        // CameraX retries the open until the camera service is back
-        stopAwaitingCameraReturn()
 
         // Cancel any pending capture requests
         mActivity.imageCapturer.cancelPendingCaptureRequest()
@@ -1594,29 +1458,18 @@ class CamConfig(private val mActivity: MainActivity) {
             .requireLensFacing(lensFacing)
             .build()
 
+        portraitFrontExplicitTargetActive = false
         val builder = ImageCapture.Builder()
+        if (currentMode == CameraMode.SLOW_MOTION) {
+            imageCapture = null
+        }
 
         // To use the last frame instead of showing a blank screen when
         // the camera that is being currently used gets unbind
         mActivity.updateLastFrame()
 
-        mActivity.videoCapturer.abandonDeferredStart()
-
-        cameraStateSource?.removeObserver(cameraStateObserver)
-        cameraStateSource = null
-
         // Unbind/close all other camera(s) [if any]
         cameraProvider?.unbindAll()
-
-        if (replacePreviewSurface) {
-            replacePreviewSurface = false
-            // PreviewView keeps its SurfaceView, and its surface, for a same-size rebind, and
-            // hiding and showing it replaces the surface. A TextureView is new on every rebind.
-            mActivity.previewView.children.filterIsInstance<SurfaceView>().forEach {
-                it.visibility = View.INVISIBLE
-                it.visibility = View.VISIBLE
-            }
-        }
 
         val extMode = currentMode.extensionMode
         var appliedExtension: Pair<Int, Int>? = null
@@ -1636,29 +1489,10 @@ class CamConfig(private val mActivity: MainActivity) {
             aspectRatio, AspectRatioStrategy.FALLBACK_RULE_AUTO
         )
 
-        // CameraX 1.6.0's SessionConfig throws an IllegalArgumentException at construction time
-        // if any use case configures a groupable feature through a non-groupable API while a
-        // feature group is in use. Recorder.Builder.setQualitySelector() is such an API since
-        // 1.6.0 introduced GroupableFeatures.*_RECORDING, so when EIS is requested through
-        // GroupableFeature.PREVIEW_STABILIZATION (the only case where this app uses a feature
-        // group), the video quality has to be requested through the feature group as well.
-        //
-        // The validation triggers on setQualitySelector() having been called at all, not on the
-        // quality it was given, so this flag -- not the resolved feature below -- is what decides
-        // whether that setter may be used. videoQualityAsGroupableFeature() can legitimately fail
-        // to map the current quality, and falling back to setQualitySelector() in that case would
-        // reintroduce the very exception this works around.
-        //
-        // Both halves of canApplyVideoStabilization() gate the group. The platform has to be able
-        // to verify feature combinations: where it cannot, the resolver would conflate "could not
-        // check" with "unsupported", quietly discard the stored video quality and produce
-        // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters
-        // below instead, which are legal exactly because no feature group is in use then. And the
-        // group exists solely to negotiate stabilization against the quality, so a camera that
-        // supports no stabilization at all has nothing to negotiate: it takes the plain fallback
-        // path directly, which produces the identical output without a needless feature-group
-        // round.
-        val usesFeatureGroup = isVideoMode && enableEIS && canApplyVideoStabilization()
+        // CameraX rejects regular quality/stabilization setters when a feature group is active.
+        // Select the quality through that group, or use the standard setters without a group.
+        val usesFeatureGroup = isVideoMode && currentMode != CameraMode.SLOW_MOTION &&
+            enableEIS && canApplyVideoStabilization()
         val videoQualityFeature: GroupableFeature? = when {
             usesFeatureGroup -> videoQualityAsGroupableFeature()
             else -> null
@@ -1702,37 +1536,58 @@ class CamConfig(private val mActivity: MainActivity) {
             if (isVideoMode) {
 
                 mActivity.micOffIcon.visibility = when {
+                    currentMode == CameraMode.SLOW_MOTION && includeAudio -> View.GONE
+                    currentMode == CameraMode.SLOW_MOTION -> View.VISIBLE
                     includeAudio -> View.GONE
                     else -> View.VISIBLE
                 }
 
                 val recorderBuilder = Recorder.Builder()
 
-                // camera-video 1.6 writes mp4 through the media3 muxer, which cannot keep up with
-                // 2160p on a Tensor device: the audio queue overflows a few seconds in and stop
-                // then has to drain everything the muxer is behind by. The platform muxer, which
-                // is what every release up to 1.5 used, keeps up. Both live in an internal
-                // package, so this has to be re-checked on every camera-video upgrade.
+                // Use the platform muxer to avoid 4K audio queue stalls on Tensor devices.
                 recorderBuilder.setMuxerFactory { MediaMuxerImpl() }
 
-                if (!usesFeatureGroup) {
+                if (currentMode == CameraMode.SLOW_MOTION) {
+                    val info = try {
+                        cameraProvider!!.getCameraInfo(cameraSelector)
+                    } catch (error: RuntimeException) {
+                        Log.e(TAG, "Unable to query high-speed camera info", error)
+                        mActivity.showMessage(R.string.slow_motion_unavailable)
+                        switchMode(CameraMode.CAMERA)
+                        return
+                    }
+                    val qualities = try {
+                        Recorder.getHighSpeedVideoCapabilities(info)
+                            ?.getSupportedQualities(DynamicRange.SDR).orEmpty()
+                    } catch (error: RuntimeException) {
+                        Log.e(TAG, "Unable to query high-speed video profiles", error)
+                        emptyList()
+                    }
+                    if (qualities.isEmpty()) {
+                        mActivity.showMessage(R.string.slow_motion_unavailable)
+                        switchMode(CameraMode.CAMERA)
+                        return
+                    }
+                    val requestedFps = commonPref.getInt("slow_motion_preferred_fps", 120)
+                    val fpsProfiles = supportedSlowMotionProfiles(info)
+                    val preferredQuality = fpsProfiles[requestedFps]
+                        ?: fpsProfiles[120]
+                    val quality = preferredQuality ?: when {
+                        Quality.FHD in qualities -> Quality.FHD
+                        Quality.HD in qualities -> Quality.HD
+                        else -> qualities.first()
+                    }
+                    recorderBuilder.setQualitySelector(QualitySelector.from(quality))
+                } else if (!usesFeatureGroup) {
                     recorderBuilder.setQualitySelector(QualitySelector.from(videoQuality))
                 }
 
                 val videoCaptureBuilder = VideoCapture.Builder(recorderBuilder.build())
 
-                // On cameras where the feature group is not used (see canApplyVideoStabilization)
-                // EIS is deliberately left off. The pre-1.6 stabilization setters cannot be applied
-                // on top of the recorder's higher qualities -- UHD in particular is in none of the
-                // stabilization-guaranteed configurations -- so requesting them would either kill
-                // the preview or force the quality down. We keep the selected quality (4K by
-                // default) and simply do not stabilize. This is the app's long-standing behavior
-                // (EIS regressed here when it moved off the Camera2 API); the toggle is hidden
-                // rather than left inert on these cameras, and implementing EIS for them -- the
-                // pre-1.6 setters, restricted to the qualities that permit them -- is a separate
-                // change that needs a device the feature group cannot serve to test on.
+                // Keep the selected recording quality when EIS cannot be negotiated safely.
 
-                if (mActivity.camConfig.saveVideoAsPreviewed) {
+                if (currentMode != CameraMode.SLOW_MOTION &&
+                    mActivity.camConfig.saveVideoAsPreviewed) {
                     videoCaptureBuilder.setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
                 }
 
@@ -1741,9 +1596,15 @@ class CamConfig(private val mActivity: MainActivity) {
                 useCasesList.add(videoCapture!!)
             }
 
-            if (!mActivity.requiresVideoModeOnly) {
+            if (!mActivity.requiresVideoModeOnly && currentMode != CameraMode.SLOW_MOTION) {
                 imageCapture = builder.let {
-                    it.setCaptureMode(captureMode)
+                    it.setCaptureMode(
+                        if (currentMode == CameraMode.BURST || currentMode == CameraMode.PANORAMA ||
+                            currentMode == CameraMode.HYPERLAPSE || currentMode == CameraMode.TIMELAPSE_PHOTO ||
+                            currentMode == CameraMode.PRO)
+                            ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+                        else captureMode
+                    )
 
 
                     it.setTargetRotation(
@@ -1751,18 +1612,76 @@ class CamConfig(private val mActivity: MainActivity) {
                             ?: rotation
                     )
 
+                    val selfiePortrait = currentMode == CameraMode.PORTRAIT &&
+                        lensFacing == CameraSelector.LENS_FACING_FRONT
+                    // Never apply the ordinary 4:3 or 16:9 capture *preference* to Portrait
+                    // selfies: CameraX ranks aspect ratio ahead of requested size and would
+                    // reject higher-pixel JPEG sizes with a native non-standard aspect (e.g.
+                    // Pixel Fold's 3840x2600 vs 3264x2448). Keep the Preview preference intact.
                     val resolutionSelectorBuilder = ResolutionSelector.Builder()
-                        .setAspectRatioStrategy(aspectRatioStrategy)
+                    if (currentMode != CameraMode.PANORAMA || !selectHighestResolution) {
+                        // Panorama now follows the SAME regular aspect-ratio preference
+                        // when "Use highest photo resolution" is disabled.
+                        if (!selfiePortrait || !portraitFrontTargetPreferenceEnabled)
+                            resolutionSelectorBuilder.setAspectRatioStrategy(aspectRatioStrategy)
+                    }
 
-                    if (selectHighestResolution) {
-                        resolutionSelectorBuilder.setAllowedResolutionMode(ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
+                    if (currentMode == CameraMode.PANORAMA && selectHighestResolution) {
+                        // Highest camera-supported JPEG pixels, not a Pixel-model table.
+                        // The live ImageAnalysis stream remains independent and low-res.
+                        resolutionSelectorBuilder.setAllowedResolutionMode(
+                            ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE)
+                        resolutionSelectorBuilder.setResolutionFilter { sizes, _ ->
+                            sizes.sortedWith(compareByDescending<Size> {
+                                it.width.toLong() * it.height.toLong()
+                            }.thenByDescending { maxOf(it.width, it.height) })
+                        }
+                        resolutionSelectorBuilder.setResolutionStrategy(
+                            ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
+                    }
+                    if (selfiePortrait) {
+                        resolutionSelectorBuilder.setAllowedResolutionMode(
+                            ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE
+                        )
+                        if (portraitFrontTargetPreferenceEnabled) {
+                            // Track this even if Camera2 can't expose its JPEG list, so that
+                            // an unsupported CameraX highest-resolution bind also retries.
+                            portraitFrontExplicitTargetActive = true
+                            // CameraX's final ResolutionFilter runs after its aspect-ratio
+                            // ranking. Sort the *available*, still-bindable sizes globally by
+                            // original pixel count, without inventing an unsupported size.
+                            resolutionSelectorBuilder.setResolutionFilter { sizes, _ ->
+                                sizes.sortedWith(compareByDescending<Size> {
+                                    it.width.toLong() * it.height.toLong()
+                                }.thenByDescending { maxOf(it.width, it.height) })
+                            }
+                            resolutionSelectorBuilder.setResolutionStrategy(
+                                ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
+                            )
+                            preferredPortraitFrontJpegSize()?.let { nativeSize ->
+                                resolutionSelectorBuilder.setResolutionStrategy(
+                                    ResolutionStrategy(nativeSize,
+                                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)
+                                )
+                            }
+                        }
+                    } else if (selectHighestResolution && currentMode != CameraMode.BURST &&
+                        currentMode != CameraMode.PANORAMA && currentMode != CameraMode.HYPERLAPSE &&
+                        currentMode != CameraMode.TIMELAPSE_PHOTO) {
+                        resolutionSelectorBuilder.setAllowedResolutionMode(
+                            ResolutionSelector.PREFER_HIGHER_RESOLUTION_OVER_CAPTURE_RATE
+                        )
                     }
 
                     it.setResolutionSelector(resolutionSelectorBuilder.build())
 
-                    it.setFlashMode(flashMode)
+                    it.setFlashMode(if (currentMode == CameraMode.PANORAMA || currentMode == CameraMode.HYPERLAPSE ||
+                        currentMode == CameraMode.TIMELAPSE_PHOTO || currentMode == CameraMode.PRO)
+                        ImageCapture.FLASH_MODE_OFF else flashMode)
 
-                    it.setJpegQuality(photoQuality)
+                    // Panorama JPEG keyframes follow the global "Image Quality" setting.
+                    it.setJpegQuality(if (currentMode == CameraMode.PANORAMA)
+                        photoQuality.coerceIn(1, 100) else photoQuality)
 
                     it.build()
                 }
@@ -1771,26 +1690,18 @@ class CamConfig(private val mActivity: MainActivity) {
             }
         }
 
-        val previewBuilder = Preview.Builder()
-            .setTargetRotation(
-                preview?.targetRotation
-                    ?: rotation
-            )
-            .setResolutionSelector(
+        val previewBuilder = Preview.Builder().setTargetRotation(
+            preview?.targetRotation ?: rotation
+        )
+        if (currentMode != CameraMode.SLOW_MOTION) {
+            previewBuilder.setResolutionSelector(
                 ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
             )
+        }
 
-        // Pixels and potentially other devices enable EIS by default, which reduces the field of
-        // view and image quality for image capture if it's not explicitly disabled.
-        //
-        // setPreviewStabilizationEnabled() is one of the non-groupable setters that SessionConfig
-        // rejects outright once a feature group is in use, so it must not be called at all --
-        // with either value -- when stabilization is being requested through the feature group
-        // below. On every other path it is explicitly disabled: EIS is not applied off the feature
-        // group (see the VideoCapture builder above), and leaving it unset would let a device
-        // default preview stabilization cost photo capture its field of view.
+        // Disable default preview stabilization outside feature groups to preserve framing.
         when {
-            usesFeatureGroup -> {}
+            usesFeatureGroup || currentMode == CameraMode.SLOW_MOTION -> {}
 
             else -> previewBuilder.setPreviewStabilizationEnabled(false)
         }
@@ -1800,28 +1711,39 @@ class CamConfig(private val mActivity: MainActivity) {
             it.surfaceProvider = mActivity.previewView.surfaceProvider
         }
 
+        // Pro tools use a bounded, latest-frame-only analysis stream when explicitly enabled.
+        if (currentMode == CameraMode.PRO) {
+            mActivity.proAnalysisUseCase()?.let(useCasesList::add)
+        }
+
+        // Panorama alone receives a low-resolution, latest-frame-only motion stream.
+        // JPEG capture and the existing Preview retain binding priority.
+        if (currentMode == CameraMode.PANORAMA) {
+            mActivity.panoramaAnalysisUseCase()?.let(useCasesList::add)
+        }
+
+        // A second direct CameraX preview for the outer display, not a captured bitmap.
+        // Bound to the SAME camera and SAME activity lifecycle as the inner preview.
+        // Only plain Camera mode is used to avoid vendor extension/recording conflicts.
+        val foldOuterPreview = mActivity.foldSecondaryPreviewView()?.takeIf {
+            currentMode == CameraMode.CAMERA
+        }?.let { outer ->
+            Preview.Builder()
+                .setTargetRotation(outer.display?.rotation ?: rotation)
+                .setResolutionSelector(
+                    ResolutionSelector.Builder()
+                        .setAspectRatioStrategy(aspectRatioStrategy).build()
+                )
+                .build().also { second ->
+                    second.surfaceProvider = outer.surfaceProvider
+                    useCasesList.add(second)
+                }
+        }
+
         mActivity.forceUpdateOrientationSensor()
 
-        // The list ordering encodes priority (highest priority first): CameraX walks the subsets
-        // of this list in order and binds the first one the camera supports, so trailing features
-        // are the ones given up first.
-        //
-        // The video quality leads because it is an explicit, deliberate choice from a spinner,
-        // whereas stabilization is a toggle that defaults to on and that most users never touch;
-        // an explicit choice should not lose to a default. This inverts the CameraX 1.5.x
-        // behaviour, where asking for 2160p on a Pixel silently recorded at 1080p because
-        // stabilization won. Whatever is given up is now reported by onFeaturesSelected().
-        //
-        // Both stabilization features are listed because the EIS toggle is offered whenever
-        // either kind is supported (see canApplyVideoStabilization). They share one feature
-        // type, so CameraX never selects both and skips the subsets containing the pair; the
-        // effective order is quality+preview-stabilization, quality+video-stabilization, quality
-        // alone, then the same three without the quality. Preview stabilization is preferred
-        // because it stabilizes the preview and the recording alike, making the framing that is
-        // shown the framing that is recorded, while video stabilization only stabilizes the file.
-        //
-        // If the quality feature is dropped the quality follows Recorder's default quality
-        // selector (FHD, HD, SD in that order).
+        // CameraX resolves the first supported feature combination. Prioritize the selected
+        // recording quality, then preview stabilization, then video stabilization.
         val preferredFeatures = arrayListOf<GroupableFeature>()
 
         if (usesFeatureGroup) {
@@ -1830,26 +1752,15 @@ class CamConfig(private val mActivity: MainActivity) {
             preferredFeatures.add(GroupableFeatures.VIDEO_STABILIZATION)
         }
 
-        // Not every camera can run video, photo and preview at once. Ask before binding rather
-        // than binding and retrying without the photo use case when it throws: an
-        // IllegalArgumentException from bindToLifecycle() carries no indication of which
-        // constraint was violated, so the retry could not tell "this camera can't do video plus
-        // photo" apart from any other misconfiguration, and would answer both by silently
-        // dropping in-video snapshots. A genuine bug then looked like a missing feature. This
-        // asks the specific question, and leaves unexpected exceptions to surface as failures.
-        //
-        // Asking costs 80-140 ms, because the camera service resolves the whole feature group to
-        // answer it, so the verdict is cached (snapshotDropReason) and every entry into video mode
-        // after the first is free.
+        // Check whether the camera supports video snapshots before binding. Cache the verdict
+        // for the current lens, quality and capture options.
         val snapshotUseCase = imageCapture
-        if (isVideoMode && snapshotUseCase != null) {
+        if (currentMode == CameraMode.VIDEO && snapshotUseCase != null) {
             val probeKey = SnapshotProbeKey(
                 lensFacing, videoQuality, usesFeatureGroup, captureMode, selectHighestResolution
             )
 
             if (!snapshotDropReason.containsKey(probeKey)) {
-                snapshotProbeCount++
-
                 val cameraInfo = try {
                     cameraProvider?.getCameraInfo(cameraSelector)
                 } catch (exception: IllegalArgumentException) {
@@ -1863,18 +1774,8 @@ class CamConfig(private val mActivity: MainActivity) {
                         SessionConfig(useCases = useCases, requiredFeatureGroup = features)
                     ) == true
 
-                // When a quality feature is about to be requested, the probe has to require that
-                // quality too: a camera can be able to run the three plain streams yet not at the
-                // chosen quality, and a probe without it would keep the snapshot use case and leave
-                // the conflict to the feature-group resolver -- which resolves it by dropping the
-                // *quality*, with a notice blaming the camera for a quality it does support. The
-                // quality wins the conflict because it is an explicit choice from the settings while
-                // in-video snapshots are an implicit capability (the same reasoning as the preferred
-                // feature ordering above), and giving up the snapshots is already the established
-                // answer when they can't be bound at all. The second isSupported(useCasesList,
-                // emptySet()) arm keeps the snapshots when the quality is unreachable even without
-                // them: dropping them would buy nothing, and the resolver's "unsupported quality"
-                // notice is genuinely true then.
+                // Check snapshots together with the selected video quality. Prefer that quality
+                // when the camera cannot support both at once.
                 snapshotDropReason[probeKey] = when {
                     videoQualityFeature == null -> when {
                         isSupported(useCasesList, emptySet()) -> null
@@ -1901,6 +1802,30 @@ class CamConfig(private val mActivity: MainActivity) {
         }
 
         try {
+            if (currentMode == CameraMode.SLOW_MOTION) {
+                val info = cameraProvider!!.getCameraInfo(cameraSelector)
+                val capture = videoCapture ?: error("Missing high-speed video capture")
+                val config = HighSpeedVideoSessionConfig.Builder(capture)
+                    .setPreview(requireNotNull(preview))
+                    .setSlowMotionEnabled(true)
+                val ranges = info.getSupportedFrameRateRanges(config.build())
+                    .filter { it.lower == it.upper && it.upper >= 120 }
+                val wanted = commonPref.getInt("slow_motion_preferred_fps", 120)
+                val rate = ranges.firstOrNull { it.upper == wanted }
+                    ?: ranges.firstOrNull { it.upper == 120 }
+                    ?: ranges.filter { it.upper <= 240 }.maxByOrNull { it.upper }
+                    ?: ranges.minByOrNull { it.upper }
+                if (rate == null) {
+                    mActivity.showMessage(R.string.slow_motion_unavailable)
+                    switchMode(CameraMode.CAMERA)
+                    return
+                }
+                activeSlowMotionFps = rate.upper
+                camera = cameraProvider!!.bindToLifecycle(
+                    mActivity, cameraSelector, config.setFrameRateRange(rate).build()
+                )
+                mActivity.showMessage(mActivity.getString(R.string.slow_motion_frame_rate, rate.upper))
+            } else {
             val sessionConfig = SessionConfig(
                 useCases = useCasesList,
                 preferredFeatureGroup = preferredFeatures
@@ -1920,12 +1845,54 @@ class CamConfig(private val mActivity: MainActivity) {
                 mActivity, cameraSelector,
                 sessionConfig
             )
+            }
         } catch (exception: RuntimeException) {
-            // A vendor extension can still fail to initialize at bind time even though the
-            // pre-flight probe in isExtensionUsable() passed. When one was applied, record the
-            // failure so the mode stops being offered, rather than letting the exception kill the
-            // process or -- equally bad -- retrying the same doomed bind on every resume.
+            if (currentMode == CameraMode.PORTRAIT &&
+                lensFacing == CameraSelector.LENS_FACING_FRONT &&
+                portraitFrontExplicitTargetActive &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException)) {
+                // The HAL can advertise a still size that cannot be bound together with Preview.
+                // Fall back to CameraX's own ranking rather than breaking Portrait entirely.
+                Log.w(TAG, "PortraitFrontRes explicit still size cannot bind; reverting to " +
+                    "CameraX automatic resolution selection", exception)
+                portraitFrontTargetPreferenceEnabled = false
+                portraitFrontExplicitTargetActive = false
+                startCamera(true)
+                return
+            }
+            if (currentMode == CameraMode.PANORAMA &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException) &&
+                mActivity.onPanoramaAnalysisBindFailure()) {
+                Log.w(TAG, "Panorama analysis unsupported: retrying JPEG + preview", exception)
+                startCamera(true)
+                return
+            }
+            if (currentMode == CameraMode.PRO &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException) &&
+                mActivity.onProAnalysisBindFailure()) {
+                Log.w(TAG, "Pro analysis stream unsupported: retrying JPEG + preview", exception)
+                mActivity.showMessage("Pro overlays are unavailable on this lens")
+                startCamera(true)
+                return
+            }
+            if (foldOuterPreview != null &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException)) {
+                // Not all Camera2 device configurations permit Preview + Preview + JPEG.
+                // Undo the extra stream, then rebind the ordinary camera without crashing.
+                Log.e(TAG, "Two CameraX previews not supported; reverting to normal preview", exception)
+                mActivity.onFoldSecondaryPreviewBindFailure()
+                startCamera(true)
+                return
+            }
+            // Record permanent extension failures so the unavailable mode is hidden.
             val key = appliedExtension
+            if (currentMode == CameraMode.SLOW_MOTION &&
+                (exception is IllegalArgumentException || exception is UnsupportedOperationException)) {
+                Log.e(TAG, "High-speed session is unsupported", exception)
+                mActivity.showMessage(R.string.slow_motion_unavailable)
+                switchMode(CameraMode.CAMERA)
+                return
+            }
             if (key == null) {
                 // No extension in play: an IllegalArgumentException is a plain unsupported
                 // configuration (reported and swallowed); anything else is a real bug that must
@@ -1938,13 +1905,8 @@ class CamConfig(private val mActivity: MainActivity) {
                 throw exception
             }
 
-            // With an extension applied, only the vendor's known-permanent signatures mean "this
-            // mode is unusable here": UnsupportedOperationException (a vendor extender that
-            // advertised the mode and then threw from its own init -- Pixels: "Framework size list
-            // map not supported in pixel path") and IllegalArgumentException (an extension bind
-            // always uses the same fixed pair of use cases, so an invalid configuration is as
-            // permanent as any other vendor failure). Anything else is a real bug and is rethrown
-            // rather than hidden behind a silent mode switch.
+            // Treat known permanent vendor extension failures as unsupported modes.
+            // Propagate unexpected binding failures.
             if (exception !is UnsupportedOperationException && exception !is IllegalArgumentException) {
                 throw exception
             }
@@ -1953,16 +1915,21 @@ class CamConfig(private val mActivity: MainActivity) {
             extensionUsability[key] = false
             mActivity.showMessage(mActivity.getString(R.string.extension_mode_unavailable))
 
-            // The bind never completed: currentMode still names the mode that was just disabled
-            // and nothing is rendering into the preview. Refreshing the tabs alone would only
-            // *visually* select another tab, leaving a frozen preview behind a lying tab bar.
-            // Switch for real -- switchMode() rebinds, moves the highlight and refreshes the tabs.
-            // Recursion stops because the default mode uses no extension.
+            // Select the active fallback mode when an extension cannot bind.
             switchMode(DEFAULT_CAMERA_MODE)
             return
         }
 
+        if (currentMode == CameraMode.PORTRAIT &&
+            lensFacing == CameraSelector.LENS_FACING_FRONT) {
+            val bound = imageCapture?.resolutionInfo?.resolution
+            Log.i(TAG, "PortraitFrontRes CameraX bound ImageCapture=" +
+                "${bound?.width ?: "unknown"}x${bound?.height ?: "unknown"}, " +
+                "explicitTarget=$portraitFrontExplicitTargetActive")
+        }
+
         loadTabs()
+        mActivity.onProCameraBound()
 
         // Every bind hands out a fresh LiveData in extension modes, and the old observer would
         // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
@@ -1975,11 +1942,6 @@ class CamConfig(private val mActivity: MainActivity) {
         // every other reader is a gesture.
         handler.removeCallbacks(attachZoomState)
         handler.post(attachZoomState)
-
-        boundCameraOpened = false
-        cameraStateSource = camera?.cameraInfo?.cameraState?.also {
-            it.observe(mActivity, cameraStateObserver)
-        }
 
         mActivity.zoomBar.updateThumb(false)
 
@@ -2059,7 +2021,11 @@ class CamConfig(private val mActivity: MainActivity) {
     private fun availableModes(): Set<CameraMode> {
         return CameraMode.entries.filter {
             when (it) {
-                CameraMode.CAMERA, CameraMode.VIDEO -> true
+                CameraMode.CAMERA, CameraMode.VIDEO, CameraMode.PORTRAIT -> true
+                CameraMode.PRO -> mActivity !is SecureMainActivity
+                CameraMode.SLOW_MOTION, CameraMode.HYPERLAPSE,
+                CameraMode.TIMELAPSE_PHOTO, CameraMode.BURST, CameraMode.PANORAMA ->
+                    mActivity !is SecureMainActivity
                 CameraMode.QR_SCAN -> mActivity !is SecureMainActivity
                 else -> {
                     check(it.extensionMode != ExtensionMode.NONE)
@@ -2075,10 +2041,7 @@ class CamConfig(private val mActivity: MainActivity) {
         }.toSet()
     }
 
-    // The (selector, cache key) pairs availableModes() needs a verdict for that only a vendor
-    // probe can answer. Deliberately a pure cache check: even asking whether a mode is
-    // advertised costs a vendor proxy round trip (see probeExtension), so the probe round has
-    // to answer that too.
+    // Read cached extension availability without making vendor calls on the UI thread.
     private fun unprobedExtensions(): List<Pair<CameraSelector, Pair<Int, Int>>> {
         if (extensionsManager == null || cameraProvider == null) return emptyList()
 
@@ -2105,15 +2068,7 @@ class CamConfig(private val mActivity: MainActivity) {
             return
         }
 
-        // Refreshing the tabs must not run extension probes on the calling (main) thread: the
-        // first refresh after process start needs one vendor-extender init round trip over
-        // binder per advertised mode per lens, which measures at over half a second of blocked
-        // main thread -- more than a hundred dropped frames -- during startup on a Pixel 7 Pro.
-        // The probes run on their own short-lived thread instead (not cameraExecutor, which the
-        // QR analyzer may be draining) and the tabs are built once every verdict is in, so the
-        // tab bar still appears exactly once, fully formed, at the same time it used to; until
-        // then swipes and taps resolve to no tab and the app simply stays in the current mode.
-        // Later refreshes find the cache warm and rebuild synchronously, exactly as before.
+        // Run vendor extension probes off the UI thread and update tabs when they finish.
         val pending = unprobedExtensions()
         if (pending.isEmpty()) {
             buildTabs()
@@ -2136,19 +2091,13 @@ class CamConfig(private val mActivity: MainActivity) {
                 if (mActivity.isDestroyed || mActivity.isFinishing) return@execute
 
                 if (probedCameraProvider !== provider) {
-                    // The camera stack was reinitialized while probing: these verdicts describe
-                    // vendor state that no longer exists (the same reasoning as the cache clear
-                    // in initializeCamera). Any refresh that ran for the new provider found this
-                    // round still in flight and skipped scheduling, so start over for it.
+                    // Discard probe results if the camera provider changed during the check.
                     loadTabs()
                     return@execute
                 }
 
                 for ((key, verdict) in verdicts) {
-                    // Only fill in keys that are still unprobed. A bind failure that ran while this
-                    // round was in flight may have blacklisted the mode (extensionUsability[key] =
-                    // false); that verdict is fresher than this probe's and must not be overwritten
-                    // -- otherwise a mode that just failed to bind would be offered again.
+                    // Keep negative verdicts recorded during concurrent camera binding.
                     if (verdict != null && extensionUsability[key] == null) {
                         extensionUsability[key] = verdict
                     }
@@ -2158,58 +2107,350 @@ class CamConfig(private val mActivity: MainActivity) {
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private fun buildTabs() {
-        val tabLayout = mActivity.tabLayout
-        val availableModes = availableModes()
+    fun refreshFoldModeTabs() = buildTabs(force = true)
 
-        if (availableModes == tabLayout.getAllModes()) {
+    private val modePrefs by lazy {
+        mActivity.getSharedPreferences("camera_mode_order", Context.MODE_PRIVATE)
+    }
+    private var lastTabSnapshot: List<String>? = null
+
+    private fun modeKey(mode: Any): String = when (mode) {
+        is CameraMode -> "camera:${mode.name}"
+        is FoldTabMode -> "fold:${mode.name}"
+        is CameraShortcutMode -> "shortcut:${mode.name}"
+        else -> error("Unexpected camera mode")
+    }
+
+    private fun savedModeOrder(): List<String> = modePrefs.getString("order", "")!!
+        .split(',').filter { it.isNotBlank() }
+
+    private fun hiddenModeKeys(): Set<String> {
+        val ordinary = modePrefs.getStringSet("hidden", setOf("camera:PRO"))?.toSet().orEmpty()
+        val shownShortcuts = modePrefs.getStringSet("shortcut_visible",emptySet())?.toSet().orEmpty()
+        val unusedShortcuts = CameraShortcutMode.entries.map(::modeKey).toSet() - shownShortcuts
+        return ordinary + unusedShortcuts
+    }
+    private fun availableModeTabs(): List<Any> =
+        availableModes().toList() + mActivity.availableFoldTabModes() + CameraShortcutMode.entries
+
+    fun pasteModeTab(source: Any, destination: Any, after: Boolean) {
+        if (source is ModeTabAction || destination is ModeTabAction || source == destination) return
+        val current = availableModeTabs()
+            .map(::modeKey).toMutableList()
+        val saved = savedModeOrder()
+        current.sortWith(compareBy { key -> saved.indexOf(key).let {
+            if (it == -1) Int.MAX_VALUE else it
+        } })
+        val sourceKey = modeKey(source)
+        val destinationKey = modeKey(destination)
+        val reordered = app.grapheneos.camera.ui.ModeEditorOrder.paste(
+            current, sourceKey, destinationKey, after)
+        val hidden = modePrefs.getStringSet("hidden",setOf("camera:PRO"))?.toMutableSet()
+            ?: mutableSetOf()
+        hidden.remove(sourceKey)
+        val shown = modePrefs.getStringSet("shortcut_visible",emptySet())?.toMutableSet()
+            ?: mutableSetOf()
+        if (source is CameraShortcutMode) shown.add(sourceKey)
+        modePrefs.edit().putString("order",reordered.joinToString(","))
+            .putStringSet("hidden",hidden).putStringSet("shortcut_visible",shown).apply()
+        buildTabs(force=true)
+        mActivity.tabLayout.selectEditorMode(source)
+    }
+
+    fun reorderModeTabs(source: Any, destination: Any) {
+        if (source is ModeTabAction || destination is ModeTabAction) return
+        val current = availableModeTabs()
+            .map(::modeKey).toMutableList()
+        val saved = savedModeOrder()
+        current.sortWith(compareBy { key -> saved.indexOf(key).let {
+            if (it == -1) Int.MAX_VALUE else it
+        } })
+        val from = current.indexOf(modeKey(source))
+        val to = current.indexOf(modeKey(destination))
+        if (from < 0 || to < 0 || from == to) return
+        val moved = current.removeAt(from)
+        current.add(to, moved)
+        modePrefs.edit().putString("order", current.joinToString(",")).apply()
+        buildTabs(force = true)
+    }
+
+    fun hideModeTab(mode: Any) {
+        if (mode == CameraMode.CAMERA || mode is ModeTabAction) return
+        // Never hide the active mode without first leaving it. In-progress captures are protected.
+        if (mActivity.videoCapturer.isRecording || mActivity.isIntervalCaptureBusy()) return
+        if (mode is FoldTabMode && mode == mActivity.foldSelectedMode) {
+            mActivity.showMessage(mActivity.getString(R.string.mode_tab_leave_fold_first))
             return
         }
+        if (mode == currentMode) switchMode(CameraMode.CAMERA)
+        val next = modePrefs.getStringSet("hidden", setOf("camera:PRO"))?.toMutableSet()
+            ?: mutableSetOf()
+        val visibleShortcuts = modePrefs.getStringSet("shortcut_visible",emptySet())?.toMutableSet()
+            ?: mutableSetOf()
+        if (mode is CameraShortcutMode) visibleShortcuts.remove(modeKey(mode))
+        else next.add(modeKey(mode))
+        modePrefs.edit().putStringSet("hidden", next)
+            .putStringSet("shortcut_visible",visibleShortcuts).apply()
+        buildTabs(force = true)
+    }
 
-        Log.i(TAG, "Refreshing tabs...")
+    private fun restoreModeTab(mode: Any) {
+        val next = modePrefs.getStringSet("hidden", setOf("camera:PRO"))?.toMutableSet()
+            ?: mutableSetOf()
+        val visibleShortcuts = modePrefs.getStringSet("shortcut_visible",emptySet())?.toMutableSet()
+            ?: mutableSetOf()
+        next.remove(modeKey(mode))
+        if (mode is CameraShortcutMode) visibleShortcuts.add(modeKey(mode))
+        modePrefs.edit().putStringSet("hidden", next)
+            .putStringSet("shortcut_visible",visibleShortcuts).apply()
+        buildTabs(force = true)
+    }
 
-        tabLayout.removeAllTabs()
-
-        availableModes.forEach { mode ->
-            tabLayout.newTab().let { tab ->
-                tab.setText(mode.uiName)
-
-                tab.view.setOnTouchListener { _, e ->
-                    if (e.action == MotionEvent.ACTION_UP) {
-                        mActivity.finalizeMode(tab)
+    /** 'More' holds hidden but available modes, never modes unsupported by this device. */
+    private fun showHiddenModes() {
+        if (mActivity.videoCapturer.isRecording || mActivity.isIntervalCaptureBusy()) return
+        val hidden = hiddenModeKeys()
+        val order = savedModeOrder()
+        val items: List<Any> = availableModeTabs()
+            .filter { modeKey(it) in hidden }
+            .sortedWith(compareBy { order.indexOf(modeKey(it)).let { pos ->
+                if (pos == -1) Int.MAX_VALUE else pos
+            } })
+        val dp = mActivity.resources.displayMetrics.density
+        fun px(value: Float) = (value * dp + 0.5f).toInt()
+        val rows = LinearLayout(mActivity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(px(14f), px(8f), px(14f), px(8f))
+        }
+        val dialog = MaterialAlertDialogBuilder(mActivity)
+            .setTitle(R.string.mode_tab_more)
+            .setView(ScrollView(mActivity).apply { addView(rows) })
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        items.forEach { mode ->
+            rows.addView(LinearLayout(mActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                addView(TextView(mActivity).apply {
+                    text = modeTabLabel(mode)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                    setTextColor(Color.WHITE)
+                    setPadding(px(12f), px(13f), px(12f), px(13f))
+                    contentDescription = mActivity.getString(R.string.mode_tab_open, modeTabLabel(mode))
+                    setOnClickListener {
+                        dialog.dismiss()
+                        if (mActivity.tabLayout.isEditingModes) {
+                            restoreModeTab(mode)
+                            mActivity.tabLayout.selectEditorMode(mode)
+                            mActivity.tabLayout.scrollEditorToMode(mode)
+                        } else {
+                            when (mode) {
+                                is CameraMode -> switchMode(mode)
+                                is FoldTabMode -> mActivity.openFoldModeFromMore(mode)
+                                is CameraShortcutMode -> mActivity.openCameraShortcut(mode)
+                            }
+                        }
                     }
-                    false
-                }
-                // A tap has committed its tab on the finger's lift, and still holds it pressed
-                // when it clicks it. A click from an accessibility service or a key has no touch
-                // to do that, and on its own would only select the tab.
-                tab.view.setOnClickListener {
-                    if (!it.isPressed) {
-                        mActivity.finalizeMode(tab)
+                }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                addView(TextView(mActivity).apply {
+                    text = "+"
+                    setTextColor(Color.WHITE)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+                    gravity = Gravity.CENTER
+                    contentDescription = mActivity.getString(R.string.mode_tab_restore, modeTabLabel(mode))
+                    setOnClickListener {
+                        restoreModeTab(mode)
+                        if (mActivity.tabLayout.isEditingModes) {
+                            mActivity.tabLayout.selectEditorMode(mode)
+                            mActivity.tabLayout.scrollEditorToMode(mode)
+                        }
+                        dialog.dismiss()
                     }
-                }
-                tab.tag = mode
+                }, LinearLayout.LayoutParams(px(48f), px(48f)))
+            })
+        }
+        dialog.show()
+    }
 
-                // Highlight the mode the camera is really in, not the default one: the tabs are
-                // also rebuilt long after startup, once the extension probes report back.
-                tabLayout.addTab(tab, mode == currentMode)
+    private fun modeTabLabel(mode: Any): String = when (mode) {
+        // Never rename the ordinary 180° PANORAMA tab when the separate 360°
+        // shortcut is active. They are distinct tabs with fixed labels.
+        CameraMode.PANORAMA -> mActivity.getString(CameraMode.PANORAMA.uiName)
+        is CameraMode -> mActivity.getString(mode.uiName)
+        FoldTabMode.DUAL -> mActivity.getString(R.string.fold_tab_dual)
+        FoldTabMode.REAR -> mActivity.getString(R.string.fold_tab_rear)
+        CameraShortcutMode.DUAL_PHOTO -> mActivity.getString(R.string.dual_photo_mode)
+        CameraShortcutMode.DUAL_VIDEO -> mActivity.getString(R.string.dual_video_mode)
+        CameraShortcutMode.PANORAMA_360 -> mActivity.getString(R.string.panorama_360_mode)
+        ModeTabAction.MORE -> mActivity.getString(R.string.mode_tab_more)
+        else -> ""
+    }
+
+    private fun editorView(mode: Any): FrameLayout {
+        val dp = mActivity.resources.displayMetrics.density
+        fun px(value: Float) = (value * dp + 0.5f).toInt()
+        val wrapper = FrameLayout(mActivity).apply {
+            background = GradientDrawable().apply {
+                setColor(Color.TRANSPARENT)
+                cornerRadius = px(9f).toFloat()
+                setStroke(px(1.5f), Color.WHITE)
             }
+            minimumHeight = px(46f)
+        }
+        val isHideable = mode != CameraMode.CAMERA && mode !is ModeTabAction
+        wrapper.addView(TextView(mActivity).apply {
+            text = modeTabLabel(mode)
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setSingleLine(true)
+            gravity = Gravity.CENTER
+            setPadding(px(12f), px(13f), px(if (isHideable) 25f else 12f), px(9f))
+        }, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, px(46f)))
+        if (isHideable) {
+            wrapper.addView(TextView(mActivity).apply {
+                text = "×"
+                contentDescription = mActivity.getString(R.string.mode_tab_hide)
+                setTextColor(Color.WHITE)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f)
+                gravity = Gravity.CENTER
+            }, FrameLayout.LayoutParams(px(27f), px(27f), Gravity.TOP or Gravity.END))
+        }
+        return wrapper
+    }
+
+    private fun buildTabs(force: Boolean = false) {
+        val tabLayout = mActivity.tabLayout
+        val modes: List<Any> = availableModeTabs()
+        val hidden = hiddenModeKeys()
+        val order = savedModeOrder()
+        // A Dual mode launched from More stays visible as the CURRENT camera mode,
+        // even when its tab is normally hidden. Leaving it restores the user's layout.
+        val selectedMode = mActivity.activeModeTabTag()
+        // Shortcuts selected through More get a temporary visible tab while
+        // active. In particular 360° must never masquerade as PANORAMA 180°.
+        val visible = modes.filter { it == CameraMode.CAMERA || modeKey(it) !in hidden ||
+            it == selectedMode }
+            .sortedWith(compareBy { mode -> order.indexOf(modeKey(mode)).let {
+                if (it == -1) Int.MAX_VALUE else it
+            } })
+        val editing = tabLayout.isEditingModes
+        val snapshot = visible.map(::modeKey) + listOf("action:more", "editor:$editing", "selected:${modeKey(selectedMode)}")
+        if (!force && lastTabSnapshot == snapshot) return
+        lastTabSnapshot = snapshot
+        val display: List<Any> = visible + ModeTabAction.MORE
+        tabLayout.markTabsRebuilding()
+        tabLayout.removeAllTabs()
+        val height = (if (editing) 52 else 30) * mActivity.resources.displayMetrics.density
+        tabLayout.layoutParams = tabLayout.layoutParams.apply { this.height = height.toInt() }
+        tabLayout.setSelectedTabIndicator(
+            if (editing) null else androidx.appcompat.content.res.AppCompatResources.getDrawable(
+                mActivity, R.drawable.mode_indicator
+            )
+        )
+        display.forEach { mode ->
+            val tab = tabLayout.newTab()
+            tab.text = modeTabLabel(mode)
+            tab.tag = mode
+            if (editing) tab.customView = editorView(mode)
+            tab.view.setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_UP && !tabLayout.isEditingModes) {
+                    when (mode) {
+                        ModeTabAction.MORE -> showHiddenModes()
+                        is CameraMode, is FoldTabMode -> mActivity.finalizeMode(tab)
+                        is CameraShortcutMode -> mActivity.openCameraShortcut(mode)
+                    }
+                }
+                false
+            }
+            // Selecting the CAMERA/PANORAMA backing mode as well as its active
+            // shortcut made the strip jump to a seemingly random nearby tab.
+            tabLayout.addTab(tab, mode == selectedMode)
+        }
+        tabLayout.canEditModes = {
+            !mActivity.videoCapturer.isRecording && !mActivity.isIntegratedDualRecording() && !mActivity.isIntervalCaptureBusy()
+        }
+        tabLayout.onEditModeChanged = { enabled ->
+            mActivity.setModeEditorVisible(enabled)
+            buildTabs(force = true)
+        }
+        tabLayout.onTabReordered = { from, to -> reorderModeTabs(from, to) }
+        tabLayout.onTabPaste = { from, to, after -> pasteModeTab(from, to, after) }
+        tabLayout.onTabHidden = { hideModeTab(it) }
+        tabLayout.onMoreClicked = { showHiddenModes() }
+        if (!editing && tabLayout.getTabForTag(selectedMode) == null) {
+            tabLayout.getTabForAction(ModeTabAction.MORE)?.let(tabLayout::goToTab)
         }
     }
 
+    /** The offered high-speed speeds come from this camera/session, not a device-name guess. */
+    var activeSlowMotionFps: Int = 120
+        private set
+
+    /** Check both high-speed video resolutions; 240 fps may be HD-only on some cameras. */
+    private fun supportedSlowMotionProfiles(info: CameraInfo): Map<Int, Quality> {
+        val previewCase = preview ?: return emptyMap()
+        val availableQualities = try {
+            Recorder.getHighSpeedVideoCapabilities(info)
+                ?.getSupportedQualities(DynamicRange.SDR).orEmpty()
+        } catch (error: RuntimeException) {
+            Log.w(TAG, "Unable to inspect high-speed video qualities", error)
+            return emptyMap()
+        }
+        val result = linkedMapOf<Int, Quality>()
+        for (quality in listOf(Quality.FHD, Quality.HD)) {
+            if (quality !in availableQualities) continue
+            try {
+                val capture = VideoCapture.Builder(
+                    Recorder.Builder().setQualitySelector(QualitySelector.from(quality)).build()
+                ).build()
+                val session = HighSpeedVideoSessionConfig.Builder(capture)
+                    .setPreview(previewCase).setSlowMotionEnabled(true).build()
+                info.getSupportedFrameRateRanges(session)
+                    .filter { it.lower == it.upper && it.upper in listOf(120, 240) }
+                    .forEach { result.putIfAbsent(it.upper, quality) }
+            } catch (error: RuntimeException) {
+                Log.w(TAG, "High-speed capability query failed for $quality", error)
+            }
+        }
+        return result
+    }
+
+    fun showSlowMotionFpsChoice() {
+        if (currentMode != CameraMode.SLOW_MOTION || mActivity.videoCapturer.isRecording) return
+        val info = try { cameraProvider?.getCameraInfo(cameraSelector) } catch (_: Exception) { null }
+            ?: return
+        val options = supportedSlowMotionProfiles(info).keys.sorted()
+        if (options.isEmpty()) return
+        val selected = options.indexOf(commonPref.getInt("slow_motion_preferred_fps", 120)).coerceAtLeast(0)
+        MaterialAlertDialogBuilder(mActivity).setTitle(R.string.slow_motion_fps_title)
+            .setSingleChoiceItems(options.map { "${it} fps" }.toTypedArray(), selected) { dialog, index ->
+                dialog.dismiss()
+                if (currentMode != CameraMode.SLOW_MOTION) return@setSingleChoiceItems
+                val choice = options[index]
+                commonPref.edit().putInt("slow_motion_preferred_fps", choice).apply()
+                startCamera(true)
+            }.setNegativeButton(android.R.string.cancel, null).show()
+    }
+
     fun switchMode(mode: CameraMode) {
+        // Restore the ordinary camera pipeline before switching to any normal mode.
+        mActivity.leaveIntegratedDualForModeChange()
         if (currentMode == mode) {
             return
         }
 
+        if (mActivity.isIntervalCaptureBusy()) return
+        mActivity.stopBurstCapture(modeChanged = true)
+        mActivity.stopPanoramaCapture()
+        mActivity.closeFoldDualForModeChange()
+        if (mode == CameraMode.PORTRAIT) portraitFrontTargetPreferenceEnabled = true
         currentMode = mode
 
         mActivity.cancelFocusTimer()
 
         isQRMode = mode == CameraMode.QR_SCAN
 
-        isVideoMode = mode == CameraMode.VIDEO
+        isVideoMode = mode == CameraMode.VIDEO || mode == CameraMode.SLOW_MOTION
 
         if (isQRMode) {
             mActivity.qrOverlay.visibility = View.VISIBLE
@@ -2244,7 +2485,7 @@ class CamConfig(private val mActivity: MainActivity) {
 
             mActivity.captureButton.setBackgroundResource(R.drawable.cbutton_bg)
 
-            if (isVideoMode) {
+            if (mode == CameraMode.VIDEO) {
                 mActivity.setCaptureButtonIcon(R.drawable.recording, R.string.start_recording)
             } else {
                 mActivity.setCaptureButtonIcon(R.drawable.camera_shutter, R.string.capture)
@@ -2255,13 +2496,24 @@ class CamConfig(private val mActivity: MainActivity) {
         mActivity.updateSelfTimerBadge()
 
         startCamera(true)
+        mActivity.onProModeChanged()
+        // Store user mode selection only for a normal app launch, not lockscreen/capture intents.
+        // If CameraX falls back to Camera during a failed bind, save the actual resulting mode.
+        if (mActivity.javaClass == MainActivity::class.java && reopenLastUsedMode) {
+            saveCurrentModeForNextLaunch()
+        }
+        if (currentMode == CameraMode.PANORAMA) mActivity.showPanoramaGuide()
+        if (currentMode == CameraMode.SLOW_MOTION) {
+            mActivity.captureButton.post { if (currentMode == CameraMode.SLOW_MOTION) showSlowMotionFpsChoice() }
+        }
 
         // A mode can change with no touch involved, so the strip follows the camera and not the
         // other way round - currentMode, because an extension that fails to bind falls back to
         // another mode from inside startCamera(). Left until after that rebind, which blocks the
         // main thread for long enough to swallow the animation whole.
         if (mActivity.shouldShowCameraModeTabs()) {
-            mActivity.tabLayout.getTabForMode(currentMode)?.let { tab ->
+            (mActivity.tabLayout.getTabForTag(mActivity.activeModeTabTag())
+                ?: mActivity.tabLayout.getTabForAction(ModeTabAction.MORE))?.let { tab ->
                 mActivity.tabLayout.goToTab(tab)
             }
         }

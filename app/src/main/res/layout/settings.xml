@@ -389,6 +389,7 @@
                         </FrameLayout>
                     </LinearLayout>
 
+
                     <!-- Extra padding for the bottom of the list -->
                     <View
                         android:layout_width="match_parent"

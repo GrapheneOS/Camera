@@ -47,7 +47,6 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.databinding.GalleryBinding
 import app.grapheneos.camera.editCapturedItem
 import app.grapheneos.camera.shareCapturedItem
-import app.grapheneos.camera.util.OneAtATimeStarter
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getParcelableArrayListExtra
 import app.grapheneos.camera.util.getParcelableExtra
@@ -70,8 +69,6 @@ class InAppGallery : AppCompatActivity() {
 
     val asyncLoaderOfCapturedItems = Executors.newSingleThreadExecutor()
     val asyncImageLoader = Executors.newSingleThreadExecutor()
-
-    val playerStarter = OneAtATimeStarter(this)
 
     private lateinit var snackBar: Snackbar
     private var ogColor by Delegates.notNull<Int>()
@@ -447,11 +444,7 @@ class InAppGallery : AppCompatActivity() {
                 }
             }
 
-            // Neither source has a creation time to give for a stripped photo kept through the
-            // Storage Access Framework, but the app named the file after the moment it captured it.
-            // A name records wall-clock time and not the zone it was read in, so this one is shown
-            // without a zone: after the device travels, the digits are still the time the camera
-            // showed at capture, but naming a zone for them would assert the wrong one.
+            // Use the filename timestamp when storage metadata is missing; omit the timezone.
             if (dateAdded == null) {
                 curItem.captureTime()?.let { dateAdded = convertTime(it, showTimeZone = false) }
             }
@@ -767,22 +760,9 @@ class InAppGallery : AppCompatActivity() {
             }
             invalidateOptionsMenu()
         } else {
-            val adapterItems = existingAdapter.items
-            adapterItems.ensureCapacity(items.size)
-
-            // At times the first item could get deleted before the others get
-            // loaded especially on relatively slower devices, allowing null without throwing
-            // an exception enables handling of such scenarios
-            val preloadedItem = adapterItems.getOrNull(0)
-
-            items.forEachIndexed { index, item ->
-                // this check is needed to avoid showing preloaded item twice (it's not guaranteed
-                // that it'll be first in the list)
-                if (index > 50 || item != preloadedItem) {
-                    adapterItems.add(item)
-                }
-            }
-            existingAdapter.notifyItemRangeInserted(1, items.size - 1)
+            existingAdapter.items.clear()
+            existingAdapter.items.addAll(items)
+            existingAdapter.notifyDataSetChanged()
         }
         gallerySlider.setCurrentItem(capturedItemPosition, false)
         showUI()

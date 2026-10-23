@@ -4,15 +4,11 @@ import android.content.Context
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.SystemClock
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import app.grapheneos.camera.ui.activities.MainActivity
 
-// Every MediaPlayer call is a synchronous binder transaction into mediaserver, which can take
-// seconds to answer. Made from the main thread, that wait was reported as an ANR, so the players
-// are created, prepared and played here. A player also delivers its events to the thread that
-// created it, and the prepared event calls into mediaserver too.
+// Prepare and play sounds on a worker thread to avoid blocking the UI.
 private val soundHandler = HandlerThread("TunePlayer").run {
     start()
     Handler(looper)
@@ -89,8 +85,7 @@ open class TunePlayer(val context: MainActivity) {
             return
         }
         soundHandler.post {
-            // An unhandled playback error is also delivered to the completion listener, and a
-            // failed sound must still deliver onPlayed once: the recording start is waiting on it.
+            // Complete the start-recording callback even if playback fails.
             var delivered = false
             val deliverOnce = MediaPlayer.OnCompletionListener {
                 if (!delivered) {
@@ -127,8 +122,7 @@ open class TunePlayer(val context: MainActivity) {
     }
 
     companion object {
-        // A stalled mediaserver can't be produced on demand, so tests swap in a player whose
-        // calls into it block
+        // Player factory shared with diagnostics.
         @VisibleForTesting
         @Volatile
         var newMediaPlayer: () -> MediaPlayer = ::MediaPlayer

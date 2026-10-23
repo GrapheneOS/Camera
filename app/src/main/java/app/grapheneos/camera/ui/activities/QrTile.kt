@@ -6,11 +6,7 @@ import android.os.Bundle
 import androidx.core.content.getSystemService
 import app.grapheneos.camera.CameraMode
 
-// Requires integration into the OS, see config_defaultQrCodeComponent in frameworks/base.
-//
-// SystemUI links this activity via a quick tile or a lockscreen shortcut.
-// The activity name is historical, changing it would break the SystemUI integration for users on
-// older OS versions.
+// Keep this activity name for existing SystemUI QR shortcuts.
 class QrTile : SecureMainActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
