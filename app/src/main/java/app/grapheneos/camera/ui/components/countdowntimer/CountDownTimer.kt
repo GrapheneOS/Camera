@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 private val FONT_SIZE = 190.dp
+private val BACKGROUND_SHAPE = RoundedCornerShape(size = 28.dp)
 
 /** The digits ignore the font scale and shrink to fit the incoming constraints. */
 @Composable
@@ -238,7 +240,7 @@ private fun PreviewCountDownTimerText(
         boldness = { boldness },
         modifier = modifier.background(
             color = MaterialTheme.cameraColors.overlayScrim,
-            shape = MaterialTheme.shapes.large,
+            shape = BACKGROUND_SHAPE,
         ),
     )
 }

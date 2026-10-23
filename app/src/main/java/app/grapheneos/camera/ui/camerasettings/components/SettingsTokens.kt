@@ -24,7 +24,7 @@ internal fun groupedItemShape(
     index: Int,
     count: Int,
 ): Shape {
-    val outer = MaterialTheme.shapes.small
+    val outer = MaterialTheme.shapes.large
     val inner = ShapeDefaults.ExtraSmall
 
     return when {

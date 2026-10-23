@@ -120,7 +120,7 @@ private fun LicenseText(text: String) {
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.large)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(TEXT_PADDING),
         )

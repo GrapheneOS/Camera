@@ -64,7 +64,7 @@ internal fun CaptureTimeTitle(
 
     Column(
         modifier = modifier
-            .clip(MaterialTheme.shapes.small)
+            .clip(MaterialTheme.shapes.large)
             .then(clickModifier)
             .padding(horizontal = TITLE_HORIZONTAL_PADDING)
             .semantics(mergeDescendants = true) {},

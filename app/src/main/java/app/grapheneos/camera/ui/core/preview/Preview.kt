@@ -73,7 +73,7 @@ internal fun CameraPreviewViewfinder(
             .aspectRatio(ratio = aspectRatio)
             .background(
                 color = PREVIEW_SCENE,
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.extraLarge,
             ),
         content = content,
     )
