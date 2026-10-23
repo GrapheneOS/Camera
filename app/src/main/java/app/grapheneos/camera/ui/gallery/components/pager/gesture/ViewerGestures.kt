@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components.gesture
+package app.grapheneos.camera.ui.gallery.components.pager.gesture
 
 import android.view.ViewConfiguration
 import androidx.compose.runtime.Composable
@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
 
 @Composable
 internal fun rememberViewerGestures(

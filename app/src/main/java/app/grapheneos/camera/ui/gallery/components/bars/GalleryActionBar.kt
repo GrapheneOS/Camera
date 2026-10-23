@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.bars
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box

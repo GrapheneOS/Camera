@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
-import app.grapheneos.camera.ui.gallery.components.CaptureTimeTitle
-import app.grapheneos.camera.ui.gallery.components.GalleryMenu
+import app.grapheneos.camera.ui.gallery.components.bars.CaptureTimeTitle
+import app.grapheneos.camera.ui.gallery.components.bars.GalleryMenu
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar

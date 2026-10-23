@@ -1,9 +1,8 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.pager
 
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -19,9 +18,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
-import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
-import app.grapheneos.camera.ui.gallery.components.gesture.rememberViewerGestures
+import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
+import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
+import app.grapheneos.camera.ui.gallery.components.pager.gesture.rememberViewerGestures
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
@@ -33,36 +32,9 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private const val CAMERA_PAGE = 0
-private const val FIRST_ITEM_PAGE = 1
 private const val CAMERA_PAGE_KEY = "camera"
 
 private val PAGE_SPACING = 24.dp
-
-internal val PagerState.settledItemIndex: Int
-    get() = settledPage - FIRST_ITEM_PAGE
-
-internal val PagerState.cameraPageProgress: Float
-    get() = when (pageCount) {
-        0 -> 0f
-        else -> (FIRST_ITEM_PAGE - currentPage - currentPageOffsetFraction).coerceIn(0f, 1f)
-    }
-
-@Composable
-internal fun rememberGalleryPagerState(
-    currentPage: Int,
-    itemCount: () -> Int,
-): PagerState {
-    return rememberPagerState(
-        initialPage = currentPage + FIRST_ITEM_PAGE,
-        pageCount = {
-            when (val count = itemCount()) {
-                0 -> 0
-                else -> count + FIRST_ITEM_PAGE
-            }
-        },
-    )
-}
 
 @Composable
 internal fun GalleryPager(
@@ -123,38 +95,29 @@ internal fun GalleryPager(
 
     HorizontalPager(
         state = pagerState,
-        key = { page ->
-            when (page) {
-                CAMERA_PAGE -> CAMERA_PAGE_KEY
-                else -> pages[page - FIRST_ITEM_PAGE].key
-            }
-        },
+        key = { page -> pageKey(pages = pages, page = page) },
         pageSpacing = PAGE_SPACING,
         beyondViewportPageCount = 1,
         userScrollEnabled = !isLeavingToCamera,
         modifier = modifier.onSizeChanged { containerSize = it },
     ) { index ->
-        if (index == CAMERA_PAGE) {
-            CameraPage()
-            return@HorizontalPager
+        when (val page = pages.getOrNull(index - FIRST_ITEM_PAGE)) {
+            null -> CameraPage()
+            else -> ViewerPage(
+                page = page,
+                preview = previews[page.key] ?: GalleryPreview.Loading,
+                details = details[page.key] ?: GalleryDetails.Loading,
+                isCurrentPage = index == settledPage,
+                showsDetails = showsDetails,
+                gestures = gestures,
+                viewerTransform = viewerTransform,
+                detailsPosition = detailsPosition,
+                onTap = onTap,
+                onVideoClick = onVideoClick,
+                onOpenMapClick = onOpenMapClick,
+                onCopy = onCopy,
+            )
         }
-
-        val page = pages[index - FIRST_ITEM_PAGE]
-
-        ViewerPage(
-            page = page,
-            preview = previews[page.key] ?: GalleryPreview.Loading,
-            details = details[page.key] ?: GalleryDetails.Loading,
-            isCurrentPage = index == settledPage,
-            showsDetails = showsDetails,
-            gestures = gestures,
-            viewerTransform = viewerTransform,
-            detailsPosition = detailsPosition,
-            onTap = onTap,
-            onVideoClick = onVideoClick,
-            onOpenMapClick = onOpenMapClick,
-            onCopy = onCopy,
-        )
     }
 }
 
@@ -249,6 +212,16 @@ private fun ViewerLayoutEffect(
             canZoom = canZoom,
         )
         detailsState.updateLayout(containerSize.toSize())
+    }
+}
+
+private fun pageKey(
+    pages: List<GalleryPageUiModel>,
+    page: Int,
+): String {
+    return when (page) {
+        CAMERA_PAGE -> CAMERA_PAGE_KEY
+        else -> pages[page - FIRST_ITEM_PAGE].key
     }
 }
 

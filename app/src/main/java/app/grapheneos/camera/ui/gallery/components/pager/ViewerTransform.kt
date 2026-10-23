@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.gallery.components
+package app.grapheneos.camera.ui.gallery.components.pager
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector
@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.animation.follow
-import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
+import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch

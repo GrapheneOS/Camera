@@ -6,8 +6,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
-import app.grapheneos.camera.ui.gallery.components.gesture.DetailsPanelState
-import app.grapheneos.camera.ui.gallery.components.gesture.ViewerTransformState
+import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
+import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 
 @Composable
