@@ -13,3 +13,12 @@ fun PackageManager.resolveActivity(intent: Intent, flags: Long): ResolveInfo? {
         resolveActivity(intent, flags.toInt())
     }
 }
+
+fun PackageManager.queryIntentActivities(intent: Intent, flags: Long): List<ResolveInfo> {
+    return if (Build.VERSION.SDK_INT >= 33) {
+        queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(flags))
+    } else {
+        @Suppress("DEPRECATION")
+        queryIntentActivities(intent, flags.toInt())
+    }
+}

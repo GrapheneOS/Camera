@@ -102,6 +102,7 @@ internal class GalleryViewModel @Inject constructor(
 
             is Action.VideoClicked -> openVideo()
             is Action.SystemGalleryClicked -> stateHolder.send(Effect.OpenSystemGallery)
+            is Action.CaptureTimeClicked -> showInSystemGallery()
             is Action.EditClicked -> edit(usesDefaultEditor = true)
             is Action.EditWithClicked -> edit(usesDefaultEditor = false)
             is Action.ShareClicked -> share()
@@ -191,6 +192,10 @@ internal class GalleryViewModel @Inject constructor(
         state.currentItem()?.let { item ->
             stateHolder.send(Effect.OpenVideo(item.uri))
         }
+    }
+
+    private fun showInSystemGallery() {
+        sendToOtherApp { item -> Effect.ShowInSystemGallery(item) }
     }
 
     private fun edit(usesDefaultEditor: Boolean) {

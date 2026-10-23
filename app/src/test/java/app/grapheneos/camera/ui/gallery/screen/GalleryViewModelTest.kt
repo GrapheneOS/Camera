@@ -214,6 +214,7 @@ class GalleryViewModelTest {
                 Action.ShareClicked,
                 Action.UseAsClicked,
                 Action.VideoClicked,
+                Action.CaptureTimeClicked,
                 Action.DetailsShownChanged(isShown = true),
             ).forEach(viewModel::onAction)
 
@@ -235,12 +236,25 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.UseAsClicked)
             viewModel.onAction(Action.EditClicked)
             viewModel.onAction(Action.SystemGalleryClicked)
+            viewModel.onAction(Action.CaptureTimeClicked)
             viewModel.onAction(Action.OpenMapClicked)
 
             assertFalse(viewModel.uiState.value.showsExternalActions)
             assertFalse(viewModel.uiState.value.showsSystemGallery)
             assertFalse(viewModel.uiState.value.showsUseAs)
             assertTrue(effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun captureTimeClicked_showsTheItemInTheSystemGallery() {
+        runTest {
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(Action.CaptureTimeClicked)
+
+            assertEquals(listOf(Effect.ShowInSystemGallery(NEWEST)), effects)
         }
     }
 

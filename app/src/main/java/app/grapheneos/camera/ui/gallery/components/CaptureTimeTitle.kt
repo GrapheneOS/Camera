@@ -56,7 +56,7 @@ internal fun CaptureTimeTitle(
     val clickModifier = when (onClick) {
         null -> Modifier
         else -> Modifier.clickable(
-            onClickLabel = stringResource(R.string.open_gallery),
+            onClickLabel = stringResource(R.string.show_in_gallery),
             role = Role.Button,
             onClick = onClick,
         )

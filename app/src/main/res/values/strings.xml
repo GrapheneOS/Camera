@@ -36,6 +36,7 @@
     <string name="loading_camera">Loading camera</string>
     <string name="mute_audio">Mute audio</string>
     <string name="open_gallery">Open gallery</string>
+    <string name="show_in_gallery">Show in gallery</string>
     <string name="pause_recording">Pause recording</string>
     <string name="play_preview">Play Preview</string>
     <string name="rec_without_audio">Start recording without audio</string>
