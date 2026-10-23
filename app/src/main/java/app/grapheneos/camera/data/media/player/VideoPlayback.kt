@@ -27,6 +27,8 @@ internal interface VideoPlayback {
 
     val shownPosition: StateFlow<Duration>
 
+    val currentPosition: Duration
+
     fun setSurface(surface: Surface?)
 
     fun play()
@@ -55,6 +57,9 @@ internal class VideoPlaybackImpl(
 
     private val _shownPosition = MutableStateFlow(Duration.ZERO)
     override val shownPosition: StateFlow<Duration> = _shownPosition.asStateFlow()
+
+    override val currentPosition: Duration
+        get() = player.currentPosition.milliseconds
 
     private val frameListener = VideoFrameMetadataListener { presentationTimeUs, _, _, _ ->
         _shownPosition.value = presentationTimeUs.coerceAtLeast(0L).microseconds

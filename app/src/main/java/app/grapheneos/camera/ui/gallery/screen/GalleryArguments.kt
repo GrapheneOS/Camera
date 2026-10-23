@@ -8,6 +8,7 @@ private const val SESSION_ITEMS = "gallery_session_items"
 private const val LAST_CAPTURED_ITEM = "gallery_last_captured_item"
 private const val VIEWED_ITEM = "gallery_viewed_item"
 private const val SHOWS_DETAILS = "gallery_shows_details"
+private const val IS_MUTED = "gallery_is_muted"
 
 internal fun galleryArguments(
     sessionItems: List<CapturedItem>?,
@@ -35,6 +36,10 @@ internal fun showsDetailsOf(arguments: SavedStateHandle): Boolean {
     return arguments.get<Boolean>(SHOWS_DETAILS) == true
 }
 
+internal fun isMutedOf(arguments: SavedStateHandle): Boolean {
+    return arguments.get<Boolean>(IS_MUTED) == true
+}
+
 internal fun saveViewedItem(
     arguments: SavedStateHandle,
     item: CapturedItem,
@@ -47,4 +52,11 @@ internal fun saveShowsDetails(
     showsDetails: Boolean,
 ) {
     arguments[SHOWS_DETAILS] = showsDetails
+}
+
+internal fun saveIsMuted(
+    arguments: SavedStateHandle,
+    isMuted: Boolean,
+) {
+    arguments[IS_MUTED] = isMuted
 }

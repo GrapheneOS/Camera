@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -31,18 +30,14 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.MediaTimestamp
 import app.grapheneos.camera.ui.common.components.systemBarsAndCutout
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import java.time.LocalDateTime
-
-private val PREVIEW_WIDTH = 360.dp
-private val PREVIEW_HEIGHT = 720.dp
 
 @Composable
 internal fun DetailsPanel(
@@ -147,18 +142,13 @@ private fun panelInsets(isSidePanel: Boolean): WindowInsets {
     return WindowInsets.systemBarsAndCutout(sides)
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun DetailsPanelPreview() {
     val dateTime = LocalDateTime.of(2023, 10, 16, 12, 0)
 
     CameraPreviewTheme {
-        BoxWithConstraints(
-            modifier = Modifier.size(
-                width = PREVIEW_WIDTH,
-                height = PREVIEW_HEIGHT,
-            ),
-        ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val containerSize = Size(
                 width = constraints.maxWidth.toFloat(),
                 height = constraints.maxHeight.toFloat(),

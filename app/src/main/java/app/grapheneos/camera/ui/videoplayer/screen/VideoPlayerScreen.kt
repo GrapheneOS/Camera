@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -27,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.mediaviewer.components.SystemBarsVisibilityEffect
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState
@@ -134,7 +134,7 @@ private fun VideoPlayerContent(
     }
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun VideoPlayerContentPreview() {
     CameraPreviewTheme {

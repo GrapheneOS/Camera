@@ -1,11 +1,9 @@
 package app.grapheneos.camera.ui.gallery.screen
 
 import android.content.ClipboardManager
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
@@ -16,18 +14,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -37,16 +34,13 @@ import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
 import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.core.preview.previewShot
 import app.grapheneos.camera.ui.core.theme.cameraColors
-import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.details.animateDetailsPositionAsState
 import app.grapheneos.camera.ui.gallery.components.details.rememberDetailsPanelState
-import app.grapheneos.camera.ui.gallery.components.pager.GalleryPager
 import app.grapheneos.camera.ui.gallery.components.pager.GalleryPlaceholder
-import app.grapheneos.camera.ui.gallery.components.pager.ViewerTransform
 import app.grapheneos.camera.ui.gallery.components.pager.cameraPageProgress
-import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.rememberViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.pager.rememberGalleryPagerState
 import app.grapheneos.camera.ui.gallery.components.pager.rememberViewerTransform
@@ -106,7 +100,7 @@ internal fun GalleryScreen(
     )
 
     SystemBarsVisibilityEffect(
-        visible = uiState.areControlsVisible || uiState.showsDetails,
+        visible = uiState.chrome.showsSystemBars,
     )
 
     HdrColorModeEffect(
@@ -150,12 +144,15 @@ private fun GalleryContent(
     val transformState = rememberViewerTransformState(pageKey = settledPageKey)
     val detailsState = rememberDetailsPanelState(isShown = uiState.showsDetails)
     val detailsPosition = animateDetailsPositionAsState(detailsState)
+    val isPanelVisible by remember(detailsPosition) {
+        derivedStateOf { detailsPosition.value > 0f }
+    }
     val viewerTransform = rememberViewerTransform(
         transformState = transformState,
         onDismissed = onNavigateBack,
     )
     val backgroundColor = rememberBackgroundColor(
-        uiState = uiState,
+        isImmersive = uiState.chrome.isImmersive,
         fadeProgress = viewerTransform::fadeProgress,
     )
 
@@ -170,7 +167,7 @@ private fun GalleryContent(
     GalleryScaffold(
         uiState = uiState,
         fadeProgress = { max(viewerTransform.fadeProgress(), pagerState.cameraPageProgress) },
-        detailsPosition = { detailsPosition.value },
+        isPanelVisible = isPanelVisible,
         backButtonVisibility = { detailsState.backButtonVisibilityAt(detailsPosition.value) },
         backgroundColor = backgroundColor,
         onAction = onAction,
@@ -188,6 +185,7 @@ private fun GalleryContent(
             viewerTransform = viewerTransform,
             detailsState = detailsState,
             detailsPosition = { detailsPosition.value },
+            isPanelVisible = isPanelVisible,
             contentPadding = contentPadding,
             onAction = onAction,
             onNavigateBack = onNavigateBack,
@@ -199,66 +197,6 @@ private fun GalleryContent(
             )
         }
     }
-}
-
-@Composable
-private fun GalleryViewerPager(
-    uiState: UiState,
-    videoPosition: () -> Duration,
-    pagerState: PagerState,
-    transformState: ViewerTransformState,
-    viewerTransform: ViewerTransform,
-    detailsState: DetailsPanelState,
-    detailsPosition: () -> Float,
-    contentPadding: PaddingValues,
-    onAction: (Action) -> Unit,
-    onNavigateBack: () -> Unit,
-) {
-    val openMap = { onAction(Action.OpenMapClicked) }
-
-    GalleryPager(
-        pages = uiState.pager.pages,
-        previews = uiState.pager.previews,
-        details = uiState.pager.details,
-        pagerState = pagerState,
-        currentPage = uiState.pager.currentPage,
-        showsDetails = uiState.showsDetails,
-        transformState = transformState,
-        viewerTransform = viewerTransform,
-        detailsState = detailsState,
-        detailsPosition = detailsPosition,
-        video = uiState.video,
-        videoOverlay = {
-            uiState.video?.let { video ->
-                GalleryVideoOverlay(
-                    video = video,
-                    position = videoPosition,
-                    areControlsVisible = uiState.areControlsVisible && !uiState.showsDetails,
-                    contentPadding = contentPadding,
-                    fadeProgress = viewerTransform::fadeProgress,
-                    onAction = onAction,
-                )
-            }
-        },
-        onPageSelected = { page -> onAction(Action.PageSelected(page)) },
-        onPageSettled = { page -> onAction(Action.PageSettled(page)) },
-        onDetailsShownChange = { isShown -> onAction(Action.DetailsShownChanged(isShown)) },
-        onTap = { onAction(Action.ScreenTapped) },
-        onVideoSurfaceCreated = { surface -> onAction(Action.VideoSurfaceCreated(surface)) },
-        onVideoSurfaceDestroyed = { onAction(Action.VideoSurfaceDestroyed) },
-        onVideoHoldChange = { isHeld ->
-            onAction(
-                when {
-                    isHeld -> Action.VideoHoldStarted
-                    else -> Action.VideoHoldEnded
-                },
-            )
-        },
-        onOpenMapClick = openMap.takeIf { uiState.pager.canOpenMap },
-        onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
-        onCameraPageReached = onNavigateBack,
-        modifier = Modifier.fillMaxSize(),
-    )
 }
 
 @Composable
@@ -285,13 +223,12 @@ private fun EmptyGalleryPlaceholder(
 
 @Composable
 private fun rememberBackgroundColor(
-    uiState: UiState,
+    isImmersive: Boolean,
     fadeProgress: () -> Float,
 ): () -> Color {
     val dismissedBackground = MaterialTheme.cameraColors.onOverlay
     val background = animateViewerBackgroundAsState(
-        areControlsVisible = uiState.showsDetails ||
-            (uiState.areControlsVisible && !uiState.isZoomed),
+        areControlsVisible = !isImmersive,
     )
 
     return remember(background, dismissedBackground, fadeProgress) {
@@ -305,7 +242,7 @@ private fun rememberBackgroundColor(
     }
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun GalleryContentPreview() {
     CameraPreviewTheme {

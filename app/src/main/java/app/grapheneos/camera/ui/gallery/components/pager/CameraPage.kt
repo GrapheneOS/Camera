@@ -12,9 +12,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 
 private val ICON_CONTAINER_SIZE = 96.dp
 private val ICON_SIZE = 48.dp
@@ -44,7 +44,7 @@ internal fun CameraPage(
     }
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun CameraPagePreview() {
     CameraPreviewTheme {

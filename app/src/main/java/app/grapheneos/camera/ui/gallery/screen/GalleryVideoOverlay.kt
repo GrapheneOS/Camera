@@ -1,8 +1,10 @@
 package app.grapheneos.camera.ui.gallery.screen
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,7 +22,10 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
 import app.grapheneos.camera.ui.mediaviewer.components.video.FastForwardBadge
 import app.grapheneos.camera.ui.mediaviewer.components.video.VideoControls
+import app.grapheneos.camera.ui.mediaviewer.components.video.VideoSkipIndicator
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoSkipUiModel
 import kotlin.time.Duration
 
 private val BADGE_TOP_MARGIN = 16.dp
@@ -29,7 +34,7 @@ private val BADGE_TOP_MARGIN = 16.dp
 internal fun GalleryVideoOverlay(
     video: GalleryVideoUiModel,
     position: () -> Duration,
-    areControlsVisible: Boolean,
+    showsControls: Boolean,
     contentPadding: PaddingValues,
     fadeProgress: () -> Float,
     onAction: (Action) -> Unit,
@@ -42,6 +47,9 @@ internal fun GalleryVideoOverlay(
             .fillMaxSize()
             .graphicsLayer { alpha = 1f - fadeProgress() },
     ) {
+        SkipIndicator(
+            skip = playback.skip,
+        )
         FastForwardIndicator(
             isVisible = playback.isFastForwarding,
             topPadding = PaddingValues(top = contentPadding.calculateTopPadding()),
@@ -51,11 +59,39 @@ internal fun GalleryVideoOverlay(
             playback = playback,
             isMuted = video.isMuted,
             position = position,
-            isVisible = areControlsVisible,
+            isVisible = showsControls,
+            showsButtons = playback.skip == null,
             bottomPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
             onAction = onAction,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+    }
+}
+
+@Composable
+private fun SkipIndicator(
+    skip: VideoSkipUiModel?,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedContent(
+        targetState = skip,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        contentKey = { shownSkip -> shownSkip?.direction },
+        modifier = modifier,
+    ) { shownSkip ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (shownSkip != null) {
+                VideoSkipIndicator(
+                    skip = shownSkip,
+                    modifier = Modifier.align(
+                        when (shownSkip.direction) {
+                            SkipDirection.Back -> Alignment.CenterStart
+                            SkipDirection.Forward -> Alignment.CenterEnd
+                        },
+                    ),
+                )
+            }
+        }
     }
 }
 
@@ -85,6 +121,7 @@ private fun PlaybackControls(
     isMuted: Boolean,
     position: () -> Duration,
     isVisible: Boolean,
+    showsButtons: Boolean,
     bottomPadding: PaddingValues,
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
@@ -93,9 +130,7 @@ private fun PlaybackControls(
         visible = isVisible,
         enter = fadeIn(),
         exit = fadeOut(),
-        modifier = modifier
-            .padding(bottomPadding)
-            .consumeWindowInsets(bottomPadding),
+        modifier = modifier,
     ) {
         VideoControls(
             isPlaying = playback.isPlaying,
@@ -106,6 +141,8 @@ private fun PlaybackControls(
             onMuteClick = { onAction(Action.MuteClicked) },
             onSeek = { target -> onAction(Action.SeekDragged(target)) },
             onSeekFinished = { onAction(Action.SeekReleased) },
+            showsButtons = showsButtons,
+            contentPadding = bottomPadding,
         )
     }
 }

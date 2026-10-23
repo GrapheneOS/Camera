@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.media.mapper.CaptureTimeMapper
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryChromeUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPagerUiModel
@@ -11,6 +12,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 import javax.inject.Inject
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -34,12 +36,23 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             pager = pager(state),
             bars = bars(state),
             video = video(state),
-            areControlsVisible = state.areControlsVisible,
+            chrome = chrome(state),
             isZoomed = state.isZoomed,
             showsDetails = state.showsDetails,
             showsHdr = showsHdr(state),
             dialog = state.dialog,
             trashedPageKey = state.trashedItem?.item?.let(::pageKeyOf),
+        )
+    }
+
+    private fun chrome(state: GalleryState): GalleryChromeUiModel {
+        val isSkipping = (state.video?.playback as? VideoPlaybackUiModel.Active)?.skip != null
+
+        return GalleryChromeUiModel(
+            showsBars = state.areControlsVisible && !isSkipping,
+            showsVideoControls = state.areControlsVisible || isSkipping,
+            showsSystemBars = state.areControlsVisible || state.showsDetails,
+            isImmersive = !state.showsDetails && (!state.areControlsVisible || state.isZoomed),
         )
     }
 

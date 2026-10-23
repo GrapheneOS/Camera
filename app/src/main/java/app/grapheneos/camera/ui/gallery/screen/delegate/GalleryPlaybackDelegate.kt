@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoState
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackController
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -34,6 +35,8 @@ internal interface GalleryPlaybackDelegate {
     fun seekTo(position: Duration)
 
     fun finishSeek()
+
+    fun skip(direction: SkipDirection)
 
     fun startFastForward()
 
@@ -86,6 +89,10 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
 
     override fun finishSeek() {
         controller?.finishSeek()
+    }
+
+    override fun skip(direction: SkipDirection) {
+        controller?.skip(direction)
     }
 
     override fun startFastForward() {

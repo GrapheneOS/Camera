@@ -197,6 +197,10 @@
     <string name="unable_to_play_video">Unable to play this video</string>
     <string name="video_position">%1$s / %2$s</string>
     <string name="video_fast_forward_speed">2x</string>
+    <plurals name="video_skip_seconds">
+        <item quantity="one">%d second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
 
     <string name="camera_settings">Camera settings</string>
     <string name="camera_sounds">Camera Sounds</string>

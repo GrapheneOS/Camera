@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -58,21 +59,21 @@ internal fun GalleryPager(
     onPageSettled: (Int) -> Unit,
     onDetailsShownChange: (Boolean) -> Unit,
     onTap: () -> Unit,
-    onVideoSurfaceCreated: (Surface) -> Unit,
-    onVideoSurfaceDestroyed: () -> Unit,
+    onVideoSurfaceChange: (Surface?) -> Unit,
     onVideoHoldChange: (Boolean) -> Unit,
+    onVideoSkip: (SkipDirection) -> Unit,
     onOpenMapClick: (() -> Unit)?,
     onCopy: (String) -> Unit,
     onCameraPageReached: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val settledPage = pagerState.settledPage
     val settledItem = pages.getOrNull(pagerState.settledItemIndex)
     val gestures = rememberViewerGestures(
         transformState = transformState,
         detailsState = detailsState,
         onDetailsShownChange = onDetailsShownChange,
         onVideoHoldChange = onVideoHoldChange,
+        onVideoSkip = onVideoSkip,
     )
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     var isLeavingToCamera by remember { mutableStateOf(false) }
@@ -113,7 +114,7 @@ internal fun GalleryPager(
                 page = page,
                 preview = previews[page.key] ?: GalleryPreview.Loading,
                 details = details[page.key] ?: GalleryDetails.Loading,
-                isCurrentPage = index == settledPage,
+                isCurrentPage = index == pagerState.settledPage,
                 showsDetails = showsDetails,
                 gestures = gestures,
                 viewerTransform = viewerTransform,
@@ -121,8 +122,7 @@ internal fun GalleryPager(
                 video = video?.playback.takeIf { video?.pageKey == page.key },
                 videoOverlay = videoOverlay.takeIf { video?.pageKey == page.key },
                 onTap = onTap,
-                onVideoSurfaceCreated = onVideoSurfaceCreated,
-                onVideoSurfaceDestroyed = onVideoSurfaceDestroyed,
+                onVideoSurfaceChange = onVideoSurfaceChange,
                 onOpenMapClick = onOpenMapClick,
                 onCopy = onCopy,
             )

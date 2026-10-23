@@ -24,9 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 
 private val PLACEHOLDER_PADDING = 24.dp
 private val ICON_CONTAINER_SIZE = 96.dp
@@ -95,7 +95,7 @@ internal fun GalleryPlaceholder(
     }
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun GalleryPlaceholderEmptyPreview() {
     CameraPreviewTheme {
@@ -118,7 +118,7 @@ private fun GalleryPlaceholderEmptyPreview() {
     }
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun GalleryPlaceholderUnavailablePreview() {
     CameraPreviewTheme {

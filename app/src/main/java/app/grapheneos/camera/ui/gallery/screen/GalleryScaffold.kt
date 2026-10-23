@@ -53,7 +53,7 @@ private val SCRIM_OVERHANG = 48.dp
 internal fun GalleryScaffold(
     uiState: UiState,
     fadeProgress: () -> Float,
-    detailsPosition: () -> Float,
+    isPanelVisible: Boolean,
     backButtonVisibility: () -> Float,
     backgroundColor: () -> Color,
     onAction: (Action) -> Unit,
@@ -62,9 +62,8 @@ internal fun GalleryScaffold(
     modifier: Modifier = Modifier,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val isPanelVisible by remember(detailsPosition) { derivedStateOf { detailsPosition() > 0f } }
     val visibility = animateBarsVisibilityAsState(
-        isVisible = uiState.areControlsVisible && !isPanelVisible,
+        isVisible = uiState.chrome.showsBars && !isPanelVisible,
         hidesInstantly = uiState.isZoomed || isPanelVisible,
     )
     val isShown by remember(visibility) { derivedStateOf { visibility.value > 0f } }

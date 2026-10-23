@@ -15,12 +15,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.mediaviewer.components.video.VideoSurface
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 
 @Composable
@@ -29,9 +30,9 @@ internal fun GalleryPage(
     preview: GalleryPreview,
     onTap: () -> Unit,
     onDoubleTap: ((Offset) -> Unit)?,
+    onSkip: ((SkipDirection) -> Unit)?,
     video: VideoPlaybackUiModel?,
-    onVideoSurfaceCreated: (Surface) -> Unit,
-    onVideoSurfaceDestroyed: () -> Unit,
+    onVideoSurfaceChange: (Surface?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -47,8 +48,9 @@ internal fun GalleryPage(
             video is VideoPlaybackUiModel.Active -> PlayingVideo(
                 video = video,
                 preview = preview,
-                onSurfaceCreated = onVideoSurfaceCreated,
-                onSurfaceDestroyed = onVideoSurfaceDestroyed,
+                onTap = onTap,
+                onSkip = onSkip,
+                onSurfaceChange = onVideoSurfaceChange,
             )
 
             video is VideoPlaybackUiModel.Failed -> UnavailablePlaceholder(
@@ -76,8 +78,9 @@ internal fun GalleryPage(
 private fun PlayingVideo(
     video: VideoPlaybackUiModel.Active,
     preview: GalleryPreview,
-    onSurfaceCreated: (Surface) -> Unit,
-    onSurfaceDestroyed: () -> Unit,
+    onTap: () -> Unit,
+    onSkip: ((SkipDirection) -> Unit)?,
+    onSurfaceChange: (Surface?) -> Unit,
 ) {
     val thumbnail = (preview as? GalleryPreview.Loaded)?.image
 
@@ -87,11 +90,18 @@ private fun PlayingVideo(
     ) {
         VideoSurface(
             aspectRatio = video.aspectRatio ?: thumbnail?.let { it.width.toFloat() / it.height },
-            onSurfaceCreated = onSurfaceCreated,
-            onSurfaceDestroyed = onSurfaceDestroyed,
+            onSurfaceCreated = onSurfaceChange,
+            onSurfaceDestroyed = { onSurfaceChange(null) },
         )
         if (!video.hasRenderedFrame && thumbnail != null) {
             VideoFrame(thumbnail)
+        }
+        if (onSkip != null) {
+            VideoTapArea(
+                isSkipping = video.skip != null,
+                onTap = onTap,
+                onSkip = onSkip,
+            )
         }
     }
 }
@@ -124,7 +134,7 @@ private fun UnavailablePlaceholder(page: GalleryPageUiModel) {
     )
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun GalleryPageUnavailablePreview() {
     CameraPreviewTheme {
@@ -137,9 +147,9 @@ private fun GalleryPageUnavailablePreview() {
             preview = GalleryPreview.Unavailable,
             onTap = {},
             onDoubleTap = {},
+            onSkip = {},
             video = null,
-            onVideoSurfaceCreated = {},
-            onVideoSurfaceDestroyed = {},
+            onVideoSurfaceChange = {},
         )
     }
 }

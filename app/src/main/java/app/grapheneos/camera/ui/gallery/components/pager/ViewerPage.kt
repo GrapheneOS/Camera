@@ -32,12 +32,12 @@ internal fun ViewerPage(
     video: VideoPlaybackUiModel?,
     videoOverlay: (@Composable BoxScope.() -> Unit)?,
     onTap: () -> Unit,
-    onVideoSurfaceCreated: (Surface) -> Unit,
-    onVideoSurfaceDestroyed: () -> Unit,
+    onVideoSurfaceChange: (Surface?) -> Unit,
     onOpenMapClick: (() -> Unit)?,
     onCopy: (String) -> Unit,
 ) {
     val detailsState = gestures.detailsState
+    val handlesTaps = isCurrentPage && !showsDetails
     val photoTransform = when {
         isCurrentPage -> {
             Modifier
@@ -59,13 +59,10 @@ internal fun ViewerPage(
             page = page,
             preview = preview,
             onTap = onTap,
-            onDoubleTap = when {
-                isCurrentPage && !showsDetails -> gestures.transformState::applyDoubleTap
-                else -> null
-            },
+            onDoubleTap = gestures.transformState::applyDoubleTap.takeIf { handlesTaps },
+            onSkip = gestures.onVideoSkip.takeIf { handlesTaps },
             video = video,
-            onVideoSurfaceCreated = onVideoSurfaceCreated,
-            onVideoSurfaceDestroyed = onVideoSurfaceDestroyed,
+            onVideoSurfaceChange = onVideoSurfaceChange,
             modifier = Modifier
                 .offset { detailsState.photoShiftAt(detailsPosition()).round() }
                 .then(photoTransform),

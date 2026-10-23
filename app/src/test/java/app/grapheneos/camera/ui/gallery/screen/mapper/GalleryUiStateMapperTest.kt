@@ -6,7 +6,12 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoState
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoSkipUiModel
 import io.mockk.mockk
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
@@ -57,6 +62,41 @@ class GalleryUiStateMapperTest {
 
         assertTrue(mapper.map(state.copy(previews = previews)).showsHdr)
         assertFalse(mapper.map(state.copy(previews = previews, currentIndex = 1)).showsHdr)
+    }
+
+    @Test
+    fun aSkip_hidesTheBarsAndShowsTheVideoControls() {
+        val skipping = VideoPlaybackUiModel.Active(
+            skip = VideoSkipUiModel(
+                direction = SkipDirection.Forward,
+                offset = 5.seconds,
+            ),
+        )
+        val chrome = mapper.map(
+            state.copy(
+                areControlsVisible = false,
+                video = GalleryVideoState(
+                    item = NEWER,
+                    playback = skipping,
+                ),
+            ),
+        ).chrome
+
+        assertFalse(chrome.showsBars)
+        assertTrue(chrome.showsVideoControls)
+    }
+
+    @Test
+    fun details_keepTheSystemBarsAndTheBackground() {
+        val chrome = mapper.map(
+            state.copy(
+                areControlsVisible = false,
+                showsDetails = true,
+            ),
+        ).chrome
+
+        assertTrue(chrome.showsSystemBars)
+        assertFalse(chrome.isImmersive)
     }
 
     private companion object {
