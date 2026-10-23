@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -297,6 +298,9 @@ class ViewfinderGalleryDelegateTest {
             scope = scope,
             stateHolder = stateHolder,
         )
+        scope.launch(dispatcher) {
+            delegate.trackLastCapturedItem()
+        }
         delegate.onScreenCreated(
             ViewfinderHost(
                 previewTarget = mockk(relaxed = true),

@@ -16,17 +16,12 @@ internal class ViewfinderModeDelegateImpl @Inject constructor() : ViewfinderMode
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     override val defaultMode: CameraMode
         get() {
             return DEFAULT_MODE
         }
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
-        if (isBound) return
-        isBound = true
-
         this.stateHolder = stateHolder
     }
 

@@ -176,12 +176,11 @@ class ViewfinderLocationDelegateTest {
         val delegate = ViewfinderLocationDelegateImpl(
             locationRepository = locationRepository,
             entryPoint = cameraEntryPoint(isSecureSession = isSecureSession),
-            mainDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
-        delegate.bind(
-            scope = backgroundScope,
-            stateHolder = stateHolder,
-        )
+        delegate.bind(stateHolder)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            delegate.trackGeoTagging()
+        }
 
         return delegate
     }

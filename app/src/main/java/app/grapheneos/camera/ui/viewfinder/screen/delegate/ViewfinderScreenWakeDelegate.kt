@@ -23,17 +23,12 @@ internal class ViewfinderScreenWakeDelegateImpl @Inject constructor() :
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     private val interactions = MutableSharedFlow<Unit>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
-        if (isBound) return
-        isBound = true
-
         this.stateHolder = stateHolder
     }
 

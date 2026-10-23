@@ -81,8 +81,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var isBound = false
-
     private var host: ViewfinderHost? = null
     private var isScreenStarted = false
     private var pendingCapture: PendingCapture? = null
@@ -95,9 +93,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         scope: CoroutineScope,
         stateHolder: ViewfinderStateHolder,
     ) {
-        if (isBound) return
-        isBound = true
-
         this.scope = scope
         this.stateHolder = stateHolder
     }
