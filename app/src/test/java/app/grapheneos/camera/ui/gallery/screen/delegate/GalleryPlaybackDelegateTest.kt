@@ -8,10 +8,11 @@ import app.grapheneos.camera.data.media.player.VideoPlayback
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
-import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,6 +39,7 @@ class GalleryPlaybackDelegateTest {
             val playback = mockk<VideoPlayback>(relaxed = true) {
                 every { state } returns MutableStateFlow(VideoPlaybackState())
                 every { shownPosition } returns MutableStateFlow(Duration.ZERO)
+                every { currentPosition } returns 10.seconds
             }
             playbacks += playback
             playback
@@ -124,22 +126,18 @@ class GalleryPlaybackDelegateTest {
     }
 
     @Test
-    fun holdingAPausedVideo_playsItFastUntilReleasedThenKeepsPlaying() {
+    fun skip_seeksFiveSecondsEachWay() {
         runTest {
             val delegate = createDelegate()
 
             settle(page = 1)
-            delegate.startFastForward()
+            delegate.skip(SkipDirection.Forward)
+            delegate.skip(SkipDirection.Back)
 
-            verify { playbacks.single().setSpeed(2f) }
-            verify { playbacks.single().play() }
-            assertTrue(playback().isFastForwarding)
-
-            delegate.stopFastForward()
-
-            verify { playbacks.single().setSpeed(1f) }
-            verify(exactly = 0) { playbacks.single().pause() }
-            assertFalse(playback().isFastForwarding)
+            verifyOrder {
+                playbacks.single().seekTo(15.seconds)
+                playbacks.single().seekTo(5.seconds)
+            }
         }
     }
 
@@ -153,12 +151,6 @@ class GalleryPlaybackDelegateTest {
 
             verify { playbacks.single().pause() }
         }
-    }
-
-    private fun playback(): VideoPlaybackUiModel.Active {
-        val playback = stateHolder.state.value.video?.playback
-
-        return requireNotNull(playback as? VideoPlaybackUiModel.Active)
     }
 
     private fun settle(page: Int) {

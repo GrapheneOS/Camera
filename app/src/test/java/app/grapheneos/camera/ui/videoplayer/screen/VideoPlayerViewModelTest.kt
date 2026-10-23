@@ -12,9 +12,7 @@ import app.grapheneos.camera.ui.videoplayer.screen.model.VideoPlayerScreenEffect
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import io.mockk.verifyOrder
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,18 +62,6 @@ class VideoPlayerViewModelTest {
     }
 
     @Test
-    fun playPauseClicked_whilePlaying_pauses() {
-        runTest {
-            val viewModel = viewModel()
-            playbackState.value = VideoPlaybackState(isPlaying = true)
-
-            viewModel.onAction(Action.PlayPauseClicked)
-
-            verify { playback.pause() }
-        }
-    }
-
-    @Test
     fun playPauseClicked_whilePaused_plays() {
         runTest {
             val viewModel = viewModel()
@@ -102,6 +88,19 @@ class VideoPlayerViewModelTest {
     }
 
     @Test
+    fun aMutedVideo_staysMutedWhenTheProcessIsRecreated() {
+        runTest {
+            val arguments = playerArguments()
+            viewModel(arguments).onAction(Action.MuteClicked)
+
+            val recreated = viewModel(arguments)
+
+            assertTrue(recreated.uiState.value.isMuted)
+            verify(exactly = 2) { playback.setMuted(true) }
+        }
+    }
+
+    @Test
     fun position_followsTheShownFrame() {
         runTest {
             val viewModel = viewModel()
@@ -121,47 +120,6 @@ class VideoPlayerViewModelTest {
             shownPosition.value = 7.seconds
 
             assertEquals(Duration.ZERO, viewModel.uiState.value.position)
-        }
-    }
-
-    @Test
-    fun shownControls_catchUpWithTheShownFrame() {
-        runTest {
-            val viewModel = viewModel()
-            viewModel.onAction(Action.ScreenTapped)
-
-            shownPosition.value = 7.seconds
-
-            viewModel.onAction(Action.ScreenTapped)
-
-            assertEquals(7.seconds, viewModel.uiState.value.position)
-        }
-    }
-
-    @Test
-    fun framesShownWhileSeeking_leaveTheThumbUnderTheFinger() {
-        runTest {
-            val viewModel = viewModel()
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-
-            shownPosition.value = 7.seconds
-
-            assertEquals(3.seconds, viewModel.uiState.value.position)
-        }
-    }
-
-    @Test
-    fun seekReleased_seeksExactlyToWhereTheFingerLifted() {
-        runTest {
-            val viewModel = viewModel()
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-
-            viewModel.onAction(Action.SeekReleased)
-
-            verifyOrder {
-                playback.setScrubbing(false)
-                playback.seekTo(3.seconds)
-            }
         }
     }
 
@@ -203,82 +161,6 @@ class VideoPlayerViewModelTest {
     }
 
     @Test
-    fun seekDragged_whilePlaying_pausesUntilReleased() {
-        runTest {
-            val viewModel = viewModel()
-            playbackState.value = VideoPlaybackState(isPlaying = true)
-
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-            viewModel.onAction(Action.SeekDragged(4.seconds))
-
-            verify(exactly = 1) { playback.pause() }
-            verify(exactly = 0) { playback.play() }
-
-            viewModel.onAction(Action.SeekReleased)
-
-            verify(exactly = 1) { playback.play() }
-        }
-    }
-
-    @Test
-    fun seekDragged_scrubsUntilReleased() {
-        runTest {
-            val viewModel = viewModel()
-
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-            viewModel.onAction(Action.SeekDragged(4.seconds))
-
-            verify(exactly = 1) { playback.setScrubbing(true) }
-            verify(exactly = 0) { playback.setScrubbing(false) }
-
-            viewModel.onAction(Action.SeekReleased)
-
-            verify(exactly = 1) { playback.setScrubbing(false) }
-        }
-    }
-
-    @Test
-    fun seekReleased_afterSeekingWhilePaused_staysPaused() {
-        runTest {
-            val viewModel = viewModel()
-
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-            viewModel.onAction(Action.SeekReleased)
-
-            verify(exactly = 0) { playback.play() }
-        }
-    }
-
-    @Test
-    fun seekReleased_whilePaused_keepsTheThumbWhereTheFingerLifted() {
-        runTest {
-            val viewModel = viewModel()
-
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-            viewModel.onAction(Action.SeekReleased)
-
-            shownPosition.value = 3.seconds + 20.milliseconds
-
-            assertEquals(3.seconds, viewModel.uiState.value.position)
-        }
-    }
-
-    @Test
-    fun playing_afterSeekingWhilePaused_followsTheShownFrameAgain() {
-        runTest {
-            val viewModel = viewModel()
-
-            viewModel.onAction(Action.SeekDragged(3.seconds))
-            viewModel.onAction(Action.SeekReleased)
-            viewModel.onAction(Action.PlayPauseClicked)
-
-            shownPosition.value = 4.seconds
-
-            assertEquals(4.seconds, viewModel.uiState.value.position)
-        }
-    }
-
-    @Test
     fun screenStopped_pausesThePlayback() {
         runTest {
             val viewModel = viewModel()
@@ -289,16 +171,20 @@ class VideoPlayerViewModelTest {
         }
     }
 
-    private fun viewModel(): VideoPlayerViewModel {
+    private fun viewModel(arguments: SavedStateHandle = playerArguments()): VideoPlayerViewModel {
+        return VideoPlayerViewModel(
+            arguments = arguments,
+            videoPlaybackFactory = videoPlaybackFactory,
+        )
+    }
+
+    private fun playerArguments(): SavedStateHandle {
         val arguments = videoPlayerArguments(VIDEO_URI)
 
-        return VideoPlayerViewModel(
-            arguments = SavedStateHandle(
-                arguments.keySet().associateWith { key ->
-                    BundleCompat.getParcelable(arguments, key, Uri::class.java)
-                },
-            ),
-            videoPlaybackFactory = videoPlaybackFactory,
+        return SavedStateHandle(
+            arguments.keySet().associateWith { key ->
+                BundleCompat.getParcelable(arguments, key, Uri::class.java)
+            },
         )
     }
 

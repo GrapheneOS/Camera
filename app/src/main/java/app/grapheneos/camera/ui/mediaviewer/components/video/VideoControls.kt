@@ -3,10 +3,13 @@ package app.grapheneos.camera.ui.mediaviewer.components.video
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -17,6 +20,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -60,6 +64,8 @@ internal fun VideoControls(
     onSeek: (Duration) -> Unit,
     onSeekFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    showsButtons: Boolean = true,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val colors = MaterialTheme.cameraColors
     val scrim = remember(colors.overlayScrim) {
@@ -70,6 +76,8 @@ internal fun VideoControls(
         modifier = modifier
             .fillMaxWidth()
             .background(scrim)
+            .padding(contentPadding)
+            .consumeWindowInsets(contentPadding)
             .windowInsetsPadding(WindowInsets.bottomBar)
             .padding(
                 start = CONTROLS_HORIZONTAL_PADDING,
@@ -79,6 +87,7 @@ internal fun VideoControls(
             ),
     ) {
         PlaybackRow(
+            showsButtons = showsButtons,
             isPlaying = isPlaying,
             isMuted = isMuted,
             position = position,
@@ -98,6 +107,7 @@ internal fun VideoControls(
 
 @Composable
 private fun PlaybackRow(
+    showsButtons: Boolean,
     isPlaying: Boolean,
     isMuted: Boolean,
     position: Duration,
@@ -105,22 +115,30 @@ private fun PlaybackRow(
     onPlayPauseClick: () -> Unit,
     onMuteClick: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxWidth()) {
-        PlayPauseButton(
-            isPlaying = isPlaying,
-            onClick = onPlayPauseClick,
-            modifier = Modifier.align(Alignment.CenterStart),
-        )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = LocalMinimumInteractiveComponentSize.current),
+    ) {
+        if (showsButtons) {
+            PlayPauseButton(
+                isPlaying = isPlaying,
+                onClick = onPlayPauseClick,
+                modifier = Modifier.align(Alignment.CenterStart),
+            )
+        }
         PlaybackTime(
             positionSeconds = position.inWholeSeconds,
             durationSeconds = duration.inWholeSeconds,
             modifier = Modifier.align(Alignment.Center),
         )
-        MuteButton(
-            isMuted = isMuted,
-            onClick = onMuteClick,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        )
+        if (showsButtons) {
+            MuteButton(
+                isMuted = isMuted,
+                onClick = onMuteClick,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
+        }
     }
 }
 

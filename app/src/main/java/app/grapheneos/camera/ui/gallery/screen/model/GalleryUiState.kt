@@ -7,7 +7,7 @@ internal data class GalleryUiState(
     val pager: GalleryPagerUiModel = GalleryPagerUiModel(),
     val bars: GalleryBarsUiModel = GalleryBarsUiModel(),
     val video: GalleryVideoUiModel? = null,
-    val areControlsVisible: Boolean = true,
+    val chrome: GalleryChromeUiModel = GalleryChromeUiModel(),
     val isZoomed: Boolean = false,
     val showsDetails: Boolean = false,
     val showsHdr: Boolean = false,

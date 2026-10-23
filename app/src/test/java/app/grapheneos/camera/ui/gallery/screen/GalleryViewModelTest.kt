@@ -570,7 +570,7 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.ScreenTapped)
 
             assertFalse(viewModel.uiState.value.showsDetails)
-            assertTrue(viewModel.uiState.value.areControlsVisible)
+            assertTrue(viewModel.uiState.value.chrome.showsBars)
         }
     }
 
@@ -582,15 +582,15 @@ class GalleryViewModelTest {
             zoomPage(viewModel = viewModel, page = 0, isZoomed = true)
 
             assertTrue(viewModel.uiState.value.isZoomed)
-            assertFalse(viewModel.uiState.value.areControlsVisible)
+            assertFalse(viewModel.uiState.value.chrome.showsBars)
 
             zoomPage(viewModel = viewModel, page = 0, isZoomed = false)
 
-            assertFalse(viewModel.uiState.value.areControlsVisible)
+            assertFalse(viewModel.uiState.value.chrome.showsBars)
 
             viewModel.onAction(Action.ScreenTapped)
 
-            assertTrue(viewModel.uiState.value.areControlsVisible)
+            assertTrue(viewModel.uiState.value.chrome.showsBars)
         }
     }
 
@@ -602,7 +602,7 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.ScreenTapped)
             zoomPage(viewModel = viewModel, page = 0, isZoomed = false)
 
-            assertFalse(viewModel.uiState.value.areControlsVisible)
+            assertFalse(viewModel.uiState.value.chrome.showsBars)
         }
     }
 

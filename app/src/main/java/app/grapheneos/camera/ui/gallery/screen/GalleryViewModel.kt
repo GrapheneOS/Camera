@@ -56,6 +56,7 @@ internal class GalleryViewModel @Inject constructor(
             isSecureSession = entryPoint.isSecureSession,
             hasSystemGallery = systemGalleryLauncher.canOpen(),
             showsDetails = showsDetailsOf(arguments),
+            isMuted = isMutedOf(arguments),
         ),
     )
 
@@ -131,12 +132,12 @@ internal class GalleryViewModel @Inject constructor(
 
     private fun onVideoAction(action: Action.Video) {
         when (action) {
-            is Action.VideoSurfaceCreated -> playbackDelegate.setSurface(action.surface)
-            is Action.VideoSurfaceDestroyed -> playbackDelegate.setSurface(null)
+            is Action.VideoSurfaceChanged -> playbackDelegate.setSurface(action.surface)
             is Action.PlayPauseClicked -> playbackDelegate.togglePlayback()
-            is Action.MuteClicked -> playbackDelegate.toggleMute()
+            is Action.MuteClicked -> toggleMute()
             is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
             is Action.SeekReleased -> playbackDelegate.finishSeek()
+            is Action.SkipTapped -> playbackDelegate.skip(action.direction)
             is Action.VideoHoldStarted -> playbackDelegate.startFastForward()
             is Action.VideoHoldEnded -> playbackDelegate.stopFastForward()
         }
@@ -187,6 +188,11 @@ internal class GalleryViewModel @Inject constructor(
                 isLoaded = true,
             )
         }
+    }
+
+    private fun toggleMute() {
+        playbackDelegate.toggleMute()
+        saveIsMuted(arguments, state.isMuted)
     }
 
     private fun selectPage(page: Int) {

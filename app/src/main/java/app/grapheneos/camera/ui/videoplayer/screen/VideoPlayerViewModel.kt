@@ -33,12 +33,12 @@ internal interface VideoPlayerScreenModel {
 
 @HiltViewModel
 internal class VideoPlayerViewModel @Inject constructor(
-    arguments: SavedStateHandle,
+    private val arguments: SavedStateHandle,
     videoPlaybackFactory: VideoPlaybackFactory,
 ) : ViewModel(),
     VideoPlayerScreenModel {
 
-    private val _uiState = MutableStateFlow(VideoPlayerUiState())
+    private val _uiState = MutableStateFlow(VideoPlayerUiState(isMuted = isMutedOf(arguments)))
     override val uiState: StateFlow<VideoPlayerUiState> = _uiState.asStateFlow()
 
     private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
@@ -49,6 +49,8 @@ internal class VideoPlayerViewModel @Inject constructor(
     )
 
     init {
+        controller.setMuted(_uiState.value.isMuted)
+
         viewModelScope.launch {
             controller.state.collect { video ->
                 _uiState.update { it.copy(video = video) }
@@ -91,6 +93,7 @@ internal class VideoPlayerViewModel @Inject constructor(
     private fun toggleMute() {
         _uiState.update { it.copy(isMuted = !it.isMuted) }
         controller.setMuted(_uiState.value.isMuted)
+        saveIsMuted(arguments, _uiState.value.isMuted)
     }
 
     private fun toggleControls() {

@@ -12,11 +12,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
 import app.grapheneos.camera.ui.core.preview.PREVIEW_SCENE
+import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.core.preview.previewShot
 
 @Composable
@@ -43,7 +43,7 @@ internal fun GalleryPhoto(
     )
 }
 
-@PreviewLightDark
+@PreviewScreenLightDark
 @Composable
 private fun GalleryPhotoPreview() {
     CameraPreviewTheme {

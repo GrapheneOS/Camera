@@ -15,10 +15,12 @@ complexity:
     ignoreAnnotatedFunctions:
       - Preview
       - PreviewLightDark
+      - PreviewScreenLightDark
   LongMethod:
     ignoreAnnotated:
       - Preview
       - PreviewLightDark
+      - PreviewScreenLightDark
 
 coroutines:
   InjectDispatcher:
@@ -50,3 +52,4 @@ style:
     ignoreAnnotated:
       - Preview
       - PreviewLightDark
+      - PreviewScreenLightDark
