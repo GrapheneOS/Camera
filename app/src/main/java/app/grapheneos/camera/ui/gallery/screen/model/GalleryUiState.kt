@@ -23,4 +23,5 @@ internal data class GalleryUiState(
     val isZoomed: Boolean = false,
     val showsDetails: Boolean = false,
     val dialog: GalleryDialog? = null,
+    val trashedPageKey: String? = null,
 )

@@ -122,7 +122,6 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
         finish()
         remove(trashedItem.item)
         stateHolder.update { it.copy(trashedItem = trashedItem) }
-        stateHolder.send(Effect.ItemTrashed)
     }
 
     private fun remove(item: CapturedItem) {

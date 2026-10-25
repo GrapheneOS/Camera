@@ -14,8 +14,6 @@ internal sealed interface GalleryScreenEffect {
 
     data object ItemDeleted : GalleryScreenEffect
 
-    data object ItemTrashed : GalleryScreenEffect
-
     data object RestoreFailed : GalleryScreenEffect
 
     data object DeletionFailed : GalleryScreenEffect

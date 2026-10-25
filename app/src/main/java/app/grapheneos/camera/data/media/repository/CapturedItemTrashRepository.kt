@@ -9,11 +9,14 @@ import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.store.MediaPrefs
+import app.grapheneos.camera.di.core.ApplicationScope
 import app.grapheneos.camera.di.core.IoDispatcher
+import app.grapheneos.camera.util.asyncAndAwait
 import app.grapheneos.camera.util.runStorageCall
 import java.io.IOException
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 
 internal interface CapturedItemTrashRepository {
@@ -33,6 +36,7 @@ internal interface CapturedItemTrashRepository {
 internal class CapturedItemTrashRepositoryImpl @Inject constructor(
     private val contentResolver: ContentResolver,
     private val mediaPrefs: DataStore<MediaPrefs>,
+    @ApplicationScope private val applicationScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemTrashRepository {
 
@@ -41,21 +45,23 @@ internal class CapturedItemTrashRepositoryImpl @Inject constructor(
             item.uri.host == MediaStore.AUTHORITY
     }
 
-    // The record is written before the item is trashed and dropped before it is restored, so a
-    // process that dies in between leaves at worst a record of an item the user deleted, never one
-    // of an item they kept.
+    // Recorded before trashing and forgotten after restoring, on the application scope so that
+    // closing the gallery cannot stop either halfway. If the process dies in between, the next
+    // launch deletes the item only if it is still in the trash.
     override suspend fun trash(item: CapturedItem): Result<Unit> {
-        record(item.uri)
+        return applicationScope.asyncAndAwait(ioDispatcher) {
+            record(item.uri)
 
-        return onStorage { setTrashed(uri = item.uri, isTrashed = true) }
-            .onFailure { forget(item.uri) }
+            onStorage { setTrashed(uri = item.uri, isTrashed = true) }
+                .onFailure { forget(item.uri) }
+        }
     }
 
     override suspend fun restore(item: CapturedItem): Result<Unit> {
-        forget(item.uri)
-
-        return onStorage { setTrashed(uri = item.uri, isTrashed = false) }
-            .onFailure { record(item.uri) }
+        return applicationScope.asyncAndAwait(ioDispatcher) {
+            onStorage { setTrashed(uri = item.uri, isTrashed = false) }
+                .onSuccess { forget(item.uri) }
+        }
     }
 
     override suspend fun delete(item: CapturedItem): Result<Unit> {
@@ -67,7 +73,7 @@ internal class CapturedItemTrashRepositoryImpl @Inject constructor(
         val uris = mediaPrefs.data.first().trashedItems
 
         uris.forEach { uri ->
-            onStorage { contentResolver.delete(uri.toUri(), null, null) }
+            onStorage { contentResolver.delete(uri.toUri(), STILL_TRASHED, null) }
         }
         mediaPrefs.updateData { it.copy(trashedItems = it.trashedItems - uris.toSet()) }
     }
@@ -114,5 +120,6 @@ internal class CapturedItemTrashRepositoryImpl @Inject constructor(
 
     private companion object {
         const val TAG = "CapturedItemTrashRepository"
+        const val STILL_TRASHED = "${MediaStore.MediaColumns.IS_TRASHED} = 1"
     }
 }

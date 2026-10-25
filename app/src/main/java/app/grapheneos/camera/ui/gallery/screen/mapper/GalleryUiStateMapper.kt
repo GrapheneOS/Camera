@@ -43,6 +43,7 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             isZoomed = state.isZoomed,
             showsDetails = state.showsDetails,
             dialog = state.dialog,
+            trashedPageKey = state.trashedItem?.item?.let(::pageKeyOf),
         )
     }
 
