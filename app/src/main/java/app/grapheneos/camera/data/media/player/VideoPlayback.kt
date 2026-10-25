@@ -13,6 +13,7 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.video.VideoFrameMetadataListener
+import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
@@ -29,7 +30,11 @@ internal interface VideoPlayback {
 
     val currentPosition: Duration
 
-    fun setSurface(surface: Surface?)
+    fun load(uri: Uri)
+
+    fun unload()
+
+    fun setOutput(output: VideoOutput?)
 
     fun play()
 
@@ -50,7 +55,6 @@ internal interface VideoPlayback {
 
 @OptIn(UnstableApi::class)
 internal class VideoPlaybackImpl(
-    uri: Uri,
     private val player: ExoPlayer,
 ) : VideoPlayback {
 
@@ -63,6 +67,8 @@ internal class VideoPlaybackImpl(
     override val currentPosition: Duration
         get() = player.currentPosition.milliseconds
 
+    private var outputId: Int? = null
+
     private val frameListener = VideoFrameMetadataListener { presentationTimeUs, _, _, _ ->
         _shownPosition.value = presentationTimeUs.coerceAtLeast(0L).microseconds
     }
@@ -74,7 +80,10 @@ internal class VideoPlaybackImpl(
         }
 
         override fun onRenderedFirstFrame() {
-            _state.value = _state.value.copy(hasRenderedFrame = true)
+            _state.value = _state.value.copy(
+                hasRenderedFrame = true,
+                renderedOutputId = outputId,
+            )
         }
 
         override fun onPlayerError(error: PlaybackException) {
@@ -94,15 +103,27 @@ internal class VideoPlaybackImpl(
         player.addListener(listener)
         player.setVideoFrameMetadataListener(frameListener)
         player.setAudioAttributes(MOVIE_AUDIO, false)
+    }
+
+    override fun load(uri: Uri) {
+        resetState()
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
         player.playWhenReady = true
     }
 
-    override fun setSurface(surface: Surface?) {
-        when (surface) {
+    override fun unload() {
+        player.stop()
+        player.clearMediaItems()
+        resetState()
+    }
+
+    override fun setOutput(output: VideoOutput?) {
+        outputId = output?.id
+
+        when (output) {
             null -> player.clearVideoSurface()
-            else -> attach(surface)
+            else -> attach(output.surface)
         }
     }
 
@@ -159,6 +180,11 @@ internal class VideoPlaybackImpl(
         }
     }
 
+    private fun resetState() {
+        _state.value = VideoPlaybackState()
+        _shownPosition.value = Duration.ZERO
+    }
+
     private fun updateAudioFocus() {
         val hasAudio = player.currentTracks.containsType(C.TRACK_TYPE_AUDIO)
 
@@ -171,6 +197,7 @@ internal class VideoPlaybackImpl(
             duration = player.duration.takeIf { it != C.TIME_UNSET }?.milliseconds,
             aspectRatio = aspectRatio(),
             hasRenderedFrame = _state.value.hasRenderedFrame,
+            renderedOutputId = _state.value.renderedOutputId,
             hasFailed = player.playerError != null,
         )
     }

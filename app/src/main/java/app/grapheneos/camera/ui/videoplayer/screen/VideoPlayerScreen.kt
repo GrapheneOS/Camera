@@ -95,8 +95,8 @@ private fun VideoPlayerContent(
         if (video != null) {
             VideoSurface(
                 aspectRatio = video.aspectRatio,
-                onSurfaceCreated = { surface -> onAction(Action.SurfaceCreated(surface)) },
-                onSurfaceDestroyed = { onAction(Action.SurfaceDestroyed) },
+                renderedOutputId = video.renderedOutputId,
+                onOutputChange = { output -> onAction(Action.OutputChanged(output)) },
             )
         }
 

@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.mediaviewer.playback
 
-import android.view.Surface
+import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import app.grapheneos.camera.data.media.player.VideoPlayback
 import kotlin.time.Duration
@@ -75,8 +75,8 @@ internal class VideoPlaybackController(
         }
     }
 
-    fun setSurface(surface: Surface?) {
-        playback.setSurface(surface)
+    fun setOutput(output: VideoOutput?) {
+        playback.setOutput(output)
     }
 
     fun togglePlayback() {
@@ -155,10 +155,6 @@ internal class VideoPlaybackController(
 
     fun stopFastForward() {
         controls.update { it.copy(isFastForwarding = false) }
-    }
-
-    fun release() {
-        playback.release()
     }
 
     private suspend fun followPosition() {
@@ -250,6 +246,7 @@ internal class VideoPlaybackController(
                 duration = playbackState.duration ?: Duration.ZERO,
                 aspectRatio = playbackState.aspectRatio,
                 hasRenderedFrame = playbackState.hasRenderedFrame,
+                renderedOutputId = playbackState.renderedOutputId,
                 isFastForwarding = controls.isFastForwarding,
                 skip = controls.skip,
             )

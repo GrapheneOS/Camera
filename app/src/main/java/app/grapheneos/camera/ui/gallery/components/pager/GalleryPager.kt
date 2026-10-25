@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery.components.pager
 
-import android.view.Surface
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.pager.HorizontalPager
@@ -8,6 +7,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.rememberViewerGestures
@@ -59,7 +60,7 @@ internal fun GalleryPager(
     onPageSettled: (Int) -> Unit,
     onDetailsShownChange: (Boolean) -> Unit,
     onTap: () -> Unit,
-    onVideoSurfaceChange: (Surface?) -> Unit,
+    onVideoOutputChange: (VideoOutput?) -> Unit,
     onVideoHoldChange: (Boolean) -> Unit,
     onVideoSkip: (SkipDirection) -> Unit,
     onOpenMapClick: (() -> Unit)?,
@@ -77,6 +78,7 @@ internal fun GalleryPager(
     )
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     var isLeavingToCamera by remember { mutableStateOf(false) }
+    val isAtRest by remember(viewerTransform) { derivedStateOf { viewerTransform.isAtRest() } }
 
     PageEffects(
         pagerState = pagerState,
@@ -96,7 +98,6 @@ internal fun GalleryPager(
         transformState = transformState,
         detailsState = detailsState,
         containerSize = containerSize,
-        page = settledItem,
         preview = settledItem?.let { previews[it.key] },
     )
 
@@ -105,7 +106,7 @@ internal fun GalleryPager(
         key = { page -> pageKey(pages = pages, page = page) },
         pageSpacing = PAGE_SPACING,
         beyondViewportPageCount = 1,
-        userScrollEnabled = !isLeavingToCamera,
+        userScrollEnabled = !isLeavingToCamera && isAtRest,
         modifier = modifier.onSizeChanged { containerSize = it },
     ) { index ->
         when (val page = pages.getOrNull(index - FIRST_ITEM_PAGE)) {
@@ -122,7 +123,7 @@ internal fun GalleryPager(
                 video = video?.playback.takeIf { video?.pageKey == page.key },
                 videoOverlay = videoOverlay.takeIf { video?.pageKey == page.key },
                 onTap = onTap,
-                onVideoSurfaceChange = onVideoSurfaceChange,
+                onVideoOutputChange = onVideoOutputChange,
                 onOpenMapClick = onOpenMapClick,
                 onCopy = onCopy,
             )
@@ -241,25 +242,21 @@ private fun ViewerLayoutEffect(
     transformState: ViewerTransformState,
     detailsState: DetailsPanelState,
     containerSize: IntSize,
-    page: GalleryPageUiModel?,
     preview: GalleryPreview?,
 ) {
     val imageSize = preview?.let(::imageSize)
-    val canZoom = page?.isVideo == false
 
     LaunchedEffect(
         transformState,
         detailsState,
         containerSize,
         imageSize,
-        canZoom,
     ) {
         if (containerSize == IntSize.Zero) return@LaunchedEffect
 
         transformState.updateLayout(
             containerSize = containerSize.toSize(),
             imageSize = imageSize,
-            canZoom = canZoom,
         )
         detailsState.updateLayout(containerSize.toSize())
     }

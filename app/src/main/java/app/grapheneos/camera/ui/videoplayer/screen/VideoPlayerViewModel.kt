@@ -44,11 +44,11 @@ internal class VideoPlayerViewModel @Inject constructor(
     private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
     override val effects: Flow<Effect> = _effects.receiveAsFlow()
 
-    private val controller = VideoPlaybackController(
-        videoPlaybackFactory.create(videoUriOf(arguments)),
-    )
+    private val playback = videoPlaybackFactory.create()
+    private val controller = VideoPlaybackController(playback)
 
     init {
+        playback.load(videoUriOf(arguments))
         controller.setMuted(_uiState.value.isMuted)
 
         viewModelScope.launch {
@@ -75,8 +75,7 @@ internal class VideoPlayerViewModel @Inject constructor(
 
     override fun onAction(action: Action) {
         when (action) {
-            is Action.SurfaceCreated -> controller.setSurface(action.surface)
-            is Action.SurfaceDestroyed -> controller.setSurface(null)
+            is Action.OutputChanged -> controller.setOutput(action.output)
             is Action.ScreenTapped -> toggleControls()
             is Action.PlayPauseClicked -> controller.togglePlayback()
             is Action.MuteClicked -> toggleMute()
@@ -87,7 +86,7 @@ internal class VideoPlayerViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        controller.release()
+        playback.release()
     }
 
     private fun toggleMute() {

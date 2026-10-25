@@ -35,11 +35,11 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
             stateHolder.state
                 .distinctUntilChanged(GalleryState::showsSamePageAs)
                 .collect { state ->
-                    keepThumbnailsAround(state).forEach { item ->
-                        this@coroutineScope.launch { loadThumbnail(item) }
-                    }
                     keepPreviewsAround(state).forEach { item ->
                         this@coroutineScope.launch { loadPreview(item) }
+                    }
+                    keepThumbnailsAround(state).forEach { item ->
+                        this@coroutineScope.launch { loadThumbnail(item) }
                     }
                 }
         }

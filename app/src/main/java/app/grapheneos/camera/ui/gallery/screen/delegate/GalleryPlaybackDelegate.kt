@@ -1,7 +1,8 @@
 package app.grapheneos.camera.ui.gallery.screen.delegate
 
-import android.view.Surface
 import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.player.VideoPlayback
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPlaybackOptions
@@ -27,7 +28,7 @@ internal interface GalleryPlaybackDelegate {
 
     suspend fun trackPlayback()
 
-    fun setSurface(surface: Surface?)
+    fun setOutput(output: VideoOutput?)
 
     fun togglePlayback()
 
@@ -59,6 +60,7 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: GalleryStateHolder
 
+    private var playback: VideoPlayback? = null
     private var controller: VideoPlaybackController? = null
 
     override fun bind(stateHolder: GalleryStateHolder) {
@@ -66,18 +68,24 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
     }
 
     override suspend fun trackPlayback() {
-        stateHolder.state
-            .map { state -> state.settledVideo() }
-            .distinctUntilChanged()
-            .collectLatest { item ->
-                if (item != null) {
-                    play(item)
+        try {
+            stateHolder.state
+                .map { state -> state.settledVideo() }
+                .distinctUntilChanged()
+                .collectLatest { item ->
+                    when (item) {
+                        null -> playback?.unload()
+                        else -> play(item)
+                    }
                 }
-            }
+        } finally {
+            playback?.release()
+            playback = null
+        }
     }
 
-    override fun setSurface(surface: Surface?) {
-        controller?.setSurface(surface)
+    override fun setOutput(output: VideoOutput?) {
+        controller?.setOutput(output)
     }
 
     override fun togglePlayback() {
@@ -144,7 +152,10 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
     }
 
     private suspend fun play(item: CapturedItem) {
-        val controller = VideoPlaybackController(videoPlaybackFactory.create(item.uri))
+        val playback = playback ?: videoPlaybackFactory.create().also { playback = it }
+        val controller = VideoPlaybackController(playback)
+
+        playback.load(item.uri)
         this.controller = controller
 
         try {
@@ -176,7 +187,6 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
             }
         } finally {
             this.controller = null
-            controller.release()
             _position.value = Duration.ZERO
             stateHolder.update { it.copy(video = null) }
         }

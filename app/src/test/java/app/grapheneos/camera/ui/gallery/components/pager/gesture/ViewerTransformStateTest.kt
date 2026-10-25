@@ -28,7 +28,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -42,7 +41,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = LETTERBOX_CONTAINER,
             imageSize = Size(width = 1000f, height = 500f),
-            canZoom = true,
         )
         state.startTransform()
 
@@ -56,7 +54,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -75,7 +72,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = tall,
             imageSize = tall,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -93,7 +89,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = LETTERBOX_CONTAINER,
             imageSize = Size(width = 100f, height = 50f),
-            canZoom = true,
         )
         state.startTransform()
 
@@ -111,7 +106,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -130,7 +124,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = large,
             imageSize = large,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -144,7 +137,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = large,
-            canZoom = true,
         )
 
         assertEquals(Offset(x = 100f, y = 100f), state.offset)
@@ -155,7 +147,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -175,7 +166,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.applyDoubleTap(position = Offset(x = 75f, y = 25f))
 
@@ -188,7 +178,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.applyDoubleTap(position = Offset(x = 75f, y = 25f))
         state.applyDoubleTap(position = Offset(x = 50f, y = 50f))
@@ -202,7 +191,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = null,
-            canZoom = true,
         )
         state.applyDoubleTap(position = SQUARE.center)
         state.startTransform()
@@ -213,19 +201,22 @@ class ViewerTransformStateTest {
     }
 
     @Test
-    fun whenZoomIsOff_neitherPinchNorDoubleTapZoomsIn() {
+    fun isAtFit_onlyWhenNeitherTransformingNorZoomed() {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = false,
         )
-        state.applyDoubleTap(position = SQUARE.center)
+
+        assertTrue(state.isAtFit())
+
         state.startTransform()
 
-        pinchAroundTheCenter(containerSize = SQUARE, zoomChange = 2f)
+        assertFalse(state.isAtFit())
 
-        assertEquals(1f, state.scale)
-        assertFalse(state.isZoomStoppedAtLimit())
+        state.release()
+        state.applyDoubleTap(position = SQUARE.center)
+
+        assertFalse(state.isAtFit())
     }
 
     @Test
@@ -295,7 +286,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -314,7 +304,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -334,7 +323,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -352,7 +340,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.applyDoubleTap(position = SQUARE.center)
         state.startTransform()
@@ -370,7 +357,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -386,7 +372,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -425,7 +410,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -440,7 +424,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -456,7 +439,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -474,7 +456,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 
@@ -489,7 +470,6 @@ class ViewerTransformStateTest {
         state.updateLayout(
             containerSize = SQUARE,
             imageSize = SQUARE,
-            canZoom = true,
         )
         state.startTransform()
 

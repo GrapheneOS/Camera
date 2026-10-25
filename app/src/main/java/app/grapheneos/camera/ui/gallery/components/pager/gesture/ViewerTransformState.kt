@@ -93,6 +93,10 @@ internal class ViewerTransformState(
         return isTransforming && maxScale > FIT_SCALE && scale == maxScale
     }
 
+    fun isAtFit(): Boolean {
+        return !isTransforming && scale == FIT_SCALE && offset == Offset.Zero && rotation == 0f
+    }
+
     fun fadeProgress(): Float {
         return when {
             isDismissed -> 1f
@@ -104,16 +108,15 @@ internal class ViewerTransformState(
     fun updateLayout(
         containerSize: Size,
         imageSize: Size?,
-        canZoom: Boolean,
     ) {
         this.containerSize = containerSize
         contentSize = when (imageSize) {
             null -> containerSize
             else -> fittedSize(imageSize)
         }
-        maxScale = when {
-            canZoom && imageSize != null -> zoomLimit(imageSize)
-            else -> FIT_SCALE
+        maxScale = when (imageSize) {
+            null -> FIT_SCALE
+            else -> zoomLimit(imageSize)
         }
 
         if (!isTransforming) {

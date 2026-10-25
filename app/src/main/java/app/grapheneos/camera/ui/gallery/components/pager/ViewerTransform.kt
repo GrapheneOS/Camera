@@ -85,6 +85,17 @@ internal class ViewerTransform(
         return fade.value
     }
 
+    fun isAtRest(): Boolean {
+        return transformState.isAtFit() &&
+            scale.value == transformState.scale &&
+            offset.value == transformState.offset &&
+            rotation.value == transformState.rotation
+    }
+
+    fun isRotated(): Boolean {
+        return rotation.value != 0f
+    }
+
     fun applyTo(layer: GraphicsLayerScope) {
         val exitShift = transformState.exitDirection * exitDistance * exitProgress.value
 
