@@ -47,6 +47,7 @@ import app.grapheneos.camera.ui.gallery.components.pager.rememberViewerTransform
 import app.grapheneos.camera.ui.gallery.components.pager.settledItemIndex
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryMenuUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPagerUiModel
@@ -109,6 +110,7 @@ internal fun GalleryScreen(
 
     GalleryDialogs(
         dialog = uiState.dialog,
+        menu = uiState.bars.menu,
         onAction = screenModel::onAction,
     )
 
@@ -268,6 +270,7 @@ private fun GalleryContentPreview() {
                 bars = GalleryBarsUiModel(
                     capturedAt = LocalDateTime.of(2023, 10, 16, 12, 0),
                     showsItemActions = true,
+                    menu = GalleryMenuUiModel.Photo,
                 ),
             ),
             videoPosition = { Duration.ZERO },

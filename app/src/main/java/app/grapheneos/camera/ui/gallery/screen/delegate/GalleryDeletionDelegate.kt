@@ -29,8 +29,6 @@ internal interface GalleryDeletionDelegate {
 
     suspend fun confirm()
 
-    fun dismiss()
-
     suspend fun undo()
 
     /** Deletes the trashed item for good; the deletion outlives the screen. */
@@ -78,7 +76,7 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
         operations.withLock {
             val item = stateHolder.state.value.currentItem() ?: return
 
-            dismiss()
+            stateHolder.update { it.copy(dialog = null) }
 
             when (deleteCapturedItem(item)) {
                 CapturedItemDeletion.Deleted -> {
@@ -89,10 +87,6 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
                 CapturedItemDeletion.Failed -> stateHolder.send(Effect.DeletionFailed)
             }
         }
-    }
-
-    override fun dismiss() {
-        stateHolder.update { it.copy(dialog = null) }
     }
 
     override suspend fun undo() {

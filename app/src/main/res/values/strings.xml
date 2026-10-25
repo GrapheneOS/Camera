@@ -197,6 +197,11 @@
     <string name="unable_to_play_video">Unable to play this video</string>
     <string name="video_position">%1$s / %2$s</string>
     <string name="video_fast_forward_speed">2x</string>
+    <string name="playback_speed">Playback speed</string>
+    <string name="playback_speed_value">%1$sx</string>
+    <string name="loop_video">Loop video</string>
+    <string name="loop_video_on">On</string>
+    <string name="loop_video_off">Off</string>
     <plurals name="video_skip_seconds">
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>

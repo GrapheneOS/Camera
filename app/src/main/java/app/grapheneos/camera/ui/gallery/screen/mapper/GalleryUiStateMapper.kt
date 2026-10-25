@@ -6,6 +6,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryChromeUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryMenuUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPagerUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
@@ -75,8 +76,26 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             showsItemActions = state.items.isNotEmpty(),
             showsExternalActions = !state.isSecureSession,
             showsSystemGallery = state.hasSystemGallery && !state.isSecureSession,
-            showsUseAs = !state.isSecureSession && currentItem?.type == CapturedItemType.IMAGE,
+            menu = currentItem?.let { item ->
+                menuOf(
+                    state = state,
+                    item = item,
+                )
+            },
         )
+    }
+
+    private fun menuOf(
+        state: GalleryState,
+        item: CapturedItem,
+    ): GalleryMenuUiModel {
+        return when (item.type) {
+            CapturedItemType.IMAGE -> GalleryMenuUiModel.Photo
+            CapturedItemType.VIDEO -> GalleryMenuUiModel.Video(
+                isLooping = state.playbackOptions.isLooping,
+                playbackSpeed = state.playbackOptions.speed,
+            )
+        }
     }
 
     private fun video(state: GalleryState): GalleryVideoUiModel? {
@@ -84,7 +103,7 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
             GalleryVideoUiModel(
                 pageKey = pageKeyOf(video.item),
                 playback = video.playback,
-                isMuted = state.isMuted,
+                isMuted = state.playbackOptions.isMuted,
             )
         }
     }

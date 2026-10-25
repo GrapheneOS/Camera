@@ -31,8 +31,6 @@ internal sealed interface GalleryAction {
 
     data object PlayPauseClicked : Video
 
-    data object MuteClicked : Video
-
     data object VideoHoldStarted : Video
 
     data object VideoHoldEnded : Video
@@ -50,6 +48,18 @@ internal sealed interface GalleryAction {
     data class SkipTapped(
         val direction: SkipDirection,
     ) : Video
+
+    sealed interface PlaybackOptions : GalleryAction
+
+    data object MuteClicked : PlaybackOptions
+
+    data object LoopClicked : PlaybackOptions
+
+    data object PlaybackSpeedClicked : PlaybackOptions
+
+    data class PlaybackSpeedSelected(
+        val speed: Float,
+    ) : PlaybackOptions
 
     sealed interface Details : GalleryAction
 

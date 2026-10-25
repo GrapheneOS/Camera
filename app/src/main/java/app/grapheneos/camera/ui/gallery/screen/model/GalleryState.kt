@@ -19,7 +19,7 @@ internal data class GalleryState(
     val dialog: GalleryDialog? = null,
     val trashedItem: GalleryTrashedItem? = null,
     val video: GalleryVideoState? = null,
-    val isMuted: Boolean = false,
+    val playbackOptions: GalleryPlaybackOptions = GalleryPlaybackOptions(),
 ) {
 
     fun currentItem(): CapturedItem? {

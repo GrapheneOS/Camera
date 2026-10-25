@@ -3,12 +3,15 @@ package app.grapheneos.camera.ui.gallery.screen
 import android.os.Bundle
 import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryPlaybackOptions
 
 private const val SESSION_ITEMS = "gallery_session_items"
 private const val LAST_CAPTURED_ITEM = "gallery_last_captured_item"
 private const val VIEWED_ITEM = "gallery_viewed_item"
 private const val SHOWS_DETAILS = "gallery_shows_details"
 private const val IS_MUTED = "gallery_is_muted"
+private const val PLAYBACK_SPEED = "gallery_playback_speed"
+private const val IS_LOOPING = "gallery_is_looping"
 
 internal fun galleryArguments(
     sessionItems: List<CapturedItem>?,
@@ -36,8 +39,14 @@ internal fun showsDetailsOf(arguments: SavedStateHandle): Boolean {
     return arguments.get<Boolean>(SHOWS_DETAILS) == true
 }
 
-internal fun isMutedOf(arguments: SavedStateHandle): Boolean {
-    return arguments.get<Boolean>(IS_MUTED) == true
+internal fun playbackOptionsOf(arguments: SavedStateHandle): GalleryPlaybackOptions {
+    val defaults = GalleryPlaybackOptions()
+
+    return GalleryPlaybackOptions(
+        isMuted = arguments.get<Boolean>(IS_MUTED) ?: defaults.isMuted,
+        speed = arguments.get<Float>(PLAYBACK_SPEED) ?: defaults.speed,
+        isLooping = arguments.get<Boolean>(IS_LOOPING) ?: defaults.isLooping,
+    )
 }
 
 internal fun saveViewedItem(
@@ -54,9 +63,11 @@ internal fun saveShowsDetails(
     arguments[SHOWS_DETAILS] = showsDetails
 }
 
-internal fun saveIsMuted(
+internal fun savePlaybackOptions(
     arguments: SavedStateHandle,
-    isMuted: Boolean,
+    options: GalleryPlaybackOptions,
 ) {
-    arguments[IS_MUTED] = isMuted
+    arguments[IS_MUTED] = options.isMuted
+    arguments[PLAYBACK_SPEED] = options.speed
+    arguments[IS_LOOPING] = options.isLooping
 }
