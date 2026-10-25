@@ -60,13 +60,15 @@ internal fun GalleryTopBar(
             }
         },
         actions = {
-            if (bars.showsItemActions) {
+            bars.menu?.let { menu ->
                 GalleryMenu(
+                    menu = menu,
                     showsExternalActions = bars.showsExternalActions,
-                    showsUseAs = bars.showsUseAs,
                     onInfoClick = { onAction(Action.DetailsShownChanged(isShown = true)) },
                     onEditWithClick = { onAction(Action.EditWithClicked) },
                     onUseAsClick = { onAction(Action.UseAsClicked) },
+                    onLoopClick = { onAction(Action.LoopClicked) },
+                    onPlaybackSpeedClick = { onAction(Action.PlaybackSpeedClicked) },
                 )
             }
         },

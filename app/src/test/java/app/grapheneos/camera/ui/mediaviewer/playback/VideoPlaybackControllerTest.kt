@@ -185,6 +185,24 @@ class VideoPlaybackControllerTest {
     }
 
     @Test
+    fun finishSeek_whilePlaying_keepsTheTargetUntilAFrameIsShownThere() {
+        runTest {
+            track()
+            shownPosition.value = 2.seconds
+            playbackState.value = VideoPlaybackState(isPlaying = true)
+
+            controller.seekTo(9.seconds)
+            controller.finishSeek()
+
+            assertEquals(9.seconds, controller.position.value)
+
+            shownPosition.value = 9.seconds + 30.milliseconds
+
+            assertEquals(9.seconds + 30.milliseconds, controller.position.value)
+        }
+    }
+
+    @Test
     fun finishSeek_afterSeekingWhilePaused_staysPaused() {
         runTest {
             track()
@@ -239,6 +257,23 @@ class VideoPlaybackControllerTest {
             verify { playback.setSpeed(1f) }
             verify(exactly = 0) { playback.pause() }
             assertFalse(active().isFastForwarding)
+        }
+    }
+
+    @Test
+    fun fastForward_returnsToTheChosenSpeed() {
+        runTest {
+            track()
+
+            controller.setSpeed(0.5f)
+            controller.startFastForward()
+            controller.setSpeed(1.5f)
+
+            verify(exactly = 0) { playback.setSpeed(1.5f) }
+
+            controller.stopFastForward()
+
+            verify { playback.setSpeed(1.5f) }
         }
     }
 

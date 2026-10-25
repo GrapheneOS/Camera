@@ -4,6 +4,7 @@ import android.view.Surface
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryPlaybackOptions
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoState
 import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackController
@@ -31,6 +32,10 @@ internal interface GalleryPlaybackDelegate {
     fun togglePlayback()
 
     fun toggleMute()
+
+    fun setSpeed(speed: Float)
+
+    fun toggleLooping()
 
     fun seekTo(position: Duration)
 
@@ -80,7 +85,15 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
     }
 
     override fun toggleMute() {
-        stateHolder.update { it.copy(isMuted = !it.isMuted) }
+        updateOptions { it.copy(isMuted = !it.isMuted) }
+    }
+
+    override fun setSpeed(speed: Float) {
+        updateOptions { it.copy(speed = speed) }
+    }
+
+    override fun toggleLooping() {
+        updateOptions { it.copy(isLooping = !it.isLooping) }
     }
 
     override fun seekTo(position: Duration) {
@@ -107,6 +120,29 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
         controller?.pause()
     }
 
+    private suspend fun applyOptions(controller: VideoPlaybackController) {
+        coroutineScope {
+            launch {
+                stateHolder.state
+                    .map { state -> state.playbackOptions.isMuted || state.showsDetails }
+                    .distinctUntilChanged()
+                    .collect(controller::setMuted)
+            }
+
+            launch {
+                stateHolder.state
+                    .map { state -> state.playbackOptions.speed }
+                    .distinctUntilChanged()
+                    .collect(controller::setSpeed)
+            }
+
+            stateHolder.state
+                .map { state -> state.playbackOptions.isLooping }
+                .distinctUntilChanged()
+                .collect(controller::setLooping)
+        }
+    }
+
     private suspend fun play(item: CapturedItem) {
         val controller = VideoPlaybackController(videoPlaybackFactory.create(item.uri))
         this.controller = controller
@@ -114,10 +150,7 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
         try {
             coroutineScope {
                 launch {
-                    stateHolder.state
-                        .map { state -> state.isMuted || state.showsDetails }
-                        .distinctUntilChanged()
-                        .collect(controller::setMuted)
+                    applyOptions(controller)
                 }
 
                 launch {
@@ -147,5 +180,9 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
             _position.value = Duration.ZERO
             stateHolder.update { it.copy(video = null) }
         }
+    }
+
+    private fun updateOptions(change: (GalleryPlaybackOptions) -> GalleryPlaybackOptions) {
+        stateHolder.update { it.copy(playbackOptions = change(it.playbackOptions)) }
     }
 }

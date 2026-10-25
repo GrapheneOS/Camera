@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -29,40 +30,45 @@ internal class VideoPlaybackController(
     private val _position = MutableStateFlow(Duration.ZERO)
     val position: StateFlow<Duration> = _position.asStateFlow()
 
-    private val seek = MutableStateFlow<Seek>(Seek.None)
-    private val isFastForwarding = MutableStateFlow(false)
-    private val skip = MutableStateFlow<VideoSkipUiModel?>(null)
+    private val controls = MutableStateFlow(Controls())
 
     private val skipTaps = Channel<Unit>(capacity = Channel.CONFLATED)
 
     suspend fun track(followsPosition: Flow<Boolean>) {
         coroutineScope {
             launch {
-                combine(
-                    playback.state,
-                    isFastForwarding,
-                    skip,
-                    ::uiModelOf,
-                ).collect { uiModel ->
+                combine(playback.state, controls, ::uiModelOf).collect { uiModel ->
                     _state.value = uiModel
                 }
             }
 
             launch {
-                playback.shownPosition.collect(::landSkip)
+                playback.shownPosition.collect(::land)
             }
 
             launch {
-                skipTaps.receiveAsFlow().collectLatest {
+                controls
+                    .map { it.playbackSpeed() }
+                    .distinctUntilChanged()
+                    .collect(playback::setSpeed)
+            }
+
+            launch {
+                skipTaps.receiveAsFlow().collectLatest { _ ->
                     delay(SKIP_SHOWN_FOR)
-                    skip.value = null
+                    controls.update { it.copy(skip = null) }
                 }
             }
 
-            combine(followsPosition, skip) { follows, shownSkip -> follows || shownSkip != null }
+            val showsPosition = combine(
+                followsPosition,
+                controls.map { it.skip != null },
+            ) { isFollowed, isSkipping -> isFollowed || isSkipping }
+
+            showsPosition
                 .distinctUntilChanged()
-                .collectLatest { follows ->
-                    if (follows) {
+                .collectLatest { isShown ->
+                    if (isShown) {
                         followPosition()
                     }
                 }
@@ -89,22 +95,26 @@ internal class VideoPlaybackController(
     }
 
     fun seekTo(position: Duration) {
-        seek.value = when (val current = seek.value) {
-            is Seek.Dragging -> current.copy(target = position)
-            else -> startDragging(target = position)
-        }
+        val dragging = (controls.value.seek as? Seek.Dragging)
+            ?.copy(target = position)
+            ?: startDragging(target = position)
+
+        setSeek(dragging)
         playback.seekTo(position)
     }
 
     fun finishSeek() {
-        val dragging = seek.value as? Seek.Dragging ?: return
+        val dragging = controls.value.seek as? Seek.Dragging ?: return
 
-        seek.value = Seek.Held(target = dragging.target)
         playback.setScrubbing(false)
         playback.seekTo(dragging.target)
 
-        if (dragging.resumesPlayback) {
-            play()
+        when {
+            dragging.resumesPlayback -> {
+                setSeek(Seek.Landing(dragging.target))
+                playback.play()
+            }
+            else -> setSeek(Seek.Held(dragging.target))
         }
     }
 
@@ -114,29 +124,37 @@ internal class VideoPlaybackController(
         val skipped = (target - position).absoluteValue
 
         if (skipped > Duration.ZERO) {
-            seek.value = Seek.Skipping(target)
+            setSeek(Seek.Landing(target))
             playback.seekTo(target)
         }
 
-        skip.update { shownSkip ->
-            nextSkip(
-                shownSkip = shownSkip,
-                direction = direction,
-                skipped = skipped,
+        controls.update {
+            it.copy(
+                skip = nextSkip(
+                    shownSkip = it.skip,
+                    direction = direction,
+                    skipped = skipped,
+                ),
             )
         }
         skipTaps.trySend(Unit)
     }
 
+    fun setSpeed(speed: Float) {
+        controls.update { it.copy(speed = speed) }
+    }
+
+    fun setLooping(isLooping: Boolean) {
+        playback.setLooping(isLooping)
+    }
+
     fun startFastForward() {
-        playback.setSpeed(FAST_FORWARD_SPEED)
+        controls.update { it.copy(isFastForwarding = true) }
         play()
-        isFastForwarding.value = true
     }
 
     fun stopFastForward() {
-        playback.setSpeed(NORMAL_SPEED)
-        isFastForwarding.value = false
+        controls.update { it.copy(isFastForwarding = false) }
     }
 
     fun release() {
@@ -144,17 +162,27 @@ internal class VideoPlaybackController(
     }
 
     private suspend fun followPosition() {
-        combine(playback.shownPosition, seek, ::positionOf).collect { position ->
+        val seek = controls.map { it.seek }.distinctUntilChanged()
+
+        combine(
+            playback.shownPosition,
+            seek,
+            ::positionOf,
+        ).collect { position ->
             _position.value = position
         }
     }
 
-    private fun landSkip(shownPosition: Duration) {
-        val skipping = seek.value as? Seek.Skipping ?: return
+    private fun land(shownPosition: Duration) {
+        val landing = controls.value.seek as? Seek.Landing ?: return
 
-        if (shownPosition - skipping.target in Duration.ZERO..<SKIP_LANDING_WINDOW) {
-            seek.value = Seek.None
+        if (shownPosition - landing.target in Duration.ZERO..<LANDING_WINDOW) {
+            setSeek(Seek.None)
         }
+    }
+
+    private fun setSeek(seek: Seek) {
+        controls.update { it.copy(seek = seek) }
     }
 
     private fun nextSkip(
@@ -197,7 +225,12 @@ internal class VideoPlaybackController(
     }
 
     private fun play() {
-        seek.value = Seek.None
+        setSeek(
+            when (val seek = controls.value.seek) {
+                is Seek.Held -> Seek.Landing(seek.target)
+                else -> Seek.None
+            },
+        )
         playback.play()
     }
 
@@ -207,8 +240,7 @@ internal class VideoPlaybackController(
 
     private fun uiModelOf(
         playbackState: VideoPlaybackState,
-        isFastForwarding: Boolean,
-        skip: VideoSkipUiModel?,
+        controls: Controls,
     ): VideoPlaybackUiModel {
         return when {
             playbackState.hasFailed -> VideoPlaybackUiModel.Failed
@@ -218,8 +250,8 @@ internal class VideoPlaybackController(
                 duration = playbackState.duration ?: Duration.ZERO,
                 aspectRatio = playbackState.aspectRatio,
                 hasRenderedFrame = playbackState.hasRenderedFrame,
-                isFastForwarding = isFastForwarding,
-                skip = skip,
+                isFastForwarding = controls.isFastForwarding,
+                skip = controls.skip,
             )
         }
     }
@@ -232,7 +264,22 @@ internal class VideoPlaybackController(
             Seek.None -> shownPosition
             is Seek.Dragging -> seek.target
             is Seek.Held -> seek.target
-            is Seek.Skipping -> seek.target
+            is Seek.Landing -> seek.target
+        }
+    }
+
+    private data class Controls(
+        val seek: Seek = Seek.None,
+        val speed: Float = NORMAL_SPEED,
+        val isFastForwarding: Boolean = false,
+        val skip: VideoSkipUiModel? = null,
+    ) {
+
+        fun playbackSpeed(): Float {
+            return when {
+                isFastForwarding -> FAST_FORWARD_SPEED
+                else -> speed
+            }
         }
     }
 
@@ -249,7 +296,7 @@ internal class VideoPlaybackController(
             val target: Duration,
         ) : Seek
 
-        data class Skipping(
+        data class Landing(
             val target: Duration,
         ) : Seek
     }
@@ -259,6 +306,6 @@ internal class VideoPlaybackController(
         const val FAST_FORWARD_SPEED = 2f
 
         val SKIP_SHOWN_FOR = 500.milliseconds
-        val SKIP_LANDING_WINDOW = SkipDirection.STEP / 2
+        val LANDING_WINDOW = SkipDirection.STEP / 2
     }
 }

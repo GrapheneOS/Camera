@@ -9,5 +9,5 @@ internal data class GalleryBarsUiModel(
     val showsItemActions: Boolean = false,
     val showsExternalActions: Boolean = true,
     val showsSystemGallery: Boolean = false,
-    val showsUseAs: Boolean = false,
+    val menu: GalleryMenuUiModel? = null,
 )

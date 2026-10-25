@@ -29,6 +29,7 @@ import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapperImpl
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryMenuUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import io.mockk.coEvery
@@ -240,7 +241,6 @@ class GalleryViewModelTest {
 
             assertFalse(viewModel.uiState.value.bars.showsExternalActions)
             assertFalse(viewModel.uiState.value.bars.showsSystemGallery)
-            assertFalse(viewModel.uiState.value.bars.showsUseAs)
             assertTrue(effects.isEmpty())
         }
     }
@@ -265,17 +265,17 @@ class GalleryViewModelTest {
 
             viewModel.onAction(Action.UseAsClicked)
 
-            assertTrue(viewModel.uiState.value.bars.showsUseAs)
+            assertEquals(GalleryMenuUiModel.Photo, viewModel.uiState.value.bars.menu)
             assertEquals(listOf(Effect.UseAs(NEWEST)), effects)
         }
     }
 
     @Test
-    fun aVideo_offersNoUseAs() {
+    fun aVideo_getsTheVideoMenu() {
         runTest {
             storedItems = listOf(VIDEO)
 
-            assertFalse(viewModel().uiState.value.bars.showsUseAs)
+            assertTrue(viewModel().uiState.value.bars.menu is GalleryMenuUiModel.Video)
         }
     }
 

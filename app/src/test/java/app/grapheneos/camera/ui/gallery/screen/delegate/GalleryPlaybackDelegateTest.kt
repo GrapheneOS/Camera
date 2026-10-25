@@ -88,7 +88,23 @@ class GalleryPlaybackDelegateTest {
 
             verify { playbacks.first().setMuted(true) }
             verify { playbacks.last().setMuted(true) }
-            assertTrue(stateHolder.state.value.isMuted)
+            assertTrue(stateHolder.state.value.playbackOptions.isMuted)
+        }
+    }
+
+    @Test
+    fun chosenSpeedAndLooping_carryOverToTheNextVideo() {
+        runTest {
+            val delegate = createDelegate()
+
+            settle(page = 1)
+            delegate.setSpeed(1.5f)
+            delegate.toggleLooping()
+            settle(page = 2)
+
+            verify { playbacks.first().setLooping(true) }
+            verify { playbacks.last().setSpeed(1.5f) }
+            verify { playbacks.last().setLooping(false) }
         }
     }
 
@@ -101,7 +117,7 @@ class GalleryPlaybackDelegateTest {
             stateHolder.update { it.copy(showsDetails = true) }
 
             verify { playbacks.single().setMuted(true) }
-            assertFalse(stateHolder.state.value.isMuted)
+            assertFalse(stateHolder.state.value.playbackOptions.isMuted)
 
             stateHolder.update { it.copy(showsDetails = false) }
 

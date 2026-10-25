@@ -12,6 +12,7 @@ import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPlaybackDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegate
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapper
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState
@@ -56,7 +57,7 @@ internal class GalleryViewModel @Inject constructor(
             isSecureSession = entryPoint.isSecureSession,
             hasSystemGallery = systemGalleryLauncher.canOpen(),
             showsDetails = showsDetailsOf(arguments),
-            isMuted = isMutedOf(arguments),
+            playbackOptions = playbackOptionsOf(arguments),
         ),
     )
 
@@ -106,9 +107,10 @@ internal class GalleryViewModel @Inject constructor(
         when (action) {
             is Action.ScreenTapped -> onScreenTapped()
             is Action.ScreenStopped -> playbackDelegate.pause()
-            is Action.DialogDismissed -> deletionDelegate.dismiss()
+            is Action.DialogDismissed -> showDialog(null)
             is Action.Page -> onPageAction(action)
             is Action.Video -> onVideoAction(action)
+            is Action.PlaybackOptions -> onPlaybackOptionsAction(action)
             is Action.Details -> onDetailsAction(action)
             is Action.OtherApp -> onOtherAppAction(action)
             is Action.Deletion -> onDeletionAction(action)
@@ -118,11 +120,7 @@ internal class GalleryViewModel @Inject constructor(
     private fun onPageAction(action: Action.Page) {
         when (action) {
             is Action.PageSelected -> selectPage(action.page)
-
-            is Action.PageSettled -> stateHolder.update {
-                it.copy(settledIndex = action.page)
-            }
-
+            is Action.PageSettled -> settlePage(action.page)
             is Action.ZoomChanged -> onZoomChanged(
                 pageKey = action.pageKey,
                 isZoomed = action.isZoomed,
@@ -132,14 +130,22 @@ internal class GalleryViewModel @Inject constructor(
 
     private fun onVideoAction(action: Action.Video) {
         when (action) {
-            is Action.VideoSurfaceChanged -> playbackDelegate.setSurface(action.surface)
             is Action.PlayPauseClicked -> playbackDelegate.togglePlayback()
-            is Action.MuteClicked -> toggleMute()
-            is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
-            is Action.SeekReleased -> playbackDelegate.finishSeek()
-            is Action.SkipTapped -> playbackDelegate.skip(action.direction)
             is Action.VideoHoldStarted -> playbackDelegate.startFastForward()
             is Action.VideoHoldEnded -> playbackDelegate.stopFastForward()
+            is Action.SeekReleased -> playbackDelegate.finishSeek()
+            is Action.VideoSurfaceChanged -> playbackDelegate.setSurface(action.surface)
+            is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
+            is Action.SkipTapped -> playbackDelegate.skip(action.direction)
+        }
+    }
+
+    private fun onPlaybackOptionsAction(action: Action.PlaybackOptions) {
+        when (action) {
+            is Action.MuteClicked -> changePlaybackOptions(playbackDelegate::toggleMute)
+            is Action.LoopClicked -> changePlaybackOptions(playbackDelegate::toggleLooping)
+            is Action.PlaybackSpeedClicked -> showDialog(Dialog.PlaybackSpeed)
+            is Action.PlaybackSpeedSelected -> setPlaybackSpeed(action.speed)
         }
     }
 
@@ -190,9 +196,21 @@ internal class GalleryViewModel @Inject constructor(
         }
     }
 
-    private fun toggleMute() {
-        playbackDelegate.toggleMute()
-        saveIsMuted(arguments, state.isMuted)
+    private fun showDialog(dialog: Dialog?) {
+        stateHolder.update { it.copy(dialog = dialog) }
+    }
+
+    private fun settlePage(page: Int) {
+        stateHolder.update { it.copy(settledIndex = page) }
+    }
+
+    private fun setPlaybackSpeed(speed: Float) {
+        changePlaybackOptions { playbackDelegate.setSpeed(speed) }
+    }
+
+    private fun changePlaybackOptions(change: () -> Unit) {
+        change()
+        savePlaybackOptions(arguments, state.playbackOptions)
     }
 
     private fun selectPage(page: Int) {

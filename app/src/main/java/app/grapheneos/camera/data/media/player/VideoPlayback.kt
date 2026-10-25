@@ -43,6 +43,8 @@ internal interface VideoPlayback {
 
     fun setSpeed(speed: Float)
 
+    fun setLooping(isLooping: Boolean)
+
     fun release()
 }
 
@@ -133,6 +135,13 @@ internal class VideoPlaybackImpl(
 
     override fun setSpeed(speed: Float) {
         player.setPlaybackSpeed(speed)
+    }
+
+    override fun setLooping(isLooping: Boolean) {
+        player.repeatMode = when {
+            isLooping -> Player.REPEAT_MODE_ONE
+            else -> Player.REPEAT_MODE_OFF
+        }
     }
 
     override fun release() {
