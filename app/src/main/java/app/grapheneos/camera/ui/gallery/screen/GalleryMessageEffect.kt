@@ -14,6 +14,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
 @Composable
 internal fun GalleryMessageEffect(
     message: GalleryMessage?,
+    trashedPageKey: String?,
     snackbarHostState: SnackbarHostState,
     onUndoClick: () -> Unit,
     onUndoDismiss: () -> Unit,
@@ -25,19 +26,24 @@ internal fun GalleryMessageEffect(
     LaunchedEffect(message) {
         if (message == null) return@LaunchedEffect
 
-        val result = snackbarHostState.showSnackbar(
+        snackbarHostState.showSnackbar(
             message = resources.getString(message.text),
-            actionLabel = when {
-                message.offersUndo -> resources.getString(R.string.undo)
-                else -> null
-            },
+            duration = SnackbarDuration.Short,
+        )
+    }
+
+    LaunchedEffect(trashedPageKey) {
+        if (trashedPageKey == null) return@LaunchedEffect
+
+        val result = snackbarHostState.showSnackbar(
+            message = resources.getString(R.string.deleted_successfully),
+            actionLabel = resources.getString(R.string.undo),
             duration = SnackbarDuration.Short,
         )
 
-        when {
-            !message.offersUndo -> Unit
-            result == SnackbarResult.ActionPerformed -> currentOnUndoClick()
-            else -> currentOnUndoDismiss()
+        when (result) {
+            SnackbarResult.ActionPerformed -> currentOnUndoClick()
+            SnackbarResult.Dismissed -> currentOnUndoDismiss()
         }
     }
 }

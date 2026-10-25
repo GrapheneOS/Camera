@@ -4,5 +4,4 @@ import androidx.annotation.StringRes
 
 internal class GalleryMessage(
     @StringRes val text: Int,
-    val offersUndo: Boolean = false,
 )

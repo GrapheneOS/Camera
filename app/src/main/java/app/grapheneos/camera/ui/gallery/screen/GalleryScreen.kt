@@ -90,6 +90,7 @@ internal fun GalleryScreen(
 
     GalleryMessageEffect(
         message = message,
+        trashedPageKey = uiState.trashedPageKey,
         snackbarHostState = snackbarHostState,
         onUndoClick = { screenModel.onAction(Action.UndoClicked) },
         onUndoDismiss = { screenModel.onAction(Action.UndoDismissed) },

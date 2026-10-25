@@ -337,7 +337,8 @@ class GalleryViewModelTest {
             coVerify { capturedItemTrashRepository.trash(NEWEST) }
             assertNull(viewModel.uiState.value.dialog)
             assertEquals(keysOf(OLDER), pageKeys(viewModel))
-            assertEquals(listOf(Effect.ItemTrashed), effects)
+            assertEquals(NEWEST.uri.toString(), viewModel.uiState.value.trashedPageKey)
+            assertEquals(emptyList<Effect>(), effects)
         }
     }
 
@@ -366,6 +367,7 @@ class GalleryViewModelTest {
             coVerify { capturedItemTrashRepository.restore(OLDER) }
             assertEquals(keysOf(NEWEST, OLDER), pageKeys(viewModel))
             assertEquals(1, viewModel.uiState.value.currentPage)
+            assertNull(viewModel.uiState.value.trashedPageKey)
         }
     }
 
@@ -382,6 +384,7 @@ class GalleryViewModelTest {
             coVerify { capturedItemTrashRepository.delete(NEWEST) }
             coVerify(exactly = 0) { capturedItemTrashRepository.restore(any()) }
             assertEquals(keysOf(OLDER), pageKeys(viewModel))
+            assertNull(viewModel.uiState.value.trashedPageKey)
         }
     }
 
@@ -427,7 +430,7 @@ class GalleryViewModelTest {
             viewModel.onAction(Action.UndoClicked)
 
             assertEquals(keysOf(OLDER), pageKeys(viewModel))
-            assertEquals(listOf(Effect.ItemTrashed, Effect.RestoreFailed), effects)
+            assertEquals(listOf(Effect.RestoreFailed), effects)
         }
     }
 

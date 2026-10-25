@@ -74,7 +74,6 @@ internal class GalleryEffectHandlerImpl(
 
             is Effect.CopyText -> copy(effect.text)
             is Effect.ItemDeleted -> showText(R.string.deleted_successfully)
-            is Effect.ItemTrashed -> showUndoableText(R.string.deleted_successfully)
             is Effect.DeletionFailed -> showText(R.string.deleting_unexpected_error)
             is Effect.RestoreFailed -> showText(R.string.restoring_unexpected_error)
         }
@@ -129,14 +128,5 @@ internal class GalleryEffectHandlerImpl(
 
     private fun showText(@StringRes text: Int) {
         showMessage(GalleryMessage(text))
-    }
-
-    private fun showUndoableText(@StringRes text: Int) {
-        showMessage(
-            GalleryMessage(
-                text = text,
-                offersUndo = true,
-            ),
-        )
     }
 }
