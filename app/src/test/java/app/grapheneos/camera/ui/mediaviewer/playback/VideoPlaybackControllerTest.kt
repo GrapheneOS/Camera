@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.mediaviewer.playback
 
+import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import app.grapheneos.camera.data.media.player.VideoPlayback
 import io.mockk.every
@@ -69,6 +70,23 @@ class VideoPlaybackControllerTest {
             playbackState.value = VideoPlaybackState(hasFailed = true)
 
             assertEquals(VideoPlaybackUiModel.Failed, controller.state.value)
+        }
+    }
+
+    @Test
+    fun setOutput_handsTheOutputToThePlayerAndReportsWhereAFrameIs() {
+        runTest {
+            track()
+            val output = VideoOutput(
+                id = 3,
+                surface = mockk(),
+            )
+
+            controller.setOutput(output)
+            playbackState.value = VideoPlaybackState(renderedOutputId = 3)
+
+            verify { playback.setOutput(output) }
+            assertEquals(3, active().renderedOutputId)
         }
     }
 

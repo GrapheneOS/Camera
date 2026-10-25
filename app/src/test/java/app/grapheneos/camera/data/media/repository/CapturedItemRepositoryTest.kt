@@ -328,6 +328,7 @@ class CapturedItemRepositoryTest {
             contentResolver = contentResolver,
             context = context,
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
+            videoFrameDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
     }
 

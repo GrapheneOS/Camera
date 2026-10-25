@@ -32,7 +32,6 @@ class ViewerTransformStateRestorationTest {
             transformState.updateLayout(
                 containerSize = SCREEN,
                 imageSize = SCREEN,
-                canZoom = true,
             )
             transformState.applyDoubleTap(position = Offset.Zero)
         }
@@ -51,7 +50,6 @@ class ViewerTransformStateRestorationTest {
             transformState.updateLayout(
                 containerSize = SCREEN,
                 imageSize = SCREEN,
-                canZoom = true,
             )
             transformState.applyDoubleTap(position = Offset.Zero)
         }

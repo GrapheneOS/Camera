@@ -57,7 +57,7 @@ internal fun GalleryViewerPager(
         onPageSettled = { page -> onAction(Action.PageSettled(page)) },
         onDetailsShownChange = { isShown -> onAction(Action.DetailsShownChanged(isShown)) },
         onTap = { onAction(Action.ScreenTapped) },
-        onVideoSurfaceChange = { surface -> onAction(Action.VideoSurfaceChanged(surface)) },
+        onVideoOutputChange = { output -> onAction(Action.VideoOutputChanged(output)) },
         onVideoHoldChange = { isHeld ->
             onAction(
                 when {

@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.gallery.screen.model
 
-import android.view.Surface
+import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import kotlin.time.Duration
 
@@ -37,8 +37,8 @@ internal sealed interface GalleryAction {
 
     data object SeekReleased : Video
 
-    data class VideoSurfaceChanged(
-        val surface: Surface?,
+    data class VideoOutputChanged(
+        val output: VideoOutput?,
     ) : Video
 
     data class SeekDragged(

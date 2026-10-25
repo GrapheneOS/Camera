@@ -56,6 +56,7 @@ class SafTreeGrantsRegressionTest {
             contentResolver = context.contentResolver,
             context = context,
             ioDispatcher = UnconfinedTestDispatcher(),
+            videoFrameDispatcher = UnconfinedTestDispatcher(),
         )
     }
 

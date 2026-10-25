@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery.components.pager
 
-import android.view.Surface
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -16,6 +15,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
@@ -30,9 +30,11 @@ internal fun GalleryPage(
     preview: GalleryPreview,
     onTap: () -> Unit,
     onDoubleTap: ((Offset) -> Unit)?,
-    onSkip: ((SkipDirection) -> Unit)?,
+    onSkip: ((SkipDirection, Offset) -> Unit)?,
     video: VideoPlaybackUiModel?,
-    onVideoSurfaceChange: (Surface?) -> Unit,
+    mayRotateVideo: Boolean,
+    isVideoRotated: Boolean,
+    onVideoOutputChange: (VideoOutput?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -49,8 +51,11 @@ internal fun GalleryPage(
                 video = video,
                 preview = preview,
                 onTap = onTap,
+                onDoubleTap = onDoubleTap,
                 onSkip = onSkip,
-                onSurfaceChange = onVideoSurfaceChange,
+                mayRotate = mayRotateVideo,
+                isRotated = isVideoRotated,
+                onOutputChange = onVideoOutputChange,
             )
 
             video is VideoPlaybackUiModel.Failed -> UnavailablePlaceholder(
@@ -79,8 +84,11 @@ private fun PlayingVideo(
     video: VideoPlaybackUiModel.Active,
     preview: GalleryPreview,
     onTap: () -> Unit,
-    onSkip: ((SkipDirection) -> Unit)?,
-    onSurfaceChange: (Surface?) -> Unit,
+    onDoubleTap: ((Offset) -> Unit)?,
+    onSkip: ((SkipDirection, Offset) -> Unit)?,
+    mayRotate: Boolean,
+    isRotated: Boolean,
+    onOutputChange: (VideoOutput?) -> Unit,
 ) {
     val thumbnail = (preview as? GalleryPreview.Loaded)?.image
 
@@ -90,16 +98,18 @@ private fun PlayingVideo(
     ) {
         VideoSurface(
             aspectRatio = video.aspectRatio ?: thumbnail?.let { it.width.toFloat() / it.height },
-            onSurfaceCreated = onSurfaceChange,
-            onSurfaceDestroyed = { onSurfaceChange(null) },
+            renderedOutputId = video.renderedOutputId,
+            onOutputChange = onOutputChange,
+            mayRotate = mayRotate,
+            isRotated = isRotated,
         )
         if (!video.hasRenderedFrame && thumbnail != null) {
             VideoFrame(thumbnail)
         }
-        if (onSkip != null) {
+        if (onDoubleTap != null && onSkip != null) {
             VideoTapArea(
-                isSkipping = video.skip != null,
                 onTap = onTap,
+                onDoubleTap = onDoubleTap,
                 onSkip = onSkip,
             )
         }
@@ -147,9 +157,11 @@ private fun GalleryPageUnavailablePreview() {
             preview = GalleryPreview.Unavailable,
             onTap = {},
             onDoubleTap = {},
-            onSkip = {},
+            onSkip = { _, _ -> },
             video = null,
-            onVideoSurfaceChange = {},
+            mayRotateVideo = false,
+            isVideoRotated = false,
+            onVideoOutputChange = {},
         )
     }
 }

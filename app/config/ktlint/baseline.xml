@@ -241,12 +241,12 @@
         <error line="7" column="114" source="standard:parameter-list-wrapping" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/util/Utils.kt">
-        <error line="24" column="44" source="standard:no-semi" />
-        <error line="74" column="66" source="standard:argument-list-wrapping" />
-        <error line="74" column="71" source="standard:argument-list-wrapping" />
-        <error line="74" column="101" source="standard:max-line-length" />
-        <error line="74" column="107" source="standard:argument-list-wrapping" />
-        <error line="74" column="110" source="standard:argument-list-wrapping" />
-        <error line="74" column="111" source="standard:argument-list-wrapping" />
+        <error line="23" column="44" source="standard:no-semi" />
+        <error line="73" column="66" source="standard:argument-list-wrapping" />
+        <error line="73" column="71" source="standard:argument-list-wrapping" />
+        <error line="73" column="101" source="standard:max-line-length" />
+        <error line="73" column="107" source="standard:argument-list-wrapping" />
+        <error line="73" column="110" source="standard:argument-list-wrapping" />
+        <error line="73" column="111" source="standard:argument-list-wrapping" />
     </file>
 </baseline>

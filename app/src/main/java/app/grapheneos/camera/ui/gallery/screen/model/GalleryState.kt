@@ -42,10 +42,19 @@ internal data class GalleryState(
     }
 
     fun itemsAround(radius: Int): List<CapturedItem> {
-        return (currentIndex - radius..currentIndex + radius).mapNotNull(items::getOrNull)
+        val center = settledOrCurrentIndex()
+        val nearestFirst = (0..radius).flatMap { distance ->
+            listOf(center + distance, center - distance).distinct()
+        }
+
+        return nearestFirst.mapNotNull(items::getOrNull)
     }
 
     fun showsSamePageAs(other: GalleryState): Boolean {
-        return currentIndex == other.currentIndex && items === other.items
+        return settledOrCurrentIndex() == other.settledOrCurrentIndex() && items === other.items
+    }
+
+    private fun settledOrCurrentIndex(): Int {
+        return settledIndex ?: currentIndex
     }
 }

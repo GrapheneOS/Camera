@@ -40,4 +40,15 @@ internal class CoroutinesProvidesModule {
     ): CoroutineScope {
         return CoroutineScope(SupervisorJob() + dispatcher)
     }
+
+    // Each frame retriever starts its own hardware decoder, which competes with the playing video's.
+    @Provides
+    @Singleton
+    @VideoFrameDispatcher
+    fun provideVideoFrameDispatcher(): CoroutineDispatcher {
+        return Dispatchers.IO.limitedParallelism(
+            parallelism = 1,
+            name = "Video frames",
+        )
+    }
 }

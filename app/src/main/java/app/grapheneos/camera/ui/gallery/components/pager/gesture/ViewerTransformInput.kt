@@ -80,6 +80,10 @@ private suspend fun AwaitPointerEventScope.awaitGestureStart(tracker: GestureSta
     do {
         event = awaitPointerEvent(pass = PointerEventPass.Initial)
         tracker.track(event)
+
+        if (event.changes.count { it.pressed } > 1) {
+            event.consumePositionChanges()
+        }
     } while (tracker.isUndecided && event.changes.any { it.pressed })
 
     if (tracker.start != null) {
@@ -109,7 +113,7 @@ private suspend fun AwaitPointerEventScope.transformPhoto(
                 centroid = event.calculateCentroid(useCurrent = false),
                 panChange = event.calculatePan(),
                 zoomChange = event.calculateZoom().takeIf { isScaling } ?: 1f,
-                rotationChange = event.calculateRotation().takeIf { isScaling } ?: 0f,
+                rotationChange = event.calculateRotation(),
             )
 
             val reachesFit = wasZoomed && transformState.isZoomStoppedAtFit()

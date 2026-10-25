@@ -42,7 +42,16 @@ class VideoPlayerViewModelTest {
         every { shownPosition } returns this@VideoPlayerViewModelTest.shownPosition
     }
     private val videoPlaybackFactory = mockk<VideoPlaybackFactory> {
-        every { create(VIDEO_URI) } returns playback
+        every { create() } returns playback
+    }
+
+    @Test
+    fun opening_loadsTheVideo() {
+        runTest {
+            viewModel()
+
+            verify { playback.load(VIDEO_URI) }
+        }
     }
 
     @Test

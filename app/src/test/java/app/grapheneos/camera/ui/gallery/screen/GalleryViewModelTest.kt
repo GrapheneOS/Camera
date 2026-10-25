@@ -638,6 +638,30 @@ class GalleryViewModelTest {
         }
     }
 
+    @Test
+    fun aPageStillMovingInto_loadsNoNewPreviewsUntilItSettles() {
+        runTest {
+            val items = (1..9).map { day -> image("2023101${day}_120000_000") }
+            storedItems = items
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.PageSettled(page = 0))
+            viewModel.onAction(Action.PageSelected(page = 7))
+
+            val pager = viewModel.uiState.value.pager
+            val lastPage = pager.pages.last().key
+
+            assertNull(pager.previews[lastPage])
+
+            viewModel.onAction(Action.PageSettled(page = 7))
+
+            val settledPager = viewModel.uiState.value.pager
+            val lastPreview = settledPager.previews[lastPage] as? GalleryPreview.Loaded
+
+            assertEquals(PREVIEW, lastPreview?.image?.asAndroidBitmap())
+        }
+    }
+
     private fun zoomPage(
         viewModel: GalleryViewModel,
         page: Int,

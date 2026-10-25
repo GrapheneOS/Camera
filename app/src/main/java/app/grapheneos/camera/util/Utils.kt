@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.storage.StorageManager
 import android.provider.DocumentsContract
@@ -91,13 +90,5 @@ fun removePendingFlagFromUri(contentResolver: ContentResolver, uri: Uri) {
     cv.put(MediaStore.MediaColumns.IS_PENDING, 0)
     if (contentResolver.update(uri, cv, null, null) != 1) {
         throw IOException("unable to remove IS_PENDING flag")
-    }
-}
-
-@Throws(Exception::class)
-fun getVideoThumbnail(context: Context, uri: Uri?): Bitmap? {
-    MediaMetadataRetriever().use {
-        it.setDataSource(context, uri)
-        return it.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
     }
 }

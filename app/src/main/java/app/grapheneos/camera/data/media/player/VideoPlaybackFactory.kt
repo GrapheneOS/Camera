@@ -1,7 +1,6 @@
 package app.grapheneos.camera.data.media.player
 
 import android.content.Context
-import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.ContentDataSource
@@ -16,7 +15,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 internal interface VideoPlaybackFactory {
-    fun create(uri: Uri): VideoPlayback
+    fun create(): VideoPlayback
 }
 
 @OptIn(UnstableApi::class)
@@ -24,7 +23,7 @@ internal class VideoPlaybackFactoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : VideoPlaybackFactory {
 
-    override fun create(uri: Uri): VideoPlayback {
+    override fun create(): VideoPlayback {
         // The app records nothing but MP4 and has no network access, so the container parser runs
         // in this process for that one format only, and reads local content alone
         val mediaSourceFactory = ProgressiveMediaSource.Factory(
@@ -46,9 +45,6 @@ internal class VideoPlaybackFactoryImpl @Inject constructor(
             .setHandleAudioBecomingNoisy(true)
             .build()
 
-        return VideoPlaybackImpl(
-            player = player,
-            uri = uri,
-        )
+        return VideoPlaybackImpl(player)
     }
 }

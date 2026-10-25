@@ -134,7 +134,7 @@ internal class GalleryViewModel @Inject constructor(
             is Action.VideoHoldStarted -> playbackDelegate.startFastForward()
             is Action.VideoHoldEnded -> playbackDelegate.stopFastForward()
             is Action.SeekReleased -> playbackDelegate.finishSeek()
-            is Action.VideoSurfaceChanged -> playbackDelegate.setSurface(action.surface)
+            is Action.VideoOutputChanged -> playbackDelegate.setOutput(action.output)
             is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
             is Action.SkipTapped -> playbackDelegate.skip(action.direction)
         }

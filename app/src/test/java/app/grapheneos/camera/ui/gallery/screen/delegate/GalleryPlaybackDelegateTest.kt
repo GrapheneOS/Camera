@@ -35,7 +35,7 @@ class GalleryPlaybackDelegateTest {
 
     private val playbacks = mutableListOf<VideoPlayback>()
     private val videoPlaybackFactory = mockk<VideoPlaybackFactory> {
-        every { create(any()) } answers {
+        every { create() } answers {
             val playback = mockk<VideoPlayback>(relaxed = true) {
                 every { state } returns MutableStateFlow(VideoPlaybackState())
                 every { shownPosition } returns MutableStateFlow(Duration.ZERO)
@@ -56,13 +56,29 @@ class GalleryPlaybackDelegateTest {
 
             settle(page = 1)
 
-            verify { videoPlaybackFactory.create(VIDEO.uri) }
+            verify { playbacks.single().load(VIDEO.uri) }
             assertEquals(VIDEO, stateHolder.state.value.video?.item)
 
             settle(page = 0)
 
-            verify { playbacks.single().release() }
+            verify { playbacks.single().unload() }
             assertNull(stateHolder.state.value.video)
+        }
+    }
+
+    @Test
+    fun theNextVideo_reusesThePlayer() {
+        runTest {
+            createDelegate()
+
+            settle(page = 1)
+            settle(page = 2)
+
+            verify(exactly = 1) { videoPlaybackFactory.create() }
+            verifyOrder {
+                playbacks.single().load(VIDEO.uri)
+                playbacks.single().load(OTHER_VIDEO.uri)
+            }
         }
     }
 
@@ -73,7 +89,7 @@ class GalleryPlaybackDelegateTest {
 
             settle(page = 0)
 
-            verify(exactly = 0) { videoPlaybackFactory.create(any()) }
+            verify(exactly = 0) { videoPlaybackFactory.create() }
         }
     }
 
@@ -86,8 +102,10 @@ class GalleryPlaybackDelegateTest {
             delegate.toggleMute()
             settle(page = 2)
 
-            verify { playbacks.first().setMuted(true) }
-            verify { playbacks.last().setMuted(true) }
+            verifyOrder {
+                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().setMuted(true)
+            }
             assertTrue(stateHolder.state.value.playbackOptions.isMuted)
         }
     }
@@ -102,9 +120,15 @@ class GalleryPlaybackDelegateTest {
             delegate.toggleLooping()
             settle(page = 2)
 
-            verify { playbacks.first().setLooping(true) }
-            verify { playbacks.last().setSpeed(1.5f) }
-            verify { playbacks.last().setLooping(false) }
+            verifyOrder {
+                playbacks.single().setLooping(true)
+                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().setLooping(false)
+            }
+            verifyOrder {
+                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().setSpeed(1.5f)
+            }
         }
     }
 

@@ -7,12 +7,12 @@ import android.content.Intent
 import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
-import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.BuildConfig
@@ -27,9 +27,9 @@ import app.grapheneos.camera.data.media.store.StoragePrefsMigration
 import app.grapheneos.camera.data.media.store.imageCollectionUri
 import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
+import app.grapheneos.camera.di.core.VideoFrameDispatcher
 import app.grapheneos.camera.util.ImageDownscaler
 import app.grapheneos.camera.util.getStringOrNull
-import app.grapheneos.camera.util.getVideoThumbnail
 import app.grapheneos.camera.util.queryFirstRowOrNull
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -92,6 +92,7 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
     private val contentResolver: ContentResolver,
     @ApplicationContext private val context: Context,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @VideoFrameDispatcher private val videoFrameDispatcher: CoroutineDispatcher,
 ) : CapturedItemRepository {
 
     override val lastCapturedItem: Flow<CapturedItem?> = mediaPrefs.data.map { prefs ->
@@ -259,44 +260,36 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }.flowOn(ioDispatcher)
     }
 
-    @Suppress("TooGenericExceptionCaught")
     override suspend fun loadThumbnail(
         item: CapturedItem,
         targetWidth: Int,
         targetHeight: Int,
     ): Bitmap? {
-        return withContext(ioDispatcher) {
-            try {
-                when (item.type) {
-                    CapturedItemType.VIDEO -> getVideoThumbnail(context, item.uri)?.let { frame ->
-                        scaleDownToFit(
-                            frame = frame,
-                            targetWidth = targetWidth,
-                            targetHeight = targetHeight,
-                        )
-                    }
+        return when (item.type) {
+            CapturedItemType.VIDEO -> loadVideoFrame(
+                item = item,
+                targetWidth = targetWidth,
+                targetHeight = targetHeight,
+            )
 
-                    CapturedItemType.IMAGE -> ImageDecoder.decodeBitmap(
-                        ImageDecoder.createSource(contentResolver, item.uri),
-                        ImageDownscaler(
-                            maxWidth = targetWidth,
-                            maxHeight = targetHeight,
-                        ),
-                    )
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to decode ${item.uri}", e)
-                null
-            }
+            CapturedItemType.IMAGE -> loadPhoto(
+                item = item,
+                targetWidth = targetWidth,
+                targetHeight = targetHeight,
+            )
         }
     }
 
     override suspend fun loadPreview(item: CapturedItem): Bitmap? {
-        return loadThumbnail(
-            item = item,
-            targetWidth = PREVIEW_MAX_SIDE,
-            targetHeight = PREVIEW_MAX_SIDE,
-        )
+        return when (item.type) {
+            CapturedItemType.VIDEO -> loadVideoPreview(item)
+
+            CapturedItemType.IMAGE -> loadPhoto(
+                item = item,
+                targetWidth = PREVIEW_MAX_SIDE,
+                targetHeight = PREVIEW_MAX_SIDE,
+            )
+        }
     }
 
     internal suspend fun trackedSafTrees(): List<Uri> {
@@ -365,17 +358,6 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return trees
     }
 
-    private fun observeSafTree(
-        tree: Uri,
-        observer: ContentObserver,
-    ) {
-        try {
-            contentResolver.registerContentObserver(childDocumentsUri(tree), true, observer)
-        } catch (e: SecurityException) {
-            Log.d(TAG, "unable to observe $tree", e)
-        }
-    }
-
     @Suppress("TooGenericExceptionCaught")
     private suspend fun collectMediaStoreItems(
         collection: Uri,
@@ -437,32 +419,99 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         }
     }
 
+    private fun observeSafTree(
+        tree: Uri,
+        observer: ContentObserver,
+    ) {
+        try {
+            contentResolver.registerContentObserver(childDocumentsUri(tree), true, observer)
+        } catch (e: SecurityException) {
+            Log.d(TAG, "unable to observe $tree", e)
+        }
+    }
+
     private fun childDocumentsUri(tree: Uri): Uri {
         val treeId = DocumentsContract.getTreeDocumentId(tree)
 
         return DocumentsContract.buildChildDocumentsUriUsingTree(tree, treeId)
     }
 
-    private fun scaleDownToFit(
-        frame: Bitmap,
+    private suspend fun loadVideoFrame(
+        item: CapturedItem,
         targetWidth: Int,
         targetHeight: Int,
-    ): Bitmap {
-        val width = frame.width.toDouble()
-        val height = frame.height.toDouble()
-        val ratio = max(width / targetWidth, height / targetHeight)
-
-        if (ratio <= 1) {
-            return frame
+    ): Bitmap? {
+        return withContext(videoFrameDispatcher) {
+            decodeOrNull(item) {
+                MediaMetadataRetriever().use { retriever ->
+                    retriever.setDataSource(context, item.uri)
+                    retriever.getScaledFrameAtTime(
+                        0,
+                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                        targetWidth,
+                        targetHeight,
+                    )
+                }
+            }
         }
+    }
 
-        val scaled = frame.scale(
-            width = (width / ratio).toInt(),
-            height = (height / ratio).toInt(),
-        )
+    private suspend fun loadPhoto(
+        item: CapturedItem,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap? {
+        return withContext(ioDispatcher) {
+            decodeOrNull(item) {
+                ImageDecoder.decodeBitmap(
+                    ImageDecoder.createSource(contentResolver, item.uri),
+                    ImageDownscaler(
+                        maxWidth = targetWidth,
+                        maxHeight = targetHeight,
+                    ),
+                )
+            }
+        }
+    }
+
+    private suspend fun loadVideoPreview(item: CapturedItem): Bitmap? {
+        val displaySide = displayMaxSide()
+        val frame = loadVideoFrame(
+            item = item,
+            targetWidth = displaySide,
+            targetHeight = displaySide,
+        ) ?: return null
+
+        return withContext(ioDispatcher) { toHardwareBitmap(frame) }
+    }
+
+    private fun displayMaxSide(): Int {
+        val metrics = context.resources.displayMetrics
+
+        return max(metrics.widthPixels, metrics.heightPixels)
+    }
+
+    // A retriever's frame is a software bitmap, which the first frame drawing it would upload to the
+    // GPU; ImageDecoder already returns hardware bitmaps.
+    private fun toHardwareBitmap(frame: Bitmap): Bitmap {
+        val hardware = frame.copy(Bitmap.Config.HARDWARE, false) ?: return frame
+
         frame.recycle()
 
-        return scaled
+        return hardware
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private inline fun decodeOrNull(
+        item: CapturedItem,
+        decode: () -> Bitmap?,
+    ): Bitmap? {
+        return try {
+            decode()
+        } catch (e: Exception) {
+            Log.d(TAG, "unable to decode ${item.uri}", e)
+            null
+        }
     }
 
     companion object {

@@ -5,7 +5,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.unit.LayoutDirection
 import app.grapheneos.camera.ui.mediaviewer.components.video.VIDEO_SKIP_AREA_FRACTION
@@ -13,60 +12,64 @@ import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 
 internal suspend fun PointerInputScope.detectVideoTaps(
     layoutDirection: LayoutDirection,
-    isSkipping: () -> Boolean,
+    screenPositionOf: (Offset) -> Offset,
+    screenWidth: () -> Float,
     onTap: () -> Unit,
+    onDoubleTap: (Offset) -> Unit,
     onSkip: (SkipDirection, Offset) -> Unit,
 ) {
     val doubleTapTimeout = viewConfiguration.doubleTapTimeoutMillis
-    var skipCooldownEnd = 0L
-
-    fun directionAt(position: Offset): SkipDirection? {
-        return skipDirectionAt(
-            x = position.x,
-            width = size.width.toFloat(),
-            layoutDirection = layoutDirection,
-        )
-    }
-
-    fun skipAt(tap: PointerInputChange) {
-        val direction = directionAt(tap.position) ?: return
-
-        skipCooldownEnd = tap.uptimeMillis + doubleTapTimeout
-        onSkip(direction, tap.position)
-    }
 
     awaitEachGesture {
-        awaitFirstDown()
-        val tap = awaitTap() ?: return@awaitEachGesture
+        var tapCount = 0
+        var tap = awaitFirstTap()
 
-        when {
-            directionAt(tap.position) == null -> onTap()
-            tap.uptimeMillis < skipCooldownEnd -> Unit
-            isSkipping() -> skipAt(tap)
-            else -> awaitDoubleTap(
-                timeout = doubleTapTimeout,
-                onSingleTap = onTap,
-                onDoubleTap = ::skipAt,
-            )
+        while (tap != null) {
+            tapCount++
+            if (tapCount > 1) {
+                val screenPosition = screenPositionOf(tap)
+                val width = screenWidth()
+                val direction = skipDirectionAt(
+                    x = screenPosition.x,
+                    width = width,
+                    layoutDirection = layoutDirection,
+                )
+
+                when {
+                    direction != null -> onSkip(
+                        direction,
+                        screenPosition - skipAreaOrigin(
+                            direction = direction,
+                            width = width,
+                            layoutDirection = layoutDirection,
+                        ),
+                    )
+                    tapCount == 2 -> onDoubleTap(tap)
+                }
+            }
+            tap = awaitNextTap(timeout = doubleTapTimeout)
+        }
+
+        if (tapCount == 1) {
+            onTap()
         }
     }
 }
 
-private suspend fun AwaitPointerEventScope.awaitDoubleTap(
-    timeout: Long,
-    onSingleTap: () -> Unit,
-    onDoubleTap: (PointerInputChange) -> Unit,
-) {
-    val secondDown = withTimeoutOrNull(timeout) { awaitFirstDown() }
+private suspend fun AwaitPointerEventScope.awaitFirstTap(): Offset? {
+    awaitFirstDown()
 
-    when (secondDown) {
-        null -> onSingleTap()
-        else -> awaitTap()?.let(onDoubleTap)
-    }
+    return awaitTapUp()
 }
 
-private suspend fun AwaitPointerEventScope.awaitTap(): PointerInputChange? {
-    return waitForUpOrCancellation()?.also { it.consume() }
+private suspend fun AwaitPointerEventScope.awaitNextTap(timeout: Long): Offset? {
+    withTimeoutOrNull(timeout) { awaitFirstDown() } ?: return null
+
+    return awaitTapUp()
+}
+
+private suspend fun AwaitPointerEventScope.awaitTapUp(): Offset? {
+    return waitForUpOrCancellation()?.also { it.consume() }?.position
 }
 
 private fun skipDirectionAt(
@@ -87,7 +90,7 @@ private fun skipDirectionAt(
     }
 }
 
-internal fun skipAreaOrigin(
+private fun skipAreaOrigin(
     direction: SkipDirection,
     width: Float,
     layoutDirection: LayoutDirection,
