@@ -13,6 +13,7 @@ import android.provider.BaseColumns
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import android.util.Size
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import app.grapheneos.camera.BuildConfig
@@ -29,11 +30,14 @@ import app.grapheneos.camera.data.media.store.videoCollectionUri
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.di.core.VideoFrameDispatcher
 import app.grapheneos.camera.util.ImageDownscaler
+import app.grapheneos.camera.util.OrientedImageDownscaler
 import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.queryFirstRowOrNull
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.IOException
 import javax.inject.Inject
 import kotlin.math.max
+import kotlin.math.min
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.currentCoroutineContext
@@ -69,14 +73,21 @@ interface CapturedItemRepository {
     /** Emits whenever the items [capturedItems] lists may have changed. */
     fun capturedItemsChanges(): Flow<Unit>
 
-    /** Decodes [item] to fit within the given size, or returns null when it can't be read. */
+    /**
+     * The system's cached thumbnail of [item], or else [item] decoded to fit the given size; null
+     * when it can't be read.
+     */
     suspend fun loadThumbnail(
         item: CapturedItem,
         targetWidth: Int,
         targetHeight: Int,
     ): Bitmap?
 
-    suspend fun loadPreview(item: CapturedItem): Bitmap?
+    /** [item] decoded to fit the screen. */
+    suspend fun loadPhotoPreview(item: CapturedItem): Bitmap?
+
+    /** [item] decoded at full resolution, scaled down only where it is too large to draw. */
+    suspend fun loadFullPhoto(item: CapturedItem): Bitmap?
 
     companion object {
         const val MEDIA_STORE_LOCATION = ""
@@ -265,7 +276,13 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         targetWidth: Int,
         targetHeight: Int,
     ): Bitmap? {
-        return when (item.type) {
+        val cached = loadCachedThumbnail(
+            item = item,
+            targetWidth = targetWidth,
+            targetHeight = targetHeight,
+        )
+
+        return cached ?: when (item.type) {
             CapturedItemType.VIDEO -> loadVideoFrame(
                 item = item,
                 targetWidth = targetWidth,
@@ -274,22 +291,29 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
             CapturedItemType.IMAGE -> loadPhoto(
                 item = item,
-                targetWidth = targetWidth,
-                targetHeight = targetHeight,
+                downscaler = ImageDownscaler(
+                    maxWidth = targetWidth,
+                    maxHeight = targetHeight,
+                ),
             )
         }
     }
 
-    override suspend fun loadPreview(item: CapturedItem): Bitmap? {
-        return when (item.type) {
-            CapturedItemType.VIDEO -> loadVideoPreview(item)
+    override suspend fun loadPhotoPreview(item: CapturedItem): Bitmap? {
+        return loadPhoto(
+            item = item,
+            downscaler = screenDownscaler(),
+        )
+    }
 
-            CapturedItemType.IMAGE -> loadPhoto(
-                item = item,
-                targetWidth = PREVIEW_MAX_SIDE,
-                targetHeight = PREVIEW_MAX_SIDE,
-            )
-        }
+    override suspend fun loadFullPhoto(item: CapturedItem): Bitmap? {
+        return loadPhoto(
+            item = item,
+            downscaler = ImageDownscaler(
+                maxWidth = FULL_PHOTO_MAX_SIDE,
+                maxHeight = FULL_PHOTO_MAX_SIDE,
+            ),
+        )
     }
 
     internal suspend fun trackedSafTrees(): List<Uri> {
@@ -436,6 +460,25 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
         return DocumentsContract.buildChildDocumentsUriUsingTree(tree, treeId)
     }
 
+    private suspend fun loadCachedThumbnail(
+        item: CapturedItem,
+        targetWidth: Int,
+        targetHeight: Int,
+    ): Bitmap? {
+        return withContext(ioDispatcher) {
+            try {
+                contentResolver.loadThumbnail(
+                    item.uri,
+                    Size(targetWidth, targetHeight),
+                    null,
+                )
+            } catch (e: IOException) {
+                Log.d(TAG, "no cached thumbnail for ${item.uri}", e)
+                null
+            }
+        }
+    }
+
     private suspend fun loadVideoFrame(
         item: CapturedItem,
         targetWidth: Int,
@@ -458,47 +501,26 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
     private suspend fun loadPhoto(
         item: CapturedItem,
-        targetWidth: Int,
-        targetHeight: Int,
+        downscaler: ImageDecoder.OnHeaderDecodedListener,
     ): Bitmap? {
         return withContext(ioDispatcher) {
             decodeOrNull(item) {
                 ImageDecoder.decodeBitmap(
                     ImageDecoder.createSource(contentResolver, item.uri),
-                    ImageDownscaler(
-                        maxWidth = targetWidth,
-                        maxHeight = targetHeight,
-                    ),
+                    downscaler,
                 )
             }
         }
     }
 
-    private suspend fun loadVideoPreview(item: CapturedItem): Bitmap? {
-        val displaySide = displayMaxSide()
-        val frame = loadVideoFrame(
-            item = item,
-            targetWidth = displaySide,
-            targetHeight = displaySide,
-        ) ?: return null
-
-        return withContext(ioDispatcher) { toHardwareBitmap(frame) }
-    }
-
-    private fun displayMaxSide(): Int {
+    // The screen can be rotated, so the photo's longer side is fitted to the screen's longer side.
+    private fun screenDownscaler(): OrientedImageDownscaler {
         val metrics = context.resources.displayMetrics
 
-        return max(metrics.widthPixels, metrics.heightPixels)
-    }
-
-    // A retriever's frame is a software bitmap, which the first frame drawing it would upload to the
-    // GPU; ImageDecoder already returns hardware bitmaps.
-    private fun toHardwareBitmap(frame: Bitmap): Bitmap {
-        val hardware = frame.copy(Bitmap.Config.HARDWARE, false) ?: return frame
-
-        frame.recycle()
-
-        return hardware
+        return OrientedImageDownscaler(
+            maxLongSide = max(metrics.widthPixels, metrics.heightPixels),
+            maxShortSide = min(metrics.widthPixels, metrics.heightPixels),
+        )
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -520,8 +542,8 @@ internal class CapturedItemRepositoryImpl @Inject constructor(
 
         private const val TAG = "CapturedItemRepository"
 
-        // Keeps a decoded photo clear of the bitmap size limit (100 MB)
-        private const val PREVIEW_MAX_SIDE = 4500
+        // A canvas refuses to draw a bitmap over 100 MB; 4500 × 4500 px at 4 bytes per pixel is 81 MB
+        private const val FULL_PHOTO_MAX_SIDE = 4500
         private const val LEGACY_MEDIA_URI_SEPARATOR = ";"
 
         private const val ID_COLUMN = 0

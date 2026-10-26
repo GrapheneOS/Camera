@@ -4,13 +4,19 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.graphics.asImageBitmap
 import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryFullPhoto
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
 import javax.inject.Inject
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 internal interface GalleryPreviewsDelegate {
@@ -32,6 +38,10 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
 
     override suspend fun trackPreviews() {
         coroutineScope {
+            launch {
+                trackFullPhoto()
+            }
+
             stateHolder.state
                 .distinctUntilChanged(GalleryState::showsSamePageAs)
                 .collect { state ->
@@ -43,6 +53,22 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
                     }
                 }
         }
+    }
+
+    // Videos get no preview: their thumbnail shows until the player draws the first frame.
+    private fun keepPreviewsAround(state: GalleryState): List<CapturedItem> {
+        val items = state.itemsAround(PREVIEW_RADIUS).filter { it.type == CapturedItemType.IMAGE }
+        val missingItems = items.filterNot(state.previews::containsKey)
+
+        stateHolder.update { current ->
+            current.copy(
+                previews = items.associateWith { item ->
+                    current.previews[item] ?: GalleryPreview.Loading
+                },
+            )
+        }
+
+        return missingItems
     }
 
     private fun keepThumbnailsAround(state: GalleryState): List<CapturedItem> {
@@ -60,19 +86,14 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
         return missingItems
     }
 
-    private fun keepPreviewsAround(state: GalleryState): List<CapturedItem> {
-        val items = state.itemsAround(PREVIEW_RADIUS)
-        val missingItems = items.filterNot(state.previews::containsKey)
+    private suspend fun loadPreview(item: CapturedItem) {
+        val bitmap = capturedItemRepository.loadPhotoPreview(item)
 
-        stateHolder.update { current ->
-            current.copy(
-                previews = items.associateWith { item ->
-                    current.previews[item] ?: GalleryPreview.Loading
-                },
-            )
+        if (item in stateHolder.state.value.previews) {
+            stateHolder.update {
+                it.copy(previews = it.previews + (item to previewOf(bitmap)))
+            }
         }
-
-        return missingItems
     }
 
     private suspend fun loadThumbnail(item: CapturedItem) {
@@ -89,12 +110,41 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
         }
     }
 
-    private suspend fun loadPreview(item: CapturedItem) {
-        val bitmap = capturedItemRepository.loadPreview(item)
+    private suspend fun trackFullPhoto() {
+        coroutineScope {
+            launch {
+                stateHolder.state
+                    .map { state -> state.currentItem() }
+                    .distinctUntilChanged()
+                    .collect(::dropFullPhotoOfOtherItems)
+            }
 
-        if (item in stateHolder.state.value.previews) {
+            stateHolder.state
+                .map { state -> state.zoomedPhoto() }
+                .distinctUntilChanged()
+                .filterNotNull()
+                .filter { item -> stateHolder.state.value.fullPhoto?.item != item }
+                .collectLatest(::loadFullPhoto)
+        }
+    }
+
+    private fun dropFullPhotoOfOtherItems(currentItem: CapturedItem?) {
+        if (stateHolder.state.value.fullPhoto?.item == currentItem) return
+
+        stateHolder.update { it.copy(fullPhoto = null) }
+    }
+
+    private suspend fun loadFullPhoto(item: CapturedItem) {
+        val bitmap = capturedItemRepository.loadFullPhoto(item)
+
+        if (item == stateHolder.state.value.currentItem()) {
             stateHolder.update {
-                it.copy(previews = it.previews + (item to previewOf(bitmap)))
+                it.copy(
+                    fullPhoto = GalleryFullPhoto(
+                        item = item,
+                        image = previewOf(bitmap),
+                    ),
+                )
             }
         }
     }

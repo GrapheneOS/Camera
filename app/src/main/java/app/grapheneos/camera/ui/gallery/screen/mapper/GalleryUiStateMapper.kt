@@ -140,10 +140,12 @@ internal class GalleryUiStateMapperImpl @Inject constructor(
         state: GalleryState,
         item: CapturedItem,
     ): GalleryPreview {
+        val fullPhoto = state.fullPhoto?.takeIf { it.item == item }?.image
         val preview = state.previews[item]
         val thumbnail = state.thumbnails[item]
 
         return when {
+            fullPhoto is GalleryPreview.Loaded -> fullPhoto
             preview is GalleryPreview.Loaded -> preview
             thumbnail is GalleryPreview.Loaded -> thumbnail
             else -> preview ?: thumbnail ?: GalleryPreview.Loading

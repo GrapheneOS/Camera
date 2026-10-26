@@ -74,7 +74,8 @@ class GalleryViewModelTest {
         coEvery { capturedItems() } coAnswers { storedItems }
         every { capturedItemsChanges() } returns capturedItemsChanges
         coEvery { loadThumbnail(any(), any(), any()) } returns THUMBNAIL
-        coEvery { loadPreview(any()) } returns PREVIEW
+        coEvery { loadPhotoPreview(any()) } returns PREVIEW
+        coEvery { loadFullPhoto(any()) } returns FULL_PHOTO
     }
     private val capturedItemDetailsRepository = mockk<CapturedItemDetailsRepository> {
         coEvery { details(any()) } returns null
@@ -778,6 +779,7 @@ class GalleryViewModelTest {
     private companion object {
         val THUMBNAIL = mockk<Bitmap>(relaxed = true)
         val PREVIEW = mockk<Bitmap>(relaxed = true)
+        val FULL_PHOTO = mockk<Bitmap>(relaxed = true)
         val STORAGE_FAILURE = Result.failure<Unit>(IOException())
         val NEWEST = image("20231016_120000_000")
         val OLDER = image("20231015_120000_000")

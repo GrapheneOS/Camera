@@ -30,6 +30,8 @@ import io.mockk.verify
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.concurrent.Executors
+import kotlin.math.max
+import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -266,25 +268,56 @@ class CapturedItemRepositoryTest {
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     @Config(sdk = [IMAGE_DECODER_SDK])
-    fun loadPreview_photoBeyondTheLimit_isScaledDownToIt() {
+    fun loadPhotoPreview_photoBeyondTheScreen_isScaledDownToIt() {
         runTest {
-            documents().file = jpeg(width = 9000, height = 10)
+            val metrics = context.resources.displayMetrics
+            val screenSide = max(metrics.widthPixels, metrics.heightPixels)
+            documents().file = jpeg(width = screenSide * 4, height = 10)
 
-            val preview = requireNotNull(repository().loadPreview(photo()))
+            val preview = requireNotNull(repository().loadPhotoPreview(photo()))
 
-            assertEquals(4500, preview.width)
-            assertEquals(5, preview.height)
+            assertEquals(screenSide, preview.width)
         }
     }
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     @Config(sdk = [IMAGE_DECODER_SDK])
-    fun loadPreview_photoWithinTheLimit_keepsItsSize() {
+    fun loadPhotoPreview_fitsTheShortSideOfThePhotoToTheShortSideOfTheScreen() {
+        runTest {
+            val metrics = context.resources.displayMetrics
+            val shortSide = min(metrics.widthPixels, metrics.heightPixels)
+            documents().file = jpeg(width = shortSide * 2, height = shortSide * 2)
+
+            val preview = requireNotNull(repository().loadPhotoPreview(photo()))
+
+            assertEquals(shortSide, preview.width)
+            assertEquals(shortSide, preview.height)
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [IMAGE_DECODER_SDK])
+    fun loadFullPhoto_photoBeyondTheLimit_isScaledDownToIt() {
+        runTest {
+            documents().file = jpeg(width = 9000, height = 10)
+
+            val photo = requireNotNull(repository().loadFullPhoto(photo()))
+
+            assertEquals(4500, photo.width)
+            assertEquals(5, photo.height)
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(sdk = [IMAGE_DECODER_SDK])
+    fun loadPhotoPreview_photoWithinTheLimit_keepsItsSize() {
         runTest {
             documents().file = jpeg(width = 40, height = 20)
 
-            val preview = requireNotNull(repository().loadPreview(photo()))
+            val preview = requireNotNull(repository().loadPhotoPreview(photo()))
 
             assertEquals(40, preview.width)
             assertEquals(20, preview.height)
@@ -294,23 +327,23 @@ class CapturedItemRepositoryTest {
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     @Config(sdk = [IMAGE_DECODER_SDK])
-    fun loadPreview_truncatedPhoto_isNull() {
+    fun loadPhotoPreview_truncatedPhoto_isNull() {
         runTest {
             val whole = jpeg(width = 40, height = 20)
             documents().file = temporaryFolder.newFile().apply {
                 writeBytes(whole.readBytes().copyOf(whole.length().toInt() / 2))
             }
 
-            assertNull(repository().loadPreview(photo()))
+            assertNull(repository().loadPhotoPreview(photo()))
         }
     }
 
     @Test
-    fun loadPreview_unreadablePhoto_isNull() {
+    fun loadPhotoPreview_unreadablePhoto_isNull() {
         runTest {
             documents()
 
-            assertNull(repository().loadPreview(photo()))
+            assertNull(repository().loadPhotoPreview(photo()))
         }
     }
 
@@ -457,7 +490,7 @@ class CapturedItemRepositoryTest {
         const val LEGACY_MEDIA_URI_SEPARATOR = ";"
 
         // Robolectric 4.17 decodes from a file descriptor only up to API 34; on 35 ImageDecoder
-        // throws "Only supported on Android" and loadPreview reads every photo as unreadable
+        // throws "Only supported on Android" and loadPhotoPreview reads every photo as unreadable
         const val IMAGE_DECODER_SDK = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
     }
 }

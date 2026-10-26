@@ -7,6 +7,7 @@ internal data class GalleryState(
     val items: List<CapturedItem> = emptyList(),
     val thumbnails: Map<CapturedItem, GalleryPreview> = emptyMap(),
     val previews: Map<CapturedItem, GalleryPreview> = emptyMap(),
+    val fullPhoto: GalleryFullPhoto? = null,
     val details: Map<CapturedItem, GalleryDetails> = emptyMap(),
     val currentIndex: Int = 0,
     val settledIndex: Int? = null,
@@ -24,6 +25,10 @@ internal data class GalleryState(
 
     fun currentItem(): CapturedItem? {
         return items.getOrNull(currentIndex)
+    }
+
+    fun zoomedPhoto(): CapturedItem? {
+        return currentItem()?.takeIf { isZoomed && it.type == CapturedItemType.IMAGE }
     }
 
     fun settledVideo(): CapturedItem? {
