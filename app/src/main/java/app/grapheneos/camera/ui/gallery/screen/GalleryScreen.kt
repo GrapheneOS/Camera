@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.common.components.keepScreenOnWhen
@@ -83,6 +85,10 @@ internal fun GalleryScreen(
         clipboardManager = clipboardManager,
         onShowMessage = { shownMessage -> message = shownMessage },
     )
+
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        screenModel.onAction(ScreenAction.ScreenStarted)
+    }
 
     ViewerLeftEffect(
         onLeave = { screenModel.onAction(ScreenAction.ScreenStopped) },

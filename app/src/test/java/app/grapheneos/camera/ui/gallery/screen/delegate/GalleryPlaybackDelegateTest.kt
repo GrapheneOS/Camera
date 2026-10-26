@@ -57,7 +57,7 @@ class GalleryPlaybackDelegateTest {
 
             settle(page = 1)
 
-            verify { playbacks.single().load(VIDEO.uri) }
+            verify { playbacks.single().load(uri = VIDEO.uri, playsWhenReady = true) }
             assertEquals(VIDEO, stateHolder.state.value.video?.item)
 
             settle(page = 0)
@@ -77,9 +77,49 @@ class GalleryPlaybackDelegateTest {
 
             verify(exactly = 1) { videoPlaybackFactory.create() }
             verifyOrder {
-                playbacks.single().load(VIDEO.uri)
-                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().load(uri = VIDEO.uri, playsWhenReady = true)
+                playbacks.single().load(uri = OTHER_VIDEO.uri, playsWhenReady = true)
             }
+        }
+    }
+
+    @Test
+    fun anItemRemovedBeforeTheSettledVideo_keepsItPlaying() {
+        runTest {
+            createDelegate()
+
+            settle(page = 1)
+            stateHolder.update { it.withItems(it.items - PHOTO) }
+
+            verify(exactly = 1) { playbacks.single().load(uri = any(), playsWhenReady = any()) }
+            assertEquals(VIDEO, stateHolder.state.value.video?.item)
+        }
+    }
+
+    @Test
+    fun aVideoSettledWhileTheScreenIsStopped_staysPaused() {
+        runTest {
+            val delegate = createDelegate()
+
+            settle(page = 1)
+            delegate.onScreenStopped()
+            settle(page = 2)
+
+            verify { playbacks.single().pause() }
+            verify { playbacks.single().load(uri = OTHER_VIDEO.uri, playsWhenReady = false) }
+        }
+    }
+
+    @Test
+    fun aVideoSettledAfterTheScreenStartsAgain_plays() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.onScreenStopped()
+            delegate.onScreenStarted()
+            settle(page = 1)
+
+            verify { playbacks.single().load(uri = VIDEO.uri, playsWhenReady = true) }
         }
     }
 
@@ -104,7 +144,7 @@ class GalleryPlaybackDelegateTest {
             settle(page = 2)
 
             verifyOrder {
-                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().load(uri = OTHER_VIDEO.uri, playsWhenReady = true)
                 playbacks.single().setMuted(true)
             }
             assertTrue(stateHolder.state.value.playbackOptions.isMuted)
@@ -123,11 +163,11 @@ class GalleryPlaybackDelegateTest {
 
             verifyOrder {
                 playbacks.single().setLooping(true)
-                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().load(uri = OTHER_VIDEO.uri, playsWhenReady = true)
                 playbacks.single().setLooping(false)
             }
             verifyOrder {
-                playbacks.single().load(OTHER_VIDEO.uri)
+                playbacks.single().load(uri = OTHER_VIDEO.uri, playsWhenReady = true)
                 playbacks.single().setSpeed(1.5f)
             }
         }

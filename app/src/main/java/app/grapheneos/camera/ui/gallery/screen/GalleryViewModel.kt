@@ -135,7 +135,8 @@ internal class GalleryViewModel @Inject constructor(
     private fun onScreenAction(action: ScreenAction) {
         when (action) {
             is ScreenAction.ScreenTapped -> onScreenTapped()
-            is ScreenAction.ScreenStopped -> playbackDelegate.pause()
+            is ScreenAction.ScreenStarted -> playbackDelegate.onScreenStarted()
+            is ScreenAction.ScreenStopped -> playbackDelegate.onScreenStopped()
             is ScreenAction.DialogDismissed -> showDialog(null)
         }
     }
@@ -235,13 +236,7 @@ internal class GalleryViewModel @Inject constructor(
     private fun showItems(items: List<CapturedItem>) {
         if (state.isLoaded && items == state.items) return
 
-        stateHolder.update {
-            it.copy(
-                items = items,
-                currentIndex = it.currentIndexIn(items),
-                isLoaded = true,
-            )
-        }
+        stateHolder.update { it.withItems(items).copy(isLoaded = true) }
     }
 
     private fun showDialog(dialog: Dialog?) {

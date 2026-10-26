@@ -41,15 +41,6 @@ internal data class GalleryState(
         return video?.isPlaying() == true && areControlsVisible && !showsDetails && dialog == null
     }
 
-    fun currentIndexIn(items: List<CapturedItem>): Int {
-        val index = items.indexOf(currentItem())
-
-        return when {
-            index >= 0 -> index
-            else -> currentIndex.coerceAtMost(items.lastIndex).coerceAtLeast(0)
-        }
-    }
-
     fun itemsAround(radius: Int): List<CapturedItem> {
         val center = settledOrCurrentIndex()
         val nearestFirst = (0..radius).flatMap { distance ->
@@ -63,7 +54,35 @@ internal data class GalleryState(
         return settledOrCurrentIndex() == other.settledOrCurrentIndex() && items === other.items
     }
 
+    fun withItems(items: List<CapturedItem>): GalleryState {
+        return copy(
+            items = items,
+            currentIndex = indexIn(
+                items = items,
+                index = currentIndex,
+            ),
+            settledIndex = settledIndex?.let { index ->
+                indexIn(
+                    items = items,
+                    index = index,
+                )
+            },
+        )
+    }
+
     private fun settledOrCurrentIndex(): Int {
         return settledIndex ?: currentIndex
+    }
+
+    private fun indexIn(
+        items: List<CapturedItem>,
+        index: Int,
+    ): Int {
+        val newIndex = items.indexOf(this.items.getOrNull(index))
+
+        return when {
+            newIndex >= 0 -> newIndex
+            else -> index.coerceAtMost(items.lastIndex).coerceAtLeast(0)
+        }
     }
 }

@@ -247,13 +247,17 @@ internal class VideoPlaybackController(
     }
 
     private fun play() {
-        setSeek(
-            when (val seek = controls.value.seek) {
-                is Seek.Held -> Seek.Landing(seek.target)
-                else -> Seek.None
-            },
-        )
+        setSeek(seekOnPlay())
         playback.play()
+    }
+
+    private fun seekOnPlay(): Seek {
+        val seek = controls.value.seek
+
+        return when {
+            seek is Seek.Held && seek.target < end() -> Seek.Landing(seek.target)
+            else -> Seek.None
+        }
     }
 
     private fun isPlaying(): Boolean {

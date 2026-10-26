@@ -30,7 +30,10 @@ internal interface VideoPlayback {
 
     val currentPosition: Duration
 
-    fun load(uri: Uri)
+    fun load(
+        uri: Uri,
+        playsWhenReady: Boolean,
+    )
 
     fun unload()
 
@@ -105,12 +108,15 @@ internal class VideoPlaybackImpl(
         player.setAudioAttributes(MOVIE_AUDIO, false)
     }
 
-    override fun load(uri: Uri) {
+    override fun load(
+        uri: Uri,
+        playsWhenReady: Boolean,
+    ) {
         releaseOutput()
         resetState()
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
-        player.playWhenReady = true
+        player.playWhenReady = playsWhenReady
     }
 
     override fun unload() {

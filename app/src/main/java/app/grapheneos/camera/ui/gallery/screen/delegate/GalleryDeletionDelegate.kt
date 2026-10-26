@@ -121,13 +121,7 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
     private fun remove(item: CapturedItem) {
         val items = stateHolder.state.value.items - item
 
-        stateHolder.update {
-            it.copy(
-                items = items,
-                currentIndex = it.currentIndexIn(items),
-                isZoomed = false,
-            )
-        }
+        stateHolder.update { it.withItems(items).copy(isZoomed = false) }
     }
 
     private fun insert(trashedItem: GalleryTrashedItem) {
@@ -137,6 +131,7 @@ internal class GalleryDeletionDelegateImpl @Inject constructor(
             it.copy(
                 items = it.items.take(index) + trashedItem.item + it.items.drop(index),
                 currentIndex = index,
+                settledIndex = index,
                 isZoomed = false,
             )
         }

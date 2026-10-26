@@ -242,6 +242,21 @@ class VideoPlaybackControllerTest {
     }
 
     @Test
+    fun playing_afterSeekingToTheEnd_followsTheReplayFromTheStart() {
+        runTest {
+            track()
+            playbackState.value = VideoPlaybackState(duration = 10.seconds)
+
+            controller.seekTo(10.seconds)
+            controller.finishSeek()
+            controller.togglePlayback()
+            shownPosition.value = 1.seconds
+
+            assertEquals(1.seconds, controller.position.value)
+        }
+    }
+
+    @Test
     fun fastForward_playsAPausedVideoFastUntilStoppedThenKeepsPlaying() {
         runTest {
             track()
