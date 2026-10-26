@@ -106,6 +106,7 @@ internal class VideoPlaybackImpl(
     }
 
     override fun load(uri: Uri) {
+        releaseOutput()
         resetState()
         player.setMediaItem(MediaItem.fromUri(uri))
         player.prepare()
@@ -113,6 +114,7 @@ internal class VideoPlaybackImpl(
     }
 
     override fun unload() {
+        releaseOutput()
         player.stop()
         player.clearMediaItems()
         resetState()
@@ -177,6 +179,15 @@ internal class VideoPlaybackImpl(
         if (_state.value.hasRenderedFrame && !player.isPlaying) {
             player.seekTo(player.currentPosition)
         }
+    }
+
+    // Detaching a surface waits for the player to stop using it. Done before stop or setMediaItem it
+    // is quick; done after them it waits until the codecs are released.
+    private fun releaseOutput() {
+        if (outputId == null) return
+
+        outputId = null
+        player.clearVideoSurface()
     }
 
     private fun detach(output: VideoOutput) {
