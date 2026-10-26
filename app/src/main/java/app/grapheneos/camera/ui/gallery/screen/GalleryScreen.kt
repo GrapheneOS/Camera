@@ -23,13 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.common.components.keepScreenOnWhen
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PREVIEW_COOL_ICON
@@ -46,6 +44,8 @@ import app.grapheneos.camera.ui.gallery.components.pager.rememberGalleryPagerSta
 import app.grapheneos.camera.ui.gallery.components.pager.rememberViewerTransform
 import app.grapheneos.camera.ui.gallery.components.pager.settledItemIndex
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DeletionAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.ScreenAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMenuUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMessage
@@ -55,6 +55,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
 import app.grapheneos.camera.ui.mediaviewer.components.HdrColorModeEffect
 import app.grapheneos.camera.ui.mediaviewer.components.SystemBarsVisibilityEffect
+import app.grapheneos.camera.ui.mediaviewer.components.ViewerLeftEffect
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState
 import app.grapheneos.camera.ui.mediaviewer.navigation.SystemGalleryLauncher
 import java.time.LocalDateTime
@@ -83,9 +84,9 @@ internal fun GalleryScreen(
         onShowMessage = { shownMessage -> message = shownMessage },
     )
 
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        screenModel.onAction(Action.ScreenStopped)
-    }
+    ViewerLeftEffect(
+        onLeave = { screenModel.onAction(ScreenAction.ScreenStopped) },
+    )
 
     CollectEvents(
         events = screenModel.effects,
@@ -96,8 +97,8 @@ internal fun GalleryScreen(
         message = message,
         trashedPageKey = uiState.trashedPageKey,
         snackbarHostState = snackbarHostState,
-        onUndoClick = { screenModel.onAction(Action.UndoClicked) },
-        onUndoDismiss = { screenModel.onAction(Action.UndoDismissed) },
+        onUndoClick = { screenModel.onAction(DeletionAction.UndoClicked) },
+        onUndoDismiss = { screenModel.onAction(DeletionAction.UndoDismissed) },
     )
 
     SystemBarsVisibilityEffect(
@@ -120,12 +121,7 @@ internal fun GalleryScreen(
         onAction = screenModel::onAction,
         onNavigateBack = onNavigateBack,
         snackbarHostState = snackbarHostState,
-        modifier = modifier.then(
-            when {
-                uiState.video?.isPlaying() == true -> Modifier.keepScreenOn()
-                else -> Modifier
-            },
-        ),
+        modifier = modifier.keepScreenOnWhen(uiState.video?.isPlaying() == true),
     )
 }
 

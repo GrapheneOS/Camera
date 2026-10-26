@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.mediaviewer.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -41,25 +43,37 @@ internal fun ViewerTopBar(
         color = containerColor,
         contentColor = contentColor,
     ) {
-        Box(
-            modifier = Modifier
-                .windowInsetsPadding(WindowInsets.topBar)
-                .padding(
-                    horizontal = BAR_HORIZONTAL_PADDING,
-                    vertical = BAR_VERTICAL_PADDING,
-                ),
-        ) {
-            Row(
-                modifier = Modifier.align(Alignment.CenterStart),
-                content = navigation,
+        val windowSize = LocalWindowInfo.current.containerSize
+        val contentModifier = Modifier
+            .windowInsetsPadding(WindowInsets.topBar)
+            .padding(
+                horizontal = BAR_HORIZONTAL_PADDING,
+                vertical = BAR_VERTICAL_PADDING,
             )
-            Box(modifier = Modifier.align(Alignment.Center)) {
+
+        when {
+            windowSize.width > windowSize.height -> Row(
+                modifier = contentModifier,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                navigation()
                 title()
+                Spacer(modifier = Modifier.weight(1f))
+                actions()
             }
-            Row(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                content = actions,
-            )
+            else -> Box(modifier = contentModifier) {
+                Row(
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    content = navigation,
+                )
+                Box(modifier = Modifier.align(Alignment.Center)) {
+                    title()
+                }
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    content = actions,
+                )
+            }
         }
     }
 }

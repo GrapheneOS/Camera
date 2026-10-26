@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.gallery.screen.delegate
 
 import app.grapheneos.camera.data.media.model.CapturedItem
-import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.data.media.player.VideoPlayback
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
@@ -28,7 +28,7 @@ internal interface GalleryPlaybackDelegate {
 
     suspend fun trackPlayback()
 
-    fun setOutput(output: VideoOutput?)
+    fun changeOutput(change: VideoOutputChange)
 
     fun togglePlayback()
 
@@ -60,7 +60,7 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: GalleryStateHolder
 
-    private var playback: VideoPlayback? = null
+    private var player: VideoPlayback? = null
     private var controller: VideoPlaybackController? = null
 
     override fun bind(stateHolder: GalleryStateHolder) {
@@ -74,18 +74,18 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
                 .distinctUntilChanged()
                 .collectLatest { item ->
                     when (item) {
-                        null -> playback?.unload()
+                        null -> player?.unload()
                         else -> play(item)
                     }
                 }
         } finally {
-            playback?.release()
-            playback = null
+            player?.release()
+            player = null
         }
     }
 
-    override fun setOutput(output: VideoOutput?) {
-        controller?.setOutput(output)
+    override fun changeOutput(change: VideoOutputChange) {
+        player?.changeOutput(change)
     }
 
     override fun togglePlayback() {
@@ -152,10 +152,8 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
     }
 
     private suspend fun play(item: CapturedItem) {
-        val playback = playback ?: videoPlaybackFactory.create().also { playback = it }
-        val controller = VideoPlaybackController(playback)
+        val controller = VideoPlaybackController(loadPlayer(item))
 
-        playback.load(item.uri)
         this.controller = controller
 
         try {
@@ -190,6 +188,13 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
             _position.value = Duration.ZERO
             stateHolder.update { it.copy(video = null) }
         }
+    }
+
+    private fun loadPlayer(item: CapturedItem): VideoPlayback {
+        val loadedPlayer = player ?: videoPlaybackFactory.create().also { player = it }
+
+        loadedPlayer.load(item.uri)
+        return loadedPlayer
     }
 
     private fun updateOptions(change: (GalleryPlaybackOptions) -> GalleryPlaybackOptions) {

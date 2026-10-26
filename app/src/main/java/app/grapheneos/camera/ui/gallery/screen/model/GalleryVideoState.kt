@@ -6,4 +6,9 @@ import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 internal data class GalleryVideoState(
     val item: CapturedItem,
     val playback: VideoPlaybackUiModel,
-)
+) {
+
+    fun isPlaying(): Boolean {
+        return (playback as? VideoPlaybackUiModel.Active)?.isPlaying == true
+    }
+}

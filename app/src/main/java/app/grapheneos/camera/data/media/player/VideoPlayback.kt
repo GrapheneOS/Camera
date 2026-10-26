@@ -2,7 +2,6 @@ package app.grapheneos.camera.data.media.player
 
 import android.net.Uri
 import android.util.Log
-import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -14,6 +13,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.video.VideoFrameMetadataListener
 import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.microseconds
@@ -34,7 +34,7 @@ internal interface VideoPlayback {
 
     fun unload()
 
-    fun setOutput(output: VideoOutput?)
+    fun changeOutput(change: VideoOutputChange)
 
     fun play()
 
@@ -118,12 +118,10 @@ internal class VideoPlaybackImpl(
         resetState()
     }
 
-    override fun setOutput(output: VideoOutput?) {
-        outputId = output?.id
-
-        when (output) {
-            null -> player.clearVideoSurface()
-            else -> attach(output.surface)
+    override fun changeOutput(change: VideoOutputChange) {
+        when (change) {
+            is VideoOutputChange.Attached -> attach(change.output)
+            is VideoOutputChange.Detached -> detach(change.output)
         }
     }
 
@@ -171,13 +169,21 @@ internal class VideoPlaybackImpl(
         player.release()
     }
 
-    private fun attach(surface: Surface) {
-        player.setVideoSurface(surface)
+    private fun attach(output: VideoOutput) {
+        outputId = output.id
+        player.setVideoSurface(output.surface)
 
         // A paused player leaves a new surface black until a seek decodes the frame again.
         if (_state.value.hasRenderedFrame && !player.isPlaying) {
             player.seekTo(player.currentPosition)
         }
+    }
+
+    private fun detach(output: VideoOutput) {
+        if (outputId != output.id) return
+
+        outputId = null
+        player.clearVideoSurface(output.surface)
     }
 
     private fun resetState() {

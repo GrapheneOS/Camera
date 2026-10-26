@@ -22,16 +22,23 @@ import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItemImpl
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryControlsDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapperImpl
-import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DeletionAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DetailsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.OtherAppAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PageAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.ScreenAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.VideoAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryMenuUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
+import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -154,7 +161,7 @@ class GalleryViewModelTest {
             storedItems = listOf(newer, NEWEST, OLDER)
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.PageSelected(page = 1))
+            viewModel.onAction(PageAction.PageSelected(page = 1))
             storedItems = listOf(newer, OLDER)
             capturedItemsChanges.emit(Unit)
 
@@ -208,14 +215,14 @@ class GalleryViewModelTest {
             val effects = effectsOf(viewModel)
 
             listOf(
-                Action.EditClicked,
-                Action.EditWithClicked,
-                Action.DeleteClicked,
-                Action.DeleteConfirmed,
-                Action.ShareClicked,
-                Action.UseAsClicked,
-                Action.CaptureTimeClicked,
-                Action.DetailsShownChanged(isShown = true),
+                OtherAppAction.EditClicked,
+                OtherAppAction.EditWithClicked,
+                DeletionAction.DeleteClicked,
+                DeletionAction.DeleteConfirmed,
+                OtherAppAction.ShareClicked,
+                OtherAppAction.UseAsClicked,
+                OtherAppAction.CaptureTimeClicked,
+                DetailsAction.DetailsShownChanged(isShown = true),
             ).forEach(viewModel::onAction)
 
             assertTrue(effects.isEmpty())
@@ -231,13 +238,13 @@ class GalleryViewModelTest {
             val effects = effectsOf(viewModel)
 
             coEvery { capturedItemDetailsRepository.details(NEWEST) } returns detailsAt(LOCATION)
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
-            viewModel.onAction(Action.ShareClicked)
-            viewModel.onAction(Action.UseAsClicked)
-            viewModel.onAction(Action.EditClicked)
-            viewModel.onAction(Action.SystemGalleryClicked)
-            viewModel.onAction(Action.CaptureTimeClicked)
-            viewModel.onAction(Action.OpenMapClicked)
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
+            viewModel.onAction(OtherAppAction.ShareClicked)
+            viewModel.onAction(OtherAppAction.UseAsClicked)
+            viewModel.onAction(OtherAppAction.EditClicked)
+            viewModel.onAction(OtherAppAction.SystemGalleryClicked)
+            viewModel.onAction(OtherAppAction.CaptureTimeClicked)
+            viewModel.onAction(DetailsAction.OpenMapClicked)
 
             assertFalse(viewModel.uiState.value.bars.showsExternalActions)
             assertFalse(viewModel.uiState.value.bars.showsSystemGallery)
@@ -251,7 +258,7 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.CaptureTimeClicked)
+            viewModel.onAction(OtherAppAction.CaptureTimeClicked)
 
             assertEquals(listOf(Effect.ShowInSystemGallery(NEWEST)), effects)
         }
@@ -263,7 +270,7 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.UseAsClicked)
+            viewModel.onAction(OtherAppAction.UseAsClicked)
 
             assertEquals(GalleryMenuUiModel.Photo, viewModel.uiState.value.bars.menu)
             assertEquals(listOf(Effect.UseAs(NEWEST)), effects)
@@ -285,10 +292,9 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
             assertEquals(Dialog.DeleteConfirmation, viewModel.uiState.value.dialog)
-
-            viewModel.onAction(Action.DeleteConfirmed)
+            viewModel.onAction(DeletionAction.DeleteConfirmed)
 
             coVerify { deleteCapturedItem(NEWEST) }
             assertEquals(keysOf(OLDER), pageKeys(viewModel))
@@ -302,8 +308,8 @@ class GalleryViewModelTest {
             storedItems = listOf(NEWEST)
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DeleteClicked)
-            viewModel.onAction(Action.DeleteConfirmed)
+            viewModel.onAction(DeletionAction.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteConfirmed)
 
             assertTrue(viewModel.uiState.value.pager.isEmpty)
         }
@@ -316,8 +322,8 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DeleteClicked)
-            viewModel.onAction(Action.DeleteConfirmed)
+            viewModel.onAction(DeletionAction.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteConfirmed)
 
             assertEquals(2, viewModel.uiState.value.pager.pages.size)
             assertEquals(listOf(Effect.DeletionFailed), effects)
@@ -331,7 +337,7 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
 
             coVerify { capturedItemTrashRepository.trash(NEWEST) }
             assertNull(viewModel.uiState.value.dialog)
@@ -347,7 +353,7 @@ class GalleryViewModelTest {
             every { capturedItemTrashRepository.canTrash(any()) } returns true
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
 
             coVerify(exactly = 2) { capturedItemRepository.capturedItems() }
         }
@@ -359,9 +365,9 @@ class GalleryViewModelTest {
             every { capturedItemTrashRepository.canTrash(any()) } returns true
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.PageSelected(page = 1))
-            viewModel.onAction(Action.DeleteClicked)
-            viewModel.onAction(Action.UndoClicked)
+            viewModel.onAction(PageAction.PageSelected(page = 1))
+            viewModel.onAction(DeletionAction.DeleteClicked)
+            viewModel.onAction(DeletionAction.UndoClicked)
 
             coVerify { capturedItemTrashRepository.restore(OLDER) }
             assertEquals(keysOf(NEWEST, OLDER), pageKeys(viewModel))
@@ -376,9 +382,9 @@ class GalleryViewModelTest {
             every { capturedItemTrashRepository.canTrash(any()) } returns true
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DeleteClicked)
-            viewModel.onAction(Action.UndoDismissed)
-            viewModel.onAction(Action.UndoClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
+            viewModel.onAction(DeletionAction.UndoDismissed)
+            viewModel.onAction(DeletionAction.UndoClicked)
 
             coVerify { capturedItemTrashRepository.delete(NEWEST) }
             coVerify(exactly = 0) { capturedItemTrashRepository.restore(any()) }
@@ -393,8 +399,8 @@ class GalleryViewModelTest {
             every { capturedItemTrashRepository.canTrash(any()) } returns true
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DeleteClicked)
-            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
 
             coVerify { capturedItemTrashRepository.delete(NEWEST) }
             coVerify { capturedItemTrashRepository.trash(OLDER) }
@@ -410,7 +416,7 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DeleteClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
 
             assertEquals(keysOf(NEWEST, OLDER), pageKeys(viewModel))
             assertEquals(listOf(Effect.DeletionFailed), effects)
@@ -425,8 +431,8 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DeleteClicked)
-            viewModel.onAction(Action.UndoClicked)
+            viewModel.onAction(DeletionAction.DeleteClicked)
+            viewModel.onAction(DeletionAction.UndoClicked)
 
             assertEquals(keysOf(OLDER), pageKeys(viewModel))
             assertEquals(listOf(Effect.RestoreFailed), effects)
@@ -442,7 +448,7 @@ class GalleryViewModelTest {
             coEvery { capturedItemDetailsRepository.details(OLDER) } returns older
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
 
             assertTrue(viewModel.uiState.value.showsDetails)
             assertEquals(GalleryDetails.Loaded(newest), detailsOf(viewModel, page = 0))
@@ -456,7 +462,7 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
 
             assertTrue(viewModel.uiState.value.showsDetails)
             assertEquals(GalleryDetails.Unavailable, detailsOf(viewModel, page = 0))
@@ -469,9 +475,9 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
-            viewModel.onAction(Action.DetailsShownChanged(isShown = false))
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = false))
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
 
             assertTrue(viewModel.uiState.value.showsDetails)
             coVerify(exactly = 1) { capturedItemDetailsRepository.details(NEWEST) }
@@ -486,8 +492,8 @@ class GalleryViewModelTest {
             coEvery { capturedItemDetailsRepository.details(any()) } returns mockk()
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
-            viewModel.onAction(Action.PageSelected(page = 3))
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
+            viewModel.onAction(PageAction.PageSelected(page = 3))
 
             assertEquals(GalleryDetails.Loading, detailsOf(viewModel, page = 0))
             assertTrue(detailsOf(viewModel, page = 3) is GalleryDetails.Loaded)
@@ -499,7 +505,7 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.PageSelected(page = 1))
+            viewModel.onAction(PageAction.PageSelected(page = 1))
 
             assertEquals(GalleryDetails.Loading, detailsOf(viewModel, page = 1))
             coVerify(exactly = 0) { capturedItemDetailsRepository.details(any()) }
@@ -512,7 +518,9 @@ class GalleryViewModelTest {
             val details = mockk<CapturedItemDetails>()
             coEvery { capturedItemDetailsRepository.details(NEWEST) } returns details
             val arguments = savedStateOf(lastCapturedItem = null)
-            viewModel(arguments = arguments).onAction(Action.DetailsShownChanged(isShown = true))
+            viewModel(arguments = arguments).onAction(
+                DetailsAction.DetailsShownChanged(isShown = true),
+            )
 
             val recreated = viewModel(arguments = arguments)
 
@@ -528,8 +536,8 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
-            viewModel.onAction(Action.OpenMapClicked)
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
+            viewModel.onAction(DetailsAction.OpenMapClicked)
 
             assertEquals(listOf(Effect.OpenMap(LOCATION)), effects)
         }
@@ -542,8 +550,8 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
-            viewModel.onAction(Action.OpenMapClicked)
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
+            viewModel.onAction(DetailsAction.OpenMapClicked)
 
             assertTrue(effects.isEmpty())
         }
@@ -555,7 +563,7 @@ class GalleryViewModelTest {
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
-            viewModel.onAction(Action.DetailLongPressed(text = "Google Pixel 8a"))
+            viewModel.onAction(DetailsAction.DetailLongPressed(text = "Google Pixel 8a"))
 
             assertEquals(listOf(Effect.CopyText("Google Pixel 8a")), effects)
         }
@@ -566,8 +574,8 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.DetailsShownChanged(isShown = true))
-            viewModel.onAction(Action.ScreenTapped)
+            viewModel.onAction(DetailsAction.DetailsShownChanged(isShown = true))
+            viewModel.onAction(ScreenAction.ScreenTapped)
 
             assertFalse(viewModel.uiState.value.showsDetails)
             assertTrue(viewModel.uiState.value.chrome.showsBars)
@@ -588,9 +596,21 @@ class GalleryViewModelTest {
 
             assertFalse(viewModel.uiState.value.chrome.showsBars)
 
-            viewModel.onAction(Action.ScreenTapped)
+            viewModel.onAction(ScreenAction.ScreenTapped)
 
             assertTrue(viewModel.uiState.value.chrome.showsBars)
+        }
+    }
+
+    @Test
+    fun skipTapped_hidesTheControls() {
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.onAction(VideoAction.SkipTapped(SkipDirection.Forward))
+
+            assertFalse(viewModel.uiState.value.chrome.showsBars)
+            assertFalse(viewModel.uiState.value.chrome.showsVideoControls)
         }
     }
 
@@ -599,7 +619,7 @@ class GalleryViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.ScreenTapped)
+            viewModel.onAction(ScreenAction.ScreenTapped)
             zoomPage(viewModel = viewModel, page = 0, isZoomed = false)
 
             assertFalse(viewModel.uiState.value.chrome.showsBars)
@@ -625,7 +645,7 @@ class GalleryViewModelTest {
             storedItems = items
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.PageSelected(page = 7))
+            viewModel.onAction(PageAction.PageSelected(page = 7))
 
             val pager = viewModel.uiState.value.pager
             val shown = pager.pages.map { page ->
@@ -645,15 +665,15 @@ class GalleryViewModelTest {
             storedItems = items
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.PageSettled(page = 0))
-            viewModel.onAction(Action.PageSelected(page = 7))
+            viewModel.onAction(PageAction.PageSettled(page = 0))
+            viewModel.onAction(PageAction.PageSelected(page = 7))
 
             val pager = viewModel.uiState.value.pager
             val lastPage = pager.pages.last().key
 
             assertNull(pager.previews[lastPage])
 
-            viewModel.onAction(Action.PageSettled(page = 7))
+            viewModel.onAction(PageAction.PageSettled(page = 7))
 
             val settledPager = viewModel.uiState.value.pager
             val lastPreview = settledPager.previews[lastPage] as? GalleryPreview.Loaded
@@ -668,7 +688,7 @@ class GalleryViewModelTest {
         isZoomed: Boolean,
     ) {
         viewModel.onAction(
-            Action.ZoomChanged(
+            PageAction.ZoomChanged(
                 pageKey = viewModel.uiState.value.pager.pages[page].key,
                 isZoomed = isZoomed,
             ),
@@ -736,6 +756,7 @@ class GalleryViewModelTest {
                 defaultDispatcher = mainDispatcherRule.testDispatcher,
             ),
             playbackDelegate = mockk(relaxed = true),
+            controlsDelegate = GalleryControlsDelegateImpl(),
             uiStateMapper = GalleryUiStateMapperImpl(captureTimeMapper = CaptureTimeMapperImpl()),
         )
     }

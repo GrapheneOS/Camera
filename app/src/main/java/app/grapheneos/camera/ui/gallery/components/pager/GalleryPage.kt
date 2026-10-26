@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BrokenImage
 import androidx.compose.material.icons.outlined.VideocamOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,7 +16,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
-import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
@@ -31,10 +32,10 @@ internal fun GalleryPage(
     onTap: () -> Unit,
     onDoubleTap: ((Offset) -> Unit)?,
     onSkip: ((SkipDirection, Offset) -> Unit)?,
-    video: VideoPlaybackUiModel?,
+    playback: VideoPlaybackUiModel?,
     mayRotateVideo: Boolean,
     isVideoRotated: Boolean,
-    onVideoOutputChange: (VideoOutput?) -> Unit,
+    onVideoOutputChange: (VideoOutputChange) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -47,8 +48,8 @@ internal fun GalleryPage(
             ),
     ) {
         when {
-            video is VideoPlaybackUiModel.Active -> PlayingVideo(
-                video = video,
+            playback is VideoPlaybackUiModel.Active -> PlayingVideo(
+                playback = playback,
                 preview = preview,
                 onTap = onTap,
                 onDoubleTap = onDoubleTap,
@@ -58,7 +59,7 @@ internal fun GalleryPage(
                 onOutputChange = onVideoOutputChange,
             )
 
-            video is VideoPlaybackUiModel.Failed -> UnavailablePlaceholder(
+            playback is VideoPlaybackUiModel.Failed -> UnavailablePlaceholder(
                 page = page,
             )
 
@@ -75,20 +76,22 @@ internal fun GalleryPage(
             preview is GalleryPreview.Unavailable -> UnavailablePlaceholder(
                 page = page,
             )
+
+            preview is GalleryPreview.Loading -> LoadingPlaceholder()
         }
     }
 }
 
 @Composable
 private fun PlayingVideo(
-    video: VideoPlaybackUiModel.Active,
+    playback: VideoPlaybackUiModel.Active,
     preview: GalleryPreview,
     onTap: () -> Unit,
     onDoubleTap: ((Offset) -> Unit)?,
     onSkip: ((SkipDirection, Offset) -> Unit)?,
     mayRotate: Boolean,
     isRotated: Boolean,
-    onOutputChange: (VideoOutput?) -> Unit,
+    onOutputChange: (VideoOutputChange) -> Unit,
 ) {
     val thumbnail = (preview as? GalleryPreview.Loaded)?.image
 
@@ -96,16 +99,19 @@ private fun PlayingVideo(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
+        if (!playback.hasRenderedFrame) {
+            when (thumbnail) {
+                null -> LoadingPlaceholder()
+                else -> VideoFrame(thumbnail)
+            }
+        }
         VideoSurface(
-            aspectRatio = video.aspectRatio ?: thumbnail?.let { it.width.toFloat() / it.height },
-            renderedOutputId = video.renderedOutputId,
+            aspectRatio = playback.aspectRatio ?: thumbnail?.let { it.width.toFloat() / it.height },
+            renderedOutputId = playback.renderedOutputId,
             onOutputChange = onOutputChange,
             mayRotate = mayRotate,
             isRotated = isRotated,
         )
-        if (!video.hasRenderedFrame && thumbnail != null) {
-            VideoFrame(thumbnail)
-        }
         if (onDoubleTap != null && onSkip != null) {
             VideoTapArea(
                 onTap = onTap,
@@ -124,6 +130,16 @@ private fun VideoFrame(image: ImageBitmap) {
         contentScale = ContentScale.Fit,
         modifier = Modifier.fillMaxSize(),
     )
+}
+
+@Composable
+private fun LoadingPlaceholder() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
 }
 
 @Composable
@@ -158,7 +174,7 @@ private fun GalleryPageUnavailablePreview() {
             onTap = {},
             onDoubleTap = {},
             onSkip = { _, _ -> },
-            video = null,
+            playback = null,
             mayRotateVideo = false,
             isVideoRotated = false,
             onVideoOutputChange = {},

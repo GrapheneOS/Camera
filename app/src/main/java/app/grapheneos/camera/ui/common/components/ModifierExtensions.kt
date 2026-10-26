@@ -8,12 +8,20 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.unit.dp
 
 private const val CROSS_INSET = 0.15f
 private const val CROSS_GAP_RATIO = 2.5f
 
 private val CROSS_STROKE_WIDTH = 2.dp
+
+internal fun Modifier.keepScreenOnWhen(condition: Boolean): Modifier {
+    return when {
+        condition -> keepScreenOn()
+        else -> this
+    }
+}
 
 internal fun Modifier.copyOnLongClick(
     text: String,

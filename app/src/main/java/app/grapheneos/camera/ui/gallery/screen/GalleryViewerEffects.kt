@@ -9,6 +9,8 @@ import androidx.compose.runtime.snapshotFlow
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DetailsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PageAction
 
 @Composable
 internal fun GalleryViewerEffects(
@@ -26,7 +28,7 @@ internal fun GalleryViewerEffects(
         snapshotFlow { transformState.isZoomed() }
             .collect { isZoomed ->
                 currentOnAction(
-                    Action.ZoomChanged(
+                    PageAction.ZoomChanged(
                         pageKey = pageKey,
                         isZoomed = isZoomed,
                     ),
@@ -39,6 +41,6 @@ internal fun GalleryViewerEffects(
     }
 
     BackHandler(enabled = showsDetails) {
-        currentOnAction(Action.DetailsShownChanged(isShown = false))
+        currentOnAction(DetailsAction.DetailsShownChanged(isShown = false))
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
@@ -32,12 +33,12 @@ import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.core.theme.cameraColors
 import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoSkipUiModel
+import kotlin.math.hypot
 import kotlin.time.Duration.Companion.seconds
 
 internal const val VIDEO_SKIP_AREA_FRACTION = 1f / 3f
 
 private const val INDICATOR_ALPHA = 0.2f
-private const val INDICATOR_VERTICAL_RADIUS_RATIO = 0.5f
 
 private val INDICATOR_SPACING = 4.dp
 
@@ -90,16 +91,18 @@ internal class VideoSkipAreaShape(
         density: Density,
     ): Outline {
         val isOnLeft = (direction == SkipDirection.Back) == (layoutDirection == LayoutDirection.Ltr)
+        val screenWidth = size.width / VIDEO_SKIP_AREA_FRACTION
+        val radius = hypot(screenWidth, size.height)
         val centerX = when {
-            isOnLeft -> 0f
-            else -> size.width
+            isOnLeft -> size.width - radius
+            else -> radius
         }
-        val verticalRadius = size.height * INDICATOR_VERTICAL_RADIUS_RATIO
         val oval = Rect(
-            left = centerX - size.width,
-            top = size.height / 2f - verticalRadius,
-            right = centerX + size.width,
-            bottom = size.height / 2f + verticalRadius,
+            center = Offset(
+                x = centerX,
+                y = size.height / 2f,
+            ),
+            radius = radius,
         )
 
         return Outline.Generic(Path().apply { addOval(oval) })

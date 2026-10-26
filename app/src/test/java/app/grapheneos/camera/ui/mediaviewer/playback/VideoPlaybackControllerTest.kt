@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.mediaviewer.playback
 
-import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import app.grapheneos.camera.data.media.player.VideoPlayback
 import io.mockk.every
@@ -70,23 +69,6 @@ class VideoPlaybackControllerTest {
             playbackState.value = VideoPlaybackState(hasFailed = true)
 
             assertEquals(VideoPlaybackUiModel.Failed, controller.state.value)
-        }
-    }
-
-    @Test
-    fun setOutput_handsTheOutputToThePlayerAndReportsWhereAFrameIs() {
-        runTest {
-            track()
-            val output = VideoOutput(
-                id = 3,
-                surface = mockk(),
-            )
-
-            controller.setOutput(output)
-            playbackState.value = VideoPlaybackState(renderedOutputId = 3)
-
-            verify { playback.setOutput(output) }
-            assertEquals(3, active().renderedOutputId)
         }
     }
 
@@ -375,6 +357,59 @@ class VideoPlaybackControllerTest {
                 ),
                 active().skip,
             )
+        }
+    }
+
+    @Test
+    fun skips_intoTheEndOfALoopingVideo_stayThereUntilTheyTimeOut() {
+        runTest {
+            track()
+            controller.setLooping(true)
+            playbackState.value = VideoPlaybackState(duration = 12.seconds)
+
+            playerPosition = 10.seconds
+            controller.skip(SkipDirection.Forward)
+            playerPosition = 12.seconds
+            controller.skip(SkipDirection.Forward)
+
+            verifyOrder {
+                playback.setLooping(false)
+                playback.seekTo(12.seconds)
+            }
+            verify(exactly = 0) { playback.seekTo(Duration.ZERO) }
+            assertEquals(
+                VideoSkipUiModel(
+                    direction = SkipDirection.Forward,
+                    offset = 5.seconds,
+                ),
+                active().skip,
+            )
+
+            advanceTimeBy(500.milliseconds)
+            runCurrent()
+
+            verifyOrder {
+                playback.setLooping(true)
+                playback.seekTo(Duration.ZERO)
+            }
+        }
+    }
+
+    @Test
+    fun skips_awayFromTheEndOfALoopingVideo_staysWhereTheyLeftIt() {
+        runTest {
+            track()
+            controller.setLooping(true)
+            playbackState.value = VideoPlaybackState(duration = 12.seconds)
+
+            controller.skip(SkipDirection.Forward)
+            playerPosition = 12.seconds
+            controller.skip(SkipDirection.Back)
+            playerPosition = 7.seconds
+            advanceTimeBy(500.milliseconds)
+            runCurrent()
+
+            verify(exactly = 0) { playback.seekTo(Duration.ZERO) }
         }
     }
 

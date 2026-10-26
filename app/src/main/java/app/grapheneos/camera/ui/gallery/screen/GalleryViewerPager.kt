@@ -10,6 +10,10 @@ import app.grapheneos.camera.ui.gallery.components.pager.GalleryPager
 import app.grapheneos.camera.ui.gallery.components.pager.ViewerTransform
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DetailsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PageAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.ScreenAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.VideoAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
 import kotlin.time.Duration
 
@@ -27,7 +31,7 @@ internal fun GalleryViewerPager(
     onAction: (Action) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    val openMap = { onAction(Action.OpenMapClicked) }
+    val openMap = { onAction(DetailsAction.OpenMapClicked) }
 
     GalleryPager(
         pages = uiState.pager.pages,
@@ -53,22 +57,22 @@ internal fun GalleryViewerPager(
                 )
             }
         },
-        onPageSelected = { page -> onAction(Action.PageSelected(page)) },
-        onPageSettled = { page -> onAction(Action.PageSettled(page)) },
-        onDetailsShownChange = { isShown -> onAction(Action.DetailsShownChanged(isShown)) },
-        onTap = { onAction(Action.ScreenTapped) },
-        onVideoOutputChange = { output -> onAction(Action.VideoOutputChanged(output)) },
+        onPageSelected = { page -> onAction(PageAction.PageSelected(page)) },
+        onPageSettled = { page -> onAction(PageAction.PageSettled(page)) },
+        onDetailsShownChange = { isShown -> onAction(DetailsAction.DetailsShownChanged(isShown)) },
+        onTap = { onAction(ScreenAction.ScreenTapped) },
+        onVideoOutputChange = { change -> onAction(VideoAction.VideoOutputChanged(change)) },
         onVideoHoldChange = { isHeld ->
             onAction(
                 when {
-                    isHeld -> Action.VideoHoldStarted
-                    else -> Action.VideoHoldEnded
+                    isHeld -> VideoAction.VideoHoldStarted
+                    else -> VideoAction.VideoHoldEnded
                 },
             )
         },
-        onVideoSkip = { direction -> onAction(Action.SkipTapped(direction)) },
+        onVideoSkip = { direction -> onAction(VideoAction.SkipTapped(direction)) },
         onOpenMapClick = openMap.takeIf { uiState.pager.canOpenMap },
-        onCopy = { text -> onAction(Action.DetailLongPressed(text)) },
+        onCopy = { text -> onAction(DetailsAction.DetailLongPressed(text)) },
         onCameraPageReached = onNavigateBack,
         modifier = Modifier.fillMaxSize(),
     )

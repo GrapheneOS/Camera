@@ -1,6 +1,6 @@
 package app.grapheneos.camera.ui.videoplayer.screen.model
 
-import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import kotlin.time.Duration
 
 internal sealed interface VideoPlayerAction {
@@ -20,6 +20,6 @@ internal sealed interface VideoPlayerAction {
     ) : VideoPlayerAction
 
     data class OutputChanged(
-        val output: VideoOutput?,
+        val change: VideoOutputChange,
     ) : VideoPlayerAction
 }

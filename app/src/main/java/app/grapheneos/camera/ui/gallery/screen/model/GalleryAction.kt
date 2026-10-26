@@ -1,99 +1,111 @@
 package app.grapheneos.camera.ui.gallery.screen.model
 
-import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import kotlin.time.Duration
 
 internal sealed interface GalleryAction {
 
-    data object ScreenTapped : GalleryAction
+    sealed interface ScreenAction : GalleryAction {
 
-    data object ScreenStopped : GalleryAction
+        data object ScreenTapped : ScreenAction
 
-    data object DialogDismissed : GalleryAction
+        data object ScreenStopped : ScreenAction
 
-    sealed interface Page : GalleryAction
+        data object DialogDismissed : ScreenAction
+    }
 
-    data class PageSelected(
-        val page: Int,
-    ) : Page
+    sealed interface PageAction : GalleryAction {
 
-    data class PageSettled(
-        val page: Int,
-    ) : Page
+        data class PageSelected(
+            val page: Int,
+        ) : PageAction
 
-    data class ZoomChanged(
-        val pageKey: String,
-        val isZoomed: Boolean,
-    ) : Page
+        data class PageSettled(
+            val page: Int,
+        ) : PageAction
 
-    sealed interface Video : GalleryAction
+        data class ZoomChanged(
+            val pageKey: String,
+            val isZoomed: Boolean,
+        ) : PageAction
+    }
 
-    data object PlayPauseClicked : Video
+    sealed interface VideoAction : GalleryAction {
 
-    data object VideoHoldStarted : Video
+        data object VideoHoldStarted : VideoAction
 
-    data object VideoHoldEnded : Video
+        data object VideoHoldEnded : VideoAction
 
-    data object SeekReleased : Video
+        data class VideoOutputChanged(
+            val change: VideoOutputChange,
+        ) : VideoAction
 
-    data class VideoOutputChanged(
-        val output: VideoOutput?,
-    ) : Video
+        data class SkipTapped(
+            val direction: SkipDirection,
+        ) : VideoAction
+    }
 
-    data class SeekDragged(
-        val position: Duration,
-    ) : Video
+    sealed interface VideoControlsAction : GalleryAction {
 
-    data class SkipTapped(
-        val direction: SkipDirection,
-    ) : Video
+        data object PlayPauseClicked : VideoControlsAction
 
-    sealed interface PlaybackOptions : GalleryAction
+        data object SeekReleased : VideoControlsAction
 
-    data object MuteClicked : PlaybackOptions
+        data class SeekDragged(
+            val position: Duration,
+        ) : VideoControlsAction
+    }
 
-    data object LoopClicked : PlaybackOptions
+    sealed interface PlaybackOptionsAction : GalleryAction {
 
-    data object PlaybackSpeedClicked : PlaybackOptions
+        data object MuteClicked : PlaybackOptionsAction
 
-    data class PlaybackSpeedSelected(
-        val speed: Float,
-    ) : PlaybackOptions
+        data object LoopClicked : PlaybackOptionsAction
 
-    sealed interface Details : GalleryAction
+        data object PlaybackSpeedClicked : PlaybackOptionsAction
 
-    data class DetailsShownChanged(
-        val isShown: Boolean,
-    ) : Details
+        data class PlaybackSpeedSelected(
+            val speed: Float,
+        ) : PlaybackOptionsAction
+    }
 
-    data object OpenMapClicked : Details
+    sealed interface DetailsAction : GalleryAction {
 
-    data class DetailLongPressed(
-        val text: String,
-    ) : Details
+        data class DetailsShownChanged(
+            val isShown: Boolean,
+        ) : DetailsAction
 
-    sealed interface OtherApp : GalleryAction
+        data object OpenMapClicked : DetailsAction
 
-    data object SystemGalleryClicked : OtherApp
+        data class DetailLongPressed(
+            val text: String,
+        ) : DetailsAction
+    }
 
-    data object CaptureTimeClicked : OtherApp
+    sealed interface OtherAppAction : GalleryAction {
 
-    data object EditClicked : OtherApp
+        data object SystemGalleryClicked : OtherAppAction
 
-    data object EditWithClicked : OtherApp
+        data object CaptureTimeClicked : OtherAppAction
 
-    data object ShareClicked : OtherApp
+        data object EditClicked : OtherAppAction
 
-    data object UseAsClicked : OtherApp
+        data object EditWithClicked : OtherAppAction
 
-    sealed interface Deletion : GalleryAction
+        data object ShareClicked : OtherAppAction
 
-    data object DeleteClicked : Deletion
+        data object UseAsClicked : OtherAppAction
+    }
 
-    data object DeleteConfirmed : Deletion
+    sealed interface DeletionAction : GalleryAction {
 
-    data object UndoClicked : Deletion
+        data object DeleteClicked : DeletionAction
 
-    data object UndoDismissed : Deletion
+        data object DeleteConfirmed : DeletionAction
+
+        data object UndoClicked : DeletionAction
+
+        data object UndoDismissed : DeletionAction
+    }
 }

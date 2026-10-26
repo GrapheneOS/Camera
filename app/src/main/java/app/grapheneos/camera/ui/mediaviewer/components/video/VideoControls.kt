@@ -1,5 +1,8 @@
 package app.grapheneos.camera.ui.mediaviewer.components.video
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -120,11 +123,15 @@ private fun PlaybackRow(
             .fillMaxWidth()
             .heightIn(min = LocalMinimumInteractiveComponentSize.current),
     ) {
-        if (showsButtons) {
+        AnimatedVisibility(
+            visible = showsButtons,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
             PlayPauseButton(
                 isPlaying = isPlaying,
                 onClick = onPlayPauseClick,
-                modifier = Modifier.align(Alignment.CenterStart),
             )
         }
         PlaybackTime(
@@ -132,11 +139,15 @@ private fun PlaybackRow(
             durationSeconds = duration.inWholeSeconds,
             modifier = Modifier.align(Alignment.Center),
         )
-        if (showsButtons) {
+        AnimatedVisibility(
+            visible = showsButtons,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
             MuteButton(
                 isMuted = isMuted,
                 onClick = onMuteClick,
-                modifier = Modifier.align(Alignment.CenterEnd),
             )
         }
     }
