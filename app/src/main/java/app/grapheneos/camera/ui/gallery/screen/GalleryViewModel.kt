@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.media.model.CapturedItem
+import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItems
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryControlsDelegate
@@ -63,7 +64,7 @@ internal class GalleryViewModel @Inject constructor(
 
     private val stateHolder = GalleryStateHolder(
         GalleryState(
-            items = listOfNotNull(viewedItemOf(arguments) ?: lastCapturedItemOf(arguments)),
+            items = listOfNotNull(firstItemOf(entryPoint)),
             isSecureSession = entryPoint.isSecureSession,
             hasSystemGallery = systemGalleryLauncher.canOpen(),
             showsDetails = showsDetailsOf(arguments),
@@ -219,6 +220,15 @@ internal class GalleryViewModel @Inject constructor(
         viewModelScope.launch {
             change()
             itemsRefreshes.trySend(Unit)
+        }
+    }
+
+    private fun firstItemOf(entryPoint: CameraEntryPoint): CapturedItem? {
+        val item = viewedItemOf(arguments) ?: lastCapturedItemOf(arguments)
+
+        return when {
+            entryPoint.requiresVideoModeOnly -> item?.takeIf { it.type == CapturedItemType.VIDEO }
+            else -> item
         }
     }
 

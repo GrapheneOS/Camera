@@ -200,6 +200,20 @@ class GalleryViewModelTest {
     }
 
     @Test
+    fun aVideoOnlyGallery_doesNotOpenOnAPhotoCapturedLast() {
+        runTest {
+            stallTheScan()
+            val entryPoint = cameraEntryPoint(requiresVideoModeOnly = true)
+
+            val afterPhoto = viewModel(entryPoint = entryPoint, lastCapturedItem = OLDER)
+            val afterVideo = viewModel(entryPoint = entryPoint, lastCapturedItem = VIDEO)
+
+            assertEquals(emptyList<String>(), pageKeys(afterPhoto))
+            assertEquals(keysOf(VIDEO), pageKeys(afterVideo))
+        }
+    }
+
+    @Test
     fun theScan_keepsTheItemOnScreenCurrent() {
         runTest {
             val viewModel = viewModel(lastCapturedItem = OLDER)
