@@ -10,6 +10,8 @@ internal sealed interface GalleryAction {
 
         data object ScreenTapped : ScreenAction
 
+        data object ScreenStarted : ScreenAction
+
         data object ScreenStopped : ScreenAction
 
         data object DialogDismissed : ScreenAction

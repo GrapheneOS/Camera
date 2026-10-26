@@ -50,7 +50,7 @@ class VideoPlayerViewModelTest {
         runTest {
             viewModel()
 
-            verify { playback.load(VIDEO_URI) }
+            verify { playback.load(uri = VIDEO_URI, playsWhenReady = true) }
         }
     }
 

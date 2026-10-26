@@ -48,7 +48,9 @@ internal interface GalleryPlaybackDelegate {
 
     fun stopFastForward()
 
-    fun pause()
+    fun onScreenStarted()
+
+    fun onScreenStopped()
 }
 
 internal class GalleryPlaybackDelegateImpl @Inject constructor(
@@ -62,6 +64,7 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
 
     private var player: VideoPlayback? = null
     private var controller: VideoPlaybackController? = null
+    private var isScreenStopped = false
 
     override fun bind(stateHolder: GalleryStateHolder) {
         this.stateHolder = stateHolder
@@ -124,7 +127,12 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
         controller?.stopFastForward()
     }
 
-    override fun pause() {
+    override fun onScreenStarted() {
+        isScreenStopped = false
+    }
+
+    override fun onScreenStopped() {
+        isScreenStopped = true
         controller?.pause()
     }
 
@@ -193,7 +201,11 @@ internal class GalleryPlaybackDelegateImpl @Inject constructor(
     private fun loadPlayer(item: CapturedItem): VideoPlayback {
         val loadedPlayer = player ?: videoPlaybackFactory.create().also { player = it }
 
-        loadedPlayer.load(item.uri)
+        loadedPlayer.load(
+            uri = item.uri,
+            playsWhenReady = !isScreenStopped,
+        )
+
         return loadedPlayer
     }
 

@@ -48,7 +48,10 @@ internal class VideoPlayerViewModel @Inject constructor(
     private val controller = VideoPlaybackController(playback)
 
     init {
-        playback.load(videoUriOf(arguments))
+        playback.load(
+            uri = videoUriOf(arguments),
+            playsWhenReady = true,
+        )
         controller.setMuted(_uiState.value.isMuted)
 
         viewModelScope.launch {
