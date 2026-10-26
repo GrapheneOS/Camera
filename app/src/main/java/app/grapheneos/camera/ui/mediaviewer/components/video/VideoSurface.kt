@@ -17,22 +17,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import java.util.concurrent.atomic.AtomicInteger
 
 // A SurfaceView keeps HDR but cannot be rotated; a TextureView rotates but is tone-mapped to SDR.
 // The TextureView is created when a rotation may follow, so that rotating only moves the decoder
-// output, and the old surface stays visible until renderedOutputId reports a frame on the new one.
+// output. A surface is shown only once renderedOutputId reports a frame on it; until then the old
+// surface, or whatever lies beneath, stays visible.
 @Composable
 internal fun VideoSurface(
     aspectRatio: Float?,
     renderedOutputId: Int?,
-    onOutputChange: (VideoOutput?) -> Unit,
+    onOutputChange: (VideoOutputChange) -> Unit,
     modifier: Modifier = Modifier,
     mayRotate: Boolean = false,
     isRotated: Boolean = false,
 ) {
     val currentOnOutputChange by rememberUpdatedState(onOutputChange)
-    val outputs = remember { VideoOutputs(onActiveChange = { currentOnOutputChange(it) }) }
+    val outputs = remember { VideoOutputs(onChange = { currentOnOutputChange(it) }) }
+    val showsDirect = renderedOutputId != null && renderedOutputId == outputs.direct?.id
     val showsTexture = renderedOutputId != null && renderedOutputId == outputs.texture?.id
 
     SideEffect {
@@ -50,7 +53,7 @@ internal fun VideoSurface(
         AndroidExternalSurface(
             modifier = Modifier
                 .fillMaxSize()
-                .shownWhen(!showsTexture),
+                .shownWhen(showsDirect),
         ) {
             onSurface { surface, _, _ ->
                 outputs.updateDirect(surface)
@@ -83,8 +86,11 @@ private fun Modifier.shownWhen(isShown: Boolean): Modifier {
 
 @Stable
 private class VideoOutputs(
-    private val onActiveChange: (VideoOutput?) -> Unit,
+    private val onChange: (VideoOutputChange) -> Unit,
 ) {
+
+    var direct: VideoOutput? by mutableStateOf(null)
+        private set
 
     var texture: VideoOutput? by mutableStateOf(null)
         private set
@@ -95,7 +101,6 @@ private class VideoOutputs(
             updateActive()
         }
 
-    private var direct: VideoOutput? = null
     private var active: VideoOutput? = null
 
     fun updateDirect(surface: Surface?) {
@@ -115,8 +120,9 @@ private class VideoOutputs(
         }
 
         if (next != active) {
+            next?.let { onChange(VideoOutputChange.Attached(it)) }
+            active?.let { onChange(VideoOutputChange.Detached(it)) }
             active = next
-            onActiveChange(next)
         }
     }
 

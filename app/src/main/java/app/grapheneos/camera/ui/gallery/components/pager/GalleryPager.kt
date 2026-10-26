@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanelState
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerTransformState
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.rememberViewerGestures
@@ -29,6 +29,7 @@ import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
 import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
+import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -60,7 +61,7 @@ internal fun GalleryPager(
     onPageSettled: (Int) -> Unit,
     onDetailsShownChange: (Boolean) -> Unit,
     onTap: () -> Unit,
-    onVideoOutputChange: (VideoOutput?) -> Unit,
+    onVideoOutputChange: (VideoOutputChange) -> Unit,
     onVideoHoldChange: (Boolean) -> Unit,
     onVideoSkip: (SkipDirection) -> Unit,
     onOpenMapClick: (() -> Unit)?,
@@ -99,6 +100,7 @@ internal fun GalleryPager(
         detailsState = detailsState,
         containerSize = containerSize,
         preview = settledItem?.let { previews[it.key] },
+        video = video?.takeIf { it.pageKey == settledItem?.key }?.playback,
     )
 
     HorizontalPager(
@@ -113,6 +115,7 @@ internal fun GalleryPager(
             null -> CameraPage()
             else -> ViewerPage(
                 page = page,
+                video = video?.takeIf { it.pageKey == page.key },
                 preview = previews[page.key] ?: GalleryPreview.Loading,
                 details = details[page.key] ?: GalleryDetails.Loading,
                 isCurrentPage = index == pagerState.settledPage,
@@ -120,8 +123,7 @@ internal fun GalleryPager(
                 gestures = gestures,
                 viewerTransform = viewerTransform,
                 detailsPosition = detailsPosition,
-                video = video?.playback.takeIf { video?.pageKey == page.key },
-                videoOverlay = videoOverlay.takeIf { video?.pageKey == page.key },
+                videoOverlay = videoOverlay,
                 onTap = onTap,
                 onVideoOutputChange = onVideoOutputChange,
                 onOpenMapClick = onOpenMapClick,
@@ -243,8 +245,12 @@ private fun ViewerLayoutEffect(
     detailsState: DetailsPanelState,
     containerSize: IntSize,
     preview: GalleryPreview?,
+    video: VideoPlaybackUiModel?,
 ) {
-    val imageSize = preview?.let(::imageSize)
+    val imageSize = shownImageSize(
+        preview = preview,
+        video = video,
+    )
 
     LaunchedEffect(
         transformState,
@@ -272,9 +278,12 @@ private fun pageKey(
     }
 }
 
-private fun imageSize(preview: GalleryPreview): Size? {
+private fun shownImageSize(
+    preview: GalleryPreview?,
+    video: VideoPlaybackUiModel?,
+): Size? {
     return when {
-        preview !is GalleryPreview.Loaded -> null
+        video is VideoPlaybackUiModel.Failed || preview !is GalleryPreview.Loaded -> null
         else -> Size(
             width = preview.image.width.toFloat(),
             height = preview.image.height.toFloat(),

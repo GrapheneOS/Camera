@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.mediaviewer.playback
 
-import app.grapheneos.camera.data.media.model.VideoOutput
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import app.grapheneos.camera.data.media.player.VideoPlayback
 import kotlin.time.Duration
@@ -34,6 +33,9 @@ internal class VideoPlaybackController(
 
     private val skipTaps = Channel<Unit>(capacity = Channel.CONFLATED)
 
+    private var isLooping = false
+    private var isLoopHeld = false
+
     suspend fun track(followsPosition: Flow<Boolean>) {
         coroutineScope {
             launch {
@@ -57,6 +59,7 @@ internal class VideoPlaybackController(
                 skipTaps.receiveAsFlow().collectLatest { _ ->
                     delay(SKIP_SHOWN_FOR)
                     controls.update { it.copy(skip = null) }
+                    releaseLoop()
                 }
             }
 
@@ -73,10 +76,6 @@ internal class VideoPlaybackController(
                     }
                 }
         }
-    }
-
-    fun setOutput(output: VideoOutput?) {
-        playback.setOutput(output)
     }
 
     fun togglePlayback() {
@@ -124,6 +123,11 @@ internal class VideoPlaybackController(
         val skipped = (target - position).absoluteValue
 
         if (skipped > Duration.ZERO) {
+            // A looping player that seeks to its end starts over at once, so skips into the end
+            // stop the loop until they time out.
+            if (isLooping && target == end()) {
+                holdLoop()
+            }
             setSeek(Seek.Landing(target))
             playback.seekTo(target)
         }
@@ -145,7 +149,8 @@ internal class VideoPlaybackController(
     }
 
     fun setLooping(isLooping: Boolean) {
-        playback.setLooping(isLooping)
+        this.isLooping = isLooping
+        applyLooping()
     }
 
     fun startFastForward() {
@@ -175,6 +180,27 @@ internal class VideoPlaybackController(
         if (shownPosition - landing.target in Duration.ZERO..<LANDING_WINDOW) {
             setSeek(Seek.None)
         }
+    }
+
+    private fun holdLoop() {
+        isLoopHeld = true
+        applyLooping()
+    }
+
+    private fun releaseLoop() {
+        if (!isLoopHeld) return
+
+        isLoopHeld = false
+        applyLooping()
+
+        if (isLooping && playback.currentPosition >= end()) {
+            setSeek(Seek.Landing(Duration.ZERO))
+            playback.seekTo(Duration.ZERO)
+        }
+    }
+
+    private fun applyLooping() {
+        playback.setLooping(isLooping && !isLoopHeld)
     }
 
     private fun setSeek(seek: Seek) {

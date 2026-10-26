@@ -3,12 +3,13 @@ package app.grapheneos.camera.ui.gallery.screen.delegate
 import android.net.Uri
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
+import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.data.media.model.VideoPlaybackState
 import app.grapheneos.camera.data.media.player.VideoPlayback
 import app.grapheneos.camera.data.media.player.VideoPlaybackFactory
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
-import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -166,30 +167,21 @@ class GalleryPlaybackDelegateTest {
     }
 
     @Test
-    fun skip_seeksFiveSecondsEachWay() {
+    fun aVideoThatStopped_stillDetachesItsOutput() {
         runTest {
             val delegate = createDelegate()
+            val detached = VideoOutputChange.Detached(
+                VideoOutput(
+                    id = 1,
+                    surface = mockk(),
+                ),
+            )
 
             settle(page = 1)
-            delegate.skip(SkipDirection.Forward)
-            delegate.skip(SkipDirection.Back)
+            settle(page = 0)
+            delegate.changeOutput(detached)
 
-            verifyOrder {
-                playbacks.single().seekTo(15.seconds)
-                playbacks.single().seekTo(5.seconds)
-            }
-        }
-    }
-
-    @Test
-    fun pause_pausesTheVideo() {
-        runTest {
-            val delegate = createDelegate()
-
-            settle(page = 1)
-            delegate.pause()
-
-            verify { playbacks.single().pause() }
+            verify { playbacks.single().changeOutput(detached) }
         }
     }
 

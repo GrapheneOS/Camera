@@ -14,13 +14,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.round
-import app.grapheneos.camera.data.media.model.VideoOutput
+import app.grapheneos.camera.data.media.model.VideoOutputChange
 import app.grapheneos.camera.ui.gallery.components.details.DetailsPanel
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.ViewerGestures
 import app.grapheneos.camera.ui.gallery.components.pager.gesture.viewerGestureInput
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPageUiModel
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
 import app.grapheneos.camera.ui.mediaviewer.playback.SkipDirection
 import app.grapheneos.camera.ui.mediaviewer.playback.VideoPlaybackUiModel
 
@@ -34,13 +35,14 @@ internal fun ViewerPage(
     gestures: ViewerGestures,
     viewerTransform: ViewerTransform,
     detailsPosition: () -> Float,
-    video: VideoPlaybackUiModel?,
-    videoOverlay: (@Composable BoxScope.() -> Unit)?,
+    video: GalleryVideoUiModel?,
+    videoOverlay: @Composable BoxScope.() -> Unit,
     onTap: () -> Unit,
-    onVideoOutputChange: (VideoOutput?) -> Unit,
+    onVideoOutputChange: (VideoOutputChange) -> Unit,
     onOpenMapClick: (() -> Unit)?,
     onCopy: (String) -> Unit,
 ) {
+    val playback = video?.playback
     val detailsState = gestures.detailsState
     val isRotated by remember(viewerTransform) { derivedStateOf { viewerTransform.isRotated() } }
     val skipPresses = remember { VideoSkipPresses() }
@@ -51,17 +53,6 @@ internal fun ViewerPage(
             positionInArea = positionInArea,
         )
         gestures.onVideoSkip(direction)
-    }
-    val photoTransform = when {
-        isCurrentPage -> {
-            Modifier
-                .viewerGestureInput(
-                    gestures = gestures,
-                    holdsVideo = video is VideoPlaybackUiModel.Active,
-                )
-                .graphicsLayer(viewerTransform::applyTo)
-        }
-        else -> Modifier
     }
 
     Box(
@@ -75,18 +66,25 @@ internal fun ViewerPage(
             onTap = onTap,
             onDoubleTap = gestures.transformState::applyDoubleTap.takeIf { handlesTaps },
             onSkip = onVideoSkip.takeIf { handlesTaps },
-            video = video,
+            playback = playback,
             mayRotateVideo = isCurrentPage && gestures.transformState.isTransforming,
             isVideoRotated = isCurrentPage && isRotated,
             onVideoOutputChange = onVideoOutputChange,
             modifier = Modifier
                 .offset { detailsState.photoShiftAt(detailsPosition()).round() }
-                .then(photoTransform),
+                .currentPageTransform(
+                    isCurrentPage = isCurrentPage,
+                    gestures = gestures,
+                    viewerTransform = viewerTransform,
+                    holdsVideo = playback is VideoPlaybackUiModel.Active,
+                ),
         )
-        if (video is VideoPlaybackUiModel.Active) {
+        if (playback is VideoPlaybackUiModel.Active) {
             VideoSkipWaves(presses = skipPresses)
         }
-        videoOverlay?.invoke(this)
+        if (video != null) {
+            videoOverlay()
+        }
         DetailsPanel(
             detailsState = detailsState,
             position = detailsPosition,
@@ -99,5 +97,22 @@ internal fun ViewerPage(
             onCopy = onCopy,
             modifier = Modifier.align(Alignment.BottomEnd),
         )
+    }
+}
+
+private fun Modifier.currentPageTransform(
+    isCurrentPage: Boolean,
+    gestures: ViewerGestures,
+    viewerTransform: ViewerTransform,
+    holdsVideo: Boolean,
+): Modifier {
+    return when {
+        isCurrentPage -> {
+            viewerGestureInput(
+                gestures = gestures,
+                holdsVideo = holdsVideo,
+            ).graphicsLayer(viewerTransform::applyTo)
+        }
+        else -> this
     }
 }

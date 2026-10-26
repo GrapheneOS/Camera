@@ -75,7 +75,7 @@ internal class VideoPlayerViewModel @Inject constructor(
 
     override fun onAction(action: Action) {
         when (action) {
-            is Action.OutputChanged -> controller.setOutput(action.output)
+            is Action.OutputChanged -> playback.changeOutput(action.change)
             is Action.ScreenTapped -> toggleControls()
             is Action.PlayPauseClicked -> controller.togglePlayback()
             is Action.MuteClicked -> toggleMute()

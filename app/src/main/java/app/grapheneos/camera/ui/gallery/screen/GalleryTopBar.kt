@@ -14,6 +14,9 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.gallery.components.bars.CaptureTimeTitle
 import app.grapheneos.camera.ui.gallery.components.bars.GalleryMenu
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DetailsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.OtherAppAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PlaybackOptionsAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryBarsUiModel
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
 
@@ -38,7 +41,7 @@ internal fun GalleryTopBar(
                 )
             }
             if (bars.showsSystemGallery) {
-                IconButton(onClick = { onAction(Action.SystemGalleryClicked) }) {
+                IconButton(onClick = { onAction(OtherAppAction.SystemGalleryClicked) }) {
                     Icon(
                         imageVector = Icons.Outlined.PhotoLibrary,
                         contentDescription = stringResource(R.string.open_gallery),
@@ -52,7 +55,7 @@ internal fun GalleryTopBar(
                     capturedAt = it,
                     onClick = when {
                         bars.showsSystemGallery -> {
-                            { onAction(Action.CaptureTimeClicked) }
+                            { onAction(OtherAppAction.CaptureTimeClicked) }
                         }
                         else -> null
                     },
@@ -64,11 +67,11 @@ internal fun GalleryTopBar(
                 GalleryMenu(
                     menu = menu,
                     showsExternalActions = bars.showsExternalActions,
-                    onInfoClick = { onAction(Action.DetailsShownChanged(isShown = true)) },
-                    onEditWithClick = { onAction(Action.EditWithClicked) },
-                    onUseAsClick = { onAction(Action.UseAsClicked) },
-                    onLoopClick = { onAction(Action.LoopClicked) },
-                    onPlaybackSpeedClick = { onAction(Action.PlaybackSpeedClicked) },
+                    onInfoClick = { onAction(DetailsAction.DetailsShownChanged(isShown = true)) },
+                    onEditWithClick = { onAction(OtherAppAction.EditWithClicked) },
+                    onUseAsClick = { onAction(OtherAppAction.UseAsClicked) },
+                    onLoopClick = { onAction(PlaybackOptionsAction.LoopClicked) },
+                    onPlaybackSpeedClick = { onAction(PlaybackOptionsAction.PlaybackSpeedClicked) },
                 )
             }
         },

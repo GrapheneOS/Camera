@@ -32,6 +32,10 @@ internal data class GalleryState(
             ?.takeIf { it.type == CapturedItemType.VIDEO }
     }
 
+    fun canHideControls(): Boolean {
+        return video?.isPlaying() == true && areControlsVisible && !showsDetails && dialog == null
+    }
+
     fun currentIndexIn(items: List<CapturedItem>): Int {
         val index = items.indexOf(currentItem())
 

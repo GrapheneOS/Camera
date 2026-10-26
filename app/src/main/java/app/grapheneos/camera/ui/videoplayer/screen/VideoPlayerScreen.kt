@@ -17,17 +17,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.common.components.keepScreenOnWhen
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.preview.PreviewScreenLightDark
 import app.grapheneos.camera.ui.mediaviewer.components.SystemBarsVisibilityEffect
+import app.grapheneos.camera.ui.mediaviewer.components.ViewerLeftEffect
 import app.grapheneos.camera.ui.mediaviewer.components.ViewerTopBar
 import app.grapheneos.camera.ui.mediaviewer.components.animateViewerBackgroundAsState
 import app.grapheneos.camera.ui.mediaviewer.components.video.VideoControls
@@ -46,9 +45,9 @@ internal fun VideoPlayerScreen(
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
     val effectHandler = rememberVideoPlayerEffectHandler()
 
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        screenModel.onAction(Action.ScreenStopped)
-    }
+    ViewerLeftEffect(
+        onLeave = { screenModel.onAction(Action.ScreenStopped) },
+    )
 
     CollectEvents(
         events = screenModel.effects,
@@ -84,19 +83,14 @@ private fun VideoPlayerContent(
                 indication = null,
                 onClick = { onAction(Action.ScreenTapped) },
             )
-            .then(
-                when {
-                    video?.isPlaying == true -> Modifier.keepScreenOn()
-                    else -> Modifier
-                },
-            ),
+            .keepScreenOnWhen(video?.isPlaying == true),
         contentAlignment = Alignment.Center,
     ) {
         if (video != null) {
             VideoSurface(
                 aspectRatio = video.aspectRatio,
                 renderedOutputId = video.renderedOutputId,
-                onOutputChange = { output -> onAction(Action.OutputChanged(output)) },
+                onOutputChange = { change -> onAction(Action.OutputChanged(change)) },
             )
         }
 

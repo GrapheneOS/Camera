@@ -43,6 +43,9 @@ import app.grapheneos.camera.ui.gallery.components.bars.GALLERY_ACTION_BAR_HEIGH
 import app.grapheneos.camera.ui.gallery.components.bars.GalleryActionBar
 import app.grapheneos.camera.ui.gallery.components.details.DetailsBackButton
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DeletionAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DetailsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.OtherAppAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryUiState as UiState
 
 private const val SCRIM_STEPS = 8
@@ -91,7 +94,7 @@ internal fun GalleryScaffold(
                 }
                 DetailsBackButton(
                     visibility = backButtonVisibility,
-                    onClick = { onAction(Action.DetailsShownChanged(isShown = false)) },
+                    onClick = { onAction(DetailsAction.DetailsShownChanged(isShown = false)) },
                 )
             }
         },
@@ -154,9 +157,9 @@ private fun ActionBarSlot(
         if (isShown) {
             GalleryActionBar(
                 showsExternalActions = showsExternalActions,
-                onShareClick = { onAction(Action.ShareClicked) },
-                onEditClick = { onAction(Action.EditClicked) },
-                onDeleteClick = { onAction(Action.DeleteClicked) },
+                onShareClick = { onAction(OtherAppAction.ShareClicked) },
+                onEditClick = { onAction(OtherAppAction.EditClicked) },
+                onDeleteClick = { onAction(DeletionAction.DeleteClicked) },
                 modifier = Modifier.onSizeChanged { size ->
                     barHeight = with(density) { size.height.toDp() }
                 },

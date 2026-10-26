@@ -6,12 +6,21 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItems
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryControlsDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPlaybackDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryPreviewsDelegate
 import app.grapheneos.camera.ui.gallery.screen.mapper.GalleryUiStateMapper
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DeletionAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.DetailsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.OtherAppAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PageAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PlaybackOptionsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.ScreenAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.VideoAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.VideoControlsAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDialog as Dialog
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
@@ -47,6 +56,7 @@ internal class GalleryViewModel @Inject constructor(
     private val detailsDelegate: GalleryDetailsDelegate,
     private val deletionDelegate: GalleryDeletionDelegate,
     private val playbackDelegate: GalleryPlaybackDelegate,
+    private val controlsDelegate: GalleryControlsDelegate,
     uiStateMapper: GalleryUiStateMapper,
 ) : ViewModel(),
     GalleryScreenModel {
@@ -77,6 +87,7 @@ internal class GalleryViewModel @Inject constructor(
         detailsDelegate.bind(stateHolder)
         deletionDelegate.bind(stateHolder)
         playbackDelegate.bind(stateHolder)
+        controlsDelegate.bind(stateHolder)
 
         viewModelScope.launch {
             previewsDelegate.trackPreviews()
@@ -88,6 +99,10 @@ internal class GalleryViewModel @Inject constructor(
 
         viewModelScope.launch {
             playbackDelegate.trackPlayback()
+        }
+
+        viewModelScope.launch {
+            controlsDelegate.hideIdleControls()
         }
 
         viewModelScope.launch {
@@ -105,75 +120,98 @@ internal class GalleryViewModel @Inject constructor(
 
     override fun onAction(action: Action) {
         when (action) {
-            is Action.ScreenTapped -> onScreenTapped()
-            is Action.ScreenStopped -> playbackDelegate.pause()
-            is Action.DialogDismissed -> showDialog(null)
-            is Action.Page -> onPageAction(action)
-            is Action.Video -> onVideoAction(action)
-            is Action.PlaybackOptions -> onPlaybackOptionsAction(action)
-            is Action.Details -> onDetailsAction(action)
-            is Action.OtherApp -> onOtherAppAction(action)
-            is Action.Deletion -> onDeletionAction(action)
+            is ScreenAction -> onScreenAction(action)
+            is PageAction -> onPageAction(action)
+            is VideoAction -> onVideoAction(action)
+            is VideoControlsAction -> onVideoControlsAction(action)
+            is PlaybackOptionsAction -> onPlaybackOptionsAction(action)
+            is DetailsAction -> onDetailsAction(action)
+            is OtherAppAction -> onOtherAppAction(action)
+            is DeletionAction -> onDeletionAction(action)
         }
     }
 
-    private fun onPageAction(action: Action.Page) {
+    private fun onScreenAction(action: ScreenAction) {
         when (action) {
-            is Action.PageSelected -> selectPage(action.page)
-            is Action.PageSettled -> settlePage(action.page)
-            is Action.ZoomChanged -> onZoomChanged(
+            is ScreenAction.ScreenTapped -> onScreenTapped()
+            is ScreenAction.ScreenStopped -> playbackDelegate.pause()
+            is ScreenAction.DialogDismissed -> showDialog(null)
+        }
+    }
+
+    private fun onPageAction(action: PageAction) {
+        when (action) {
+            is PageAction.PageSelected -> selectPage(action.page)
+            is PageAction.PageSettled -> settlePage(action.page)
+            is PageAction.ZoomChanged -> onZoomChanged(
                 pageKey = action.pageKey,
                 isZoomed = action.isZoomed,
             )
         }
     }
 
-    private fun onVideoAction(action: Action.Video) {
+    private fun onVideoAction(action: VideoAction) {
         when (action) {
-            is Action.PlayPauseClicked -> playbackDelegate.togglePlayback()
-            is Action.VideoHoldStarted -> playbackDelegate.startFastForward()
-            is Action.VideoHoldEnded -> playbackDelegate.stopFastForward()
-            is Action.SeekReleased -> playbackDelegate.finishSeek()
-            is Action.VideoOutputChanged -> playbackDelegate.setOutput(action.output)
-            is Action.SeekDragged -> playbackDelegate.seekTo(action.position)
-            is Action.SkipTapped -> playbackDelegate.skip(action.direction)
+            is VideoAction.VideoHoldStarted -> playbackDelegate.startFastForward()
+            is VideoAction.VideoHoldEnded -> playbackDelegate.stopFastForward()
+            is VideoAction.VideoOutputChanged -> playbackDelegate.changeOutput(action.change)
+            is VideoAction.SkipTapped -> {
+                playbackDelegate.skip(action.direction)
+                controlsDelegate.hide()
+            }
         }
     }
 
-    private fun onPlaybackOptionsAction(action: Action.PlaybackOptions) {
+    private fun onVideoControlsAction(action: VideoControlsAction) {
+        controlsDelegate.restartIdleTimer()
+
         when (action) {
-            is Action.MuteClicked -> changePlaybackOptions(playbackDelegate::toggleMute)
-            is Action.LoopClicked -> changePlaybackOptions(playbackDelegate::toggleLooping)
-            is Action.PlaybackSpeedClicked -> showDialog(Dialog.PlaybackSpeed)
-            is Action.PlaybackSpeedSelected -> setPlaybackSpeed(action.speed)
+            is VideoControlsAction.PlayPauseClicked -> playbackDelegate.togglePlayback()
+            is VideoControlsAction.SeekDragged -> playbackDelegate.seekTo(action.position)
+            is VideoControlsAction.SeekReleased -> playbackDelegate.finishSeek()
         }
     }
 
-    private fun onDetailsAction(action: Action.Details) {
+    private fun onPlaybackOptionsAction(action: PlaybackOptionsAction) {
+        controlsDelegate.restartIdleTimer()
+
         when (action) {
-            is Action.DetailsShownChanged -> showDetails(action.isShown)
-            is Action.OpenMapClicked -> detailsDelegate.openMap()
-            is Action.DetailLongPressed -> stateHolder.send(Effect.CopyText(action.text))
+            is PlaybackOptionsAction.PlaybackSpeedClicked -> showDialog(Dialog.PlaybackSpeed)
+            is PlaybackOptionsAction.PlaybackSpeedSelected -> setPlaybackSpeed(action.speed)
+            is PlaybackOptionsAction.MuteClicked -> changePlaybackOptions(
+                change = playbackDelegate::toggleMute,
+            )
+            is PlaybackOptionsAction.LoopClicked -> changePlaybackOptions(
+                change = playbackDelegate::toggleLooping,
+            )
         }
     }
 
-    private fun onOtherAppAction(action: Action.OtherApp) {
+    private fun onDetailsAction(action: DetailsAction) {
         when (action) {
-            is Action.SystemGalleryClicked -> stateHolder.send(Effect.OpenSystemGallery)
-            is Action.CaptureTimeClicked -> showInSystemGallery()
-            is Action.EditClicked -> edit(usesDefaultEditor = true)
-            is Action.EditWithClicked -> edit(usesDefaultEditor = false)
-            is Action.ShareClicked -> share()
-            is Action.UseAsClicked -> useAs()
+            is DetailsAction.DetailsShownChanged -> showDetails(action.isShown)
+            is DetailsAction.OpenMapClicked -> detailsDelegate.openMap()
+            is DetailsAction.DetailLongPressed -> stateHolder.send(Effect.CopyText(action.text))
         }
     }
 
-    private fun onDeletionAction(action: Action.Deletion) {
+    private fun onOtherAppAction(action: OtherAppAction) {
         when (action) {
-            is Action.DeleteClicked -> changeItems { deletionDelegate.delete() }
-            is Action.DeleteConfirmed -> changeItems { deletionDelegate.confirm() }
-            is Action.UndoClicked -> changeItems { deletionDelegate.undo() }
-            is Action.UndoDismissed -> deletionDelegate.finish()
+            is OtherAppAction.SystemGalleryClicked -> stateHolder.send(Effect.OpenSystemGallery)
+            is OtherAppAction.CaptureTimeClicked -> showInSystemGallery()
+            is OtherAppAction.EditClicked -> edit(usesDefaultEditor = true)
+            is OtherAppAction.EditWithClicked -> edit(usesDefaultEditor = false)
+            is OtherAppAction.ShareClicked -> share()
+            is OtherAppAction.UseAsClicked -> useAs()
+        }
+    }
+
+    private fun onDeletionAction(action: DeletionAction) {
+        when (action) {
+            is DeletionAction.DeleteClicked -> changeItems { deletionDelegate.delete() }
+            is DeletionAction.DeleteConfirmed -> changeItems { deletionDelegate.confirm() }
+            is DeletionAction.UndoClicked -> changeItems { deletionDelegate.undo() }
+            is DeletionAction.UndoDismissed -> deletionDelegate.finish()
         }
     }
 
@@ -221,7 +259,7 @@ internal class GalleryViewModel @Inject constructor(
     private fun onScreenTapped() {
         when {
             state.showsDetails -> detailsDelegate.hide()
-            else -> stateHolder.update { it.copy(areControlsVisible = !it.areControlsVisible) }
+            else -> controlsDelegate.toggle()
         }
     }
 

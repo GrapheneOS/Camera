@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.gallery.screen
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -13,12 +14,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.ui.common.components.topBar
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction as Action
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.PlaybackOptionsAction
+import app.grapheneos.camera.ui.gallery.screen.model.GalleryAction.VideoControlsAction
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryVideoUiModel
 import app.grapheneos.camera.ui.mediaviewer.components.video.FastForwardBadge
 import app.grapheneos.camera.ui.mediaviewer.components.video.VideoControls
@@ -126,8 +130,11 @@ private fun PlaybackControls(
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val visibility = remember { MutableTransitionState(initialState = false) }
+    visibility.targetState = isVisible
+
     AnimatedVisibility(
-        visible = isVisible,
+        visibleState = visibility,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = modifier,
@@ -137,10 +144,10 @@ private fun PlaybackControls(
             isMuted = isMuted,
             position = position(),
             duration = playback.duration,
-            onPlayPauseClick = { onAction(Action.PlayPauseClicked) },
-            onMuteClick = { onAction(Action.MuteClicked) },
-            onSeek = { target -> onAction(Action.SeekDragged(target)) },
-            onSeekFinished = { onAction(Action.SeekReleased) },
+            onPlayPauseClick = { onAction(VideoControlsAction.PlayPauseClicked) },
+            onMuteClick = { onAction(PlaybackOptionsAction.MuteClicked) },
+            onSeek = { target -> onAction(VideoControlsAction.SeekDragged(target)) },
+            onSeekFinished = { onAction(VideoControlsAction.SeekReleased) },
             showsButtons = showsButtons,
             contentPadding = bottomPadding,
         )

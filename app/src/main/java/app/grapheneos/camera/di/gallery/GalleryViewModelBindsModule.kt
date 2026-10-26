@@ -4,6 +4,8 @@ import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSessionImpl
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapper
 import app.grapheneos.camera.domain.gallery.mapper.VisibleCaptureMapperImpl
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryControlsDelegate
+import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryControlsDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegate
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDeletionDelegateImpl
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryDetailsDelegate
@@ -48,6 +50,12 @@ internal abstract class GalleryViewModelBindsModule {
     abstract fun bindGalleryPlaybackDelegate(
         impl: GalleryPlaybackDelegateImpl,
     ): GalleryPlaybackDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindGalleryControlsDelegate(
+        impl: GalleryControlsDelegateImpl,
+    ): GalleryControlsDelegate
 
     @Binds
     @ViewModelScoped
