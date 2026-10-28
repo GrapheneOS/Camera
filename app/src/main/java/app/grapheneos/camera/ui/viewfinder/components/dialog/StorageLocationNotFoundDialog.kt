@@ -13,7 +13,7 @@ import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 
 @Composable
 internal fun StorageLocationNotFoundDialog(
-    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
     onCameraSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -23,7 +23,7 @@ internal fun StorageLocationNotFoundDialog(
         title = { Text(text = stringResource(R.string.folder_not_found)) },
         text = { Text(text = stringResource(R.string.reverting_to_default_folder)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            TextButton(onClick = onDismiss) {
                 Text(text = stringResource(R.string.ok))
             }
         },
@@ -44,7 +44,7 @@ internal fun StorageLocationNotFoundDialog(
 private fun StorageLocationNotFoundDialogPreview() {
     CameraPreviewTheme {
         StorageLocationNotFoundDialog(
-            onConfirm = {},
+            onDismiss = {},
             onCameraSettingsClick = {},
         )
     }

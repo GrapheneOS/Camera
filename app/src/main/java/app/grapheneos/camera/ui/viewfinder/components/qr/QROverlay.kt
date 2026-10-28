@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder.components
+package app.grapheneos.camera.ui.viewfinder.components.qr
 
 import android.content.Context
 import android.content.res.Resources

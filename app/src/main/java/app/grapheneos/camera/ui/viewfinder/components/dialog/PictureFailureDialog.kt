@@ -22,6 +22,11 @@ internal fun PictureFailureDialog(
         modifier = modifier,
         text = { Text(text = message) },
         confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onShowDetailsClick) {
                 Text(text = stringResource(R.string.show_details))
             }

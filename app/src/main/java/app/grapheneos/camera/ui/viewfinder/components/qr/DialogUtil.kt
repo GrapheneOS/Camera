@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.common.dialog
+package app.grapheneos.camera.ui.viewfinder.components.qr
 
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog

@@ -34,7 +34,7 @@ internal fun ViewfinderDialogs(
         )
 
         is Dialog.StorageLocationNotFound -> StorageLocationNotFoundDialog(
-            onConfirm = onDismiss,
+            onDismiss = onDismiss,
             onCameraSettingsClick = { onAction(DialogAction.Choice.CameraSettingsClicked) },
         )
 

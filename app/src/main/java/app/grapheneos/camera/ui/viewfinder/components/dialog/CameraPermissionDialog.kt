@@ -29,7 +29,7 @@ internal fun CameraPermissionDialog(
                 }
 
                 else -> TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(R.string.cancel))
+                    Text(text = stringResource(R.string.ok))
                 }
             }
         },
