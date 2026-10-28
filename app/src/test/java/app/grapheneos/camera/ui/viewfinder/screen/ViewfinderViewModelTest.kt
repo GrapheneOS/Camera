@@ -15,6 +15,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Lifecyc
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -292,7 +293,14 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     fun dialogDismissed_whileItIsUp_isHandedToTheDelegate() {
         runTest {
             val viewModel = createViewModel()
-            stateHolder.update { it.copy(permissionDialog = AppPermission.CAMERA) }
+            stateHolder.update {
+                it.copy(
+                    dialog = ViewfinderDialog.Permission(
+                        permission = AppPermission.CAMERA,
+                        offersSettings = true,
+                    ),
+                )
+            }
 
             viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
 

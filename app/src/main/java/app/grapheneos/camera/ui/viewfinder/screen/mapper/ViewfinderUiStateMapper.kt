@@ -79,6 +79,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             exposure = exposureState(state.session.exposure),
             settingsSheet = settingsSheetUiStateMapper.map(state),
             capture = captureUiStateMapper.map(state),
+            dialog = state.dialog,
         )
     }
 

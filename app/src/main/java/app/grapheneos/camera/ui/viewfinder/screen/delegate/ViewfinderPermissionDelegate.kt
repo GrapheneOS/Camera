@@ -4,6 +4,7 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 
@@ -31,17 +32,16 @@ internal class ViewfinderPermissionDelegateImpl @Inject constructor(
     }
 
     override fun refresh() {
-        val dialog = stateHolder.state.value.permissionDialog
+        val dialog = stateHolder.state.value.dialog
         val missing = AppPermission.entries.filterNotTo(mutableSetOf()) {
             permissionRepository.isGranted(it)
         }
 
         stateHolder.update { it.copy(missingPermissions = missing) }
 
-        if (dialog != null && dialog !in missing) {
-            dismissDialog()
-            stateHolder.postEffect(Effect.Permission.DismissDialog)
-        }
+        if (dialog !is ViewfinderDialog.Permission || dialog.permission in missing) return
+
+        dismissDialog()
     }
 
     override fun request(
@@ -57,15 +57,12 @@ internal class ViewfinderPermissionDelegateImpl @Inject constructor(
     }
 
     override fun showDialog(permission: AppPermission) {
-        if (stateHolder.state.value.permissionDialog == permission) return
-
-        stateHolder.update { it.copy(permissionDialog = permission) }
-        stateHolder.postEffect(
-            Effect.Permission.ShowDialog(
-                permission = permission,
-                offersSettings = !entryPoint.isSecureSession,
-            ),
+        val dialog = ViewfinderDialog.Permission(
+            permission = permission,
+            offersSettings = !entryPoint.isSecureSession,
         )
+
+        stateHolder.update { it.copy(dialog = dialog) }
     }
 
     override fun openSettings() {
@@ -85,6 +82,6 @@ internal class ViewfinderPermissionDelegateImpl @Inject constructor(
     }
 
     override fun dismissDialog() {
-        stateHolder.update { it.copy(permissionDialog = null) }
+        stateHolder.update { it.copy(dialog = null) }
     }
 }

@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.common.dialog
 
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
-import app.grapheneos.camera.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -26,11 +25,3 @@ fun AlertDialog.showIgnoringShortEdgeMode(): AlertDialog {
 
 fun MaterialAlertDialogBuilder.showIgnoringShortEdgeMode(): AlertDialog =
     this.create().showIgnoringShortEdgeMode()
-
-fun MaterialAlertDialogBuilder.setSettingsButton(
-    onClick: (() -> Unit)?,
-): MaterialAlertDialogBuilder {
-    return apply {
-        onClick?.let { setPositiveButton(R.string.settings) { _, _ -> it() } }
-    }
-}

@@ -43,6 +43,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -612,7 +613,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         captureDelegate.onScreenDestroyed()
         galleryDelegate.onScreenDestroyed()
         recordingDelegate.onScreenDestroyed()
-        permissionDelegate.dismissDialog()
     }
 
     private fun onScreenResumed() {
@@ -668,7 +668,9 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun onPermissionDialogDismissed(permission: AppPermission) {
-        if (state().permissionDialog != permission) return
+        val dialog = state().dialog
+
+        if (dialog !is ViewfinderDialog.Permission || dialog.permission != permission) return
 
         permissionDelegate.onDialogDismissed(permission)
     }

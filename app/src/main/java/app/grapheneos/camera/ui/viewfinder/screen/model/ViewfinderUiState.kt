@@ -50,4 +50,5 @@ data class ViewfinderUiState(
     val exposure: ExposureUiState? = null,
     val settingsSheet: SettingsSheetUiState = SettingsSheetUiState(),
     val capture: CaptureUiState = CaptureUiState(),
+    val dialog: ViewfinderDialog? = null,
 )

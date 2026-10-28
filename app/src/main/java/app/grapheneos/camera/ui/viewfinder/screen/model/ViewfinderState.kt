@@ -25,7 +25,7 @@ data class ViewfinderState(
     val gallery: ViewfinderGalleryState = ViewfinderGalleryState(),
     val recording: ViewfinderRecordingState = ViewfinderRecordingState(),
     val missingPermissions: Set<AppPermission> = emptySet(),
-    val permissionDialog: AppPermission? = null,
+    val dialog: ViewfinderDialog? = null,
     val deviceOrientation: DeviceOrientation? = null,
     val displayRotation: Int = Surface.ROTATION_0,
     val autoRotateEnabled: Boolean = false,
