@@ -111,7 +111,6 @@ internal class ViewfinderEffectHandlerImpl(
         when (effect) {
             is Effect.Preview.ShowFocus -> showFocus(effect)
             is Effect.Preview.Flash -> flashPreview(effect.selfIlluminate)
-            is Effect.Preview.ApplySelfIllumination -> applySelfIllumination(effect.enabled)
         }
     }
 
@@ -159,10 +158,6 @@ internal class ViewfinderEffectHandlerImpl(
         )
 
         activity.mainOverlay.startAnimation(animation)
-    }
-
-    private fun applySelfIllumination(enabled: Boolean) {
-        activity.settingsDialog.selfIllumination(enabled)
     }
 
     private fun handleSettings(effect: Effect.Settings) {

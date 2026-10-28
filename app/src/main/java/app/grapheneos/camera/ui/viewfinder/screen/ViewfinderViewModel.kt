@@ -260,9 +260,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is SettingsAction.SettingsIconClicked -> settingsDelegate.openSettingsPanel()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
-            is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
             is SettingsAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
+
+            is SettingsAction.SelfIlluminationToggled -> {
+                settingsDelegate.setSelfIllumination(action.enabled)
+            }
 
             is SettingsAction.CameraSettingsClicked -> {
                 settingsDelegate.openCameraSettings(cameraDelegate.capabilities())
@@ -716,14 +719,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
 
         cameraDelegate.applyFlashMode(slotted.modeSettings.flashMode)
-
-        setSelfIllumination(slotted.modeSettings.selfIllumination)
-    }
-
-    private fun setSelfIllumination(enabled: Boolean) {
-        settingsDelegate.setSelfIllumination(enabled)
-
-        emitEffect(Effect.Preview.ApplySelfIllumination(state().selfIlluminate()))
     }
 
     private fun dismissQrResult() {
