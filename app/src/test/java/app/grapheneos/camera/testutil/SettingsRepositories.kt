@@ -6,6 +6,7 @@ import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 
 internal fun settingsRepositoryOver(
     storedSettings: MutableStateFlow<CameraSettings>,
@@ -13,6 +14,7 @@ internal fun settingsRepositoryOver(
     return mockk {
         every { settings } returns storedSettings
         every { modeSettings(slot = any()) } returns ModeSettings()
+        every { observeModeSettings(slot = any()) } answers { flowOf(modeSettings(firstArg())) }
         every { update(transform = any()) } answers {
             val transform = firstArg<(CameraSettings) -> CameraSettings>()
             storedSettings.value = transform(storedSettings.value)

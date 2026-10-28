@@ -13,7 +13,11 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 
 interface ViewfinderSettingsDelegate {
@@ -21,6 +25,7 @@ interface ViewfinderSettingsDelegate {
     fun bind(stateHolder: ViewfinderStateHolder)
 
     suspend fun trackSettings()
+    suspend fun trackModeSettings()
     suspend fun trackCaptureStarts()
 
     fun setSelfTimerDuration(seconds: Int)
@@ -45,7 +50,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private var slot: ModeSlot? = null
+    private val currentSlot = MutableStateFlow<ModeSlot?>(null)
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
         this.stateHolder = stateHolder
@@ -57,6 +62,16 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         settingsRepository.settings.collect { settings ->
             stateHolder.update { it.copy(settings = settings) }
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun trackModeSettings() {
+        currentSlot
+            .filterNotNull()
+            .flatMapLatest(settingsRepository::observeModeSettings)
+            .collect { modeSettings ->
+                stateHolder.update { it.copy(modeSettings = modeSettings) }
+            }
     }
 
     override suspend fun trackCaptureStarts() {
@@ -89,7 +104,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     override fun selectModeSlot(slot: ModeSlot) {
-        this.slot = slot
+        currentSlot.value = slot
 
         val modeSettings = settingsRepository.modeSettings(slot)
 
@@ -160,7 +175,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     private fun writeMode(write: (ModeSlot) -> ModeSettings): ModeSettings {
-        val current = slot ?: return stateHolder.state.value.modeSettings
+        val current = currentSlot.value ?: return stateHolder.state.value.modeSettings
 
         return write(current)
     }

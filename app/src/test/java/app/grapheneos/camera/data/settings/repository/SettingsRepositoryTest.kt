@@ -34,6 +34,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -306,6 +307,30 @@ class SettingsRepositoryTest {
             repository.modeSettings(SLOT)
 
             assertEquals(StoredModeSettings(selfIllumination = true), lastMappedMode())
+        }
+    }
+
+    @Test
+    fun observeModeSettings_followsWritesToThatSlotOnly() {
+        runTest {
+            every { modeSettingsMapper.map(stored = any(), isFrontFacing = any()) } answers {
+                val stored = firstArg<StoredModeSettings>()
+
+                ModeSettings(selfIllumination = stored.selfIllumination == true)
+            }
+            val repository = repository()
+            val observed = mutableListOf<ModeSettings>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                repository.observeModeSettings(SLOT).collect { observed += it }
+            }
+
+            repository.setSelfIllumination(OTHER_SLOT, true)
+            repository.setSelfIllumination(SLOT, true)
+
+            assertEquals(
+                listOf(ModeSettings(), ModeSettings(selfIllumination = true)),
+                observed,
+            )
         }
     }
 

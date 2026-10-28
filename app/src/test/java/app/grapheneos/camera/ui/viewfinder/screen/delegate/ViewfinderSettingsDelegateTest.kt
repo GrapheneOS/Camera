@@ -113,6 +113,29 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
+    fun modeSettings_changedElsewhere_reachTheStateForTheSlotInUse() {
+        runTest {
+            val slotted = MutableStateFlow(SLOTTED)
+            val left = MutableStateFlow(ModeSettings())
+            every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
+            every { settingsRepository.observeModeSettings(SLOT) } returns slotted
+            every { settingsRepository.observeModeSettings(OTHER_SLOT) } returns left
+
+            val delegate = createDelegate()
+            delegate.selectModeSlot(OTHER_SLOT)
+            delegate.selectModeSlot(SLOT)
+
+            slotted.value = SLOTTED.copy(videoQuality = VideoQuality.UHD)
+            left.value = ModeSettings(videoQuality = VideoQuality.SD)
+
+            assertEquals(
+                SLOTTED.copy(videoQuality = VideoQuality.UHD),
+                stateHolder.state.value.modeSettings,
+            )
+        }
+    }
+
+    @Test
     fun perModeWrite_afterAModeIsSlotted_keepsWhatTheRepositoryStored() {
         runTest {
             val stored = SLOTTED.copy(videoQuality = VideoQuality.UHD)
@@ -244,6 +267,9 @@ class ViewfinderSettingsDelegateTest {
             delegate.trackSettings()
         }
         backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+            delegate.trackModeSettings()
+        }
+        backgroundScope.launch(mainDispatcherRule.testDispatcher) {
             delegate.trackCaptureStarts()
         }
 
@@ -267,6 +293,7 @@ class ViewfinderSettingsDelegateTest {
         )
 
         val SLOT = ModeSlot(mode = CameraMode.VIDEO, isFrontFacing = false)
+        val OTHER_SLOT = ModeSlot(mode = CameraMode.CAMERA, isFrontFacing = false)
         val SLOTTED = ModeSettings(selfIllumination = true, videoQuality = VideoQuality.FHD)
     }
 }

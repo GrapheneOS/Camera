@@ -18,10 +18,13 @@ import app.grapheneos.camera.di.core.DurablePreferences
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -36,10 +39,14 @@ interface SettingsRepository {
     val settings: StateFlow<CameraSettings>
 
     fun update(transform: (CameraSettings) -> CameraSettings): CameraSettings
+
     fun modeSettings(slot: ModeSlot): ModeSettings
+    fun observeModeSettings(slot: ModeSlot): Flow<ModeSettings>
+
     fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings
     fun setSelfIllumination(slot: ModeSlot, value: Boolean): ModeSettings
     fun setVideoQuality(slot: ModeSlot, value: VideoQuality): ModeSettings
+
     fun sessionCopy(): SettingsRepository
 }
 
@@ -67,10 +74,13 @@ internal class SettingsRepositoryImpl @Inject constructor(
     }
 
     override fun modeSettings(slot: ModeSlot): ModeSettings {
-        return modeSettingsMapper.map(
-            stored = prefs.value.mode(slot.mode),
-            isFrontFacing = slot.isFrontFacing,
-        )
+        return modeSettingsOf(prefs = prefs.value, slot = slot)
+    }
+
+    override fun observeModeSettings(slot: ModeSlot): Flow<ModeSettings> {
+        return prefs
+            .map { prefs -> modeSettingsOf(prefs = prefs, slot = slot) }
+            .distinctUntilChanged()
     }
 
     override fun setFlashMode(slot: ModeSlot, value: FlashMode): ModeSettings {
@@ -132,6 +142,16 @@ internal class SettingsRepositoryImpl @Inject constructor(
                 stored = updated.mode(slot.mode),
                 isFrontFacing = slot.isFrontFacing,
             ),
+        )
+    }
+
+    private fun modeSettingsOf(
+        prefs: SettingsPrefs,
+        slot: ModeSlot,
+    ): ModeSettings {
+        return modeSettingsMapper.map(
+            stored = prefs.mode(slot.mode),
+            isFrontFacing = slot.isFrontFacing,
         )
     }
 
