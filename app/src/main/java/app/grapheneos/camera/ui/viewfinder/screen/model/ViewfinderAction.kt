@@ -157,13 +157,11 @@ sealed interface ViewfinderAction {
         data class RationaleRequired(
             val permission: AppPermission,
         ) : PermissionAction
-
-        data class DialogDismissed(
-            val permission: AppPermission,
-        ) : PermissionAction
     }
 
     sealed interface DialogAction : ViewfinderAction {
+
+        data object Dismissed : DialogAction
 
         data class CopyClicked(
             val text: String,

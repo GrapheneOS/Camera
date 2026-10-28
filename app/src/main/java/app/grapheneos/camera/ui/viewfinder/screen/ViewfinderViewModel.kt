@@ -281,15 +281,12 @@ class ViewfinderViewModel @AssistedInject constructor(
             is PermissionAction.RationaleRequired -> {
                 permissionDelegate.showDialog(action.permission)
             }
-
-            is PermissionAction.DialogDismissed -> {
-                onPermissionDialogDismissed(action.permission)
-            }
         }
     }
 
     private fun onDialogAction(action: DialogAction) {
         when (action) {
+            is DialogAction.Dismissed -> dismissDialog()
             is DialogAction.CopyClicked -> copy(action.text)
         }
     }
@@ -667,12 +664,18 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
-    private fun onPermissionDialogDismissed(permission: AppPermission) {
-        val dialog = state().dialog
+    private fun dismissDialog() {
+        when (val dialog = state().dialog) {
+            is ViewfinderDialog.Permission -> {
+                permissionDelegate.onDialogDismissed(dialog.permission)
+            }
 
-        if (dialog !is ViewfinderDialog.Permission || dialog.permission != permission) return
+            is ViewfinderDialog.StorageLocationNotFound -> {
+                stateHolder.update { it.copy(dialog = null) }
+            }
 
-        permissionDelegate.onDialogDismissed(permission)
+            null -> Unit
+        }
     }
 
     private fun initializeCamera(forced: Boolean) {
