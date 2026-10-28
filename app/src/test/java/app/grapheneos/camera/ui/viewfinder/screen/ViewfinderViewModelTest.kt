@@ -171,29 +171,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewStreamingStarted_inVideoMode_refreshesTheVideoQualities() {
-        runTest {
-            val viewModel = createViewModel()
-            stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-
-            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
-
-            verify(exactly = 1) { cameraDelegate.refreshVideoQualities() }
-        }
-    }
-
-    @Test
-    fun previewStreamingStarted_inPhotoMode_leavesTheVideoQualitiesAlone() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
-
-            verify(exactly = 0) { cameraDelegate.refreshVideoQualities() }
-        }
-    }
-
-    @Test
     fun bindOutcome_extensionUnusable_fallsBackToTheDefaultModeAndMovesTheTabs() {
         runTest {
             val viewModel = createViewModel()
@@ -225,16 +202,6 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 ),
                 effects,
             )
-        }
-    }
-
-    @Test
-    fun torchToggleClicked_togglesTheTorch() {
-        runTest {
-            val viewModel = createViewModel()
-            viewModel.onAction(CameraAction.TorchToggleClicked)
-
-            verify(exactly = 1) { cameraDelegate.toggleTorch() }
         }
     }
 

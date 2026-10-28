@@ -107,7 +107,7 @@ class ModeSwitchLatencyRegressionTest {
                     spinner.count > 1,
                 )
 
-                val quality = activity.viewfinder.uiState.value.settingsSheet.videoQuality
+                val quality = activity.quickSettings.uiState.value.videoQuality
                 val original = spinner.selectedItemPosition
 
                 try {
@@ -116,7 +116,7 @@ class ModeSwitchLatencyRegressionTest {
                     assertNotEquals(
                         "the video quality did not change",
                         quality,
-                        activity.viewfinder.uiState.value.settingsSheet.videoQuality
+                        activity.quickSettings.uiState.value.videoQuality
                     )
                     assertEquals(
                         "the new quality was answered from the old verdict",

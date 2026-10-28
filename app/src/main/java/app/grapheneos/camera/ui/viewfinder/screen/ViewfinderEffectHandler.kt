@@ -22,11 +22,8 @@ import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
-import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
-import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
-import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
+import app.grapheneos.camera.ui.camerasettings.navigation.openCameraSettings
 import app.grapheneos.camera.ui.common.videoQualityTitle
-import app.grapheneos.camera.ui.core.activity.SecureActivity
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
 import app.grapheneos.camera.ui.gallery.screen.galleryArguments
@@ -36,9 +33,9 @@ import app.grapheneos.camera.ui.viewfinder.components.qr.showQrResultDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LocationAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 
 internal interface ViewfinderEffectHandler {
@@ -163,7 +160,11 @@ internal class ViewfinderEffectHandlerImpl(
     private fun handleSettings(effect: Effect.Settings) {
         when (effect) {
             is Effect.Settings.ShowQrFormats -> showQrFormats()
-            is Effect.Settings.OpenCameraSettings -> openCameraSettings(effect)
+            is Effect.Settings.OpenCameraSettings -> openCameraSettings(
+                activity = activity,
+                entryPoint = activity.cameraEntryPoint,
+                capabilities = effect.capabilities,
+            )
         }
     }
 
@@ -172,18 +173,6 @@ internal class ViewfinderEffectHandlerImpl(
             activity = activity,
             barcodeFormats = activity.barcodeFormats,
         )
-    }
-
-    private fun openCameraSettings(effect: Effect.Settings.OpenCameraSettings) {
-        val screen = when (activity) {
-            is SecureActivity -> SecureCameraSettingsActivity::class.java
-            else -> CameraSettingsActivity::class.java
-        }
-        val intent = Intent(activity, screen)
-            .putExtras(cameraEntryPointArguments(activity.cameraEntryPoint))
-            .putExtras(cameraSettingsArguments(effect.capabilities))
-
-        activity.startActivity(intent)
     }
 
     private fun handleModeTab(effect: Effect.ModeTab) {
@@ -267,7 +256,7 @@ internal class ViewfinderEffectHandlerImpl(
             msg = activity.getString(R.string.location_is_disabled),
             action = action,
         ) {
-            onAction(SettingsAction.EnableLocationClicked)
+            onAction(LocationAction.EnableLocationClicked)
         }
     }
 

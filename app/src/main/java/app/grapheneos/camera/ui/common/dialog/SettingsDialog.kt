@@ -35,22 +35,21 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.databinding.SettingsBinding
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.common.videoQualityTitle
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import app.grapheneos.camera.ui.settings.components.SettingsFrameLayout
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderScreenModel
-import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.materialswitch.MaterialSwitch
 import kotlin.math.max
 
 @SuppressLint("ClickableViewAccessibility")
-class SettingsDialog(
+internal class SettingsDialog(
     val mActivity: MainActivity,
     themedContext: Context,
+    private val screenModel: QuickSettingsScreenModel,
     private val onDismissRequest: () -> Unit,
 ) : Dialog(themedContext) {
-    val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
     private var dialog: View
@@ -108,7 +107,7 @@ class SettingsDialog(
 
         cameraSettingsButton = binding.cameraSettings
         cameraSettingsButton.setOnClickListener {
-            viewfinder.onAction(SettingsAction.CameraSettingsClicked)
+            screenModel.onAction(Action.CameraSettingsClicked)
         }
 
         window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -156,7 +155,7 @@ class SettingsDialog(
 
         flashToggle = binding.flashToggleOption
         flashToggle.setOnClickListener {
-            viewfinder.onAction(CameraAction.FlashToggleClicked)
+            screenModel.onAction(Action.FlashToggleClicked)
         }
 
         aRToggle = binding.aspectRatioToggle
@@ -167,14 +166,14 @@ class SettingsDialog(
                     getString(R.string.four_by_three_unsupported_in_video)
                 )
             } else {
-                viewfinder.onAction(CameraAction.AspectRatioToggleClicked)
+                screenModel.onAction(Action.AspectRatioToggleClicked)
             }
         }
 
         torchToggle = binding.torchToggleOption
         torchToggle.setOnClickListener {
             if (sheetState.torchAvailable) {
-                viewfinder.onAction(CameraAction.TorchToggleClicked)
+                screenModel.onAction(Action.TorchToggleClicked)
             } else {
                 torchToggle.isChecked = false
                 mActivity.showMessage(
@@ -203,8 +202,8 @@ class SettingsDialog(
 
         selfIlluminationToggle = binding.selfIlluminationSwitch
         selfIlluminationToggle.setOnClickListener {
-            viewfinder.onAction(
-                SettingsAction.SelfIlluminationToggled(selfIlluminationToggle.isChecked),
+            screenModel.onAction(
+                Action.SelfIlluminationToggled(selfIlluminationToggle.isChecked),
             )
         }
         binding.selfIlluminationSwitchContainer.setOnTouchListener { _, event ->
@@ -255,7 +254,7 @@ class SettingsDialog(
 
         includeAudioToggle = binding.includeAudioSwitch
         includeAudioToggle.setOnClickListener {
-            viewfinder.onAction(SettingsAction.AudioToggled(includeAudioToggle.isChecked))
+            screenModel.onAction(Action.AudioToggled(includeAudioToggle.isChecked))
         }
 
         binding.includeAudioSwitchContainer.setOnTouchListener { _, event ->
@@ -374,22 +373,19 @@ class SettingsDialog(
         })
     }
 
-    private var sheetState = SettingsSheetUiState()
+    private var sheetState = QuickSettingsUiState()
 
-    private fun storedSheetState(): SettingsSheetUiState {
-        return viewfinder.uiState.value.settingsSheet
+    private fun storedSheetState(): QuickSettingsUiState {
+        return screenModel.uiState.value
     }
 
-    fun render(state: SettingsSheetUiState) {
+    fun render(state: QuickSettingsUiState) {
         sheetState = state
 
         flashToggle.setImageResource(state.flashIcon)
         flashToggle.contentDescription = mActivity.getString(state.flashDescription)
 
         includeAudioToggle.isChecked = state.includeAudio
-
-        includeAudioToggle.isEnabled = state.includeAudioSettingEnabled
-        videoQualitySpinner.isEnabled = state.videoQualitySettingEnabled
 
         aRToggle.isChecked = state.is16by9
         ViewCompat.setStateDescription(aRToggle, mActivity.getString(state.aspectRatioDescription))
@@ -405,7 +401,7 @@ class SettingsDialog(
         renderVideoQualities(state)
     }
 
-    private fun renderVideoQualities(state: SettingsSheetUiState) {
+    private fun renderVideoQualities(state: QuickSettingsUiState) {
         if (state.videoQualities != videoQualities) {
             videoQualities = state.videoQualities
 
@@ -439,7 +435,7 @@ class SettingsDialog(
     private fun updateTimerDuration(duration: Int) {
         // Common rather than per-mode: a mode's preferences are not slotted until the camera
         // starts, which happens after this dialog is built.
-        viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = duration))
+        screenModel.onAction(Action.SelfTimerSelected(seconds = duration))
     }
 
     private fun restoreTimerDuration() {
@@ -450,7 +446,7 @@ class SettingsDialog(
     }
 
     fun updateVideoQuality(quality: VideoQuality) {
-        viewfinder.onAction(SettingsAction.VideoQualitySelected(quality))
+        screenModel.onAction(Action.VideoQualitySelected(quality))
     }
 
     private var wasSelfIlluminationOn = false

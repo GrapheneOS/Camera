@@ -66,6 +66,9 @@ import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsEffectHandler
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsEffectHandlerImpl
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -133,6 +136,10 @@ open class MainActivity : AppCompatActivity() {
         extrasProducer = { viewfinderCreationExtras() },
     )
 
+    internal val quickSettings: QuickSettingsViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
     internal val gestureHandler by lazy {
         ViewfinderGestureHandler(
             context = this,
@@ -146,7 +153,7 @@ open class MainActivity : AppCompatActivity() {
     @set:VisibleForTesting
     lateinit var tunePlayer: TunePlayer
 
-    lateinit var settingsDialog: SettingsDialog
+    internal lateinit var settingsDialog: SettingsDialog
 
     val threeButtons: View
         get() = binding.threeButtons
@@ -739,28 +746,7 @@ open class MainActivity : AppCompatActivity() {
 
         cdTimer.setMainActivity(this)
 
-        val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
-        settingsDialog = SettingsDialog(
-            mActivity = this,
-            themedContext = themedContext,
-            onDismissRequest = navigator::back,
-        )
-
-        val navigation = ViewfinderNavigationCallbacks(
-            onOpenSettingsPanel = { navigator.push(QuickSettingsNavKey) },
-            onCloseSettingsPanel = { navigator.removeDestination(QuickSettingsNavKey) },
-        )
-
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewfinder.navigationEvents.collect(navigation::navigate)
-            }
-        }
-
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            snapshotFlow { QuickSettingsNavKey in navigator.backStack }
-                .collect(::renderSettingsPanel)
-        }
+        setUpSettingsPanel()
 
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
@@ -795,6 +781,54 @@ open class MainActivity : AppCompatActivity() {
 
         muteToggle.setOnClickListener {
             viewfinder.onAction(RecordingAction.MuteToggleClicked)
+        }
+    }
+
+    private fun setUpSettingsPanel() {
+        val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
+        settingsDialog = SettingsDialog(
+            mActivity = this,
+            themedContext = themedContext,
+            screenModel = quickSettings,
+            onDismissRequest = navigator::back,
+        )
+        val effectHandler: QuickSettingsEffectHandler = QuickSettingsEffectHandlerImpl(
+            activity = this,
+            entryPoint = cameraEntryPoint,
+            showMessage = ::showMessage,
+        )
+        val navigation = ViewfinderNavigationCallbacks(
+            onOpenSettingsPanel = { navigator.push(QuickSettingsNavKey) },
+            onCloseSettingsPanel = { navigator.removeDestination(QuickSettingsNavKey) },
+        )
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                quickSettings.uiState.collect { state ->
+                    settingsDialog.render(state)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                quickSettings.effects.collect { effect ->
+                    effectHandler.handle(effect)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.navigationEvents.collect { event ->
+                    navigation.navigate(event)
+                }
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            snapshotFlow { QuickSettingsNavKey in navigator.backStack }
+                .collect { open -> renderSettingsPanel(open) }
         }
     }
 
@@ -892,6 +926,13 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun viewfinderCreationExtras(): CreationExtras {
+        return cameraEntryPointCreationExtras()
+            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
+                factory.create(outputUri = outputUri)
+            }
+    }
+
+    private fun cameraEntryPointCreationExtras(): CreationExtras {
         val defaults = defaultViewModelCreationExtras
         val arguments = Bundle().apply {
             defaults[DEFAULT_ARGS_KEY]?.let(::putAll)
@@ -900,9 +941,6 @@ open class MainActivity : AppCompatActivity() {
 
         return MutableCreationExtras(defaults)
             .apply { set(DEFAULT_ARGS_KEY, arguments) }
-            .withCreationCallback<ViewfinderViewModel.Factory> { factory ->
-                factory.create(outputUri = outputUri)
-            }
     }
 
     fun showMessage(@StringRes message: Int) {

@@ -1,45 +1,50 @@
-package app.grapheneos.camera.ui.viewfinder.screen.mapper
+package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import javax.inject.Inject
+import kotlinx.collections.immutable.toImmutableList
 
-interface SettingsSheetUiStateMapper {
-    fun map(state: ViewfinderState): SettingsSheetUiState
+internal interface QuickSettingsUiStateMapper {
+    fun map(state: QuickSettingsState): QuickSettingsUiState
 }
 
-internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSheetUiStateMapper {
+internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSettingsUiStateMapper {
 
-    override fun map(state: ViewfinderState): SettingsSheetUiState {
+    override fun map(state: QuickSettingsState): QuickSettingsUiState {
         val settings = state.settings
-        val session = state.session
-        val isVideoMode = state.isVideoMode()
-        val aspectRatio = state.aspectRatio()
-        val isRecordingActive = state.recording.isActive()
+        val camera = state.boundCamera
+        val isVideoMode = camera?.isVideoMode == true
+        val hasFlashUnit = camera?.hasFlashUnit == true
+        val videoQualities = camera?.videoQualities.orEmpty()
+        val aspectRatio = when {
+            isVideoMode -> AspectRatio.RATIO_16_9
+            else -> settings.aspectRatio
+        }
 
         val flash = flashOf(
-            flashMode = state.flashMode,
-            isFlashAvailable = session.isFlashAvailable,
+            flashMode = state.modeSettings.flashMode,
+            hasFlashUnit = hasFlashUnit,
         )
 
-        return SettingsSheetUiState(
+        return QuickSettingsUiState(
             flashIcon = flash.first,
             flashDescription = flash.second,
             includeAudio = settings.includeAudio,
             selfTimerSeconds = settings.selfTimerDurationSeconds,
             videoQuality = state.modeSettings.videoQuality,
-            videoQualities = session.videoQualities,
+            videoQualities = videoQualities.toImmutableList(),
             videoQualityPosition = videoQualityPosition(
-                videoQualities = session.videoQualities,
+                videoQualities = videoQualities,
                 videoQuality = state.modeSettings.videoQuality,
             ),
-            torchAvailable = session.isFlashAvailable,
-            torchOn = session.isTorchOn,
+            torchAvailable = hasFlashUnit,
+            torchOn = state.isTorchOn,
             selfIllumination = state.modeSettings.selfIllumination,
             is16by9 = aspectRatio == AspectRatio.RATIO_16_9,
             aspectRatioFixed = isVideoMode,
@@ -49,11 +54,8 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
             },
             includeAudioSettingVisible = isVideoMode,
             videoQualitySettingVisible = isVideoMode,
-            selfIlluminationSettingVisible =
-                session.lensFacing == LensFacing.FRONT,
+            selfIlluminationSettingVisible = camera?.lensFacing == LensFacing.FRONT,
             timerSettingVisible = !isVideoMode,
-            includeAudioSettingEnabled = !isRecordingActive,
-            videoQualitySettingEnabled = !isRecordingActive,
         )
     }
 
@@ -72,9 +74,9 @@ internal class SettingsSheetUiStateMapperImpl @Inject constructor() : SettingsSh
 
     private fun flashOf(
         flashMode: FlashMode,
-        isFlashAvailable: Boolean,
+        hasFlashUnit: Boolean,
     ): Pair<Int, Int> {
-        if (!isFlashAvailable) {
+        if (!hasFlashUnit) {
             return R.drawable.flash_off_circle to R.string.flash_off
         }
 

@@ -13,6 +13,7 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
@@ -408,17 +409,6 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun refreshVideoQualities_publishesWhatTheCameraRecordsAt() {
-        val qualities = listOf(VideoQuality.UHD, VideoQuality.FHD)
-        every { session.supportedVideoQualities() } returns qualities
-
-        val delegate = createAttachedDelegate()
-        delegate.refreshVideoQualities()
-
-        assertEquals(qualities, stateHolder.state.value.session.videoQualities)
-    }
-
-    @Test
     fun bindCamera_keepsTheModesAndPublishesWhatTheNewCameraSupports() {
         val modes = setOf(CameraMode.CAMERA)
         every { session.sensorOrientationDegrees } returns SENSOR_ORIENTATION
@@ -526,6 +516,16 @@ class ViewfinderCameraDelegateTest {
         stateHolder.update { it.copy(settings = CameraSettings(scanAllCodes = true)) }
 
         verify(exactly = 1) { session.setBarcodeFormats(BarcodeFormat.entries.toSet()) }
+    }
+
+    @Test
+    fun flashMode_storedElsewhere_reachesTheSession() {
+        createAttachedDelegate()
+
+        stateHolder.update { it.copy(modeSettings = ModeSettings(flashMode = FlashMode.AUTO)) }
+
+        verify(exactly = 1) { session.setFlashMode(FlashMode.AUTO) }
+        assertEquals(FlashMode.AUTO, stateHolder.state.value.flashMode)
     }
 
     private fun lensUnsupported(facing: LensFacing) {

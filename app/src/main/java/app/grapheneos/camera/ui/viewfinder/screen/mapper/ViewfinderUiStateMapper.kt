@@ -18,7 +18,6 @@ interface ViewfinderUiStateMapper {
 }
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor(
-    private val settingsSheetUiStateMapper: SettingsSheetUiStateMapper,
     private val captureUiStateMapper: CaptureUiStateMapper,
 ) : ViewfinderUiStateMapper {
 
@@ -78,7 +77,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             },
             levelFrameRotationDegrees = deviceRotation,
             exposure = exposureState(state.session.exposure),
-            settingsSheet = settingsSheetUiStateMapper.map(state),
             capture = captureUiStateMapper.map(state),
             dialog = state.dialog,
         )

@@ -70,38 +70,6 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
-    fun setSelfTimerDuration_isInTheStateBeforeItReturns() {
-        runTest {
-            every { settingsRepository.update(transform = any()) } answers {
-                firstArg<(CameraSettings) -> CameraSettings>().invoke(storedSettings.value)
-            }
-
-            val delegate = createDelegate()
-
-            delegate.setSelfTimerDuration(seconds = SELF_TIMER_SECONDS)
-
-            assertEquals(
-                SELF_TIMER_SECONDS,
-                stateHolder.state.value.settings.selfTimerDurationSeconds,
-            )
-        }
-    }
-
-    @Test
-    fun perModeWrite_beforeAModeIsSlotted_isDropped() {
-        runTest {
-            val delegate = createDelegate()
-
-            delegate.setSelfIllumination(enabled = true)
-
-            verify(exactly = 0) {
-                settingsRepository.setSelfIllumination(slot = any(), value = any())
-            }
-            assertEquals(ModeSettings(), stateHolder.state.value.modeSettings)
-        }
-    }
-
-    @Test
     fun selectModeSlot_loadsThatSlotsSettings() {
         runTest {
             every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
@@ -147,8 +115,8 @@ class ViewfinderSettingsDelegateTest {
                 }
             }
 
-            delegate.setAspectRatio(AspectRatio.RATIO_16_9)
-            delegate.setAspectRatio(AspectRatio.RATIO_16_9)
+            settingsRepository.update { it.copy(aspectRatio = AspectRatio.RATIO_16_9) }
+            settingsRepository.update { it.copy(aspectRatio = AspectRatio.RATIO_16_9) }
 
             assertEquals(listOf(AspectRatio.RATIO_16_9), ratiosAtRequest)
         }
@@ -173,23 +141,6 @@ class ViewfinderSettingsDelegateTest {
             delegate.selectModeSlot(OTHER_SLOT)
 
             assertEquals(listOf(VideoQuality.UHD), qualitiesAtRequest)
-        }
-    }
-
-    @Test
-    fun perModeWrite_afterAModeIsSlotted_keepsWhatTheRepositoryStored() {
-        runTest {
-            val stored = SLOTTED.copy(videoQuality = VideoQuality.UHD)
-            every { settingsRepository.modeSettings(SLOT) } returns SLOTTED
-            every {
-                settingsRepository.setVideoQuality(slot = SLOT, value = VideoQuality.UHD)
-            } returns stored
-
-            val delegate = createDelegate()
-            delegate.selectModeSlot(SLOT)
-            delegate.setVideoQuality(VideoQuality.UHD)
-
-            assertEquals(stored, stateHolder.state.value.modeSettings)
         }
     }
 
@@ -318,7 +269,6 @@ class ViewfinderSettingsDelegateTest {
     }
 
     private companion object {
-        const val SELF_TIMER_SECONDS = 5
 
         val CAPABILITIES = CameraCapabilities(
             lensFeatures = mapOf(

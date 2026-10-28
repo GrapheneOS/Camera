@@ -34,6 +34,7 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.mapper.VideoQualityFeatureMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
+import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
@@ -63,10 +64,14 @@ import javax.inject.Inject
 import kotlin.concurrent.thread
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 interface CameraSession {
     val events: Flow<CameraSessionEvent>
+    val boundCamera: StateFlow<BoundCamera?>
 
     val cameraProvider: ProcessCameraProvider?
     val isActive: Boolean
@@ -122,6 +127,9 @@ internal class CameraSessionImpl @Inject constructor(
         extraBufferCapacity = EVENT_BUFFER_CAPACITY,
     )
     override val events: Flow<CameraSessionEvent> = _events.asSharedFlow()
+
+    private val _boundCamera = MutableStateFlow<BoundCamera?>(null)
+    override val boundCamera: StateFlow<BoundCamera?> = _boundCamera.asStateFlow()
 
     override var cameraProvider: ProcessCameraProvider? = null
 
@@ -255,6 +263,7 @@ internal class CameraSessionImpl @Inject constructor(
         videoCapture = null
         iAnalyzer = null
         qrAnalyzer = null
+        _boundCamera.value = null
     }
 
     override fun initialize(forced: Boolean, extensionMode: ExtensionMode?) {
@@ -442,6 +451,7 @@ internal class CameraSessionImpl @Inject constructor(
 
         // Unbind/close all other camera(s) [if any]
         provider.unbindAll()
+        _boundCamera.value = null
         handler.removeCallbacks(qrAutofocus)
 
         val extMode = settings.mode.extensionMode
@@ -714,11 +724,27 @@ internal class CameraSessionImpl @Inject constructor(
             return BindOutcome.EXTENSION_UNUSABLE
         }
 
+        _boundCamera.value = boundCameraOf(settings)
+
         return BindOutcome.BOUND
+    }
+
+    private fun boundCameraOf(settings: CameraBindSettings): BoundCamera {
+        return BoundCamera(
+            mode = settings.mode,
+            isVideoMode = settings.isVideoMode,
+            lensFacing = lensFacing,
+            hasFlashUnit = camera?.cameraInfo?.hasFlashUnit() ?: false,
+            videoQualities = when {
+                settings.isVideoMode -> supportedVideoQualities()
+                else -> emptyList()
+            },
+        )
     }
 
     override fun unbind() {
         cameraProvider?.unbindAll()
+        _boundCamera.value = null
     }
 
     // Maps the user-chosen video quality to the equivalent groupable feature, for use when a
