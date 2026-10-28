@@ -4,6 +4,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegateImpl
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
@@ -89,4 +91,10 @@ internal abstract class ViewfinderViewModelBindsModule {
     abstract fun bindViewfinderGalleryDelegate(
         impl: ViewfinderGalleryDelegateImpl,
     ): ViewfinderGalleryDelegate
+
+    @Binds
+    @ViewModelScoped
+    abstract fun bindViewfinderDialogDelegate(
+        impl: ViewfinderDialogDelegateImpl,
+    ): ViewfinderDialogDelegate
 }

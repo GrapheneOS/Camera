@@ -11,7 +11,9 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import io.mockk.every
@@ -19,6 +21,7 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -38,6 +41,20 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(SettingsAction.CameraSettingsClicked)
 
             verify { settingsDelegate.openCameraSettings(capabilities) }
+        }
+    }
+
+    @Test
+    fun cameraSettingsClicked_inADialog_closesItAndOpensThem() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(DialogAction.Choice.CameraSettingsClicked)
+
+            verifyOrder {
+                dialogDelegate.close()
+                settingsDelegate.openCameraSettings(any())
+            }
         }
     }
 

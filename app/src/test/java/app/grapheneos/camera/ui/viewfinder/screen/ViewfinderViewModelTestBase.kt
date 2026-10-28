@@ -2,13 +2,13 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
@@ -54,7 +54,7 @@ open class ViewfinderViewModelTestBase {
     protected val orientationDelegate = mockk<ViewfinderOrientationDelegate>(relaxed = true)
     protected val screenWakeDelegate = mockk<ViewfinderScreenWakeDelegate>(relaxed = true)
     protected val galleryDelegate = mockk<ViewfinderGalleryDelegate>(relaxed = true)
-    protected val copyText = mockk<CopyText>(relaxed = true)
+    protected val dialogDelegate = mockk<ViewfinderDialogDelegate>(relaxed = true)
 
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
@@ -87,7 +87,7 @@ open class ViewfinderViewModelTestBase {
             orientationDelegate = orientationDelegate,
             screenWakeDelegate = screenWakeDelegate,
             galleryDelegate = galleryDelegate,
-            copyText = copyText,
+            dialogDelegate = dialogDelegate,
             uiStateMapper = mockk(relaxed = true),
             zoomUiStateMapper = mockk(relaxed = true),
             cameraBindSettingsMapper = mockk(relaxed = true),

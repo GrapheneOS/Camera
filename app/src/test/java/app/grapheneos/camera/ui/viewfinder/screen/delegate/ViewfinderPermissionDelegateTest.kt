@@ -43,33 +43,17 @@ class ViewfinderPermissionDelegateTest {
     }
 
     @Test
-    fun dialog_isShownUntilDismissed() {
-        val delegate = createDelegate()
+    fun dialog_isShownForThePermission() {
+        createDelegate().showDialog(AppPermission.CAMERA)
 
-        delegate.showDialog(AppPermission.CAMERA)
-        assertEquals(
-            ViewfinderDialog.Permission(
-                permission = AppPermission.CAMERA,
-                offersSettings = true,
-            ),
-            state().dialog,
-        )
-
-        delegate.dismissDialog()
-        assertNull(state().dialog)
+        assertEquals(ViewfinderDialog.CameraPermission(offersSettings = true), state().dialog)
     }
 
     @Test
     fun dialog_inALockscreenSession_offersNoSettings() {
         createDelegate(isSecureSession = true).showDialog(AppPermission.MICROPHONE)
 
-        assertEquals(
-            ViewfinderDialog.Permission(
-                permission = AppPermission.MICROPHONE,
-                offersSettings = false,
-            ),
-            state().dialog,
-        )
+        assertEquals(ViewfinderDialog.MicrophonePermission(offersSettings = false), state().dialog)
     }
 
     @Test
@@ -103,49 +87,13 @@ class ViewfinderPermissionDelegateTest {
     }
 
     @Test
-    fun openSettings_closesTheDialogOnTheWay() {
+    fun openSettings_opensTheAppSettings() {
         runTest {
             val effects = collectEffects(stateHolder)
-            val delegate = createDelegate()
 
-            delegate.showDialog(AppPermission.MICROPHONE)
-            effects.clear()
+            createDelegate().openSettings()
 
-            delegate.openSettings()
-
-            assertNull(state().dialog)
             assertEquals(listOf(Effect.Permission.OpenSettings), effects)
-        }
-    }
-
-    @Test
-    fun cameraDialogDismissed_closesTheScreen() {
-        runTest {
-            val effects = collectEffects(stateHolder)
-            val delegate = createDelegate()
-
-            delegate.showDialog(AppPermission.CAMERA)
-            effects.clear()
-
-            delegate.onDialogDismissed(AppPermission.CAMERA)
-
-            assertNull(state().dialog)
-            assertEquals(listOf(Effect.CloseScreen), effects)
-        }
-    }
-
-    @Test
-    fun microphoneDialogDismissed_keepsTheScreen() {
-        runTest {
-            val effects = collectEffects(stateHolder)
-            val delegate = createDelegate()
-
-            delegate.showDialog(AppPermission.MICROPHONE)
-            effects.clear()
-
-            delegate.onDialogDismissed(AppPermission.MICROPHONE)
-
-            assertTrue(effects.isEmpty())
         }
     }
 

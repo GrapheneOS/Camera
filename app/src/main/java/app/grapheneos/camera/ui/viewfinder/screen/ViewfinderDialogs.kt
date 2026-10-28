@@ -1,48 +1,70 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import androidx.compose.runtime.Composable
-import app.grapheneos.camera.data.permission.model.AppPermission
+import androidx.compose.ui.res.stringResource
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.viewfinder.components.dialog.CameraPermissionDialog
 import app.grapheneos.camera.ui.viewfinder.components.dialog.MicrophonePermissionDialog
+import app.grapheneos.camera.ui.viewfinder.components.dialog.PictureFailureDetailsDialog
+import app.grapheneos.camera.ui.viewfinder.components.dialog.PictureFailureDialog
 import app.grapheneos.camera.ui.viewfinder.components.dialog.StorageLocationNotFoundDialog
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction as Action
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog as Dialog
 
 @Composable
 internal fun ViewfinderDialogs(
     dialog: Dialog?,
-    onAction: (Action) -> Unit,
+    onAction: (DialogAction) -> Unit,
 ) {
+    val onDismiss = { onAction(DialogAction.Dismissed) }
+
     when (dialog) {
-        is Dialog.Permission -> when (dialog.permission) {
-            AppPermission.CAMERA -> CameraPermissionDialog(
-                offersSettings = dialog.offersSettings,
-                onSettingsClick = { onAction(PermissionAction.SettingsClicked) },
-                onDismiss = { onAction(DialogAction.Dismissed) },
-            )
-
-            AppPermission.MICROPHONE -> MicrophonePermissionDialog(
-                offersSettings = dialog.offersSettings,
-                onSettingsClick = { onAction(PermissionAction.SettingsClicked) },
-                onRecordWithoutAudioClick = { onAction(RecordingAction.RecordWithoutAudioClicked) },
-                onDismiss = { onAction(DialogAction.Dismissed) },
-            )
-
-            AppPermission.LOCATION -> Unit
-        }
-
-        is Dialog.StorageLocationNotFound -> StorageLocationNotFoundDialog(
-            onConfirm = { onAction(DialogAction.Dismissed) },
-            onCameraSettingsClick = {
-                onAction(DialogAction.Dismissed)
-                onAction(SettingsAction.CameraSettingsClicked)
-            },
+        is Dialog.CameraPermission -> CameraPermissionDialog(
+            offersSettings = dialog.offersSettings,
+            onSettingsClick = { onAction(DialogAction.Choice.PermissionSettingsClicked) },
+            onDismiss = onDismiss,
         )
 
+        is Dialog.MicrophonePermission -> MicrophonePermissionDialog(
+            offersSettings = dialog.offersSettings,
+            onSettingsClick = { onAction(DialogAction.Choice.PermissionSettingsClicked) },
+            onRecordWithoutAudioClick = { onAction(DialogAction.Choice.RecordWithoutAudioClicked) },
+            onDismiss = onDismiss,
+        )
+
+        is Dialog.StorageLocationNotFound -> StorageLocationNotFoundDialog(
+            onConfirm = onDismiss,
+            onCameraSettingsClick = { onAction(DialogAction.Choice.CameraSettingsClicked) },
+        )
+
+        is Dialog.PictureFailure -> when {
+            dialog.showsDetails -> PictureFailureDetailsDialog(
+                details = dialog.details,
+                onCopyClick = { onAction(DialogAction.PictureFailureDetailsCopyClicked) },
+                onDismiss = onDismiss,
+            )
+
+            else -> PictureFailureDialog(
+                message = pictureFailureMessage(dialog.cause),
+                onShowDetailsClick = { onAction(DialogAction.PictureFailureDetailsClicked) },
+                onDismiss = onDismiss,
+            )
+        }
+
         null -> Unit
+    }
+}
+
+@Composable
+private fun pictureFailureMessage(cause: PictureFailureCause): String {
+    return when (cause) {
+        is PictureFailureCause.Capture -> {
+            stringResource(R.string.unable_to_capture_image_verbose, cause.errorCode)
+        }
+
+        is PictureFailureCause.Save -> {
+            stringResource(R.string.unable_to_save_image_verbose, cause.stage)
+        }
     }
 }

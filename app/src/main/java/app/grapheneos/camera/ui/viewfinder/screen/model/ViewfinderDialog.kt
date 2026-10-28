@@ -1,13 +1,20 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import app.grapheneos.camera.data.permission.model.AppPermission
-
 sealed interface ViewfinderDialog {
 
     data object StorageLocationNotFound : ViewfinderDialog
 
-    data class Permission(
-        val permission: AppPermission,
+    data class CameraPermission(
         val offersSettings: Boolean,
+    ) : ViewfinderDialog
+
+    data class MicrophonePermission(
+        val offersSettings: Boolean,
+    ) : ViewfinderDialog
+
+    data class PictureFailure(
+        val cause: PictureFailureCause,
+        val details: String,
+        val showsDetails: Boolean = false,
     ) : ViewfinderDialog
 }

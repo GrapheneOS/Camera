@@ -26,7 +26,6 @@ import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
 import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
-import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
 import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
 import app.grapheneos.camera.ui.common.videoQualityTitle
 import app.grapheneos.camera.ui.core.activity.SecureActivity
@@ -37,7 +36,6 @@ import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
@@ -96,9 +94,11 @@ internal class ViewfinderEffectHandlerImpl(
         showQrResultDialog(
             activity = activity,
             rawText = text,
-            onCopyText = { copiedText -> copy(copiedText.toString()) },
+            onCopyText = { copiedText ->
+                onAction(DialogAction.QrResultCopyClicked(copiedText.toString()))
+            },
             onDismissed = {
-                onAction(LifecycleAction.QrResultDismissed)
+                onAction(DialogAction.QrResultDismissed)
             },
         )
     }
@@ -315,8 +315,6 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handlePicture(effect: Effect.Picture) {
         when (effect) {
-            is Effect.Picture.CaptureFailed -> showCaptureFailure(effect)
-            is Effect.Picture.SaveFailed -> showSaveFailure(effect)
             is Effect.Picture.PreviewCaptured -> showCapturedPreview(effect.bitmap)
             is Effect.Picture.PreviewFailed -> showCapturedPreviewFailure()
             is Effect.Picture.PreviewStored -> finishCapture(stored = true)
@@ -326,38 +324,6 @@ internal class ViewfinderEffectHandlerImpl(
                 captureActivity()?.returnCapturedBitmap(effect.bitmap)
             }
         }
-    }
-
-    private fun showCaptureFailure(effect: Effect.Picture.CaptureFailed) {
-        showPictureFailureDialog(
-            activity = activity,
-            message = activity.getString(
-                R.string.unable_to_capture_image_verbose,
-                effect.errorCode,
-            ),
-            stackTrace = effect.stackTrace,
-            onCopyDetails = ::copy,
-        )
-    }
-
-    private fun showSaveFailure(effect: Effect.Picture.SaveFailed) {
-        when {
-            effect.alreadyReported -> activity.showMessage(R.string.unable_to_save_image)
-
-            else -> showPictureFailureDialog(
-                activity = activity,
-                message = activity.getString(
-                    R.string.unable_to_save_image_verbose,
-                    effect.stage,
-                ),
-                stackTrace = effect.stackTrace,
-                onCopyDetails = ::copy,
-            )
-        }
-    }
-
-    private fun copy(text: String) {
-        onAction(DialogAction.CopyClicked(text))
     }
 
     private fun showCapturedPreview(bitmap: Bitmap) {

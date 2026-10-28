@@ -16,8 +16,6 @@ interface ViewfinderPermissionDelegate {
     fun request(permission: AppPermission, explainsFirst: Boolean)
     fun showDialog(permission: AppPermission)
     fun openSettings()
-    fun onDialogDismissed(permission: AppPermission)
-    fun dismissDialog()
 }
 
 internal class ViewfinderPermissionDelegateImpl @Inject constructor(
@@ -32,16 +30,20 @@ internal class ViewfinderPermissionDelegateImpl @Inject constructor(
     }
 
     override fun refresh() {
-        val dialog = stateHolder.state.value.dialog
+        val dialogPermission = when (stateHolder.state.value.dialog) {
+            is ViewfinderDialog.CameraPermission -> AppPermission.CAMERA
+            is ViewfinderDialog.MicrophonePermission -> AppPermission.MICROPHONE
+            else -> null
+        }
         val missing = AppPermission.entries.filterNotTo(mutableSetOf()) {
             permissionRepository.isGranted(it)
         }
 
         stateHolder.update { it.copy(missingPermissions = missing) }
 
-        if (dialog !is ViewfinderDialog.Permission || dialog.permission in missing) return
+        if (dialogPermission == null || dialogPermission in missing) return
 
-        dismissDialog()
+        stateHolder.update { it.copy(dialog = null) }
     }
 
     override fun request(
@@ -57,31 +59,17 @@ internal class ViewfinderPermissionDelegateImpl @Inject constructor(
     }
 
     override fun showDialog(permission: AppPermission) {
-        val dialog = ViewfinderDialog.Permission(
-            permission = permission,
-            offersSettings = !entryPoint.isSecureSession,
-        )
+        val offersSettings = !entryPoint.isSecureSession
+        val dialog = when (permission) {
+            AppPermission.CAMERA -> ViewfinderDialog.CameraPermission(offersSettings)
+            AppPermission.MICROPHONE -> ViewfinderDialog.MicrophonePermission(offersSettings)
+            AppPermission.LOCATION -> return
+        }
 
         stateHolder.update { it.copy(dialog = dialog) }
     }
 
     override fun openSettings() {
-        dismissDialog()
         stateHolder.postEffect(Effect.Permission.OpenSettings)
-    }
-
-    override fun onDialogDismissed(permission: AppPermission) {
-        dismissDialog()
-
-        // The dialog could have either been dismissed by clicking on the
-        // background or by clicking the cancel button. So in those cases,
-        // the app should exit as the app depends on the camera permission.
-        if (permission == AppPermission.CAMERA) {
-            stateHolder.postEffect(Effect.CloseScreen)
-        }
-    }
-
-    override fun dismissDialog() {
-        stateHolder.update { it.copy(dialog = null) }
     }
 }
