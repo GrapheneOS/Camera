@@ -39,10 +39,6 @@ sealed interface ViewfinderScreenEffect {
         data class Flash(
             val selfIlluminate: Boolean,
         ) : Preview
-
-        data class ApplySelfIllumination(
-            val enabled: Boolean,
-        ) : Preview
     }
 
     sealed interface Settings : ViewfinderScreenEffect {

@@ -41,6 +41,7 @@ data class ViewfinderUiState(
     val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,
     val isQrMode: Boolean = false,
     val isVideoMode: Boolean = false,
+    val isSelfIlluminating: Boolean = false,
     val scanAllCodes: Boolean = false,
     val handlesVolumeKeys: Boolean = true,
     val availableModes: Set<CameraMode> = emptySet(),

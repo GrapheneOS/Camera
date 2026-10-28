@@ -59,6 +59,19 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
+    fun selfIlluminationToggled_storesItWithoutTellingTheScreen() {
+        runTest {
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(SettingsAction.SelfIlluminationToggled(enabled = true))
+
+            verify { settingsDelegate.setSelfIllumination(true) }
+            assertEquals(emptyList<ViewfinderScreenEffect>(), effects)
+        }
+    }
+
+    @Test
     fun enableLocationClicked_opensTheLocationSettings() {
         runTest {
             val viewModel = createViewModel()

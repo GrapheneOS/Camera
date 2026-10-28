@@ -28,6 +28,7 @@ internal class ViewfinderViewRenderer(
     private var renderedIconRotation: Float? = null
     private var renderedLevelFrameRotation: Float? = null
     private var renderedKeepScreenOn = false
+    private var renderedSelfIlluminating = false
     private var renderedThumbnail: Bitmap? = null
 
     fun render(state: ViewfinderUiState) {
@@ -66,6 +67,7 @@ internal class ViewfinderViewRenderer(
         activity.exposureBar.render(state.exposure)
 
         renderKeepScreenOn(state.keepScreenOn)
+        renderSelfIllumination(state.isSelfIlluminating)
         renderThumbnailLoader(state.thumbnailLoaderVisible)
         renderThumbnail(state.thumbnail)
         renderModeTabs(state)
@@ -92,6 +94,13 @@ internal class ViewfinderViewRenderer(
             keepScreenOn -> activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             else -> activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    private fun renderSelfIllumination(selfIlluminating: Boolean) {
+        if (selfIlluminating == renderedSelfIlluminating) return
+        renderedSelfIlluminating = selfIlluminating
+
+        activity.settingsDialog.selfIllumination(selfIlluminating)
     }
 
     private fun renderThumbnailLoader(visible: Boolean) {
