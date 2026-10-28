@@ -35,7 +35,13 @@ class ImageCapturer(val mActivity: MainActivity) {
 
     private var currentImageSaver : ImageSaver? = null
 
+    private var isCaptureButtonFaded = false
+
     private fun fadeCaptureButton() {
+        // The shutter stops the recording a snapshot is taken from, so it stays live for one
+        if (mActivity.videoCapturer.isRecording) return
+
+        isCaptureButtonFaded = true
         mActivity.captureButton.isEnabled = false
 
         val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 0.6f)
@@ -47,6 +53,9 @@ class ImageCapturer(val mActivity: MainActivity) {
     }
 
     private fun unfadeCaptureButton() {
+        if (!isCaptureButtonFaded) return
+
+        isCaptureButtonFaded = false
         mActivity.captureButton.isEnabled = true
 
         val animation: Animation = AlphaAnimation(mActivity.captureButton.alpha, 1f)
@@ -234,9 +243,9 @@ class ImageCapturer(val mActivity: MainActivity) {
         }
     }
 
-    fun onThumbnailGenerated(thumbnail: Bitmap?) {
+    fun onThumbnailGenerated(item: CapturedItem, thumbnail: Bitmap?) {
         mActivity.previewLoader.visibility = View.GONE
-        mActivity.imagePreview.setImageBitmap(thumbnail)
+        mActivity.showThumbnail(item, thumbnail)
     }
 
     companion object {

@@ -103,7 +103,7 @@ class ImageSaver(
             val imageFormat = image.format
 
             origJpegBytes = if (imageFormat == ImageFormat.JPEG) {
-                ImageUtil.jpegImageToJpegByteArray(image)
+                withoutTrailingPadding(ImageUtil.jpegImageToJpegByteArray(image))
             } else if (imageFormat == ImageFormat.YUV_420_888) {
                 ImageUtil.yuvImageToJpegByteArray(image, cropRect, jpegQuality, 0)
             } else {
@@ -123,15 +123,34 @@ class ImageSaver(
         }
     }
 
+    private fun withoutTrailingPadding(jpeg: ByteArray): ByteArray {
+        val length = jpeg.indexOfLast { it != 0.toByte() } + 1
+        if (length == jpeg.size) {
+            return jpeg
+        }
+
+        // Only zeros straight after the EOI marker are padding. Without the marker right before
+        // them they may be image data, e.g. of a JPEG that ends early
+        if (!endsWithEoiMarker(jpeg, length)) {
+            return jpeg
+        }
+
+        return jpeg.copyOf(length)
+    }
+
+    private fun endsWithEoiMarker(jpeg: ByteArray, length: Int): Boolean {
+        return length >= 2 && jpeg[length - 2] == 0xff.toByte() && jpeg[length - 1] == 0xd9.toByte()
+    }
+
     private fun saveImage() {
-        try {
+        val item = try {
             saveImageInner()
         } catch (e: ImageSaverException) {
             handleError(e)
             return
         }
 
-        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive(this::generateThumbnail)
+        imageCapturer.mActivity.thumbnailLoaderExecutor.executeIfAlive { generateThumbnail(item) }
     }
 
     private var cropRect: Rect? = null
@@ -141,7 +160,7 @@ class ImageSaver(
     private var orientation = 0
 
     @Throws(ImageSaverException::class)
-    private fun saveImageInner() {
+    private fun saveImageInner(): CapturedItem {
         val uncroppedJpegBytes = origJpegBytes!!
         if (cropRect != null) {
             try {
@@ -207,6 +226,7 @@ class ImageSaver(
 
         val capturedItem = CapturedItem(ITEM_TYPE_IMAGE, dateString(), uri)
         mainThreadExecutor.execute { imageCapturer.onImageSaverSuccess(capturedItem) }
+        return capturedItem
     }
 
     // based on EXIF update sequence in androidx.camera.core.ImageSaver#saveImageToTempFile(),
@@ -273,7 +293,7 @@ class ImageSaver(
         return res
     }
 
-    private fun generateThumbnail() {
+    private fun generateThumbnail(item: CapturedItem) {
         val source = ImageDecoder.createSource(ByteBuffer.wrap(processedJpegBytes))
         val bitmap = try {
             ImageDecoder.decodeBitmap(source, ImageResizer(targetThumbnailWidth, targetThumbnailHeight))
@@ -283,7 +303,7 @@ class ImageSaver(
             Log.w(TAG, "unable to generate a thumbnail", e)
             null
         }
-        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(bitmap) }
+        mainThreadExecutor.execute { imageCapturer.onThumbnailGenerated(item, bitmap) }
     }
 
     fun saveToMediaStore() = storageLocation == CamConfig.SettingValues.Default.STORAGE_LOCATION

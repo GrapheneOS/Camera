@@ -73,6 +73,8 @@ import androidx.core.view.updateMargins
 import app.grapheneos.camera.App
 import app.grapheneos.camera.CamConfig
 import app.grapheneos.camera.CameraMode
+import app.grapheneos.camera.CapturedItem
+import app.grapheneos.camera.CapturedItems
 import app.grapheneos.camera.ITEM_TYPE_IMAGE
 import app.grapheneos.camera.ITEM_TYPE_VIDEO
 import app.grapheneos.camera.R
@@ -724,7 +726,10 @@ open class MainActivity : AppCompatActivity(),
             KeyEvent.KEYCODE_VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_CAMERA -> {
-                captureButton.performClick()
+                // performClick() ignores both, so check them: a key may only do what a tap could
+                if (captureButton.isShown && captureButton.isEnabled) {
+                    captureButton.performClick()
+                }
             }
             KeyEvent.KEYCODE_FOCUS -> {
                 // cancel any manual focus
@@ -1994,6 +1999,7 @@ open class MainActivity : AppCompatActivity(),
         rearSelfieController?.dispose()
         rearSelfieController = null
         super.onDestroy()
+        camConfig.stopAwaitingCameraReturn()
         SensorOrientationChangeNotifier.clearInstance()
         thumbnailLoaderExecutor.shutdownNow()
         frameCopyThread?.quitSafely()
@@ -2102,50 +2108,101 @@ open class MainActivity : AppCompatActivity(),
 
     var isThumbnailLoaded = false
 
+    // The capture that the thumbnail shows
+    private var thumbnailItem: CapturedItem? = null
+
+    fun showThumbnail(item: CapturedItem?, bitmap: Bitmap?) {
+        imagePreview.setImageBitmap(bitmap)
+        thumbnailItem = if (bitmap != null) item else null
+    }
+
     fun updateThumbnail() {
         val item = camConfig.lastCapturedItem
         val preview = imagePreview
-        preview.setImageBitmap(null)
         isThumbnailLoaded = false
+
+        // The same capture keeps its thumbnail while it reloads, or it would flash empty on every
+        // return to this screen. Told apart by file, since items equal by name
+        val shownItem = thumbnailItem
+        if (item == null || shownItem == null ||
+            CapturedItems.fileKey(item.uri) != CapturedItems.fileKey(shownItem.uri)) {
+            showThumbnail(null, null)
+        }
 
         if (item == null) {
             return
         }
 
         val ctx = applicationContext
+        val side = preview.layoutParams.width
+        // What the gallery opened from here shows; a secure session shows only its own captures,
+        // told apart by file since items equal by name
+        val videosOnly = requiresVideoModeOnly
+        val sessionFiles = when (this) {
+            is SecureMainActivity -> capturedItems.mapTo(HashSet()) { CapturedItems.fileKey(it.uri) }
+            is SecureActivity -> emptySet()
+            else -> null
+        }
 
         thumbnailLoaderExecutor.executeIfAlive {
-            var bitmap: Bitmap? = null
-            try {
-                val side = preview.layoutParams.width
+            var shown: CapturedItem? = item
+            var replaced = false
+            var bitmap = loadThumbnail(ctx, item, side)
+            var listedEverywhere = true
 
-                if (item.type == ITEM_TYPE_VIDEO) {
-                    val origBitmap = getVideoThumbnail(ctx, item.uri)
-                    origBitmap?.let {
-                        val w = it.width.toDouble()
-                        val h = it.height.toDouble()
-                        val ratio = max(w / side, h / side)
-
-                        bitmap = it.scale((w / ratio).toInt(), (h / ratio).toInt())
-                        origBitmap.recycle()
-                    }
-                } else if (item.type == ITEM_TYPE_IMAGE) {
-                    val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
-                    bitmap = ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+            // A file still there that fails to decode would otherwise be listed for on every resume
+            if (bitmap == null && !CapturedItems.isPresent(ctx, item)) {
+                val listing = try {
+                    CapturedItems.list(ctx)
+                } catch (_: InterruptedException) {
+                    return@executeIfAlive
                 }
-            } catch (e: Exception) {
-                Log.d(TAG, "unable to update preview", e)
+                // Deleted or moved away since, in the gallery or by another app
+                if (listing.lacks(item)) {
+                    shown = listing.files.filter {
+                        (sessionFiles == null || CapturedItems.fileKey(it.uri) in sessionFiles) &&
+                                (!videosOnly || it.type == ITEM_TYPE_VIDEO)
+                    }.maxByOrNull { it.dateString }
+                    // Possibly by a file of the same name, which equals it
+                    replaced = true
+                    bitmap = shown?.let { loadThumbnail(ctx, it, side) }
+                    // A location that could not be listed may hold a newer one
+                    listedEverywhere = listing.isComplete
+                }
             }
 
-            if (bitmap != null) {
-                mainExecutor.execute {
-                    if (isStarted && camConfig.lastCapturedItem == item) {
-                        preview.setImageBitmap(bitmap)
-                        isThumbnailLoaded = true
+            mainExecutor.execute {
+                if (isStarted && camConfig.lastCapturedItem == item) {
+                    if (replaced) {
+                        val seesEveryItem = sessionFiles == null && !videosOnly && listedEverywhere
+                        camConfig.replaceLastCapturedItem(shown, save = seesEveryItem)
                     }
+                    showThumbnail(shown, bitmap)
+                    isThumbnailLoaded = bitmap != null
                 }
             }
         }
+    }
+
+    private fun loadThumbnail(ctx: Context, item: CapturedItem, side: Int): Bitmap? {
+        try {
+            if (item.type == ITEM_TYPE_VIDEO) {
+                val origBitmap = getVideoThumbnail(ctx, item.uri) ?: return null
+                val w = origBitmap.width.toDouble()
+                val h = origBitmap.height.toDouble()
+                val ratio = max(w / side, h / side)
+
+                val bitmap = origBitmap.scale((w / ratio).toInt(), (h / ratio).toInt())
+                origBitmap.recycle()
+                return bitmap
+            } else if (item.type == ITEM_TYPE_IMAGE) {
+                val source = ImageDecoder.createSource(ctx.contentResolver, item.uri)
+                return ImageDecoder.decodeBitmap(source, ImageResizer(side, side))
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "unable to update preview", e)
+        }
+        return null
     }
 
     open fun shouldShowCameraModeTabs() = true

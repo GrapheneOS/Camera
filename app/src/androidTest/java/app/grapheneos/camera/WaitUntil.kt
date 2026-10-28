@@ -3,6 +3,8 @@ package app.grapheneos.camera
 import android.app.Activity
 import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
+import app.grapheneos.camera.ui.activities.MainActivity
+import java.util.concurrent.ExecutorService
 
 /**
  * Polls [condition] on the activity until it holds, and fails the test if it never does.
@@ -24,4 +26,13 @@ fun <A : Activity> waitUntil(
         Thread.sleep(100)
     }
     throw AssertionError("Timed out after ${timeoutMs}ms waiting until $description")
+}
+
+/** Waits for the thumbnail loader to finish its work and for the result it posted to apply. */
+fun <A : MainActivity> awaitThumbnailLoader(scenario: ActivityScenario<A>) {
+    lateinit var loader: ExecutorService
+    scenario.onActivity { loader = it.thumbnailLoaderExecutor }
+    loader.submit {}.get()
+    // Runs after the result the loader posted
+    scenario.onActivity {}
 }

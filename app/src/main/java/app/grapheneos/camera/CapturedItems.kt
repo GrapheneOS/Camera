@@ -159,6 +159,36 @@ internal fun editCapturedItem(activity: Activity, item: CapturedItem, useDefault
     }
 }
 
+class CapturedItemsListing(
+    /** Every file listed, including those that share a name with one in another folder. */
+    val files: List<CapturedItem>,
+    private val listedMediaStore: Boolean,
+    private val unlistedTrees: List<Uri>,
+) {
+    /** One item per name, as the gallery shows them. */
+    val items = files.distinct()
+
+    private val fileKeys by lazy { files.mapTo(HashSet()) { CapturedItems.fileKey(it.uri) } }
+
+    val isComplete get() = listedMediaStore && unlistedTrees.isEmpty()
+
+    /** Whether [item] is gone, rather than in a location that could not be listed. */
+    fun lacks(item: CapturedItem): Boolean {
+        // Items equal by name, which a file in another folder can share
+        if (CapturedItems.fileKey(item.uri) in fileKeys) {
+            return false
+        }
+        val uri = item.uri
+        if (uri.authority == MediaStore.AUTHORITY) {
+            return listedMediaStore
+        }
+        return !DocumentsContract.isTreeUri(uri) || unlistedTrees.none {
+            it.authority == uri.authority &&
+                DocumentsContract.getTreeDocumentId(it) == DocumentsContract.getTreeDocumentId(uri)
+        }
+    }
+}
+
 object CapturedItems {
     const val TAG = "CapturedItems"
 
@@ -238,24 +268,73 @@ object CapturedItems {
     }
 
     @Throws(InterruptedException::class)
-    fun get(ctx: Context): List<CapturedItem> {
+    fun get(ctx: Context): List<CapturedItem> = list(ctx).items
+
+    @Throws(InterruptedException::class)
+    fun list(ctx: Context): CapturedItemsListing {
         val resolver = ctx.contentResolver
         val list = ArrayList<CapturedItem>()
 
-        collectMediaStoreItems(resolver, MediaStore.VOLUME_EXTERNAL_PRIMARY, list)
+        val listedMediaStore =
+            collectMediaStoreItems(resolver, MediaStore.VOLUME_EXTERNAL_PRIMARY, list)
 
+        val unlistedTrees = ArrayList<Uri>()
         getSafTrees(ctx.getSharedPreferences(CamConfig.COMMON_SHARED_PREFS_NAME, Context.MODE_PRIVATE)).forEach {
             if (Thread.interrupted()) {
                 // executor is shutting down
                 throw InterruptedException()
             }
-            collectSafItems(resolver, it, list)
+            if (!collectSafItems(resolver, it, list)) {
+                unlistedTrees.add(it)
+            }
         }
 
-        return list.distinct()
+        return CapturedItemsListing(list, listedMediaStore, unlistedTrees)
     }
 
-    private fun collectMediaStoreItems(resolver: ContentResolver, volumeName: String, dest: ArrayList<CapturedItem>) {
+    /**
+     * Whether [item] can still be found where it was saved. False too when its provider can't
+     * say, which only a listing tells apart from it being gone.
+     */
+    fun isPresent(ctx: Context, item: CapturedItem): Boolean {
+        val uri = item.uri
+        val idColumn = if (uri.authority == MediaStore.AUTHORITY) {
+            BaseColumns._ID
+        } else {
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID
+        }
+
+        return try {
+            ctx.contentResolver.query(uri, arrayOf(idColumn), null, null)?.use {
+                it.count > 0
+            } ?: false
+        } catch (e: Exception) {
+            Log.d(TAG, "unable to look up ${item.uiName()}", e)
+            false
+        }
+    }
+
+    /**
+     * The provider and id of the file [uri] names. A listing names a file by another uri than the
+     * one it was saved under, and two files can share a name, which is all items compare by.
+     */
+    fun fileKey(uri: Uri): Pair<String?, String> {
+        val id = try {
+            if (uri.authority == MediaStore.AUTHORITY) {
+                ContentUris.parseId(uri).toString()
+            } else {
+                DocumentsContract.getDocumentId(uri)
+            }
+        } catch (e: IllegalArgumentException) {
+            uri.toString()
+        }
+        return uri.authority to id
+    }
+
+    // Both return whether they listed every item: a provider that is down gives no cursor
+    private fun collectMediaStoreItems(
+        resolver: ContentResolver, volumeName: String, dest: ArrayList<CapturedItem>
+    ): Boolean {
         val volumeUri = MediaStore.Files.getContentUri(volumeName)
 
         val columns = arrayOf(BaseColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME)
@@ -274,13 +353,17 @@ object CapturedItems {
                         dest.add(it)
                     }
                 }
+                return true
             }
         } catch (e: Exception) {
             Log.d(TAG, "unable to collect MediaStore items, volume $volumeName", e)
         }
+        return false
     }
 
-    private fun collectSafItems(resolver: ContentResolver, treeUri: Uri, dest: ArrayList<CapturedItem>) {
+    private fun collectSafItems(
+        resolver: ContentResolver, treeUri: Uri, dest: ArrayList<CapturedItem>
+    ): Boolean {
         val treeId = DocumentsContract.getTreeDocumentId(treeUri)
         val childDocumentsUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeId)
 
@@ -301,12 +384,14 @@ object CapturedItems {
                         dest.add(it)
                     }
                 }
+                return true
             }
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) {
                 Log.d(TAG, "unable to collect SAF items, treeUri $treeUri", e)
             }
         }
+        return false
     }
 
     fun maybeGetCurentSafTree(prefs: SharedPreferences): Uri? {

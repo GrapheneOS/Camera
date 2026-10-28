@@ -200,6 +200,9 @@
     <string name="unable_to_save_video">Unable to save this video</string>
     <string name="unable_to_save_video_verbose">Unable to save this video, error code: %d</string>
     <string name="unable_to_play_video">Unable to play this video</string>
+    <string name="recording_stopped_storage_almost_full">Recording stopped because the storage is almost full</string>
+    <string name="recording_stopped_camera_lost">Recording stopped because the camera stopped working</string>
+    <string name="recording_not_started_camera_lost">Recording could not start because the camera stopped working</string>
     <string name="error_during_recording">A error has occurred finishing the current recording, error code: %d</string>
     <string name="unable_to_access_output_file">Unable to access output file</string>
     <string name="please_wait_for_image_to_get_captured_before_sharing">Please wait for the image to get captured before attempting to share via long tap</string>
