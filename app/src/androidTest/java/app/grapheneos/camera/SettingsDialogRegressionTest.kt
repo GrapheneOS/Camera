@@ -6,6 +6,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,10 +37,8 @@ class SettingsDialogRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
 
-            scenario.onActivity { activity ->
-                activity.settingsDialog.show()
-                assertTrue(activity.settingsDialog.isShowing)
-            }
+            scenario.onActivity { it.viewfinder.onAction(SettingsAction.SettingsIconClicked) }
+            waitUntil(scenario, "the settings panel is shown") { it.settingsDialog.isShowing }
 
             scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
 
@@ -62,12 +63,15 @@ class SettingsDialogRegressionTest {
             scenario.onActivity { activity ->
                 assertFalse(activity.onBackPressedDispatcher.hasEnabledCallbacks())
 
-                activity.settingsDialog.show()
+                activity.viewfinder.onAction(SettingsAction.SettingsIconClicked)
+            }
+            waitUntil(scenario, "the settings panel is shown") { it.settingsDialog.isShowing }
+
+            scenario.onActivity { activity ->
                 assertTrue(activity.onBackPressedDispatcher.hasEnabledCallbacks())
 
-                activity.settingsDialog.slideDialogUp()
+                activity.viewfinder.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
             }
-
             waitUntil(scenario, "the settings panel is dismissed") {
                 !it.settingsDialog.isShowing
             }

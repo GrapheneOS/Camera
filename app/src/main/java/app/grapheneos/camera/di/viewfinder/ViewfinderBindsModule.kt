@@ -10,8 +10,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
@@ -66,9 +66,9 @@ internal abstract class ViewfinderBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindSwipeEffectMapper(
-        impl: SwipeEffectMapperImpl,
-    ): SwipeEffectMapper
+    abstract fun bindSwipeOutcomeMapper(
+        impl: SwipeOutcomeMapperImpl,
+    ): SwipeOutcomeMapper
 
     @Binds
     @Reusable

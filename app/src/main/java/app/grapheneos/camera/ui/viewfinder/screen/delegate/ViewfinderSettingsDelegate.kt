@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 
@@ -28,6 +29,9 @@ interface ViewfinderSettingsDelegate {
     fun setFlashMode(value: FlashMode)
     fun setSelfIllumination(enabled: Boolean)
     fun setVideoQuality(quality: VideoQuality)
+
+    fun openSettingsPanel()
+    fun onSettingsPanelVisibilityChanged(visible: Boolean)
 
     fun openCameraSettings(capabilities: CameraCapabilities)
 }
@@ -107,6 +111,16 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         }
 
         stateHolder.update { it.copy(modeSettings = modeSettings) }
+    }
+
+    override fun openSettingsPanel() {
+        if (stateHolder.state.value.isQrMode()) return
+
+        stateHolder.postNavEvent(NavEvent.OpenSettingsPanel)
+    }
+
+    override fun onSettingsPanelVisibilityChanged(visible: Boolean) {
+        stateHolder.update { it.copy(isSettingsPanelOpen = visible) }
     }
 
     override fun openCameraSettings(capabilities: CameraCapabilities) {

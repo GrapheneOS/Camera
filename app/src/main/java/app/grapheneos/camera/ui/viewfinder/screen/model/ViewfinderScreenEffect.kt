@@ -47,10 +47,6 @@ sealed interface ViewfinderScreenEffect {
 
     sealed interface Settings : ViewfinderScreenEffect {
 
-        data object OpenSheet : Settings
-
-        data object CloseSheet : Settings
-
         data object ShowQrFormats : Settings
 
         data class OpenCameraSettings(

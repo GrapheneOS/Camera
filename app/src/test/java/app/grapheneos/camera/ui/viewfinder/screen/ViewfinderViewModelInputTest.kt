@@ -104,25 +104,6 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun previewSwiped_sidewaysMovesAcrossTheModeTabs() {
-        runTest {
-            val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.LEFT))
-            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.RIGHT))
-
-            assertEquals(
-                listOf(
-                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = 1),
-                    ViewfinderScreenEffect.ModeTab.SelectAdjacent(offset = -1),
-                ),
-                effects,
-            )
-        }
-    }
-
-    @Test
     fun flipCameraClicked_towardsAnUnavailableLens_saysSoAndDoesNotRebind() {
         runTest {
             val viewModel = createViewModel()
@@ -229,16 +210,19 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun settingsIconClicked_opensTheSheetOutsideQrMode() {
+    fun settingsPanel_followsTheIconSwipesAndTheHost() {
         runTest {
             val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
 
             viewModel.onAction(SettingsAction.SettingsIconClicked)
-            stateHolder.update { state -> state.copy(mode = CameraMode.QR_SCAN) }
-            viewModel.onAction(SettingsAction.SettingsIconClicked)
+            viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
+            viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
 
-            assertEquals(listOf(ViewfinderScreenEffect.Settings.OpenSheet), effects)
+            verifyOrder {
+                settingsDelegate.openSettingsPanel()
+                gestureDelegate.onPreviewSwiped(SwipeDirection.UP)
+                settingsDelegate.onSettingsPanelVisibilityChanged(true)
+            }
         }
     }
 

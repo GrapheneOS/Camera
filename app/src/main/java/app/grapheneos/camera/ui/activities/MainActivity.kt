@@ -35,6 +35,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -61,6 +63,9 @@ import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.common.dialog.SettingsDialog
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
+import app.grapheneos.camera.ui.navigation.Navigator
+import app.grapheneos.camera.ui.navigation.NavigatorImpl
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -76,6 +81,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderNavigationCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderOverlay
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
@@ -241,6 +247,8 @@ open class MainActivity : AppCompatActivity() {
             onLateFrame = ::showLateTransitionFrame,
         )
     }
+
+    private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
@@ -732,7 +740,27 @@ open class MainActivity : AppCompatActivity() {
         cdTimer.setMainActivity(this)
 
         val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
-        settingsDialog = SettingsDialog(this, themedContext)
+        settingsDialog = SettingsDialog(
+            mActivity = this,
+            themedContext = themedContext,
+            onDismissRequest = navigator::back,
+        )
+
+        val navigation = ViewfinderNavigationCallbacks(
+            onOpenSettingsPanel = { navigator.push(QuickSettingsNavKey) },
+            onCloseSettingsPanel = { navigator.removeDestination(QuickSettingsNavKey) },
+        )
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewfinder.navigationEvents.collect(navigation::navigate)
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            snapshotFlow { QuickSettingsNavKey in navigator.backStack }
+                .collect(::renderSettingsPanel)
+        }
 
         previewView.viewTreeObserver.addOnPreDrawListener(
             object : ViewTreeObserver.OnPreDrawListener {
@@ -767,6 +795,15 @@ open class MainActivity : AppCompatActivity() {
 
         muteToggle.setOnClickListener {
             viewfinder.onAction(RecordingAction.MuteToggleClicked)
+        }
+    }
+
+    private fun renderSettingsPanel(open: Boolean) {
+        viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
+
+        when {
+            open -> settingsDialog.show()
+            settingsDialog.isShowing -> settingsDialog.slideDialogUp()
         }
     }
 

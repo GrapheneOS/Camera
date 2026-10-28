@@ -165,6 +165,10 @@ sealed interface ViewfinderAction {
             val enabled: Boolean,
         ) : SettingsAction
 
+        data class SettingsPanelVisibilityChanged(
+            val visible: Boolean,
+        ) : SettingsAction
+
         data class SelfIlluminationToggled(
             val enabled: Boolean,
         ) : SettingsAction

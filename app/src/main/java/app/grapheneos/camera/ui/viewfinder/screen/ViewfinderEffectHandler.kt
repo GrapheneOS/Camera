@@ -167,22 +167,12 @@ internal class ViewfinderEffectHandlerImpl(
 
     private fun handleSettings(effect: Effect.Settings) {
         when (effect) {
-            is Effect.Settings.OpenSheet -> openSettingsSheet()
-            is Effect.Settings.CloseSheet -> activity.settingsDialog.slideDialogUp()
             is Effect.Settings.ShowQrFormats -> showQrFormats()
             is Effect.Settings.OpenCameraSettings -> openCameraSettings(effect)
         }
     }
 
-    private fun openSettingsSheet() {
-        if (activity.settingsDialog.isShowing || !activity.settingsIcon.isEnabled) return
-
-        activity.settingsDialog.show()
-    }
-
     private fun showQrFormats() {
-        if (activity.settingsDialog.isShowing) return
-
         showMoreQrFormatOptions(
             activity = activity,
             barcodeFormats = activity.barcodeFormats,
@@ -209,8 +199,6 @@ internal class ViewfinderEffectHandlerImpl(
     }
 
     private fun selectAdjacentModeTab(offset: Int) {
-        if (activity.settingsDialog.isShowing) return
-
         val tabLayout = activity.tabLayout
 
         tabLayout.getTabAt(tabLayout.selectedTabPosition + offset)?.let(activity::finalizeMode)
