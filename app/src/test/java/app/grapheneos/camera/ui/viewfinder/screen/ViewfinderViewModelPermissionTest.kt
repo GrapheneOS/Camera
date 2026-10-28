@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -77,17 +78,6 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
             viewModel.onAction(PermissionAction.RationaleRequired(AppPermission.CAMERA))
 
             verify(exactly = 1) { permissionDelegate.showDialog(AppPermission.CAMERA) }
-        }
-    }
-
-    @Test
-    fun dialogDismissed_afterTheDialogWasAlreadyClosed_doesNothing() {
-        runTest {
-            val viewModel = createViewModel()
-
-            viewModel.onAction(DialogAction.Dismissed)
-
-            verify(exactly = 0) { permissionDelegate.onDialogDismissed(any()) }
         }
     }
 

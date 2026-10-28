@@ -1,7 +1,9 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.net.Uri
+import android.os.Build
 import androidx.core.graphics.createBitmap
+import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.media.model.CapturedItem
@@ -21,9 +23,11 @@ import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.util.printStackTraceToString
 import io.mockk.coEvery
@@ -49,6 +53,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -284,7 +289,6 @@ class ViewfinderCaptureDelegateTest {
     fun captureFailed_onScreen_reportsTheFailure() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
             val cause = IOException("no camera")
             delegate.onScreenStarted()
 
@@ -294,9 +298,15 @@ class ViewfinderCaptureDelegateTest {
             )
 
             assertFalse(capture().isSavingPicture)
-            val failure = effects.single() as Effect.Picture.CaptureFailed
-            assertEquals(CAPTURE_ERROR_CODE, failure.errorCode)
-            assertEquals(cause.printStackTraceToString(), failure.stackTrace)
+            assertEquals(
+                ViewfinderDialog.PictureFailure(
+                    cause = PictureFailureCause.Capture(errorCode = CAPTURE_ERROR_CODE),
+                    details = "osVersion: ${Build.FINGERPRINT}" +
+                        "\npackage: ${BuildConfig.APPLICATION_ID}:${BuildConfig.VERSION_CODE}" +
+                        "\n\n${cause.printStackTraceToString()}",
+                ),
+                stateHolder.state.value.dialog,
+            )
         }
     }
 
@@ -317,11 +327,29 @@ class ViewfinderCaptureDelegateTest {
             )
 
             assertTrue(effects.isEmpty())
+            assertNull(stateHolder.state.value.dialog)
         }
     }
 
     @Test
     fun saveFailed_onScreen_reportsTheStageThatFailed() {
+        runTest {
+            val delegate = createDelegate()
+            delegate.onScreenStarted()
+
+            delegate.takePicture()
+            emitCaptureEvent(CapturedImageEvent.Captured)
+            emitCaptureEvent(saveFailure(alreadyReported = false))
+
+            assertFalse(capture().isSavingPicture)
+            val failure = stateHolder.state.value.dialog as ViewfinderDialog.PictureFailure
+            assertEquals(PictureFailureCause.Save(stage = SAVE_FAILURE_STAGE), failure.cause)
+            coVerify(exactly = 0) { notifyPictureSaveFailed() }
+        }
+    }
+
+    @Test
+    fun saveFailed_alreadyReported_isOnlyMentioned() {
         runTest {
             val delegate = createDelegate()
             val effects = collectEffects(stateHolder)
@@ -331,11 +359,8 @@ class ViewfinderCaptureDelegateTest {
             emitCaptureEvent(CapturedImageEvent.Captured)
             emitCaptureEvent(saveFailure(alreadyReported = true))
 
-            assertFalse(capture().isSavingPicture)
-            val failure = effects.last() as Effect.Picture.SaveFailed
-            assertEquals(SAVE_FAILURE_STAGE, failure.stage)
-            assertTrue(failure.alreadyReported)
-            coVerify(exactly = 0) { notifyPictureSaveFailed() }
+            assertEquals(Effect.ShowMessage(R.string.unable_to_save_image), effects.last())
+            assertNull(stateHolder.state.value.dialog)
         }
     }
 
@@ -382,6 +407,7 @@ class ViewfinderCaptureDelegateTest {
 
             assertFalse(capture().isTakingPicture)
             assertTrue(effects.isEmpty())
+            assertNull(stateHolder.state.value.dialog)
         }
     }
 

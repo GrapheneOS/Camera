@@ -2,7 +2,9 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
@@ -20,8 +22,10 @@ import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.util.printStackTraceToString
 import java.io.IOException
@@ -366,10 +370,10 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
         if (!isScreenStarted) return
 
-        postEffect(
-            Effect.Picture.CaptureFailed(
-                errorCode = event.errorCode,
-                stackTrace = event.cause.printStackTraceToString(),
+        showDialog(
+            ViewfinderDialog.PictureFailure(
+                cause = PictureFailureCause.Capture(errorCode = event.errorCode),
+                details = failureDetails(event.cause),
             ),
         )
     }
@@ -380,20 +384,23 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         finishPictureSave()
 
         when {
-            isScreenStarted -> {
-                postEffect(
-                    Effect.Picture.SaveFailed(
-                        stage = event.cause.place.name,
-                        stackTrace = event.cause.printStackTraceToString(),
-                        alreadyReported = event.alreadyReported,
-                    ),
-                )
-            }
-
-            else -> {
+            !isScreenStarted -> {
                 applicationScope.launch(mainDispatcher) {
                     notifyPictureSaveFailed()
                 }
+            }
+
+            event.alreadyReported -> {
+                postEffect(Effect.ShowMessage(R.string.unable_to_save_image))
+            }
+
+            else -> {
+                showDialog(
+                    ViewfinderDialog.PictureFailure(
+                        cause = PictureFailureCause.Save(stage = event.cause.place.name),
+                        details = failureDetails(event.cause),
+                    ),
+                )
             }
         }
     }
@@ -417,6 +424,16 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
 
     private fun finishPictureSave() {
         updateCapture { it.copy(isSavingPicture = false) }
+    }
+
+    private fun failureDetails(cause: Throwable): String {
+        return "osVersion: ${Build.FINGERPRINT}" +
+            "\npackage: ${BuildConfig.APPLICATION_ID}:${BuildConfig.VERSION_CODE}" +
+            "\n\n${cause.printStackTraceToString()}"
+    }
+
+    private fun showDialog(dialog: ViewfinderDialog) {
+        stateHolder.update { it.copy(dialog = dialog) }
     }
 
     private fun postEffect(effect: Effect) {

@@ -131,17 +131,6 @@ sealed interface ViewfinderScreenEffect {
         data class PreviewCaptured(
             val bitmap: Bitmap,
         ) : Picture
-
-        data class CaptureFailed(
-            val errorCode: Int,
-            val stackTrace: String,
-        ) : Picture
-
-        data class SaveFailed(
-            val stage: String,
-            val stackTrace: String,
-            val alreadyReported: Boolean,
-        ) : Picture
     }
 
     sealed interface Recording : ViewfinderScreenEffect {

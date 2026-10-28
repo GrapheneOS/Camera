@@ -13,11 +13,10 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
-import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
-import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
@@ -43,7 +42,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -84,7 +82,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val orientationDelegate: ViewfinderOrientationDelegate,
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val galleryDelegate: ViewfinderGalleryDelegate,
-    private val copyText: CopyText,
+    private val dialogDelegate: ViewfinderDialogDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val swipeEffectMapper: SwipeEffectMapper,
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
@@ -124,6 +122,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         settingsDelegate.bind(stateHolder)
         locationDelegate.bind(stateHolder)
         recordingDelegate.bind(stateHolder)
+        dialogDelegate.bind(stateHolder)
 
         cameraDelegate.bind(
             scope = viewModelScope,
@@ -233,7 +232,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onRecordingAction(action: RecordingAction) {
         when (action) {
             is RecordingAction.RecordingRequested -> startRecording()
-            is RecordingAction.RecordWithoutAudioClicked -> recordWithoutAudio()
             is RecordingAction.RecordingStopRequested -> recordingDelegate.requestStop()
             is RecordingAction.StartSoundPlayed -> recordingDelegate.startPreparedRecording()
             is RecordingAction.MuteToggleClicked -> recordingDelegate.toggleMute()
@@ -251,7 +249,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             is LifecycleAction.ScreenResumed -> onScreenResumed()
             is LifecycleAction.ScreenPaused -> onScreenPaused()
             is LifecycleAction.ScreenInteracted -> screenWakeDelegate.onScreenInteracted()
-            is LifecycleAction.QrResultDismissed -> dismissQrResult()
         }
     }
 
@@ -275,8 +272,9 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onPermissionAction(action: PermissionAction) {
         when (action) {
-            is PermissionAction.RequestAnswered -> onPermissionRequestAnswered(action.permission)
-            is PermissionAction.SettingsClicked -> permissionDelegate.openSettings()
+            is PermissionAction.RequestAnswered -> {
+                onPermissionRequestAnswered(action.permission)
+            }
 
             is PermissionAction.RationaleRequired -> {
                 permissionDelegate.showDialog(action.permission)
@@ -286,8 +284,18 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onDialogAction(action: DialogAction) {
         when (action) {
-            is DialogAction.Dismissed -> dismissDialog()
-            is DialogAction.CopyClicked -> copy(action.text)
+            is DialogAction.Dismissed -> dialogDelegate.dismiss()
+            is DialogAction.QrResultDismissed -> dismissQrResult()
+            is DialogAction.QrResultCopyClicked -> dialogDelegate.copy(action.text)
+            is DialogAction.Choice -> onDialogChoice(action)
+
+            is DialogAction.PictureFailureDetailsClicked -> {
+                dialogDelegate.showPictureFailureDetails()
+            }
+
+            is DialogAction.PictureFailureDetailsCopyClicked -> {
+                dialogDelegate.copyPictureFailureDetails()
+            }
         }
     }
 
@@ -313,6 +321,24 @@ class ViewfinderViewModel @AssistedInject constructor(
                     x = action.x,
                     y = action.y,
                 )
+            }
+        }
+    }
+
+    private fun onDialogChoice(action: DialogAction.Choice) {
+        dialogDelegate.close()
+
+        when (action) {
+            is DialogAction.Choice.PermissionSettingsClicked -> {
+                permissionDelegate.openSettings()
+            }
+
+            is DialogAction.Choice.RecordWithoutAudioClicked -> {
+                recordWithoutAudio()
+            }
+
+            is DialogAction.Choice.CameraSettingsClicked -> {
+                settingsDelegate.openCameraSettings(cameraDelegate.capabilities())
             }
         }
     }
@@ -581,7 +607,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     }
 
     private fun recordWithoutAudio() {
-        permissionDelegate.dismissDialog()
         settingsDelegate.setIncludeAudio(false)
 
         startRecording()
@@ -661,20 +686,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             AppPermission.MICROPHONE -> onMicrophonePermissionAnswered()
             AppPermission.CAMERA -> Unit
             AppPermission.LOCATION -> Unit
-        }
-    }
-
-    private fun dismissDialog() {
-        when (val dialog = state().dialog) {
-            is ViewfinderDialog.Permission -> {
-                permissionDelegate.onDialogDismissed(dialog.permission)
-            }
-
-            is ViewfinderDialog.StorageLocationNotFound -> {
-                stateHolder.update { it.copy(dialog = null) }
-            }
-
-            null -> Unit
         }
     }
 
@@ -796,12 +807,6 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun state(): ViewfinderState {
         return stateHolder.state.value
-    }
-
-    private fun copy(text: String) {
-        if (copyText(text) == CopyTextResult.Unconfirmed) {
-            emitEffect(Effect.ShowMessage(R.string.copied_text_to_clipboard))
-        }
     }
 
     private fun emitEffect(effect: Effect) {

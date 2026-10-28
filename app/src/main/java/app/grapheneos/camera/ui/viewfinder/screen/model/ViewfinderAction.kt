@@ -114,8 +114,6 @@ sealed interface ViewfinderAction {
 
         data object RecordingRequested : RecordingAction
 
-        data object RecordWithoutAudioClicked : RecordingAction
-
         data object MuteToggleClicked : RecordingAction
 
         data class RecordingPauseToggled(
@@ -137,8 +135,6 @@ sealed interface ViewfinderAction {
 
         data object PreviewStreamingStarted : LifecycleAction
 
-        data object QrResultDismissed : LifecycleAction
-
         data object ScreenDestroyed : LifecycleAction
 
         data class ScreenCreated(
@@ -148,8 +144,6 @@ sealed interface ViewfinderAction {
 
     sealed interface PermissionAction : ViewfinderAction {
 
-        data object SettingsClicked : PermissionAction
-
         data class RequestAnswered(
             val permission: AppPermission,
         ) : PermissionAction
@@ -157,15 +151,6 @@ sealed interface ViewfinderAction {
         data class RationaleRequired(
             val permission: AppPermission,
         ) : PermissionAction
-    }
-
-    sealed interface DialogAction : ViewfinderAction {
-
-        data object Dismissed : DialogAction
-
-        data class CopyClicked(
-            val text: String,
-        ) : DialogAction
     }
 
     sealed interface SettingsAction : ViewfinderAction {
@@ -191,5 +176,29 @@ sealed interface ViewfinderAction {
         data class VideoQualitySelected(
             val quality: VideoQuality,
         ) : SettingsAction
+    }
+
+    sealed interface DialogAction : ViewfinderAction {
+
+        data object Dismissed : DialogAction
+
+        data object PictureFailureDetailsClicked : DialogAction
+
+        data object PictureFailureDetailsCopyClicked : DialogAction
+
+        data object QrResultDismissed : DialogAction
+
+        data class QrResultCopyClicked(
+            val text: String,
+        ) : DialogAction
+
+        sealed interface Choice : DialogAction {
+
+            data object PermissionSettingsClicked : Choice
+
+            data object RecordWithoutAudioClicked : Choice
+
+            data object CameraSettingsClicked : Choice
+        }
     }
 }

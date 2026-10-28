@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
+import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
@@ -36,48 +37,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
-
-    @Test
-    fun dialogDismissed_closesTheDialog() {
-        runTest {
-            val viewModel = createViewModel()
-            stateHolder.update { it.copy(dialog = ViewfinderDialog.StorageLocationNotFound) }
-
-            viewModel.onAction(DialogAction.Dismissed)
-
-            assertNull(stateHolder.state.value.dialog)
-        }
-    }
-
-    @Test
-    fun copyClicked_copiesTheTextAndConfirms() {
-        runTest {
-            every { copyText("text") } returns CopyTextResult.Unconfirmed
-            val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(DialogAction.CopyClicked("text"))
-
-            verify { copyText("text") }
-            assertEquals(
-                listOf(ViewfinderScreenEffect.ShowMessage(R.string.copied_text_to_clipboard)),
-                effects,
-            )
-        }
-    }
-
-    @Test
-    fun copyClicked_confirmedBySystem_isNotConfirmedAgain() {
-        runTest {
-            every { copyText(any()) } returns CopyTextResult.ConfirmedBySystem
-            val viewModel = createViewModel()
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(DialogAction.CopyClicked("text"))
-
-            assertTrue(effects.isEmpty())
-        }
-    }
 
     @Test
     fun screenResumed_withTheProviderReady_startsTheBindBeforeReturning() {
@@ -147,7 +106,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 ViewfinderBindTarget(qrLensFacing = LensFacing.FRONT)
             every { cameraDelegate.bindCamera(any()) } returns BindOutcome.BOUND
 
-            viewModel.onAction(LifecycleAction.QrResultDismissed)
+            viewModel.onAction(DialogAction.QrResultDismissed)
 
             assertEquals(
                 listOf(
@@ -176,7 +135,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(LifecycleAction.QrResultDismissed)
+            viewModel.onAction(DialogAction.QrResultDismissed)
 
             verifyOrder {
                 cameraDelegate.dismissQrResult()
@@ -292,32 +251,16 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun settingsClicked_opensTheSettings() {
+    fun permissionSettingsClicked_closesTheDialogAndOpensTheSettings() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(PermissionAction.SettingsClicked)
+            viewModel.onAction(DialogAction.Choice.PermissionSettingsClicked)
 
-            verify(exactly = 1) { permissionDelegate.openSettings() }
-        }
-    }
-
-    @Test
-    fun dialogDismissed_whileItIsUp_isHandedToTheDelegate() {
-        runTest {
-            val viewModel = createViewModel()
-            stateHolder.update {
-                it.copy(
-                    dialog = ViewfinderDialog.Permission(
-                        permission = AppPermission.CAMERA,
-                        offersSettings = true,
-                    ),
-                )
+            verifyOrder {
+                dialogDelegate.close()
+                permissionDelegate.openSettings()
             }
-
-            viewModel.onAction(DialogAction.Dismissed)
-
-            verify(exactly = 1) { permissionDelegate.onDialogDismissed(AppPermission.CAMERA) }
         }
     }
 

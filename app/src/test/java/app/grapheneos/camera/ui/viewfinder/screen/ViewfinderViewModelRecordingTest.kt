@@ -6,6 +6,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
@@ -88,10 +89,10 @@ class ViewfinderViewModelRecordingTest : ViewfinderViewModelTestBase() {
             every { cameraDelegate.canRecord } returns true
 
             val viewModel = createViewModel()
-            viewModel.onAction(RecordingAction.RecordWithoutAudioClicked)
+            viewModel.onAction(DialogAction.Choice.RecordWithoutAudioClicked)
 
             verifyOrder {
-                permissionDelegate.dismissDialog()
+                dialogDelegate.close()
                 settingsDelegate.setIncludeAudio(false)
                 recordingDelegate.requestRecording()
             }
