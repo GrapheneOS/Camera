@@ -13,12 +13,15 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 interface ViewfinderSettingsDelegate {
 
     fun bind(stateHolder: ViewfinderStateHolder)
 
     suspend fun trackSettings()
+    suspend fun trackCaptureStarts()
 
     fun setSelfTimerDuration(seconds: Int)
     fun setAspectRatio(value: AspectRatio)
@@ -54,6 +57,19 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         settingsRepository.settings.collect { settings ->
             stateHolder.update { it.copy(settings = settings) }
         }
+    }
+
+    override suspend fun trackCaptureStarts() {
+        stateHolder.state
+            .map { state ->
+                state.recording.isActive() || state.capture.isSelfTimerRunning
+            }
+            .distinctUntilChanged()
+            .collect { isCapturing ->
+                if (isCapturing && stateHolder.state.value.isSettingsPanelOpen) {
+                    stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
+                }
+            }
     }
 
     override fun setSelfTimerDuration(seconds: Int) {
@@ -114,7 +130,8 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     override fun openSettingsPanel() {
-        if (stateHolder.state.value.isQrMode()) return
+        val state = stateHolder.state.value
+        if (state.isQrMode() || state.recording.isActive()) return
 
         stateHolder.postNavEvent(NavEvent.OpenSettingsPanel)
     }

@@ -74,17 +74,14 @@ class SwipeOutcomeMapperTest {
     }
 
     @Test
-    fun swipes_whileRecording_stillOpenTheSettingsButKeepTheMode() {
+    fun swipes_whileRecording_doNothing() {
         val recording = photoState.copy(
             recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
 
-        assertNull(mapper.map(direction = SwipeDirection.LEFT, state = recording))
-        assertNull(mapper.map(direction = SwipeDirection.UP, state = recording))
-        assertEquals(
-            SwipeOutcome.OpenSettingsPanel,
-            mapper.map(direction = SwipeDirection.DOWN, state = recording),
-        )
+        SwipeDirection.entries.forEach { direction ->
+            assertNull(mapper.map(direction = direction, state = recording))
+        }
     }
 
     @Test
