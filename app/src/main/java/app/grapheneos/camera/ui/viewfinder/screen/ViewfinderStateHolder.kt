@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import kotlinx.coroutines.channels.Channel
@@ -22,6 +23,9 @@ class ViewfinderStateHolder(
     private val _effects = Channel<Effect>(capacity = Channel.BUFFERED)
     val effects: Flow<Effect> = _effects.receiveAsFlow()
 
+    private val _navigationEvents = Channel<NavEvent>(capacity = Channel.BUFFERED)
+    val navigationEvents: Flow<NavEvent> = _navigationEvents.receiveAsFlow()
+
     /**
      * A flow of [map] applied to the state, recomputed within every [update], so it is current by
      * the time [update] returns. It only emits when its own value changes, which is what keeps a
@@ -43,5 +47,9 @@ class ViewfinderStateHolder(
 
     fun postEffect(effect: Effect) {
         _effects.trySend(effect)
+    }
+
+    fun postNavEvent(event: NavEvent) {
+        _navigationEvents.trySend(event)
     }
 }

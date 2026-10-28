@@ -45,8 +45,11 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import kotlin.math.max
 
 @SuppressLint("ClickableViewAccessibility")
-class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
-    Dialog(themedContext) {
+class SettingsDialog(
+    val mActivity: MainActivity,
+    themedContext: Context,
+    private val onDismissRequest: () -> Unit,
+) : Dialog(themedContext) {
     val viewfinder: ViewfinderScreenModel = mActivity.viewfinder
 
     private val binding: SettingsBinding by lazy { SettingsBinding.inflate(layoutInflater) }
@@ -91,7 +94,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     // otherwise fall through to the activity and close the app.
     private val backCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
-            slideDialogUp()
+            onDismissRequest()
         }
     }
 
@@ -117,7 +120,7 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
 
         val background: View = binding.background
         background.setOnClickListener {
-            slideDialogUp()
+            onDismissRequest()
         }
 
         val rootView = binding.root
@@ -571,9 +574,14 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
         anim
     }
 
+    private var isOpen = false
+
     val dismissHandler = Handler(Looper.myLooper()!!)
     val dismissCallback = Runnable {
-        dismiss()
+        // A slide-up cut short by show() still reports its end, a frame later.
+        if (!isOpen) {
+            dismiss()
+        }
     }
 
     private val slideUpAnimation: Animation by lazy {
@@ -623,6 +631,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     fun slideDialogUp() {
+        isOpen = false
+
         // Restarting the animation would bounce the panel back into view and postpone the dismissal
         // its end schedules, so ignore any further request to close while it plays out.
         if (slideUpAnimation.hasStarted() && !slideUpAnimation.hasEnded()) {
@@ -632,6 +642,8 @@ class SettingsDialog(val mActivity: MainActivity, themedContext: Context) :
     }
 
     override fun show() {
+        isOpen = true
+        settingsFrame.clearAnimation()
 
         this.resize()
 

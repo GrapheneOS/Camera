@@ -18,6 +18,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDeleg
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGalleryDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderGestureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
@@ -26,12 +27,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
@@ -42,6 +41,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
@@ -64,6 +64,7 @@ interface ViewfinderScreenModel {
     val levelUiState: StateFlow<LevelUiState>
 
     val effects: Flow<Effect>
+    val navigationEvents: Flow<NavEvent>
 
     fun onAction(action: ViewfinderAction)
 }
@@ -83,8 +84,8 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val galleryDelegate: ViewfinderGalleryDelegate,
     private val dialogDelegate: ViewfinderDialogDelegate,
+    private val gestureDelegate: ViewfinderGestureDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
-    private val swipeEffectMapper: SwipeEffectMapper,
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
     uiStateMapper: ViewfinderUiStateMapper,
     zoomUiStateMapper: ZoomUiStateMapper,
@@ -111,6 +112,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     override val levelUiState: StateFlow<LevelUiState> = orientationDelegate.levelUiState
 
     override val effects: Flow<Effect> = stateHolder.effects
+    override val navigationEvents: Flow<NavEvent> = stateHolder.navigationEvents
 
     private var resumedWork: Job? = null
 
@@ -123,6 +125,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         locationDelegate.bind(stateHolder)
         recordingDelegate.bind(stateHolder)
         dialogDelegate.bind(stateHolder)
+        gestureDelegate.bind(stateHolder)
 
         cameraDelegate.bind(
             scope = viewModelScope,
@@ -254,7 +257,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
-            is SettingsAction.SettingsIconClicked -> onSettingsIconClicked()
+            is SettingsAction.SettingsIconClicked -> settingsDelegate.openSettingsPanel()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
             is SettingsAction.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
@@ -262,6 +265,10 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             is SettingsAction.CameraSettingsClicked -> {
                 settingsDelegate.openCameraSettings(cameraDelegate.capabilities())
+            }
+
+            is SettingsAction.SettingsPanelVisibilityChanged -> {
+                settingsDelegate.onSettingsPanelVisibilityChanged(action.visible)
             }
 
             is SettingsAction.SelfTimerSelected -> {
@@ -314,7 +321,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onPreviewAction(action: CameraAction.Preview) {
         when (action) {
             is CameraAction.Preview.Pinched -> cameraDelegate.scaleZoom(action.scaleFactor)
-            is CameraAction.Preview.Swiped -> onPreviewSwiped(action.direction)
+            is CameraAction.Preview.Swiped -> gestureDelegate.onPreviewSwiped(action.direction)
 
             is CameraAction.Preview.Tapped -> {
                 cameraDelegate.focusAt(
@@ -379,15 +386,6 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onDisplayRotationChanged(rotation: Int) {
         cameraDelegate.setPreviewRotation(rotation)
         orientationDelegate.setDisplayRotation(rotation)
-    }
-
-    private fun onPreviewSwiped(direction: SwipeDirection) {
-        val effect = swipeEffectMapper.map(
-            direction = direction,
-            state = state(),
-        )
-
-        effect?.let(::emitEffect)
     }
 
     private fun switchMode(mode: CameraMode) {
@@ -719,12 +717,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         cameraDelegate.applyFlashMode(slotted.modeSettings.flashMode)
 
         setSelfIllumination(slotted.modeSettings.selfIllumination)
-    }
-
-    private fun onSettingsIconClicked() {
-        if (!state().isQrMode()) {
-            emitEffect(Effect.Settings.OpenSheet)
-        }
     }
 
     private fun setSelfIllumination(enabled: Boolean) {

@@ -1,56 +1,58 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import javax.inject.Inject
 
-interface SwipeEffectMapper {
+interface SwipeOutcomeMapper {
 
     fun map(
         direction: SwipeDirection,
         state: ViewfinderState,
-    ): Effect?
+    ): SwipeOutcome?
 }
 
-internal class SwipeEffectMapperImpl @Inject constructor() : SwipeEffectMapper {
+internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper {
 
     override fun map(
         direction: SwipeDirection,
         state: ViewfinderState,
-    ): Effect? {
+    ): SwipeOutcome? {
         if (state.capture.isSelfTimerRunning) return null
 
         return when (direction) {
-            SwipeDirection.DOWN -> openSettingsSheet(state)
-            SwipeDirection.UP -> closeSettingsSheet(state)
+            SwipeDirection.DOWN -> openSettingsPanel(state)
+            SwipeDirection.UP -> closeSettingsPanel(state)
             SwipeDirection.LEFT -> selectAdjacentMode(state = state, offset = 1)
             SwipeDirection.RIGHT -> selectAdjacentMode(state = state, offset = -1)
         }
     }
 
-    private fun openSettingsSheet(state: ViewfinderState): Effect? {
+    private fun openSettingsPanel(state: ViewfinderState): SwipeOutcome? {
         return when {
-            !state.isQrMode() -> Effect.Settings.OpenSheet
-            !state.settings.scanAllCodes -> Effect.Settings.ShowQrFormats
+            state.isSettingsPanelOpen -> null
+            !state.isQrMode() -> SwipeOutcome.OpenSettingsPanel
+            !state.settings.scanAllCodes -> SwipeOutcome.ShowQrFormats
             else -> null
         }
     }
 
-    private fun closeSettingsSheet(state: ViewfinderState): Effect? {
+    private fun closeSettingsPanel(state: ViewfinderState): SwipeOutcome? {
         return when {
             state.recording.isActive() -> null
-            else -> Effect.Settings.CloseSheet
+            else -> SwipeOutcome.CloseSettingsPanel
         }
     }
 
     private fun selectAdjacentMode(
         state: ViewfinderState,
         offset: Int,
-    ): Effect? {
+    ): SwipeOutcome? {
         return when {
+            state.isSettingsPanelOpen -> null
             state.recording.isActive() || !state.showsCameraModeTabs -> null
-            else -> Effect.ModeTab.SelectAdjacent(offset = offset)
+            else -> SwipeOutcome.SelectAdjacentMode(offset = offset)
         }
     }
 }

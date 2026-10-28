@@ -1,6 +1,7 @@
 package app.grapheneos.camera.testutil
 
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -18,4 +19,17 @@ internal fun TestScope.collectEffects(
     }
 
     return effects
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun TestScope.collectNavEvents(
+    stateHolder: ViewfinderStateHolder,
+): MutableList<ViewfinderNavEvent> {
+    val events = mutableListOf<ViewfinderNavEvent>()
+
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+        stateHolder.navigationEvents.collect { events += it }
+    }
+
+    return events
 }

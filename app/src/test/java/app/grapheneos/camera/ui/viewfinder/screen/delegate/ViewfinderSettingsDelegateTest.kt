@@ -13,9 +13,11 @@ import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.collectEffects
+import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
@@ -123,6 +125,33 @@ class ViewfinderSettingsDelegateTest {
             delegate.setVideoQuality(VideoQuality.UHD)
 
             assertEquals(stored, stateHolder.state.value.modeSettings)
+        }
+    }
+
+    @Test
+    fun settingsPanel_isNavigatedToOutsideQrMode() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+
+            delegate.openSettingsPanel()
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+            delegate.openSettingsPanel()
+
+            assertEquals(listOf(ViewfinderNavEvent.OpenSettingsPanel), events)
+        }
+    }
+
+    @Test
+    fun settingsPanel_isOpenOnlyWhileTheHostShowsIt() {
+        runTest {
+            val delegate = createDelegate()
+
+            delegate.openSettingsPanel()
+            assertFalse(stateHolder.state.value.isSettingsPanelOpen)
+
+            delegate.onSettingsPanelVisibilityChanged(true)
+            assertTrue(stateHolder.state.value.isSettingsPanelOpen)
         }
     }
 

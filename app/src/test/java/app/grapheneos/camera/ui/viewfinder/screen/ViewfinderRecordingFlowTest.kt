@@ -28,7 +28,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMappe
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeEffectMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
@@ -230,6 +229,7 @@ class ViewfinderRecordingFlowTest {
             screenWakeDelegate = mockk(relaxed = true),
             galleryDelegate = mockk(relaxed = true),
             dialogDelegate = mockk(relaxed = true),
+            gestureDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = ViewfinderUiStateMapperImpl(
                 settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
@@ -237,7 +237,6 @@ class ViewfinderRecordingFlowTest {
             ),
             zoomUiStateMapper = ZoomUiStateMapperImpl(),
             cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
-            swipeEffectMapper = SwipeEffectMapperImpl(),
             volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
         )
     }
