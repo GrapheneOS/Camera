@@ -10,7 +10,6 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
-import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -261,8 +260,11 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is SettingsAction.SettingsIconClicked -> settingsDelegate.openSettingsPanel()
             is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
-            is SettingsAction.VideoQualitySelected -> onVideoQualitySelected(action.quality)
             is SettingsAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
+
+            is SettingsAction.VideoQualitySelected -> {
+                settingsDelegate.setVideoQuality(action.quality)
+            }
 
             is SettingsAction.SelfIlluminationToggled -> {
                 settingsDelegate.setSelfIllumination(action.enabled)
@@ -480,16 +482,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
 
         settingsDelegate.setAspectRatio(next)
-
-        startCamera(forced = true)
-    }
-
-    private fun onVideoQualitySelected(quality: VideoQuality) {
-        if (quality == state().modeSettings.videoQuality) return
-
-        settingsDelegate.setVideoQuality(quality)
-
-        startCamera(forced = true)
     }
 
     private fun onCaptureButtonClicked() {
@@ -671,6 +663,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             launch { orientationDelegate.trackOrientation() }
             launch { locationDelegate.trackLocation() }
             launch { screenWakeDelegate.keepScreenAwake() }
+            launch { settingsDelegate.rebindRequests().collect { startCamera(forced = true) } }
         }
     }
 

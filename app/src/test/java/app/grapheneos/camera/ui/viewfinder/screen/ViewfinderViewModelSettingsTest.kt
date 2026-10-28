@@ -8,10 +8,10 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
@@ -19,6 +19,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -84,7 +85,7 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun aspectRatioToggleClicked_storesTheOtherRatioBeforeRebinding() {
+    fun aspectRatioToggleClicked_storesTheOtherRatio() {
         runTest {
             val viewModel = createViewModel()
             stateHolder.update {
@@ -93,42 +94,35 @@ class ViewfinderViewModelSettingsTest : ViewfinderViewModelTestBase() {
 
             viewModel.onAction(CameraAction.AspectRatioToggleClicked)
 
-            verifyOrder {
-                settingsDelegate.setAspectRatio(AspectRatio.RATIO_16_9)
-                cameraDelegate.canBeginBind(forced = true)
-            }
+            verify { settingsDelegate.setAspectRatio(AspectRatio.RATIO_16_9) }
         }
     }
 
     @Test
-    fun videoQualitySelected_theOneAlreadyInUse_leavesTheCameraAlone() {
+    fun videoQualitySelected_storesIt() {
         runTest {
             val viewModel = createViewModel()
-            stateHolder.update {
-                it.copy(modeSettings = ModeSettings(videoQuality = VideoQuality.UHD))
-            }
-
-            viewModel.onAction(SettingsAction.VideoQualitySelected(VideoQuality.UHD))
-
-            verify(exactly = 0) { settingsDelegate.setVideoQuality(any()) }
-            verify(exactly = 0) { cameraDelegate.canBeginBind(forced = any()) }
-        }
-    }
-
-    @Test
-    fun videoQualitySelected_anotherOne_storesItBeforeRebinding() {
-        runTest {
-            val viewModel = createViewModel()
-            stateHolder.update {
-                it.copy(modeSettings = ModeSettings(videoQuality = VideoQuality.UHD))
-            }
 
             viewModel.onAction(SettingsAction.VideoQualitySelected(VideoQuality.FHD))
 
-            verifyOrder {
-                settingsDelegate.setVideoQuality(VideoQuality.FHD)
-                cameraDelegate.canBeginBind(forced = true)
-            }
+            verify { settingsDelegate.setVideoQuality(VideoQuality.FHD) }
+        }
+    }
+
+    @Test
+    fun rebindRequests_rebindTheCameraOnlyWhileTheScreenIsResumed() {
+        runTest {
+            val rebindRequests = MutableSharedFlow<Unit>()
+            every { settingsDelegate.rebindRequests() } returns rebindRequests
+            every { cameraDelegate.isProviderReady } returns false
+            val viewModel = createViewModel()
+
+            viewModel.onAction(LifecycleAction.ScreenResumed)
+            rebindRequests.emit(Unit)
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+            rebindRequests.emit(Unit)
+
+            verify(exactly = 1) { cameraDelegate.canBeginBind(forced = true) }
         }
     }
 

@@ -14,11 +14,14 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as Na
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 
 interface ViewfinderSettingsDelegate {
 
@@ -27,6 +30,9 @@ interface ViewfinderSettingsDelegate {
     suspend fun trackSettings()
     suspend fun trackModeSettings()
     suspend fun trackCaptureStarts()
+
+    /** Emits after each write of a setting the camera binds with, once the state holds it. */
+    fun rebindRequests(): Flow<Unit>
 
     fun setSelfTimerDuration(seconds: Int)
     fun setAspectRatio(value: AspectRatio)
@@ -85,6 +91,27 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
                     stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
                 }
             }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun rebindRequests(): Flow<Unit> {
+        val aspectRatioWrites = settingsRepository.settings
+            .map { settings -> settings.aspectRatio }
+            .distinctUntilChanged()
+            .drop(1)
+        val videoQualityWrites = currentSlot
+            .filterNotNull()
+            .flatMapLatest { slot ->
+                settingsRepository.observeModeSettings(slot)
+                    .map { modeSettings -> modeSettings.videoQuality }
+                    .distinctUntilChanged()
+                    .drop(1)
+            }
+
+        return merge(
+            aspectRatioWrites,
+            videoQualityWrites
+        ).map { reload() }
     }
 
     override fun setSelfTimerDuration(seconds: Int) {
@@ -166,6 +193,17 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         }
 
         stateHolder.postEffect(effect)
+    }
+
+    private fun reload() {
+        val slot = currentSlot.value
+
+        stateHolder.update {
+            it.copy(
+                settings = settingsRepository.settings.value,
+                modeSettings = slot?.let(settingsRepository::modeSettings) ?: it.modeSettings,
+            )
+        }
     }
 
     private fun update(transform: (CameraSettings) -> CameraSettings) {
