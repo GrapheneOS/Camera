@@ -35,7 +35,7 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"/>
 
-                <app.grapheneos.camera.ui.viewfinder.components.QROverlay
+                <app.grapheneos.camera.ui.viewfinder.components.qr.QROverlay
                     android:id="@+id/qr_overlay"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
@@ -558,7 +558,7 @@
                 android:orientation="vertical"
                 android:layout_height="wrap_content">
 
-                    <app.grapheneos.camera.ui.viewfinder.components.QRToggle
+                    <app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
                         android:id="@+id/qr_scan_toggle"
                         android:layout_width="@dimen/qr_toggle_button_size"
                         android:layout_height="@dimen/qr_toggle_button_size"
@@ -592,7 +592,7 @@
                 android:orientation="vertical"
                 android:layout_height="wrap_content">
 
-                    <app.grapheneos.camera.ui.viewfinder.components.QRToggle
+                    <app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
                         android:id="@+id/data_matrix_toggle"
                         android:layout_gravity="center"
                         android:src="@drawable/data_matrix"
@@ -626,7 +626,7 @@
                 android:orientation="vertical"
                 android:layout_height="wrap_content">
 
-                    <app.grapheneos.camera.ui.viewfinder.components.QRToggle
+                    <app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
                         android:id="@+id/aztec_toggle"
                         android:layout_gravity="center"
                         android:src="@drawable/aztec"
@@ -660,7 +660,7 @@
                 android:orientation="vertical"
                 android:layout_height="wrap_content">
 
-                <app.grapheneos.camera.ui.viewfinder.components.QRToggle
+                <app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
                     android:id="@+id/pdf417_toggle"
                     android:layout_gravity="center"
                     android:src="@drawable/pdf417"

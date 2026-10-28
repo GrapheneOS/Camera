@@ -135,13 +135,13 @@
         <error line="87" column="38" source="standard:argument-list-wrapping" />
         <error line="87" column="58" source="standard:argument-list-wrapping" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/QROverlay.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/qr/QROverlay.kt">
         <error line="14" column="17" source="standard:class-signature" />
         <error line="14" column="35" source="standard:class-signature" />
         <error line="14" column="54" source="standard:class-signature" />
         <error line="65" column="1" source="standard:no-blank-line-before-rbrace" />
     </file>
-    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/QRToggle.kt">
+    <file name="src/main/java/app/grapheneos/camera/ui/viewfinder/components/qr/QRToggle.kt">
         <error line="10" column="23" source="standard:parameter-list-wrapping" />
         <error line="10" column="23" source="standard:class-signature" />
         <error line="10" column="50" source="standard:trailing-comma-on-declaration-site" />

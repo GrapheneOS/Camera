@@ -25,14 +25,14 @@ import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
-import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
-import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
 import app.grapheneos.camera.ui.common.videoQualityTitle
 import app.grapheneos.camera.ui.core.activity.SecureActivity
 import app.grapheneos.camera.ui.gallery.GalleryActivity
 import app.grapheneos.camera.ui.gallery.SecureGalleryActivity
 import app.grapheneos.camera.ui.gallery.screen.galleryArguments
 import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
+import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
+import app.grapheneos.camera.ui.viewfinder.components.qr.showQrResultDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction

@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.common.dialog
+package app.grapheneos.camera.ui.viewfinder.components.qr
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.domain.qr.BarcodeFormats

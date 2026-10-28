@@ -29,6 +29,11 @@ internal fun PictureFailureDetailsDialog(
             )
         },
         confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onCopyClick) {
                 Text(text = stringResource(R.string.copy_to_clipboard))
             }
