@@ -31,7 +31,7 @@ internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper
 
     private fun openSettingsPanel(state: ViewfinderState): SwipeOutcome? {
         return when {
-            state.isSettingsPanelOpen -> null
+            state.isSettingsPanelOpen || state.recording.isActive() -> null
             !state.isQrMode() -> SwipeOutcome.OpenSettingsPanel
             !state.settings.scanAllCodes -> SwipeOutcome.ShowQrFormats
             else -> null
