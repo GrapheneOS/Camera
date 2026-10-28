@@ -11,8 +11,6 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 
 sealed interface ViewfinderScreenEffect {
 
-    data object ShowStorageLocationNotFound : ViewfinderScreenEffect
-
     data object AnimateLensSwitch : ViewfinderScreenEffect
 
     data object PlayLevelHaptic : ViewfinderScreenEffect

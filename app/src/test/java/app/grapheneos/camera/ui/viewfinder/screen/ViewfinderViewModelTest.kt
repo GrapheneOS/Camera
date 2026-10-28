@@ -28,6 +28,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +36,18 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
+
+    @Test
+    fun dialogDismissed_closesTheDialog() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(dialog = ViewfinderDialog.StorageLocationNotFound) }
+
+            viewModel.onAction(DialogAction.Dismissed)
+
+            assertNull(stateHolder.state.value.dialog)
+        }
+    }
 
     @Test
     fun copyClicked_copiesTheTextAndConfirms() {
@@ -302,7 +315,7 @@ class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
                 )
             }
 
-            viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
+            viewModel.onAction(DialogAction.Dismissed)
 
             verify(exactly = 1) { permissionDelegate.onDialogDismissed(AppPermission.CAMERA) }
         }

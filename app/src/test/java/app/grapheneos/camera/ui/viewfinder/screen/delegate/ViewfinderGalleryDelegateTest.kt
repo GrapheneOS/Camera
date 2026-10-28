@@ -16,6 +16,7 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -241,14 +242,13 @@ class ViewfinderGalleryDelegateTest {
     fun storageLocationNotFound_showsTheDialogOnlyOnceTheLocationIsReverted() {
         runTest {
             val delegate = createDelegate()
-            val effects = collectEffects(stateHolder)
 
             delegate.onStorageLocationNotFound()
-            assertTrue(effects.isEmpty())
+            assertNull(stateHolder.state.value.dialog)
 
             reverted.complete(Unit)
 
-            assertEquals(listOf(Effect.ShowStorageLocationNotFound), effects)
+            assertEquals(ViewfinderDialog.StorageLocationNotFound, stateHolder.state.value.dialog)
             coVerify(exactly = 1) { revertToMediaStoreLocation() }
         }
     }

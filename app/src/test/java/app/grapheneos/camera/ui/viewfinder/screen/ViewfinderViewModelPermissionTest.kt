@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import io.mockk.every
@@ -84,7 +85,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(PermissionAction.DialogDismissed(AppPermission.CAMERA))
+            viewModel.onAction(DialogAction.Dismissed)
 
             verify(exactly = 0) { permissionDelegate.onDialogDismissed(any()) }
         }

@@ -28,7 +28,6 @@ import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
 import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
 import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
-import app.grapheneos.camera.ui.common.dialog.showStorageLocationNotFoundDialog
 import app.grapheneos.camera.ui.common.videoQualityTitle
 import app.grapheneos.camera.ui.core.activity.SecureActivity
 import app.grapheneos.camera.ui.gallery.GalleryActivity
@@ -67,7 +66,6 @@ internal class ViewfinderEffectHandlerImpl(
         when (effect) {
             is Effect.ShowMessage -> activity.showMessage(effect.message)
             is Effect.ShowVideoQualityUnsupported -> showVideoQualityUnsupported(effect.quality)
-            is Effect.ShowStorageLocationNotFound -> showStorageLocationNotFound()
             is Effect.ShowQrResult -> showQrResult(effect.text)
             is Effect.AnimateLensSwitch -> activity.animateLensSwitch()
             is Effect.PlayLevelHaptic -> playLevelHaptic()
@@ -91,13 +89,6 @@ internal class ViewfinderEffectHandlerImpl(
                 R.string.quality_unsupported,
                 videoQualityTitle(activity, quality),
             ),
-        )
-    }
-
-    private fun showStorageLocationNotFound() {
-        showStorageLocationNotFoundDialog(
-            activity = activity,
-            onCameraSettingsClicked = { onAction(SettingsAction.CameraSettingsClicked) },
         )
     }
 

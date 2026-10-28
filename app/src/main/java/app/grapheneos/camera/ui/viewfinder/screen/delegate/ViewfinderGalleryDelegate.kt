@@ -11,6 +11,7 @@ import app.grapheneos.camera.domain.gallery.coordinator.CapturedItemSession
 import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderGalleryState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
@@ -176,7 +177,7 @@ internal class ViewfinderGalleryDelegateImpl @Inject constructor(
     override fun onStorageLocationNotFound() {
         applicationScope.launch(mainDispatcher) {
             revertToMediaStoreLocation()
-            stateHolder.postEffect(Effect.ShowStorageLocationNotFound)
+            stateHolder.update { it.copy(dialog = ViewfinderDialog.StorageLocationNotFound) }
         }
     }
 
