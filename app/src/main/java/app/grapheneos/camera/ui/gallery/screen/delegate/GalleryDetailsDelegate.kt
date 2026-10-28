@@ -3,6 +3,8 @@ package app.grapheneos.camera.ui.gallery.screen.delegate
 import androidx.lifecycle.SavedStateHandle
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
+import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
+import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryDetails
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryScreenEffect as Effect
@@ -25,11 +27,14 @@ internal interface GalleryDetailsDelegate {
     fun hide()
 
     fun openMap()
+
+    fun copy(text: String)
 }
 
 internal class GalleryDetailsDelegateImpl @Inject constructor(
     private val arguments: SavedStateHandle,
     private val capturedItemDetailsRepository: CapturedItemDetailsRepository,
+    private val copyText: CopyText,
 ) : GalleryDetailsDelegate {
 
     private lateinit var stateHolder: GalleryStateHolder
@@ -67,6 +72,12 @@ internal class GalleryDetailsDelegateImpl @Inject constructor(
 
         details?.details?.location?.let { location ->
             stateHolder.send(Effect.OpenMap(location))
+        }
+    }
+
+    override fun copy(text: String) {
+        if (copyText(text) == CopyTextResult.Unconfirmed) {
+            stateHolder.send(Effect.TextCopied)
         }
     }
 

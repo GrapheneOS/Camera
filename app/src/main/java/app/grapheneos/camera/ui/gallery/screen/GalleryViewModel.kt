@@ -193,7 +193,7 @@ internal class GalleryViewModel @Inject constructor(
         when (action) {
             is DetailsAction.DetailsShownChanged -> showDetails(action.isShown)
             is DetailsAction.OpenMapClicked -> detailsDelegate.openMap()
-            is DetailsAction.DetailLongPressed -> stateHolder.send(Effect.CopyText(action.text))
+            is DetailsAction.DetailLongPressed -> detailsDelegate.copy(action.text)
         }
     }
 

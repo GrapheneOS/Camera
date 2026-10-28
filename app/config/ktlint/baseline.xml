@@ -214,8 +214,8 @@
         <error line="80" column="1" source="standard:final-newline" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/MainActivity.kt">
-        <error line="634" column="100" source="standard:max-line-length" />
-        <error line="773" column="100" source="standard:max-line-length" />
+        <error line="629" column="100" source="standard:max-line-length" />
+        <error line="768" column="100" source="standard:max-line-length" />
     </file>
     <file name="src/main/java/app/grapheneos/camera/ui/activities/QrTile.kt">
         <error line="28" column="64" source="standard:no-semi" />

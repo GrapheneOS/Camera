@@ -12,6 +12,8 @@ import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.repository.CapturedItemDetailsRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.CapturedItemTrashRepository
+import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
+import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.gallery.mapper.GalleryItemsMapperImpl
 import app.grapheneos.camera.domain.gallery.model.CapturedItemDeletion
@@ -43,6 +45,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
@@ -81,6 +84,7 @@ class GalleryViewModelTest {
         coEvery { details(any()) } returns null
     }
     private val deleteCapturedItem = mockk<DeleteCapturedItem>()
+    private val copyText = mockk<CopyText>()
     private val capturedItemTrashRepository = mockk<CapturedItemTrashRepository> {
         every { canTrash(any()) } returns false
         coEvery { trash(any()) } coAnswers {
@@ -573,14 +577,29 @@ class GalleryViewModelTest {
     }
 
     @Test
-    fun detailLongPressed_copiesItsText() {
+    fun detailLongPressed_copiesItsTextAndConfirms() {
         runTest {
+            every { copyText("Google Pixel 8a") } returns CopyTextResult.Unconfirmed
             val viewModel = viewModel()
             val effects = effectsOf(viewModel)
 
             viewModel.onAction(DetailsAction.DetailLongPressed(text = "Google Pixel 8a"))
 
-            assertEquals(listOf(Effect.CopyText("Google Pixel 8a")), effects)
+            verify { copyText("Google Pixel 8a") }
+            assertEquals(listOf(Effect.TextCopied), effects)
+        }
+    }
+
+    @Test
+    fun detailLongPressed_confirmedBySystem_isNotConfirmedAgain() {
+        runTest {
+            every { copyText(any()) } returns CopyTextResult.ConfirmedBySystem
+            val viewModel = viewModel()
+            val effects = effectsOf(viewModel)
+
+            viewModel.onAction(DetailsAction.DetailLongPressed(text = "Google Pixel 8a"))
+
+            assertTrue(effects.isEmpty())
         }
     }
 
@@ -761,6 +780,7 @@ class GalleryViewModelTest {
             detailsDelegate = GalleryDetailsDelegateImpl(
                 arguments = arguments,
                 capturedItemDetailsRepository = capturedItemDetailsRepository,
+                copyText = copyText,
             ),
             deletionDelegate = GalleryDeletionDelegateImpl(
                 trashCapturedItem = TrashCapturedItemImpl(capturedItemTrashRepository),

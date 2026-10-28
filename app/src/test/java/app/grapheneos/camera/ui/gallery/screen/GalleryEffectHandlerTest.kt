@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery.screen
 
-import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
@@ -27,12 +26,10 @@ class GalleryEffectHandlerTest {
 
     private val activity = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
     private val systemGalleryLauncher = mockk<SystemGalleryLauncher>(relaxed = true)
-    private val clipboardManager = activity.getSystemService(ClipboardManager::class.java)
     private val messages = mutableListOf<Int>()
     private val effectHandler = GalleryEffectHandlerImpl(
         activity = activity,
         systemGalleryLauncher = systemGalleryLauncher,
-        clipboardManager = clipboardManager,
         showMessage = { message -> messages += message.text },
     )
 
@@ -119,24 +116,16 @@ class GalleryEffectHandlerTest {
     }
 
     @Test
-    fun copyText_putsTheTextOnTheClipboard() {
-        effectHandler.handle(Effect.CopyText("47.50000, -122.25000"))
-
-        assertEquals(
-            "47.50000, -122.25000",
-            clipboardManager.primaryClip?.getItemAt(0)?.text,
-        )
-    }
-
-    @Test
     fun outcomes_thatKeepTheGalleryOpen_areReportedAsMessages() {
         effectHandler.handle(Effect.ItemDeleted)
         effectHandler.handle(Effect.DeletionFailed)
+        effectHandler.handle(Effect.TextCopied)
 
         assertEquals(
             listOf(
                 R.string.deleted_successfully,
                 R.string.deleting_unexpected_error,
+                R.string.copied_text_to_clipboard,
             ),
             messages,
         )

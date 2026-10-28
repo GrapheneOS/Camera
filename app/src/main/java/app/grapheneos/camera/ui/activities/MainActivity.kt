@@ -2,7 +2,6 @@ package app.grapheneos.camera.ui.activities
 
 import android.animation.Animator
 import android.annotation.SuppressLint
-import android.content.ClipboardManager
 import android.content.res.Configuration
 import android.graphics.Point
 import android.graphics.Rect
@@ -110,9 +109,6 @@ open class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var barcodeFormats: BarcodeFormats
-
-    @Inject
-    lateinit var clipboardManager: ClipboardManager
 
     @Inject
     lateinit var cameraSoundPlayer: CameraSoundPlayer
@@ -496,7 +492,6 @@ open class MainActivity : AppCompatActivity() {
         )
         val effectHandler: ViewfinderEffectHandler = ViewfinderEffectHandlerImpl(
             activity = this,
-            clipboardManager = clipboardManager,
             vibrator = vibrator,
             onAction = viewfinder::onAction,
         )

@@ -163,6 +163,13 @@ sealed interface ViewfinderAction {
         ) : PermissionAction
     }
 
+    sealed interface DialogAction : ViewfinderAction {
+
+        data class CopyClicked(
+            val text: String,
+        ) : DialogAction
+    }
+
     sealed interface SettingsAction : ViewfinderAction {
 
         data object SettingsIconClicked : SettingsAction

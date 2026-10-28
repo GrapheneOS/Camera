@@ -7,8 +7,10 @@ import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
@@ -32,6 +34,36 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelTest : ViewfinderViewModelTestBase() {
+
+    @Test
+    fun copyClicked_copiesTheTextAndConfirms() {
+        runTest {
+            every { copyText("text") } returns CopyTextResult.Unconfirmed
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(DialogAction.CopyClicked("text"))
+
+            verify { copyText("text") }
+            assertEquals(
+                listOf(ViewfinderScreenEffect.ShowMessage(R.string.copied_text_to_clipboard)),
+                effects,
+            )
+        }
+    }
+
+    @Test
+    fun copyClicked_confirmedBySystem_isNotConfirmedAgain() {
+        runTest {
+            every { copyText(any()) } returns CopyTextResult.ConfirmedBySystem
+            val viewModel = createViewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(DialogAction.CopyClicked("text"))
+
+            assertTrue(effects.isEmpty())
+        }
+    }
 
     @Test
     fun screenResumed_withTheProviderReady_startsTheBindBeforeReturning() {

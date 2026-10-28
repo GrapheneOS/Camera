@@ -13,6 +13,8 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
+import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
+import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -34,6 +36,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
@@ -80,6 +83,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val orientationDelegate: ViewfinderOrientationDelegate,
     private val screenWakeDelegate: ViewfinderScreenWakeDelegate,
     private val galleryDelegate: ViewfinderGalleryDelegate,
+    private val copyText: CopyText,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val swipeEffectMapper: SwipeEffectMapper,
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
@@ -166,6 +170,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is LifecycleAction -> onLifecycleAction(action)
             is SettingsAction -> onSettingsAction(action)
             is PermissionAction -> onPermissionAction(action)
+            is DialogAction -> onDialogAction(action)
         }
     }
 
@@ -279,6 +284,12 @@ class ViewfinderViewModel @AssistedInject constructor(
             is PermissionAction.DialogDismissed -> {
                 onPermissionDialogDismissed(action.permission)
             }
+        }
+    }
+
+    private fun onDialogAction(action: DialogAction) {
+        when (action) {
+            is DialogAction.CopyClicked -> copy(action.text)
         }
     }
 
@@ -780,6 +791,12 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun state(): ViewfinderState {
         return stateHolder.state.value
+    }
+
+    private fun copy(text: String) {
+        if (copyText(text) == CopyTextResult.Unconfirmed) {
+            emitEffect(Effect.ShowMessage(R.string.copied_text_to_clipboard))
+        }
     }
 
     private fun emitEffect(effect: Effect) {
