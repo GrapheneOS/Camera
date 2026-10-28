@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.gallery.screen
 
-import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -71,7 +70,6 @@ private const val PREVIEW_PAGE_KEY = "content://media/external/images/media/1"
 @Composable
 internal fun GalleryScreen(
     systemGalleryLauncher: SystemGalleryLauncher,
-    clipboardManager: ClipboardManager,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     screenModel: GalleryScreenModel = hiltViewModel<GalleryViewModel>(),
@@ -82,7 +80,6 @@ internal fun GalleryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val effectHandler = rememberGalleryEffectHandler(
         systemGalleryLauncher = systemGalleryLauncher,
-        clipboardManager = clipboardManager,
         onShowMessage = { shownMessage -> message = shownMessage },
     )
 

@@ -136,12 +136,12 @@ sealed interface ViewfinderScreenEffect {
 
         data class CaptureFailed(
             val errorCode: Int,
-            val details: PictureFailureDetails,
+            val stackTrace: String,
         ) : Picture
 
         data class SaveFailed(
             val stage: String,
-            val details: PictureFailureDetails,
+            val stackTrace: String,
             val alreadyReported: Boolean,
         ) : Picture
     }

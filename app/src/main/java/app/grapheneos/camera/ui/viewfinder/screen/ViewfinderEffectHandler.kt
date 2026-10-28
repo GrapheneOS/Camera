@@ -1,7 +1,5 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -42,6 +40,7 @@ import app.grapheneos.camera.ui.gallery.screen.galleryArguments
 import app.grapheneos.camera.ui.mediaviewer.navigation.shareCapturedItem
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
@@ -54,7 +53,6 @@ internal interface ViewfinderEffectHandler {
 
 internal class ViewfinderEffectHandlerImpl(
     private val activity: MainActivity,
-    private val clipboardManager: ClipboardManager,
     private val vibrator: Vibrator,
     private val onAction: (ViewfinderAction) -> Unit,
 ) : ViewfinderEffectHandler {
@@ -112,10 +110,7 @@ internal class ViewfinderEffectHandlerImpl(
         showQrResultDialog(
             activity = activity,
             rawText = text,
-            onCopyText = { copiedText ->
-                clipboardManager.setPrimaryClip(ClipData.newPlainText("text", copiedText))
-                activity.showMessage(R.string.copied_text_to_clipboard)
-            },
+            onCopyText = { copiedText -> copy(copiedText.toString()) },
             onDismissed = {
                 onAction(LifecycleAction.QrResultDismissed)
             },
@@ -354,10 +349,8 @@ internal class ViewfinderEffectHandlerImpl(
                 R.string.unable_to_capture_image_verbose,
                 effect.errorCode,
             ),
-            details = effect.details,
-            onCopyDetails = { text ->
-                copyFailureDetails(effect.details.name, text)
-            },
+            stackTrace = effect.stackTrace,
+            onCopyDetails = ::copy,
         )
     }
 
@@ -371,17 +364,14 @@ internal class ViewfinderEffectHandlerImpl(
                     R.string.unable_to_save_image_verbose,
                     effect.stage,
                 ),
-                details = effect.details,
-                onCopyDetails = { text ->
-                    copyFailureDetails(effect.details.name, text)
-                },
+                stackTrace = effect.stackTrace,
+                onCopyDetails = ::copy,
             )
         }
     }
 
-    private fun copyFailureDetails(label: String, text: String) {
-        clipboardManager.setPrimaryClip(ClipData.newPlainText(label, text))
-        activity.showMessage(R.string.copied_text_to_clipboard)
+    private fun copy(text: String) {
+        onAction(DialogAction.CopyClicked(text))
     }
 
     private fun showCapturedPreview(bitmap: Bitmap) {

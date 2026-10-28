@@ -229,6 +229,7 @@ class ViewfinderRecordingFlowTest {
             orientationDelegate = mockk(relaxed = true),
             screenWakeDelegate = mockk(relaxed = true),
             galleryDelegate = mockk(relaxed = true),
+            copyText = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = ViewfinderUiStateMapperImpl(
                 settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),

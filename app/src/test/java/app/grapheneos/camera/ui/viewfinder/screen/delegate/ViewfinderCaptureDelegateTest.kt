@@ -25,6 +25,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.util.printStackTraceToString
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -295,7 +296,7 @@ class ViewfinderCaptureDelegateTest {
             assertFalse(capture().isSavingPicture)
             val failure = effects.single() as Effect.Picture.CaptureFailed
             assertEquals(CAPTURE_ERROR_CODE, failure.errorCode)
-            assertEquals(cause.javaClass.name, failure.details.name)
+            assertEquals(cause.printStackTraceToString(), failure.stackTrace)
         }
     }
 

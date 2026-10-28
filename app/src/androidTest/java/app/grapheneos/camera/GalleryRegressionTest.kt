@@ -80,7 +80,6 @@ class GalleryRegressionTest {
             CameraTheme {
                 GalleryScreen(
                     systemGalleryLauncher = mockk(relaxed = true),
-                    clipboardManager = mockk(relaxed = true),
                     onNavigateBack = {},
                     screenModel = screenModel,
                 )

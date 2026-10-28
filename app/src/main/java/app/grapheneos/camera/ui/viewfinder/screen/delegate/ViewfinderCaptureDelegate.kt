@@ -20,7 +20,6 @@ import app.grapheneos.camera.domain.capture.usecase.StoreCapturedPreview
 import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureDetails
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
@@ -370,7 +369,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         postEffect(
             Effect.Picture.CaptureFailed(
                 errorCode = event.errorCode,
-                details = detailsOf(event.cause),
+                stackTrace = event.cause.printStackTraceToString(),
             ),
         )
     }
@@ -385,7 +384,7 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 postEffect(
                     Effect.Picture.SaveFailed(
                         stage = event.cause.place.name,
-                        details = detailsOf(event.cause),
+                        stackTrace = event.cause.printStackTraceToString(),
                         alreadyReported = event.alreadyReported,
                     ),
                 )
@@ -397,13 +396,6 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun detailsOf(exception: Throwable): PictureFailureDetails {
-        return PictureFailureDetails(
-            name = exception.javaClass.name,
-            stackTrace = exception.printStackTraceToString(),
-        )
     }
 
     private fun onPreviewCaptured(bitmap: Bitmap) {

@@ -17,11 +17,9 @@ internal sealed interface GalleryScreenEffect {
 
     data object DeletionFailed : GalleryScreenEffect
 
-    data object OpenSystemGallery : OutsideSession
+    data object TextCopied : GalleryScreenEffect
 
-    data class CopyText(
-        val text: String,
-    ) : GalleryScreenEffect
+    data object OpenSystemGallery : OutsideSession
 
     data class ShowInSystemGallery(
         val item: CapturedItem,
