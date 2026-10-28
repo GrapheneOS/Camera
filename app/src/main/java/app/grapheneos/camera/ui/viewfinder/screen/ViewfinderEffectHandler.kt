@@ -12,7 +12,6 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -26,8 +25,6 @@ import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.ui.camerasettings.CameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.SecureCameraSettingsActivity
 import app.grapheneos.camera.ui.camerasettings.screen.cameraSettingsArguments
-import app.grapheneos.camera.ui.common.dialog.showCameraPermissionDialog
-import app.grapheneos.camera.ui.common.dialog.showMicrophonePermissionDialog
 import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.common.dialog.showPictureFailureDialog
 import app.grapheneos.camera.ui.common.dialog.showQrResultDialog
@@ -64,8 +61,6 @@ internal class ViewfinderEffectHandlerImpl(
             onAction(PermissionAction.RequestAnswered(permission))
         }
     }
-
-    private var permissionDialog: AlertDialog? = null
 
     @Suppress("CyclomaticComplexMethod")
     override fun handle(effect: Effect) {
@@ -421,8 +416,6 @@ internal class ViewfinderEffectHandlerImpl(
     private fun handlePermission(effect: Effect.Permission) {
         when (effect) {
             is Effect.Permission.Request -> requestPermission(effect)
-            is Effect.Permission.ShowDialog -> showPermissionDialog(effect)
-            is Effect.Permission.DismissDialog -> permissionDialog?.dismiss()
             is Effect.Permission.OpenSettings -> openAppSettings()
         }
     }
@@ -442,32 +435,6 @@ internal class ViewfinderEffectHandlerImpl(
                     .getValue(permission)
                     .launch(permission.manifestNames.toTypedArray())
             }
-        }
-    }
-
-    private fun showPermissionDialog(effect: Effect.Permission.ShowDialog) {
-        val permission = effect.permission
-        val onDismissed = { onAction(PermissionAction.DialogDismissed(permission)) }
-        val onSettingsClicked = { onAction(PermissionAction.SettingsClicked) }
-            .takeIf { effect.offersSettings }
-
-        permissionDialog = when (permission) {
-            AppPermission.CAMERA -> showCameraPermissionDialog(
-                activity = activity,
-                onSettingsClicked = onSettingsClicked,
-                onDismissed = onDismissed,
-            )
-
-            AppPermission.MICROPHONE -> showMicrophonePermissionDialog(
-                activity = activity,
-                onSettingsClicked = onSettingsClicked,
-                onRecordWithoutAudioClicked = {
-                    onAction(RecordingAction.RecordWithoutAudioClicked)
-                },
-                onDismissed = onDismissed,
-            )
-
-            AppPermission.LOCATION -> null
         }
     }
 

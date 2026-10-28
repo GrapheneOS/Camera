@@ -165,18 +165,11 @@ sealed interface ViewfinderScreenEffect {
 
     sealed interface Permission : ViewfinderScreenEffect {
 
-        data object DismissDialog : Permission
-
         data object OpenSettings : Permission
 
         data class Request(
             val permission: AppPermission,
             val explainsFirst: Boolean,
-        ) : Permission
-
-        data class ShowDialog(
-            val permission: AppPermission,
-            val offersSettings: Boolean,
         ) : Permission
     }
 }

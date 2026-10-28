@@ -60,6 +60,7 @@ import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.common.dialog.SettingsDialog
 import app.grapheneos.camera.ui.common.dialog.showMoreQrFormatOptions
+import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
@@ -75,6 +76,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderOverlay
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
 import app.grapheneos.camera.ui.viewfinder.screen.applyPreviewRatio
@@ -548,6 +550,12 @@ open class MainActivity : AppCompatActivity() {
                 viewfinder.effects.collect { effect ->
                     effectHandler.handle(effect)
                 }
+            }
+        }
+
+        binding.composeOverlay.setContent {
+            CameraTheme {
+                ViewfinderOverlay(screenModel = viewfinder)
             }
         }
 

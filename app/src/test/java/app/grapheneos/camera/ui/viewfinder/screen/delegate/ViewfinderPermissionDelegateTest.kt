@@ -6,6 +6,7 @@ import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import io.mockk.every
@@ -43,74 +44,43 @@ class ViewfinderPermissionDelegateTest {
 
     @Test
     fun dialog_isShownUntilDismissed() {
-        runTest {
-            val effects = collectEffects(stateHolder)
-            val delegate = createDelegate()
+        val delegate = createDelegate()
 
-            delegate.showDialog(AppPermission.CAMERA)
-            assertEquals(AppPermission.CAMERA, state().permissionDialog)
-            assertEquals(
-                listOf(
-                    Effect.Permission.ShowDialog(
-                        permission = AppPermission.CAMERA,
-                        offersSettings = true,
-                    ),
-                ),
-                effects,
-            )
+        delegate.showDialog(AppPermission.CAMERA)
+        assertEquals(
+            ViewfinderDialog.Permission(
+                permission = AppPermission.CAMERA,
+                offersSettings = true,
+            ),
+            state().dialog,
+        )
 
-            delegate.dismissDialog()
-            assertNull(state().permissionDialog)
-        }
-    }
-
-    @Test
-    fun dialog_alreadyUp_isNotStackedAgain() {
-        runTest {
-            val effects = collectEffects(stateHolder)
-            val delegate = createDelegate()
-
-            delegate.showDialog(AppPermission.CAMERA)
-            delegate.showDialog(AppPermission.CAMERA)
-
-            assertEquals(1, effects.size)
-        }
+        delegate.dismissDialog()
+        assertNull(state().dialog)
     }
 
     @Test
     fun dialog_inALockscreenSession_offersNoSettings() {
-        runTest {
-            val effects = collectEffects(stateHolder)
+        createDelegate(isSecureSession = true).showDialog(AppPermission.MICROPHONE)
 
-            createDelegate(isSecureSession = true).showDialog(AppPermission.MICROPHONE)
-
-            assertEquals(
-                listOf(
-                    Effect.Permission.ShowDialog(
-                        permission = AppPermission.MICROPHONE,
-                        offersSettings = false,
-                    ),
-                ),
-                effects,
-            )
-        }
+        assertEquals(
+            ViewfinderDialog.Permission(
+                permission = AppPermission.MICROPHONE,
+                offersSettings = false,
+            ),
+            state().dialog,
+        )
     }
 
     @Test
     fun refresh_closesTheDialogOfAPermissionGrantedMeanwhile() {
-        runTest {
-            val effects = collectEffects(stateHolder)
-            val delegate = createDelegate()
+        val delegate = createDelegate()
 
-            delegate.showDialog(AppPermission.CAMERA)
-            effects.clear()
+        delegate.showDialog(AppPermission.CAMERA)
+        granted += AppPermission.CAMERA
+        delegate.refresh()
 
-            granted += AppPermission.CAMERA
-            delegate.refresh()
-
-            assertNull(state().permissionDialog)
-            assertEquals(listOf(Effect.Permission.DismissDialog), effects)
-        }
+        assertNull(state().dialog)
     }
 
     @Test
@@ -143,7 +113,7 @@ class ViewfinderPermissionDelegateTest {
 
             delegate.openSettings()
 
-            assertNull(state().permissionDialog)
+            assertNull(state().dialog)
             assertEquals(listOf(Effect.Permission.OpenSettings), effects)
         }
     }
@@ -159,7 +129,7 @@ class ViewfinderPermissionDelegateTest {
 
             delegate.onDialogDismissed(AppPermission.CAMERA)
 
-            assertNull(state().permissionDialog)
+            assertNull(state().dialog)
             assertEquals(listOf(Effect.CloseScreen), effects)
         }
     }
