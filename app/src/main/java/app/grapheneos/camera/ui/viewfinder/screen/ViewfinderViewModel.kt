@@ -142,6 +142,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         viewModelScope.launch { cameraDelegate.trackSession() }
         viewModelScope.launch { settingsDelegate.trackSettings() }
+        viewModelScope.launch { settingsDelegate.trackModeSettings() }
         viewModelScope.launch { settingsDelegate.trackCaptureStarts() }
         viewModelScope.launch { locationDelegate.trackGeoTagging() }
         viewModelScope.launch { recordingDelegate.trackRecorder() }
