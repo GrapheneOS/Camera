@@ -63,7 +63,6 @@ internal class ViewfinderViewRenderer(
         activity.cdTimer.visibility = visibleOrGone(state.selfTimerCountdownVisible)
         activity.cbCross.visibility = visibleOrInvisible(state.selfTimerCancelVisible)
 
-        activity.settingsDialog.render(state.settingsSheet)
         activity.exposureBar.render(state.exposure)
 
         renderKeepScreenOn(state.keepScreenOn)

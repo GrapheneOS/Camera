@@ -27,7 +27,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDel
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CaptureUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.SettingsSheetUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
@@ -232,7 +231,6 @@ class ViewfinderRecordingFlowTest {
             gestureDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
             uiStateMapper = ViewfinderUiStateMapperImpl(
-                settingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl(),
                 captureUiStateMapper = CaptureUiStateMapperImpl(),
             ),
             zoomUiStateMapper = ZoomUiStateMapperImpl(),

@@ -10,8 +10,8 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.activities.VideoOnlyActivity
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -46,7 +46,7 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 10))
                 activity.cdTimer.startTimer()
                 assertTrue(activity.cdTimer.isRunning)
             }
@@ -78,7 +78,7 @@ class SelfTimerRegressionTest {
             // A countdown has to have run at least once for the bug to be reachable: the guard this
             // replaced asked whether a timer had ever been built, not whether one was up.
             scenario.onActivity { activity ->
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 1))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 1))
                 activity.cdTimer.startTimer()
                 activity.cdTimer.cancelTimer()
                 assertFalse(activity.cdTimer.isRunning)
@@ -108,11 +108,11 @@ class SelfTimerRegressionTest {
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
 
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 5))
                 assertEquals(View.VISIBLE, activity.cbText.visibility)
                 assertEquals("5s", activity.cbText.text.toString())
 
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 0))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 0))
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)
                 assertEquals("", activity.cbText.text.toString())
             }
@@ -131,7 +131,7 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 10))
 
                 activity.captureButton.performClick()
 
@@ -158,7 +158,7 @@ class SelfTimerRegressionTest {
 
             scenario.onActivity { activity ->
                 activity.viewfinder.onAction(CameraAction.ModeSelected(CameraMode.CAMERA))
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 10))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 10))
                 val shutterDescription = activity.captureButton.contentDescription
 
                 activity.captureButton.performClick()
@@ -187,7 +187,7 @@ class SelfTimerRegressionTest {
             waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
 
             scenario.onActivity { activity ->
-                activity.viewfinder.onAction(SettingsAction.SelfTimerSelected(seconds = 5))
+                activity.quickSettings.onAction(QuickSettingsAction.SelfTimerSelected(seconds = 5))
 
                 assertTrue(activity.viewfinder.uiState.value.isVideoMode)
                 assertEquals(View.INVISIBLE, activity.cbText.visibility)

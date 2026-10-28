@@ -1,18 +1,22 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.quicksettings.screen.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
-data class SettingsSheetUiState(
+@Immutable
+data class QuickSettingsUiState(
     @DrawableRes val flashIcon: Int = R.drawable.flash_off_circle,
     @StringRes val flashDescription: Int = R.string.flash_off,
     val includeAudio: Boolean = false,
     val selfTimerSeconds: Int = 0,
     val videoQuality: VideoQuality = SettingsDefaults.VIDEO_QUALITY,
-    val videoQualities: List<VideoQuality> = emptyList(),
+    val videoQualities: ImmutableList<VideoQuality> = persistentListOf(),
     val videoQualityPosition: Int? = null,
     val torchAvailable: Boolean = false,
     val torchOn: Boolean = false,
@@ -24,6 +28,4 @@ data class SettingsSheetUiState(
     val videoQualitySettingVisible: Boolean = false,
     val selfIlluminationSettingVisible: Boolean = false,
     val timerSettingVisible: Boolean = true,
-    val includeAudioSettingEnabled: Boolean = true,
-    val videoQualitySettingEnabled: Boolean = true,
 )

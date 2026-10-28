@@ -1,6 +1,7 @@
-package app.grapheneos.camera.ui.viewfinder.screen.mapper
+package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.R
+import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
@@ -8,12 +9,8 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.SettingsSheetUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -23,37 +20,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class SettingsSheetUiStateMapperTest {
+class QuickSettingsUiStateMapperTest {
 
-    private val mapper: SettingsSheetUiStateMapper = SettingsSheetUiStateMapperImpl()
-
-    @Test
-    fun recording_locksTheSettingsItWasStartedWith() {
-        val state = map(
-            mode = CameraMode.VIDEO,
-            recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
-        )
-
-        assertFalse(state.includeAudioSettingEnabled)
-        assertFalse(state.videoQualitySettingEnabled)
-    }
-
-    @Test
-    fun aRecordingStillStarting_locksTheSettingsItWillStartWith() {
-        val state = map(
-            mode = CameraMode.VIDEO,
-            recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING),
-        )
-
-        assertFalse(state.includeAudioSettingEnabled)
-        assertFalse(state.videoQualitySettingEnabled)
-    }
+    private val mapper: QuickSettingsUiStateMapper = QuickSettingsUiStateMapperImpl()
 
     @Test
     fun flash_followsTheModeItWasSetTo() {
-        val on = map(flashMode = FlashMode.ON, session = sessionWithFlash())
-        val auto = map(flashMode = FlashMode.AUTO, session = sessionWithFlash())
-        val off = map(flashMode = FlashMode.OFF, session = sessionWithFlash())
+        val on = map(modeSettings = ModeSettings(flashMode = FlashMode.ON))
+        val auto = map(modeSettings = ModeSettings(flashMode = FlashMode.AUTO))
+        val off = map(modeSettings = ModeSettings(flashMode = FlashMode.OFF))
 
         assertEquals(R.drawable.flash_on_circle, on.flashIcon)
         assertEquals(R.string.flash_on, on.flashDescription)
@@ -68,8 +43,8 @@ class SettingsSheetUiStateMapperTest {
     @Test
     fun flash_unavailable_readsAsOffWhateverWasStored() {
         val state = map(
-            flashMode = FlashMode.ON,
-            session = ViewfinderSessionState(isFlashAvailable = false),
+            modeSettings = ModeSettings(flashMode = FlashMode.ON),
+            camera = PHOTO_CAMERA.copy(hasFlashUnit = false),
         )
 
         assertEquals(R.drawable.flash_off_circle, state.flashIcon)
@@ -78,8 +53,8 @@ class SettingsSheetUiStateMapperTest {
 
     @Test
     fun videoRows_areOnlyShownInVideoMode() {
-        val video = map(mode = CameraMode.VIDEO)
-        val photo = map(mode = CameraMode.CAMERA)
+        val video = map(camera = VIDEO_CAMERA)
+        val photo = map(camera = PHOTO_CAMERA)
 
         assertTrue(video.includeAudioSettingVisible)
         assertTrue(video.videoQualitySettingVisible)
@@ -92,11 +67,10 @@ class SettingsSheetUiStateMapperTest {
 
     @Test
     fun selfIlluminationRow_isForTheFrontLensOnly() {
-        val front = ViewfinderSessionState(lensFacing = LensFacing.FRONT)
-        val back = ViewfinderSessionState(lensFacing = LensFacing.BACK)
+        val front = PHOTO_CAMERA.copy(lensFacing = LensFacing.FRONT)
 
-        assertTrue(map(session = front).selfIlluminationSettingVisible)
-        assertFalse(map(session = back).selfIlluminationSettingVisible)
+        assertTrue(map(camera = front).selfIlluminationSettingVisible)
+        assertFalse(map(camera = PHOTO_CAMERA).selfIlluminationSettingVisible)
     }
 
     @Test
@@ -112,10 +86,7 @@ class SettingsSheetUiStateMapperTest {
 
     @Test
     fun selfIlluminationToggle_isTheStoredValueNotTheEffectiveOne() {
-        val state = map(
-            modeSettings = ModeSettings(selfIllumination = true),
-            session = ViewfinderSessionState(lensFacing = LensFacing.BACK),
-        )
+        val state = map(modeSettings = ModeSettings(selfIllumination = true))
 
         assertTrue(state.selfIllumination)
         assertFalse(state.selfIlluminationSettingVisible)
@@ -134,10 +105,21 @@ class SettingsSheetUiStateMapperTest {
     }
 
     @Test
+    fun aspectRatio_inVideoMode_isFixedAtWideWhateverWasStored() {
+        val state = map(
+            settings = CameraSettings(aspectRatio = AspectRatio.RATIO_4_3),
+            camera = VIDEO_CAMERA,
+        )
+
+        assertTrue(state.is16by9)
+        assertTrue(state.aspectRatioFixed)
+    }
+
+    @Test
     fun videoQuality_theStoredOne_isSelectedAmongTheOffered() {
         val state = map(
             modeSettings = ModeSettings(videoQuality = VideoQuality.FHD),
-            session = ViewfinderSessionState(videoQualities = OFFERED_QUALITIES),
+            camera = VIDEO_CAMERA,
         )
 
         assertEquals(OFFERED_QUALITIES, state.videoQualities)
@@ -148,7 +130,7 @@ class SettingsSheetUiStateMapperTest {
     fun videoQuality_leftToTheDevice_selectsTheHighestOffered() {
         val state = map(
             modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST),
-            session = ViewfinderSessionState(videoQualities = OFFERED_QUALITIES),
+            camera = VIDEO_CAMERA,
         )
 
         assertEquals(0, state.videoQualityPosition)
@@ -158,56 +140,61 @@ class SettingsSheetUiStateMapperTest {
     fun videoQuality_notOfferedByThisCamera_selectsNothing() {
         val state = map(
             modeSettings = ModeSettings(videoQuality = VideoQuality.SD),
-            session = ViewfinderSessionState(videoQualities = OFFERED_QUALITIES),
+            camera = VIDEO_CAMERA,
         )
 
         assertNull(state.videoQualityPosition)
     }
 
     @Test
-    fun videoQuality_beforeTheQualitiesAreKnown_selectsNothing() {
-        val state = map(modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST))
+    fun videoQuality_beforeACameraIsBound_selectsNothing() {
+        val state = map(
+            modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST),
+            camera = null,
+        )
 
         assertNull(state.videoQualityPosition)
     }
 
     @Test
-    fun torch_followsTheSession() {
-        val state = map(session = ViewfinderSessionState(isFlashAvailable = true, isTorchOn = true))
+    fun torch_followsTheCameraAndTheState() {
+        val state = map(isTorchOn = true)
 
         assertTrue(state.torchAvailable)
         assertTrue(state.torchOn)
     }
 
     private fun map(
-        mode: CameraMode = CameraMode.CAMERA,
-        requiresVideoModeOnly: Boolean = false,
-        flashMode: FlashMode = FlashMode.OFF,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
-        session: ViewfinderSessionState = ViewfinderSessionState(),
-        capture: ViewfinderCaptureState = ViewfinderCaptureState(),
-        recording: ViewfinderRecordingState = ViewfinderRecordingState(),
-    ): SettingsSheetUiState {
+        camera: BoundCamera? = PHOTO_CAMERA,
+        isTorchOn: Boolean = false,
+    ): QuickSettingsUiState {
         return mapper.map(
-            ViewfinderState(
-                mode = mode,
-                requiresVideoModeOnly = requiresVideoModeOnly,
-                flashMode = flashMode,
+            QuickSettingsState(
                 settings = settings,
                 modeSettings = modeSettings,
-                session = session,
-                capture = capture,
-                recording = recording,
+                boundCamera = camera,
+                isTorchOn = isTorchOn,
             ),
         )
     }
 
-    private fun sessionWithFlash(): ViewfinderSessionState {
-        return ViewfinderSessionState(isFlashAvailable = true)
-    }
-
     private companion object {
         val OFFERED_QUALITIES = listOf(VideoQuality.UHD, VideoQuality.FHD, VideoQuality.HD)
+
+        val PHOTO_CAMERA = BoundCamera(
+            mode = CameraMode.CAMERA,
+            isVideoMode = false,
+            lensFacing = LensFacing.BACK,
+            hasFlashUnit = true,
+            videoQualities = emptyList(),
+        )
+
+        val VIDEO_CAMERA = PHOTO_CAMERA.copy(
+            mode = CameraMode.VIDEO,
+            isVideoMode = true,
+            videoQualities = OFFERED_QUALITIES,
+        )
     }
 }

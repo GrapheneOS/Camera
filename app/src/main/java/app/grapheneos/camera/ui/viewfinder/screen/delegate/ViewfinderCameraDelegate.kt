@@ -81,7 +81,6 @@ interface ViewfinderCameraDelegate {
     fun focusAt(x: Float, y: Float)
     fun cancelFocus()
 
-    fun refreshVideoQualities()
     fun dismissQrResult()
 
     fun capabilities(): CameraCapabilities
@@ -149,6 +148,13 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                     .map { state -> state.barcodeFormats() }
                     .distinctUntilChanged()
                     .collect { barcodeFormats -> session.setBarcodeFormats(barcodeFormats) }
+            }
+
+            launch {
+                stateHolder.state
+                    .map { state -> state.modeSettings.flashMode }
+                    .distinctUntilChanged()
+                    .collect(::applyFlashMode)
             }
 
             stateHolder.state
@@ -364,14 +370,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
         session.cancelFocusAndMetering()
     }
 
-    override fun refreshVideoQualities() {
-        val videoQualities = session.supportedVideoQualities()
-
-        stateHolder.update {
-            it.copy(session = it.session.copy(videoQualities = videoQualities))
-        }
-    }
-
     override fun dismissQrResult() {
         stateHolder.update { it.copy(session = it.session.copy(isQrResultShown = false)) }
     }
@@ -450,7 +448,6 @@ internal class ViewfinderCameraDelegateImpl @Inject constructor(
                 session = it.session.copy(
                     lensFacing = session.lensFacing,
                     canTakePicture = session.imageCapture != null,
-                    isFlashAvailable = torch.isAvailable,
                     isTorchOn = false,
                     sensorOrientationDegrees = session.sensorOrientationDegrees,
                 ),

@@ -7,9 +7,7 @@ import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.LensFacing
-import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -35,6 +33,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraA
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LocationAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
@@ -172,6 +171,7 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CaptureAction -> onCaptureAction(action)
             is RecordingAction -> onRecordingAction(action)
             is LifecycleAction -> onLifecycleAction(action)
+            is LocationAction -> onLocationAction(action)
             is SettingsAction -> onSettingsAction(action)
             is PermissionAction -> onPermissionAction(action)
             is DialogAction -> onDialogAction(action)
@@ -182,9 +182,6 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is CameraAction.ModeSelected -> switchMode(action.mode)
             is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
-            is CameraAction.FlashToggleClicked -> toggleFlashMode()
-            is CameraAction.TorchToggleClicked -> cameraDelegate.toggleTorch()
-            is CameraAction.AspectRatioToggleClicked -> toggleAspectRatio()
             is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
             is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
             is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
@@ -256,30 +253,17 @@ class ViewfinderViewModel @AssistedInject constructor(
         }
     }
 
+    private fun onLocationAction(action: LocationAction) {
+        when (action) {
+            is LocationAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
+        }
+    }
+
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.SettingsIconClicked -> settingsDelegate.openSettingsPanel()
-            is SettingsAction.AudioToggled -> settingsDelegate.setIncludeAudio(action.enabled)
-            is SettingsAction.EnableLocationClicked -> emitEffect(Effect.Location.OpenSettings)
-
-            is SettingsAction.VideoQualitySelected -> {
-                settingsDelegate.setVideoQuality(action.quality)
-            }
-
-            is SettingsAction.SelfIlluminationToggled -> {
-                settingsDelegate.setSelfIllumination(action.enabled)
-            }
-
-            is SettingsAction.CameraSettingsClicked -> {
-                settingsDelegate.openCameraSettings(cameraDelegate.capabilities())
-            }
-
             is SettingsAction.SettingsPanelVisibilityChanged -> {
                 settingsDelegate.onSettingsPanelVisibilityChanged(action.visible)
-            }
-
-            is SettingsAction.SelfTimerSelected -> {
-                settingsDelegate.setSelfTimerDuration(action.seconds)
             }
         }
     }
@@ -442,46 +426,6 @@ class ViewfinderViewModel @AssistedInject constructor(
             LensFacing.BACK -> R.string.rear_camera_unavailable
             LensFacing.FRONT -> R.string.front_camera_unavailable
         }
-    }
-
-    private fun toggleFlashMode() {
-        val state = state()
-
-        when {
-            state.requiresVideoModeOnly -> {
-                emitEffect(Effect.ShowMessage(R.string.flash_switch_unsupported))
-            }
-
-            state.session.isFlashAvailable -> {
-                val next = when (state.flashMode) {
-                    FlashMode.OFF -> FlashMode.ON
-                    FlashMode.ON -> FlashMode.AUTO
-                    FlashMode.AUTO -> FlashMode.OFF
-                }
-
-                setFlashMode(next)
-            }
-
-            else -> {
-                emitEffect(
-                    Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode),
-                )
-            }
-        }
-    }
-
-    private fun setFlashMode(value: FlashMode) {
-        settingsDelegate.setFlashMode(value)
-        cameraDelegate.applyFlashMode(value)
-    }
-
-    private fun toggleAspectRatio() {
-        val next = when (state().aspectRatio()) {
-            AspectRatio.RATIO_16_9 -> AspectRatio.RATIO_4_3
-            AspectRatio.RATIO_4_3 -> AspectRatio.RATIO_16_9
-        }
-
-        settingsDelegate.setAspectRatio(next)
     }
 
     private fun onCaptureButtonClicked() {
@@ -706,13 +650,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun applyModeSettings() {
         slotCurrentMode()
 
-        val slotted = state()
-
-        if (slotted.isVideoMode()) {
-            cameraDelegate.refreshVideoQualities()
-        }
-
-        cameraDelegate.applyFlashMode(slotted.modeSettings.flashMode)
+        cameraDelegate.applyFlashMode(state().modeSettings.flashMode)
     }
 
     private fun dismissQrResult() {
