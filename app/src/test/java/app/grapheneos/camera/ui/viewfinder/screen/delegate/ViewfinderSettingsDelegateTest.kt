@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
+import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
@@ -132,6 +133,46 @@ class ViewfinderSettingsDelegateTest {
                 SLOTTED.copy(videoQuality = VideoQuality.UHD),
                 stateHolder.state.value.modeSettings,
             )
+        }
+    }
+
+    @Test
+    fun rebindRequests_followAspectRatioWritesOnceTheStateHoldsThem() {
+        runTest {
+            val delegate = createDelegate()
+            val ratiosAtRequest = mutableListOf<AspectRatio>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.rebindRequests().collect {
+                    ratiosAtRequest += stateHolder.state.value.settings.aspectRatio
+                }
+            }
+
+            delegate.setAspectRatio(AspectRatio.RATIO_16_9)
+            delegate.setAspectRatio(AspectRatio.RATIO_16_9)
+
+            assertEquals(listOf(AspectRatio.RATIO_16_9), ratiosAtRequest)
+        }
+    }
+
+    @Test
+    fun rebindRequests_followVideoQualityWritesButNotSlotSwitches() {
+        runTest {
+            val stored = MutableStateFlow(SLOTTED)
+            every { settingsRepository.modeSettings(SLOT) } answers { stored.value }
+            every { settingsRepository.observeModeSettings(SLOT) } returns stored
+            val delegate = createDelegate()
+            val qualitiesAtRequest = mutableListOf<VideoQuality>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.rebindRequests().collect {
+                    qualitiesAtRequest += stateHolder.state.value.modeSettings.videoQuality
+                }
+            }
+
+            delegate.selectModeSlot(SLOT)
+            stored.value = SLOTTED.copy(videoQuality = VideoQuality.UHD)
+            delegate.selectModeSlot(OTHER_SLOT)
+
+            assertEquals(listOf(VideoQuality.UHD), qualitiesAtRequest)
         }
     }
 
