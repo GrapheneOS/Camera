@@ -2069,18 +2069,27 @@ class CamConfig(private val mActivity: MainActivity) {
 
         Log.i(TAG, "Refreshing tabs...")
 
+        // One event path for standard and fold tabs. Touch already commits on ACTION_UP;
+        // accessibility and keyboard clicks have no pressed touch and must commit too.
+        fun installModeTabActions(tab: com.google.android.material.tabs.TabLayout.Tab) {
+            tab.view.setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_UP) {
+                    mActivity.finalizeMode(tab)
+                }
+                false
+            }
+            tab.view.setOnClickListener { view ->
+                if (!view.isPressed) mActivity.finalizeMode(tab)
+            }
+        }
+
         tabLayout.removeAllTabs()
 
         availableModes.forEach { mode ->
             tabLayout.newTab().let { tab ->
                 tab.setText(mode.uiName)
 
-                tab.view.setOnTouchListener { _, e ->
-                    if (e.action == MotionEvent.ACTION_UP) {
-                        mActivity.finalizeMode(tab)
-                    }
-                    false
-                }
+                installModeTabActions(tab)
                 tab.tag = mode
 
                 // Highlight the mode the camera is really in, not the default one: the tabs are
@@ -2096,10 +2105,7 @@ class CamConfig(private val mActivity: MainActivity) {
                     FoldTabMode.REAR -> tab.setText(R.string.fold_tab_rear)
                 }
                 tab.tag = foldMode
-                tab.view.setOnTouchListener { _, e ->
-                    if (e.action == MotionEvent.ACTION_UP) mActivity.finalizeMode(tab)
-                    false
-                }
+                installModeTabActions(tab)
                 tabLayout.addTab(tab, foldMode == mActivity.foldSelectedMode)
             }
         }

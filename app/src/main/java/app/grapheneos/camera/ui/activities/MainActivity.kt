@@ -160,12 +160,19 @@ open class MainActivity : AppCompatActivity(),
             tabLayout.post {
                 if (!isFinishing && !isDestroyed) camConfig.refreshFoldModeTabs()
             }
-        } else if (selectionChanged && tabLayout.tabCount > 0) {
-            val target = newSelection?.let(tabLayout::getTabForFoldMode)
-                ?: tabLayout.getTabForMode(camConfig.currentMode)
-            target?.let { tabLayout.goToTab(it) }
+        } else if (tabLayout.tabCount > 0) {
+            // A rejected/failed fold request must not leave the UI highlighting a mode
+            // the camera never entered. This also covers no state change (null -> null).
+            val staleFoldSelection = newSelection == null &&
+                tabLayout.selectedTab?.tag is FoldTabMode
+            if (selectionChanged || staleFoldSelection) {
+                val target = newSelection?.let(tabLayout::getTabForFoldMode)
+                    ?: tabLayout.getTabForMode(camConfig.currentMode)
+                target?.let { tabLayout.goToTab(it) }
+            }
         }
     }
+    internal fun foldPreviewRecoveryCount(): Int = rearSelfieController?.foldPreviewRecoveryCount ?: 0
     internal fun foldSecondaryPreviewView(): PreviewView? = rearSelfieController?.secondaryPreviewView
     internal fun onFoldSecondaryPreviewBindFailure() { rearSelfieController?.onPreviewBindFailed() }
     internal fun closeFoldDualForModeChange() { rearSelfieController?.stopDualForModeChange() }
@@ -1276,12 +1283,12 @@ open class MainActivity : AppCompatActivity(),
                 return
             }
             val mode = selectedTab.tag as? CameraMode ?: return
-            // Exiting a fold tab via a standard mode must end the active fold session.
-            when (foldSelectedMode) {
-                FoldTabMode.DUAL -> if (mode == CameraMode.CAMERA) rearSelfieController?.toggleDualPreview()
-                FoldTabMode.REAR -> rearSelfieController?.toggleRearSelfie()
-                null -> Unit
-            }
+            // Cancel pending AND active WindowArea requests, including a queued
+            // Dual -> Rear transfer. A toggle is not a safe cancellation operation.
+            rearSelfieController?.cancelForModeChange(
+                restoreCameraPreview = mode == CameraMode.CAMERA &&
+                    mode == camConfig.currentMode
+            )
 
             // Blurred while the strip is still gliding, not once the camera has gone: the rebind
             // holds the main thread for half a second, so a transition left to the stream state
