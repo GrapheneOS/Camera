@@ -5,6 +5,8 @@ import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 
 internal sealed interface QuickSettingsScreenEffect {
 
+    data object TextCopied : QuickSettingsScreenEffect
+
     data class OpenCameraSettings(
         val entryPoint: CameraEntryPoint,
         val capabilities: CameraCapabilities,

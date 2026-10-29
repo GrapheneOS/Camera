@@ -2,12 +2,15 @@ package app.grapheneos.camera.ui.quicksettings.screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
+import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapper
@@ -42,6 +45,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val session: CameraSession,
     private val torch: TorchControl,
+    private val copyText: CopyText,
 ) : ViewModel(),
     QuickSettingsScreenModel {
 
@@ -85,6 +89,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     override fun onAction(action: Action) {
         when (action) {
             is Action.CameraSettingsClicked -> openCameraSettings()
+            is Action.CameraSettingsLongClicked -> copyVersion()
             is Action.FlashModeSelected -> setFlashMode(action.mode)
             is Action.TorchToggled -> setTorch(action.enabled)
             is Action.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
@@ -113,6 +118,12 @@ internal class QuickSettingsViewModel @Inject constructor(
                 capabilities = session.capabilities(),
             ),
         )
+    }
+
+    private fun copyVersion() {
+        if (copyText(BuildConfig.VERSION_NAME) == CopyTextResult.Unconfirmed) {
+            stateHolder.send(Effect.TextCopied)
+        }
     }
 
     private fun setTorch(enabled: Boolean) {

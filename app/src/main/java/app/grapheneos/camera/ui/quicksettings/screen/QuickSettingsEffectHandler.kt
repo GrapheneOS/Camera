@@ -1,9 +1,11 @@
 package app.grapheneos.camera.ui.quicksettings.screen
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.camerasettings.navigation.openCameraSettings
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 
@@ -33,6 +35,12 @@ internal class QuickSettingsEffectHandlerImpl(
                 entryPoint = effect.entryPoint,
                 capabilities = effect.capabilities,
             )
+
+            is Effect.TextCopied -> showTextCopied()
         }
+    }
+
+    private fun showTextCopied() {
+        Toast.makeText(activity, R.string.copied_text_to_clipboard, Toast.LENGTH_SHORT).show()
     }
 }

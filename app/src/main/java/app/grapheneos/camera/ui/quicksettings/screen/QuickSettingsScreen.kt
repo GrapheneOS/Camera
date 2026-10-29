@@ -136,6 +136,7 @@ private fun QuickSettingsContent(
                 QuickSettingsHeader(
                     isVideoMode = uiState.isVideoMode,
                     onMoreClick = { onAction(Action.CameraSettingsClicked) },
+                    onMoreLongClick = { onAction(Action.CameraSettingsLongClicked) },
                 )
                 QuickSettingsRows(
                     uiState = uiState,
