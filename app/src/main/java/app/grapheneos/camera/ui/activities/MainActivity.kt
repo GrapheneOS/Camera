@@ -62,10 +62,12 @@ import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.common.TunePlayer
+import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
+import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
@@ -81,6 +83,7 @@ import app.grapheneos.camera.ui.viewfinder.components.qr.QRToggle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolderImpl
+import app.grapheneos.camera.ui.viewfinder.screen.SettingsPanelDragCallbacks
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
@@ -144,6 +147,14 @@ open class MainActivity : AppCompatActivity() {
         ViewfinderGestureHandler(
             context = this,
             onAction = viewfinder::onAction,
+            settingsPanelDrag = SettingsPanelDragCallbacks(
+                isAvailable = { viewfinder.uiState.value.isSettingsPanelAvailable },
+                onDragStarted = quickSettingsSheet::startDrag,
+                onDragged = { delta -> quickSettingsSheet.drag(delta) },
+                onDragStopped = { velocity ->
+                    showSettingsPanel(quickSettingsSheet.release(velocity))
+                },
+            ),
         )
     }
 
@@ -256,6 +267,12 @@ open class MainActivity : AppCompatActivity() {
     private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
     private val quickSettingsInsets = mutableStateOf(QuickSettingsInsets())
+
+    private val quickSettingsSheet by lazy {
+        QuickSettingsSheetState(
+            settleVelocity = with(Density(context = this)) { SETTLE_VELOCITY.toPx() },
+        )
+    }
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
@@ -573,9 +590,10 @@ open class MainActivity : AppCompatActivity() {
                 ViewfinderOverlay(screenModel = viewfinder)
                 QuickSettingsScreen(
                     screenModel = quickSettings,
+                    sheetState = quickSettingsSheet,
                     visible = QuickSettingsNavKey in navigator.backStack,
                     insets = quickSettingsInsets.value,
-                    onDismissRequest = navigator::back,
+                    onVisibleChange = ::showSettingsPanel,
                 )
             }
         }
@@ -792,8 +810,8 @@ open class MainActivity : AppCompatActivity() {
 
     private fun setUpSettingsPanel() {
         val navigation = ViewfinderNavigationCallbacks(
-            onOpenSettingsPanel = { navigator.push(QuickSettingsNavKey) },
-            onCloseSettingsPanel = { navigator.removeDestination(QuickSettingsNavKey) },
+            onOpenSettingsPanel = { showSettingsPanel(true) },
+            onCloseSettingsPanel = { showSettingsPanel(false) },
         )
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
@@ -807,6 +825,11 @@ open class MainActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             snapshotFlow { QuickSettingsNavKey in navigator.backStack }
                 .collect { open -> renderSettingsPanel(open) }
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
+            snapshotFlow { quickSettingsSheet.visibleFraction() }
+                .collect { fraction -> settingsIcon.alpha = 1f - fraction }
         }
 
         trackQuickSettingsInsets()
@@ -828,6 +851,13 @@ open class MainActivity : AppCompatActivity() {
                     shutterRow = (overlay.height - threeButtons.top).toDp(),
                 )
             }
+        }
+    }
+
+    private fun showSettingsPanel(visible: Boolean) {
+        when {
+            visible -> navigator.push(QuickSettingsNavKey)
+            else -> navigator.removeDestination(QuickSettingsNavKey)
         }
     }
 

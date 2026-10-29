@@ -38,30 +38,15 @@ class SwipeOutcomeMapperTest {
     }
 
     @Test
-    fun swipeUp_opensTheSettings() {
-        assertEquals(
-            SwipeOutcome.OpenSettingsPanel,
-            mapper.map(direction = SwipeDirection.UP, state = photoState),
-        )
-    }
-
-    @Test
-    fun swipeDown_closesOpenSettingsAndOtherwiseDoesNothing() {
+    fun verticalSwipes_outsideQrMode_doNothing() {
+        assertNull(mapper.map(direction = SwipeDirection.UP, state = photoState))
         assertNull(mapper.map(direction = SwipeDirection.DOWN, state = photoState))
-        assertEquals(
-            SwipeOutcome.CloseSettingsPanel,
-            mapper.map(
-                direction = SwipeDirection.DOWN,
-                state = photoState.copy(isSettingsPanelOpen = true),
-            ),
-        )
     }
 
     @Test
-    fun swipes_whileTheSettingsAreOpen_neitherReopenThemNorChangeTheMode() {
+    fun sidewaysSwipes_whileTheSettingsAreOpen_doNotChangeTheMode() {
         val open = photoState.copy(isSettingsPanelOpen = true)
 
-        assertNull(mapper.map(direction = SwipeDirection.UP, state = open))
         assertNull(mapper.map(direction = SwipeDirection.LEFT, state = open))
     }
 

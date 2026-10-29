@@ -2,11 +2,9 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.testutil.collectEffects
-import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -22,25 +20,6 @@ class ViewfinderGestureDelegateTest {
     private val delegate = ViewfinderGestureDelegateImpl(
         swipeOutcomeMapper = SwipeOutcomeMapperImpl(),
     ).also { it.bind(stateHolder) }
-
-    @Test
-    fun verticalSwipes_navigateToAndAwayFromTheSettingsPanel() {
-        runTest {
-            val events = collectNavEvents(stateHolder)
-
-            delegate.onPreviewSwiped(SwipeDirection.UP)
-            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
-            delegate.onPreviewSwiped(SwipeDirection.DOWN)
-
-            assertEquals(
-                listOf(
-                    ViewfinderNavEvent.OpenSettingsPanel,
-                    ViewfinderNavEvent.CloseSettingsPanel,
-                ),
-                events,
-            )
-        }
-    }
 
     @Test
     fun sidewaysSwipes_moveAcrossTheModeTabs() {

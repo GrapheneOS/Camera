@@ -4,7 +4,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeOutcome
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
 import javax.inject.Inject
 
@@ -36,14 +35,6 @@ internal class ViewfinderGestureDelegateImpl @Inject constructor(
 
             is SwipeOutcome.ShowQrFormats -> {
                 stateHolder.postEffect(Effect.Settings.ShowQrFormats)
-            }
-
-            is SwipeOutcome.OpenSettingsPanel -> {
-                stateHolder.postNavEvent(NavEvent.OpenSettingsPanel)
-            }
-
-            is SwipeOutcome.CloseSettingsPanel -> {
-                stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
             }
 
             is SwipeOutcome.SelectAdjacentMode -> {

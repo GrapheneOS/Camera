@@ -201,6 +201,21 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
+    fun settingsPanel_shownWhileUnavailable_isClosed() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+            stateHolder.update {
+                it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
+            }
+
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
+        }
+    }
+
+    @Test
     fun capturing_withTheSettingsPanelClosed_navigatesNowhere() {
         runTest {
             createDelegate()

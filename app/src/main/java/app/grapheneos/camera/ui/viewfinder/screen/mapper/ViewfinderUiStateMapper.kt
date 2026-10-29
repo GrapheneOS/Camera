@@ -56,6 +56,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             muteToggleVisible = isRecording && settings.includeAudio,
             keepScreenOn = isRecordingActive || state.keepsScreenAwake,
             isSelfIlluminating = state.selfIlluminate(),
+            isSettingsPanelAvailable = state.isSettingsPanelAvailable(),
             recordingTimerText = formatVideoDuration(state.recording.duration.inWholeSeconds),
             cameraPreviewVisible = !state.capture.isCapturedPreviewShown,
             modeTabsVisible = modeTabsVisible(state),
