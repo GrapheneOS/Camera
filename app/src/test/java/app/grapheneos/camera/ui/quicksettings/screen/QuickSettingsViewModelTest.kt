@@ -22,7 +22,6 @@ import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction a
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -42,7 +41,12 @@ class QuickSettingsViewModelTest {
 
     private val storedSettings = MutableStateFlow(CameraSettings())
 
-    private val settingsRepository = settingsRepositoryOver(storedSettings)
+    private val storedModeSettings = mutableMapOf<ModeSlot, ModeSettings>()
+
+    private val settingsRepository = settingsRepositoryOver(
+        storedSettings = storedSettings,
+        storedModeSettings = storedModeSettings,
+    )
 
     private val boundCamera = MutableStateFlow<BoundCamera?>(PHOTO_CAMERA)
 
@@ -56,7 +60,7 @@ class QuickSettingsViewModelTest {
     @Test
     fun modeSettings_followTheSlotOfTheBoundCamera() {
         runTest {
-            every { settingsRepository.modeSettings(FRONT_VIDEO_SLOT) } returns STORED_FRONT_VIDEO
+            storedModeSettings[FRONT_VIDEO_SLOT] = STORED_FRONT_VIDEO
             val viewModel = viewModel()
 
             boundCamera.value = FRONT_VIDEO_CAMERA
@@ -68,17 +72,12 @@ class QuickSettingsViewModelTest {
     @Test
     fun flashToggleClicked_withAFlashThatIsOff_storesOnForTheBoundSlot() {
         runTest {
-            every { settingsRepository.modeSettings(PHOTO_SLOT) } returns ModeSettings(
-                flashMode = FlashMode.OFF,
-            )
-            every {
-                settingsRepository.setFlashMode(slot = any(), value = any())
-            } returns ModeSettings()
+            storedModeSettings[PHOTO_SLOT] = ModeSettings(flashMode = FlashMode.OFF)
             val viewModel = viewModel()
 
             viewModel.onAction(Action.FlashToggleClicked)
 
-            verify { settingsRepository.setFlashMode(slot = PHOTO_SLOT, value = FlashMode.ON) }
+            assertEquals(FlashMode.ON, storedModeSettings.getValue(PHOTO_SLOT).flashMode)
         }
     }
 
@@ -95,7 +94,7 @@ class QuickSettingsViewModelTest {
                 listOf(Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode)),
                 effects,
             )
-            verify(exactly = 0) { settingsRepository.setFlashMode(slot = any(), value = any()) }
+            assertEquals(emptyMap<ModeSlot, ModeSettings>(), storedModeSettings)
         }
     }
 
@@ -110,7 +109,7 @@ class QuickSettingsViewModelTest {
             viewModel.onAction(Action.FlashToggleClicked)
 
             assertEquals(listOf(Effect.ShowMessage(R.string.flash_switch_unsupported)), effects)
-            verify(exactly = 0) { settingsRepository.setFlashMode(slot = any(), value = any()) }
+            assertEquals(emptyMap<ModeSlot, ModeSettings>(), storedModeSettings)
         }
     }
 
@@ -140,19 +139,14 @@ class QuickSettingsViewModelTest {
     fun videoQualitySelected_storesItForTheBoundSlot() {
         runTest {
             boundCamera.value = FRONT_VIDEO_CAMERA
-            every {
-                settingsRepository.setVideoQuality(slot = any(), value = any())
-            } returns ModeSettings()
             val viewModel = viewModel()
 
             viewModel.onAction(Action.VideoQualitySelected(VideoQuality.UHD))
 
-            verify {
-                settingsRepository.setVideoQuality(
-                    slot = FRONT_VIDEO_SLOT,
-                    value = VideoQuality.UHD,
-                )
-            }
+            assertEquals(
+                VideoQuality.UHD,
+                storedModeSettings.getValue(FRONT_VIDEO_SLOT).videoQuality,
+            )
         }
     }
 
@@ -164,9 +158,7 @@ class QuickSettingsViewModelTest {
 
             viewModel.onAction(Action.SelfIlluminationToggled(enabled = true))
 
-            verify(exactly = 0) {
-                settingsRepository.setSelfIllumination(slot = any(), value = any())
-            }
+            assertEquals(emptyMap<ModeSlot, ModeSettings>(), storedModeSettings)
         }
     }
 

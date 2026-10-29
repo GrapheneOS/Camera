@@ -143,25 +143,28 @@ internal class QuickSettingsViewModel @Inject constructor(
 
     private fun cycleFlashMode() {
         val slot = state.modeSlot() ?: return
-        val next = when (state.modeSettings.flashMode) {
-            FlashMode.OFF -> FlashMode.ON
-            FlashMode.ON -> FlashMode.AUTO
-            FlashMode.AUTO -> FlashMode.OFF
-        }
 
-        settingsRepository.setFlashMode(slot = slot, value = next)
+        settingsRepository.updateMode(slot = slot) { settings ->
+            val next = when (settings.flashMode) {
+                FlashMode.OFF -> FlashMode.ON
+                FlashMode.ON -> FlashMode.AUTO
+                FlashMode.AUTO -> FlashMode.OFF
+            }
+
+            settings.copy(flashMode = next)
+        }
     }
 
     private fun setSelfIllumination(enabled: Boolean) {
         val slot = state.modeSlot() ?: return
 
-        settingsRepository.setSelfIllumination(slot = slot, value = enabled)
+        settingsRepository.updateMode(slot = slot) { it.copy(selfIllumination = enabled) }
     }
 
     private fun setVideoQuality(quality: VideoQuality) {
         val slot = state.modeSlot() ?: return
 
-        settingsRepository.setVideoQuality(slot = slot, value = quality)
+        settingsRepository.updateMode(slot = slot) { it.copy(videoQuality = quality) }
     }
 
     private fun showMessage(@StringRes message: Int) {

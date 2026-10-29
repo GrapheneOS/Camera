@@ -102,7 +102,7 @@ class SecurePrefsIsolationTest {
         val owners = durable.settingsRepository()
 
         owners.update { ownersSettings }
-        owners.setSelfIllumination(SLOT, ownersSelfIllumination)
+        owners.updateMode(SLOT) { it.copy(selfIllumination = ownersSelfIllumination) }
     }
 
     @Test
@@ -142,11 +142,11 @@ class SecurePrefsIsolationTest {
     @Test
     fun aSecureSessionKeepsItsModeSettingsToItselfAndThenKeepsThem() {
         asTheOwner { repository ->
-            repository.setSelfIllumination(SLOT, false)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = false) }
         }
 
         asASecureSession { repository ->
-            repository.setSelfIllumination(SLOT, true)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
 
             assertTrue(
                 "The session lost its own mode-scoped write, so it was handed a second copy" +

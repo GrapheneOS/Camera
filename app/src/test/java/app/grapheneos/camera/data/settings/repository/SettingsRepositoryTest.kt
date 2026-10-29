@@ -40,6 +40,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -100,7 +101,7 @@ class SettingsRepositoryTest {
             val repository = repository(from = stalledStore())
 
             repository.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            repository.setSelfIllumination(SLOT, true)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
             repository.modeSettings(SLOT)
 
             assertEquals(SOME_PHOTO_QUALITY, repository.settings.value.photoQuality)
@@ -150,7 +151,7 @@ class SettingsRepositoryTest {
         runTest {
             val owners = repository(from = stalledStore())
             owners.update { it.copy(photoQuality = SOME_PHOTO_QUALITY) }
-            owners.setSelfIllumination(SLOT, true)
+            owners.updateMode(SLOT) { it.copy(selfIllumination = true) }
 
             val session = owners.sessionCopy()
             session.modeSettings(SLOT)
@@ -168,7 +169,7 @@ class SettingsRepositoryTest {
 
             val session = owners.sessionCopy()
             session.update { it.copy(photoQuality = OTHER_PHOTO_QUALITY) }
-            session.setSelfIllumination(SLOT, true)
+            session.updateMode(SLOT) { it.copy(selfIllumination = true) }
 
             assertEquals(OTHER_PHOTO_QUALITY, settingsOf(session).photoQuality)
             assertEquals(SOME_PHOTO_QUALITY, settingsOf(owners).photoQuality)
@@ -206,7 +207,7 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
-            repository.setSelfIllumination(SLOT, true)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
             repository.modeSettings(SLOT)
 
             assertEquals(
@@ -236,35 +237,56 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun setVideoQuality_storesTheNameTheMapperGaveIt() {
+    fun updateMode_storesTheVideoQualityNameTheMapperGaveIt() {
         runTest {
             val repository = repository()
 
-            repository.modeSettings(SLOT)
-            storeVideoQualityAs(StoredVideoQuality.DEVICE_CHOICE)
-            repository.setVideoQuality(SLOT, VideoQuality.HIGHEST)
+            storeVideoQualityAs(StoredVideoQuality.UHD)
+            repository.updateMode(SLOT) { it.copy(videoQuality = VideoQuality.UHD) }
 
-            verify(exactly = 1) { storedVideoQualityMapper.map(quality = VideoQuality.HIGHEST) }
+            verify(exactly = 1) { storedVideoQualityMapper.map(quality = VideoQuality.UHD) }
             confirmVerified(storedVideoQualityMapper)
             assertEquals(
-                StoredVideoQuality.DEVICE_CHOICE,
+                StoredVideoQuality.UHD,
                 stored().modes[MODE.name]?.videoQualityBack,
             )
         }
     }
 
     @Test
-    fun setVideoQuality_eachLensFacing_isStoredSeparately() {
+    fun updateMode_storesOnlyTheFieldsItChanges() {
+        runTest {
+            val repository = repository()
+
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
+
+            assertEquals(StoredModeSettings(selfIllumination = true), stored().modes[MODE.name])
+        }
+    }
+
+    @Test
+    fun updateMode_changingNothing_storesNothing() {
+        runTest {
+            val repository = repository()
+
+            repository.updateMode(SLOT) { it }
+
+            assertNull(stored().modes[MODE.name])
+        }
+    }
+
+    @Test
+    fun updateMode_eachLensFacing_storesItsVideoQualitySeparately() {
         runTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.UHD)
-            repository.setVideoQuality(SLOT, VideoQuality.UHD)
+            repository.updateMode(SLOT) { it.copy(videoQuality = VideoQuality.UHD) }
 
             repository.modeSettings(FRONT_SLOT)
             storeVideoQualityAs(StoredVideoQuality.HD)
-            repository.setVideoQuality(FRONT_SLOT, VideoQuality.HD)
+            repository.updateMode(FRONT_SLOT) { it.copy(videoQuality = VideoQuality.HD) }
 
             val storedMode = stored().modes.getValue(MODE.name)
 
@@ -280,7 +302,7 @@ class SettingsRepositoryTest {
 
             repository.modeSettings(SLOT)
             storeVideoQualityAs(StoredVideoQuality.FHD)
-            repository.setVideoQuality(SLOT, VideoQuality.FHD)
+            repository.updateMode(SLOT) { it.copy(videoQuality = VideoQuality.FHD) }
 
             val relaunched = repository()
 
@@ -299,7 +321,7 @@ class SettingsRepositoryTest {
             val repository = repository()
 
             repository.modeSettings(SLOT)
-            repository.setSelfIllumination(SLOT, true)
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
             repository.modeSettings(OTHER_SLOT)
 
             assertEquals(StoredModeSettings(), lastMappedMode())
@@ -324,8 +346,8 @@ class SettingsRepositoryTest {
                 repository.observeModeSettings(SLOT).collect { observed += it }
             }
 
-            repository.setSelfIllumination(OTHER_SLOT, true)
-            repository.setSelfIllumination(SLOT, true)
+            repository.updateMode(OTHER_SLOT) { it.copy(selfIllumination = true) }
+            repository.updateMode(SLOT) { it.copy(selfIllumination = true) }
 
             assertEquals(
                 listOf(ModeSettings(), ModeSettings(selfIllumination = true)),
