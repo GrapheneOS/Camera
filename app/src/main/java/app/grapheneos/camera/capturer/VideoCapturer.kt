@@ -41,6 +41,7 @@ import app.grapheneos.camera.ui.activities.SecureMainActivity
 import app.grapheneos.camera.ui.activities.VideoCaptureActivity
 import app.grapheneos.camera.util.formatVideoDuration
 import app.grapheneos.camera.util.getTreeDocumentUri
+import app.grapheneos.camera.util.isForeignOutputUriAllowed
 import app.grapheneos.camera.util.removePendingFlagFromUri
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -131,6 +132,7 @@ class VideoCapturer(private val mActivity: MainActivity) {
         var isPendingMediaStoreUri = false
 
         if (foreignUri != null) {
+            check(isForeignOutputUriAllowed(mActivity, foreignUri)) { "refused output uri $foreignUri" }
             uri = foreignUri
             shouldAddToGallery = false
         } else {
