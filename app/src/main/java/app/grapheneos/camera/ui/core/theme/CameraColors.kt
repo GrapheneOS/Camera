@@ -14,6 +14,7 @@ internal data class CameraColors(
     val overlay: Color,
     val onOverlay: Color,
     val overlayScrim: Color,
+    val selfIllumination: Color,
 ) {
 
     companion object {
@@ -23,6 +24,7 @@ internal data class CameraColors(
             overlay = Color.White,
             onOverlay = Color.Black,
             overlayScrim = Color.Black.copy(alpha = 0.6f),
+            selfIllumination = Color(color = 0xFFFFE8CF),
         )
     }
 }

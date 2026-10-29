@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.quicksettings.screen
 
-import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.LensFacing
@@ -22,6 +21,7 @@ import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction a
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -65,60 +65,28 @@ class QuickSettingsViewModelTest {
 
             boundCamera.value = FRONT_VIDEO_CAMERA
 
-            assertEquals(VideoQuality.HD, viewModel.uiState.value.videoQuality)
+            assertEquals(VideoQuality.HD, viewModel.uiState.value.videoQuality?.selected)
         }
     }
 
     @Test
-    fun flashToggleClicked_withAFlashThatIsOff_storesOnForTheBoundSlot() {
+    fun flashModeSelected_storesItForTheBoundSlot() {
         runTest {
             storedModeSettings[PHOTO_SLOT] = ModeSettings(flashMode = FlashMode.OFF)
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.FlashToggleClicked)
+            viewModel.onAction(Action.FlashModeSelected(FlashMode.ON))
 
             assertEquals(FlashMode.ON, storedModeSettings.getValue(PHOTO_SLOT).flashMode)
         }
     }
 
     @Test
-    fun flashToggleClicked_withoutAFlash_saysSoAndStoresNothing() {
-        runTest {
-            boundCamera.value = PHOTO_CAMERA.copy(hasFlashUnit = false)
-            val viewModel = viewModel()
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(Action.FlashToggleClicked)
-
-            assertEquals(
-                listOf(Effect.ShowMessage(R.string.flash_unavailable_in_selected_mode)),
-                effects,
-            )
-            assertEquals(emptyMap<ModeSlot, ModeSettings>(), storedModeSettings)
-        }
-    }
-
-    @Test
-    fun flashToggleClicked_inAVideoOnlyEntryPoint_saysSoEvenWithAFlash() {
-        runTest {
-            val viewModel = viewModel(
-                entryPoint = cameraEntryPoint(requiresVideoModeOnly = true),
-            )
-            val effects = collectEffects(viewModel)
-
-            viewModel.onAction(Action.FlashToggleClicked)
-
-            assertEquals(listOf(Effect.ShowMessage(R.string.flash_switch_unsupported)), effects)
-            assertEquals(emptyMap<ModeSlot, ModeSettings>(), storedModeSettings)
-        }
-    }
-
-    @Test
-    fun aspectRatioToggleClicked_storesTheOtherRatio() {
+    fun aspectRatioSelected_storesIt() {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.AspectRatioToggleClicked)
+            viewModel.onAction(Action.AspectRatioSelected(AspectRatio.RATIO_16_9))
 
             assertEquals(AspectRatio.RATIO_16_9, storedSettings.value.aspectRatio)
         }
@@ -129,9 +97,9 @@ class QuickSettingsViewModelTest {
         runTest {
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.SelfTimerSelected(seconds = SELF_TIMER_SECONDS))
+            viewModel.onAction(Action.SelfTimerSelected(SELF_TIMER))
 
-            assertEquals(SELF_TIMER_SECONDS, storedSettings.value.selfTimerDurationSeconds)
+            assertEquals(SELF_TIMER, storedSettings.value.selfTimerDuration)
         }
     }
 
@@ -163,14 +131,23 @@ class QuickSettingsViewModelTest {
     }
 
     @Test
-    fun cameraSettingsClicked_opensThemWithWhatTheCameraSupports() {
+    fun cameraSettingsClicked_opensThemForThisSessionWithWhatTheCameraSupports() {
         runTest {
-            val viewModel = viewModel()
+            val entryPoint = cameraEntryPoint(isSecureSession = true)
+            val viewModel = viewModel(entryPoint = entryPoint)
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(Action.CameraSettingsClicked)
 
-            assertEquals(listOf(Effect.OpenCameraSettings(CAPABILITIES)), effects)
+            assertEquals(
+                listOf(
+                    Effect.OpenCameraSettings(
+                        entryPoint = entryPoint,
+                        capabilities = CAPABILITIES,
+                    ),
+                ),
+                effects,
+            )
         }
     }
 
@@ -197,7 +174,7 @@ class QuickSettingsViewModelTest {
     }
 
     private companion object {
-        const val SELF_TIMER_SECONDS = 5
+        val SELF_TIMER = 5.seconds
 
         val CAPABILITIES = CameraCapabilities(lensFacing = LensFacing.BACK)
 

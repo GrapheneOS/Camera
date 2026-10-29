@@ -7,8 +7,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.di.camera.SnapshotProbeCacheEntryPoint
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import dagger.hilt.android.EntryPointAccessors
 import org.junit.Assert.assertEquals
@@ -97,26 +99,24 @@ class ModeSwitchLatencyRegressionTest {
             // The qualities a camera records at are listed once its preview starts streaming,
             // which is a good while after the mode switch that bound it returns.
             waitUntil(scenario, "the video qualities are listed") {
-                it.settingsDialog.videoQualitySpinner.count > 0
+                videoQualityOptions(it).isNotEmpty()
             }
 
             scenario.onActivity { activity ->
-                val spinner = activity.settingsDialog.videoQualitySpinner
                 assumeTrue(
                     "this camera records at a single quality",
-                    spinner.count > 1,
+                    videoQualityOptions(activity).size > 1,
                 )
 
-                val quality = activity.quickSettings.uiState.value.videoQuality
-                val original = spinner.selectedItemPosition
+                val original = selectedVideoQualityPosition(activity)
 
                 try {
                     selectVideoQuality(activity, if (original == 0) 1 else 0)
 
                     assertNotEquals(
                         "the video quality did not change",
-                        quality,
-                        activity.quickSettings.uiState.value.videoQuality
+                        original,
+                        selectedVideoQualityPosition(activity)
                     )
                     assertEquals(
                         "the new quality was answered from the old verdict",
@@ -182,11 +182,19 @@ class ModeSwitchLatencyRegressionTest {
         }
     }
 
-    // Both halves are needed: setSelection() only posts its callback, so the quality is applied
-    // here rather than a looper pass later.
     private fun selectVideoQuality(activity: MainActivity, position: Int) {
-        val dialog = activity.settingsDialog
-        dialog.videoQualitySpinner.setSelection(position)
-        dialog.updateVideoQuality(dialog.videoQualities[position])
+        val quality = videoQualityOptions(activity)[position]
+
+        activity.quickSettings.onAction(QuickSettingsAction.VideoQualitySelected(quality))
+    }
+
+    private fun selectedVideoQualityPosition(activity: MainActivity): Int {
+        val selected = activity.quickSettings.uiState.value.videoQuality?.selected
+
+        return videoQualityOptions(activity).indexOf(selected)
+    }
+
+    private fun videoQualityOptions(activity: MainActivity): List<VideoQuality> {
+        return activity.quickSettings.uiState.value.videoQuality?.options.orEmpty()
     }
 }

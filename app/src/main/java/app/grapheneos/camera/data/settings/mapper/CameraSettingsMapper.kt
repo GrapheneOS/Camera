@@ -12,6 +12,7 @@ import app.grapheneos.camera.data.settings.store.StoredCaptureMode
 import app.grapheneos.camera.data.settings.store.StoredGridType
 import app.grapheneos.camera.data.settings.store.StoredVolumeKeyAction
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 internal interface CameraSettingsMapper {
 
@@ -30,7 +31,7 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             focusTimeoutSeconds = stored.focusTimeoutSeconds
                 ?: SettingsDefaults.FOCUS_TIMEOUT_SECONDS,
             volumeKeyAction = map(stored.volumeKeyAction),
-            selfTimerDurationSeconds = stored.selfTimerDurationSeconds
+            selfTimerDuration = stored.selfTimerDurationSeconds?.seconds
                 ?: SettingsDefaults.SELF_TIMER_DURATION,
             timerLight = stored.timerLight ?: SettingsDefaults.TIMER_LIGHT,
             enableCameraSounds = stored.enableCameraSounds ?: SettingsDefaults.CAMERA_SOUNDS,
@@ -70,8 +71,10 @@ internal class CameraSettingsMapperImpl @Inject constructor() : CameraSettingsMa
             volumeKeyAction = settings.volumeKeyAction
                 .takeUnless { it == SettingsDefaults.VOLUME_KEY_ACTION }
                 ?.let(::map),
-            selfTimerDurationSeconds = settings.selfTimerDurationSeconds
-                .takeUnless { it == SettingsDefaults.SELF_TIMER_DURATION },
+            selfTimerDurationSeconds = settings.selfTimerDuration
+                .takeUnless { it == SettingsDefaults.SELF_TIMER_DURATION }
+                ?.inWholeSeconds
+                ?.toInt(),
             timerLight = settings.timerLight
                 .takeUnless { it == SettingsDefaults.TIMER_LIGHT },
             enableCameraSounds = settings.enableCameraSounds

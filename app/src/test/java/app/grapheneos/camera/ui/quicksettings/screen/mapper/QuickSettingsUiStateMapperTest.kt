@@ -1,6 +1,5 @@
 package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
-import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
@@ -11,8 +10,10 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,146 +26,121 @@ class QuickSettingsUiStateMapperTest {
     private val mapper: QuickSettingsUiStateMapper = QuickSettingsUiStateMapperImpl()
 
     @Test
-    fun flash_followsTheModeItWasSetTo() {
-        val on = map(modeSettings = ModeSettings(flashMode = FlashMode.ON))
-        val auto = map(modeSettings = ModeSettings(flashMode = FlashMode.AUTO))
-        val off = map(modeSettings = ModeSettings(flashMode = FlashMode.OFF))
-
-        assertEquals(R.drawable.flash_on_circle, on.flashIcon)
-        assertEquals(R.string.flash_on, on.flashDescription)
-
-        assertEquals(R.drawable.flash_auto_circle, auto.flashIcon)
-        assertEquals(R.string.flash_auto, auto.flashDescription)
-
-        assertEquals(R.drawable.flash_off_circle, off.flashIcon)
-        assertEquals(R.string.flash_off, off.flashDescription)
+    fun beforeACameraIsBound_thereIsNothingToSet() {
+        assertEquals(QuickSettingsUiState(), map(camera = null))
     }
 
     @Test
-    fun flash_unavailable_readsAsOffWhateverWasStored() {
-        val state = map(
-            modeSettings = ModeSettings(flashMode = FlashMode.ON),
-            camera = PHOTO_CAMERA.copy(hasFlashUnit = false),
-        )
+    fun photoMode_offersTheTimerAndTheAspectRatioButNotTheVideoSettings() {
+        val state = map(camera = PHOTO_CAMERA)
 
-        assertEquals(R.drawable.flash_off_circle, state.flashIcon)
-        assertEquals(R.string.flash_off, state.flashDescription)
+        assertFalse(state.isVideoMode)
+        assertNotNull(state.selfTimer)
+        assertNotNull(state.aspectRatio)
+        assertNull(state.videoQuality)
+        assertNull(state.audio)
     }
 
     @Test
-    fun videoRows_areOnlyShownInVideoMode() {
-        val video = map(camera = VIDEO_CAMERA)
-        val photo = map(camera = PHOTO_CAMERA)
+    fun videoMode_offersTheVideoSettingsButNotTheTimerOrTheAspectRatio() {
+        val state = map(camera = VIDEO_CAMERA)
 
-        assertTrue(video.includeAudioSettingVisible)
-        assertTrue(video.videoQualitySettingVisible)
-        assertFalse(video.timerSettingVisible)
-
-        assertFalse(photo.includeAudioSettingVisible)
-        assertFalse(photo.videoQualitySettingVisible)
-        assertTrue(photo.timerSettingVisible)
+        assertTrue(state.isVideoMode)
+        assertNull(state.selfTimer)
+        assertNull(state.aspectRatio)
+        assertNotNull(state.videoQuality)
+        assertNotNull(state.audio)
     }
 
     @Test
-    fun selfIlluminationRow_isForTheFrontLensOnly() {
-        val front = PHOTO_CAMERA.copy(lensFacing = LensFacing.FRONT)
+    fun flash_selectsTheStoredModeAmongAllModes() {
+        val flash = map(modeSettings = ModeSettings(flashMode = FlashMode.AUTO)).flash
 
-        assertTrue(map(camera = front).selfIlluminationSettingVisible)
-        assertFalse(map(camera = PHOTO_CAMERA).selfIlluminationSettingVisible)
+        assertEquals(FlashMode.AUTO, flash?.selected)
+        assertEquals(FlashMode.entries, flash?.options)
     }
 
     @Test
-    fun toggles_readTheValuesTheyStandFor() {
-        val state = map(
-            settings = CameraSettings(includeAudio = true),
-            modeSettings = ModeSettings(selfIllumination = true),
-        )
-
-        assertTrue(state.includeAudio)
-        assertTrue(state.selfIllumination)
+    fun flash_inAVideoOnlyEntryPoint_cannotBeChanged() {
+        assertEquals(false, map(requiresVideoModeOnly = true).flash?.enabled)
     }
 
     @Test
-    fun selfIlluminationToggle_isTheStoredValueNotTheEffectiveOne() {
-        val state = map(modeSettings = ModeSettings(selfIllumination = true))
+    fun withoutAFlashUnit_neitherTheFlashNorTheTorchIsOffered() {
+        val state = map(camera = PHOTO_CAMERA.copy(hasFlashUnit = false))
 
-        assertTrue(state.selfIllumination)
-        assertFalse(state.selfIlluminationSettingVisible)
+        assertNull(state.flash)
+        assertNull(state.torch)
     }
 
     @Test
-    fun aspectRatioToggle_announcesTheRatioItIsOn() {
-        val wide = map(settings = CameraSettings(aspectRatio = AspectRatio.RATIO_16_9))
-        val narrow = map(settings = CameraSettings(aspectRatio = AspectRatio.RATIO_4_3))
-
-        assertTrue(wide.is16by9)
-        assertEquals(R.string.aspect_ratio_16_9, wide.aspectRatioDescription)
-
-        assertFalse(narrow.is16by9)
-        assertEquals(R.string.aspect_ratio_4_3, narrow.aspectRatioDescription)
+    fun torch_followsTheState() {
+        assertEquals(true, map(isTorchOn = true).torch)
     }
 
     @Test
-    fun aspectRatio_inVideoMode_isFixedAtWideWhateverWasStored() {
-        val state = map(
-            settings = CameraSettings(aspectRatio = AspectRatio.RATIO_4_3),
-            camera = VIDEO_CAMERA,
-        )
+    fun selfIllumination_isOfferedForTheFrontLensOnly() {
+        val modeSettings = ModeSettings(selfIllumination = true)
 
-        assertTrue(state.is16by9)
-        assertTrue(state.aspectRatioFixed)
+        val front = map(modeSettings = modeSettings, camera = FRONT_PHOTO_CAMERA)
+        val back = map(modeSettings = modeSettings)
+
+        assertEquals(true, front.selfIllumination)
+        assertTrue(front.isSelfIlluminating)
+        assertNull(back.selfIllumination)
+        assertFalse(back.isSelfIlluminating)
     }
 
     @Test
-    fun videoQuality_theStoredOne_isSelectedAmongTheOffered() {
-        val state = map(
+    fun selfTimer_keepsTheStoredDurationEvenWithoutAMatchingOption() {
+        val selfTimer = map(settings = CameraSettings(selfTimerDuration = 8.seconds)).selfTimer
+
+        assertEquals(8.seconds, selfTimer?.selected)
+        assertFalse(selfTimer?.options.orEmpty().contains(8.seconds))
+    }
+
+    @Test
+    fun aspectRatio_selectsTheStoredRatio() {
+        val settings = CameraSettings(aspectRatio = AspectRatio.RATIO_16_9)
+
+        val aspectRatio = map(settings = settings).aspectRatio
+
+        assertEquals(AspectRatio.RATIO_16_9, aspectRatio?.selected)
+    }
+
+    @Test
+    fun videoQuality_selectsTheStoredQualityAmongTheOffered() {
+        val videoQuality = map(
             modeSettings = ModeSettings(videoQuality = VideoQuality.FHD),
             camera = VIDEO_CAMERA,
-        )
+        ).videoQuality
 
-        assertEquals(OFFERED_QUALITIES, state.videoQualities)
-        assertEquals(1, state.videoQualityPosition)
+        assertEquals(VideoQuality.FHD, videoQuality?.selected)
+        assertEquals(OFFERED_QUALITIES, videoQuality?.options)
     }
 
     @Test
     fun videoQuality_leftToTheDevice_selectsTheHighestOffered() {
-        val state = map(
+        val videoQuality = map(
             modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST),
+            camera = VIDEO_CAMERA,
+        ).videoQuality
+
+        assertEquals(VideoQuality.UHD, videoQuality?.selected)
+    }
+
+    @Test
+    fun audio_followsTheStoredSetting() {
+        val state = map(
+            settings = CameraSettings(includeAudio = false),
             camera = VIDEO_CAMERA,
         )
 
-        assertEquals(0, state.videoQualityPosition)
-    }
-
-    @Test
-    fun videoQuality_notOfferedByThisCamera_selectsNothing() {
-        val state = map(
-            modeSettings = ModeSettings(videoQuality = VideoQuality.SD),
-            camera = VIDEO_CAMERA,
-        )
-
-        assertNull(state.videoQualityPosition)
-    }
-
-    @Test
-    fun videoQuality_beforeACameraIsBound_selectsNothing() {
-        val state = map(
-            modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST),
-            camera = null,
-        )
-
-        assertNull(state.videoQualityPosition)
-    }
-
-    @Test
-    fun torch_followsTheCameraAndTheState() {
-        val state = map(isTorchOn = true)
-
-        assertTrue(state.torchAvailable)
-        assertTrue(state.torchOn)
+        assertEquals(false, state.audio)
     }
 
     private fun map(
+        requiresVideoModeOnly: Boolean = false,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         camera: BoundCamera? = PHOTO_CAMERA,
@@ -172,6 +148,7 @@ class QuickSettingsUiStateMapperTest {
     ): QuickSettingsUiState {
         return mapper.map(
             QuickSettingsState(
+                requiresVideoModeOnly = requiresVideoModeOnly,
                 settings = settings,
                 modeSettings = modeSettings,
                 boundCamera = camera,
@@ -190,6 +167,8 @@ class QuickSettingsUiStateMapperTest {
             hasFlashUnit = true,
             videoQualities = emptyList(),
         )
+
+        val FRONT_PHOTO_CAMERA = PHOTO_CAMERA.copy(lensFacing = LensFacing.FRONT)
 
         val VIDEO_CAMERA = PHOTO_CAMERA.copy(
             mode = CameraMode.VIDEO,

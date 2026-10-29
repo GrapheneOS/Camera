@@ -1,11 +1,14 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import android.animation.ValueAnimator
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.updateLayoutParams
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
@@ -15,6 +18,7 @@ import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import com.google.android.material.color.MaterialColors
 import kotlin.math.abs
 
 internal class ViewfinderViewRenderer(
@@ -99,7 +103,50 @@ internal class ViewfinderViewRenderer(
         if (selfIlluminating == renderedSelfIlluminating) return
         renderedSelfIlluminating = selfIlluminating
 
-        activity.settingsDialog.selfIllumination(selfIlluminating)
+        animateSelfIllumination(selfIlluminating)
+        renderScreenBrightness(selfIlluminating)
+    }
+
+    private fun animateSelfIllumination(lit: Boolean) {
+        val tabLayout = activity.tabLayout
+        val light = activity.getColor(R.color.self_illumination_light)
+        val indicator = MaterialColors.getColor(tabLayout, androidx.appcompat.R.attr.colorPrimary)
+        val selectedText = MaterialColors.getColor(
+            tabLayout,
+            com.google.android.material.R.attr.colorOnPrimary,
+        )
+
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = SELF_ILLUMINATION_DURATION
+            addUpdateListener { animator ->
+                val fraction = when {
+                    lit -> animator.animatedFraction
+                    else -> 1f - animator.animatedFraction
+                }
+                val background = ColorUtils.blendARGB(Color.BLACK, light, fraction)
+
+                activity.previewView.setBackgroundColor(background)
+                activity.rootView.setBackgroundColor(background)
+                activity.bottomOverlay.setBackgroundColor(background)
+                tabLayout.setTabTextColors(
+                    ColorUtils.blendARGB(Color.WHITE, Color.BLACK, fraction),
+                    ColorUtils.blendARGB(selectedText, Color.WHITE, fraction),
+                )
+                tabLayout.setSelectedTabIndicatorColor(
+                    ColorUtils.blendARGB(indicator, Color.BLACK, fraction),
+                )
+            }
+            start()
+        }
+    }
+
+    private fun renderScreenBrightness(lit: Boolean) {
+        val attributes = activity.window.attributes
+        attributes.screenBrightness = when {
+            lit -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
+            else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
+        activity.window.attributes = attributes
     }
 
     private fun renderThumbnailLoader(visible: Boolean) {
@@ -170,7 +217,6 @@ internal class ViewfinderViewRenderer(
             activity.binding.exposureNegIcon,
             activity.binding.zoomInIcon,
             activity.binding.zoomOutIcon,
-            activity.settingsDialog.settingsFrame,
             activity.micOffIcon,
             activity.muteToggle,
         )
@@ -270,6 +316,7 @@ internal class ViewfinderViewRenderer(
 
     private companion object {
         private const val ROTATION_DURATION = 400L
+        private const val SELF_ILLUMINATION_DURATION = 300L
         private const val LEVEL_LINE_THICKNESS_DP = 4
         private const val TILTED_LINE_THICKNESS_DP = 2
         private const val HORIZON_RANGE_DEGREES = 45

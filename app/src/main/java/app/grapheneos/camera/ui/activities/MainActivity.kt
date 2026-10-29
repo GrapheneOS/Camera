@@ -36,7 +36,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.unit.Density
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -60,15 +62,14 @@ import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
 import app.grapheneos.camera.ui.common.TunePlayer
-import app.grapheneos.camera.ui.common.dialog.SettingsDialog
 import app.grapheneos.camera.ui.core.theme.CameraTheme
 import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
-import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsEffectHandler
-import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsEffectHandlerImpl
+import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -97,7 +98,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.VolumeKey
 import app.grapheneos.camera.util.setBlurBitmapCompat
-import com.google.android.material.color.DynamicColors
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -152,8 +152,6 @@ open class MainActivity : AppCompatActivity() {
 
     @set:VisibleForTesting
     lateinit var tunePlayer: TunePlayer
-
-    internal lateinit var settingsDialog: SettingsDialog
 
     val threeButtons: View
         get() = binding.threeButtons
@@ -257,6 +255,8 @@ open class MainActivity : AppCompatActivity() {
 
     private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
+    private val quickSettingsInsets = mutableStateOf(QuickSettingsInsets())
+
     // Whether the transition still is standing in for the preview.
     private var transitionShown = false
 
@@ -304,7 +304,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         previewGrid.visibility = View.VISIBLE
-        if (!settingsDialog.isShowing) {
+        if (QuickSettingsNavKey !in navigator.backStack) {
             settingsIcon.visibility = View.VISIBLE
         }
 
@@ -571,6 +571,12 @@ open class MainActivity : AppCompatActivity() {
         binding.composeOverlay.setContent {
             CameraTheme {
                 ViewfinderOverlay(screenModel = viewfinder)
+                QuickSettingsScreen(
+                    screenModel = quickSettings,
+                    visible = QuickSettingsNavKey in navigator.backStack,
+                    insets = quickSettingsInsets.value,
+                    onDismissRequest = navigator::back,
+                )
             }
         }
 
@@ -785,38 +791,10 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpSettingsPanel() {
-        val themedContext = DynamicColors.wrapContextIfAvailable(this, R.style.Theme_SettingsDialog)
-        settingsDialog = SettingsDialog(
-            mActivity = this,
-            themedContext = themedContext,
-            screenModel = quickSettings,
-            onDismissRequest = navigator::back,
-        )
-        val effectHandler: QuickSettingsEffectHandler = QuickSettingsEffectHandlerImpl(
-            activity = this,
-            entryPoint = cameraEntryPoint,
-            showMessage = ::showMessage,
-        )
         val navigation = ViewfinderNavigationCallbacks(
             onOpenSettingsPanel = { navigator.push(QuickSettingsNavKey) },
             onCloseSettingsPanel = { navigator.removeDestination(QuickSettingsNavKey) },
         )
-
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                quickSettings.uiState.collect { state ->
-                    settingsDialog.render(state)
-                }
-            }
-        }
-
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                quickSettings.effects.collect { effect ->
-                    effectHandler.handle(effect)
-                }
-            }
-        }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -830,14 +808,35 @@ open class MainActivity : AppCompatActivity() {
             snapshotFlow { QuickSettingsNavKey in navigator.backStack }
                 .collect { open -> renderSettingsPanel(open) }
         }
+
+        trackQuickSettingsInsets()
+    }
+
+    private fun trackQuickSettingsInsets() {
+        val overlay = binding.composeOverlay
+        val overlayParent = overlay.parent as ViewGroup
+        val previewBounds = Rect()
+
+        overlay.viewTreeObserver.addOnGlobalLayoutListener {
+            previewView.getDrawingRect(previewBounds)
+            overlayParent.offsetDescendantRectToMyCoords(previewView, previewBounds)
+
+            quickSettingsInsets.value = with(Density(context = this)) {
+                QuickSettingsInsets(
+                    previewTop = previewBounds.top.toDp(),
+                    previewBottom = (overlay.height - previewBounds.bottom).toDp(),
+                    shutterRow = (overlay.height - threeButtons.top).toDp(),
+                )
+            }
+        }
     }
 
     private fun renderSettingsPanel(open: Boolean) {
         viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
 
-        when {
-            open -> settingsDialog.show()
-            settingsDialog.isShowing -> settingsDialog.slideDialogUp()
+        settingsIcon.visibility = when {
+            open -> View.INVISIBLE
+            else -> View.VISIBLE
         }
     }
 

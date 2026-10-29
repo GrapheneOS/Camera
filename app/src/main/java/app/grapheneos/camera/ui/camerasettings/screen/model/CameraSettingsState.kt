@@ -28,7 +28,7 @@ internal data class CameraSettingsState(
 
         return CameraSettings(
             aspectRatio = settings.aspectRatio,
-            selfTimerDurationSeconds = settings.selfTimerDurationSeconds,
+            selfTimerDuration = settings.selfTimerDuration,
             includeAudio = settings.includeAudio,
             removeExifAfterCapture = removeExifAfterCapture,
             scanAllCodes = settings.scanAllCodes,

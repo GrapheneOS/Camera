@@ -38,14 +38,22 @@ class SwipeOutcomeMapperTest {
     }
 
     @Test
-    fun verticalSwipes_openAndCloseTheSettings() {
+    fun swipeUp_opensTheSettings() {
         assertEquals(
             SwipeOutcome.OpenSettingsPanel,
-            mapper.map(direction = SwipeDirection.DOWN, state = photoState),
+            mapper.map(direction = SwipeDirection.UP, state = photoState),
         )
+    }
+
+    @Test
+    fun swipeDown_closesOpenSettingsAndOtherwiseDoesNothing() {
+        assertNull(mapper.map(direction = SwipeDirection.DOWN, state = photoState))
         assertEquals(
             SwipeOutcome.CloseSettingsPanel,
-            mapper.map(direction = SwipeDirection.UP, state = photoState),
+            mapper.map(
+                direction = SwipeDirection.DOWN,
+                state = photoState.copy(isSettingsPanelOpen = true),
+            ),
         )
     }
 
@@ -53,24 +61,20 @@ class SwipeOutcomeMapperTest {
     fun swipes_whileTheSettingsAreOpen_neitherReopenThemNorChangeTheMode() {
         val open = photoState.copy(isSettingsPanelOpen = true)
 
-        assertNull(mapper.map(direction = SwipeDirection.DOWN, state = open))
+        assertNull(mapper.map(direction = SwipeDirection.UP, state = open))
         assertNull(mapper.map(direction = SwipeDirection.LEFT, state = open))
-        assertEquals(
-            SwipeOutcome.CloseSettingsPanel,
-            mapper.map(direction = SwipeDirection.UP, state = open),
-        )
     }
 
     @Test
-    fun swipeDown_inQrMode_offersTheFormatsUnlessAllAreScanned() {
+    fun swipeUp_inQrMode_offersTheFormatsUnlessAllAreScanned() {
         val qrState = photoState.copy(mode = CameraMode.QR_SCAN)
         val scanningAll = qrState.copy(settings = CameraSettings(scanAllCodes = true))
 
         assertEquals(
             SwipeOutcome.ShowQrFormats,
-            mapper.map(direction = SwipeDirection.DOWN, state = qrState),
+            mapper.map(direction = SwipeDirection.UP, state = qrState),
         )
-        assertNull(mapper.map(direction = SwipeDirection.DOWN, state = scanningAll))
+        assertNull(mapper.map(direction = SwipeDirection.UP, state = scanningAll))
     }
 
     @Test

@@ -4,12 +4,14 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 
 private const val SETTLE_STIFFNESS = 500f
 
 internal val SETTLE_SPEC = settleSpring<Float>()
 internal val SETTLE_SIZE_SPEC = settleSpring<IntSize>()
+internal val SETTLE_OFFSET_SPEC = settleSpring<IntOffset>()
 internal val SETTLE_COLOR_SPEC = settleSpring<Color>()
 
 internal val CONTROLS_SPEC = spring<Float>(stiffness = Spring.StiffnessMediumLow)

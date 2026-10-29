@@ -16,6 +16,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
 import io.mockk.verifyOrder
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -87,7 +88,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     fun captureButtonClicked_withASelfTimer_startsAndCancelsTheCountdown() {
         runTest {
             val viewModel = createViewModel()
-            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDurationSeconds = 3)) }
+            stateHolder.update { it.copy(settings = CameraSettings(selfTimerDuration = 3.seconds)) }
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
             stateHolder.update {
@@ -206,6 +207,19 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
                 galleryDelegate.openGallery()
                 galleryDelegate.shareLastCapturedItem()
             }
+        }
+    }
+
+    @Test
+    fun previewTapped_withTheSettingsPanelOpen_onlyClosesIt() {
+        runTest {
+            val viewModel = createViewModel()
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            viewModel.onAction(CameraAction.Preview.Tapped(x = 1f, y = 2f))
+
+            verify(exactly = 1) { settingsDelegate.closeSettingsPanel() }
+            verify(exactly = 0) { cameraDelegate.focusAt(x = any(), y = any()) }
         }
     }
 

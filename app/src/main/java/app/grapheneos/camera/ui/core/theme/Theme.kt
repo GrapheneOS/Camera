@@ -32,7 +32,7 @@ internal fun CameraTheme(
     }
 }
 
-private fun cameraColorScheme(
+internal fun cameraColorScheme(
     context: Context,
     darkTheme: Boolean,
 ): ColorScheme {

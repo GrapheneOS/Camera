@@ -37,8 +37,8 @@ internal data class ChoiceButtonColors(
             return ChoiceButtonColors(
                 containerColor = colorScheme.surfaceContainerHighest,
                 contentColor = colorScheme.onSurface,
-                selectedContainerColor = colorScheme.secondaryContainer,
-                selectedContentColor = colorScheme.onSecondaryContainer,
+                selectedContainerColor = colorScheme.primary,
+                selectedContentColor = colorScheme.onPrimary,
             )
         }
     }

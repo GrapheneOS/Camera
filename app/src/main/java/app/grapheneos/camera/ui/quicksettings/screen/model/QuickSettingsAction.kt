@@ -1,18 +1,19 @@
 package app.grapheneos.camera.ui.quicksettings.screen.model
 
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
+import kotlin.time.Duration
 
-sealed interface QuickSettingsAction {
-
-    data object FlashToggleClicked : QuickSettingsAction
-
-    data object TorchToggleClicked : QuickSettingsAction
-
-    data object AspectRatioToggleClicked : QuickSettingsAction
+internal sealed interface QuickSettingsAction {
 
     data object CameraSettingsClicked : QuickSettingsAction
 
-    data class AudioToggled(
+    data class FlashModeSelected(
+        val mode: FlashMode,
+    ) : QuickSettingsAction
+
+    data class TorchToggled(
         val enabled: Boolean,
     ) : QuickSettingsAction
 
@@ -21,10 +22,18 @@ sealed interface QuickSettingsAction {
     ) : QuickSettingsAction
 
     data class SelfTimerSelected(
-        val seconds: Int,
+        val duration: Duration,
+    ) : QuickSettingsAction
+
+    data class AspectRatioSelected(
+        val ratio: AspectRatio,
     ) : QuickSettingsAction
 
     data class VideoQualitySelected(
         val quality: VideoQuality,
+    ) : QuickSettingsAction
+
+    data class AudioToggled(
+        val enabled: Boolean,
     ) : QuickSettingsAction
 }

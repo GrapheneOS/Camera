@@ -12,6 +12,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.util.formatVideoDuration
 import javax.inject.Inject
+import kotlin.time.Duration
 
 interface ViewfinderUiStateMapper {
     fun map(state: ViewfinderState): ViewfinderUiState
@@ -149,7 +150,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
         isVideoMode: Boolean,
     ): ViewfinderUiState {
         val settings = state.settings
-        val selfTimerSeconds = settings.selfTimerDurationSeconds
+        val selfTimerDuration = settings.selfTimerDuration
         val isSelfTimerRunning = state.capture.isSelfTimerRunning
 
         return ViewfinderUiState(
@@ -174,11 +175,13 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor(
             ),
             flipCameraIcon = R.drawable.flip_camera,
             flipCameraDescription = R.string.flip_camera,
-            selfTimerBadge = when (selfTimerSeconds) {
-                0 -> ""
-                else -> "${selfTimerSeconds}s"
+            selfTimerBadge = when (selfTimerDuration) {
+                Duration.ZERO -> ""
+                else -> "${selfTimerDuration.inWholeSeconds}s"
             },
-            selfTimerBadgeVisible = selfTimerSeconds != 0 && !isVideoMode && !isSelfTimerRunning,
+            selfTimerBadgeVisible = selfTimerDuration != Duration.ZERO &&
+                !isVideoMode &&
+                !isSelfTimerRunning,
             selfTimerCountdownVisible = isSelfTimerRunning,
             selfTimerCancelVisible = isSelfTimerRunning,
         )

@@ -165,6 +165,19 @@ class ViewfinderSettingsDelegateTest {
     }
 
     @Test
+    fun settingsPanel_closesOnSwitchingToQrScanning() {
+        runTest {
+            createDelegate()
+            val events = collectNavEvents(stateHolder)
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+
+            stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
+
+            assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
+        }
+    }
+
+    @Test
     fun settingsPanel_closesOnceARecordingOrTheSelfTimerStarts() {
         runTest {
             createDelegate()
@@ -262,7 +275,7 @@ class ViewfinderSettingsDelegateTest {
             delegate.trackModeSettings()
         }
         backgroundScope.launch(mainDispatcherRule.testDispatcher) {
-            delegate.trackCaptureStarts()
+            delegate.trackSettingsPanelAvailability()
         }
 
         return delegate

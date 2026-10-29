@@ -6,7 +6,8 @@ import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 
-data class QuickSettingsState(
+internal data class QuickSettingsState(
+    val requiresVideoModeOnly: Boolean = false,
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
     val boundCamera: BoundCamera? = null,

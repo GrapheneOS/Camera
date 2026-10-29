@@ -22,8 +22,8 @@ internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper
         if (state.capture.isSelfTimerRunning) return null
 
         return when (direction) {
-            SwipeDirection.DOWN -> openSettingsPanel(state)
-            SwipeDirection.UP -> closeSettingsPanel(state)
+            SwipeDirection.UP -> openSettingsPanel(state)
+            SwipeDirection.DOWN -> closeSettingsPanel(state)
             SwipeDirection.LEFT -> selectAdjacentMode(state = state, offset = 1)
             SwipeDirection.RIGHT -> selectAdjacentMode(state = state, offset = -1)
         }
@@ -40,8 +40,8 @@ internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper
 
     private fun closeSettingsPanel(state: ViewfinderState): SwipeOutcome? {
         return when {
-            state.recording.isActive() -> null
-            else -> SwipeOutcome.CloseSettingsPanel
+            state.isSettingsPanelOpen -> SwipeOutcome.CloseSettingsPanel
+            else -> null
         }
     }
 
