@@ -57,10 +57,7 @@ internal fun QuickSettingsHeader(
             transitionSpec = { crossfade() },
         ) { shownVideoMode ->
             Text(
-                text = when {
-                    shownVideoMode -> stringResource(R.string.quick_settings_video_title)
-                    else -> stringResource(R.string.quick_settings_photo_title)
-                },
+                text = quickSettingsTitle(isVideoMode = shownVideoMode),
                 style = MaterialTheme.typography.headlineSmall,
             )
         }
@@ -68,6 +65,14 @@ internal fun QuickSettingsHeader(
             onClick = onMoreClick,
             onLongClick = onMoreLongClick,
         )
+    }
+}
+
+@Composable
+internal fun quickSettingsTitle(isVideoMode: Boolean): String {
+    return when {
+        isVideoMode -> stringResource(R.string.quick_settings_video_title)
+        else -> stringResource(R.string.quick_settings_photo_title)
     }
 }
 
