@@ -9,6 +9,8 @@ internal sealed interface QuickSettingsAction {
 
     data object CameraSettingsClicked : QuickSettingsAction
 
+    data object CameraSettingsLongClicked : QuickSettingsAction
+
     data class FlashModeSelected(
         val mode: FlashMode,
     ) : QuickSettingsAction

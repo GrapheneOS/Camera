@@ -82,6 +82,7 @@
     <string name="quick_settings_photo_title">Photo settings</string>
     <string name="quick_settings_video_title">Video settings</string>
     <string name="quick_settings_resolution">Resolution</string>
+    <string name="quick_settings_copy_version">Copy app version</string>
     <string name="quick_settings_off">Off</string>
     <string name="quick_settings_on">On</string>
     <string name="quick_settings_auto">Auto</string>

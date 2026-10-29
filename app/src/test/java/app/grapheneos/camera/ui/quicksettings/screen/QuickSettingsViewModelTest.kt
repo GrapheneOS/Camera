@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.quicksettings.screen
 
+import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.LensFacing
@@ -12,6 +13,8 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
+import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
+import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
@@ -21,6 +24,7 @@ import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction a
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toList
@@ -56,6 +60,7 @@ class QuickSettingsViewModelTest {
     }
 
     private val torch = mockk<TorchControl>(relaxed = true)
+    private val copyText = mockk<CopyText>()
 
     @Test
     fun modeSettings_followTheSlotOfTheBoundCamera() {
@@ -151,6 +156,33 @@ class QuickSettingsViewModelTest {
         }
     }
 
+    @Test
+    fun cameraSettingsLongClicked_copiesTheVersionAndConfirmsWhereTheSystemDoesNot() {
+        runTest {
+            every { copyText(BuildConfig.VERSION_NAME) } returns CopyTextResult.Unconfirmed
+            val viewModel = viewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(Action.CameraSettingsLongClicked)
+
+            verify { copyText(BuildConfig.VERSION_NAME) }
+            assertEquals(listOf(Effect.TextCopied), effects)
+        }
+    }
+
+    @Test
+    fun cameraSettingsLongClicked_leavesTheConfirmationToTheSystemWhereItShowsOne() {
+        runTest {
+            every { copyText(any()) } returns CopyTextResult.ConfirmedBySystem
+            val viewModel = viewModel()
+            val effects = collectEffects(viewModel)
+
+            viewModel.onAction(Action.CameraSettingsLongClicked)
+
+            assertEquals(emptyList<Effect>(), effects)
+        }
+    }
+
     private fun viewModel(
         entryPoint: CameraEntryPoint = cameraEntryPoint(),
     ): QuickSettingsViewModel {
@@ -159,6 +191,7 @@ class QuickSettingsViewModelTest {
             settingsRepository = settingsRepository,
             session = session,
             torch = torch,
+            copyText = copyText,
             uiStateMapper = QuickSettingsUiStateMapperImpl(),
         )
     }
