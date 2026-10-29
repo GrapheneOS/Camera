@@ -99,7 +99,12 @@ class VideoCaptureActivity : CaptureActivity() {
         } else {
             val resultIntent = Intent()
             resultIntent.data = savedUri
-            resultIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            // Only a video saved where this app chose needs a grant. A caller already has access to
+            // the output it passed in, and granting it that uri would hand it whatever this app
+            // can read there.
+            if (!isOutputUriAvailable()) {
+                resultIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
             resultIntent.putExtra(
                 EXTRA_OUTPUT,
                 savedUri
