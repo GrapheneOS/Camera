@@ -1,0 +1,172 @@
+package app.grapheneos.camera.ui.quicksettings.components
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FlashAuto
+import androidx.compose.material.icons.outlined.FlashOff
+import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.FlashlightOff
+import androidx.compose.material.icons.outlined.FlashlightOn
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.MicOff
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import app.grapheneos.camera.R
+import app.grapheneos.camera.data.core.model.AspectRatio
+import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.ui.common.videoQualityTitleId
+import app.grapheneos.camera.ui.core.animation.crossfadeResizing
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
+import kotlin.time.Duration
+
+@Composable
+internal fun QuickSettingsRows(
+    uiState: QuickSettingsUiState,
+    onAction: (Action) -> Unit,
+) {
+    LightRows(
+        uiState = uiState,
+        onAction = onAction,
+    )
+    CaptureRows(
+        uiState = uiState,
+        onAction = onAction,
+    )
+}
+
+@Composable
+private fun LightRows(
+    uiState: QuickSettingsUiState,
+    onAction: (Action) -> Unit,
+) {
+    AnimatedSettingRow(setting = uiState.flash) { flash ->
+        QuickSettingsRow(
+            label = stringResource(R.string.flash_mode),
+            setting = flash,
+            onSelect = { mode -> onAction(Action.FlashModeSelected(mode)) },
+            valueLabel = { mode -> flashLabel(mode) },
+            icon = { mode -> flashIcon(mode) },
+        )
+    }
+    AnimatedSettingRow(setting = uiState.torch) { torch ->
+        QuickSettingsRow(
+            label = stringResource(R.string.torch),
+            checked = torch,
+            onToggle = { enabled -> onAction(Action.TorchToggled(enabled)) },
+            offIcon = Icons.Outlined.FlashlightOff,
+            onIcon = Icons.Outlined.FlashlightOn,
+        )
+    }
+    AnimatedSettingRow(setting = uiState.selfIllumination) { selfIllumination ->
+        QuickSettingsRow(
+            label = stringResource(R.string.self_illumination),
+            checked = selfIllumination,
+            onToggle = { enabled -> onAction(Action.SelfIlluminationToggled(enabled)) },
+        )
+    }
+}
+
+@Composable
+private fun CaptureRows(
+    uiState: QuickSettingsUiState,
+    onAction: (Action) -> Unit,
+) {
+    AnimatedSettingRow(setting = uiState.selfTimer) { selfTimer ->
+        QuickSettingsRow(
+            label = stringResource(R.string.timer),
+            setting = selfTimer,
+            onSelect = { duration -> onAction(Action.SelfTimerSelected(duration)) },
+            valueLabel = { duration -> selfTimerLabel(duration) },
+        )
+    }
+    AnimatedSettingRow(setting = uiState.aspectRatio) { aspectRatio ->
+        QuickSettingsRow(
+            label = stringResource(R.string.aspect_ratio),
+            setting = aspectRatio,
+            onSelect = { ratio -> onAction(Action.AspectRatioSelected(ratio)) },
+            valueLabel = { ratio -> aspectRatioLabel(ratio) },
+        )
+    }
+    AnimatedSettingRow(setting = uiState.videoQuality) { videoQuality ->
+        QuickSettingsRow(
+            label = stringResource(R.string.quick_settings_resolution),
+            setting = videoQuality,
+            onSelect = { quality -> onAction(Action.VideoQualitySelected(quality)) },
+            valueLabel = { quality -> stringResource(videoQualityTitleId(quality)) },
+            optionLabel = { quality -> videoQualityLabel(quality) },
+        )
+    }
+    AnimatedSettingRow(setting = uiState.audio) { audio ->
+        QuickSettingsRow(
+            label = stringResource(R.string.include_audio),
+            checked = audio,
+            onToggle = { enabled -> onAction(Action.AudioToggled(enabled)) },
+            offIcon = Icons.Outlined.MicOff,
+            onIcon = Icons.Outlined.Mic,
+        )
+    }
+}
+
+@Composable
+private fun <T> AnimatedSettingRow(
+    setting: T?,
+    row: @Composable (T) -> Unit,
+) {
+    AnimatedContent(
+        targetState = setting,
+        modifier = Modifier.fillMaxWidth(),
+        transitionSpec = { crossfadeResizing() },
+        contentKey = { shownSetting -> shownSetting != null },
+    ) { shownSetting ->
+        shownSetting?.let { row(it) }
+    }
+}
+
+@Composable
+private fun flashLabel(mode: FlashMode): String {
+    return when (mode) {
+        FlashMode.OFF -> stringResource(R.string.quick_settings_off)
+        FlashMode.AUTO -> stringResource(R.string.quick_settings_auto)
+        FlashMode.ON -> stringResource(R.string.quick_settings_on)
+    }
+}
+
+private fun flashIcon(mode: FlashMode): ImageVector {
+    return when (mode) {
+        FlashMode.OFF -> Icons.Outlined.FlashOff
+        FlashMode.AUTO -> Icons.Outlined.FlashAuto
+        FlashMode.ON -> Icons.Outlined.FlashOn
+    }
+}
+
+@Composable
+private fun selfTimerLabel(duration: Duration): String {
+    return when (duration) {
+        Duration.ZERO -> stringResource(R.string.quick_settings_off)
+        else -> stringResource(R.string.quick_settings_seconds, duration.inWholeSeconds.toInt())
+    }
+}
+
+@Composable
+private fun aspectRatioLabel(ratio: AspectRatio): String {
+    return when (ratio) {
+        AspectRatio.RATIO_4_3 -> stringResource(R.string.aspect_ratio_4_3)
+        AspectRatio.RATIO_16_9 -> stringResource(R.string.aspect_ratio_16_9)
+    }
+}
+
+@Composable
+private fun videoQualityLabel(quality: VideoQuality): String {
+    return when (quality) {
+        VideoQuality.UHD -> stringResource(R.string.video_quality_uhd_short)
+        VideoQuality.FHD -> stringResource(R.string.video_quality_fhd_short)
+        VideoQuality.HD -> stringResource(R.string.video_quality_hd_short)
+        VideoQuality.SD -> stringResource(R.string.video_quality_sd_short)
+        VideoQuality.HIGHEST -> stringResource(R.string.video_quality_unknown)
+    }
+}

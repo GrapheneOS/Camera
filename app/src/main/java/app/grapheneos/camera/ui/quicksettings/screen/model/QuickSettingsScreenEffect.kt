@@ -1,15 +1,12 @@
 package app.grapheneos.camera.ui.quicksettings.screen.model
 
-import androidx.annotation.StringRes
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 
-sealed interface QuickSettingsScreenEffect {
-
-    data class ShowMessage(
-        @StringRes val message: Int,
-    ) : QuickSettingsScreenEffect
+internal sealed interface QuickSettingsScreenEffect {
 
     data class OpenCameraSettings(
+        val entryPoint: CameraEntryPoint,
         val capabilities: CameraCapabilities,
     ) : QuickSettingsScreenEffect
 }

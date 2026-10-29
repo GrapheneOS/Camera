@@ -11,26 +11,24 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraA
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class SettingsDialogRegressionTest {
+class SettingsPanelRegressionTest {
 
     @get:Rule
     val grantPermissions: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.CAMERA,
     )
 
-    /** The panel dismisses itself from an animation callback, which needs a visible window. */
     @get:Rule
     val screenAwake = ScreenAwakeRule()
 
     /**
-     * The panel's window is not focusable, so back never reached it: the event fell through to the
-     * activity, which left the panel on screen and sent the camera to the background.
+     * Back used to fall through the panel to the activity, which left the panel on screen and
+     * sent the camera to the background.
      */
     @Test
     fun back_dismissesTheSettingsPanel() {
@@ -38,14 +36,10 @@ class SettingsDialogRegressionTest {
             waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
 
             scenario.onActivity { it.viewfinder.onAction(SettingsAction.SettingsIconClicked) }
-            waitUntil(scenario, "the settings panel is shown") { it.settingsDialog.isShowing }
+            waitUntil(scenario, "the settings panel takes back") { interceptsBack(it) }
 
             scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-
-            // The panel dismisses itself at the end of the slide-up animation
-            waitUntil(scenario, "the settings panel is dismissed") {
-                !it.settingsDialog.isShowing
-            }
+            waitUntil(scenario, "the settings panel is dismissed") { !interceptsBack(it) }
 
             assertEquals(Lifecycle.State.RESUMED, scenario.state)
         }
@@ -61,24 +55,20 @@ class SettingsDialogRegressionTest {
             waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
 
             scenario.onActivity { activity ->
-                assertFalse(activity.onBackPressedDispatcher.hasEnabledCallbacks())
+                assertFalse(interceptsBack(activity))
 
                 activity.viewfinder.onAction(SettingsAction.SettingsIconClicked)
             }
-            waitUntil(scenario, "the settings panel is shown") { it.settingsDialog.isShowing }
-
-            scenario.onActivity { activity ->
-                assertTrue(activity.onBackPressedDispatcher.hasEnabledCallbacks())
-
-                activity.viewfinder.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
-            }
-            waitUntil(scenario, "the settings panel is dismissed") {
-                !it.settingsDialog.isShowing
-            }
+            waitUntil(scenario, "the settings panel takes back") { interceptsBack(it) }
 
             scenario.onActivity {
-                assertFalse(it.onBackPressedDispatcher.hasEnabledCallbacks())
+                it.viewfinder.onAction(CameraAction.Preview.Swiped(SwipeDirection.DOWN))
             }
+            waitUntil(scenario, "the settings panel gives back up") { !interceptsBack(it) }
         }
+    }
+
+    private fun interceptsBack(activity: MainActivity): Boolean {
+        return activity.onBackPressedDispatcher.hasEnabledCallbacks()
     }
 }

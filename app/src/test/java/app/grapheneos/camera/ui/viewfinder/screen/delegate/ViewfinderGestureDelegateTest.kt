@@ -28,8 +28,9 @@ class ViewfinderGestureDelegateTest {
         runTest {
             val events = collectNavEvents(stateHolder)
 
-            delegate.onPreviewSwiped(SwipeDirection.DOWN)
             delegate.onPreviewSwiped(SwipeDirection.UP)
+            stateHolder.update { it.copy(isSettingsPanelOpen = true) }
+            delegate.onPreviewSwiped(SwipeDirection.DOWN)
 
             assertEquals(
                 listOf(

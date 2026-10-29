@@ -49,6 +49,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlin.time.Duration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -141,7 +142,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         viewModelScope.launch { cameraDelegate.trackSession() }
         viewModelScope.launch { settingsDelegate.trackSettings() }
         viewModelScope.launch { settingsDelegate.trackModeSettings() }
-        viewModelScope.launch { settingsDelegate.trackCaptureStarts() }
+        viewModelScope.launch { settingsDelegate.trackSettingsPanelAvailability() }
         viewModelScope.launch { locationDelegate.trackGeoTagging() }
         viewModelScope.launch { recordingDelegate.trackRecorder() }
         viewModelScope.launch { galleryDelegate.trackLastCapturedItem() }
@@ -314,8 +315,9 @@ class ViewfinderViewModel @AssistedInject constructor(
             is CameraAction.Preview.Pinched -> cameraDelegate.scaleZoom(action.scaleFactor)
             is CameraAction.Preview.Swiped -> gestureDelegate.onPreviewSwiped(action.direction)
 
-            is CameraAction.Preview.Tapped -> {
-                cameraDelegate.focusAt(
+            is CameraAction.Preview.Tapped -> when {
+                state().isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
+                else -> cameraDelegate.focusAt(
                     x = action.x,
                     y = action.y,
                 )
@@ -434,7 +436,7 @@ class ViewfinderViewModel @AssistedInject constructor(
         when {
             state.isVideoMode() -> toggleRecording(state)
             state.isQrMode() -> cameraDelegate.toggleTorch()
-            state.settings.selfTimerDurationSeconds == 0 -> takePicture()
+            state.settings.selfTimerDuration == Duration.ZERO -> takePicture()
             state.capture.isSelfTimerRunning -> captureDelegate.cancelSelfTimer()
             else -> captureDelegate.startSelfTimer()
         }

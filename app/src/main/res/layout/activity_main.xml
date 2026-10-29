@@ -216,6 +216,100 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/zoom_bar_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="16dp"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/zoom_in_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:src="@drawable/zoom_in"
+                android:layout_marginBottom="10dp"
+                android:importantForAccessibility="no"/>
+
+            <app.grapheneos.camera.ui.viewfinder.components.ZoomBar
+                android:id="@+id/zoom_bar"
+                android:layout_width="wrap_content"
+                android:progressTint="@android:color/transparent"
+                android:layout_height="250dp"
+                android:contentDescription="@string/zoom"/>
+
+            <ImageView
+                android:id="@+id/zoom_out_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/zoom_out"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="32dp"
+                android:layout_gravity="center_horizontal"
+                android:importantForAccessibility="no"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/exposure_bar_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/exposure_plus_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:src="@drawable/exposure_plus"
+                android:layout_marginBottom="8dp"
+                android:importantForAccessibility="no"/>
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="250dp">
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="1dp"
+                    android:layout_gravity="center"
+                    android:background="#99ffffff"/>
+
+                <app.grapheneos.camera.ui.viewfinder.components.ExposureBar
+                    android:id="@+id/exposure_bar"
+                    android:layout_width="wrap_content"
+                    android:progressTint="@android:color/transparent"
+                    android:thumb="@drawable/exposure_thumb"
+                    android:layout_height="250dp"
+                    android:contentDescription="@string/exposure_compensation"/>
+
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/exposure_neg_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/exposure_neg"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="24dp"
+                android:layout_gravity="center_horizontal"
+                android:importantForAccessibility="no"/>
+
+        </LinearLayout>
+
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/compose_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
             android:id="@+id/three_buttons"
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
@@ -382,95 +476,6 @@
                     android:contentDescription="@string/play_preview"/>
 
             </FrameLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/zoom_bar_panel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="16dp"
-            android:visibility="gone"
-            android:orientation="vertical">
-
-            <ImageView
-                android:id="@+id/zoom_in_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:src="@drawable/zoom_in"
-                android:layout_marginBottom="10dp"
-                android:importantForAccessibility="no"/>
-
-            <app.grapheneos.camera.ui.viewfinder.components.ZoomBar
-                android:id="@+id/zoom_bar"
-                android:layout_width="wrap_content"
-                android:progressTint="@android:color/transparent"
-                android:layout_height="250dp"
-                android:contentDescription="@string/zoom"/>
-
-            <ImageView
-                android:id="@+id/zoom_out_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/zoom_out"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="32dp"
-                android:layout_gravity="center_horizontal"
-                android:importantForAccessibility="no"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/exposure_bar_panel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
-            android:visibility="gone"
-            android:orientation="vertical">
-
-            <ImageView
-                android:id="@+id/exposure_plus_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:src="@drawable/exposure_plus"
-                android:layout_marginBottom="8dp"
-                android:importantForAccessibility="no"/>
-
-            <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="250dp">
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="1dp"
-                    android:layout_gravity="center"
-                    android:background="#99ffffff"/>
-
-                <app.grapheneos.camera.ui.viewfinder.components.ExposureBar
-                    android:id="@+id/exposure_bar"
-                    android:layout_width="wrap_content"
-                    android:progressTint="@android:color/transparent"
-                    android:thumb="@drawable/exposure_thumb"
-                    android:layout_height="250dp"
-                    android:contentDescription="@string/exposure_compensation"/>
-
-            </FrameLayout>
-
-            <ImageView
-                android:id="@+id/exposure_neg_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/exposure_neg"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="24dp"
-                android:layout_gravity="center_horizontal"
-                android:importantForAccessibility="no"/>
 
         </LinearLayout>
 
@@ -724,10 +729,5 @@
         </LinearLayout>
 
     </RelativeLayout>
-
-    <androidx.compose.ui.platform.ComposeView
-        android:id="@+id/compose_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

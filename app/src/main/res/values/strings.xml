@@ -56,16 +56,11 @@
     <!-- The flash control cycles through several states rather than toggling between two, so
          its labels name the state it is currently in; naming the next action instead would
          leave a screen reader user unable to tell where in the cycle they are. -->
-    <string name="flash_auto">Flash auto</string>
-    <string name="flash_off">Flash off</string>
-    <string name="flash_on">Flash on</string>
 
     <string name="aspect_ratio">Aspect Ratio</string>
     <string name="aspect_ratio_16_9">16:9</string>
     <string name="aspect_ratio_4_3">4:3</string>
     <string name="flash_mode">Flash Mode</string>
-    <string name="flash_unavailable_in_current_mode">Flash/Torch is unavailable for this mode</string>
-    <string name="four_by_three_unsupported_in_video">4:3 is not supported in video mode</string>
     <string name="include_audio">Include Audio</string>
     <string name="latency">Latency</string>
     <string name="optimize_for">Optimize for</string>
@@ -73,14 +68,25 @@
     <string name="self_illumination">Self Illumination</string>
     <string name="timer">Timer</string>
     <string name="torch">Torch</string>
-    <string name="unexpected_error_while_setting_timer_duration">An unexpected error occurred while setting the self-timer duration</string>
-    <string name="video_quality">Video Quality</string>
 
     <string name="video_quality_fhd">1080p (FHD)</string>
     <string name="video_quality_hd">720p (HD)</string>
     <string name="video_quality_sd">480p (SD)</string>
     <string name="video_quality_uhd">2160p (UHD)</string>
     <string name="video_quality_unknown">Unknown</string>
+    <string name="video_quality_uhd_short">4K</string>
+    <string name="video_quality_fhd_short">FHD</string>
+    <string name="video_quality_hd_short">HD</string>
+    <string name="video_quality_sd_short">SD</string>
+
+    <string name="quick_settings_photo_title">Photo settings</string>
+    <string name="quick_settings_video_title">Video settings</string>
+    <string name="quick_settings_resolution">Resolution</string>
+    <string name="quick_settings_off">Off</string>
+    <string name="quick_settings_on">On</string>
+    <string name="quick_settings_auto">Auto</string>
+    <string name="quick_settings_seconds">%1$ds</string>
+    <string name="quick_settings_option_description">%1$s, %2$s</string>
 
     <string name="aztec_code">Aztec Code</string>
     <string name="copied_text_to_clipboard">Copied text to clipboard</string>

@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import java.io.ByteArrayOutputStream
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -26,7 +27,7 @@ class SettingsWireFormatTest {
         gridType = GridType.GOLDEN_RATIO,
         focusTimeoutSeconds = SOME_FOCUS_TIMEOUT_SECONDS,
         volumeKeyAction = VolumeKeyAction.ZOOM,
-        selfTimerDurationSeconds = SOME_SELF_TIMER_DURATION,
+        selfTimerDuration = SOME_SELF_TIMER_DURATION,
         timerLight = true,
         enableCameraSounds = false,
         includeAudio = false,
@@ -374,7 +375,6 @@ class SettingsWireFormatTest {
     private companion object {
         const val MODE = "VIDEO"
         const val SOME_FOCUS_TIMEOUT_SECONDS = 10L
-        const val SOME_SELF_TIMER_DURATION = 3
         const val SOME_PHOTO_QUALITY = 71
         const val SOME_BARCODE_FORMAT = "AZTEC"
 
@@ -396,5 +396,6 @@ class SettingsWireFormatTest {
             """"video_quality_front":"HD","video_quality_back":"UHD"}}}"""
 
         val SOME_FLASH_MODE = StoredFlashMode.OFF
+        val SOME_SELF_TIMER_DURATION = 3.seconds
     }
 }

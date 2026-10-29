@@ -25,7 +25,7 @@ interface ViewfinderSettingsDelegate {
 
     suspend fun trackSettings()
     suspend fun trackModeSettings()
-    suspend fun trackCaptureStarts()
+    suspend fun trackSettingsPanelAvailability()
 
     /** Emits after each write of a setting the camera binds with, once the state holds it. */
     fun rebindRequests(): Flow<Unit>
@@ -35,6 +35,7 @@ interface ViewfinderSettingsDelegate {
     fun selectModeSlot(slot: ModeSlot)
 
     fun openSettingsPanel()
+    fun closeSettingsPanel()
     fun onSettingsPanelVisibilityChanged(visible: Boolean)
 
     fun openCameraSettings(capabilities: CameraCapabilities)
@@ -70,14 +71,14 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
             }
     }
 
-    override suspend fun trackCaptureStarts() {
+    override suspend fun trackSettingsPanelAvailability() {
         stateHolder.state
             .map { state ->
-                state.recording.isActive() || state.capture.isSelfTimerRunning
+                state.recording.isActive() || state.capture.isSelfTimerRunning || state.isQrMode()
             }
             .distinctUntilChanged()
-            .collect { isCapturing ->
-                if (isCapturing && stateHolder.state.value.isSettingsPanelOpen) {
+            .collect { isUnavailable ->
+                if (isUnavailable && stateHolder.state.value.isSettingsPanelOpen) {
                     stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
                 }
             }
@@ -125,6 +126,10 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         if (state.isQrMode() || state.recording.isActive()) return
 
         stateHolder.postNavEvent(NavEvent.OpenSettingsPanel)
+    }
+
+    override fun closeSettingsPanel() {
+        stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
     }
 
     override fun onSettingsPanelVisibilityChanged(visible: Boolean) {
