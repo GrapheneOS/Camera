@@ -6,8 +6,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FlashAuto
 import androidx.compose.material.icons.outlined.FlashOff
 import androidx.compose.material.icons.outlined.FlashOn
-import androidx.compose.material.icons.outlined.FlashlightOff
-import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.MicOff
 import androidx.compose.runtime.Composable
@@ -53,13 +51,13 @@ private fun LightRows(
             icon = { mode -> flashIcon(mode) },
         )
     }
-    AnimatedSettingRow(setting = uiState.torch) { torch ->
+    AnimatedSettingRow(setting = uiState.videoLight) { videoLight ->
         QuickSettingsRow(
-            label = stringResource(R.string.torch),
-            checked = torch,
-            onToggle = { enabled -> onAction(Action.TorchToggled(enabled)) },
-            offIcon = Icons.Outlined.FlashlightOff,
-            onIcon = Icons.Outlined.FlashlightOn,
+            label = stringResource(R.string.flash_mode),
+            checked = videoLight,
+            onToggle = { enabled -> onAction(Action.VideoLightToggled(enabled)) },
+            offIcon = Icons.Outlined.FlashOff,
+            onIcon = Icons.Outlined.FlashOn,
         )
     }
     AnimatedSettingRow(setting = uiState.selfIllumination) { selfIllumination ->

@@ -15,7 +15,7 @@ internal sealed interface QuickSettingsAction {
         val mode: FlashMode,
     ) : QuickSettingsAction
 
-    data class TorchToggled(
+    data class VideoLightToggled(
         val enabled: Boolean,
     ) : QuickSettingsAction
 

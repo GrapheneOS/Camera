@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
@@ -141,6 +142,26 @@ class ViewfinderSettingsDelegateTest {
             delegate.selectModeSlot(OTHER_SLOT)
 
             assertEquals(listOf(VideoQuality.UHD), qualitiesAtRequest)
+        }
+    }
+
+    @Test
+    fun videoLightWrites_followWritesToTheCurrentSlotButNotSlotSwitches() {
+        runTest {
+            val stored = MutableStateFlow(SLOTTED)
+            every { settingsRepository.modeSettings(SLOT) } answers { stored.value }
+            every { settingsRepository.observeModeSettings(SLOT) } returns stored
+            val delegate = createDelegate()
+            val writes = mutableListOf<Boolean>()
+            backgroundScope.launch(mainDispatcherRule.testDispatcher) {
+                delegate.videoLightWrites().collect { enabled -> writes += enabled }
+            }
+
+            delegate.selectModeSlot(SLOT)
+            stored.value = SLOTTED.copy(flashMode = FlashMode.ON)
+            delegate.selectModeSlot(OTHER_SLOT)
+
+            assertEquals(listOf(true), writes)
         }
     }
 

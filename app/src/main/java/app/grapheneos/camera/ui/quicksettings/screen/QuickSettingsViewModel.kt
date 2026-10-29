@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
@@ -44,14 +43,12 @@ internal class QuickSettingsViewModel @Inject constructor(
     private val entryPoint: CameraEntryPoint,
     private val settingsRepository: SettingsRepository,
     private val session: CameraSession,
-    private val torch: TorchControl,
     private val copyText: CopyText,
 ) : ViewModel(),
     QuickSettingsScreenModel {
 
     private val stateHolder = ScreenStateHolder<QuickSettingsState, Effect>(
         initial = QuickSettingsState(
-            requiresVideoModeOnly = entryPoint.requiresVideoModeOnly,
             settings = settingsRepository.settings.value,
         ),
     )
@@ -75,10 +72,7 @@ internal class QuickSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             session.boundCamera.collect { boundCamera ->
                 stateHolder.update {
-                    it.copy(
-                        boundCamera = boundCamera,
-                        isTorchOn = torch.isOn,
-                    )
+                    it.copy(boundCamera = boundCamera)
                 }
             }
         }
@@ -91,7 +85,7 @@ internal class QuickSettingsViewModel @Inject constructor(
             is Action.CameraSettingsClicked -> openCameraSettings()
             is Action.CameraSettingsLongClicked -> copyVersion()
             is Action.FlashModeSelected -> setFlashMode(action.mode)
-            is Action.TorchToggled -> setTorch(action.enabled)
+            is Action.VideoLightToggled -> setVideoLight(action.enabled)
             is Action.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is Action.SelfTimerSelected -> setSelfTimerDuration(action.duration)
             is Action.AspectRatioSelected -> setAspectRatio(action.ratio)
@@ -126,12 +120,6 @@ internal class QuickSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun setTorch(enabled: Boolean) {
-        torch.enable(enabled)
-
-        stateHolder.update { it.copy(isTorchOn = torch.isOn) }
-    }
-
     private fun setAspectRatio(ratio: AspectRatio) {
         settingsRepository.update { it.copy(aspectRatio = ratio) }
     }
@@ -148,6 +136,15 @@ internal class QuickSettingsViewModel @Inject constructor(
         val slot = state.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(flashMode = mode) }
+    }
+
+    private fun setVideoLight(enabled: Boolean) {
+        val flashMode = when {
+            enabled -> FlashMode.ON
+            else -> FlashMode.OFF
+        }
+
+        setFlashMode(flashMode)
     }
 
     private fun setSelfIllumination(enabled: Boolean) {

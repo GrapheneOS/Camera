@@ -58,7 +58,6 @@ internal fun <T> QuickSettingsRow(
                 text = optionLabel(option),
                 icon = icon?.invoke(option),
                 selected = option == setting.selected,
-                enabled = setting.enabled,
                 onClick = { onSelect(option) },
             )
         }
@@ -153,7 +152,6 @@ private fun QuickSettingsOption(
     icon: ImageVector?,
     selected: Boolean,
     onClick: () -> Unit,
-    enabled: Boolean = true,
 ) {
     val description = stringResource(R.string.quick_settings_option_description, rowLabel, text)
 
@@ -161,7 +159,6 @@ private fun QuickSettingsOption(
         selected = selected,
         onClick = onClick,
         modifier = Modifier.semantics { contentDescription = description },
-        enabled = enabled,
     ) {
         when (icon) {
             null -> Text(

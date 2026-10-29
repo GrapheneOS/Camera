@@ -5,7 +5,6 @@ import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
-import app.grapheneos.camera.data.camera.session.TorchControl
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -59,7 +58,6 @@ class QuickSettingsViewModelTest {
         every { capabilities() } returns CAPABILITIES
     }
 
-    private val torch = mockk<TorchControl>(relaxed = true)
     private val copyText = mockk<CopyText>()
 
     @Test
@@ -83,6 +81,22 @@ class QuickSettingsViewModelTest {
             viewModel.onAction(Action.FlashModeSelected(FlashMode.ON))
 
             assertEquals(FlashMode.ON, storedModeSettings.getValue(PHOTO_SLOT).flashMode)
+        }
+    }
+
+    @Test
+    fun videoLightToggled_storesFlashOnOrOffForTheBoundSlot() {
+        runTest {
+            boundCamera.value = FRONT_VIDEO_CAMERA
+            storedModeSettings[FRONT_VIDEO_SLOT] = ModeSettings(flashMode = FlashMode.AUTO)
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.VideoLightToggled(enabled = true))
+            val turnedOn = storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode
+            viewModel.onAction(Action.VideoLightToggled(enabled = false))
+
+            assertEquals(FlashMode.ON, turnedOn)
+            assertEquals(FlashMode.OFF, storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode)
         }
     }
 
@@ -190,7 +204,6 @@ class QuickSettingsViewModelTest {
             entryPoint = entryPoint,
             settingsRepository = settingsRepository,
             session = session,
-            torch = torch,
             copyText = copyText,
             uiStateMapper = QuickSettingsUiStateMapperImpl(),
         )

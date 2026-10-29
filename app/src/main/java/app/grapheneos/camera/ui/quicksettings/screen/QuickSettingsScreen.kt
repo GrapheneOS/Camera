@@ -58,11 +58,7 @@ private val PREVIEW_FRONT_PHOTO_UI_STATE = QuickSettingsUiState(
 
 private val PREVIEW_VIDEO_UI_STATE = QuickSettingsUiState(
     isVideoMode = true,
-    flash = QuickChoiceUiModel(
-        selected = FlashMode.OFF,
-        options = FlashMode.entries.toImmutableList(),
-    ),
-    torch = false,
+    videoLight = false,
     videoQuality = QuickChoiceUiModel(
         selected = VideoQuality.UHD,
         options = persistentListOf(VideoQuality.UHD, VideoQuality.FHD, VideoQuality.HD),

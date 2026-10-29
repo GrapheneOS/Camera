@@ -7,5 +7,4 @@ import kotlinx.collections.immutable.ImmutableList
 internal data class QuickChoiceUiModel<T>(
     val selected: T,
     val options: ImmutableList<T>,
-    val enabled: Boolean = true,
 )

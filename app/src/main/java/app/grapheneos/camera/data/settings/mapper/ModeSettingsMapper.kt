@@ -44,10 +44,8 @@ internal class ModeSettingsMapperImpl @Inject constructor() : ModeSettingsMapper
             StoredFlashMode.AUTO -> FlashMode.AUTO
             StoredFlashMode.ON -> FlashMode.ON
             StoredFlashMode.OFF -> FlashMode.OFF
-
-            StoredFlashMode.UNKNOWN,
-            null,
-            -> SettingsDefaults.FLASH_MODE
+            StoredFlashMode.UNKNOWN -> SettingsDefaults.FLASH_MODE
+            null -> SettingsDefaults.FLASH_MODE
         }
     }
 
