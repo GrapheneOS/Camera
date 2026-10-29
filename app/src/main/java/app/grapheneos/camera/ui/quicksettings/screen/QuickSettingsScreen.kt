@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,7 @@ import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsRows
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheet
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsTheme
+import app.grapheneos.camera.ui.quicksettings.components.quickSettingsTitle
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
@@ -126,8 +129,12 @@ private fun QuickSettingsContent(
             tailHeight = insets.shutterRow,
             onSettle = onSettle,
         ) {
+            val title = quickSettingsTitle(isVideoMode = uiState.isVideoMode)
+
             Column(
-                modifier = Modifier.verticalScroll(state = rememberScrollState()),
+                modifier = Modifier
+                    .verticalScroll(state = rememberScrollState())
+                    .semantics { paneTitle = title },
             ) {
                 QuickSettingsHeader(
                     isVideoMode = uiState.isVideoMode,

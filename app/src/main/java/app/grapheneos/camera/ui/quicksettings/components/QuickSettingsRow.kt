@@ -16,11 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.MultiContentMeasurePolicy
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -153,11 +155,17 @@ private fun QuickSettingsOption(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     val description = stringResource(R.string.quick_settings_option_description, rowLabel, text)
 
     ChoiceButton(
         selected = selected,
-        onClick = onClick,
+        onClick = {
+            if (!selected) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            }
+            onClick()
+        },
         modifier = Modifier.semantics { contentDescription = description },
     ) {
         when (icon) {
