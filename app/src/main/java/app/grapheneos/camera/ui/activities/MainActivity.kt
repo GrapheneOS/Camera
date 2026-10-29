@@ -587,14 +587,15 @@ open class MainActivity : AppCompatActivity() {
 
         binding.composeOverlay.setContent {
             CameraTheme {
-                ViewfinderOverlay(screenModel = viewfinder)
-                QuickSettingsScreen(
-                    screenModel = quickSettings,
-                    sheetState = quickSettingsSheet,
-                    visible = QuickSettingsNavKey in navigator.backStack,
-                    insets = quickSettingsInsets.value,
-                    onVisibleChange = ::showSettingsPanel,
-                )
+                ViewfinderOverlay(screenModel = viewfinder) {
+                    QuickSettingsScreen(
+                        screenModel = quickSettings,
+                        sheetState = quickSettingsSheet,
+                        visible = QuickSettingsNavKey in navigator.backStack,
+                        insets = quickSettingsInsets.value,
+                        onVisibleChange = ::showSettingsPanel,
+                    )
+                }
             }
         }
 
