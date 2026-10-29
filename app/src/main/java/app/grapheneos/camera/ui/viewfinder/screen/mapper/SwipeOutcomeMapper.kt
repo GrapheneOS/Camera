@@ -22,25 +22,16 @@ internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper
         if (state.capture.isSelfTimerRunning) return null
 
         return when (direction) {
-            SwipeDirection.UP -> openSettingsPanel(state)
-            SwipeDirection.DOWN -> closeSettingsPanel(state)
+            SwipeDirection.UP -> showQrFormats(state)
+            SwipeDirection.DOWN -> null
             SwipeDirection.LEFT -> selectAdjacentMode(state = state, offset = 1)
             SwipeDirection.RIGHT -> selectAdjacentMode(state = state, offset = -1)
         }
     }
 
-    private fun openSettingsPanel(state: ViewfinderState): SwipeOutcome? {
+    private fun showQrFormats(state: ViewfinderState): SwipeOutcome? {
         return when {
-            state.isSettingsPanelOpen || state.recording.isActive() -> null
-            !state.isQrMode() -> SwipeOutcome.OpenSettingsPanel
-            !state.settings.scanAllCodes -> SwipeOutcome.ShowQrFormats
-            else -> null
-        }
-    }
-
-    private fun closeSettingsPanel(state: ViewfinderState): SwipeOutcome? {
-        return when {
-            state.isSettingsPanelOpen -> SwipeOutcome.CloseSettingsPanel
+            state.isQrMode() && !state.settings.scanAllCodes -> SwipeOutcome.ShowQrFormats
             else -> null
         }
     }

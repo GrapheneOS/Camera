@@ -80,4 +80,8 @@ data class ViewfinderState(
         return modeSettings.selfIllumination &&
             session.lensFacing == LensFacing.FRONT
     }
+
+    fun isSettingsPanelAvailable(): Boolean {
+        return !(recording.isActive() || capture.isSelfTimerRunning || isQrMode())
+    }
 }

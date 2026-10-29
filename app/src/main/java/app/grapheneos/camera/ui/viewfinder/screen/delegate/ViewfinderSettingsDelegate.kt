@@ -73,12 +73,10 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
 
     override suspend fun trackSettingsPanelAvailability() {
         stateHolder.state
-            .map { state ->
-                state.recording.isActive() || state.capture.isSelfTimerRunning || state.isQrMode()
-            }
+            .map { state -> state.isSettingsPanelOpen && !state.isSettingsPanelAvailable() }
             .distinctUntilChanged()
-            .collect { isUnavailable ->
-                if (isUnavailable && stateHolder.state.value.isSettingsPanelOpen) {
+            .collect { isOpenWhileUnavailable ->
+                if (isOpenWhileUnavailable) {
                     stateHolder.postNavEvent(NavEvent.CloseSettingsPanel)
                 }
             }
@@ -122,8 +120,7 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
     }
 
     override fun openSettingsPanel() {
-        val state = stateHolder.state.value
-        if (state.isQrMode() || state.recording.isActive()) return
+        if (!stateHolder.state.value.isSettingsPanelAvailable()) return
 
         stateHolder.postNavEvent(NavEvent.OpenSettingsPanel)
     }

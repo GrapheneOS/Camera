@@ -6,7 +6,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import app.grapheneos.camera.ui.activities.MainActivity
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import org.junit.Assert.assertEquals
@@ -62,7 +61,7 @@ class SettingsPanelRegressionTest {
             waitUntil(scenario, "the settings panel takes back") { interceptsBack(it) }
 
             scenario.onActivity {
-                it.viewfinder.onAction(CameraAction.Preview.Swiped(SwipeDirection.DOWN))
+                it.viewfinder.onAction(CameraAction.Preview.Tapped(x = 0f, y = 0f))
             }
             waitUntil(scenario, "the settings panel gives back up") { !interceptsBack(it) }
         }

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import app.grapheneos.camera.ui.core.animation.CONTROLS_SPEC
 import app.grapheneos.camera.ui.core.animation.follow
+import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -27,7 +28,6 @@ private const val CLOSED_POSITION = 0f
 private const val OPEN_POSITION = 1f
 private const val EXPANDED_POSITION = 2f
 
-private val SETTLE_VELOCITY = 125.dp
 private val SIDE_PANEL_WIDTH = 360.dp
 
 @Composable

@@ -99,6 +99,24 @@ class ViewfinderStateTest {
     }
 
     @Test
+    fun isSettingsPanelAvailable_outsideRecordingsTheSelfTimerAndQrMode() {
+        val photo = state()
+
+        assertTrue(photo.isSettingsPanelAvailable())
+        assertFalse(
+            photo
+                .copy(recording = ViewfinderRecordingState(phase = RecordingPhase.STARTING))
+                .isSettingsPanelAvailable(),
+        )
+        assertFalse(
+            photo
+                .copy(capture = ViewfinderCaptureState(isSelfTimerRunning = true))
+                .isSettingsPanelAvailable(),
+        )
+        assertFalse(state(mode = CameraMode.QR_SCAN).isSettingsPanelAvailable())
+    }
+
+    @Test
     fun barcodeFormats_scanningAllCodes_areEveryFormat() {
         val state = state(
             mode = CameraMode.QR_SCAN,
