@@ -11,7 +11,7 @@ internal data class QuickSettingsUiState(
     val isVideoMode: Boolean = false,
     val isSelfIlluminating: Boolean = false,
     val flash: QuickChoiceUiModel<FlashMode>? = null,
-    val torch: Boolean? = null,
+    val videoLight: Boolean? = null,
     val selfIllumination: Boolean? = null,
     val selfTimer: QuickChoiceUiModel<Duration>? = null,
     val aspectRatio: QuickChoiceUiModel<AspectRatio>? = null,

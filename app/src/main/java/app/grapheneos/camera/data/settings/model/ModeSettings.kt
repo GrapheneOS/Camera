@@ -7,4 +7,9 @@ data class ModeSettings(
     val flashMode: FlashMode = SettingsDefaults.FLASH_MODE,
     val selfIllumination: Boolean = SettingsDefaults.SELF_ILLUMINATION,
     val videoQuality: VideoQuality = SettingsDefaults.VIDEO_QUALITY,
-)
+) {
+
+    fun isVideoLightOn(): Boolean {
+        return flashMode == FlashMode.ON
+    }
+}

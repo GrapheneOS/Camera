@@ -61,21 +61,35 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun flash_inAVideoOnlyEntryPoint_cannotBeChanged() {
-        assertEquals(false, map(requiresVideoModeOnly = true).flash?.enabled)
-    }
-
-    @Test
-    fun withoutAFlashUnit_neitherTheFlashNorTheTorchIsOffered() {
-        val state = map(camera = PHOTO_CAMERA.copy(hasFlashUnit = false))
+    fun videoMode_offersTheVideoLightInsteadOfTheFlash() {
+        val state = map(camera = VIDEO_CAMERA)
 
         assertNull(state.flash)
-        assertNull(state.torch)
+        assertEquals(false, state.videoLight)
+        assertNull(map().videoLight)
     }
 
     @Test
-    fun torch_followsTheState() {
-        assertEquals(true, map(isTorchOn = true).torch)
+    fun videoLight_isOnForFlashOnOnly() {
+        val on = map(
+            modeSettings = ModeSettings(flashMode = FlashMode.ON),
+            camera = VIDEO_CAMERA,
+        )
+        val auto = map(
+            modeSettings = ModeSettings(flashMode = FlashMode.AUTO),
+            camera = VIDEO_CAMERA,
+        )
+
+        assertEquals(true, on.videoLight)
+        assertEquals(false, auto.videoLight)
+    }
+
+    @Test
+    fun withoutAFlashUnit_neitherTheFlashNorTheVideoLightIsOffered() {
+        val noFlashUnit = PHOTO_CAMERA.copy(hasFlashUnit = false)
+
+        assertNull(map(camera = noFlashUnit).flash)
+        assertNull(map(camera = noFlashUnit.copy(isVideoMode = true)).videoLight)
     }
 
     @Test
@@ -93,10 +107,12 @@ class QuickSettingsUiStateMapperTest {
 
     @Test
     fun selfTimer_keepsTheStoredDurationEvenWithoutAMatchingOption() {
-        val selfTimer = map(settings = CameraSettings(selfTimerDuration = 8.seconds)).selfTimer
+        val selfTimer = requireNotNull(
+            map(settings = CameraSettings(selfTimerDuration = 8.seconds)).selfTimer,
+        )
 
-        assertEquals(8.seconds, selfTimer?.selected)
-        assertFalse(selfTimer?.options.orEmpty().contains(8.seconds))
+        assertEquals(8.seconds, selfTimer.selected)
+        assertFalse(selfTimer.options.contains(8.seconds))
     }
 
     @Test
@@ -140,19 +156,15 @@ class QuickSettingsUiStateMapperTest {
     }
 
     private fun map(
-        requiresVideoModeOnly: Boolean = false,
         settings: CameraSettings = CameraSettings(),
         modeSettings: ModeSettings = ModeSettings(),
         camera: BoundCamera? = PHOTO_CAMERA,
-        isTorchOn: Boolean = false,
     ): QuickSettingsUiState {
         return mapper.map(
             QuickSettingsState(
-                requiresVideoModeOnly = requiresVideoModeOnly,
                 settings = settings,
                 modeSettings = modeSettings,
                 boundCamera = camera,
-                isTorchOn = isTorchOn,
             ),
         )
     }

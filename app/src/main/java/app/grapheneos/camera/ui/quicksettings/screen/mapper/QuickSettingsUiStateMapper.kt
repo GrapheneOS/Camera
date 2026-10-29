@@ -30,7 +30,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
                 state = state,
                 camera = camera,
             ),
-            torch = torch(
+            videoLight = videoLight(
                 state = state,
                 camera = camera,
             ),
@@ -62,22 +62,21 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         camera: BoundCamera,
     ): QuickChoiceUiModel<FlashMode>? {
         return when {
-            camera.hasFlashUnit -> QuickChoiceUiModel(
+            camera.hasFlashUnit && !camera.isVideoMode -> QuickChoiceUiModel(
                 selected = state.modeSettings.flashMode,
                 options = FlashMode.entries.toImmutableList(),
-                enabled = !state.requiresVideoModeOnly,
             )
 
             else -> null
         }
     }
 
-    private fun torch(
+    private fun videoLight(
         state: QuickSettingsState,
         camera: BoundCamera,
     ): Boolean? {
         return when {
-            camera.hasFlashUnit -> state.isTorchOn
+            camera.hasFlashUnit && camera.isVideoMode -> state.modeSettings.isVideoLightOn()
             else -> null
         }
     }

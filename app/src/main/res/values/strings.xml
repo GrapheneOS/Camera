@@ -67,7 +67,6 @@
     <string name="quality">Quality</string>
     <string name="self_illumination">Self Illumination</string>
     <string name="timer">Timer</string>
-    <string name="torch">Torch</string>
 
     <string name="video_quality_fhd">1080p (FHD)</string>
     <string name="video_quality_hd">720p (HD)</string>
