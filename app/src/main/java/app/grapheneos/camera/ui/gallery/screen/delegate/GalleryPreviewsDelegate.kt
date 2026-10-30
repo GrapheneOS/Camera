@@ -7,6 +7,7 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
+import app.grapheneos.camera.ui.gallery.screen.ScreenImageBounds
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryFullPhoto
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
@@ -28,6 +29,7 @@ internal interface GalleryPreviewsDelegate {
 
 internal class GalleryPreviewsDelegateImpl @Inject constructor(
     private val capturedItemRepository: CapturedItemRepository,
+    private val screenImageBounds: ScreenImageBounds,
 ) : GalleryPreviewsDelegate {
 
     private lateinit var stateHolder: GalleryStateHolder
@@ -87,7 +89,10 @@ internal class GalleryPreviewsDelegateImpl @Inject constructor(
     }
 
     private suspend fun loadPreview(item: CapturedItem) {
-        val bitmap = capturedItemRepository.loadPhotoPreview(item)
+        val bitmap = capturedItemRepository.loadPhotoPreview(
+            item = item,
+            bounds = screenImageBounds.bounds(),
+        )
 
         if (item in stateHolder.state.value.previews) {
             stateHolder.update {

@@ -22,6 +22,7 @@ import app.grapheneos.camera.domain.gallery.usecase.DeleteTrashedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.ObserveGalleryItemsImpl
 import app.grapheneos.camera.domain.gallery.usecase.RestoreCapturedItemImpl
 import app.grapheneos.camera.domain.gallery.usecase.TrashCapturedItemImpl
+import app.grapheneos.camera.testutil.FIXED_SCREEN
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.gallery.screen.delegate.GalleryControlsDelegateImpl
@@ -77,7 +78,7 @@ class GalleryViewModelTest {
         coEvery { capturedItems() } coAnswers { storedItems }
         every { capturedItemsChanges() } returns capturedItemsChanges
         coEvery { loadThumbnail(any(), any(), any()) } returns THUMBNAIL
-        coEvery { loadPhotoPreview(any()) } returns PREVIEW
+        coEvery { loadPhotoPreview(any(), any()) } returns PREVIEW
         coEvery { loadFullPhoto(any()) } returns FULL_PHOTO
     }
     private val capturedItemDetailsRepository = mockk<CapturedItemDetailsRepository> {
@@ -776,7 +777,7 @@ class GalleryViewModelTest {
                 galleryItemsMapper = GalleryItemsMapperImpl(),
                 defaultDispatcher = mainDispatcherRule.testDispatcher,
             ),
-            previewsDelegate = GalleryPreviewsDelegateImpl(capturedItemRepository),
+            previewsDelegate = GalleryPreviewsDelegateImpl(capturedItemRepository, FIXED_SCREEN),
             detailsDelegate = GalleryDetailsDelegateImpl(
                 arguments = arguments,
                 capturedItemDetailsRepository = capturedItemDetailsRepository,

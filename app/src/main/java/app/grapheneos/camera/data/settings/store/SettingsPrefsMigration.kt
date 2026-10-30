@@ -1,11 +1,11 @@
 package app.grapheneos.camera.data.settings.store
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.datastore.core.DataMigration
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.store.LEGACY_CAPTURE_KEYS
 import app.grapheneos.camera.data.core.store.LEGACY_STORAGE_KEYS
+import app.grapheneos.camera.data.core.store.PreferenceFiles
 import app.grapheneos.camera.data.core.store.legacyCommonPreferences
 import app.grapheneos.camera.data.core.store.removeLegacyCommonKeys
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
@@ -14,11 +14,11 @@ import app.grapheneos.camera.data.settings.model.SettingsDefaults
 // fallbacks below describe shipped formats and must remain independent of current UI names.
 @Suppress("TooManyFunctions")
 internal class SettingsPrefsMigration(
-    private val context: Context,
+    private val files: PreferenceFiles,
 ) : DataMigration<SettingsPrefs> {
 
     override suspend fun shouldMigrate(currentData: SettingsPrefs): Boolean {
-        val ownsSomething = legacyCommonPreferences(context).all.keys.any(::owns)
+        val ownsSomething = legacyCommonPreferences(files).all.keys.any(::owns)
 
         return ownsSomething || CameraMode.entries.any {
             preferences(SettingsPrefs.storedModeName(it)).all.isNotEmpty()
@@ -28,7 +28,7 @@ internal class SettingsPrefsMigration(
     override suspend fun migrate(currentData: SettingsPrefs): SettingsPrefs {
         return currentData.copy(
             common = readCommonSettings(
-                commons = legacyCommonPreferences(context),
+                commons = legacyCommonPreferences(files),
                 current = currentData.common,
             ),
             modes = readModeSettings(currentData),
@@ -37,10 +37,10 @@ internal class SettingsPrefsMigration(
 
     override suspend fun cleanUp() {
         CameraMode.entries.forEach { mode ->
-            context.deleteSharedPreferences(SettingsPrefs.storedModeName(mode))
+            files.delete(SettingsPrefs.storedModeName(mode))
         }
 
-        removeLegacyCommonKeys(context, ::owns)
+        removeLegacyCommonKeys(files, ::owns)
     }
 
     private fun owns(key: String): Boolean {
@@ -205,7 +205,7 @@ internal class SettingsPrefsMigration(
     }
 
     private fun preferences(name: String): SharedPreferences {
-        return context.getSharedPreferences(name, Context.MODE_PRIVATE)
+        return files.open(name)
     }
 
     private companion object {

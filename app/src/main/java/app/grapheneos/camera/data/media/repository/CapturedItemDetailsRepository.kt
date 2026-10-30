@@ -1,7 +1,6 @@
 package app.grapheneos.camera.data.media.repository
 
 import android.content.ContentResolver
-import android.content.Context
 import android.database.Cursor
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -19,12 +18,12 @@ import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.data.media.store.RetrieverDataSource
 import app.grapheneos.camera.di.core.IoDispatcher
 import app.grapheneos.camera.util.getLongOrNull
 import app.grapheneos.camera.util.getStringOrNull
 import app.grapheneos.camera.util.queryFirstRow
 import app.grapheneos.camera.util.queryFirstRowOrNull
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.DateTimeException
 import java.time.Instant
 import java.time.LocalDateTime
@@ -45,7 +44,7 @@ internal interface CapturedItemDetailsRepository {
 internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
     private val contentResolver: ContentResolver,
     private val captureTimeMapper: CaptureTimeMapper,
-    @ApplicationContext private val context: Context,
+    private val retrieverDataSource: RetrieverDataSource,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : CapturedItemDetailsRepository {
 
@@ -196,7 +195,7 @@ internal class CapturedItemDetailsRepositoryImpl @Inject constructor(
 
     private fun readVideo(uri: Uri): MediaMetadata {
         return MediaMetadataRetriever().use { retriever ->
-            retriever.setDataSource(context, uri)
+            retrieverDataSource.setOn(retriever, uri)
 
             val recorded = retriever
                 .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)

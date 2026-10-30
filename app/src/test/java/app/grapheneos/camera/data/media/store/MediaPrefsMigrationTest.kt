@@ -8,6 +8,7 @@ import app.grapheneos.camera.testutil.LEGACY_ITEM_DATE_STRING
 import app.grapheneos.camera.testutil.LEGACY_ITEM_URI
 import app.grapheneos.camera.testutil.clearLegacyPreferences
 import app.grapheneos.camera.testutil.legacyCommonsFile
+import app.grapheneos.camera.testutil.preferenceFilesOf
 import app.grapheneos.camera.testutil.writeLegacyPreferences
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,7 +25,9 @@ class MediaPrefsMigrationTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val migration = MediaPrefsMigration(context)
+    private val files = preferenceFilesOf(context)
+
+    private val migration = MediaPrefsMigration(files)
 
     @Before
     fun clearLegacyFiles() {

@@ -1,13 +1,12 @@
 package app.grapheneos.camera.data.sound.player
 
-import android.content.Context
+import android.content.res.Resources
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.HandlerThread
 import androidx.annotation.RawRes
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.sound.model.CameraSound
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 interface CameraSoundPlayer {
@@ -22,13 +21,13 @@ interface CameraSoundPlayer {
 }
 
 internal class CameraSoundPlayerImpl(
-    context: Context,
+    private val resources: Resources,
     private val newMediaPlayer: () -> MediaPlayer,
 ) : CameraSoundPlayer {
 
     @Inject
-    constructor(@ApplicationContext context: Context) : this(
-        context = context,
+    constructor(resources: Resources) : this(
+        resources = resources,
         newMediaPlayer = ::MediaPlayer,
     )
 
@@ -47,10 +46,7 @@ internal class CameraSoundPlayerImpl(
     init {
         soundHandler.post {
             CameraSound.entries.forEach { sound ->
-                players[sound] = preparePlayer(
-                    context = context,
-                    sound = sound,
-                )
+                players[sound] = preparePlayer(sound)
             }
         }
     }
@@ -103,13 +99,10 @@ internal class CameraSoundPlayerImpl(
         player.start()
     }
 
-    private fun preparePlayer(
-        context: Context,
-        sound: CameraSound,
-    ): MediaPlayer {
+    private fun preparePlayer(sound: CameraSound): MediaPlayer {
         val player = newMediaPlayer()
 
-        context.resources.openRawResourceFd(resourceOf(sound)).use { file ->
+        resources.openRawResourceFd(resourceOf(sound)).use { file ->
             player.setDataSource(file)
         }
 

@@ -1,35 +1,40 @@
 package app.grapheneos.camera.data.camera.repository
 
-import android.content.Context
 import android.util.Log
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.core.content.ContextCompat
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executor
 import javax.inject.Inject
 import kotlin.concurrent.thread
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 
 interface CameraProviderSource {
 
     fun acquireProvider(
-        context: Context,
         onResult: (ProcessCameraProvider?) -> Unit,
     )
 
     fun acquireExtensionsManager(
-        context: Context,
         provider: ProcessCameraProvider,
         onResult: (ExtensionsManager?) -> Unit,
     )
 }
 
-internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSource {
+internal class CameraProviderSourceImpl @Inject constructor(
+    private val cameraProviderFactory: CameraProviderFactory,
+    private val extensionsManagerFactory: ExtensionsManagerFactory,
+    @MainImmediateDispatcher mainDispatcher: CoroutineDispatcher,
+) : CameraProviderSource {
+
+    private val mainExecutor: Executor = mainDispatcher.asExecutor()
 
     override fun acquireProvider(
-        context: Context,
         onResult: (ProcessCameraProvider?) -> Unit,
     ) {
-        val providerFuture = ProcessCameraProvider.getInstance(context)
+        val providerFuture = cameraProviderFactory.create()
         val deliverProvider = {
             val provider = try {
                 providerFuture.get()
@@ -41,15 +46,11 @@ internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSo
             onResult(provider)
         }
 
-        providerFuture.addListener(
-            deliverProvider,
-            ContextCompat.getMainExecutor(context),
-        )
+        providerFuture.addListener(deliverProvider, mainExecutor)
     }
 
     @Suppress("TooGenericExceptionCaught")
     override fun acquireExtensionsManager(
-        context: Context,
         provider: ProcessCameraProvider,
         onResult: (ExtensionsManager?) -> Unit,
     ) {
@@ -61,7 +62,7 @@ internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSo
         // listener has to run on the main thread, for the field write and startCamera().
         thread {
             try {
-                val extensionsManagerFuture = ExtensionsManager.getInstanceAsync(context, provider)
+                val extensionsManagerFuture = extensionsManagerFactory.create(provider)
                 val deliverExtensionsManager = {
                     val extensionsManager = try {
                         extensionsManagerFuture.get()
@@ -73,10 +74,7 @@ internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSo
                     onResult(extensionsManager)
                 }
 
-                extensionsManagerFuture.addListener(
-                    deliverExtensionsManager,
-                    ContextCompat.getMainExecutor(context),
-                )
+                extensionsManagerFuture.addListener(deliverExtensionsManager, mainExecutor)
             } catch (exception: Exception) {
                 // getInstanceAsync() runs its initialization synchronously (see above), so it
                 // -- or addListener -- can throw right here on this background thread, where an
@@ -85,7 +83,7 @@ internal class CameraProviderSourceImpl @Inject constructor() : CameraProviderSo
                 // path does: report it and start the camera without extensions, on the main
                 // thread.
                 Log.e(TAG, "Extensions manager initialization failed", exception)
-                ContextCompat.getMainExecutor(context).execute { onResult(null) }
+                mainExecutor.execute { onResult(null) }
             }
         }
     }

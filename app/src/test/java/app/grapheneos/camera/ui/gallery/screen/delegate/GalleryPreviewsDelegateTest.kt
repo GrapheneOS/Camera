@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
+import app.grapheneos.camera.testutil.FIXED_SCREEN
 import app.grapheneos.camera.ui.gallery.screen.GalleryStateHolder
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryPreview
 import app.grapheneos.camera.ui.gallery.screen.model.GalleryState
@@ -30,7 +31,7 @@ class GalleryPreviewsDelegateTest {
 
     private val capturedItemRepository = mockk<CapturedItemRepository> {
         coEvery { loadThumbnail(any(), any(), any()) } returns THUMBNAIL
-        coEvery { loadPhotoPreview(any()) } returns PREVIEW
+        coEvery { loadPhotoPreview(any(), any()) } returns PREVIEW
         coEvery { loadFullPhoto(any()) } returns FULL_PHOTO
     }
     private val stateHolder = GalleryStateHolder(GalleryState(items = listOf(PHOTO, VIDEO)))
@@ -44,7 +45,7 @@ class GalleryPreviewsDelegateTest {
 
             assertFalse(VIDEO in state.previews)
             assertEquals(THUMBNAIL, bitmapOf(state.thumbnails[VIDEO]))
-            coVerify(exactly = 0) { capturedItemRepository.loadPhotoPreview(VIDEO) }
+            coVerify(exactly = 0) { capturedItemRepository.loadPhotoPreview(VIDEO, any()) }
         }
     }
 
@@ -97,7 +98,7 @@ class GalleryPreviewsDelegateTest {
     }
 
     private fun TestScope.trackPreviews() {
-        val delegate = GalleryPreviewsDelegateImpl(capturedItemRepository)
+        val delegate = GalleryPreviewsDelegateImpl(capturedItemRepository, FIXED_SCREEN)
 
         delegate.bind(stateHolder)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

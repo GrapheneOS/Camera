@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.testutil.selfPermissionCheckerOf
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,7 +17,9 @@ class PermissionRepositoryTest {
 
     private val application = ApplicationProvider.getApplicationContext<Application>()
 
-    private val repository = PermissionRepositoryImpl(context = application)
+    private val repository = PermissionRepositoryImpl(
+        selfPermissionChecker = selfPermissionCheckerOf(application),
+    )
 
     @Test
     fun location_isGrantedByEitherOfItsPermissions() {

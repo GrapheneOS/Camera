@@ -1,15 +1,17 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.Manifest
-import android.content.Context
 import androidx.annotation.RequiresPermission
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.Recording
 import app.grapheneos.camera.data.camera.mapper.RecordingEventMapper
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingRequest
-import dagger.hilt.android.qualifiers.ApplicationContext
+import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import java.util.concurrent.Executor
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 
 interface VideoRecordingSession {
 
@@ -32,8 +34,11 @@ interface VideoRecordingSession {
 internal class VideoRecordingSessionImpl @Inject constructor(
     private val cameraSession: CameraSession,
     private val recordingEventMapper: RecordingEventMapper,
-    @ApplicationContext private val context: Context,
+    private val recordingPreparer: RecordingPreparer,
+    @MainImmediateDispatcher mainDispatcher: CoroutineDispatcher,
 ) : VideoRecordingSession {
+
+    private val mainExecutor: Executor = mainDispatcher.asExecutor()
 
     private var recording: Recording? = null
 
@@ -50,7 +55,7 @@ internal class VideoRecordingSessionImpl @Inject constructor(
         val outputOptions = FileDescriptorOutputOptions.Builder(request.fileDescriptor)
             .setLocation(request.location)
             .build()
-        val pendingRecording = recorder.prepareRecording(context, outputOptions)
+        val pendingRecording = recordingPreparer.prepare(recorder, outputOptions)
 
         if (request.includeAudio) {
             pendingRecording.withAudioEnabled()
@@ -59,7 +64,7 @@ internal class VideoRecordingSessionImpl @Inject constructor(
         // Recorder reports an output it cannot open by finalizing from this very call, so the
         // events have to reach us posted rather than run inline: the first one would otherwise
         // arrive before start() has returned the recording it is about.
-        recording = pendingRecording.start(context.mainExecutor) { event ->
+        recording = pendingRecording.start(mainExecutor) { event ->
             recordingEventMapper.map(event)?.let(onEvent)
         }
 

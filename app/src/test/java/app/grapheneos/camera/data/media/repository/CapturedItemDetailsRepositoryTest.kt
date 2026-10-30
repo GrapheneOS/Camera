@@ -21,6 +21,7 @@ import app.grapheneos.camera.data.media.model.CapturedItemDetails
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.media.model.GeoCoordinates
 import app.grapheneos.camera.data.media.model.MediaTimestamp
+import app.grapheneos.camera.testutil.retrieverDataSourceOf
 import io.mockk.every
 import io.mockk.mockk
 import java.io.File
@@ -315,8 +316,8 @@ class CapturedItemDetailsRepositoryTest {
 
     private fun TestScope.repository(): CapturedItemDetailsRepositoryImpl {
         return CapturedItemDetailsRepositoryImpl(
-            context = context,
             contentResolver = contentResolver,
+            retrieverDataSource = retrieverDataSourceOf(context),
             captureTimeMapper = CaptureTimeMapperImpl(),
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
         )

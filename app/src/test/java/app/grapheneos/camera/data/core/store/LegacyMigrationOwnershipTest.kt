@@ -17,6 +17,7 @@ import app.grapheneos.camera.testutil.clearLegacyPreferences
 import app.grapheneos.camera.testutil.legacyCommonsFile
 import app.grapheneos.camera.testutil.legacyCommonsFileExists
 import app.grapheneos.camera.testutil.legacyModeFileExists
+import app.grapheneos.camera.testutil.preferenceFilesOf
 import app.grapheneos.camera.testutil.writeLegacyPreferences
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,11 +33,11 @@ class LegacyMigrationOwnershipTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val settings = SettingsPrefsMigration(context)
+    private val files = preferenceFilesOf(context)
 
-    private val storage = StoragePrefsMigration(context)
-
-    private val media = MediaPrefsMigration(context)
+    private val settings = SettingsPrefsMigration(files)
+    private val storage = StoragePrefsMigration(files)
+    private val media = MediaPrefsMigration(files)
 
     @Before
     fun clearLegacyFiles() {

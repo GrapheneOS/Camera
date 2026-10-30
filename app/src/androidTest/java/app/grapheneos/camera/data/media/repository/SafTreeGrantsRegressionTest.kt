@@ -13,6 +13,7 @@ import app.grapheneos.camera.data.media.mapper.SafTreeReleaseFlagsMapperImpl
 import app.grapheneos.camera.data.media.mapper.StoredCapturedItemMapperImpl
 import app.grapheneos.camera.data.media.store.MediaPrefs
 import app.grapheneos.camera.data.media.store.StoragePrefs
+import app.grapheneos.camera.di.media.MediaStoreProvidesModule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -54,7 +55,7 @@ class SafTreeGrantsRegressionTest {
             storedCapturedItemMapper = StoredCapturedItemMapperImpl(),
             safTreeReleaseFlagsMapper = releaseFlagsMapper,
             contentResolver = context.contentResolver,
-            context = context,
+            retrieverDataSource = MediaStoreProvidesModule().provideRetrieverDataSource(context),
             ioDispatcher = UnconfinedTestDispatcher(),
             videoFrameDispatcher = UnconfinedTestDispatcher(),
         )
