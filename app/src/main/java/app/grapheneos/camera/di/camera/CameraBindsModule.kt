@@ -18,6 +18,10 @@ import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactory
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactoryImpl
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
+import app.grapheneos.camera.data.camera.session.FeatureGroupRequestResolver
+import app.grapheneos.camera.data.camera.session.FeatureGroupRequestResolverImpl
+import app.grapheneos.camera.data.camera.session.HighFrameRateSupportResolver
+import app.grapheneos.camera.data.camera.session.HighFrameRateSupportResolverImpl
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolver
 import app.grapheneos.camera.data.camera.session.InVideoSnapshotSupportResolverImpl
 import app.grapheneos.camera.data.camera.session.JpegExtractor
@@ -130,4 +134,16 @@ internal abstract class CameraBindsModule {
     abstract fun bindSnapshotProbeCache(
         impl: SnapshotProbeCacheImpl,
     ): SnapshotProbeCache
+
+    @Binds
+    @Reusable
+    abstract fun bindFeatureGroupRequestResolver(
+        impl: FeatureGroupRequestResolverImpl,
+    ): FeatureGroupRequestResolver
+
+    @Binds
+    @Singleton
+    abstract fun bindHighFrameRateSupportResolver(
+        impl: HighFrameRateSupportResolverImpl,
+    ): HighFrameRateSupportResolver
 }

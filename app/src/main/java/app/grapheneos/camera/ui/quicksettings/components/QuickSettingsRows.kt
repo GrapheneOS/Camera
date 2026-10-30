@@ -3,11 +3,15 @@ package app.grapheneos.camera.ui.quicksettings.components
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.FlashAuto
 import androidx.compose.material.icons.outlined.FlashOff
 import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.MicOff
+import androidx.compose.material.icons.outlined._30fpsSelect
+import androidx.compose.material.icons.outlined._60fpsSelect
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -15,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.common.videoQualityTitleId
 import app.grapheneos.camera.ui.core.animation.crossfadeResizing
@@ -31,7 +36,11 @@ internal fun QuickSettingsRows(
         uiState = uiState,
         onAction = onAction,
     )
-    CaptureRows(
+    PhotoRows(
+        uiState = uiState,
+        onAction = onAction,
+    )
+    VideoRows(
         uiState = uiState,
         onAction = onAction,
     )
@@ -65,12 +74,14 @@ private fun LightRows(
             label = stringResource(R.string.self_illumination),
             checked = selfIllumination,
             onToggle = { enabled -> onAction(Action.SelfIlluminationToggled(enabled)) },
+            offIcon = Icons.Outlined.Block,
+            onIcon = Icons.Outlined.Lightbulb,
         )
     }
 }
 
 @Composable
-private fun CaptureRows(
+private fun PhotoRows(
     uiState: QuickSettingsUiState,
     onAction: (Action) -> Unit,
 ) {
@@ -90,6 +101,15 @@ private fun CaptureRows(
             valueLabel = { ratio -> aspectRatioLabel(ratio) },
         )
     }
+}
+
+@Composable
+private fun VideoRows(
+    uiState: QuickSettingsUiState,
+    onAction: (Action) -> Unit,
+) {
+    val onHighFrameRateLimitClick = { onAction(Action.HighFrameRateLimitClicked) }
+
     AnimatedSettingRow(setting = uiState.videoQuality) { videoQuality ->
         QuickSettingsRow(
             label = stringResource(R.string.quick_settings_resolution),
@@ -97,6 +117,20 @@ private fun CaptureRows(
             onSelect = { quality -> onAction(Action.VideoQualitySelected(quality)) },
             valueLabel = { quality -> stringResource(videoQualityTitleId(quality)) },
             optionLabel = { quality -> videoQualityLabel(quality) },
+        )
+    }
+    AnimatedSettingRow(setting = uiState.videoFrameRate) { videoFrameRate ->
+        QuickSettingsRow(
+            label = stringResource(R.string.quick_settings_frame_rate),
+            setting = videoFrameRate,
+            onSelect = { frameRate -> onAction(Action.VideoFrameRateSelected(frameRate)) },
+            valueLabel = { frameRate ->
+                stringResource(R.string.quick_settings_fps, frameRate.framesPerSecond)
+            },
+            icon = { frameRate -> frameRateIcon(frameRate) },
+            onUnavailableClick = onHighFrameRateLimitClick.takeIf {
+                uiState.highFrameRateLimit != null
+            },
         )
     }
     AnimatedSettingRow(setting = uiState.audio) { audio ->
@@ -139,6 +173,13 @@ private fun flashIcon(mode: FlashMode): ImageVector {
         FlashMode.OFF -> Icons.Outlined.FlashOff
         FlashMode.AUTO -> Icons.Outlined.FlashAuto
         FlashMode.ON -> Icons.Outlined.FlashOn
+    }
+}
+
+private fun frameRateIcon(frameRate: VideoFrameRate): ImageVector {
+    return when (frameRate) {
+        VideoFrameRate.FPS_30 -> Icons.Outlined._30fpsSelect
+        VideoFrameRate.FPS_60 -> Icons.Outlined._60fpsSelect
     }
 }
 

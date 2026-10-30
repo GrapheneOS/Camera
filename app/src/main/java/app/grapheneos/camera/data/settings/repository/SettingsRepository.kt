@@ -123,6 +123,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
         updated: ModeSettings,
         isFrontFacing: Boolean,
     ): StoredModeSettings {
+        val framesPerSecond = updated.videoFrameRate.framesPerSecond
         val flashMode = when (updated.flashMode) {
             current.flashMode -> stored.flashMode
             else -> modeSettingsMapper.map(updated.flashMode)
@@ -135,8 +136,7 @@ internal class SettingsRepositoryImpl @Inject constructor(
             flashMode = flashMode,
             selfIllumination = selfIllumination,
         )
-
-        return when {
+        val withQuality = when {
             updated.videoQuality == current.videoQuality -> withSwitches
 
             isFrontFacing -> withSwitches.copy(
@@ -146,6 +146,12 @@ internal class SettingsRepositoryImpl @Inject constructor(
             else -> withSwitches.copy(
                 videoQualityBack = storedVideoQualityMapper.map(updated.videoQuality),
             )
+        }
+
+        return when {
+            updated.videoFrameRate == current.videoFrameRate -> withQuality
+            isFrontFacing -> withQuality.copy(frameRateFront = framesPerSecond)
+            else -> withQuality.copy(frameRateBack = framesPerSecond)
         }
     }
 

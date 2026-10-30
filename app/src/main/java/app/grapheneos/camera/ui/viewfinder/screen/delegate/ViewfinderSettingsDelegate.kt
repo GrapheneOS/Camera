@@ -91,18 +91,20 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
             .map { settings -> settings.aspectRatio }
             .distinctUntilChanged()
             .drop(1)
-        val videoQualityWrites = currentSlot
+        val videoFormatWrites = currentSlot
             .filterNotNull()
             .flatMapLatest { slot ->
                 settingsRepository.observeModeSettings(slot)
-                    .map { modeSettings -> modeSettings.videoQuality }
+                    .map { modeSettings ->
+                        modeSettings.videoQuality to modeSettings.videoFrameRate
+                    }
                     .distinctUntilChanged()
                     .drop(1)
             }
 
         return merge(
             aspectRatioWrites,
-            videoQualityWrites,
+            videoFormatWrites,
         ).map { reload() }
     }
 

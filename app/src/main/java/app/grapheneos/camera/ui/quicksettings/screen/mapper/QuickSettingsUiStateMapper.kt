@@ -1,16 +1,21 @@
 package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
+import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
+import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 
 internal interface QuickSettingsUiStateMapper {
@@ -21,6 +26,11 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
 
     override fun map(state: QuickSettingsState): QuickSettingsUiState {
         val camera = state.boundCamera ?: return QuickSettingsUiState()
+        val highFrameRateLimit = when (val support = camera.highFrameRate) {
+            is HighFrameRateSupport.Unavailable -> support.limit
+            is HighFrameRateSupport.Supported -> null
+            null -> null
+        }
 
         return QuickSettingsUiState(
             isVideoMode = camera.isVideoMode,
@@ -50,9 +60,18 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
                 state = state,
                 camera = camera,
             ),
+            videoFrameRate = videoFrameRate(
+                state = state,
+                camera = camera,
+            ),
+            highFrameRateLimit = highFrameRateLimit,
             audio = audio(
                 state = state,
                 camera = camera,
+            ),
+            dialog = dialog(
+                state = state,
+                highFrameRateLimit = highFrameRateLimit,
             ),
         )
     }
@@ -64,7 +83,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         return when {
             camera.hasFlashUnit && !camera.isVideoMode -> QuickChoiceUiModel(
                 selected = state.modeSettings.flashMode,
-                options = FlashMode.entries.toImmutableList(),
+                options = FLASH_OPTIONS.toImmutableList(),
             )
 
             else -> null
@@ -129,7 +148,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
                     stored = state.modeSettings.videoQuality,
                     offered = camera.videoQualities,
                 ),
-                options = camera.videoQualities.toImmutableList(),
+                options = camera.videoQualities.reversed().toImmutableList(),
             )
 
             else -> null
@@ -147,6 +166,27 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         }
     }
 
+    // Shows what is recorded; a stored 60 waits for a camera that can record it.
+    private fun videoFrameRate(
+        state: QuickSettingsState,
+        camera: BoundCamera,
+    ): QuickChoiceUiModel<VideoFrameRate>? {
+        val highFrameRate = camera.highFrameRate ?: return null
+        val isHighFrameRateSupported = highFrameRate == HighFrameRateSupport.Supported
+
+        return QuickChoiceUiModel(
+            selected = when {
+                isHighFrameRateSupported -> state.modeSettings.videoFrameRate
+                else -> VideoFrameRate.FPS_30
+            },
+            options = VideoFrameRate.entries.toImmutableList(),
+            unavailable = when {
+                isHighFrameRateSupported -> persistentSetOf()
+                else -> persistentSetOf(VideoFrameRate.FPS_60)
+            },
+        )
+    }
+
     private fun audio(
         state: QuickSettingsState,
         camera: BoundCamera,
@@ -157,7 +197,26 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         }
     }
 
+    private fun dialog(
+        state: QuickSettingsState,
+        highFrameRateLimit: HighFrameRateLimit?,
+    ): QuickSettingsDialog? {
+        return when {
+            state.isHighFrameRateLimitShown && highFrameRateLimit != null -> {
+                QuickSettingsDialog.HighFrameRateUnavailable(limit = highFrameRateLimit)
+            }
+
+            else -> null
+        }
+    }
+
     private companion object {
+        val FLASH_OPTIONS = listOf(
+            FlashMode.OFF,
+            FlashMode.AUTO,
+            FlashMode.ON,
+        )
+
         val SELF_TIMER_OPTIONS = listOf(
             Duration.ZERO,
             3.seconds,

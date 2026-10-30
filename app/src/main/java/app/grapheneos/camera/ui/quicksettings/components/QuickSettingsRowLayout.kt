@@ -1,0 +1,169 @@
+package app.grapheneos.camera.ui.quicksettings.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.MultiContentMeasurePolicy
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.dp
+import app.grapheneos.camera.R
+
+private val ROW_MIN_HEIGHT = 56.dp
+private val ROW_HORIZONTAL_PADDING = 16.dp
+private val ROW_VERTICAL_PADDING = 4.dp
+private val LABEL_SPACING = 16.dp
+private val LABEL_RIPPLE_HORIZONTAL_PADDING = 8.dp
+private val LABEL_RIPPLE_VERTICAL_PADDING = 4.dp
+private val OPTION_SPACING = 8.dp
+private val UNAVAILABLE_ICON_SPACING = 4.dp
+private val UNAVAILABLE_ICON_SIZE = 18.dp
+
+@Composable
+internal fun QuickSettingsRowLayout(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    onUnavailableClick: (() -> Unit)? = null,
+    options: @Composable RowScope.() -> Unit,
+) {
+    Layout(
+        contents = listOf(
+            {
+                QuickSettingsRowLabel(
+                    label = label,
+                    value = value,
+                    onUnavailableClick = onUnavailableClick,
+                )
+            },
+            {
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(state = rememberScrollState())
+                        .selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(space = OPTION_SPACING),
+                    content = options,
+                )
+            },
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = ROW_MIN_HEIGHT)
+            .padding(
+                horizontal = ROW_HORIZONTAL_PADDING,
+                vertical = ROW_VERTICAL_PADDING,
+            ),
+        measurePolicy = QuickSettingsRowMeasurePolicy,
+    )
+}
+
+@Composable
+private fun QuickSettingsRowLabel(
+    label: String,
+    value: String,
+    onUnavailableClick: (() -> Unit)?,
+) {
+    val clickModifier = when (onUnavailableClick) {
+        null -> Modifier
+
+        // Cancels the padding, so only the ripple reaches past the text.
+        else -> {
+            Modifier
+                .offset(x = -LABEL_RIPPLE_HORIZONTAL_PADDING)
+                .clip(shape = MaterialTheme.shapes.small)
+                .clickable(
+                    onClickLabel = stringResource(R.string.quick_settings_why_unavailable),
+                    role = Role.Button,
+                    onClick = onUnavailableClick,
+                )
+                .padding(
+                    horizontal = LABEL_RIPPLE_HORIZONTAL_PADDING,
+                    vertical = LABEL_RIPPLE_VERTICAL_PADDING,
+                )
+        }
+    }
+
+    Column(
+        modifier = clickModifier,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(space = UNAVAILABLE_ICON_SPACING),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (onUnavailableClick != null) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                    contentDescription = null,
+                    modifier = Modifier.size(size = UNAVAILABLE_ICON_SIZE),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+private object QuickSettingsRowMeasurePolicy : MultiContentMeasurePolicy {
+
+    override fun MeasureScope.measure(
+        measurables: List<List<Measurable>>,
+        constraints: Constraints,
+    ): MeasureResult {
+        val (label, options) = measurables.map { it.single() }
+        val width = constraints.maxWidth
+        val labelSpacing = LABEL_SPACING.roundToPx()
+        val labelMinWidth = label.minIntrinsicWidth(height = constraints.maxHeight)
+        val optionsPlaceable = options.measure(
+            Constraints(maxWidth = (width - labelSpacing - labelMinWidth).coerceAtLeast(0)),
+        )
+        val labelPlaceable = label.measure(
+            Constraints(maxWidth = width - labelSpacing - optionsPlaceable.width),
+        )
+        val height = maxOf(labelPlaceable.height, optionsPlaceable.height)
+            .coerceAtLeast(constraints.minHeight)
+
+        return layout(width = width, height = height) {
+            labelPlaceable.place(
+                x = 0,
+                y = (height - labelPlaceable.height) / 2,
+            )
+            optionsPlaceable.place(
+                x = width - optionsPlaceable.width,
+                y = (height - optionsPlaceable.height) / 2,
+            )
+        }
+    }
+}

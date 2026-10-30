@@ -1,8 +1,10 @@
 package app.grapheneos.camera.ui.quicksettings.screen.model
 
 import androidx.compose.runtime.Immutable
+import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import kotlin.time.Duration
 
@@ -16,5 +18,8 @@ internal data class QuickSettingsUiState(
     val selfTimer: QuickChoiceUiModel<Duration>? = null,
     val aspectRatio: QuickChoiceUiModel<AspectRatio>? = null,
     val videoQuality: QuickChoiceUiModel<VideoQuality>? = null,
+    val videoFrameRate: QuickChoiceUiModel<VideoFrameRate>? = null,
+    val highFrameRateLimit: HighFrameRateLimit? = null,
     val audio: Boolean? = null,
+    val dialog: QuickSettingsDialog? = null,
 )

@@ -257,15 +257,20 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
     }
 
     private fun videoBytesPerMinute(state: CameraSettingsState): Long? {
-        val bitrates = state.capabilities.videoBitrates[state.videoQuality] ?: return null
+        val videoModeSettings = state.videoModeSettings
+        val bitrates = state.capabilities.videoBitrates[videoModeSettings.videoQuality]
+            ?: return null
         val audioBitsPerSecond = when {
             state.settings.includeAudio -> bitrates.audioBitsPerSecond
             else -> 0
         }
         val profileBitsPerSecond = bitrates.videoBitsPerSecond.toLong()
+        val profileFrameRate = bitrates.videoFrameRate
+        val framesPerSecond = videoModeSettings.videoFrameRate.framesPerSecond
+        // CameraX scales the profile's bitrate to the frame rate it records at.
         val videoBitsPerSecond = when {
-            bitrates.videoFrameRate <= 0 -> profileBitsPerSecond
-            else -> profileBitsPerSecond * RECORDING_FRAME_RATE / bitrates.videoFrameRate
+            profileFrameRate > 0 -> profileBitsPerSecond * framesPerSecond / profileFrameRate
+            else -> profileBitsPerSecond
         }
         val bitsPerSecond = videoBitsPerSecond + audioBitsPerSecond
 
@@ -302,8 +307,6 @@ internal class CameraSettingsUiStateMapperImpl @Inject constructor() : CameraSet
         )
         val FOCUS_TIMEOUT_OPTIONS = listOf(0L, 3L, 5L, 8L, 10L)
 
-        // With no frame rate set, CameraX records at 30 fps and scales the profile's bitrate to it.
-        const val RECORDING_FRAME_RATE = 30
         const val SECONDS_PER_MINUTE = 60
         const val BITS_PER_BYTE = 8
         const val PIXELS_PER_MEGAPIXEL = 1_000_000

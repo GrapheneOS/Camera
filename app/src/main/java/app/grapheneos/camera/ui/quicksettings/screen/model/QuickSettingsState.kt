@@ -10,6 +10,7 @@ internal data class QuickSettingsState(
     val settings: CameraSettings = CameraSettings(),
     val modeSettings: ModeSettings = ModeSettings(),
     val boundCamera: BoundCamera? = null,
+    val isHighFrameRateLimitShown: Boolean = false,
 ) {
 
     fun modeSlot(): ModeSlot? {

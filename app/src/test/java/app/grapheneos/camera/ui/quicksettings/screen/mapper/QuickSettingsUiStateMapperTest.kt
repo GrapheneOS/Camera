@@ -1,16 +1,22 @@
 package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
+import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
+import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toImmutableList
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -53,11 +59,11 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun flash_selectsTheStoredModeAmongAllModes() {
+    fun flash_selectsTheStoredModeAmongAllModesFromOffToOn() {
         val flash = map(modeSettings = ModeSettings(flashMode = FlashMode.AUTO)).flash
 
         assertEquals(FlashMode.AUTO, flash?.selected)
-        assertEquals(FlashMode.entries, flash?.options)
+        assertEquals(listOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON), flash?.options)
     }
 
     @Test
@@ -125,14 +131,14 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun videoQuality_selectsTheStoredQualityAmongTheOffered() {
+    fun videoQuality_selectsTheStoredQualityAmongTheOfferedFromLowestToHighest() {
         val videoQuality = map(
             modeSettings = ModeSettings(videoQuality = VideoQuality.FHD),
             camera = VIDEO_CAMERA,
         ).videoQuality
 
         assertEquals(VideoQuality.FHD, videoQuality?.selected)
-        assertEquals(OFFERED_QUALITIES, videoQuality?.options)
+        assertEquals(OFFERED_QUALITIES.reversed(), videoQuality?.options)
     }
 
     @Test
@@ -143,6 +149,48 @@ class QuickSettingsUiStateMapperTest {
         ).videoQuality
 
         assertEquals(VideoQuality.UHD, videoQuality?.selected)
+    }
+
+    @Test
+    fun videoFrameRate_isOfferedOnlyWhereTheCameraWasCheckedForAHighFrameRate() {
+        assertNull(map(camera = VIDEO_CAMERA).videoFrameRate)
+    }
+
+    @Test
+    fun videoFrameRate_whereTheHighRateFits_selectsTheStoredRate() {
+        val state = map(
+            modeSettings = ModeSettings(videoFrameRate = VideoFrameRate.FPS_60),
+            camera = VIDEO_CAMERA.copy(highFrameRate = HighFrameRateSupport.Supported),
+        )
+
+        assertEquals(
+            QuickChoiceUiModel(
+                selected = VideoFrameRate.FPS_60,
+                options = VideoFrameRate.entries.toImmutableList(),
+            ),
+            state.videoFrameRate,
+        )
+        assertNull(state.highFrameRateLimit)
+    }
+
+    @Test
+    fun videoFrameRate_whereTheHighRateDoesNotFit_showsTheRecordedRateAndWhy() {
+        val state = map(
+            modeSettings = ModeSettings(videoFrameRate = VideoFrameRate.FPS_60),
+            camera = VIDEO_CAMERA.copy(
+                highFrameRate = HighFrameRateSupport.Unavailable(limit = HighFrameRateLimit.HDR),
+            ),
+        )
+
+        assertEquals(
+            QuickChoiceUiModel(
+                selected = VideoFrameRate.FPS_30,
+                options = VideoFrameRate.entries.toImmutableList(),
+                unavailable = persistentSetOf(VideoFrameRate.FPS_60),
+            ),
+            state.videoFrameRate,
+        )
+        assertEquals(HighFrameRateLimit.HDR, state.highFrameRateLimit)
     }
 
     @Test
