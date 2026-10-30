@@ -14,7 +14,7 @@ interface ExtensionAvailabilityRepository {
 
     // The cache keys availableModes() needs a verdict for that only a vendor probe can answer.
     // Deliberately a pure cache check: even asking whether a mode is advertised costs a vendor
-    // proxy round trip (see probeExtension), so the probe round has to answer that too.
+    // proxy round trip (see ExtensionProbe), so the probe round has to answer that too.
     fun unprobed(): List<ExtensionKey>
 
     fun clear()
@@ -24,7 +24,7 @@ internal class ExtensionAvailabilityRepositoryImpl @Inject constructor() :
     ExtensionAvailabilityRepository {
 
     // Whether a vendor extension is usable, keyed by lens facing and extension mode (see
-    // probeExtension). A verdict describes the device rather than any one activity and costs
+    // ExtensionProbe). A verdict describes the device rather than any one activity and costs
     // binder round trips to reach, so it is kept for the process: every lock screen launch used
     // to re-probe what the session underneath it had already answered.
     private val usability = HashMap<ExtensionKey, Boolean>()

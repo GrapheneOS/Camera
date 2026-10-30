@@ -1,8 +1,10 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
+import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalZeroShutterLag
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.MirrorMode
 import androidx.camera.core.Preview
@@ -10,6 +12,7 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.video.GroupableFeatures
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -28,6 +31,8 @@ import javax.inject.Inject
 interface CameraSessionPlanFactory {
 
     fun create(request: CameraBindRequest): CameraSessionPlan
+
+    fun createQrAnalysis(): ImageAnalysis
 
     /** Nothing in these is set through a non-groupable API, so a feature group can be probed. */
     fun createProbeUseCases(aspectRatio: AspectRatio): List<UseCase>
@@ -61,6 +66,22 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
             ),
             preferredFeatures = preferredFeatures(request),
         )
+    }
+
+    override fun createQrAnalysis(): ImageAnalysis {
+        val resolutionStrategy = ResolutionStrategy(
+            QR_ANALYSIS_SIZE,
+            ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+        )
+
+        return ImageAnalysis.Builder()
+            .setResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setResolutionStrategy(resolutionStrategy)
+                    .build(),
+            )
+            .setOutputImageRotationEnabled(true)
+            .build()
     }
 
     override fun createProbeUseCases(aspectRatio: AspectRatio): List<UseCase> {
@@ -229,5 +250,9 @@ internal class CameraSessionPlanFactoryImpl @Inject constructor(
                 add(GroupableFeatures.VIDEO_STABILIZATION)
             }
         }
+    }
+
+    private companion object {
+        val QR_ANALYSIS_SIZE = Size(960, 960)
     }
 }
