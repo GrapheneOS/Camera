@@ -5,6 +5,7 @@ import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.MultiContentMeasurePolicy
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -15,7 +16,8 @@ private val BOTTOM_PADDING = 4.dp
 private val ITEM_OVERLAP = 8.dp
 
 // Items go from the start up to a cutout in the middle of the bar, and stop at the first one that
-// does not fit, so an item never takes the place of one before it.
+// does not fit, so an item never takes the place of one before it. The settings button stays at
+// the end, moved before a cutout in the end corner.
 internal class StatusBarMeasurePolicy(
     private val cutout: Rect,
 ) : MultiContentMeasurePolicy {
@@ -32,30 +34,32 @@ internal class StatusBarMeasurePolicy(
         val settingsPlaceable = settings.single().measure(Constraints())
         val itemPlaceables = items.map { item -> item.measure(Constraints()) }
         val rowTop = height - BOTTOM_PADDING.roundToPx() - settingsPlaceable.height
-        val settingsStart = width - edgePadding - settingsPlaceable.width
-        val cutoutInRow = cutout.width > 0 && cutout.bottom > rowTop
-        val (cutoutStart, cutoutEnd) = when (layoutDirection) {
-            LayoutDirection.Ltr -> cutout.left to cutout.right
-            LayoutDirection.Rtl -> width - cutout.right to width - cutout.left
-        }
+        val cutoutSpan = cutoutSpan(
+            width = width,
+            rowTop = rowTop,
+        )
+        val settingsStart = settingsStart(
+            cutoutSpan = cutoutSpan,
+            settingsEnd = width - edgePadding,
+            settingsWidth = settingsPlaceable.width,
+        )
         val itemsStart = when {
-            cutoutInRow && cutoutStart <= edgePadding -> cutoutEnd.roundToInt()
+            cutoutSpan != null && cutoutSpan.first <= edgePadding -> cutoutSpan.last
             else -> edgePadding
         }
         val itemsEnd = when {
-            cutoutInRow && cutoutStart > itemsStart -> {
-                minOf(cutoutStart.roundToInt(), settingsStart)
+            cutoutSpan != null && cutoutSpan.first > itemsStart -> {
+                minOf(cutoutSpan.first, settingsStart)
             }
 
             else -> settingsStart
         }
-        var itemStart = itemsStart
-        val shownItems = itemPlaceables.takeWhile { placeable ->
-            val fits = itemStart + placeable.width <= itemsEnd
-
-            itemStart += placeable.width - itemOverlap
-            fits
-        }
+        val shownItems = fittingItems(
+            placeables = itemPlaceables,
+            start = itemsStart,
+            end = itemsEnd,
+            overlap = itemOverlap,
+        )
 
         return layout(width = width, height = height) {
             var x = itemsStart
@@ -71,6 +75,51 @@ internal class StatusBarMeasurePolicy(
                 x = settingsStart,
                 y = rowTop,
             )
+        }
+    }
+
+    private fun MeasureScope.cutoutSpan(
+        width: Int,
+        rowTop: Int,
+    ): IntRange? {
+        if (cutout.width <= 0f || cutout.bottom <= rowTop) return null
+
+        val (start, end) = when (layoutDirection) {
+            LayoutDirection.Ltr -> cutout.left to cutout.right
+            LayoutDirection.Rtl -> width - cutout.right to width - cutout.left
+        }
+
+        return start.roundToInt()..end.roundToInt()
+    }
+
+    private fun settingsStart(
+        cutoutSpan: IntRange?,
+        settingsEnd: Int,
+        settingsWidth: Int,
+    ): Int {
+        val coversSettings = cutoutSpan != null &&
+            cutoutSpan.last > settingsEnd - settingsWidth &&
+            cutoutSpan.first < settingsEnd
+
+        return when {
+            coversSettings -> cutoutSpan.first - settingsWidth
+            else -> settingsEnd - settingsWidth
+        }
+    }
+
+    private fun fittingItems(
+        placeables: List<Placeable>,
+        start: Int,
+        end: Int,
+        overlap: Int,
+    ): List<Placeable> {
+        var itemStart = start
+
+        return placeables.takeWhile { placeable ->
+            val fits = itemStart + placeable.width <= end
+
+            itemStart += placeable.width - overlap
+            fits
         }
     }
 }

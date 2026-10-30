@@ -111,7 +111,6 @@ internal fun ChoiceButton(
                 minWidth = CHOICE_BUTTON_SIZE,
                 minHeight = CHOICE_BUTTON_SIZE,
             )
-            .graphicsLayer { this.alpha = alpha }
             .drawBehind {
                 drawRoundRect(
                     color = containerColor,
@@ -142,6 +141,7 @@ internal fun ChoiceButton(
         ChoiceButtonContent(
             selected = selected,
             colors = colors,
+            alpha = { alpha },
             content = content,
         )
     }
@@ -151,6 +151,7 @@ internal fun ChoiceButton(
 private fun ChoiceButtonContent(
     selected: Boolean,
     colors: ChoiceButtonColors,
+    alpha: () -> Float,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val rotation = LocalContentRotation.current
@@ -164,6 +165,7 @@ private fun ChoiceButtonContent(
             .padding(horizontal = CONTENT_PADDING)
             .graphicsLayer {
                 rotationZ = rotation()
+                this.alpha = alpha()
                 compositingStrategy = CompositingStrategy.Offscreen
             }
             .drawWithContent {

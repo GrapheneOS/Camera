@@ -69,7 +69,13 @@ internal class ViewfinderGestureHandler(
         return true
     }
 
+    // A pinch, or a double tap held and dragged, zooms only while the panel is down, and stops the
+    // panel from following the same finger.
     override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+        if (settingsPanelDrag.isShown()) return false
+
+        stopSettingsPanelDrag(velocity = 0f)
+
         return true
     }
 

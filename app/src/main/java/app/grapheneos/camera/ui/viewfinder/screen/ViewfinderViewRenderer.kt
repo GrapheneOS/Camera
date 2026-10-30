@@ -1,12 +1,14 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.animation.ValueAnimator
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.animation.LinearInterpolator
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.updateLayoutParams
@@ -15,6 +17,7 @@ import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
+import app.grapheneos.camera.ui.core.theme.cameraColorScheme
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
@@ -33,6 +36,9 @@ internal class ViewfinderViewRenderer(
     private var renderedLevelFrameRotation: Float? = null
     private var renderedKeepScreenOn = false
     private var renderedSelfIlluminating = false
+    private var litFraction = 0f
+    private var settingsPanelFraction = 0f
+    private val panelTextColor by lazy { panelTextColor() }
     private var renderedThumbnail: Bitmap? = null
 
     fun render(state: ViewfinderUiState) {
@@ -111,10 +117,6 @@ internal class ViewfinderViewRenderer(
         val tabLayout = activity.tabLayout
         val light = activity.getColor(R.color.self_illumination_light)
         val indicator = MaterialColors.getColor(tabLayout, androidx.appcompat.R.attr.colorPrimary)
-        val selectedText = MaterialColors.getColor(
-            tabLayout,
-            com.google.android.material.R.attr.colorOnPrimary,
-        )
 
         ValueAnimator.ofFloat(0f, 1f).apply {
             duration = SELF_ILLUMINATION_DURATION
@@ -124,20 +126,47 @@ internal class ViewfinderViewRenderer(
                     else -> 1f - animator.animatedFraction
                 }
                 val background = ColorUtils.blendARGB(Color.BLACK, light, fraction)
+                litFraction = fraction
 
                 activity.previewView.setBackgroundColor(background)
                 activity.rootView.setBackgroundColor(background)
                 activity.bottomOverlay.setBackgroundColor(background)
-                tabLayout.setTabTextColors(
-                    ColorUtils.blendARGB(Color.WHITE, Color.BLACK, fraction),
-                    ColorUtils.blendARGB(selectedText, Color.WHITE, fraction),
-                )
+                renderTabTextColors()
                 tabLayout.setSelectedTabIndicatorColor(
                     ColorUtils.blendARGB(indicator, Color.BLACK, fraction),
                 )
             }
             start()
         }
+    }
+
+    fun renderSettingsPanelFraction(fraction: Float) {
+        settingsPanelFraction = fraction
+        renderTabTextColors()
+    }
+
+    private fun renderTabTextColors() {
+        val tabLayout = activity.tabLayout
+        val selectedText = MaterialColors.getColor(
+            tabLayout,
+            com.google.android.material.R.attr.colorOnPrimary,
+        )
+        val text = ColorUtils.blendARGB(Color.WHITE, panelTextColor, settingsPanelFraction)
+
+        tabLayout.setTabTextColors(
+            ColorUtils.blendARGB(text, Color.BLACK, litFraction),
+            ColorUtils.blendARGB(selectedText, Color.WHITE, litFraction),
+        )
+    }
+
+    private fun panelTextColor(): Int {
+        val nightMode = activity.resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK
+
+        return cameraColorScheme(
+            context = activity,
+            darkTheme = nightMode == Configuration.UI_MODE_NIGHT_YES,
+        ).onSurface.toArgb()
     }
 
     private fun renderScreenBrightness(lit: Boolean) {
