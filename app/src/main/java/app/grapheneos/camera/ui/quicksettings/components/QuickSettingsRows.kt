@@ -19,6 +19,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.ui.core.animation.crossfadeResizing
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import app.grapheneos.camera.ui.settingvalues.flashIcon
@@ -30,18 +31,22 @@ import app.grapheneos.camera.ui.settingvalues.videoQualityTitleId
 @Composable
 internal fun QuickSettingsRows(
     uiState: QuickSettingsUiState,
+    rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
     LightRows(
         uiState = uiState,
+        rowHighlight = rowHighlight,
         onAction = onAction,
     )
     PhotoRows(
         uiState = uiState,
+        rowHighlight = rowHighlight,
         onAction = onAction,
     )
     VideoRows(
         uiState = uiState,
+        rowHighlight = rowHighlight,
         onAction = onAction,
     )
 }
@@ -49,6 +54,7 @@ internal fun QuickSettingsRows(
 @Composable
 private fun LightRows(
     uiState: QuickSettingsUiState,
+    rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
     AnimatedSettingRow(setting = uiState.flash) { flash ->
@@ -58,6 +64,7 @@ private fun LightRows(
             onSelect = { mode -> onAction(Action.FlashModeSelected(mode)) },
             valueLabel = { mode -> flashLabel(mode) },
             icon = { mode -> flashIcon(mode) },
+            highlight = { rowHighlight.alphaOf(QuickSetting.FLASH) },
         )
     }
     AnimatedSettingRow(setting = uiState.videoLight) { videoLight ->
@@ -67,6 +74,7 @@ private fun LightRows(
             onToggle = { enabled -> onAction(Action.VideoLightToggled(enabled)) },
             offIcon = Icons.Outlined.FlashOff,
             onIcon = Icons.Outlined.FlashOn,
+            highlight = { rowHighlight.alphaOf(QuickSetting.VIDEO_LIGHT) },
         )
     }
     AnimatedSettingRow(setting = uiState.selfIllumination) { selfIllumination ->
@@ -76,6 +84,7 @@ private fun LightRows(
             onToggle = { enabled -> onAction(Action.SelfIlluminationToggled(enabled)) },
             offIcon = Icons.Outlined.Block,
             onIcon = Icons.Outlined.Lightbulb,
+            highlight = { rowHighlight.alphaOf(QuickSetting.SELF_ILLUMINATION) },
         )
     }
 }
@@ -83,6 +92,7 @@ private fun LightRows(
 @Composable
 private fun PhotoRows(
     uiState: QuickSettingsUiState,
+    rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
     AnimatedSettingRow(setting = uiState.selfTimer) { selfTimer ->
@@ -91,6 +101,7 @@ private fun PhotoRows(
             setting = selfTimer,
             onSelect = { duration -> onAction(Action.SelfTimerSelected(duration)) },
             valueLabel = { duration -> selfTimerLabel(duration) },
+            highlight = { rowHighlight.alphaOf(QuickSetting.SELF_TIMER) },
         )
     }
     AnimatedSettingRow(setting = uiState.aspectRatio) { aspectRatio ->
@@ -106,6 +117,7 @@ private fun PhotoRows(
 @Composable
 private fun VideoRows(
     uiState: QuickSettingsUiState,
+    rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
     val onHighFrameRateLimitClick = { onAction(Action.HighFrameRateLimitClicked) }
@@ -117,6 +129,7 @@ private fun VideoRows(
             onSelect = { quality -> onAction(Action.VideoQualitySelected(quality)) },
             valueLabel = { quality -> stringResource(videoQualityTitleId(quality)) },
             optionLabel = { quality -> videoQualityLabel(quality) },
+            highlight = { rowHighlight.alphaOf(QuickSetting.VIDEO_QUALITY) },
         )
     }
     AnimatedSettingRow(setting = uiState.videoFrameRate) { videoFrameRate ->

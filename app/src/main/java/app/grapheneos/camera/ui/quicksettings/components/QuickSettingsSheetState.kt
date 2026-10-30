@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import app.grapheneos.camera.ui.core.animation.SETTLE_SPEC
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 
 private const val HIDDEN_POSITION = 0f
 private const val OPEN_POSITION = 1f
@@ -91,6 +92,11 @@ internal class QuickSettingsSheetState(
 
     fun visibleFraction(): Float {
         return position.value
+    }
+
+    suspend fun awaitShown() {
+        snapshotFlow { visibleFraction() }
+            .first { fraction -> fraction == 1f }
     }
 
     suspend fun animate() {

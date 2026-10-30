@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import app.grapheneos.camera.R
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusItemUiModel
 import kotlinx.collections.immutable.ImmutableList
 
@@ -24,7 +25,7 @@ import kotlinx.collections.immutable.ImmutableList
 internal fun StatusBar(
     items: ImmutableList<StatusItemUiModel>,
     enabled: Boolean,
-    onItemClick: () -> Unit,
+    onItemClick: (QuickSetting) -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

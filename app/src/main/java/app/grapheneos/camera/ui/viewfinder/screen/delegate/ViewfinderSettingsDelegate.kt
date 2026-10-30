@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.camera.model.CameraCapabilities
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
@@ -37,7 +38,7 @@ interface ViewfinderSettingsDelegate {
     fun setIncludeAudio(enabled: Boolean)
     fun selectModeSlot(slot: ModeSlot)
 
-    fun openSettingsPanel()
+    fun openSettingsPanel(highlight: QuickSetting? = null)
     fun closeSettingsPanel()
     fun onSettingsPanelVisibilityChanged(visible: Boolean)
 
@@ -136,10 +137,10 @@ internal class ViewfinderSettingsDelegateImpl @Inject constructor(
         stateHolder.update { it.copy(modeSettings = modeSettings) }
     }
 
-    override fun openSettingsPanel() {
+    override fun openSettingsPanel(highlight: QuickSetting?) {
         if (!stateHolder.state.value.isSettingsPanelAvailable()) return
 
-        stateHolder.postNavEvent(NavEvent.OpenSettingsPanel)
+        stateHolder.postNavEvent(NavEvent.OpenSettingsPanel(highlight = highlight))
     }
 
     override fun closeSettingsPanel() {

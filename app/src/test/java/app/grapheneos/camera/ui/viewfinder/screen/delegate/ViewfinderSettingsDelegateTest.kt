@@ -19,6 +19,7 @@ import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
@@ -203,7 +204,22 @@ class ViewfinderSettingsDelegateTest {
             }
             delegate.openSettingsPanel()
 
-            assertEquals(listOf(ViewfinderNavEvent.OpenSettingsPanel), events)
+            assertEquals(listOf(ViewfinderNavEvent.OpenSettingsPanel()), events)
+        }
+    }
+
+    @Test
+    fun settingsPanel_carriesTheSettingToHighlight() {
+        runTest {
+            val delegate = createDelegate()
+            val events = collectNavEvents(stateHolder)
+
+            delegate.openSettingsPanel(highlight = QuickSetting.SELF_TIMER)
+
+            assertEquals(
+                listOf(ViewfinderNavEvent.OpenSettingsPanel(highlight = QuickSetting.SELF_TIMER)),
+                events,
+            )
         }
     }
 

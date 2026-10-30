@@ -5,6 +5,7 @@ import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -228,13 +229,13 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(SettingsAction.StatusBarClicked)
+            viewModel.onAction(SettingsAction.StatusBarClicked(QuickSetting.SELF_TIMER))
             viewModel.onAction(SettingsAction.QuickSettingsButtonClicked)
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
             viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
 
             verifyOrder {
-                settingsDelegate.openSettingsPanel()
+                settingsDelegate.openSettingsPanel(QuickSetting.SELF_TIMER)
                 settingsDelegate.openSettingsPanel()
                 gestureDelegate.onPreviewSwiped(SwipeDirection.UP)
                 settingsDelegate.onSettingsPanelVisibilityChanged(true)
