@@ -110,6 +110,8 @@
     <string name="photo">Photo</string>
     <string name="remove_exif_title">Remove EXIF data after capture</string>
     <string name="remove_exif_subtitle">Note: Geo-tagging/Location option is independent of this setting</string>
+    <string name="remove_icc_title">Remove ICC profile data after capture</string>
+    <string name="remove_icc_subtitle">Note: Removing ICC can lower image quality / accuracy when viewed on some screens.</string>
     <string name="video_setting_title">Video</string>
     <string name="degree_format">%d°</string>
     <string name="percent_symbol">%</string>
