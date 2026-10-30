@@ -224,15 +224,17 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
-    fun settingsPanel_followsTheIconSwipesAndTheHost() {
+    fun settingsPanel_followsTheStatusBarTheButtonSwipesAndTheHost() {
         runTest {
             val viewModel = createViewModel()
 
             viewModel.onAction(SettingsAction.StatusBarClicked)
+            viewModel.onAction(SettingsAction.QuickSettingsButtonClicked)
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
             viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
 
             verifyOrder {
+                settingsDelegate.openSettingsPanel()
                 settingsDelegate.openSettingsPanel()
                 gestureDelegate.onPreviewSwiped(SwipeDirection.UP)
                 settingsDelegate.onSettingsPanelVisibilityChanged(true)

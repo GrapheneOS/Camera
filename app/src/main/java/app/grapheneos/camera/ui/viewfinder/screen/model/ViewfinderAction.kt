@@ -155,6 +155,8 @@ sealed interface ViewfinderAction {
 
         data object StatusBarClicked : SettingsAction
 
+        data object QuickSettingsButtonClicked : SettingsAction
+
         data class SettingsPanelVisibilityChanged(
             val visible: Boolean,
         ) : SettingsAction

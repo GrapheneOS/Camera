@@ -16,7 +16,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import android.view.animation.RotateAnimation
@@ -33,25 +32,16 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Density
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.marginTop
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import androidx.lifecycle.DEFAULT_ARGS_KEY
@@ -77,10 +67,7 @@ import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
-import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
-import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
-import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreen
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
@@ -99,7 +86,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderEffectHandlerImpl
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderGestureHandler
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderNavigationCallbacks
-import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderOverlay
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewModel
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderViewRenderer
 import app.grapheneos.camera.ui.viewfinder.screen.applyPreviewRatio
@@ -277,7 +263,7 @@ open class MainActivity : AppCompatActivity() {
 
     private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
-    private val quickSettingsInsets = mutableStateOf(QuickSettingsInsets())
+    private var overlayInsets by mutableStateOf(ViewfinderOverlayInsets())
 
     private val quickSettingsSheet by lazy {
         QuickSettingsSheetState(
@@ -287,8 +273,6 @@ open class MainActivity : AppCompatActivity() {
 
     // Whether the transition still is standing in for the preview.
     private var transitionShown by mutableStateOf(false)
-
-    private var bottomNavigationBarPadding: Int = 0
 
     private lateinit var snackBar: Snackbar
 
@@ -591,40 +575,16 @@ open class MainActivity : AppCompatActivity() {
 
         binding.composeOverlay.setContent {
             CameraTheme {
-                val isSheetHidden by remember {
-                    derivedStateOf { quickSettingsSheet.visibleFraction() == 0f }
-                }
-
-                ViewfinderOverlay(screenModel = viewfinder) { viewfinderUiState ->
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        if (
-                            viewfinderUiState.isSettingsPanelAvailable &&
-                            !viewfinderUiState.capturedPreviewVisible &&
-                            !transitionShown
-                        ) {
-                            StatusBarScreen(
-                                screenModel = statusBar,
-                                enabled = isSheetHidden,
-                                onItemClick = {
-                                    viewfinder.onAction(SettingsAction.StatusBarClicked)
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(quickSettingsInsets.value.previewTop)
-                                    .graphicsLayer {
-                                        alpha = 1f - quickSettingsSheet.visibleFraction()
-                                    },
-                            )
-                        }
-                        QuickSettingsScreen(
-                            screenModel = quickSettings,
-                            sheetState = quickSettingsSheet,
-                            visible = QuickSettingsNavKey in navigator.backStack,
-                            insets = quickSettingsInsets.value,
-                            onVisibleChange = ::showSettingsPanel,
-                        )
-                    }
-                }
+                ViewfinderOverlayContent(
+                    viewfinder = viewfinder,
+                    statusBar = statusBar,
+                    quickSettings = quickSettings,
+                    sheetState = quickSettingsSheet,
+                    isSheetOpen = QuickSettingsNavKey in navigator.backStack,
+                    isTransitionShown = transitionShown,
+                    insets = overlayInsets,
+                    onSheetOpenChange = ::showSettingsPanel,
+                )
             }
         }
 
@@ -719,7 +679,10 @@ open class MainActivity : AppCompatActivity() {
 
             zoomBarPanel.setPadding(0, 0, 0, insets.bottom)
             exposureBarPanel.setPadding(0, 0, 0, insets.bottom)
-            bottomNavigationBarPadding = insets.bottom
+            binding.bottomRow.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = insets.bottom +
+                    resources.getDimensionPixelSize(R.dimen.bottom_row_above_navigation_bar)
+            }
 
             if (insets.top != 0 && !isInsetSet) {
                 val topBarBelowStatusBar = resources.getDimensionPixelSize(
@@ -771,16 +734,6 @@ open class MainActivity : AppCompatActivity() {
 
         setUpSettingsPanel()
 
-        previewView.viewTreeObserver.addOnPreDrawListener(
-            object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    previewView.viewTreeObserver.removeOnPreDrawListener(this)
-                    repositionTabLayout()
-                    return true
-                }
-            }
-        )
-
         binding.moreOptions.setOnClickListener {
             showMoreQrFormatOptions(
                 activity = this,
@@ -826,10 +779,10 @@ open class MainActivity : AppCompatActivity() {
                 .collect { open -> renderSettingsPanel(open) }
         }
 
-        trackQuickSettingsInsets()
+        trackOverlayInsets()
     }
 
-    private fun trackQuickSettingsInsets() {
+    private fun trackOverlayInsets() {
         val overlay = binding.composeOverlay
         val overlayParent = overlay.parent as ViewGroup
         val previewBounds = Rect()
@@ -838,11 +791,12 @@ open class MainActivity : AppCompatActivity() {
             previewView.getDrawingRect(previewBounds)
             overlayParent.offsetDescendantRectToMyCoords(previewView, previewBounds)
 
-            quickSettingsInsets.value = with(Density(context = this)) {
-                QuickSettingsInsets(
+            overlayInsets = with(Density(context = this)) {
+                ViewfinderOverlayInsets(
                     previewTop = previewBounds.top.toDp(),
                     previewBottom = (overlay.height - previewBounds.bottom).toDp(),
                     shutterRow = (overlay.height - threeButtons.top).toDp(),
+                    bottomRow = (overlay.height - binding.bottomRow.bottom).toDp(),
                 )
             }
         }
@@ -857,50 +811,6 @@ open class MainActivity : AppCompatActivity() {
 
     private fun renderSettingsPanel(open: Boolean) {
         viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
-    }
-
-    private fun repositionTabLayout() {
-        threeButtons.visibility = View.VISIBLE
-
-        tabLayout.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                tabLayout.viewTreeObserver
-                    .removeOnPreDrawListener(
-                        this
-                    )
-
-                val previewHeight169 = binding.previewContainer.width * 16 / 9
-
-                val extraHeight169 = binding.previewContainer.height -
-                    previewHeight169 -
-                    tabLayout.height -
-                    10 * resources.displayMetrics.density.toInt()
-
-                // When there's no extra space in 16:9 for even the bottom nav bar to be present without
-                // obscuring the preview or if there's sufficient space for the entire bottom UI to exist
-                val shouldSnapAboveBottomNav = extraHeight169 < bottomNavigationBarPadding ||
-                    extraHeight169 >=
-                    (threeButtons.height + tabLayout.height + tabLayout.marginTop)
-
-                tabLayout.layoutParams =
-                    (tabLayout.layoutParams as ViewGroup.MarginLayoutParams).let {
-                        it.setMargins(
-                            it.leftMargin,
-                            it.topMargin,
-                            it.rightMargin,
-                            if (shouldSnapAboveBottomNav) {
-                                bottomNavigationBarPadding
-                            } else {
-                                extraHeight169
-                            }
-                        )
-
-                        it
-                    }
-
-                return true
-            }
-        })
     }
 
     fun finalizeMode(tab: TabLayout.Tab? = null) {

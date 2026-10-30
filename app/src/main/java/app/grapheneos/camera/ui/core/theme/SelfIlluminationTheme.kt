@@ -4,8 +4,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 
 @Composable
@@ -46,8 +48,23 @@ internal fun SelfIlluminationTheme(
         )
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content,
+    val controlColors = MaterialTheme.cameraColors.copy(
+        controlContainer = lerp(
+            start = darkColorScheme.surfaceContainerHighest,
+            stop = MaterialTheme.cameraColors.overlayScrim,
+            fraction = litFraction,
+        ),
+        onControlContainer = lerp(
+            start = darkColorScheme.onSurface,
+            stop = MaterialTheme.cameraColors.overlay,
+            fraction = litFraction,
+        ),
     )
+
+    CompositionLocalProvider(LocalCameraColors provides controlColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            content = content,
+        )
+    }
 }

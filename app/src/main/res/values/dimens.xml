@@ -5,4 +5,7 @@
     <dimen name="settings_dialog_padding_horizontal">14dp</dimen>
 
     <dimen name="top_bar_below_status_bar">20dp</dimen>
+
+    <dimen name="bottom_row_height">48dp</dimen>
+    <dimen name="bottom_row_above_navigation_bar">20dp</dimen>
 </resources>

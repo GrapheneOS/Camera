@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.core.theme
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -15,17 +16,24 @@ internal data class CameraColors(
     val onOverlay: Color,
     val overlayScrim: Color,
     val selfIllumination: Color,
+    val controlContainer: Color,
+    val onControlContainer: Color,
 ) {
 
     companion object {
-        val DEFAULT = CameraColors(
-            recording = Color(color = 0xFFEC0000),
-            locked = Color(color = 0xFFEAC76B),
-            overlay = Color.White,
-            onOverlay = Color.Black,
-            overlayScrim = Color.Black.copy(alpha = 0.6f),
-            selfIllumination = Color(color = 0xFFFFE8CF),
-        )
+
+        fun fromScheme(colorScheme: ColorScheme): CameraColors {
+            return CameraColors(
+                recording = Color(color = 0xFFEC0000),
+                locked = Color(color = 0xFFEAC76B),
+                overlay = Color.White,
+                onOverlay = Color.Black,
+                overlayScrim = Color.Black.copy(alpha = 0.6f),
+                selfIllumination = Color(color = 0xFFFFE8CF),
+                controlContainer = colorScheme.surfaceContainerHighest,
+                onControlContainer = colorScheme.onSurface,
+            )
+        }
     }
 }
 

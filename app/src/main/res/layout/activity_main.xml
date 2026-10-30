@@ -316,8 +316,7 @@
             android:orientation="horizontal"
             android:weightSum="3"
             android:layout_above="@id/camera_mode_tabs"
-            android:layout_marginBottom="12dp"
-            android:visibility="invisible"
+            android:layout_marginBottom="18dp"
             android:baselineAligned="false">
 
             <FrameLayout
@@ -479,9 +478,15 @@
 
         </LinearLayout>
 
+        <View
+            android:id="@+id/bottom_row"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/bottom_row_height"
+            android:layout_alignParentBottom="true" />
+
         <app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
             android:id="@+id/camera_mode_tabs"
-            android:layout_alignParentBottom="true"
+            android:layout_above="@id/bottom_row"
             android:layout_width="match_parent"
             android:layout_height="30dp"
             app:tabPaddingStart="16dp"
@@ -496,8 +501,7 @@
             app:tabTextColor="@android:color/white"
             app:tabSelectedTextColor="?attr/colorOnPrimary"
             android:background="@android:color/transparent"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="24dp" />
 
         <FrameLayout
             android:layout_height="26dp"

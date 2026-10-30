@@ -24,7 +24,7 @@ internal fun CameraTheme(
         darkTheme = darkTheme,
     )
 
-    CompositionLocalProvider(LocalCameraColors provides CameraColors.DEFAULT) {
+    CompositionLocalProvider(LocalCameraColors provides CameraColors.fromScheme(colorScheme)) {
         MaterialTheme(
             colorScheme = colorScheme,
             content = content,
