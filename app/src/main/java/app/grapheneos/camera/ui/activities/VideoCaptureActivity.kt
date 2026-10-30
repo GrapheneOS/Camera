@@ -5,14 +5,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore.EXTRA_OUTPUT
 import android.view.View
-import android.widget.ImageView
 import app.grapheneos.camera.R
 import app.grapheneos.camera.util.OneAtATimeStarter
 
 class VideoCaptureActivity : CaptureActivity() {
-
-    private lateinit var whiteOptionCircle: ImageView
-    private lateinit var playPreview: ImageView
 
     private var savedUri: Uri? = null
 
