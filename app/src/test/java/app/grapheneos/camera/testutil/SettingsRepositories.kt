@@ -1,8 +1,8 @@
 package app.grapheneos.camera.testutil
 
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import io.mockk.every
 import io.mockk.mockk

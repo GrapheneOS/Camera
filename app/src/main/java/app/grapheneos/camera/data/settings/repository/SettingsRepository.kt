@@ -1,13 +1,13 @@
 package app.grapheneos.camera.data.settings.repository
 
 import androidx.datastore.core.DataStore
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.store.InMemoryDataStore
 import app.grapheneos.camera.data.settings.mapper.CameraSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.ModeSettingsMapper
 import app.grapheneos.camera.data.settings.mapper.StoredVideoQualityMapper
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.store.SettingsPrefs
 import app.grapheneos.camera.data.settings.store.StoredModeSettings
 import app.grapheneos.camera.di.core.ApplicationScope

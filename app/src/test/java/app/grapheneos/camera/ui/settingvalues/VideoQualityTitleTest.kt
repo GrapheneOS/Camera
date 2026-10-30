@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.common
+package app.grapheneos.camera.ui.settingvalues
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider

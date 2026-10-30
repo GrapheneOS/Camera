@@ -144,25 +144,11 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
     ): QuickChoiceUiModel<VideoQuality>? {
         return when {
             camera.isVideoMode -> QuickChoiceUiModel(
-                selected = shownVideoQuality(
-                    stored = state.modeSettings.videoQuality,
-                    offered = camera.videoQualities,
-                ),
+                selected = camera.recordedVideoQuality(stored = state.modeSettings.videoQuality),
                 options = camera.videoQualities.reversed().toImmutableList(),
             )
 
             else -> null
-        }
-    }
-
-    private fun shownVideoQuality(
-        stored: VideoQuality,
-        offered: List<VideoQuality>,
-    ): VideoQuality {
-        // CameraX lists the supported qualities from the highest down.
-        return when (stored) {
-            VideoQuality.HIGHEST -> offered.firstOrNull() ?: stored
-            else -> stored
         }
     }
 

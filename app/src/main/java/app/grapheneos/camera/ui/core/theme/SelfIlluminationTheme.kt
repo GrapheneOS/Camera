@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.quicksettings.components
+package app.grapheneos.camera.ui.core.theme
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -7,12 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import app.grapheneos.camera.ui.core.theme.cameraColorScheme
-import app.grapheneos.camera.ui.core.theme.cameraColors
-import app.grapheneos.camera.ui.core.theme.lerp
 
 @Composable
-internal fun QuickSettingsTheme(
+internal fun SelfIlluminationTheme(
     selfIlluminating: Boolean,
     content: @Composable () -> Unit,
 ) {

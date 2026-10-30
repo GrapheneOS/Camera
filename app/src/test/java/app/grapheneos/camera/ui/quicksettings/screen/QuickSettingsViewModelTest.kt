@@ -10,11 +10,11 @@ import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
 import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -244,6 +244,7 @@ class QuickSettingsViewModelTest {
             settingsRepository = settingsRepository,
             session = session,
             copyText = copyText,
+            appLabel = { APP_LABEL },
             uiStateMapper = QuickSettingsUiStateMapperImpl(),
         )
     }
@@ -259,7 +260,8 @@ class QuickSettingsViewModelTest {
     }
 
     private companion object {
-        const val COPIED_VERSION = "GrapheneOS Camera version ${BuildConfig.VERSION_NAME}"
+        const val APP_LABEL = "Camera"
+        const val COPIED_VERSION = "$APP_LABEL version ${BuildConfig.VERSION_NAME}"
 
         val SELF_TIMER = 5.seconds
 

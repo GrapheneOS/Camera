@@ -228,7 +228,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.onAction(SettingsAction.SettingsIconClicked)
+            viewModel.onAction(SettingsAction.StatusBarClicked)
             viewModel.onAction(CameraAction.Preview.Swiped(SwipeDirection.UP))
             viewModel.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = true))
 

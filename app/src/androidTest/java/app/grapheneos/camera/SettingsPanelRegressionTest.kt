@@ -34,7 +34,7 @@ class SettingsPanelRegressionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             waitUntil(scenario, "camera is bound") { cameraSession(it).camera != null }
 
-            scenario.onActivity { it.viewfinder.onAction(SettingsAction.SettingsIconClicked) }
+            scenario.onActivity { it.viewfinder.onAction(SettingsAction.StatusBarClicked) }
             waitUntil(scenario, "the settings panel takes back") { interceptsBack(it) }
 
             scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
@@ -56,7 +56,7 @@ class SettingsPanelRegressionTest {
             scenario.onActivity { activity ->
                 assertFalse(interceptsBack(activity))
 
-                activity.viewfinder.onAction(SettingsAction.SettingsIconClicked)
+                activity.viewfinder.onAction(SettingsAction.StatusBarClicked)
             }
             waitUntil(scenario, "the settings panel takes back") { interceptsBack(it) }
 

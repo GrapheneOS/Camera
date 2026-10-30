@@ -28,11 +28,11 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
+import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsHeader
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsRows
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheet
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
-import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsTheme
 import app.grapheneos.camera.ui.quicksettings.components.quickSettingsTitle
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
@@ -133,7 +133,7 @@ private fun QuickSettingsContent(
     onSettle: (isShown: Boolean) -> Unit,
     onAction: (Action) -> Unit,
 ) {
-    QuickSettingsTheme(
+    SelfIlluminationTheme(
         selfIlluminating = uiState.isSelfIlluminating,
     ) {
         QuickSettingsSheet(

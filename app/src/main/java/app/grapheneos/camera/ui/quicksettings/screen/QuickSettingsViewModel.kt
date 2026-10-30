@@ -45,6 +45,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val session: CameraSession,
     private val copyText: CopyText,
+    private val appLabel: AppLabel,
 ) : ViewModel(),
     QuickSettingsScreenModel {
 
@@ -101,7 +102,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun trackModeSettings() {
         stateHolder.state
-            .mapNotNull { state -> state.modeSlot() }
+            .mapNotNull { state -> state.boundCamera?.modeSlot() }
             .distinctUntilChanged()
             .flatMapLatest(settingsRepository::observeModeSettings)
             .collect { modeSettings ->
@@ -119,7 +120,9 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun copyVersion() {
-        if (copyText("$VERSION_LABEL ${BuildConfig.VERSION_NAME}") == CopyTextResult.Unconfirmed) {
+        val version = "${appLabel.label()} version ${BuildConfig.VERSION_NAME}"
+
+        if (copyText(version) == CopyTextResult.Unconfirmed) {
             stateHolder.send(Effect.TextCopied)
         }
     }
@@ -137,7 +140,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun setFlashMode(mode: FlashMode) {
-        val slot = state.modeSlot() ?: return
+        val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(flashMode = mode) }
     }
@@ -152,7 +155,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun setSelfIllumination(enabled: Boolean) {
-        val slot = state.modeSlot() ?: return
+        val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(selfIllumination = enabled) }
     }
@@ -162,18 +165,14 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun setVideoFrameRate(frameRate: VideoFrameRate) {
-        val slot = state.modeSlot() ?: return
+        val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(videoFrameRate = frameRate) }
     }
 
     private fun setVideoQuality(quality: VideoQuality) {
-        val slot = state.modeSlot() ?: return
+        val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(videoQuality = quality) }
-    }
-
-    private companion object {
-        const val VERSION_LABEL = "GrapheneOS Camera version"
     }
 }
