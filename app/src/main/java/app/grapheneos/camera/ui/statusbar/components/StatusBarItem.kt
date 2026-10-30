@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.components.motion.LocalContentRotation
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.settingvalues.flashIcon
 import app.grapheneos.camera.ui.settingvalues.flashLabel
 import app.grapheneos.camera.ui.settingvalues.selfTimerLabel
@@ -36,7 +37,7 @@ private val BADGE_VERTICAL_PADDING = 1.dp
 internal fun StatusItem(
     item: StatusItemUiModel,
     enabled: Boolean,
-    onClick: () -> Unit,
+    onClick: (QuickSetting) -> Unit,
 ) {
     val on = stringResource(R.string.quick_settings_on)
 
@@ -47,7 +48,7 @@ internal fun StatusItem(
             StatusBarButton(
                 description = statusDescription(R.string.timer, value),
                 enabled = enabled,
-                onClick = onClick,
+                onClick = { onClick(QuickSetting.SELF_TIMER) },
             ) {
                 StatusBadge(text = value)
             }
@@ -56,7 +57,7 @@ internal fun StatusItem(
         is StatusItemUiModel.Flash -> StatusBarButton(
             description = statusDescription(R.string.flash_mode, flashLabel(item.mode)),
             enabled = enabled,
-            onClick = onClick,
+            onClick = { onClick(QuickSetting.FLASH) },
         ) {
             StatusIcon(icon = flashIcon(item.mode))
         }
@@ -64,7 +65,7 @@ internal fun StatusItem(
         StatusItemUiModel.VideoLight -> StatusBarButton(
             description = statusDescription(R.string.flash_mode, on),
             enabled = enabled,
-            onClick = onClick,
+            onClick = { onClick(QuickSetting.VIDEO_LIGHT) },
         ) {
             StatusIcon(icon = Icons.Outlined.FlashOn)
         }
@@ -72,7 +73,7 @@ internal fun StatusItem(
         StatusItemUiModel.SelfIllumination -> StatusBarButton(
             description = statusDescription(R.string.self_illumination, on),
             enabled = enabled,
-            onClick = onClick,
+            onClick = { onClick(QuickSetting.SELF_ILLUMINATION) },
         ) {
             StatusIcon(icon = Icons.Outlined.Lightbulb)
         }
@@ -83,7 +84,7 @@ internal fun StatusItem(
             StatusBarButton(
                 description = statusDescription(R.string.quick_settings_resolution, value),
                 enabled = enabled,
-                onClick = onClick,
+                onClick = { onClick(QuickSetting.VIDEO_QUALITY) },
             ) {
                 StatusBadge(text = value)
             }

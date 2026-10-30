@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreenModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
@@ -33,7 +35,7 @@ internal fun CameraOverlay(
     statusBar: StatusBarScreenModel,
     quickSettings: QuickSettingsScreenModel,
     sheetState: QuickSettingsSheetState,
-    isSheetOpen: Boolean,
+    sheet: QuickSettingsNavKey?,
     isTransitionShown: Boolean,
     insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
@@ -54,7 +56,9 @@ internal fun CameraOverlay(
                     sheetState = sheetState,
                     enabled = isSheetHidden,
                     height = insets.previewTop,
-                    onItemClick = { viewfinder.onAction(SettingsAction.StatusBarClicked) },
+                    onItemClick = { setting ->
+                        viewfinder.onAction(SettingsAction.StatusBarClicked(setting))
+                    },
                 )
                 BottomRowLayer(
                     uiState = uiState,
@@ -69,12 +73,13 @@ internal fun CameraOverlay(
             QuickSettingsScreen(
                 screenModel = quickSettings,
                 sheetState = sheetState,
-                visible = isSheetOpen,
+                visible = sheet != null,
                 insets = QuickSettingsInsets(
                     previewTop = insets.previewTop,
                     previewBottom = insets.previewBottom,
                     shutterRow = insets.shutterRow,
                 ),
+                highlight = sheet?.highlight,
                 onVisibleChange = onSheetOpenChange,
             )
         }
@@ -87,7 +92,7 @@ private fun StatusBarLayer(
     sheetState: QuickSettingsSheetState,
     enabled: Boolean,
     height: Dp,
-    onItemClick: () -> Unit,
+    onItemClick: (QuickSetting) -> Unit,
 ) {
     StatusBarScreen(
         screenModel = statusBar,

@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
@@ -48,9 +49,12 @@ internal fun QuickSettingsRowLayout(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    highlight: () -> Float = { 0f },
     onUnavailableClick: (() -> Unit)? = null,
     options: @Composable RowScope.() -> Unit,
 ) {
+    val highlightColor = MaterialTheme.colorScheme.secondaryContainer
+
     Layout(
         contents = listOf(
             {
@@ -73,6 +77,12 @@ internal fun QuickSettingsRowLayout(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = ROW_MIN_HEIGHT)
+            .drawBehind {
+                drawRect(
+                    color = highlightColor,
+                    alpha = highlight(),
+                )
+            }
             .padding(
                 horizontal = ROW_HORIZONTAL_PADDING,
                 vertical = ROW_VERTICAL_PADDING,

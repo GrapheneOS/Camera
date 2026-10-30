@@ -33,7 +33,9 @@ import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsHeader
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsRows
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheet
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
+import app.grapheneos.camera.ui.quicksettings.components.RowHighlightState
 import app.grapheneos.camera.ui.quicksettings.components.quickSettingsTitle
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
@@ -83,11 +85,13 @@ internal fun QuickSettingsScreen(
     sheetState: QuickSettingsSheetState,
     visible: Boolean,
     insets: QuickSettingsInsets,
+    highlight: QuickSetting?,
     onVisibleChange: (visible: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
     val effectHandler = rememberQuickSettingsEffectHandler()
+    val rowHighlight = remember { RowHighlightState() }
 
     CollectEvents(
         events = screenModel.effects,
@@ -96,6 +100,13 @@ internal fun QuickSettingsScreen(
 
     LaunchedEffect(sheetState, visible) {
         sheetState.show(visible)
+    }
+
+    LaunchedEffect(highlight) {
+        if (highlight == null) return@LaunchedEffect
+
+        sheetState.awaitShown()
+        rowHighlight.blink(highlight)
     }
 
     BackHandler(
@@ -113,6 +124,7 @@ internal fun QuickSettingsScreen(
         QuickSettingsContent(
             uiState = uiState,
             sheetState = sheetState,
+            rowHighlight = rowHighlight,
             insets = insets,
             onSettle = onVisibleChange,
             onAction = screenModel::onAction,
@@ -129,6 +141,7 @@ internal fun QuickSettingsScreen(
 private fun QuickSettingsContent(
     uiState: QuickSettingsUiState,
     sheetState: QuickSettingsSheetState,
+    rowHighlight: RowHighlightState,
     insets: QuickSettingsInsets,
     onSettle: (isShown: Boolean) -> Unit,
     onAction: (Action) -> Unit,
@@ -156,6 +169,7 @@ private fun QuickSettingsContent(
                 )
                 QuickSettingsRows(
                     uiState = uiState,
+                    rowHighlight = rowHighlight,
                     onAction = onAction,
                 )
             }
@@ -170,6 +184,7 @@ private fun QuickSettingsPhotoPreview() {
         QuickSettingsContent(
             uiState = PREVIEW_FRONT_PHOTO_UI_STATE,
             sheetState = rememberPreviewSheetState(),
+            rowHighlight = remember { RowHighlightState() },
             insets = PREVIEW_INSETS,
             onSettle = {},
             onAction = {},
@@ -184,6 +199,7 @@ private fun QuickSettingsVideoPreview() {
         QuickSettingsContent(
             uiState = PREVIEW_VIDEO_UI_STATE,
             sheetState = rememberPreviewSheetState(),
+            rowHighlight = remember { RowHighlightState() },
             insets = PREVIEW_INSETS,
             onSettle = {},
             onAction = {},
@@ -198,6 +214,7 @@ private fun QuickSettingsLargeFontPreview() {
         QuickSettingsContent(
             uiState = PREVIEW_VIDEO_UI_STATE,
             sheetState = rememberPreviewSheetState(),
+            rowHighlight = remember { RowHighlightState() },
             insets = PREVIEW_INSETS,
             onSettle = {},
             onAction = {},

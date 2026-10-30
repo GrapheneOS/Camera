@@ -1,16 +1,17 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 
 internal class ViewfinderNavigationCallbacks(
-    val onOpenSettingsPanel: () -> Unit,
+    val onOpenSettingsPanel: (highlight: QuickSetting?) -> Unit,
     val onCloseSettingsPanel: () -> Unit,
 ) {
 
     fun navigate(event: NavEvent) {
         when (event) {
-            NavEvent.OpenSettingsPanel -> onOpenSettingsPanel()
-            NavEvent.CloseSettingsPanel -> onCloseSettingsPanel()
+            is NavEvent.OpenSettingsPanel -> onOpenSettingsPanel(event.highlight)
+            is NavEvent.CloseSettingsPanel -> onCloseSettingsPanel()
         }
     }
 }

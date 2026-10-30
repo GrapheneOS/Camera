@@ -3,6 +3,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.model
 import android.graphics.Bitmap
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 
 sealed interface ViewfinderAction {
@@ -153,9 +154,11 @@ sealed interface ViewfinderAction {
 
     sealed interface SettingsAction : ViewfinderAction {
 
-        data object StatusBarClicked : SettingsAction
-
         data object QuickSettingsButtonClicked : SettingsAction
+
+        data class StatusBarClicked(
+            val setting: QuickSetting,
+        ) : SettingsAction
 
         data class SettingsPanelVisibilityChanged(
             val visible: Boolean,

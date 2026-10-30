@@ -13,6 +13,7 @@ import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.statusbar.components.StatusBar
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarAction as Action
 import app.grapheneos.camera.ui.statusbar.screen.model.StatusBarUiState
@@ -40,7 +41,7 @@ private val PREVIEW_VIDEO_UI_STATE = StatusBarUiState(
 internal fun StatusBarScreen(
     screenModel: StatusBarScreenModel,
     enabled: Boolean,
-    onItemClick: () -> Unit,
+    onItemClick: (QuickSetting) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
@@ -64,7 +65,7 @@ internal fun StatusBarScreen(
 private fun StatusBarContent(
     uiState: StatusBarUiState,
     enabled: Boolean,
-    onItemClick: () -> Unit,
+    onItemClick: (QuickSetting) -> Unit,
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {

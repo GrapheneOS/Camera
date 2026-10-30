@@ -25,12 +25,14 @@ internal fun <T> QuickSettingsRow(
     modifier: Modifier = Modifier,
     optionLabel: @Composable (T) -> String = valueLabel,
     icon: ((T) -> ImageVector)? = null,
+    highlight: () -> Float = { 0f },
     onUnavailableClick: (() -> Unit)? = null,
 ) {
     QuickSettingsRowLayout(
         label = label,
         value = valueLabel(setting.selected),
         modifier = modifier,
+        highlight = highlight,
         onUnavailableClick = onUnavailableClick,
     ) {
         setting.options.forEach { option ->
@@ -54,6 +56,7 @@ internal fun QuickSettingsRow(
     modifier: Modifier = Modifier,
     offIcon: ImageVector? = null,
     onIcon: ImageVector? = null,
+    highlight: () -> Float = { 0f },
 ) {
     val off = stringResource(R.string.quick_settings_off)
     val on = stringResource(R.string.quick_settings_on)
@@ -65,6 +68,7 @@ internal fun QuickSettingsRow(
             else -> off
         },
         modifier = modifier,
+        highlight = highlight,
     ) {
         QuickSettingsOption(
             rowLabel = label,
