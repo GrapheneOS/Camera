@@ -22,14 +22,12 @@ internal class QuickSettingsSheetState(
     isShown: Boolean = false,
 ) {
 
-    var isShown by mutableStateOf(isShown)
-        private set
-
     var isDragging by mutableStateOf(false)
         private set
 
     val isHidden by derivedStateOf { !isDragging && position.value == HIDDEN_POSITION }
 
+    private var shown by mutableStateOf(isShown)
     private var height = 0f
     private var releaseVelocity = 0f
     private var dragPosition by mutableFloatStateOf(HIDDEN_POSITION)
@@ -43,10 +41,14 @@ internal class QuickSettingsSheetState(
     fun show(isShown: Boolean) {
         if (isDragging) return
 
-        if (this.isShown != isShown) {
+        if (shown != isShown) {
             releaseVelocity = 0f
         }
-        this.isShown = isShown
+        shown = isShown
+    }
+
+    fun isShown(): Boolean {
+        return shown
     }
 
     fun startDrag() {
@@ -68,7 +70,7 @@ internal class QuickSettingsSheetState(
     }
 
     fun release(velocity: Float): Boolean {
-        isShown = when {
+        shown = when {
             velocity <= -settleVelocity -> true
             velocity >= settleVelocity -> false
             else -> dragPosition >= HALFWAY_POSITION
@@ -79,7 +81,7 @@ internal class QuickSettingsSheetState(
         }
         isDragging = false
 
-        return isShown
+        return shown
     }
 
     fun updateHeight(height: Float) {
@@ -96,7 +98,7 @@ internal class QuickSettingsSheetState(
 
     suspend fun awaitShown() {
         snapshotFlow { visibleFraction() }
-            .first { fraction -> fraction == 1f }
+            .first { fraction -> fraction == OPEN_POSITION }
     }
 
     suspend fun animate() {
@@ -118,7 +120,7 @@ internal class QuickSettingsSheetState(
     fun targetPosition(): Float {
         return when {
             isDragging -> dragPosition
-            else -> positionOf(isShown)
+            else -> positionOf(shown)
         }
     }
 

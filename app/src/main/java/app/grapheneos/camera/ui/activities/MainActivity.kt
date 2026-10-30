@@ -68,7 +68,8 @@ import app.grapheneos.camera.ui.mediaviewer.navigation.VideoPlayerLauncher
 import app.grapheneos.camera.ui.navigation.Navigator
 import app.grapheneos.camera.ui.navigation.NavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
-import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigator
+import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavigatorImpl
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
 import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
@@ -151,6 +152,7 @@ open class MainActivity : AppCompatActivity() {
             onAction = viewfinder::onAction,
             settingsPanelDrag = SettingsPanelDragCallbacks(
                 isAvailable = { viewfinder.uiState.value.isSettingsPanelAvailable },
+                isShown = { !quickSettingsSheet.isHidden },
                 onDragStarted = quickSettingsSheet::startDrag,
                 onDragged = { delta -> quickSettingsSheet.drag(delta) },
                 onDragStopped = { velocity ->
@@ -264,6 +266,10 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
+
+    private val quickSettingsNavigator: QuickSettingsNavigator = QuickSettingsNavigatorImpl(
+        navigator = navigator,
+    )
 
     private var overlayInsets by mutableStateOf(CameraOverlayInsets())
 
@@ -552,6 +558,11 @@ open class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
+            snapshotFlow { quickSettingsSheet.visibleFraction() }
+                .collect(renderer::renderSettingsPanelFraction)
+        }
+
+        lifecycleScope.launch(Dispatchers.Main.immediate) {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewfinder.zoomUiState.collect { zoom ->
                     renderer.renderZoom(zoom)
@@ -582,7 +593,7 @@ open class MainActivity : AppCompatActivity() {
                     statusBar = statusBar,
                     quickSettings = quickSettings,
                     sheetState = quickSettingsSheet,
-                    isSheetOpen = QuickSettingsNavKey in navigator.backStack,
+                    sheet = quickSettingsNavigator.quickSettingsNavKey(),
                     isTransitionShown = transitionShown,
                     insets = overlayInsets,
                     onSheetOpenChange = ::showSettingsPanel,
@@ -764,7 +775,7 @@ open class MainActivity : AppCompatActivity() {
 
     private fun setUpSettingsPanel() {
         val navigation = ViewfinderNavigationCallbacks(
-            onOpenSettingsPanel = { showSettingsPanel(true) },
+            onOpenSettingsPanel = quickSettingsNavigator::navigateToQuickSettings,
             onCloseSettingsPanel = { showSettingsPanel(false) },
         )
 
@@ -777,7 +788,7 @@ open class MainActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
-            snapshotFlow { QuickSettingsNavKey in navigator.backStack }
+            snapshotFlow { quickSettingsNavigator.quickSettingsNavKey() != null }
                 .collect { open -> renderSettingsPanel(open) }
         }
 
@@ -806,8 +817,8 @@ open class MainActivity : AppCompatActivity() {
 
     private fun showSettingsPanel(visible: Boolean) {
         when {
-            visible -> navigator.push(QuickSettingsNavKey)
-            else -> navigator.removeDestination(QuickSettingsNavKey)
+            visible -> quickSettingsNavigator.navigateToQuickSettings(highlight = null)
+            else -> quickSettingsNavigator.closeQuickSettings()
         }
     }
 

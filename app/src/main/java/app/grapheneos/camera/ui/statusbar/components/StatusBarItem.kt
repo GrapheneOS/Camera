@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -32,6 +33,8 @@ import app.grapheneos.camera.ui.statusbar.screen.model.StatusItemUiModel
 
 private val BADGE_HORIZONTAL_PADDING = 4.dp
 private val BADGE_VERTICAL_PADDING = 1.dp
+private val BADGE_TEXT_SIZE = 14.dp
+private val BADGE_LINE_HEIGHT = 20.dp
 
 @Composable
 internal fun StatusItem(
@@ -136,6 +139,7 @@ internal fun StatusIcon(icon: ImageVector) {
 @Composable
 private fun StatusBadge(text: String) {
     val rotation = LocalContentRotation.current
+    val density = LocalDensity.current
 
     Text(
         text = text,
@@ -150,8 +154,9 @@ private fun StatusBadge(text: String) {
                 vertical = BADGE_VERTICAL_PADDING,
             ),
         color = MaterialTheme.colorScheme.surface,
-        style = MaterialTheme.typography.labelLarge,
+        fontSize = with(density) { BADGE_TEXT_SIZE.toSp() },
         fontWeight = FontWeight.Bold,
+        lineHeight = with(density) { BADGE_LINE_HEIGHT.toSp() },
         maxLines = 1,
     )
 }
