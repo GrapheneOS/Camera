@@ -3,4 +3,6 @@
     <dimen name="qr_toggle_button_size">52dp</dimen>
 
     <dimen name="settings_dialog_padding_horizontal">14dp</dimen>
+
+    <dimen name="top_bar_below_status_bar">20dp</dimen>
 </resources>

@@ -728,11 +728,15 @@ open class MainActivity : AppCompatActivity() {
             bottomNavigationBarPadding = insets.bottom
 
             if (insets.top != 0 && !isInsetSet) {
+                val topBarBelowStatusBar = resources.getDimensionPixelSize(
+                    R.dimen.top_bar_below_status_bar,
+                )
+
                 binding.mainFrame.layoutParams =
                     (binding.mainFrame.layoutParams as ViewGroup.MarginLayoutParams).let {
                         it.setMargins(
                             it.leftMargin,
-                            (8 * resources.displayMetrics.density.toInt()) + insets.top,
+                            insets.top + topBarBelowStatusBar,
                             it.rightMargin,
                             it.bottomMargin,
                         )
