@@ -8,12 +8,12 @@ import app.grapheneos.camera.data.camera.model.PhotoResolutions
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.collectNavEvents

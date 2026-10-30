@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.media.usecase.ChangeStorageLocation

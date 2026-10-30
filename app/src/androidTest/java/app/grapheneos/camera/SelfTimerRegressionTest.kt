@@ -139,7 +139,7 @@ class SelfTimerRegressionTest {
                 assertTrue(activity.cdTimer.isRunning)
                 assertEquals(View.VISIBLE, activity.cdTimer.visibility)
                 assertEquals(View.VISIBLE, activity.cbCross.visibility)
-                assertEquals(View.INVISIBLE, activity.settingsIcon.visibility)
+                assertFalse(activity.viewfinder.uiState.value.isSettingsPanelAvailable)
                 assertEquals(View.INVISIBLE, activity.tabLayout.visibility)
                 assertEquals(
                     activity.getString(R.string.cancel_timer),
@@ -170,7 +170,7 @@ class SelfTimerRegressionTest {
                 assertFalse(activity.cdTimer.isRunning)
                 assertEquals(View.GONE, activity.cdTimer.visibility)
                 assertEquals(View.INVISIBLE, activity.cbCross.visibility)
-                assertEquals(View.VISIBLE, activity.settingsIcon.visibility)
+                assertTrue(activity.viewfinder.uiState.value.isSettingsPanelAvailable)
                 assertEquals(View.VISIBLE, activity.tabLayout.visibility)
                 assertEquals(View.VISIBLE, activity.cbText.visibility)
                 assertEquals(shutterDescription, activity.captureButton.contentDescription)

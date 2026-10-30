@@ -2,8 +2,8 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent

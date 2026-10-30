@@ -517,20 +517,6 @@
 
         </FrameLayout>
 
-        <ImageButton
-            android:id="@+id/settings_option"
-            android:layout_alignParentTop="true"
-            android:minWidth="48dp"
-            android:minHeight="48dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            tools:visibility="visible"
-            android:paddingHorizontal="16dp"
-            android:background="@null"
-            android:src="@drawable/settings_icon"
-            android:contentDescription="@string/settings"/>
-
         <TextView
             android:id="@+id/timer"
             android:layout_marginEnd="12dp"

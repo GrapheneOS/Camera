@@ -8,8 +8,8 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.camera.model.BindOutcome
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.permission.model.AppPermission
-import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -262,7 +262,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
-            is SettingsAction.SettingsIconClicked -> settingsDelegate.openSettingsPanel()
+            is SettingsAction.StatusBarClicked -> settingsDelegate.openSettingsPanel()
             is SettingsAction.SettingsPanelVisibilityChanged -> {
                 settingsDelegate.onSettingsPanelVisibilityChanged(action.visible)
             }

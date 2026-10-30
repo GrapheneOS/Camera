@@ -3,7 +3,6 @@ package app.grapheneos.camera.ui.activities
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.res.Configuration
-import android.graphics.Point
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
@@ -25,7 +24,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -35,9 +33,19 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.StreamState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Density
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
@@ -72,6 +80,8 @@ import app.grapheneos.camera.ui.quicksettings.navigation.QuickSettingsNavKey
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsScreen
 import app.grapheneos.camera.ui.quicksettings.screen.QuickSettingsViewModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
+import app.grapheneos.camera.ui.statusbar.screen.StatusBarScreen
+import app.grapheneos.camera.ui.statusbar.screen.StatusBarViewModel
 import app.grapheneos.camera.ui.viewfinder.components.BottomTabLayout
 import app.grapheneos.camera.ui.viewfinder.components.CaptureButton
 import app.grapheneos.camera.ui.viewfinder.components.CountDownTimerUI
@@ -140,6 +150,10 @@ open class MainActivity : AppCompatActivity() {
     )
 
     internal val quickSettings: QuickSettingsViewModel by viewModels(
+        extrasProducer = { cameraEntryPointCreationExtras() },
+    )
+
+    private val statusBar: StatusBarViewModel by viewModels(
         extrasProducer = { cameraEntryPointCreationExtras() },
     )
 
@@ -230,9 +244,6 @@ open class MainActivity : AppCompatActivity() {
     val qrOverlay: QROverlay
         get() = binding.qrOverlay
 
-    val settingsIcon: ImageView
-        get() = binding.settingsOption
-
     val mainOverlay: ImageView
         get() = binding.mainOverlay
 
@@ -275,7 +286,7 @@ open class MainActivity : AppCompatActivity() {
     }
 
     // Whether the transition still is standing in for the preview.
-    private var transitionShown = false
+    private var transitionShown by mutableStateOf(false)
 
     private var bottomNavigationBarPadding: Int = 0
 
@@ -301,8 +312,6 @@ open class MainActivity : AppCompatActivity() {
         // would leave a bar down the side of the preview until the new camera streams.
         mainOverlay.scaleType = ImageView.ScaleType.CENTER_CROP
         setBlurBitmapCompat(mainOverlay, lastFrame)
-        settingsIcon.visibility = View.INVISIBLE
-        settingsIcon.isEnabled = false
         mainOverlay.visibility = View.VISIBLE
     }
 
@@ -321,11 +330,6 @@ open class MainActivity : AppCompatActivity() {
         }
 
         previewGrid.visibility = View.VISIBLE
-        if (QuickSettingsNavKey !in navigator.backStack) {
-            settingsIcon.visibility = View.VISIBLE
-        }
-
-        settingsIcon.isEnabled = true
     }
 
     // Not from the strip's own touch listener: a tab view takes the DOWN, so the strip is only
@@ -587,14 +591,39 @@ open class MainActivity : AppCompatActivity() {
 
         binding.composeOverlay.setContent {
             CameraTheme {
-                ViewfinderOverlay(screenModel = viewfinder) {
-                    QuickSettingsScreen(
-                        screenModel = quickSettings,
-                        sheetState = quickSettingsSheet,
-                        visible = QuickSettingsNavKey in navigator.backStack,
-                        insets = quickSettingsInsets.value,
-                        onVisibleChange = ::showSettingsPanel,
-                    )
+                val isSheetHidden by remember {
+                    derivedStateOf { quickSettingsSheet.visibleFraction() == 0f }
+                }
+
+                ViewfinderOverlay(screenModel = viewfinder) { viewfinderUiState ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (
+                            viewfinderUiState.isSettingsPanelAvailable &&
+                            !viewfinderUiState.capturedPreviewVisible &&
+                            !transitionShown
+                        ) {
+                            StatusBarScreen(
+                                screenModel = statusBar,
+                                enabled = isSheetHidden,
+                                onItemClick = {
+                                    viewfinder.onAction(SettingsAction.StatusBarClicked)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(quickSettingsInsets.value.previewTop)
+                                    .graphicsLayer {
+                                        alpha = 1f - quickSettingsSheet.visibleFraction()
+                                    },
+                            )
+                        }
+                        QuickSettingsScreen(
+                            screenModel = quickSettings,
+                            sheetState = quickSettingsSheet,
+                            visible = QuickSettingsNavKey in navigator.backStack,
+                            insets = quickSettingsInsets.value,
+                            onVisibleChange = ::showSettingsPanel,
+                        )
+                    }
                 }
             }
         }
@@ -669,41 +698,6 @@ open class MainActivity : AppCompatActivity() {
 
         zoomBar.setMainActivity(this)
         exposureBar.setMainActivity(this)
-
-        settingsIcon.setOnClickListener {
-            viewfinder.onAction(SettingsAction.SettingsIconClicked)
-        }
-
-        settingsIcon.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                rootView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                val displayCutout = window.decorView.rootWindowInsets.displayCutout
-                val layoutParams = (settingsIcon.layoutParams as RelativeLayout.LayoutParams)
-
-                val rect = if (displayCutout?.boundingRects?.isNotEmpty() == true) {
-                    displayCutout.boundingRects.first()
-                } else {
-                    null
-                }
-
-                val windowsSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    windowManager.currentWindowMetrics.bounds
-                } else {
-                    val size = Point()
-                    // defaultDisplay isn't deprecated below API 30 as highlighted by the IDE
-                    // and this code would only execute if it is (Hint: enclosing if-block)
-                    @Suppress("DEPRECATION")
-                    windowManager.defaultDisplay.getRealSize(size)
-                    Rect(0, 0, size.x, size.y)
-                }
-
-                if (rect == null || rect.left <= 0 || rect.right == windowsSize.right) {
-                    layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL)
-                } else {
-                    layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
-                }
-            }
-        })
 
         var isInsetSet = false
 
@@ -832,11 +826,6 @@ open class MainActivity : AppCompatActivity() {
                 .collect { open -> renderSettingsPanel(open) }
         }
 
-        lifecycleScope.launch(Dispatchers.Main.immediate) {
-            snapshotFlow { quickSettingsSheet.visibleFraction() }
-                .collect { fraction -> settingsIcon.alpha = 1f - fraction }
-        }
-
         trackQuickSettingsInsets()
     }
 
@@ -868,11 +857,6 @@ open class MainActivity : AppCompatActivity() {
 
     private fun renderSettingsPanel(open: Boolean) {
         viewfinder.onAction(SettingsAction.SettingsPanelVisibilityChanged(visible = open))
-
-        settingsIcon.visibility = when {
-            open -> View.INVISIBLE
-            else -> View.VISIBLE
-        }
     }
 
     private fun repositionTabLayout() {

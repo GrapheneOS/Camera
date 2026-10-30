@@ -153,7 +153,7 @@ sealed interface ViewfinderAction {
 
     sealed interface SettingsAction : ViewfinderAction {
 
-        data object SettingsIconClicked : SettingsAction
+        data object StatusBarClicked : SettingsAction
 
         data class SettingsPanelVisibilityChanged(
             val visible: Boolean,
