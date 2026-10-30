@@ -1,11 +1,10 @@
 package app.grapheneos.camera.domain.capture.usecase
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
+import android.content.res.Resources
 import app.grapheneos.camera.R
-import dagger.hilt.android.qualifiers.ApplicationContext
+import app.grapheneos.camera.data.core.notification.NotificationBuilderFactory
 import javax.inject.Inject
 
 interface NotifyPictureSaveFailed {
@@ -13,19 +12,20 @@ interface NotifyPictureSaveFailed {
 }
 
 internal class NotifyPictureSaveFailedImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val resources: Resources,
     private val notificationManager: NotificationManager,
+    private val notificationBuilderFactory: NotificationBuilderFactory,
 ) : NotifyPictureSaveFailed {
 
     override suspend fun invoke() {
-        val title = context.getString(R.string.unable_to_save_image)
+        val title = resources.getString(R.string.unable_to_save_image)
         val channel = NotificationChannel(
             CHANNEL_ID,
             title,
             NotificationManager.IMPORTANCE_HIGH,
         )
 
-        val notification = Notification.Builder(context, CHANNEL_ID)
+        val notification = notificationBuilderFactory.create(CHANNEL_ID)
             .setSmallIcon(R.drawable.info)
             .setContentTitle(title)
             .build()

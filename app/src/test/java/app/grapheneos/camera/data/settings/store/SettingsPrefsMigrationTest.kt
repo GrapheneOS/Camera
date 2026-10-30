@@ -16,6 +16,7 @@ import app.grapheneos.camera.testutil.clearLegacyPreferences
 import app.grapheneos.camera.testutil.legacyCommonsFile
 import app.grapheneos.camera.testutil.legacyCommonsFileExists
 import app.grapheneos.camera.testutil.legacyModeFile
+import app.grapheneos.camera.testutil.preferenceFilesOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -30,7 +31,9 @@ class SettingsPrefsMigrationTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    private val migration = SettingsPrefsMigration(context)
+    private val files = preferenceFilesOf(context)
+
+    private val migration = SettingsPrefsMigration(files)
 
     private val mapper: CameraSettingsMapper = CameraSettingsMapperImpl()
 

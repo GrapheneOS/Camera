@@ -1,6 +1,5 @@
 package app.grapheneos.camera.data.core.store
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 
@@ -27,12 +26,12 @@ internal val LEGACY_STORAGE_KEYS = setOf(
     LEGACY_MEDIA_URIS,
 )
 
-internal fun legacyCommonPreferences(context: Context): SharedPreferences {
-    return context.getSharedPreferences(LEGACY_COMMON_PREFS_NAME, Context.MODE_PRIVATE)
+internal fun legacyCommonPreferences(files: PreferenceFiles): SharedPreferences {
+    return files.open(LEGACY_COMMON_PREFS_NAME)
 }
 
-internal fun removeLegacyCommonKeys(context: Context, owns: (String) -> Boolean) {
-    val preferences = legacyCommonPreferences(context)
+internal fun removeLegacyCommonKeys(files: PreferenceFiles, owns: (String) -> Boolean) {
+    val preferences = legacyCommonPreferences(files)
     val owned = preferences.all.keys.filter(owns)
 
     // An empty edit can recreate the file after another migration deletes it.
@@ -43,6 +42,6 @@ internal fun removeLegacyCommonKeys(context: Context, owns: (String) -> Boolean)
     }
 
     if (preferences.all.isEmpty()) {
-        context.deleteSharedPreferences(LEGACY_COMMON_PREFS_NAME)
+        files.delete(LEGACY_COMMON_PREFS_NAME)
     }
 }
