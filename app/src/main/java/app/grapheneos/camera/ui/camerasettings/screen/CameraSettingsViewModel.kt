@@ -6,12 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.media.repository.CapturedItemRepository
 import app.grapheneos.camera.data.media.repository.StorageSpaceRepository
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.permission.repository.PermissionRepository
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.ModeSlot
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
@@ -62,7 +62,7 @@ internal class CameraSettingsViewModel @Inject constructor(
                     AppPermission.LOCATION,
                 ),
                 settings = settingsRepository.settings.value,
-                videoQuality = videoModeQuality(capabilities.lensFacing),
+                videoModeSettings = videoModeSettings(capabilities.lensFacing),
             )
         },
     )
@@ -245,13 +245,13 @@ internal class CameraSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun videoModeQuality(lensFacing: LensFacing): VideoQuality {
+    private fun videoModeSettings(lensFacing: LensFacing): ModeSettings {
         val slot = ModeSlot(
             mode = CameraMode.VIDEO,
             isFrontFacing = lensFacing == LensFacing.FRONT,
         )
 
-        return settingsRepository.modeSettings(slot).videoQuality
+        return settingsRepository.modeSettings(slot)
     }
 
     private fun showDialog(dialog: Dialog?) {

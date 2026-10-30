@@ -3,11 +3,14 @@ package app.grapheneos.camera.ui.quicksettings.screen
 import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.data.camera.model.BoundCamera
 import app.grapheneos.camera.data.camera.model.CameraCapabilities
+import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
+import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
@@ -20,6 +23,7 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapperImpl
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog as Dialog
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import io.mockk.every
 import io.mockk.mockk
@@ -31,6 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,6 +102,40 @@ class QuickSettingsViewModelTest {
 
             assertEquals(FlashMode.ON, turnedOn)
             assertEquals(FlashMode.OFF, storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode)
+        }
+    }
+
+    @Test
+    fun videoFrameRateSelected_storesItForTheBoundSlot() {
+        runTest {
+            boundCamera.value = FRONT_VIDEO_CAMERA
+            storedModeSettings[FRONT_VIDEO_SLOT] = STORED_FRONT_VIDEO
+            val viewModel = viewModel()
+
+            viewModel.onAction(Action.VideoFrameRateSelected(VideoFrameRate.FPS_60))
+
+            assertEquals(
+                VideoFrameRate.FPS_60,
+                storedModeSettings.getValue(FRONT_VIDEO_SLOT).videoFrameRate,
+            )
+        }
+    }
+
+    @Test
+    fun highFrameRateLimitClicked_explainsTheLimitUntilDismissed() {
+        runTest {
+            val limit = HighFrameRateLimit.RESOLUTION
+            boundCamera.value = FRONT_VIDEO_CAMERA.copy(
+                highFrameRate = HighFrameRateSupport.Unavailable(limit = limit),
+            )
+            val viewModel = viewModel()
+            viewModel.onAction(Action.HighFrameRateLimitClicked)
+
+            val shown = viewModel.uiState.value.dialog
+            viewModel.onAction(Action.DialogDismissed)
+
+            assertEquals(Dialog.HighFrameRateUnavailable(limit = limit), shown)
+            assertNull(viewModel.uiState.value.dialog)
         }
     }
 
@@ -173,13 +212,13 @@ class QuickSettingsViewModelTest {
     @Test
     fun cameraSettingsLongClicked_copiesTheVersionAndConfirmsWhereTheSystemDoesNot() {
         runTest {
-            every { copyText(BuildConfig.VERSION_NAME) } returns CopyTextResult.Unconfirmed
+            every { copyText(COPIED_VERSION) } returns CopyTextResult.Unconfirmed
             val viewModel = viewModel()
             val effects = collectEffects(viewModel)
 
             viewModel.onAction(Action.CameraSettingsLongClicked)
 
-            verify { copyText(BuildConfig.VERSION_NAME) }
+            verify { copyText(COPIED_VERSION) }
             assertEquals(listOf(Effect.TextCopied), effects)
         }
     }
@@ -220,9 +259,13 @@ class QuickSettingsViewModelTest {
     }
 
     private companion object {
+        const val COPIED_VERSION = "GrapheneOS Camera version ${BuildConfig.VERSION_NAME}"
+
         val SELF_TIMER = 5.seconds
 
-        val CAPABILITIES = CameraCapabilities(lensFacing = LensFacing.BACK)
+        val CAPABILITIES = CameraCapabilities(
+            lensFacing = LensFacing.BACK,
+        )
 
         val PHOTO_CAMERA = BoundCamera(
             mode = CameraMode.CAMERA,

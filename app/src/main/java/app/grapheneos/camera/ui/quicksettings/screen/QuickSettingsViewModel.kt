@@ -6,6 +6,7 @@ import app.grapheneos.camera.BuildConfig
 import app.grapheneos.camera.data.camera.session.CameraSession
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.repository.SettingsRepository
 import app.grapheneos.camera.domain.clipboard.model.CopyTextResult
@@ -90,6 +91,9 @@ internal class QuickSettingsViewModel @Inject constructor(
             is Action.SelfTimerSelected -> setSelfTimerDuration(action.duration)
             is Action.AspectRatioSelected -> setAspectRatio(action.ratio)
             is Action.VideoQualitySelected -> setVideoQuality(action.quality)
+            is Action.VideoFrameRateSelected -> setVideoFrameRate(action.frameRate)
+            is Action.HighFrameRateLimitClicked -> showHighFrameRateLimit(true)
+            is Action.DialogDismissed -> showHighFrameRateLimit(false)
             is Action.AudioToggled -> setIncludeAudio(action.enabled)
         }
     }
@@ -115,7 +119,7 @@ internal class QuickSettingsViewModel @Inject constructor(
     }
 
     private fun copyVersion() {
-        if (copyText(BuildConfig.VERSION_NAME) == CopyTextResult.Unconfirmed) {
+        if (copyText("$VERSION_LABEL ${BuildConfig.VERSION_NAME}") == CopyTextResult.Unconfirmed) {
             stateHolder.send(Effect.TextCopied)
         }
     }
@@ -153,9 +157,23 @@ internal class QuickSettingsViewModel @Inject constructor(
         settingsRepository.updateMode(slot = slot) { it.copy(selfIllumination = enabled) }
     }
 
+    private fun showHighFrameRateLimit(isShown: Boolean) {
+        stateHolder.update { it.copy(isHighFrameRateLimitShown = isShown) }
+    }
+
+    private fun setVideoFrameRate(frameRate: VideoFrameRate) {
+        val slot = state.modeSlot() ?: return
+
+        settingsRepository.updateMode(slot = slot) { it.copy(videoFrameRate = frameRate) }
+    }
+
     private fun setVideoQuality(quality: VideoQuality) {
         val slot = state.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(videoQuality = quality) }
+    }
+
+    private companion object {
+        const val VERSION_LABEL = "GrapheneOS Camera version"
     }
 }

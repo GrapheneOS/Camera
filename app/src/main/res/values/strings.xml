@@ -82,6 +82,12 @@
     <string name="quick_settings_video_title">Video settings</string>
     <string name="quick_settings_resolution">Resolution</string>
     <string name="quick_settings_copy_version">Copy app version</string>
+    <string name="quick_settings_frame_rate">Frame rate</string>
+    <string name="quick_settings_fps">%1$d fps</string>
+    <string name="quick_settings_why_unavailable">Why some options are unavailable</string>
+    <string name="quick_settings_frame_rate_unavailable">60 fps unavailable</string>
+    <string name="quick_settings_frame_rate_not_with_hdr">This camera can\'t record 60 fps in HDR at this resolution. Turn off HDR video to record at 60 fps.</string>
+    <string name="quick_settings_frame_rate_not_at_resolution">This camera can\'t record 60 fps at this resolution.</string>
     <string name="quick_settings_off">Off</string>
     <string name="quick_settings_on">On</string>
     <string name="quick_settings_auto">Auto</string>

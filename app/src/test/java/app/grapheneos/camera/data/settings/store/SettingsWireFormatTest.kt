@@ -236,6 +236,8 @@ class SettingsWireFormatTest {
                 selfIllumination = true,
                 videoQualityFront = StoredVideoQuality.HD,
                 videoQualityBack = StoredVideoQuality.UHD,
+                frameRateFront = 30,
+                frameRateBack = 60,
             )
 
             assertEquals(EVERY_MODE_SETTING_ON_DISK, encodeMode(mode))
@@ -393,7 +395,8 @@ class SettingsWireFormatTest {
 
         const val EVERY_MODE_SETTING_ON_DISK = """{"modes":{"VIDEO":{"flash_mode":2,""" +
             """"self_illumination":true,""" +
-            """"video_quality_front":"HD","video_quality_back":"UHD"}}}"""
+            """"video_quality_front":"HD","video_quality_back":"UHD",""" +
+            """"frame_rate_front":30,"frame_rate_back":60}}}"""
 
         val SOME_FLASH_MODE = StoredFlashMode.OFF
         val SOME_SELF_TIMER_DURATION = 3.seconds

@@ -1,6 +1,7 @@
 package app.grapheneos.camera.data.settings.mapper
 
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
@@ -56,6 +57,28 @@ class ModeSettingsMapperTest {
 
         assertEquals(VideoQuality.HD, front.videoQuality)
         assertEquals(VideoQuality.UHD, back.videoQuality)
+    }
+
+    @Test
+    fun map_theSlottedFacing_isTheOnlyFrameRateExposed() {
+        val stored = StoredModeSettings(
+            frameRateFront = 30,
+            frameRateBack = 60,
+        )
+
+        val front = mapper.map(stored = stored, isFrontFacing = true)
+        val back = mapper.map(stored = stored, isFrontFacing = false)
+
+        assertEquals(VideoFrameRate.FPS_30, front.videoFrameRate)
+        assertEquals(VideoFrameRate.FPS_60, back.videoFrameRate)
+    }
+
+    @Test
+    fun map_anUnknownFrameRate_readsAsTheDefault() {
+        val stored = StoredModeSettings(frameRateBack = 24)
+        val mapped = mapper.map(stored = stored, isFrontFacing = false)
+
+        assertEquals(SettingsDefaults.VIDEO_FRAME_RATE, mapped.videoFrameRate)
     }
 
     @Test

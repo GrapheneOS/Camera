@@ -1,22 +1,13 @@
 package app.grapheneos.camera.data.camera.model
 
 import app.grapheneos.camera.data.core.model.AspectRatio
-import app.grapheneos.camera.data.core.model.CaptureMode
-import app.grapheneos.camera.data.core.model.FlashMode
-import app.grapheneos.camera.data.core.model.VideoQuality
 
 data class CameraBindRequest(
-    val includesVideoCapture: Boolean,
-    val includesImageCapture: Boolean,
     val aspectRatio: AspectRatio,
     val imageCaptureTargetRotation: Int,
     val previewTargetRotation: Int,
-    val flashMode: FlashMode,
-    val photoQuality: Int,
-    val captureMode: CaptureMode,
-    val selectHighestResolution: Boolean,
-    val ultraHdr: Boolean,
-    val videoQuality: VideoQuality,
-    val mirrorVideoOnFrontCamera: Boolean,
+    val photo: PhotoBindSettings?,
+    val video: VideoBindSettings?,
+    val lensFeatures: LensFeatures,
     val featureGroup: FeatureGroupRequest,
 )

@@ -2,17 +2,22 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.LensFacing
+import app.grapheneos.camera.data.camera.model.PhotoBindSettings
+import app.grapheneos.camera.data.camera.model.VideoBindSettings
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.JpegQuality
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
-import com.google.zxing.BarcodeFormat
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,7 +41,10 @@ class CameraBindSettingsMapperTest {
                 ultraHdr = true,
                 keepSelfiesAsSeen = true,
             ),
-            modeSettings = ModeSettings(videoQuality = VideoQuality.UHD),
+            modeSettings = ModeSettings(
+                videoQuality = VideoQuality.UHD,
+                videoFrameRate = VideoFrameRate.FPS_60,
+            ),
             flashMode = FlashMode.AUTO,
         )
 
@@ -48,24 +56,55 @@ class CameraBindSettingsMapperTest {
         assertEquals(
             CameraBindSettings(
                 mode = CameraMode.CAMERA,
-                isQrMode = false,
-                isVideoMode = false,
-                requiresVideoModeOnly = false,
-                qrLensFacing = null,
                 aspectRatio = AspectRatio.RATIO_16_9,
-                flashMode = FlashMode.AUTO,
-                photoQuality = PHOTO_QUALITY,
-                videoQuality = VideoQuality.UHD,
-                captureMode = CaptureMode.QUALITY,
-                enableEis = true,
-                hdrVideo = false,
-                selectHighestResolution = true,
-                ultraHdr = true,
-                mirrorVideoOnFrontCamera = true,
-                barcodeFormats = setOf(BarcodeFormat.QR_CODE),
+                photo = PhotoBindSettings(
+                    flashMode = FlashMode.AUTO,
+                    quality = JpegQuality(percent = PHOTO_QUALITY),
+                    captureMode = CaptureMode.QUALITY,
+                    selectHighestResolution = true,
+                    ultraHdr = true,
+                ),
+                video = null,
+                qr = null,
             ),
             settings,
         )
+    }
+
+    @Test
+    fun videoMode_bindsTheVideoSettingsAndPlainSnapshots() {
+        val state = ViewfinderState(
+            mode = CameraMode.VIDEO,
+            requiresVideoModeOnly = false,
+            settings = CameraSettings(
+                enableEis = true,
+                hdrVideo = true,
+                ultraHdr = true,
+                keepSelfiesAsSeen = true,
+            ),
+            modeSettings = ModeSettings(
+                videoQuality = VideoQuality.UHD,
+                videoFrameRate = VideoFrameRate.FPS_60,
+            ),
+        )
+
+        val settings = mapper.map(
+            state = state,
+            target = ViewfinderBindTarget(qrLensFacing = null),
+        )
+
+        assertEquals(
+            VideoBindSettings(
+                quality = VideoQuality.UHD,
+                frameRate = VideoFrameRate.FPS_60,
+                stabilization = true,
+                hdr = true,
+                mirrorOnFrontCamera = true,
+            ),
+            settings.video,
+        )
+        assertEquals(false, settings.photo?.ultraHdr)
+        assertNull(settings.qr)
     }
 
     @Test
@@ -81,9 +120,10 @@ class CameraBindSettingsMapperTest {
             target = ViewfinderBindTarget(qrLensFacing = LensFacing.FRONT),
         )
 
-        assertEquals(true, settings.isQrMode)
+        assertEquals(LensFacing.FRONT, settings.qr?.lensFacing)
         assertEquals(AspectRatio.RATIO_4_3, settings.aspectRatio)
-        assertEquals(LensFacing.FRONT, settings.qrLensFacing)
+        assertNull(settings.photo)
+        assertNull(settings.video)
     }
 
     @Test
@@ -98,8 +138,8 @@ class CameraBindSettingsMapperTest {
             target = ViewfinderBindTarget(qrLensFacing = null),
         )
 
-        assertEquals(true, settings.isVideoMode)
-        assertEquals(true, settings.requiresVideoModeOnly)
+        assertNotNull(settings.video)
+        assertNull(settings.photo)
         assertEquals(AspectRatio.RATIO_16_9, settings.aspectRatio)
     }
 

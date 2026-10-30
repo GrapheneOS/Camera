@@ -8,5 +8,6 @@ data class LensFeatures(
     val isZslSupported: Boolean = false,
     val isVideoStabilizationSupported: Boolean = false,
     val isHdrVideoSupported: Boolean = false,
+    val isHighFrameRateSupported: Boolean = false,
     val isUltraHdrSupported: Boolean = false,
 ) : Parcelable

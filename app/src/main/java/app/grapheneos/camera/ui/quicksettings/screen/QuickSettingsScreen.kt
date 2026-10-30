@@ -21,8 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.core.model.AspectRatio
-import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.core.effect.CollectEvents
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
@@ -40,6 +41,7 @@ import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 
 private val PREVIEW_INSETS = QuickSettingsInsets(
@@ -64,8 +66,14 @@ private val PREVIEW_VIDEO_UI_STATE = QuickSettingsUiState(
     videoLight = false,
     videoQuality = QuickChoiceUiModel(
         selected = VideoQuality.UHD,
-        options = persistentListOf(VideoQuality.UHD, VideoQuality.FHD, VideoQuality.HD),
+        options = persistentListOf(VideoQuality.HD, VideoQuality.FHD, VideoQuality.UHD),
     ),
+    videoFrameRate = QuickChoiceUiModel(
+        selected = VideoFrameRate.FPS_30,
+        options = VideoFrameRate.entries.toImmutableList(),
+        unavailable = persistentSetOf(VideoFrameRate.FPS_60),
+    ),
+    highFrameRateLimit = HighFrameRateLimit.HDR,
     audio = true,
 )
 
@@ -110,6 +118,11 @@ internal fun QuickSettingsScreen(
             onAction = screenModel::onAction,
         )
     }
+
+    QuickSettingsDialogs(
+        dialog = uiState.dialog,
+        onAction = screenModel::onAction,
+    )
 }
 
 @Composable

@@ -13,4 +13,8 @@ internal data class StoredModeSettings(
     val videoQualityFront: StoredVideoQuality = StoredVideoQuality.DEVICE_CHOICE,
     @SerialName("video_quality_back")
     val videoQualityBack: StoredVideoQuality = StoredVideoQuality.DEVICE_CHOICE,
+    @SerialName("frame_rate_front")
+    val frameRateFront: Int? = null,
+    @SerialName("frame_rate_back")
+    val frameRateBack: Int? = null,
 )

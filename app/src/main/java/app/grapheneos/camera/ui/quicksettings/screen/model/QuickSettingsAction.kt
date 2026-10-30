@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.quicksettings.screen.model
 
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import kotlin.time.Duration
 
@@ -10,6 +11,10 @@ internal sealed interface QuickSettingsAction {
     data object CameraSettingsClicked : QuickSettingsAction
 
     data object CameraSettingsLongClicked : QuickSettingsAction
+
+    data object HighFrameRateLimitClicked : QuickSettingsAction
+
+    data object DialogDismissed : QuickSettingsAction
 
     data class FlashModeSelected(
         val mode: FlashMode,
@@ -33,6 +38,10 @@ internal sealed interface QuickSettingsAction {
 
     data class VideoQualitySelected(
         val quality: VideoQuality,
+    ) : QuickSettingsAction
+
+    data class VideoFrameRateSelected(
+        val frameRate: VideoFrameRate,
     ) : QuickSettingsAction
 
     data class AudioToggled(

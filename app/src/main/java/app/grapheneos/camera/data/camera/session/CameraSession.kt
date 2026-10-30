@@ -43,6 +43,7 @@ import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.InVideoSnapshotSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
@@ -120,6 +121,7 @@ internal class CameraSessionImpl @Inject constructor(
     private val cameraXConstantsMapper: CameraXConstantsMapper,
     private val cameraXStateMapper: CameraXStateMapper,
     private val inVideoSnapshotSupportResolver: InVideoSnapshotSupportResolver,
+    private val featureGroupRequestResolver: FeatureGroupRequestResolver,
     private val snapshotProbeCache: SnapshotProbeCache,
 ) : CameraSession {
 
@@ -480,77 +482,39 @@ internal class CameraSessionImpl @Inject constructor(
             cameraFeatureSupport.features(it)
         } ?: LensFeatures()
 
-        // CameraX 1.6.0's SessionConfig throws an IllegalArgumentException at construction time
-        // if any use case configures a groupable feature through a non-groupable API while a
-        // feature group is in use. Recorder.Builder.setQualitySelector() is such an API since
-        // 1.6.0 introduced GroupableFeatures.*_RECORDING, so when EIS is requested through
-        // GroupableFeature.PREVIEW_STABILIZATION (the only case where this app uses a feature
-        // group), the video quality has to be requested through the feature group as well.
-        //
-        // The validation triggers on setQualitySelector() having been called at all, not on the
-        // quality it was given, so this flag -- not the resolved feature below -- is what decides
-        // whether that setter may be used. videoQualityAsGroupableFeature() can legitimately fail
-        // to map the current quality, and falling back to setQualitySelector() in that case would
-        // reintroduce the very exception this works around.
-        //
-        // Both halves of LensFeatures.isVideoStabilizationSupported gate the group. The platform
-        // has to be able to verify feature combinations: where it cannot, the resolver would
-        // conflate "could not check" with "unsupported", quietly discard the stored video quality and produce
-        // untruthful notices. Cameras behind that gate use the pre-1.6 non-groupable setters in
-        // the session plan instead, which are legal exactly because no feature group is in use
-        // then. And the group exists solely to negotiate stabilization and HDR against the
-        // quality, so a camera that can apply neither has nothing to negotiate: it takes the
-        // plain fallback path directly, which produces the identical output without a needless
-        // feature-group round. HDR is never applied off the group either: the strict quality
-        // selector there would fail the bind at any quality the camera can't record in HLG.
-        val requestsStabilization = settings.enableEis && features.isVideoStabilizationSupported
-        val requestsHdr = settings.hdrVideo && features.isHdrVideoSupported
-        val featureGroup: FeatureGroupRequest = when {
-            settings.isVideoMode && (requestsStabilization || requestsHdr) -> {
-                FeatureGroupRequest.Requested(
-                    videoQualityFeature = videoQualityAsGroupableFeature(settings.videoQuality),
-                    stabilization = requestsStabilization,
-                    hdr = requestsHdr,
-                )
-            }
-
-            else -> FeatureGroupRequest.Unused
-        }
+        val video = settings.video
+        val videoFeatureGroup = featureGroupRequestResolver.resolve(
+            provider = provider,
+            cameraInfo = currentCameraInfoOrNull(),
+            lensFacing = lensFacing,
+            aspectRatio = settings.aspectRatio,
+            video = video,
+            videoQualityFeature = video?.let { videoQualityAsGroupableFeature(it.quality) },
+            features = features,
+        )
+        val featureGroup = videoFeatureGroup.request
 
         val requiredQualityFeature = when (featureGroup) {
             is FeatureGroupRequest.Requested -> featureGroup.videoQualityFeature
             FeatureGroupRequest.Unused -> null
         }
 
-        val requiredHdrFeature = when (featureGroup) {
-            is FeatureGroupRequest.Requested -> {
-                GroupableFeature.HDR_HLG10.takeIf { featureGroup.hdr }
-            }
-
-            FeatureGroupRequest.Unused -> null
-        }
-
         val bindRequest = CameraBindRequest(
-            includesVideoCapture = !settings.isQrMode && settings.isVideoMode,
-            includesImageCapture = !settings.isQrMode && !settings.requiresVideoModeOnly,
             aspectRatio = settings.aspectRatio,
             imageCaptureTargetRotation = captureRotation ?: displayRotation(),
             previewTargetRotation = displayRotation(),
-            flashMode = settings.flashMode,
-            photoQuality = settings.photoQuality,
-            captureMode = settings.captureMode,
-            selectHighestResolution = settings.selectHighestResolution,
-            ultraHdr = settings.ultraHdr && !settings.isVideoMode && features.isUltraHdrSupported,
-            videoQuality = settings.videoQuality,
-            mirrorVideoOnFrontCamera = settings.mirrorVideoOnFrontCamera,
+            photo = settings.photo,
+            video = video,
+            lensFeatures = features,
             featureGroup = featureGroup,
         )
 
         val plan = cameraSessionPlanFactory.create(bindRequest)
 
-        if (settings.isQrMode) {
+        val qr = settings.qr
+        if (qr != null) {
             val analyzer = QrCodeAnalyzer(
-                barcodeFormats = settings.barcodeFormats,
+                barcodeFormats = qr.barcodeFormats,
                 onCodeScanned = { text ->
                     _events.tryEmit(CameraSessionEvent.QrCodeScanned(text))
                 },
@@ -569,7 +533,7 @@ internal class CameraSessionImpl @Inject constructor(
             iAnalyzer = mIAnalyzer
             mIAnalyzer.setAnalyzer(cameraExecutor, analyzer)
             cameraSelector = selectorFor(
-                requireNotNull(settings.qrLensFacing) {
+                requireNotNull(qr.lensFacing) {
                     "QR mode needs a lens facing"
                 }
             )
@@ -605,14 +569,16 @@ internal class CameraSessionImpl @Inject constructor(
         // answer it, so the verdict is cached (SnapshotProbeCache) and every entry into video mode
         // after the first is free.
         val snapshotUseCase = imageCapture
-        if (settings.isVideoMode && snapshotUseCase != null) {
+        val photo = settings.photo
+        if (video != null && photo != null && snapshotUseCase != null) {
             val probeKey = SnapshotProbeKey(
                 lensFacing = lensFacing,
-                videoQuality = settings.videoQuality,
+                videoQuality = video.quality,
                 usesFeatureGroup = featureGroup is FeatureGroupRequest.Requested,
-                hdrVideo = requestsHdr,
-                captureMode = plan.captureMode,
-                selectHighestResolution = settings.selectHighestResolution,
+                hdrVideo = GroupableFeature.HDR_HLG10 in featureGroup.chosenFeatures(),
+                highFrameRate = GroupableFeature.FPS_60 in featureGroup.chosenFeatures(),
+                captureMode = photo.captureMode,
+                selectHighestResolution = photo.selectHighestResolution,
             )
 
             if (snapshotProbeCache[probeKey] == null) {
@@ -626,10 +592,7 @@ internal class CameraSessionImpl @Inject constructor(
                 }
 
                 snapshotProbeCache[probeKey] = inVideoSnapshotSupportResolver.resolve(
-                    featuresByPriority = listOfNotNull(
-                        requiredQualityFeature,
-                        requiredHdrFeature,
-                    ),
+                    featuresByPriority = featureGroup.chosenFeatures(),
                     probe = { withSnapshots, features ->
                         val probedUseCases = when {
                             withSnapshots -> useCasesList
@@ -724,21 +687,28 @@ internal class CameraSessionImpl @Inject constructor(
             return BindOutcome.EXTENSION_UNUSABLE
         }
 
-        _boundCamera.value = boundCameraOf(settings)
+        _boundCamera.value = boundCameraOf(
+            settings = settings,
+            highFrameRate = videoFeatureGroup.highFrameRate,
+        )
 
         return BindOutcome.BOUND
     }
 
-    private fun boundCameraOf(settings: CameraBindSettings): BoundCamera {
+    private fun boundCameraOf(
+        settings: CameraBindSettings,
+        highFrameRate: HighFrameRateSupport?,
+    ): BoundCamera {
         return BoundCamera(
             mode = settings.mode,
-            isVideoMode = settings.isVideoMode,
+            isVideoMode = settings.video != null,
             lensFacing = lensFacing,
             hasFlashUnit = camera?.cameraInfo?.hasFlashUnit() ?: false,
             videoQualities = when {
-                settings.isVideoMode -> supportedVideoQualities()
+                settings.video != null -> supportedVideoQualities()
                 else -> emptyList()
             },
+            highFrameRate = highFrameRate,
         )
     }
 

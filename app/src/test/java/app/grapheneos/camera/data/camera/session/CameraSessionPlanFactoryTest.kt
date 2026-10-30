@@ -9,9 +9,14 @@ import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
 import app.grapheneos.camera.data.camera.model.CameraBindRequest
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.data.camera.model.LensFeatures
+import app.grapheneos.camera.data.camera.model.PhotoBindSettings
+import app.grapheneos.camera.data.camera.model.VideoBindSettings
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CaptureMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.data.core.model.JpegQuality
+import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -61,7 +66,6 @@ class CameraSessionPlanFactoryTest {
         ).forEach { (captureMode, cameraXCaptureMode) ->
             val plan = buildPlan(request(captureMode = captureMode))
 
-            assertEquals(captureMode, plan.captureMode)
             assertEquals(cameraXCaptureMode, plan.imageCapture?.captureMode)
         }
     }
@@ -128,6 +132,22 @@ class CameraSessionPlanFactoryTest {
         )
     }
 
+    @Test
+    fun create_aFeatureGroupSessionAtAHighFrameRate_putsItAfterHdrAndBeforeStabilization() {
+        val plan = buildPlan(featureGroupRequest(hdr = true, highFrameRate = true))
+
+        assertEquals(
+            listOf(
+                GroupableFeatures.UHD_RECORDING,
+                GroupableFeature.HDR_HLG10,
+                GroupableFeature.FPS_60,
+                GroupableFeature.PREVIEW_STABILIZATION,
+                GroupableFeatures.VIDEO_STABILIZATION,
+            ),
+            plan.preferredFeatures,
+        )
+    }
+
     // CameraX 1.6.0's SessionConfig rejects at construction time any use case that configured a
     // groupable feature through a non-groupable API while a feature group is in use --
     // Recorder.Builder.setQualitySelector() and Preview.Builder.setPreviewStabilizationEnabled()
@@ -166,6 +186,7 @@ class CameraSessionPlanFactoryTest {
         videoQualityFeature: GroupableFeature? = GroupableFeatures.UHD_RECORDING,
         stabilization: Boolean = true,
         hdr: Boolean = false,
+        highFrameRate: Boolean = false,
     ): CameraBindRequest {
         return request(
             includesVideoCapture = true,
@@ -174,6 +195,7 @@ class CameraSessionPlanFactoryTest {
                 videoQualityFeature = videoQualityFeature,
                 stabilization = stabilization,
                 hdr = hdr,
+                highFrameRate = highFrameRate,
             ),
         )
     }
@@ -188,18 +210,24 @@ class CameraSessionPlanFactoryTest {
         featureGroup: FeatureGroupRequest = FeatureGroupRequest.Unused,
     ): CameraBindRequest {
         return CameraBindRequest(
-            includesVideoCapture = includesVideoCapture,
-            includesImageCapture = includesImageCapture,
             aspectRatio = AspectRatio.RATIO_16_9,
             imageCaptureTargetRotation = imageCaptureTargetRotation,
             previewTargetRotation = 0,
-            flashMode = flashMode,
-            photoQuality = 90,
-            captureMode = captureMode,
-            selectHighestResolution = false,
-            ultraHdr = ultraHdr,
-            videoQuality = VideoQuality.UHD,
-            mirrorVideoOnFrontCamera = false,
+            photo = PhotoBindSettings(
+                flashMode = flashMode,
+                quality = JpegQuality(percent = 90),
+                captureMode = captureMode,
+                selectHighestResolution = false,
+                ultraHdr = ultraHdr,
+            ).takeIf { includesImageCapture },
+            video = VideoBindSettings(
+                quality = VideoQuality.UHD,
+                frameRate = VideoFrameRate.FPS_30,
+                stabilization = false,
+                hdr = false,
+                mirrorOnFrontCamera = false,
+            ).takeIf { includesVideoCapture },
+            lensFeatures = LensFeatures(isUltraHdrSupported = true),
             featureGroup = featureGroup,
         )
     }

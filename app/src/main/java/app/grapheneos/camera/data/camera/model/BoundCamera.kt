@@ -9,4 +9,5 @@ data class BoundCamera(
     val lensFacing: LensFacing,
     val hasFlashUnit: Boolean,
     val videoQualities: List<VideoQuality>,
+    val highFrameRate: HighFrameRateSupport? = null,
 )
