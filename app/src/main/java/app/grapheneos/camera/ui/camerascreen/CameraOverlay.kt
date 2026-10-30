@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.activities
+package app.grapheneos.camera.ui.camerascreen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -28,14 +28,14 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Setting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 
 @Composable
-internal fun ViewfinderOverlayContent(
+internal fun CameraOverlay(
     viewfinder: ViewfinderScreenModel,
     statusBar: StatusBarScreenModel,
     quickSettings: QuickSettingsScreenModel,
     sheetState: QuickSettingsSheetState,
     isSheetOpen: Boolean,
     isTransitionShown: Boolean,
-    insets: ViewfinderOverlayInsets,
+    insets: CameraOverlayInsets,
     onSheetOpenChange: (open: Boolean) -> Unit,
 ) {
     val isSheetHidden by remember(sheetState) {
@@ -58,10 +58,11 @@ internal fun ViewfinderOverlayContent(
                 )
                 BottomRowLayer(
                     uiState = uiState,
-                    enabled = isSheetHidden,
                     insets = insets,
                     onQuickSettingsClick = {
-                        viewfinder.onAction(SettingsAction.QuickSettingsButtonClicked)
+                        if (isSheetHidden) {
+                            viewfinder.onAction(SettingsAction.QuickSettingsButtonClicked)
+                        }
                     },
                 )
             }
@@ -102,8 +103,7 @@ private fun StatusBarLayer(
 @Composable
 private fun BoxScope.BottomRowLayer(
     uiState: ViewfinderUiState,
-    enabled: Boolean,
-    insets: ViewfinderOverlayInsets,
+    insets: CameraOverlayInsets,
     onQuickSettingsClick: () -> Unit,
 ) {
     SelfIlluminationTheme(
@@ -111,7 +111,6 @@ private fun BoxScope.BottomRowLayer(
     ) {
         ViewfinderBottomRow(
             isVideoMode = uiState.isVideoMode,
-            enabled = enabled,
             onQuickSettingsClick = onQuickSettingsClick,
             modifier = Modifier
                 .align(Alignment.BottomStart)

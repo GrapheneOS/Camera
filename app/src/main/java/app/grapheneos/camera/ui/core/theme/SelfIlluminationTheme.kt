@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.core.theme
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -13,15 +14,15 @@ import androidx.compose.ui.platform.LocalContext
 @Composable
 internal fun SelfIlluminationTheme(
     selfIlluminating: Boolean,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
     val selfIlluminationColor = MaterialTheme.cameraColors.selfIllumination
-    // TODO: follow the system theme once the viewfinder's own controls are Compose and do too.
-    val darkColorScheme = remember(context) {
+    val baseColorScheme = remember(context, darkTheme) {
         cameraColorScheme(
             context = context,
-            darkTheme = true,
+            darkTheme = darkTheme,
         )
     }
     val litColorScheme = remember(context, selfIlluminationColor) {
@@ -39,10 +40,10 @@ internal fun SelfIlluminationTheme(
     )
 
     val colorScheme = when (litFraction) {
-        0f -> darkColorScheme
+        0f -> baseColorScheme
         1f -> litColorScheme
         else -> lerp(
-            start = darkColorScheme,
+            start = baseColorScheme,
             stop = litColorScheme,
             fraction = litFraction,
         )
@@ -50,12 +51,12 @@ internal fun SelfIlluminationTheme(
 
     val controlColors = MaterialTheme.cameraColors.copy(
         controlContainer = lerp(
-            start = darkColorScheme.surfaceContainerHighest,
+            start = baseColorScheme.surfaceContainerHighest,
             stop = MaterialTheme.cameraColors.overlayScrim,
             fraction = litFraction,
         ),
         onControlContainer = lerp(
-            start = darkColorScheme.onSurface,
+            start = baseColorScheme.onSurface,
             stop = MaterialTheme.cameraColors.overlay,
             fraction = litFraction,
         ),

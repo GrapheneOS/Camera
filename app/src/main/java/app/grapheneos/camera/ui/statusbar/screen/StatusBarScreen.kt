@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.grapheneos.camera.data.core.model.FlashMode
@@ -68,8 +68,10 @@ private fun StatusBarContent(
     onAction: (Action) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // TODO: follow the system theme once the viewfinder's black background does.
     SelfIlluminationTheme(
         selfIlluminating = uiState.isSelfIlluminating,
+        darkTheme = true,
     ) {
         StatusBar(
             items = uiState.items,
@@ -81,10 +83,10 @@ private fun StatusBarContent(
     }
 }
 
-@PreviewLightDark
+@Preview
 @Composable
 private fun StatusBarPhotoPreview() {
-    CameraPreviewTheme {
+    CameraPreviewTheme(darkTheme = true) {
         StatusBarContent(
             uiState = PREVIEW_PHOTO_UI_STATE,
             enabled = true,
@@ -97,10 +99,10 @@ private fun StatusBarPhotoPreview() {
     }
 }
 
-@PreviewLightDark
+@Preview
 @Composable
 private fun StatusBarVideoPreview() {
-    CameraPreviewTheme {
+    CameraPreviewTheme(darkTheme = true) {
         StatusBarContent(
             uiState = PREVIEW_VIDEO_UI_STATE,
             enabled = true,
