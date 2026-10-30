@@ -263,6 +263,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onSettingsAction(action: SettingsAction) {
         when (action) {
             is SettingsAction.StatusBarClicked -> settingsDelegate.openSettingsPanel()
+            is SettingsAction.QuickSettingsButtonClicked -> settingsDelegate.openSettingsPanel()
             is SettingsAction.SettingsPanelVisibilityChanged -> {
                 settingsDelegate.onSettingsPanelVisibilityChanged(action.visible)
             }
