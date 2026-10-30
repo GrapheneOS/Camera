@@ -11,8 +11,8 @@ sealed interface InVideoSnapshotSupport {
             "Video, photo and preview can't be bound together on this camera",
         ),
         SELECTED_VIDEO_SETTINGS(
-            "This camera can't record with the selected video quality and HDR with in-video " +
-                "snapshots enabled",
+            "This camera can't record with the selected video quality, HDR and frame rate with " +
+                "in-video snapshots enabled",
         ),
     }
 }

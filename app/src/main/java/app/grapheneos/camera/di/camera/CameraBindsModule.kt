@@ -16,6 +16,8 @@ import app.grapheneos.camera.data.camera.session.CameraFeatureSupport
 import app.grapheneos.camera.data.camera.session.CameraFeatureSupportImpl
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactory
 import app.grapheneos.camera.data.camera.session.CameraSessionPlanFactoryImpl
+import app.grapheneos.camera.data.camera.session.ExtensionProbe
+import app.grapheneos.camera.data.camera.session.ExtensionProbeImpl
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupport
 import app.grapheneos.camera.data.camera.session.FeatureCombinationSupportImpl
 import app.grapheneos.camera.data.camera.session.FeatureGroupRequestResolver
@@ -30,8 +32,12 @@ import app.grapheneos.camera.data.camera.session.PhotoResolutionSupport
 import app.grapheneos.camera.data.camera.session.PhotoResolutionSupportImpl
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCache
 import app.grapheneos.camera.data.camera.session.SnapshotProbeCacheImpl
+import app.grapheneos.camera.data.camera.session.SnapshotSupportProbe
+import app.grapheneos.camera.data.camera.session.SnapshotSupportProbeImpl
 import app.grapheneos.camera.data.camera.session.VideoBitrateSupport
 import app.grapheneos.camera.data.camera.session.VideoBitrateSupportImpl
+import app.grapheneos.camera.data.camera.session.VideoQualitySupport
+import app.grapheneos.camera.data.camera.session.VideoQualitySupportImpl
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModesImpl
 import dagger.Binds
@@ -122,6 +128,24 @@ internal abstract class CameraBindsModule {
     abstract fun bindInVideoSnapshotSupportResolver(
         impl: InVideoSnapshotSupportResolverImpl,
     ): InVideoSnapshotSupportResolver
+
+    @Binds
+    @Reusable
+    abstract fun bindVideoQualitySupport(
+        impl: VideoQualitySupportImpl,
+    ): VideoQualitySupport
+
+    @Binds
+    @Reusable
+    abstract fun bindExtensionProbe(
+        impl: ExtensionProbeImpl,
+    ): ExtensionProbe
+
+    @Binds
+    @Reusable
+    abstract fun bindSnapshotSupportProbe(
+        impl: SnapshotSupportProbeImpl,
+    ): SnapshotSupportProbe
 
     @Binds
     @Reusable
