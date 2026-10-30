@@ -25,7 +25,6 @@ private val HORIZONTAL_PADDING = 16.dp
 @Composable
 internal fun ViewfinderBottomRow(
     isVideoMode: Boolean,
-    enabled: Boolean,
     onQuickSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -44,7 +43,6 @@ internal fun ViewfinderBottomRow(
             onClick = onQuickSettingsClick,
             icon = Icons.Outlined.Tune,
             modifier = Modifier.semantics { contentDescription = description },
-            enabled = enabled,
             colors = OverlayIconButtonColors(
                 containerColor = cameraColors.controlContainer,
                 contentColor = cameraColors.onControlContainer,
@@ -59,7 +57,6 @@ private fun ViewfinderBottomRowPreview() {
     CameraPreviewTheme {
         ViewfinderBottomRow(
             isVideoMode = false,
-            enabled = true,
             onQuickSettingsClick = {},
         )
     }

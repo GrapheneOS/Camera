@@ -59,6 +59,8 @@ import app.grapheneos.camera.databinding.ActivityMainBinding
 import app.grapheneos.camera.di.core.cameraEntryPointArguments
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.domain.qr.BarcodeFormats
+import app.grapheneos.camera.ui.camerascreen.CameraOverlay
+import app.grapheneos.camera.ui.camerascreen.CameraOverlayInsets
 import app.grapheneos.camera.ui.common.TunePlayer
 import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
 import app.grapheneos.camera.ui.core.theme.CameraTheme
@@ -263,7 +265,7 @@ open class MainActivity : AppCompatActivity() {
 
     private val navigator: Navigator = NavigatorImpl(backStack = mutableStateListOf())
 
-    private var overlayInsets by mutableStateOf(ViewfinderOverlayInsets())
+    private var overlayInsets by mutableStateOf(CameraOverlayInsets())
 
     private val quickSettingsSheet by lazy {
         QuickSettingsSheetState(
@@ -575,7 +577,7 @@ open class MainActivity : AppCompatActivity() {
 
         binding.composeOverlay.setContent {
             CameraTheme {
-                ViewfinderOverlayContent(
+                CameraOverlay(
                     viewfinder = viewfinder,
                     statusBar = statusBar,
                     quickSettings = quickSettings,
@@ -792,7 +794,7 @@ open class MainActivity : AppCompatActivity() {
             overlayParent.offsetDescendantRectToMyCoords(previewView, previewBounds)
 
             overlayInsets = with(Density(context = this)) {
-                ViewfinderOverlayInsets(
+                CameraOverlayInsets(
                     previewTop = previewBounds.top.toDp(),
                     previewBottom = (overlay.height - previewBounds.bottom).toDp(),
                     shutterRow = (overlay.height - threeButtons.top).toDp(),
