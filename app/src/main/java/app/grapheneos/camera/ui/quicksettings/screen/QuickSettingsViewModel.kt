@@ -14,6 +14,7 @@ import app.grapheneos.camera.domain.clipboard.usecase.CopyText
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.core.screen.ScreenStateHolder
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapper
+import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
@@ -87,14 +88,13 @@ internal class QuickSettingsViewModel @Inject constructor(
             is Action.CameraSettingsClicked -> openCameraSettings()
             is Action.CameraSettingsLongClicked -> copyVersion()
             is Action.FlashModeSelected -> setFlashMode(action.mode)
-            is Action.VideoLightToggled -> setVideoLight(action.enabled)
             is Action.SelfIlluminationToggled -> setSelfIllumination(action.enabled)
             is Action.SelfTimerSelected -> setSelfTimerDuration(action.duration)
             is Action.AspectRatioSelected -> setAspectRatio(action.ratio)
             is Action.VideoQualitySelected -> setVideoQuality(action.quality)
             is Action.VideoFrameRateSelected -> setVideoFrameRate(action.frameRate)
-            is Action.HighFrameRateLimitClicked -> showHighFrameRateLimit(true)
-            is Action.DialogDismissed -> showHighFrameRateLimit(false)
+            is Action.LimitClicked -> showLimit(action.limit)
+            is Action.LimitDismissed -> hideLimit()
             is Action.AudioToggled -> setIncludeAudio(action.enabled)
         }
     }
@@ -145,29 +145,24 @@ internal class QuickSettingsViewModel @Inject constructor(
         settingsRepository.updateMode(slot = slot) { it.copy(flashMode = mode) }
     }
 
-    private fun setVideoLight(enabled: Boolean) {
-        val flashMode = when {
-            enabled -> FlashMode.ON
-            else -> FlashMode.OFF
-        }
-
-        setFlashMode(flashMode)
-    }
-
     private fun setSelfIllumination(enabled: Boolean) {
         val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(selfIllumination = enabled) }
     }
 
-    private fun showHighFrameRateLimit(isShown: Boolean) {
-        stateHolder.update { it.copy(isHighFrameRateLimitShown = isShown) }
-    }
-
     private fun setVideoFrameRate(frameRate: VideoFrameRate) {
         val slot = state.boundCamera?.modeSlot() ?: return
 
         settingsRepository.updateMode(slot = slot) { it.copy(videoFrameRate = frameRate) }
+    }
+
+    private fun showLimit(limit: OptionLimit) {
+        stateHolder.update { it.copy(shownLimit = limit) }
+    }
+
+    private fun hideLimit() {
+        stateHolder.update { it.copy(shownLimit = null) }
     }
 
     private fun setVideoQuality(quality: VideoQuality) {

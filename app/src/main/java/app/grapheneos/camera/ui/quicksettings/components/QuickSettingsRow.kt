@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import app.grapheneos.camera.R
 import app.grapheneos.camera.ui.components.choicebutton.ChoiceButton
+import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 
 @Composable
@@ -21,19 +22,19 @@ internal fun <T> QuickSettingsRow(
     label: String,
     setting: QuickChoiceUiModel<T>,
     onSelect: (T) -> Unit,
+    onLimitClick: (OptionLimit) -> Unit,
     valueLabel: @Composable (T) -> String,
     modifier: Modifier = Modifier,
     optionLabel: @Composable (T) -> String = valueLabel,
     icon: ((T) -> ImageVector)? = null,
     highlight: () -> Float = { 0f },
-    onUnavailableClick: (() -> Unit)? = null,
 ) {
     QuickSettingsRowLayout(
         label = label,
         value = valueLabel(setting.selected),
         modifier = modifier,
         highlight = highlight,
-        onUnavailableClick = onUnavailableClick,
+        onUnavailableClick = setting.limit?.let { limit -> { onLimitClick(limit) } },
     ) {
         setting.options.forEach { option ->
             QuickSettingsOption(

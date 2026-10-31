@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FlashOn
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,14 +62,6 @@ internal fun StatusItem(
             onClick = { onClick(QuickSetting.FLASH) },
         ) {
             StatusIcon(icon = flashIcon(item.mode))
-        }
-
-        StatusItemUiModel.VideoLight -> StatusBarButton(
-            description = statusDescription(R.string.flash_mode, on),
-            enabled = enabled,
-            onClick = { onClick(QuickSetting.VIDEO_LIGHT) },
-        ) {
-            StatusIcon(icon = Icons.Outlined.FlashOn)
         }
 
         StatusItemUiModel.SelfIllumination -> StatusBarButton(

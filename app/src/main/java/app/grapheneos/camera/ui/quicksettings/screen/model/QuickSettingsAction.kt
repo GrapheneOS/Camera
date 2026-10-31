@@ -12,16 +12,14 @@ internal sealed interface QuickSettingsAction {
 
     data object CameraSettingsLongClicked : QuickSettingsAction
 
-    data object HighFrameRateLimitClicked : QuickSettingsAction
+    data object LimitDismissed : QuickSettingsAction
 
-    data object DialogDismissed : QuickSettingsAction
+    data class LimitClicked(
+        val limit: OptionLimit,
+    ) : QuickSettingsAction
 
     data class FlashModeSelected(
         val mode: FlashMode,
-    ) : QuickSettingsAction
-
-    data class VideoLightToggled(
-        val enabled: Boolean,
     ) : QuickSettingsAction
 
     data class SelfIlluminationToggled(

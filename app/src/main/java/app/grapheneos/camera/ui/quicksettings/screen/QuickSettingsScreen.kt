@@ -14,20 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
-import app.grapheneos.camera.data.core.model.AspectRatio
-import app.grapheneos.camera.data.core.model.VideoFrameRate
-import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.ui.core.effect.CollectEvents
-import app.grapheneos.camera.ui.core.gesture.SETTLE_VELOCITY
-import app.grapheneos.camera.ui.core.preview.CameraPreviewTheme
 import app.grapheneos.camera.ui.core.theme.SelfIlluminationTheme
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsHeader
 import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsRows
@@ -36,48 +26,9 @@ import app.grapheneos.camera.ui.quicksettings.components.QuickSettingsSheetState
 import app.grapheneos.camera.ui.quicksettings.components.RowHighlightState
 import app.grapheneos.camera.ui.quicksettings.components.quickSettingsTitle
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
-import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsInsets
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.collections.immutable.toImmutableList
-
-private val PREVIEW_INSETS = QuickSettingsInsets(
-    previewBottom = 220.dp,
-    shutterRow = 160.dp,
-)
-
-private val PREVIEW_FRONT_PHOTO_UI_STATE = QuickSettingsUiState(
-    selfIllumination = false,
-    selfTimer = QuickChoiceUiModel(
-        selected = Duration.ZERO,
-        options = persistentListOf(Duration.ZERO, 3.seconds, 5.seconds, 10.seconds),
-    ),
-    aspectRatio = QuickChoiceUiModel(
-        selected = AspectRatio.RATIO_4_3,
-        options = AspectRatio.entries.toImmutableList(),
-    ),
-)
-
-private val PREVIEW_VIDEO_UI_STATE = QuickSettingsUiState(
-    isVideoMode = true,
-    videoLight = false,
-    videoQuality = QuickChoiceUiModel(
-        selected = VideoQuality.UHD,
-        options = persistentListOf(VideoQuality.HD, VideoQuality.FHD, VideoQuality.UHD),
-    ),
-    videoFrameRate = QuickChoiceUiModel(
-        selected = VideoFrameRate.FPS_30,
-        options = VideoFrameRate.entries.toImmutableList(),
-        unavailable = persistentSetOf(VideoFrameRate.FPS_60),
-    ),
-    highFrameRateLimit = HighFrameRateLimit.HDR,
-    audio = true,
-)
 
 @Composable
 internal fun QuickSettingsScreen(
@@ -138,13 +89,14 @@ internal fun QuickSettingsScreen(
 }
 
 @Composable
-private fun QuickSettingsContent(
+internal fun QuickSettingsContent(
     uiState: QuickSettingsUiState,
     sheetState: QuickSettingsSheetState,
     rowHighlight: RowHighlightState,
     insets: QuickSettingsInsets,
     onSettle: (isShown: Boolean) -> Unit,
     onAction: (Action) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     SelfIlluminationTheme(
         selfIlluminating = uiState.isSelfIlluminating,
@@ -154,6 +106,7 @@ private fun QuickSettingsContent(
             solidHeight = insets.previewBottom - insets.shutterRow,
             tailHeight = insets.shutterRow,
             onSettle = onSettle,
+            modifier = modifier,
         ) {
             val title = quickSettingsTitle(isVideoMode = uiState.isVideoMode)
 
@@ -174,62 +127,5 @@ private fun QuickSettingsContent(
                 )
             }
         }
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun QuickSettingsPhotoPreview() {
-    CameraPreviewTheme {
-        QuickSettingsContent(
-            uiState = PREVIEW_FRONT_PHOTO_UI_STATE,
-            sheetState = rememberPreviewSheetState(),
-            rowHighlight = remember { RowHighlightState() },
-            insets = PREVIEW_INSETS,
-            onSettle = {},
-            onAction = {},
-        )
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun QuickSettingsVideoPreview() {
-    CameraPreviewTheme {
-        QuickSettingsContent(
-            uiState = PREVIEW_VIDEO_UI_STATE,
-            sheetState = rememberPreviewSheetState(),
-            rowHighlight = remember { RowHighlightState() },
-            insets = PREVIEW_INSETS,
-            onSettle = {},
-            onAction = {},
-        )
-    }
-}
-
-@Preview(widthDp = 320, heightDp = 400, fontScale = 2f)
-@Composable
-private fun QuickSettingsLargeFontPreview() {
-    CameraPreviewTheme {
-        QuickSettingsContent(
-            uiState = PREVIEW_VIDEO_UI_STATE,
-            sheetState = rememberPreviewSheetState(),
-            rowHighlight = remember { RowHighlightState() },
-            insets = PREVIEW_INSETS,
-            onSettle = {},
-            onAction = {},
-        )
-    }
-}
-
-@Composable
-private fun rememberPreviewSheetState(): QuickSettingsSheetState {
-    val density = LocalDensity.current
-
-    return remember(density) {
-        QuickSettingsSheetState(
-            settleVelocity = with(density) { SETTLE_VELOCITY.toPx() },
-            isShown = true,
-        )
     }
 }

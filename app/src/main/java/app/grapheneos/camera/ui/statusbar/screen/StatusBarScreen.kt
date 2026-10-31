@@ -32,7 +32,7 @@ private val PREVIEW_PHOTO_UI_STATE = StatusBarUiState(
 
 private val PREVIEW_VIDEO_UI_STATE = StatusBarUiState(
     items = persistentListOf(
-        StatusItemUiModel.VideoLight,
+        StatusItemUiModel.Flash(mode = FlashMode.ON),
         StatusItemUiModel.Resolution(quality = VideoQuality.FHD),
     ),
 )
@@ -62,7 +62,7 @@ internal fun StatusBarScreen(
 }
 
 @Composable
-private fun StatusBarContent(
+internal fun StatusBarContent(
     uiState: StatusBarUiState,
     enabled: Boolean,
     onItemClick: (QuickSetting) -> Unit,

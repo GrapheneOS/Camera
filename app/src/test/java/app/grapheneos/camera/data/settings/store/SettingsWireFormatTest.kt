@@ -296,6 +296,8 @@ class SettingsWireFormatTest {
                     StoredFlashMode.AUTO to """{"modes":{"VIDEO":{"flash_mode":0}}}""",
                     StoredFlashMode.ON to """{"modes":{"VIDEO":{"flash_mode":1}}}""",
                     StoredFlashMode.OFF to """{"modes":{"VIDEO":{"flash_mode":2}}}""",
+                    StoredFlashMode.LOW_LIGHT_BOOST to
+                        """{"modes":{"VIDEO":{"flash_mode":100}}}""",
                 ),
                 StoredFlashMode.entries.associateWith {
                     encodeMode(StoredModeSettings(flashMode = it))

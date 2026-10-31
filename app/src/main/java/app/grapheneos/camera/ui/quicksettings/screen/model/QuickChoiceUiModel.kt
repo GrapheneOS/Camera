@@ -10,4 +10,5 @@ internal data class QuickChoiceUiModel<T>(
     val selected: T,
     val options: ImmutableList<T>,
     val unavailable: ImmutableSet<T> = persistentSetOf(),
+    val limit: OptionLimit? = null,
 )

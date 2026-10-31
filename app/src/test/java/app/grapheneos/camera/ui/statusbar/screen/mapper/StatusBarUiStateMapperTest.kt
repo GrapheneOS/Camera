@@ -49,13 +49,16 @@ class StatusBarUiStateMapperTest {
     }
 
     @Test
-    fun withoutAFlashUnit_neverShowsTheFlash() {
+    fun showsTheAppliedFlashModeRatherThanTheStoredOne() {
         val state = map(
-            modeSettings = ModeSettings(flashMode = FlashMode.ON),
-            camera = PHOTO_CAMERA.copy(hasFlashUnit = false),
+            modeSettings = ModeSettings(flashMode = FlashMode.AUTO),
+            camera = VIDEO_CAMERA,
         )
 
-        assertEquals(emptyList<StatusItemUiModel>(), state.items)
+        assertEquals(
+            listOf(StatusItemUiModel.Resolution(quality = VideoQuality.UHD)),
+            state.items,
+        )
     }
 
     @Test
@@ -71,7 +74,10 @@ class StatusBarUiStateMapperTest {
 
     @Test
     fun inVideoMode_alwaysShowsTheRecordedResolutionAfterTheLight() {
-        val atTheDefaults = map(camera = VIDEO_CAMERA)
+        val withoutTheLight = map(
+            modeSettings = ModeSettings(videoQuality = VideoQuality.HD),
+            camera = VIDEO_CAMERA,
+        )
         val withTheLight = map(
             modeSettings = ModeSettings(
                 flashMode = FlashMode.ON,
@@ -81,12 +87,12 @@ class StatusBarUiStateMapperTest {
         )
 
         assertEquals(
-            listOf(StatusItemUiModel.Resolution(quality = VideoQuality.UHD)),
-            atTheDefaults.items,
+            listOf(StatusItemUiModel.Resolution(quality = VideoQuality.HD)),
+            withoutTheLight.items,
         )
         assertEquals(
             listOf(
-                StatusItemUiModel.VideoLight,
+                StatusItemUiModel.Flash(mode = FlashMode.ON),
                 StatusItemUiModel.Resolution(quality = VideoQuality.FHD),
             ),
             withTheLight.items,
