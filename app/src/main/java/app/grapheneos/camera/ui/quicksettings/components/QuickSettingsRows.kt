@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material.icons.outlined.FlashOff
-import androidx.compose.material.icons.outlined.FlashOn
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.MicOff
@@ -62,19 +60,10 @@ private fun LightRows(
             label = stringResource(R.string.flash_mode),
             setting = flash,
             onSelect = { mode -> onAction(Action.FlashModeSelected(mode)) },
+            onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { mode -> flashLabel(mode) },
             icon = { mode -> flashIcon(mode) },
             highlight = { rowHighlight.alphaOf(QuickSetting.FLASH) },
-        )
-    }
-    AnimatedSettingRow(setting = uiState.videoLight) { videoLight ->
-        QuickSettingsRow(
-            label = stringResource(R.string.flash_mode),
-            checked = videoLight,
-            onToggle = { enabled -> onAction(Action.VideoLightToggled(enabled)) },
-            offIcon = Icons.Outlined.FlashOff,
-            onIcon = Icons.Outlined.FlashOn,
-            highlight = { rowHighlight.alphaOf(QuickSetting.VIDEO_LIGHT) },
         )
     }
     AnimatedSettingRow(setting = uiState.selfIllumination) { selfIllumination ->
@@ -100,6 +89,7 @@ private fun PhotoRows(
             label = stringResource(R.string.timer),
             setting = selfTimer,
             onSelect = { duration -> onAction(Action.SelfTimerSelected(duration)) },
+            onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { duration -> selfTimerLabel(duration) },
             highlight = { rowHighlight.alphaOf(QuickSetting.SELF_TIMER) },
         )
@@ -109,6 +99,7 @@ private fun PhotoRows(
             label = stringResource(R.string.aspect_ratio),
             setting = aspectRatio,
             onSelect = { ratio -> onAction(Action.AspectRatioSelected(ratio)) },
+            onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { ratio -> aspectRatioLabel(ratio) },
         )
     }
@@ -120,13 +111,12 @@ private fun VideoRows(
     rowHighlight: RowHighlightState,
     onAction: (Action) -> Unit,
 ) {
-    val onHighFrameRateLimitClick = { onAction(Action.HighFrameRateLimitClicked) }
-
     AnimatedSettingRow(setting = uiState.videoQuality) { videoQuality ->
         QuickSettingsRow(
             label = stringResource(R.string.quick_settings_resolution),
             setting = videoQuality,
             onSelect = { quality -> onAction(Action.VideoQualitySelected(quality)) },
+            onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { quality -> stringResource(videoQualityTitleId(quality)) },
             optionLabel = { quality -> videoQualityLabel(quality) },
             highlight = { rowHighlight.alphaOf(QuickSetting.VIDEO_QUALITY) },
@@ -137,13 +127,11 @@ private fun VideoRows(
             label = stringResource(R.string.quick_settings_frame_rate),
             setting = videoFrameRate,
             onSelect = { frameRate -> onAction(Action.VideoFrameRateSelected(frameRate)) },
+            onLimitClick = { limit -> onAction(Action.LimitClicked(limit)) },
             valueLabel = { frameRate ->
                 stringResource(R.string.quick_settings_fps, frameRate.framesPerSecond)
             },
             icon = { frameRate -> frameRateIcon(frameRate) },
-            onUnavailableClick = onHighFrameRateLimitClick.takeIf {
-                uiState.highFrameRateLimit != null
-            },
         )
     }
     AnimatedSettingRow(setting = uiState.audio) { audio ->

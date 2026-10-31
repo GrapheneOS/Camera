@@ -91,6 +91,9 @@
     <string name="quick_settings_off">Off</string>
     <string name="quick_settings_on">On</string>
     <string name="quick_settings_auto">Auto</string>
+    <string name="quick_settings_low_light">Low light</string>
+    <string name="quick_settings_low_light_unavailable">Low light unavailable</string>
+    <string name="quick_settings_low_light_not_at_high_frame_rate">Low light doesn\'t work at 60 fps. Switch to 30 fps to use it.</string>
     <string name="quick_settings_seconds">%1$ds</string>
     <string name="quick_settings_option_description">%1$s, %2$s</string>
 

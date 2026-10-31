@@ -22,6 +22,7 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.ui.quicksettings.screen.mapper.QuickSettingsUiStateMapperImpl
+import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsAction as Action
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog as Dialog
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsScreenEffect as Effect
@@ -90,18 +91,18 @@ class QuickSettingsViewModelTest {
     }
 
     @Test
-    fun videoLightToggled_storesFlashOnOrOffForTheBoundSlot() {
+    fun flashModeSelected_inVideo_storesItForTheBoundVideoSlot() {
         runTest {
             boundCamera.value = FRONT_VIDEO_CAMERA
             storedModeSettings[FRONT_VIDEO_SLOT] = ModeSettings(flashMode = FlashMode.AUTO)
             val viewModel = viewModel()
 
-            viewModel.onAction(Action.VideoLightToggled(enabled = true))
-            val turnedOn = storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode
-            viewModel.onAction(Action.VideoLightToggled(enabled = false))
+            viewModel.onAction(Action.FlashModeSelected(FlashMode.LOW_LIGHT_BOOST))
 
-            assertEquals(FlashMode.ON, turnedOn)
-            assertEquals(FlashMode.OFF, storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode)
+            assertEquals(
+                FlashMode.LOW_LIGHT_BOOST,
+                storedModeSettings.getValue(FRONT_VIDEO_SLOT).flashMode,
+            )
         }
     }
 
@@ -122,19 +123,19 @@ class QuickSettingsViewModelTest {
     }
 
     @Test
-    fun highFrameRateLimitClicked_explainsTheLimitUntilDismissed() {
+    fun limitClicked_explainsTheLimitUntilDismissed() {
         runTest {
-            val limit = HighFrameRateLimit.RESOLUTION
+            val limit = OptionLimit.HighFrameRate(limit = HighFrameRateLimit.RESOLUTION)
             boundCamera.value = FRONT_VIDEO_CAMERA.copy(
-                highFrameRate = HighFrameRateSupport.Unavailable(limit = limit),
+                highFrameRate = HighFrameRateSupport.Unavailable(limit = limit.limit),
             )
             val viewModel = viewModel()
-            viewModel.onAction(Action.HighFrameRateLimitClicked)
+            viewModel.onAction(Action.LimitClicked(limit))
 
             val shown = viewModel.uiState.value.dialog
-            viewModel.onAction(Action.DialogDismissed)
+            viewModel.onAction(Action.LimitDismissed)
 
-            assertEquals(Dialog.HighFrameRateUnavailable(limit = limit), shown)
+            assertEquals(Dialog.OptionUnavailable(limit = limit), shown)
             assertNull(viewModel.uiState.value.dialog)
         }
     }

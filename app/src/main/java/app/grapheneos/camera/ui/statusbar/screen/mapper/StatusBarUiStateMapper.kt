@@ -39,14 +39,14 @@ internal class StatusBarUiStateMapperImpl @Inject constructor() : StatusBarUiSta
         isSelfIlluminating: Boolean,
     ): ImmutableList<StatusItemUiModel> {
         val selfTimer = state.settings.selfTimerDuration
-        val flashMode = state.modeSettings.flashMode
+        val flashMode = camera.appliedFlashMode(
+            stored = state.modeSettings.flashMode,
+            frameRate = state.modeSettings.videoFrameRate,
+        )
 
         return buildList {
-            if (camera.hasFlashUnit && !camera.isVideoMode && flashMode != FlashMode.OFF) {
+            if (flashMode != FlashMode.OFF) {
                 add(StatusItemUiModel.Flash(mode = flashMode))
-            }
-            if (camera.hasFlashUnit && camera.isVideoMode && state.modeSettings.isVideoLightOn()) {
-                add(StatusItemUiModel.VideoLight)
             }
             if (isSelfIlluminating) {
                 add(StatusItemUiModel.SelfIllumination)

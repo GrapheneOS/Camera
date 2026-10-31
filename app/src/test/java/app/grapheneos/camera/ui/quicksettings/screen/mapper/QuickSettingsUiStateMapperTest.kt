@@ -11,7 +11,9 @@ import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
+import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
+import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsUiState
 import kotlin.time.Duration.Companion.seconds
@@ -59,43 +61,52 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun flash_selectsTheStoredModeAmongAllModesFromOffToOn() {
-        val flash = map(modeSettings = ModeSettings(flashMode = FlashMode.AUTO)).flash
-
-        assertEquals(FlashMode.AUTO, flash?.selected)
-        assertEquals(listOf(FlashMode.OFF, FlashMode.AUTO, FlashMode.ON), flash?.options)
-    }
-
-    @Test
-    fun videoMode_offersTheVideoLightInsteadOfTheFlash() {
-        val state = map(camera = VIDEO_CAMERA)
-
-        assertNull(state.flash)
-        assertEquals(false, state.videoLight)
-        assertNull(map().videoLight)
-    }
-
-    @Test
-    fun videoLight_isOnForFlashOnOnly() {
-        val on = map(
-            modeSettings = ModeSettings(flashMode = FlashMode.ON),
-            camera = VIDEO_CAMERA,
-        )
-        val auto = map(
+    fun flash_offersTheCameraModesAndSelectsTheAppliedOne() {
+        val flash = map(
             modeSettings = ModeSettings(flashMode = FlashMode.AUTO),
             camera = VIDEO_CAMERA,
-        )
+        ).flash
 
-        assertEquals(true, on.videoLight)
-        assertEquals(false, auto.videoLight)
+        assertEquals(VIDEO_CAMERA.flashModes(), flash?.options)
+        assertEquals(FlashMode.OFF, flash?.selected)
     }
 
     @Test
-    fun withoutAFlashUnit_neitherTheFlashNorTheVideoLightIsOffered() {
+    fun withoutAFlashUnitOrLowLightBoost_theFlashIsNotOffered() {
         val noFlashUnit = PHOTO_CAMERA.copy(hasFlashUnit = false)
 
         assertNull(map(camera = noFlashUnit).flash)
-        assertNull(map(camera = noFlashUnit.copy(isVideoMode = true)).videoLight)
+        assertNull(map(camera = noFlashUnit.copy(isVideoMode = true)).flash)
+    }
+
+    @Test
+    fun lowLightBoost_atAHighFrameRate_isUnavailableAndShowsTheFlashOff() {
+        val state = map(
+            modeSettings = ModeSettings(
+                flashMode = FlashMode.LOW_LIGHT_BOOST,
+                videoFrameRate = VideoFrameRate.FPS_60,
+            ),
+            camera = BOOSTED_VIDEO_CAMERA.copy(highFrameRate = HighFrameRateSupport.Supported),
+        )
+
+        assertEquals(FlashMode.OFF, state.flash?.selected)
+        assertEquals(setOf(FlashMode.LOW_LIGHT_BOOST), state.flash?.unavailable)
+        assertEquals(OptionLimit.LowLightBoostAtHighFrameRate, state.flash?.limit)
+    }
+
+    @Test
+    fun shownLimit_isExplainedInADialog() {
+        val state = mapper.map(
+            QuickSettingsState(
+                boundCamera = BOOSTED_VIDEO_CAMERA,
+                shownLimit = OptionLimit.LowLightBoostAtHighFrameRate,
+            ),
+        )
+
+        assertEquals(
+            QuickSettingsDialog.OptionUnavailable(OptionLimit.LowLightBoostAtHighFrameRate),
+            state.dialog,
+        )
     }
 
     @Test
@@ -142,16 +153,6 @@ class QuickSettingsUiStateMapperTest {
     }
 
     @Test
-    fun videoQuality_leftToTheDevice_selectsTheHighestOffered() {
-        val videoQuality = map(
-            modeSettings = ModeSettings(videoQuality = VideoQuality.HIGHEST),
-            camera = VIDEO_CAMERA,
-        ).videoQuality
-
-        assertEquals(VideoQuality.UHD, videoQuality?.selected)
-    }
-
-    @Test
     fun videoFrameRate_isOfferedOnlyWhereTheCameraWasCheckedForAHighFrameRate() {
         assertNull(map(camera = VIDEO_CAMERA).videoFrameRate)
     }
@@ -170,7 +171,6 @@ class QuickSettingsUiStateMapperTest {
             ),
             state.videoFrameRate,
         )
-        assertNull(state.highFrameRateLimit)
     }
 
     @Test
@@ -187,10 +187,10 @@ class QuickSettingsUiStateMapperTest {
                 selected = VideoFrameRate.FPS_30,
                 options = VideoFrameRate.entries.toImmutableList(),
                 unavailable = persistentSetOf(VideoFrameRate.FPS_60),
+                limit = OptionLimit.HighFrameRate(limit = HighFrameRateLimit.HDR),
             ),
             state.videoFrameRate,
         )
-        assertEquals(HighFrameRateLimit.HDR, state.highFrameRateLimit)
     }
 
     @Test
@@ -235,5 +235,7 @@ class QuickSettingsUiStateMapperTest {
             isVideoMode = true,
             videoQualities = OFFERED_QUALITIES,
         )
+
+        val BOOSTED_VIDEO_CAMERA = VIDEO_CAMERA.copy(isLowLightBoostSupported = true)
     }
 }

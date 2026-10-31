@@ -99,6 +99,10 @@ class ModeSettingsMapperTest {
         assertEquals(FlashMode.AUTO, mappedFlashMode(StoredFlashMode.AUTO))
         assertEquals(FlashMode.ON, mappedFlashMode(StoredFlashMode.ON))
         assertEquals(FlashMode.OFF, mappedFlashMode(StoredFlashMode.OFF))
+        assertEquals(
+            FlashMode.LOW_LIGHT_BOOST,
+            mappedFlashMode(StoredFlashMode.LOW_LIGHT_BOOST),
+        )
     }
 
     @Test

@@ -1,13 +1,13 @@
 package app.grapheneos.camera.ui.quicksettings.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.BoundCamera
-import app.grapheneos.camera.data.camera.model.HighFrameRateLimit
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
+import app.grapheneos.camera.ui.quicksettings.screen.model.OptionLimit
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickChoiceUiModel
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsDialog
 import app.grapheneos.camera.ui.quicksettings.screen.model.QuickSettingsState
@@ -26,21 +26,12 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
 
     override fun map(state: QuickSettingsState): QuickSettingsUiState {
         val camera = state.boundCamera ?: return QuickSettingsUiState()
-        val highFrameRateLimit = when (val support = camera.highFrameRate) {
-            is HighFrameRateSupport.Unavailable -> support.limit
-            is HighFrameRateSupport.Supported -> null
-            null -> null
-        }
 
         return QuickSettingsUiState(
             isVideoMode = camera.isVideoMode,
             isSelfIlluminating = camera.lensFacing == LensFacing.FRONT &&
                 state.modeSettings.selfIllumination,
             flash = flash(
-                state = state,
-                camera = camera,
-            ),
-            videoLight = videoLight(
                 state = state,
                 camera = camera,
             ),
@@ -64,15 +55,11 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
                 state = state,
                 camera = camera,
             ),
-            highFrameRateLimit = highFrameRateLimit,
             audio = audio(
                 state = state,
                 camera = camera,
             ),
-            dialog = dialog(
-                state = state,
-                highFrameRateLimit = highFrameRateLimit,
-            ),
+            dialog = state.shownLimit?.let(QuickSettingsDialog::OptionUnavailable),
         )
     }
 
@@ -80,22 +67,23 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         state: QuickSettingsState,
         camera: BoundCamera,
     ): QuickChoiceUiModel<FlashMode>? {
+        val options = camera.flashModes()
+        val isLowLightBoostLimited = camera.limitsLowLightBoost(state.modeSettings.videoFrameRate)
+
         return when {
-            camera.hasFlashUnit && !camera.isVideoMode -> QuickChoiceUiModel(
-                selected = state.modeSettings.flashMode,
-                options = FLASH_OPTIONS.toImmutableList(),
+            options.size > 1 -> QuickChoiceUiModel(
+                selected = camera.appliedFlashMode(
+                    stored = state.modeSettings.flashMode,
+                    frameRate = state.modeSettings.videoFrameRate,
+                ),
+                options = options.toImmutableList(),
+                unavailable = when {
+                    isLowLightBoostLimited -> persistentSetOf(FlashMode.LOW_LIGHT_BOOST)
+                    else -> persistentSetOf()
+                },
+                limit = OptionLimit.LowLightBoostAtHighFrameRate.takeIf { isLowLightBoostLimited },
             )
 
-            else -> null
-        }
-    }
-
-    private fun videoLight(
-        state: QuickSettingsState,
-        camera: BoundCamera,
-    ): Boolean? {
-        return when {
-            camera.hasFlashUnit && camera.isVideoMode -> state.modeSettings.isVideoLightOn()
             else -> null
         }
     }
@@ -158,19 +146,20 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         camera: BoundCamera,
     ): QuickChoiceUiModel<VideoFrameRate>? {
         val highFrameRate = camera.highFrameRate ?: return null
-        val isHighFrameRateSupported = highFrameRate == HighFrameRateSupport.Supported
 
-        return QuickChoiceUiModel(
-            selected = when {
-                isHighFrameRateSupported -> state.modeSettings.videoFrameRate
-                else -> VideoFrameRate.FPS_30
-            },
-            options = VideoFrameRate.entries.toImmutableList(),
-            unavailable = when {
-                isHighFrameRateSupported -> persistentSetOf()
-                else -> persistentSetOf(VideoFrameRate.FPS_60)
-            },
-        )
+        return when (highFrameRate) {
+            HighFrameRateSupport.Supported -> QuickChoiceUiModel(
+                selected = state.modeSettings.videoFrameRate,
+                options = VideoFrameRate.entries.toImmutableList(),
+            )
+
+            is HighFrameRateSupport.Unavailable -> QuickChoiceUiModel(
+                selected = VideoFrameRate.FPS_30,
+                options = VideoFrameRate.entries.toImmutableList(),
+                unavailable = persistentSetOf(VideoFrameRate.FPS_60),
+                limit = OptionLimit.HighFrameRate(limit = highFrameRate.limit),
+            )
+        }
     }
 
     private fun audio(
@@ -183,26 +172,7 @@ internal class QuickSettingsUiStateMapperImpl @Inject constructor() : QuickSetti
         }
     }
 
-    private fun dialog(
-        state: QuickSettingsState,
-        highFrameRateLimit: HighFrameRateLimit?,
-    ): QuickSettingsDialog? {
-        return when {
-            state.isHighFrameRateLimitShown && highFrameRateLimit != null -> {
-                QuickSettingsDialog.HighFrameRateUnavailable(limit = highFrameRateLimit)
-            }
-
-            else -> null
-        }
-    }
-
     private companion object {
-        val FLASH_OPTIONS = listOf(
-            FlashMode.OFF,
-            FlashMode.AUTO,
-            FlashMode.ON,
-        )
-
         val SELF_TIMER_OPTIONS = listOf(
             Duration.ZERO,
             3.seconds,

@@ -400,6 +400,11 @@ internal class CameraSessionImpl @Inject constructor(
 
     override fun setFlashMode(flashMode: FlashMode) {
         imageCapture?.flashMode = cameraXConstantsMapper.map(flashMode)
+
+        camera
+            ?.takeIf { camera -> camera.cameraInfo.isLowLightBoostSupported }
+            ?.cameraControl
+            ?.enableLowLightBoostAsync(flashMode == FlashMode.LOW_LIGHT_BOOST)
     }
 
     override fun setZoomRatio(zoomRatio: Float) {
@@ -797,6 +802,7 @@ internal class CameraSessionImpl @Inject constructor(
             isVideoMode = settings.video != null,
             lensFacing = lensFacing,
             hasFlashUnit = camera?.cameraInfo?.hasFlashUnit() ?: false,
+            isLowLightBoostSupported = camera?.cameraInfo?.isLowLightBoostSupported ?: false,
             videoQualities = camera?.cameraInfo
                 ?.takeIf { settings.video != null }
                 ?.let(videoQualitySupport::supported)
