@@ -11,12 +11,16 @@ import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.source.MediaSource
 import app.grapheneos.camera.data.media.player.ExoPlayerComponents
 import app.grapheneos.camera.data.media.store.RetrieverDataSource
+import app.grapheneos.camera.di.core.IoDispatcher
+import app.grapheneos.camera.di.core.VideoFrameDispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.Reusable
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -30,6 +34,19 @@ internal class MediaStoreProvidesModule {
         return RetrieverDataSource { retriever, uri ->
             retriever.setDataSource(context, uri)
         }
+    }
+
+    // Each frame retriever starts its own hardware decoder, which competes with the playing video's.
+    @Provides
+    @Singleton
+    @VideoFrameDispatcher
+    fun provideVideoFrameDispatcher(
+        @IoDispatcher dispatcher: CoroutineDispatcher,
+    ): CoroutineDispatcher {
+        return dispatcher.limitedParallelism(
+            parallelism = 1,
+            name = "Video frames",
+        )
     }
 
     @OptIn(UnstableApi::class)
