@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraZoom
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import javax.inject.Inject
 
 interface NextZoomStopMapper {

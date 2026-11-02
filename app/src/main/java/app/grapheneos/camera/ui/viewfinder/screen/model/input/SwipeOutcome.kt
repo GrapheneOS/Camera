@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.input
 
 sealed interface SwipeOutcome {
 

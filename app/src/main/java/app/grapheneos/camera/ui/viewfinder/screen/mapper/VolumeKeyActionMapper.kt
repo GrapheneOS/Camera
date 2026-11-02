@@ -4,8 +4,8 @@ import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.VolumeKey
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import javax.inject.Inject
 
 interface VolumeKeyActionMapper {

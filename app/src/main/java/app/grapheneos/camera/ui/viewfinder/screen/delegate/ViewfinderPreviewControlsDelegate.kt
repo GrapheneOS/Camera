@@ -2,7 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderPreviewControlsState as Controls
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState as Controls
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher

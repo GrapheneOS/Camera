@@ -1,6 +1,6 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.ui
 
-data class RecordingUiState(
+data class RecordingUiModel(
     val isActive: Boolean = false,
     val isMuted: Boolean = false,
     val muteToggleVisible: Boolean = false,

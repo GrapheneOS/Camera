@@ -3,18 +3,18 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.FlipCameraUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ModeTabsUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.PreviewUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.QrUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.RotationUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.SelfTimerUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThirdOptionUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ModeTabsUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 import app.grapheneos.camera.util.formatVideoDuration
 import javax.inject.Inject
 import kotlin.time.Duration
@@ -31,12 +31,12 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         return ViewfinderUiState(
             mode = state.mode,
             isVideoMode = state.isVideoMode(),
-            preview = PreviewUiState(
+            preview = PreviewUiModel(
                 aspectRatio = state.aspectRatio(),
                 sensorOrientationDegrees = state.session.sensorOrientationDegrees,
                 gridType = state.settings.gridType,
             ),
-            modeTabs = ModeTabsUiState(
+            modeTabs = ModeTabsUiModel(
                 visible = modeTabsVisible(state),
                 availableModes = state.session.availableModes,
             ),
@@ -48,7 +48,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
                 !state.recording.isRecording(),
             selfTimer = selfTimer(state),
             recording = recording(state),
-            qr = QrUiState(
+            qr = QrUiModel(
                 overlayVisible = state.isQrMode(),
                 scanTogglesVisible = state.isQrMode() && !state.settings.scanAllCodes,
             ),
@@ -64,9 +64,9 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun captureButton(state: ViewfinderState): CaptureButtonUiState {
+    private fun captureButton(state: ViewfinderState): CaptureButtonUiModel {
         val isTorchOn = state.session.isTorchOn
-        val common = CaptureButtonUiState(
+        val common = CaptureButtonUiModel(
             visible = !state.capture.isCapturedPreviewShown,
             enabled = !state.capture.isTakingPicture,
             recording = state.recording.isActive(),
@@ -103,7 +103,7 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         }
     }
 
-    private fun flipCamera(state: ViewfinderState): FlipCameraUiState {
+    private fun flipCamera(state: ViewfinderState): FlipCameraUiModel {
         val visible = !state.capture.isSelfTimerRunning()
 
         return when {
@@ -114,12 +114,12 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
                 visible = visible,
             )
 
-            else -> FlipCameraUiState(visible = visible)
+            else -> FlipCameraUiModel(visible = visible)
         }
     }
 
-    private fun scanAllCodesToggle(scanAllCodes: Boolean): FlipCameraUiState {
-        return FlipCameraUiState(
+    private fun scanAllCodesToggle(scanAllCodes: Boolean): FlipCameraUiModel {
+        return FlipCameraUiModel(
             icon = when {
                 scanAllCodes -> R.drawable.cancel
                 else -> R.drawable.auto
@@ -134,8 +134,8 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
     private fun recordingPauseToggle(
         paused: Boolean,
         visible: Boolean,
-    ): FlipCameraUiState {
-        return FlipCameraUiState(
+    ): FlipCameraUiModel {
+        return FlipCameraUiModel(
             visible = visible,
             icon = when {
                 paused -> R.drawable.play
@@ -148,11 +148,11 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun thirdOption(state: ViewfinderState): ThirdOptionUiState {
+    private fun thirdOption(state: ViewfinderState): ThirdOptionUiModel {
         // While recording, the gallery button turns into a shutter for stills
         val takesStills = !state.isQrMode() && state.recording.isRecording()
 
-        return ThirdOptionUiState(
+        return ThirdOptionUiModel(
             visible = !state.isQrMode() &&
                 thirdOptionVisible(state) &&
                 !state.capture.isSelfTimerRunning(),
@@ -169,12 +169,12 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun selfTimer(state: ViewfinderState): SelfTimerUiState {
-        if (state.isQrMode()) return SelfTimerUiState()
+    private fun selfTimer(state: ViewfinderState): SelfTimerUiModel {
+        if (state.isQrMode()) return SelfTimerUiModel()
 
         val duration = state.settings.selfTimerDuration
 
-        return SelfTimerUiState(
+        return SelfTimerUiModel(
             remaining = state.capture.selfTimerRemaining,
             badge = when (duration) {
                 Duration.ZERO -> ""
@@ -186,11 +186,11 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun recording(state: ViewfinderState): RecordingUiState {
+    private fun recording(state: ViewfinderState): RecordingUiModel {
         val recording = state.recording
         val includeAudio = state.settings.includeAudio
 
-        return RecordingUiState(
+        return RecordingUiModel(
             isActive = recording.isActive(),
             isMuted = recording.isMuted,
             muteToggleVisible = recording.isRecording() && includeAudio,
@@ -200,20 +200,20 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
         )
     }
 
-    private fun exposure(state: ViewfinderState): ExposureUiState {
+    private fun exposure(state: ViewfinderState): ExposureUiModel {
         val exposure = state.session.exposure
 
-        return ExposureUiState(
+        return ExposureUiModel(
             range = exposure?.compensationRange,
             progress = exposure?.compensationIndex ?: 0,
             panelVisible = state.previewControls.isExposurePanelShown,
         )
     }
 
-    private fun rotation(state: ViewfinderState): RotationUiState {
+    private fun rotation(state: ViewfinderState): RotationUiModel {
         val deviceRotation = deviceRotationDegrees(state)
 
-        return RotationUiState(
+        return RotationUiModel(
             iconDegrees = when {
                 state.autoRotateEnabled -> deviceRotation
                 else -> 0f

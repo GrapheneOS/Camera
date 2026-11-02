@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.camera.model.PreviewTarget
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
 
 class ViewfinderHost(
     val previewTarget: PreviewTarget,

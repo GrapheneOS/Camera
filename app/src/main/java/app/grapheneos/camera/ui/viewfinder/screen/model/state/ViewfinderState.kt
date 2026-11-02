@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
 import android.view.Surface
 import app.grapheneos.camera.data.camera.model.LensFacing
@@ -10,6 +10,7 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import app.grapheneos.camera.data.settings.model.SettingsDefaults
+import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import com.google.zxing.BarcodeFormat
 
 data class ViewfinderState(
