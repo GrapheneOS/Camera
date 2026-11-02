@@ -27,6 +27,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -176,7 +177,9 @@ class ViewfinderSettingsDelegateTest {
             val events = collectNavEvents(stateHolder)
 
             delegate.openSettingsPanel()
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
             delegate.openSettingsPanel()
             stateHolder.update {
                 it.copy(mode = CameraMode.QR_SCAN, capture = ViewfinderCaptureState())
@@ -241,7 +244,9 @@ class ViewfinderSettingsDelegateTest {
             val events = collectNavEvents(stateHolder)
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
 
             assertEquals(listOf(ViewfinderNavEvent.CloseSettingsPanel), events)
         }
@@ -252,7 +257,9 @@ class ViewfinderSettingsDelegateTest {
         runTest {
             createDelegate()
             val events = collectNavEvents(stateHolder)
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
 
             stateHolder.update { it.copy(isSettingsPanelOpen = true) }
 

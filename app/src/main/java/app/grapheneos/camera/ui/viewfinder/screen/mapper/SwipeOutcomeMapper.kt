@@ -19,7 +19,7 @@ internal class SwipeOutcomeMapperImpl @Inject constructor() : SwipeOutcomeMapper
         direction: SwipeDirection,
         state: ViewfinderState,
     ): SwipeOutcome? {
-        if (state.capture.isSelfTimerRunning) return null
+        if (state.capture.isSelfTimerRunning()) return null
 
         return when (direction) {
             SwipeDirection.UP -> showQrFormats(state)

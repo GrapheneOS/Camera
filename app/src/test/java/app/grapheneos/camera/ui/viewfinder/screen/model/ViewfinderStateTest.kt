@@ -8,6 +8,7 @@ import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
 import com.google.zxing.BarcodeFormat
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -111,7 +112,7 @@ class ViewfinderStateTest {
         )
         assertFalse(
             photo
-                .copy(capture = ViewfinderCaptureState(isSelfTimerRunning = true))
+                .copy(capture = ViewfinderCaptureState(selfTimerRemaining = 3.seconds))
                 .isSettingsPanelAvailable(),
         )
         assertFalse(state(mode = CameraMode.QR_SCAN).isSettingsPanelAvailable())

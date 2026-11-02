@@ -7,6 +7,8 @@ sealed interface ViewfinderCaptureEvent {
 
     data object StorageLocationNotFound : ViewfinderCaptureEvent
 
+    data object SelfTimerFinished : ViewfinderCaptureEvent
+
     data class ThumbnailReady(
         val thumbnail: Bitmap?,
     ) : ViewfinderCaptureEvent

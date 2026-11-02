@@ -34,7 +34,7 @@ internal class LevelUiStateMapperImpl @Inject constructor() : LevelUiStateMapper
                 current.copy(visible = false)
             }
 
-            state.capture.isSelfTimerRunning -> {
+            state.capture.isSelfTimerRunning() -> {
                 current.copy(visible = visible)
             }
 

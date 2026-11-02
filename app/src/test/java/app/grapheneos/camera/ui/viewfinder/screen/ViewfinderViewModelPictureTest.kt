@@ -138,6 +138,19 @@ class ViewfinderViewModelPictureTest : ViewfinderViewModelTestBase() {
     }
 
     @Test
+    fun selfTimerFinished_takesThePicture() {
+        runTest {
+            every { cameraDelegate.isCameraReady } returns true
+            createViewModel()
+            stateHolder.update { it.copy(session = it.session.copy(canTakePicture = true)) }
+
+            captureEvents.emit(ViewfinderCaptureEvent.SelfTimerFinished)
+
+            verify(exactly = 1) { captureDelegate.takePicture() }
+        }
+    }
+
+    @Test
     fun thumbnailReady_showsIt() {
         runTest {
             createViewModel()
