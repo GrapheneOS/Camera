@@ -1,59 +1,27 @@
 package app.grapheneos.camera.ui.viewfinder.screen.model
 
-import android.graphics.Bitmap
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
-import app.grapheneos.camera.R
-import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.data.settings.model.GridType
-import kotlin.time.Duration
+import app.grapheneos.camera.data.settings.model.SettingsDefaults
 
 data class ViewfinderUiState(
-    val qrOverlayVisible: Boolean = false,
-    val qrScanTogglesVisible: Boolean = false,
-    val thirdOptionVisible: Boolean = true,
-    val cancelButtonVisible: Boolean = true,
-    val capturedPreviewVisible: Boolean = false,
-    val cameraPreviewVisible: Boolean = true,
-    val qrResultVisible: Boolean = false,
-    val micMutedIconVisible: Boolean = false,
-    val isRecordingActive: Boolean = false,
-    val isRecordingPaused: Boolean = false,
-    val isRecordingMuted: Boolean = false,
-    val muteToggleVisible: Boolean = false,
-    val recordingTimerVisible: Boolean = false,
-    val recordingTimerText: String = "",
-    val modeTabsVisible: Boolean = false,
-    val keepScreenOn: Boolean = false,
-    @DrawableRes val thirdCircleIcon: Int = R.drawable.option_circle,
-    @StringRes val thirdCircleDescription: Int = R.string.open_gallery,
-    val thumbnailLoaderVisible: Boolean = false,
-    val thumbnail: Bitmap? = null,
-    val captureButton: CaptureButtonUiState = CaptureButtonUiState(),
-    val flipCameraVisible: Boolean = true,
-    @DrawableRes val flipCameraIcon: Int = R.drawable.flip_camera,
-    @StringRes val flipCameraDescription: Int = R.string.flip_camera,
-    val selfTimerBadge: String = "",
-    val selfTimerBadgeVisible: Boolean = false,
-    val selfTimerRemaining: Duration? = null,
-    val selfTimerCancelVisible: Boolean = false,
-    val gridType: GridType = GridType.NONE,
     val mode: CameraMode = CameraMode.CAMERA,
-    val aspectRatio: AspectRatio = AspectRatio.RATIO_4_3,
-    val isQrMode: Boolean = false,
     val isVideoMode: Boolean = false,
+    val preview: PreviewUiState = PreviewUiState(),
+    val modeTabs: ModeTabsUiState = ModeTabsUiState(),
+    val captureButton: CaptureButtonUiState = CaptureButtonUiState(),
+    val flipCamera: FlipCameraUiState = FlipCameraUiState(),
+    val thirdOption: ThirdOptionUiState = ThirdOptionUiState(),
+    val cancelButtonVisible: Boolean = true,
+    val selfTimer: SelfTimerUiState = SelfTimerUiState(),
+    val recording: RecordingUiState = RecordingUiState(),
+    val qr: QrUiState = QrUiState(),
+    val exposure: ExposureUiState = ExposureUiState(),
+    val rotation: RotationUiState = RotationUiState(),
+    val capturedPreviewVisible: Boolean = false,
+    val keepScreenOn: Boolean = false,
     val isSelfIlluminating: Boolean = false,
     val isSettingsPanelAvailable: Boolean = false,
-    val scanAllCodes: Boolean = false,
     val handlesVolumeKeys: Boolean = true,
-    val availableModes: Set<CameraMode> = emptySet(),
-    val sensorOrientationDegrees: Int? = null,
-    val iconRotationDegrees: Float = 0f,
-    val levelFrameRotationDegrees: Float = 0f,
-    val zoomPanelVisible: Boolean = false,
-    val exposure: ExposureUiState? = null,
-    val exposurePanelVisible: Boolean = false,
-    val capture: CaptureUiState = CaptureUiState(),
+    val cameraSoundsEnabled: Boolean = SettingsDefaults.CAMERA_SOUNDS,
     val dialog: ViewfinderDialog? = null,
 )

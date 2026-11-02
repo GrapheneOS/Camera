@@ -317,7 +317,7 @@ open class MainActivity : AppCompatActivity() {
         transitionShown = false
         mainOverlay.visibility = View.INVISIBLE
 
-        if (viewfinder.uiState.value.isQrMode) {
+        if (viewfinder.uiState.value.mode.isQr) {
             return
         }
 
@@ -543,7 +543,7 @@ open class MainActivity : AppCompatActivity() {
 
         tunePlayer = TunePlayer(
             cameraSoundPlayer = cameraSoundPlayer,
-            soundsEnabled = { viewfinder.uiState.value.capture.cameraSounds },
+            soundsEnabled = { viewfinder.uiState.value.cameraSoundsEnabled },
         )
 
         lifecycleScope.launch(Dispatchers.Main.immediate) {
@@ -831,7 +831,7 @@ open class MainActivity : AppCompatActivity() {
         // The strip is untouchable during a recording but not while its start sound still plays, and
         // rebinding the camera there starts the queued recording on a dead recorder. The touch may
         // already have dragged the strip, so put it back on the mode the camera is really in.
-        if (viewfinder.uiState.value.isRecordingActive) {
+        if (viewfinder.uiState.value.recording.isActive) {
             tabLayout.getTabForMode(viewfinder.uiState.value.mode)?.let {
                 tabLayout.goToTab(it)
             }
@@ -956,10 +956,10 @@ open class MainActivity : AppCompatActivity() {
         // The preview follows the window; the capture use cases follow the sensor.
         viewfinder.onAction(CameraAction.DisplayRotationChanged(rotation = displayRotation()))
 
-        val state = viewfinder.uiState.value
-        state.sensorOrientationDegrees?.let {
+        val preview = viewfinder.uiState.value.preview
+        preview.sensorOrientationDegrees?.let {
             previewView.applyPreviewRatio(
-                aspectRatio = state.aspectRatio,
+                aspectRatio = preview.aspectRatio,
                 sensorOrientationDegrees = it,
             )
         }
@@ -992,7 +992,7 @@ open class MainActivity : AppCompatActivity() {
     override fun onStop() {
         viewfinder.onAction(LifecycleAction.ScreenStopped)
         // Stop explicitly rather than letting the unbind tear the recording down for us.
-        if (viewfinder.uiState.value.isRecordingActive) {
+        if (viewfinder.uiState.value.recording.isActive) {
             previewFrames.holdCurrentFrame()
             viewfinder.onAction(RecordingAction.RecordingStopRequested)
         }

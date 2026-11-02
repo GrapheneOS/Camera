@@ -1,7 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.R
@@ -11,6 +10,7 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.ModeSlot
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderDialogDelegate
@@ -20,6 +20,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderLocationDel
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderOrientationDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPermissionDelegate
+import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
@@ -75,6 +76,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val settingsDelegate: ViewfinderSettingsDelegate,
     private val modeDelegate: ViewfinderModeDelegate,
     private val cameraDelegate: ViewfinderCameraDelegate,
+    private val cameraControlsDelegate: ViewfinderCameraControlsDelegate,
     private val captureDelegate: ViewfinderCaptureDelegate,
     private val recordingDelegate: ViewfinderRecordingDelegate,
     private val permissionDelegate: ViewfinderPermissionDelegate,
@@ -84,6 +86,7 @@ class ViewfinderViewModel @AssistedInject constructor(
     private val galleryDelegate: ViewfinderGalleryDelegate,
     private val dialogDelegate: ViewfinderDialogDelegate,
     private val gestureDelegate: ViewfinderGestureDelegate,
+    private val previewControlsDelegate: ViewfinderPreviewControlsDelegate,
     private val cameraBindSettingsMapper: CameraBindSettingsMapper,
     private val volumeKeyActionMapper: VolumeKeyActionMapper,
     uiStateMapper: ViewfinderUiStateMapper,
@@ -125,8 +128,9 @@ class ViewfinderViewModel @AssistedInject constructor(
         recordingDelegate.bind(stateHolder)
         dialogDelegate.bind(stateHolder)
         gestureDelegate.bind(stateHolder)
+        cameraDelegate.bind(stateHolder)
 
-        cameraDelegate.bind(
+        cameraControlsDelegate.bind(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
@@ -138,8 +142,13 @@ class ViewfinderViewModel @AssistedInject constructor(
             scope = viewModelScope,
             stateHolder = stateHolder,
         )
+        previewControlsDelegate.bind(
+            scope = viewModelScope,
+            stateHolder = stateHolder,
+        )
 
         viewModelScope.launch { cameraDelegate.trackSession() }
+        viewModelScope.launch { cameraControlsDelegate.trackZoom() }
         viewModelScope.launch { settingsDelegate.trackSettings() }
         viewModelScope.launch { settingsDelegate.trackModeSettings() }
         viewModelScope.launch { settingsDelegate.trackSettingsPanelAvailability() }
@@ -150,6 +159,12 @@ class ViewfinderViewModel @AssistedInject constructor(
         viewModelScope.launch {
             cameraDelegate.cameraEvents.collect { event ->
                 onCameraEvent(event)
+            }
+        }
+
+        viewModelScope.launch {
+            cameraControlsDelegate.zoomChanges.collect {
+                previewControlsDelegate.showZoomPanel()
             }
         }
 
@@ -183,15 +198,18 @@ class ViewfinderViewModel @AssistedInject constructor(
         when (action) {
             is CameraAction.ModeSelected -> switchMode(action.mode)
             is CameraAction.FlipCameraClicked -> onFlipCameraClicked()
-            is CameraAction.ZoomInKeyPressed -> cameraDelegate.stepZoom(ZOOM_KEY_STEP)
-            is CameraAction.ZoomOutKeyPressed -> cameraDelegate.stepZoom(-ZOOM_KEY_STEP)
-            is CameraAction.FocusKeyPressed -> cameraDelegate.cancelFocus()
             is CameraAction.ZoomStepKey -> onZoomStepKey(action)
             is CameraAction.Preview -> onPreviewAction(action)
-            is CameraAction.ZoomSliderDragged -> cameraDelegate.setLinearZoom(action.linearZoom)
+            is CameraAction.ZoomInKeyPressed -> cameraControlsDelegate.stepZoom(ZOOM_KEY_STEP)
+            is CameraAction.ZoomOutKeyPressed -> cameraControlsDelegate.stepZoom(-ZOOM_KEY_STEP)
+            is CameraAction.FocusKeyPressed -> cameraControlsDelegate.cancelFocus()
+            is CameraAction.ZoomSliderDragged -> {
+                cameraControlsDelegate.setLinearZoom(action.linearZoom)
+            }
 
             is CameraAction.ExposureSliderDragged -> {
-                cameraDelegate.setExposureCompensation(action.compensationIndex)
+                cameraControlsDelegate.setExposureCompensation(action.compensationIndex)
+                previewControlsDelegate.showExposurePanel()
             }
 
             is CameraAction.DisplayRotationChanged -> {
@@ -302,26 +320,22 @@ class ViewfinderViewModel @AssistedInject constructor(
     private fun onZoomStepKey(action: CameraAction.ZoomStepKey) {
         when (action) {
             is CameraAction.ZoomStepKey.Released -> {
-                cameraDelegate.stopZoomStepping()
+                cameraControlsDelegate.stopZoomStepping()
             }
 
             is CameraAction.ZoomStepKey.Pressed -> {
-                cameraDelegate.startZoomStepping(action.direction)
+                cameraControlsDelegate.startZoomStepping(action.direction)
             }
         }
     }
 
     private fun onPreviewAction(action: CameraAction.Preview) {
         when (action) {
-            is CameraAction.Preview.Pinched -> cameraDelegate.scaleZoom(action.scaleFactor)
+            is CameraAction.Preview.Pinched -> cameraControlsDelegate.scaleZoom(action.scaleFactor)
             is CameraAction.Preview.Swiped -> gestureDelegate.onPreviewSwiped(action.direction)
-
             is CameraAction.Preview.Tapped -> when {
                 state().isSettingsPanelOpen -> settingsDelegate.closeSettingsPanel()
-                else -> cameraDelegate.focusAt(
-                    x = action.x,
-                    y = action.y,
-                )
+                else -> focusAt(x = action.x, y = action.y)
             }
         }
     }
@@ -407,29 +421,11 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             else -> {
                 emitEffect(Effect.AnimateLensSwitch)
-                switchLens()
+
+                if (cameraDelegate.switchLens(state.mode.extensionMode)) {
+                    startCamera(forced = true)
+                }
             }
-        }
-    }
-
-    private fun switchLens() {
-        val lensFacing = cameraDelegate.lensFacing.opposite()
-        val isSwitched = cameraDelegate.switchLensFacing(
-            lensFacing = lensFacing,
-            extensionMode = state().mode.extensionMode,
-        )
-
-        when {
-            isSwitched -> startCamera(forced = true)
-            else -> emitEffect(Effect.ShowMessage(lensUnavailableMessage(lensFacing)))
-        }
-    }
-
-    @StringRes
-    private fun lensUnavailableMessage(lensFacing: LensFacing): Int {
-        return when (lensFacing) {
-            LensFacing.BACK -> R.string.rear_camera_unavailable
-            LensFacing.FRONT -> R.string.front_camera_unavailable
         }
     }
 
@@ -443,6 +439,16 @@ class ViewfinderViewModel @AssistedInject constructor(
             state.capture.isSelfTimerRunning() -> captureDelegate.cancelSelfTimer()
             else -> captureDelegate.startSelfTimer()
         }
+    }
+
+    private fun focusAt(
+        x: Float,
+        y: Float,
+    ) {
+        if (state().isQrMode()) return
+
+        cameraControlsDelegate.focusAt(x = x, y = y)
+        previewControlsDelegate.showFocusPanels()
     }
 
     private fun onCaptureKeyPressed() {
@@ -674,7 +680,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
         captureDelegate.cancelPictureCapture()
 
-        cameraDelegate.hideExposurePanel()
+        previewControlsDelegate.hideExposurePanel()
 
         slotCurrentMode()
 
@@ -721,7 +727,7 @@ class ViewfinderViewModel @AssistedInject constructor(
 
             BindOutcome.BOUND -> {
                 cameraDelegate.announceBind()
-                cameraDelegate.hideZoomPanel()
+                previewControlsDelegate.hideZoomPanel()
             }
         }
     }

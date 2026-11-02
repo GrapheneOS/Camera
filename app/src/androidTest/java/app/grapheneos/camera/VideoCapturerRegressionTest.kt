@@ -369,7 +369,7 @@ class VideoCapturerRegressionTest {
             waitUntil(scenario, "recording has started") { hasRecordingStarted(it) }
             // A recording that wrote nothing is thrown away, and leaves no preview to defer
             waitUntil(scenario, "recording has content") {
-                it.viewfinder.uiState.value.recordingTimerText != "00:00"
+                it.viewfinder.uiState.value.recording.timerText != "00:00"
             }
 
             // Stops the activity, which stops the recording; the finalize event that used to crash
@@ -442,11 +442,11 @@ class VideoCapturerRegressionTest {
     }
 
     private fun isRecording(activity: MainActivity): Boolean {
-        return activity.viewfinder.uiState.value.isRecordingActive
+        return activity.viewfinder.uiState.value.recording.isActive
     }
 
     private fun hasRecordingStarted(activity: MainActivity): Boolean {
-        return activity.viewfinder.uiState.value.recordingTimerVisible
+        return activity.viewfinder.uiState.value.recording.timerVisible
     }
 
     private fun stopRecording(activity: MainActivity) {

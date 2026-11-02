@@ -11,11 +11,15 @@ interface ZoomUiStateMapper {
 internal class ZoomUiStateMapperImpl @Inject constructor() : ZoomUiStateMapper {
 
     override fun map(state: ViewfinderState): ZoomUiState {
-        return when (val zoom = state.session.zoom) {
-            null -> ZoomUiState()
+        val zoom = state.session.zoom
+        val panelVisible = state.previewControls.isZoomPanelShown
+
+        return when (zoom) {
+            null -> ZoomUiState(panelVisible = panelVisible)
             else -> ZoomUiState(
                 zoomRatio = zoom.zoomRatio,
                 linearZoom = zoom.linearZoom,
+                panelVisible = panelVisible,
             )
         }
     }

@@ -14,35 +14,26 @@ import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoQuality
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.ModeSettings
-import app.grapheneos.camera.data.sound.model.CameraSound
 import app.grapheneos.camera.domain.camera.usecase.ResolveAvailableModes
 import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
-import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
 import com.google.zxing.BarcodeFormat
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.runCurrent
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -74,7 +65,6 @@ class ViewfinderCameraDelegateTest {
     private val torch = mockk<TorchControl>(relaxed = true)
     private val resolveAvailableModes = mockk<ResolveAvailableModes>()
     private val resolveDroppedVideoQuality = mockk<ResolveDroppedVideoQuality>()
-    private val playCameraSound = mockk<PlayCameraSound>(relaxed = true)
     private val sessionEvents = MutableSharedFlow<CameraSessionEvent>(extraBufferCapacity = 8)
     private val effects = mutableListOf<Effect>()
 
@@ -154,29 +144,25 @@ class ViewfinderCameraDelegateTest {
     }
 
     @Test
-    fun switchLensFacing_toAnUnsupportedLens_keepsTheCurrentOne() {
+    fun switchLens_toAnUnsupportedLens_keepsTheCurrentOneAndSaysSo() {
         lensUnsupported(LensFacing.FRONT)
 
         val delegate = createAttachedDelegate()
-        val switched = delegate.switchLensFacing(
-            lensFacing = LensFacing.FRONT,
-            extensionMode = null,
-        )
+        val switched = delegate.switchLens(extensionMode = null)
 
         assertFalse(switched)
         assertEquals(LensFacing.BACK, lensFacing)
+        assertEquals(listOf(Effect.ShowMessage(R.string.front_camera_unavailable)), effects)
     }
 
     @Test
-    fun switchLensFacing_toASupportedLens_takesIt() {
+    fun switchLens_toASupportedLens_takesIt() {
         val delegate = createAttachedDelegate()
-        val switched = delegate.switchLensFacing(
-            lensFacing = LensFacing.FRONT,
-            extensionMode = null,
-        )
+        val switched = delegate.switchLens(extensionMode = null)
 
         assertTrue(switched)
         assertEquals(LensFacing.FRONT, lensFacing)
+        assertTrue(effects.isEmpty())
     }
 
     @Test
@@ -213,202 +199,6 @@ class ViewfinderCameraDelegateTest {
 
         assertEquals(ZOOM, stateHolder.state.value.session.zoom)
         assertEquals(EXPOSURE, stateHolder.state.value.session.exposure)
-    }
-
-    @Test
-    fun focusAt_focusesForTheChosenTimeoutAndShowsItWithTheSoundOnlyForPhotos() {
-        val delegate = createAttachedDelegate()
-        stateHolder.update {
-            it.copy(settings = CameraSettings(focusTimeoutSeconds = FOCUS_TIMEOUT_SECONDS))
-        }
-
-        delegate.focusAt(x = 10f, y = 20f)
-        stateHolder.update { it.copy(mode = CameraMode.VIDEO) }
-        delegate.focusAt(x = 10f, y = 20f)
-
-        verify(exactly = 2) {
-            session.startFocusAndMetering(
-                x = 10f,
-                y = 20f,
-                autoCancelSeconds = FOCUS_TIMEOUT_SECONDS,
-            )
-        }
-        assertEquals(
-            listOf(
-                Effect.Preview.ShowFocus(x = 10f, y = 20f),
-                Effect.Preview.ShowFocus(x = 10f, y = 20f),
-            ),
-            effects,
-        )
-        assertTrue(stateHolder.state.value.isZoomPanelShown)
-        assertTrue(stateHolder.state.value.isExposurePanelShown)
-        coVerify(exactly = 1) { playCameraSound(CameraSound.FOCUS_START) }
-    }
-
-    @Test
-    fun focusAndZoom_inQrMode_areLeftAlone() {
-        every { session.zoom } returns ZOOM
-        val delegate = createAttachedDelegate()
-        stateHolder.update { it.copy(mode = CameraMode.QR_SCAN) }
-
-        delegate.focusAt(x = 10f, y = 20f)
-        delegate.cancelFocus()
-        delegate.stepZoom(step = 1f)
-
-        verify(exactly = 0) {
-            session.startFocusAndMetering(x = any(), y = any(), autoCancelSeconds = any())
-        }
-        verify(exactly = 0) { session.cancelFocusAndMetering() }
-        verify(exactly = 0) { session.setZoomRatio(any()) }
-        assertTrue(effects.isEmpty())
-        assertFalse(stateHolder.state.value.isZoomPanelShown)
-        assertFalse(stateHolder.state.value.isExposurePanelShown)
-    }
-
-    @Test
-    fun stepZoom_pastEitherEnd_stopsThere() {
-        every { session.zoom } returns ZOOM
-
-        val delegate = createAttachedDelegate()
-        delegate.stepZoom(step = 100f)
-        delegate.stepZoom(step = -100f)
-
-        verifyOrder {
-            session.setZoomRatio(ZOOM.maxZoomRatio)
-            session.setZoomRatio(ZOOM.minZoomRatio)
-        }
-    }
-
-    @Test
-    fun stepZoom_outOfTheWideAngleCamera_stopsAtThePrimaryOne() {
-        every { session.zoom } returns ZOOM.copy(zoomRatio = 0.6f, minZoomRatio = 0.5f)
-
-        val delegate = createAttachedDelegate()
-        delegate.stepZoom(step = 1f)
-
-        verify(exactly = 1) { session.setZoomRatio(1f) }
-    }
-
-    @Test
-    fun stepZoom_beforeTheZoomIsKnown_leavesTheZoomAlone() {
-        every { session.zoom } returns null
-
-        val delegate = createAttachedDelegate()
-        delegate.stepZoom(step = 1f)
-
-        verify(exactly = 0) { session.setZoomRatio(any()) }
-    }
-
-    @Test
-    fun zoomStepping_stepsAtOnceThenAtEachIntervalWhileHeld() {
-        trackZoomRatio()
-
-        val delegate = createAttachedDelegate()
-        delegate.startZoomStepping(ZoomDirection.IN)
-        verify(exactly = 1) { session.setZoomRatio(2f) }
-
-        scope.advanceTimeBy(ZOOM_STOP_INTERVAL)
-        scope.runCurrent()
-
-        verify(exactly = 1) { session.setZoomRatio(ZOOM.maxZoomRatio) }
-    }
-
-    @Test
-    fun zoomStepping_stopped_takesNoFurtherStep() {
-        trackZoomRatio()
-
-        val delegate = createAttachedDelegate()
-        delegate.startZoomStepping(ZoomDirection.IN)
-        delegate.stopZoomStepping()
-        scope.advanceTimeBy(ZOOM_STOP_INTERVAL * 4)
-        scope.runCurrent()
-
-        verify(exactly = 1) { session.setZoomRatio(any()) }
-    }
-
-    @Test
-    fun scaleZoom_scalesTheCurrentRatio() {
-        every { session.zoom } returns ZOOM
-
-        val delegate = createAttachedDelegate()
-        delegate.scaleZoom(scaleFactor = 1.5f)
-
-        verify(exactly = 1) { session.setZoomRatio(ZOOM.zoomRatio * 1.5f) }
-    }
-
-    @Test
-    fun setExposureCompensation_isAppliedAndPublished() {
-        stateHolder.update { it.copy(session = it.session.copy(exposure = EXPOSURE)) }
-
-        val delegate = createAttachedDelegate()
-        delegate.setExposureCompensation(compensationIndex = 5)
-
-        verify(exactly = 1) { session.setExposureCompensationIndex(5) }
-        assertEquals(5, stateHolder.state.value.session.exposure?.compensationIndex)
-    }
-
-    @Test
-    fun zoomStateLoaded_publishesTheZoomWithoutShowingItsPanel() {
-        every { session.zoom } returns ZOOM
-        createAttachedDelegate()
-
-        sessionEvents.tryEmit(CameraSessionEvent.ZoomStateLoaded)
-
-        assertEquals(ZOOM, stateHolder.state.value.session.zoom)
-        assertFalse(stateHolder.state.value.isZoomPanelShown)
-    }
-
-    @Test
-    fun zoomStateChanged_publishesTheZoomAndShowsItsPanel() {
-        every { session.zoom } returns ZOOM
-        createAttachedDelegate()
-
-        sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
-
-        assertEquals(ZOOM, stateHolder.state.value.session.zoom)
-        assertTrue(stateHolder.state.value.isZoomPanelShown)
-    }
-
-    @Test
-    fun zoomPanel_hidesTwoSecondsAfterTheLastZoomChange() {
-        every { session.zoom } returns ZOOM
-        createAttachedDelegate()
-
-        sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
-        scope.advanceTimeBy(1.seconds)
-        sessionEvents.tryEmit(CameraSessionEvent.ZoomStateChanged)
-        scope.advanceTimeBy(1.5.seconds)
-        assertTrue(stateHolder.state.value.isZoomPanelShown)
-
-        scope.advanceTimeBy(1.seconds)
-        assertFalse(stateHolder.state.value.isZoomPanelShown)
-    }
-
-    @Test
-    fun exposurePanel_staysWhileDraggedAndHidesTwoSecondsAfter() {
-        stateHolder.update { it.copy(session = it.session.copy(exposure = EXPOSURE)) }
-        val delegate = createAttachedDelegate()
-
-        delegate.setExposureCompensation(compensationIndex = 1)
-        scope.advanceTimeBy(1.5.seconds)
-        delegate.setExposureCompensation(compensationIndex = 2)
-        scope.advanceTimeBy(1.5.seconds)
-        assertTrue(stateHolder.state.value.isExposurePanelShown)
-
-        scope.advanceTimeBy(1.seconds)
-        assertFalse(stateHolder.state.value.isExposurePanelShown)
-    }
-
-    @Test
-    fun hidePanels_hidesThemAtOnce() {
-        val delegate = createAttachedDelegate()
-
-        delegate.focusAt(x = 10f, y = 20f)
-        delegate.hideZoomPanel()
-        delegate.hideExposurePanel()
-
-        assertFalse(stateHolder.state.value.isZoomPanelShown)
-        assertFalse(stateHolder.state.value.isExposurePanelShown)
     }
 
     @Test
@@ -621,12 +411,6 @@ class ViewfinderCameraDelegateTest {
         )
     }
 
-    private fun trackZoomRatio() {
-        var zoomRatio = 1f
-        every { session.zoom } answers { ZOOM.copy(zoomRatio = zoomRatio, minZoomRatio = 0.5f) }
-        every { session.setZoomRatio(any()) } answers { zoomRatio = firstArg() }
-    }
-
     private fun createAttachedDelegate(
         showsCameraModeTabs: Boolean = true,
     ): ViewfinderCameraDelegate {
@@ -636,15 +420,9 @@ class ViewfinderCameraDelegateTest {
             entryPoint = cameraEntryPoint(showsCameraModeTabs = showsCameraModeTabs),
             resolveAvailableModes = resolveAvailableModes,
             resolveDroppedVideoQuality = resolveDroppedVideoQuality,
-            playCameraSound = playCameraSound,
-            nextZoomStopMapper = NextZoomStopMapperImpl(),
-            mainDispatcher = mainDispatcherRule.testDispatcher,
         )
 
-        delegate.bind(
-            scope = scope,
-            stateHolder = stateHolder,
-        )
+        delegate.bind(stateHolder)
         scope.launch(mainDispatcherRule.testDispatcher) {
             delegate.trackSession()
         }
@@ -658,8 +436,6 @@ class ViewfinderCameraDelegateTest {
     }
 
     private companion object {
-        val ZOOM_STOP_INTERVAL = 500.milliseconds
-
         val ZOOM = CameraZoom(
             zoomRatio = 2f,
             linearZoom = 0.5f,
@@ -674,6 +450,5 @@ class ViewfinderCameraDelegateTest {
 
         const val SENSOR_ORIENTATION = 90
         const val QR_TEXT = "https://grapheneos.org"
-        const val FOCUS_TIMEOUT_SECONDS = 3L
     }
 }

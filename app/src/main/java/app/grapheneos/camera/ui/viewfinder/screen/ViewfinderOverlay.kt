@@ -14,7 +14,7 @@ internal fun ViewfinderOverlay(
     val uiState by screenModel.uiState.collectAsStateWithLifecycle()
 
     ProvideContentRotation(
-        degrees = uiState.iconRotationDegrees,
+        degrees = uiState.rotation.iconDegrees,
     ) {
         content(uiState)
     }
