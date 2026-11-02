@@ -2,19 +2,23 @@ package app.grapheneos.camera.data.camera.session
 
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraControl
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.SessionConfig
+import androidx.camera.core.ZoomState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapperImpl
-import app.grapheneos.camera.data.camera.mapper.CameraXStateMapperImpl
+import androidx.lifecycle.MutableLiveData
 import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
+import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
+import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.LensFeatures
 import app.grapheneos.camera.data.camera.model.PreviewTarget
+import app.grapheneos.camera.data.camera.model.QrBindSettings
 import app.grapheneos.camera.data.camera.model.VideoBindSettings
 import app.grapheneos.camera.data.camera.model.VideoFeatureGroup
 import app.grapheneos.camera.data.camera.repository.CameraProviderSource
@@ -23,31 +27,46 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.FlashMode
 import app.grapheneos.camera.data.core.model.VideoFrameRate
 import app.grapheneos.camera.data.core.model.VideoQuality
-import app.grapheneos.camera.testutil.MainDispatcherRule
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import io.mockk.verify
 import io.mockk.verifySequence
-import org.junit.Rule
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class CameraSessionTest {
 
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
-
     private val lifecycleOwner = TestLifecycleOwner()
 
-    private val sceneLightControl = mockk<SceneLightControl>(relaxed = true)
+    private val zoomStates = MutableLiveData<ZoomState>(mockk(relaxed = true))
 
     private val cameraControl = mockk<CameraControl>(relaxed = true)
 
+    private val sceneLightControl = mockk<SceneLightControl>(relaxed = true)
+
+    private val cameraInfo = mockk<CameraInfo>(relaxed = true) {
+        every { zoomState } returns zoomStates
+    }
+
     private val camera = mockk<Camera>(relaxed = true) {
         every { cameraControl } returns this@CameraSessionTest.cameraControl
+        every { cameraInfo } returns this@CameraSessionTest.cameraInfo
     }
 
     private val provider = mockk<ProcessCameraProvider>(relaxed = true) {
@@ -82,52 +101,183 @@ class CameraSessionTest {
                 preferredFeatures = emptyList(),
             )
         }
+        every { createQrAnalysis() } answers { mockk(relaxed = true) }
+    }
+
+    @Test
+    fun bind_inQrMode_refocusesTheScanAreaEveryTwoSecondsWhileResumed() {
+        runTest {
+            boundSession(QR_SETTINGS)
+
+            advanceTimeBy(2.seconds - 1.milliseconds)
+            verify(exactly = 0) { cameraControl.startFocusAndMetering(any()) }
+
+            advanceTimeBy(1.milliseconds)
+            runCurrent()
+            verify(exactly = 1) { cameraControl.startFocusAndMetering(any()) }
+
+            advanceTimeBy(2.seconds)
+            runCurrent()
+            verify(exactly = 2) { cameraControl.startFocusAndMetering(any()) }
+        }
+    }
+
+    @Test
+    fun bind_inQrMode_stopsRefocusingOnceThePreviewIsNoLongerResumed() {
+        runTest {
+            boundSession(QR_SETTINGS)
+
+            advanceTimeBy(2.seconds)
+            runCurrent()
+            lifecycleOwner.registry.currentState = Lifecycle.State.STARTED
+            advanceTimeBy(2.seconds)
+            runCurrent()
+            lifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
+            advanceTimeBy(10.seconds)
+            runCurrent()
+
+            verify(exactly = 1) { cameraControl.startFocusAndMetering(any()) }
+        }
+    }
+
+    @Test
+    fun bind_again_restartsTheQrRefocusInterval() {
+        runTest {
+            val session = boundSession(QR_SETTINGS)
+
+            advanceTimeBy(1.5.seconds)
+            session.bind(QR_SETTINGS)
+            advanceTimeBy(1.seconds)
+            runCurrent()
+            verify(exactly = 0) { cameraControl.startFocusAndMetering(any()) }
+
+            advanceTimeBy(1.seconds)
+            runCurrent()
+            verify(exactly = 1) { cameraControl.startFocusAndMetering(any()) }
+        }
+    }
+
+    @Test
+    fun bind_toAPhotoMode_doesNotRefocusTheQrScanArea() {
+        runTest {
+            boundSession(PHOTO_SETTINGS)
+
+            advanceTimeBy(10.seconds)
+            runCurrent()
+
+            verify(exactly = 0) { cameraControl.startFocusAndMetering(any()) }
+        }
+    }
+
+    @Test
+    fun previewGoingAway_stopsTheQrRefocus() {
+        runTest {
+            val session = boundSession(QR_SETTINGS)
+
+            session.setPreviewTarget(null)
+            advanceTimeBy(10.seconds)
+            runCurrent()
+
+            verify(exactly = 0) { cameraControl.startFocusAndMetering(any()) }
+        }
+    }
+
+    @Test
+    fun reattachZoomState_readsTheZoomStateOnALaterMessage() {
+        runTest {
+            val session = boundSession(PHOTO_SETTINGS)
+            val events = mutableListOf<CameraZoomEvent>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                session.zoomEvents.collect(events::add)
+            }
+
+            session.reattachZoomState()
+            verify(exactly = 0) { cameraInfo.zoomState }
+            assertEquals(emptyList<CameraZoomEvent>(), events)
+
+            runCurrent()
+            verify(exactly = 1) { cameraInfo.zoomState }
+            assertEquals(listOf(CameraZoomEvent.Loaded), events)
+        }
+    }
+
+    @Test
+    fun reattachZoomState_twiceBeforeItRuns_readsTheZoomStateOnce() {
+        runTest {
+            val session = boundSession(PHOTO_SETTINGS)
+
+            session.reattachZoomState()
+            session.reattachZoomState()
+            runCurrent()
+
+            verify(exactly = 1) { cameraInfo.zoomState }
+        }
+    }
+
+    @Test
+    fun reattachZoomState_thenThePreviewGoesAway_neverReadsTheZoomState() {
+        runTest {
+            val session = boundSession(PHOTO_SETTINGS)
+
+            session.reattachZoomState()
+            session.setPreviewTarget(null)
+            runCurrent()
+
+            verify(exactly = 0) { cameraInfo.zoomState }
+        }
     }
 
     @Test
     fun bind_attachesTheSceneLightToTheBoundCamera() {
-        val session = boundSession()
+        runTest {
+            val session = boundSession(VIDEO_SETTINGS)
 
-        session.setFlashMode(FlashMode.ON)
+            session.setFlashMode(FlashMode.ON)
 
-        verifySequence {
-            sceneLightControl.detach()
-            sceneLightControl.attach(
-                control = cameraControl,
-                boundCamera = match { boundCamera -> boundCamera.isVideoMode },
-            )
-            sceneLightControl.setFlashMode(FlashMode.ON)
+            verifySequence {
+                sceneLightControl.detach()
+                sceneLightControl.attach(
+                    control = cameraControl,
+                    boundCamera = match { boundCamera -> boundCamera.isVideoMode },
+                )
+                sceneLightControl.setFlashMode(FlashMode.ON)
+            }
         }
     }
 
     @Test
     fun unbind_detachesTheSceneLight() {
-        val session = boundSession()
+        runTest {
+            val session = boundSession(VIDEO_SETTINGS)
 
-        session.unbind()
+            session.unbind()
 
-        verifySequence {
-            sceneLightControl.detach()
-            sceneLightControl.attach(control = cameraControl, boundCamera = any())
-            sceneLightControl.detach()
+            verifySequence {
+                sceneLightControl.detach()
+                sceneLightControl.attach(control = cameraControl, boundCamera = any())
+                sceneLightControl.detach()
+            }
         }
     }
 
     @Test
     fun rebind_detachesTheSceneLightBeforeAttachingItAgain() {
-        val session = boundSession()
+        runTest {
+            val session = boundSession(VIDEO_SETTINGS)
 
-        session.bind(VIDEO_SETTINGS)
+            session.bind(VIDEO_SETTINGS)
 
-        verifySequence {
-            sceneLightControl.detach()
-            sceneLightControl.attach(control = cameraControl, boundCamera = any())
-            sceneLightControl.detach()
-            sceneLightControl.attach(control = cameraControl, boundCamera = any())
+            verifySequence {
+                sceneLightControl.detach()
+                sceneLightControl.attach(control = cameraControl, boundCamera = any())
+                sceneLightControl.detach()
+                sceneLightControl.attach(control = cameraControl, boundCamera = any())
+            }
         }
     }
 
-    private fun boundSession(): CameraSessionImpl {
+    private fun TestScope.boundSession(settings: CameraBindSettings): CameraSessionImpl {
+        val dispatcher = StandardTestDispatcher(testScheduler)
         val session = CameraSessionImpl(
             cameraProviderSource = cameraProviderSource,
             extensionAvailabilityRepository = mockk(relaxed = true),
@@ -141,10 +291,14 @@ class CameraSessionTest {
             videoBitrateSupport = mockk(relaxed = true),
             lowLightBoostSupport = mockk(relaxed = true),
             videoQualitySupport = mockk(relaxed = true),
-            cameraXConstantsMapper = CameraXConstantsMapperImpl(),
-            cameraXStateMapper = CameraXStateMapperImpl(),
+            cameraXConstantsMapper = mockk(relaxed = true),
+            cameraXStateMapper = mockk(relaxed = true),
+            zoomStateTracker = ZoomStateTrackerImpl(),
             sceneLightControl = sceneLightControl,
-            mainDispatcher = mainDispatcherRule.testDispatcher,
+            mainDispatcher = dispatcher,
+            mainLooperDispatcher = dispatcher,
+            qrAnalysisDispatcher = dispatcher,
+            scope = backgroundScope,
         )
 
         lifecycleOwner.registry.currentState = Lifecycle.State.RESUMED
@@ -156,7 +310,7 @@ class CameraSessionTest {
             ),
         )
         session.initialize(forced = false, extensionMode = null)
-        session.bind(VIDEO_SETTINGS)
+        session.bind(settings)
 
         return session
     }
@@ -172,10 +326,27 @@ class CameraSessionTest {
     }
 
     private companion object {
-        val VIDEO_SETTINGS = CameraBindSettings(
-            mode = CameraMode.VIDEO,
+        private val QR_SETTINGS = CameraBindSettings(
+            mode = CameraMode.QR_SCAN,
             aspectRatio = AspectRatio.RATIO_4_3,
             photo = null,
+            video = null,
+            qr = QrBindSettings(
+                lensFacing = LensFacing.BACK,
+                barcodeFormats = emptySet(),
+            ),
+        )
+
+        private val PHOTO_SETTINGS = CameraBindSettings(
+            mode = CameraMode.CAMERA,
+            aspectRatio = AspectRatio.RATIO_4_3,
+            photo = null,
+            video = null,
+            qr = null,
+        )
+
+        private val VIDEO_SETTINGS = PHOTO_SETTINGS.copy(
+            mode = CameraMode.VIDEO,
             video = VideoBindSettings(
                 quality = VideoQuality.FHD,
                 frameRate = VideoFrameRate.FPS_30,
@@ -183,7 +354,6 @@ class CameraSessionTest {
                 hdr = false,
                 mirrorOnFrontCamera = false,
             ),
-            qr = null,
         )
     }
 }
