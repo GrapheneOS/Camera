@@ -4,8 +4,8 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.settings.model.CameraSettings
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
@@ -15,9 +15,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class LevelUiStateMapperTest {
+class ViewfinderLevelStateMapperTest {
 
-    private val mapper = LevelUiStateMapperImpl()
+    private val mapper = ViewfinderLevelStateMapperImpl()
 
     private val photoState = ViewfinderState(
         mode = CameraMode.CAMERA,
@@ -34,14 +34,14 @@ class LevelUiStateMapperTest {
         assertFalse(jumpedClose.visible)
 
         assertEquals(
-            LevelUiState(visible = true, tiltDegrees = 1, horizonDegrees = 0),
+            ViewfinderLevelState(visible = true, tiltDegrees = 1, horizonDegrees = 0),
             map(current = jumpedClose, previous = motionOf(tilt = 2), tilt = 1),
         )
     }
 
     @Test
     fun level_disappearsBeyondItsRange() {
-        val shown = LevelUiState(visible = true, tiltDegrees = 1)
+        val shown = ViewfinderLevelState(visible = true, tiltDegrees = 1)
 
         assertFalse(map(current = shown, previous = motionOf(tilt = 1), tilt = 50).visible)
     }
@@ -55,7 +55,7 @@ class LevelUiStateMapperTest {
 
     @Test
     fun level_holdsItsAnglesWhileTheSelfTimerCountsDown() {
-        val shown = LevelUiState(visible = true, tiltDegrees = 1)
+        val shown = ViewfinderLevelState(visible = true, tiltDegrees = 1)
         val state = photoState.copy(
             capture = ViewfinderCaptureState(selfTimerRemaining = 3.seconds),
         )
@@ -72,11 +72,11 @@ class LevelUiStateMapperTest {
     }
 
     private fun map(
-        current: LevelUiState = LevelUiState(),
+        current: ViewfinderLevelState = ViewfinderLevelState(),
         previous: DeviceMotion?,
         tilt: Int,
         state: ViewfinderState = photoState,
-    ): LevelUiState {
+    ): ViewfinderLevelState {
         return mapper.map(
             current = current,
             previousMotion = previous,
