@@ -1,29 +1,29 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 import kotlin.math.abs
 
-interface LevelUiStateMapper {
+interface ViewfinderLevelStateMapper {
 
     fun map(
-        current: LevelUiState,
+        current: ViewfinderLevelState,
         state: ViewfinderState,
         motion: DeviceMotion,
         previousMotion: DeviceMotion?,
-    ): LevelUiState
+    ): ViewfinderLevelState
 }
 
-internal class LevelUiStateMapperImpl @Inject constructor() : LevelUiStateMapper {
+internal class ViewfinderLevelStateMapperImpl @Inject constructor() : ViewfinderLevelStateMapper {
 
     override fun map(
-        current: LevelUiState,
+        current: ViewfinderLevelState,
         state: ViewfinderState,
         motion: DeviceMotion,
         previousMotion: DeviceMotion?,
-    ): LevelUiState {
+    ): ViewfinderLevelState {
         val visible = current.visible || isSteadyNearLevel(
             previousMotion = previousMotion,
             motion = motion,
@@ -39,7 +39,7 @@ internal class LevelUiStateMapperImpl @Inject constructor() : LevelUiStateMapper
             }
 
             else -> {
-                LevelUiState(
+                ViewfinderLevelState(
                     visible = visible,
                     tiltDegrees = motion.tiltDegrees,
                     horizonDegrees = motion.horizonDegrees,

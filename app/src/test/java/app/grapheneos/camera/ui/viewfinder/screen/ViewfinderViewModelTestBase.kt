@@ -1,10 +1,12 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
+import androidx.lifecycle.viewModelScope
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.cameraEntryPoint
+import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraControlsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCameraDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDelegate
@@ -19,24 +21,23 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderPreviewCont
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
-import io.mockk.coEvery
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 
@@ -64,12 +65,19 @@ open class ViewfinderViewModelTestBase {
         relaxed = true,
     )
 
+    protected val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true)
+    protected val cameraBindSettingsMapper = mockk<CameraBindSettingsMapper>(relaxed = true)
+    protected val volumeKeyActionMapper = mockk<VolumeKeyActionMapper>(relaxed = true)
+
     protected val cameraEvents = MutableSharedFlow<ViewfinderCameraEvent>()
     protected val captureEvents = MutableSharedFlow<ViewfinderCaptureEvent>()
     protected val zoomChanges = MutableSharedFlow<Unit>()
     protected val recordingEvents = MutableSharedFlow<ViewfinderRecordingEvent>()
 
     protected lateinit var stateHolder: ViewfinderStateHolder
+    protected lateinit var levelStateHolder: StateHolder<ViewfinderLevelState>
+
+    private val viewModels = mutableListOf<ViewfinderViewModel>()
 
     @Before
     fun setUp() {
@@ -78,6 +86,11 @@ open class ViewfinderViewModelTestBase {
         every { captureDelegate.captureEvents } returns captureEvents
         every { cameraControlsDelegate.zoomChanges } returns zoomChanges
         every { recordingDelegate.recordingEvents } returns recordingEvents
+    }
+
+    @After
+    fun tearDown() {
+        viewModels.forEach { viewModel -> viewModel.viewModelScope.cancel() }
     }
 
     protected fun createViewModel(
@@ -101,24 +114,22 @@ open class ViewfinderViewModelTestBase {
             dialogDelegate = dialogDelegate,
             gestureDelegate = gestureDelegate,
             previewControlsDelegate = previewControlsDelegate,
-            uiStateMapper = mockk(relaxed = true),
-            zoomUiStateMapper = mockk(relaxed = true),
-            cameraBindSettingsMapper = mockk(relaxed = true),
-            volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
+            uiStateMapper = uiStateMapper,
+            cameraBindSettingsMapper = cameraBindSettingsMapper,
+            volumeKeyActionMapper = volumeKeyActionMapper,
         )
+
+        viewModels += viewModel
 
         val boundStateHolder = slot<ViewfinderStateHolder>()
         verify { modeDelegate.bind(capture(boundStateHolder)) }
         stateHolder = boundStateHolder.captured
 
-        return viewModel
-    }
+        val boundLevelStateHolder = slot<StateHolder<ViewfinderLevelState>>()
+        verify { orientationDelegate.bind(any(), capture(boundLevelStateHolder)) }
+        levelStateHolder = boundLevelStateHolder.captured
 
-    protected fun endlessSelfTimer(): Flow<Int> {
-        return flow {
-            emit(3)
-            awaitCancellation()
-        }
+        return viewModel
     }
 
     protected fun TestScope.collectEffects(

@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import android.net.Uri
 import app.grapheneos.camera.data.camera.model.BindOutcome
+import app.grapheneos.camera.data.camera.model.CameraBindSettings
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.camera.model.RecordingEvent
 import app.grapheneos.camera.data.camera.model.RecordingOutcome
@@ -31,20 +32,20 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderCaptureDele
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderModeDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDelegateImpl
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegateImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect.Recording.PlayStartSound
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,6 +69,15 @@ class ViewfinderRecordingFlowTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val recordingSession = FakeVideoRecordingSession()
+
+    private val mappedState = slot<ViewfinderState>()
+    private val uiStateMapper = mockk<ViewfinderUiStateMapper>(relaxed = true) {
+        every { map(capture(mappedState)) } returns mockk()
+    }
+    private val bindSettings = mockk<CameraBindSettings>()
+    private val cameraBindSettingsMapper = mockk<CameraBindSettingsMapper> {
+        every { map(any(), any()) } returns bindSettings
+    }
 
     private var outputCreated = CompletableDeferred(Unit)
     private var outputPublished = CompletableDeferred(Unit)
@@ -141,9 +151,14 @@ class ViewfinderRecordingFlowTest {
 
             viewModel.onAction(CameraAction.ModeSelected(CameraMode.NIGHT))
 
-            assertEquals(CameraMode.VIDEO, viewModel.uiState.value.mode)
-            verify(exactly = 1) { cameraSession.bind(match { it.mode == CameraMode.NIGHT }) }
-            verify(exactly = 1) { cameraSession.bind(match { it.mode == CameraMode.VIDEO }) }
+            assertEquals(CameraMode.VIDEO, state().mode)
+            verify(exactly = 1) {
+                cameraBindSettingsMapper.map(match { it.mode == CameraMode.NIGHT }, any())
+            }
+            verify(exactly = 1) {
+                cameraBindSettingsMapper.map(match { it.mode == CameraMode.VIDEO }, any())
+            }
+            verify(exactly = 2) { cameraSession.bind(bindSettings) }
         }
     }
 
@@ -159,7 +174,7 @@ class ViewfinderRecordingFlowTest {
             outputCreated.complete(Unit)
 
             assertEquals(0, recordingSession.startCount)
-            assertFalse(viewModel.uiState.value.recording.isActive)
+            assertFalse(state().recording.isActive())
             assertTrue(effects.none { it is PlayStartSound })
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
@@ -189,14 +204,14 @@ class ViewfinderRecordingFlowTest {
 
             viewModel.onAction(RecordingAction.RecordingRequested)
             viewModel.onAction(RecordingAction.RecordingStopRequested)
-            assertFalse(viewModel.uiState.value.recording.isActive)
+            assertFalse(state().recording.isActive())
             recordingSession.emit(
                 RecordingEvent.Finalized(outcome = RecordingOutcome.NothingPlayableWritten),
             )
             finishStartSound(viewModel = viewModel, effects = effects)
 
             assertEquals(1, recordingSession.stopCount)
-            assertFalse(viewModel.uiState.value.recording.isActive)
+            assertFalse(state().recording.isActive())
             coVerify(exactly = 1) { captureOutputRepository.delete(OUTPUT_URI) }
         }
     }
@@ -229,7 +244,7 @@ class ViewfinderRecordingFlowTest {
                     showsCameraModeTabs = false,
                 ),
             )
-            assertEquals(CameraMode.VIDEO, viewModel.uiState.value.mode)
+            assertEquals(CameraMode.VIDEO, state().mode)
             val effects = collectEffects(viewModel)
             viewModel.onAction(LifecycleAction.ScreenCreated(host))
 
@@ -280,28 +295,33 @@ class ViewfinderRecordingFlowTest {
             ),
         )
 
-        assertEquals(CameraMode.VIDEO, viewModel.uiState.value.mode)
+        assertEquals(CameraMode.VIDEO, state().mode)
 
         viewModel.onAction(LifecycleAction.ScreenCreated(host))
         viewModel.onAction(LifecycleAction.ScreenResumed)
         viewModel.onAction(LifecycleAction.PreviewStreamingStarted)
 
-        assertTrue(viewModel.uiState.value.isSelfIlluminating)
+        assertTrue(state().selfIlluminate())
         verify { settingsRepository.modeSettings(videoSlot) }
         verify(exactly = 0) {
             settingsRepository.modeSettings(match { it.mode != CameraMode.VIDEO })
         }
         verify(exactly = 1) {
-            cameraSession.bind(
-                match {
+            cameraBindSettingsMapper.map(
+                state = match {
                     it.mode == CameraMode.VIDEO &&
-                        it.video?.quality == VideoQuality.UHD &&
-                        it.video.frameRate == VideoFrameRate.FPS_60 &&
-                        it.photo == null
+                        it.requiresVideoModeOnly &&
+                        it.modeSettings == videoSettings
                 },
+                target = any(),
             )
         }
+        verify(exactly = 1) { cameraSession.bind(bindSettings) }
         verify { cameraSession.setFlashMode(FlashMode.SELF_ILLUMINATION) }
+    }
+
+    private fun state(): ViewfinderState {
+        return mappedState.captured
     }
 
     private fun prepareVideoOnlyCamera() {
@@ -353,10 +373,9 @@ class ViewfinderRecordingFlowTest {
             gestureDelegate = mockk(relaxed = true),
             previewControlsDelegate = mockk(relaxed = true),
             locationDelegate = mockk(relaxed = true),
-            uiStateMapper = ViewfinderUiStateMapperImpl(),
-            zoomUiStateMapper = ZoomUiStateMapperImpl(),
-            cameraBindSettingsMapper = CameraBindSettingsMapperImpl(),
-            volumeKeyActionMapper = VolumeKeyActionMapperImpl(),
+            uiStateMapper = uiStateMapper,
+            cameraBindSettingsMapper = cameraBindSettingsMapper,
+            volumeKeyActionMapper = mockk(relaxed = true),
         )
     }
 
