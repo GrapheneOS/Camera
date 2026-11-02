@@ -504,9 +504,6 @@ open class MainActivity : AppCompatActivity() {
         // strip on a mode the camera never entered.
         tabLayout.settleNow()
 
-        // The countdown would otherwise keep ticking while the app is in the background and fire a
-        // capture into a camera that has already been unbound.
-        cdTimer.cancelTimer()
         viewfinder.onAction(LifecycleAction.ScreenPaused)
         previewFrames.clear()
     }
@@ -742,8 +739,6 @@ open class MainActivity : AppCompatActivity() {
         }
 
         enableEdgeToEdge()
-
-        cdTimer.setMainActivity(this)
 
         setUpSettingsPanel()
 

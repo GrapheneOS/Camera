@@ -8,6 +8,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -75,7 +76,9 @@ class SwipeOutcomeMapperTest {
 
     @Test
     fun swipes_duringTheSelfTimer_doNothing() {
-        val counting = photoState.copy(capture = ViewfinderCaptureState(isSelfTimerRunning = true))
+        val counting = photoState.copy(
+            capture = ViewfinderCaptureState(selfTimerRemaining = 3.seconds),
+        )
 
         SwipeDirection.entries.forEach { direction ->
             assertNull(mapper.map(direction = direction, state = counting))

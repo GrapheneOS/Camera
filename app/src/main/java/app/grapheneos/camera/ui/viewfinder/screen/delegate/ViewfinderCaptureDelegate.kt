@@ -211,15 +211,14 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
     override fun startSelfTimer() {
         cancelSelfTimer()
 
-        postEffect(Effect.SelfTimer.Started)
-        setSelfTimerRunning(true)
-
         val settings = stateHolder.state.value.settings
+        setSelfTimerRemaining(settings.selfTimerDuration)
+
         selfTimer = scope.launch(mainDispatcher) {
             val timer = this
 
             selfTimerCountdown(settings.selfTimerDuration).collect { secondsLeft ->
-                postEffect(Effect.SelfTimer.Ticked(secondsLeft))
+                setSelfTimerRemaining(secondsLeft.seconds)
                 playCameraSound(tickSound(secondsLeft))
 
                 val flashes = timerLightFlashes(secondsLeft)
@@ -228,8 +227,8 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
                 }
             }
 
-            setSelfTimerRunning(false)
-            postEffect(Effect.SelfTimer.Finished)
+            setSelfTimerRemaining(null)
+            _captureEvents.trySend(ViewfinderCaptureEvent.SelfTimerFinished)
         }
     }
 
@@ -240,12 +239,11 @@ internal class ViewfinderCaptureDelegateImpl @Inject constructor(
         if (selfTimer?.isActive != true) return
 
         selfTimer?.cancel()
-        setSelfTimerRunning(false)
-        postEffect(Effect.SelfTimer.Cancelled)
+        setSelfTimerRemaining(null)
     }
 
-    private fun setSelfTimerRunning(running: Boolean) {
-        updateCapture { it.copy(isSelfTimerRunning = running) }
+    private fun setSelfTimerRemaining(remaining: Duration?) {
+        updateCapture { it.copy(selfTimerRemaining = remaining) }
     }
 
     private fun tickSound(secondsLeft: Int): CameraSound {

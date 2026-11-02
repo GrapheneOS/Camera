@@ -26,6 +26,7 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import io.mockk.every
 import io.mockk.verify
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -247,7 +248,9 @@ class ViewfinderSettingsDelegateTest {
                 it.copy(recording = it.recording.copy(phase = RecordingPhase.STARTING))
             }
             stateHolder.update { it.copy(recording = ViewfinderRecordingState()) }
-            stateHolder.update { it.copy(capture = it.capture.copy(isSelfTimerRunning = true)) }
+            stateHolder.update {
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
+            }
 
             assertEquals(
                 listOf(

@@ -82,6 +82,6 @@ data class ViewfinderState(
     }
 
     fun isSettingsPanelAvailable(): Boolean {
-        return !(recording.isActive() || capture.isSelfTimerRunning || isQrMode())
+        return !(recording.isActive() || capture.isSelfTimerRunning() || isQrMode())
     }
 }

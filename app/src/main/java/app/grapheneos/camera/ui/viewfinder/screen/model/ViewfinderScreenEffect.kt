@@ -95,19 +95,6 @@ sealed interface ViewfinderScreenEffect {
         data object HideExposure : Panel
     }
 
-    sealed interface SelfTimer : ViewfinderScreenEffect {
-
-        data object Started : SelfTimer
-
-        data object Finished : SelfTimer
-
-        data object Cancelled : SelfTimer
-
-        data class Ticked(
-            val secondsLeft: Int,
-        ) : SelfTimer
-    }
-
     sealed interface Picture : ViewfinderScreenEffect {
 
         data object PreviewFailed : Picture

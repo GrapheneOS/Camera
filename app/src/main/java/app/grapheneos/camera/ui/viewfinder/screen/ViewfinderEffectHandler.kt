@@ -31,7 +31,6 @@ import app.grapheneos.camera.ui.settingvalues.videoQualityTitle
 import app.grapheneos.camera.ui.viewfinder.components.qr.showMoreQrFormatOptions
 import app.grapheneos.camera.ui.viewfinder.components.qr.showQrResultDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CaptureAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LocationAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
@@ -71,7 +70,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Gallery -> handleGallery(effect)
             is Effect.Location -> handleLocation(effect)
             is Effect.Panel -> handlePanel(effect)
-            is Effect.SelfTimer -> handleSelfTimer(effect)
             is Effect.Picture -> handlePicture(effect)
             is Effect.Recording -> handleRecording(effect)
             is Effect.Permission -> handlePermission(effect)
@@ -269,19 +267,6 @@ internal class ViewfinderEffectHandlerImpl(
             is Effect.Panel.ShowZoom -> activity.zoomBar.showPanel()
             is Effect.Panel.HideZoom -> activity.zoomBar.hidePanel()
             is Effect.Panel.HideExposure -> activity.exposureBar.hidePanel()
-        }
-    }
-
-    private fun handleSelfTimer(effect: Effect.SelfTimer) {
-        when (effect) {
-            is Effect.SelfTimer.Started -> activity.cdTimer.onTimerStarted()
-            is Effect.SelfTimer.Ticked -> activity.cdTimer.onTick(effect.secondsLeft)
-            is Effect.SelfTimer.Cancelled -> activity.cdTimer.onTimerEnded()
-
-            is Effect.SelfTimer.Finished -> {
-                activity.cdTimer.onTimerEnded()
-                onAction(CaptureAction.ShutterClicked)
-            }
         }
     }
 

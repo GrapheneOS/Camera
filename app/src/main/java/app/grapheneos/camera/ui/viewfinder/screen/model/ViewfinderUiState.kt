@@ -7,6 +7,7 @@ import app.grapheneos.camera.R
 import app.grapheneos.camera.data.core.model.AspectRatio
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.GridType
+import kotlin.time.Duration
 
 data class ViewfinderUiState(
     val qrOverlayVisible: Boolean = false,
@@ -30,11 +31,12 @@ data class ViewfinderUiState(
     val thumbnailLoaderVisible: Boolean = false,
     val thumbnail: Bitmap? = null,
     val captureButton: CaptureButtonUiState = CaptureButtonUiState(),
+    val flipCameraVisible: Boolean = true,
     @DrawableRes val flipCameraIcon: Int = R.drawable.flip_camera,
     @StringRes val flipCameraDescription: Int = R.string.flip_camera,
     val selfTimerBadge: String = "",
     val selfTimerBadgeVisible: Boolean = false,
-    val selfTimerCountdownVisible: Boolean = false,
+    val selfTimerRemaining: Duration? = null,
     val selfTimerCancelVisible: Boolean = false,
     val gridType: GridType = GridType.NONE,
     val mode: CameraMode = CameraMode.CAMERA,

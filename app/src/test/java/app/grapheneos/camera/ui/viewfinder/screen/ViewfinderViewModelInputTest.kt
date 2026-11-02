@@ -93,7 +93,7 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
 
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
             stateHolder.update {
-                it.copy(capture = it.capture.copy(isSelfTimerRunning = true))
+                it.copy(capture = it.capture.copy(selfTimerRemaining = 3.seconds))
             }
             viewModel.onAction(CaptureAction.CaptureButtonClicked)
 
@@ -240,6 +240,17 @@ class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
                 gestureDelegate.onPreviewSwiped(SwipeDirection.UP)
                 settingsDelegate.onSettingsPanelVisibilityChanged(true)
             }
+        }
+    }
+
+    @Test
+    fun screenPaused_cancelsTheSelfTimer() {
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(LifecycleAction.ScreenPaused)
+
+            verify(exactly = 1) { captureDelegate.cancelSelfTimer() }
         }
     }
 
