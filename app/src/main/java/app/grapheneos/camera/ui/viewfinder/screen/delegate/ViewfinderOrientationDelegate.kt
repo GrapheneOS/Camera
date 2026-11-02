@@ -3,32 +3,30 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.orientation.repository.DeviceOrientationRepository
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.ui.core.screen.StateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 interface ViewfinderOrientationDelegate {
 
-    val levelUiState: StateFlow<LevelUiState>
-
-    fun bind(stateHolder: ViewfinderStateHolder)
+    fun bind(
+        stateHolder: ViewfinderStateHolder,
+        levelStateHolder: StateHolder<ViewfinderLevelState>,
+    )
 
     fun setDisplayRotation(rotation: Int)
 
@@ -37,17 +35,20 @@ interface ViewfinderOrientationDelegate {
 
 internal class ViewfinderOrientationDelegateImpl @Inject constructor(
     private val deviceOrientationRepository: DeviceOrientationRepository,
-    private val levelUiStateMapper: LevelUiStateMapper,
+    private val levelStateMapper: ViewfinderLevelStateMapper,
     @MainImmediateDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) : ViewfinderOrientationDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
-    private val _levelUiState = MutableStateFlow(LevelUiState())
-    override val levelUiState: StateFlow<LevelUiState> = _levelUiState.asStateFlow()
+    private lateinit var levelStateHolder: StateHolder<ViewfinderLevelState>
 
-    override fun bind(stateHolder: ViewfinderStateHolder) {
+    override fun bind(
+        stateHolder: ViewfinderStateHolder,
+        levelStateHolder: StateHolder<ViewfinderLevelState>,
+    ) {
         this.stateHolder = stateHolder
+        this.levelStateHolder = levelStateHolder
     }
 
     override fun setDisplayRotation(rotation: Int) {
@@ -73,12 +74,14 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
                 state.copy(deviceOrientation = motion.orientation)
             }
 
-            _levelUiState.value = levelUiStateMapper.map(
-                current = _levelUiState.value,
-                previousMotion = previousMotion,
-                motion = motion,
-                state = stateHolder.state.value,
-            )
+            levelStateHolder.update { current ->
+                levelStateMapper.map(
+                    current = current,
+                    previousMotion = previousMotion,
+                    motion = motion,
+                    state = stateHolder.state.value,
+                )
+            }
             previousMotion = motion
         }
     }
@@ -97,7 +100,7 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
             .distinctUntilChanged()
             .filterNot { shown -> shown }
             .collect {
-                _levelUiState.update { level ->
+                levelStateHolder.update { level ->
                     level.copy(visible = false)
                 }
             }
@@ -107,7 +110,7 @@ internal class ViewfinderOrientationDelegateImpl @Inject constructor(
         var isArmed = true
         var isAnnounced = false
 
-        _levelUiState
+        levelStateHolder.state
             .map { level -> level.tiltDegrees }
             .distinctUntilChanged()
             .drop(1)

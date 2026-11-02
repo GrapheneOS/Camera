@@ -2,6 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.settings.model.CameraSettings
+import app.grapheneos.camera.data.settings.model.VolumeKeyAction
 import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.CameraAction
@@ -11,6 +12,8 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Recordi
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.SettingsAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import io.mockk.every
 import io.mockk.verify
@@ -25,6 +28,47 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ViewfinderViewModelInputTest : ViewfinderViewModelTestBase() {
+
+    @Test
+    fun volumeKeyEvent_mapsWithTheCurrentSettingAndDispatchesTheResult() {
+        runTest {
+            val event = CaptureAction.VolumeKeyEvent.Pressed(VolumeKey.UP)
+            every {
+                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.ZOOM)
+            } returns CameraAction.ZoomStepKey.Pressed(ZoomDirection.IN)
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(volumeKeyAction = VolumeKeyAction.ZOOM))
+            }
+
+            viewModel.onAction(event)
+
+            verify(exactly = 1) { cameraControlsDelegate.startZoomStepping(ZoomDirection.IN) }
+        }
+    }
+
+    @Test
+    fun volumeKeyEvent_withoutAMappedAction_doesNothing() {
+        runTest {
+            val event = CaptureAction.VolumeKeyEvent.Released(VolumeKey.DOWN)
+            every {
+                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.OFF)
+            } returns null
+            val viewModel = createViewModel()
+            stateHolder.update {
+                it.copy(settings = CameraSettings(volumeKeyAction = VolumeKeyAction.OFF))
+            }
+
+            viewModel.onAction(event)
+
+            verify(exactly = 1) {
+                volumeKeyActionMapper.map(event = event, volumeKeyAction = VolumeKeyAction.OFF)
+            }
+            verify(exactly = 0) { captureDelegate.takePicture() }
+            verify(exactly = 0) { recordingDelegate.requestRecording() }
+            verify(exactly = 0) { cameraControlsDelegate.stopZoomStepping() }
+        }
+    }
 
     @Test
     fun captureKey_inQrMode_leavesTheTorchAlone() {

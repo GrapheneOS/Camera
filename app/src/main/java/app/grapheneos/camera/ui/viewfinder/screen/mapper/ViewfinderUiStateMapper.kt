@@ -3,7 +3,10 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 import android.view.Surface
 import app.grapheneos.camera.R
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
+import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderLevelState
 import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
 import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
@@ -21,6 +24,10 @@ import kotlin.time.Duration
 
 interface ViewfinderUiStateMapper {
     fun map(state: ViewfinderState): ViewfinderUiState
+
+    fun mapZoom(state: ViewfinderState): ZoomUiState
+
+    fun mapLevel(state: ViewfinderLevelState): LevelUiState
 }
 
 internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiStateMapper {
@@ -60,6 +67,28 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
             handlesVolumeKeys = state.settings.volumeKeyAction != VolumeKeyAction.VOLUME,
             cameraSoundsEnabled = state.settings.enableCameraSounds,
             dialog = state.dialog,
+        )
+    }
+
+    override fun mapZoom(state: ViewfinderState): ZoomUiState {
+        val zoom = state.session.zoom
+        val panelVisible = state.previewControls.isZoomPanelShown
+
+        return when (zoom) {
+            null -> ZoomUiState(panelVisible = panelVisible)
+            else -> ZoomUiState(
+                zoomRatio = zoom.zoomRatio,
+                linearZoom = zoom.linearZoom,
+                panelVisible = panelVisible,
+            )
+        }
+    }
+
+    override fun mapLevel(state: ViewfinderLevelState): LevelUiState {
+        return LevelUiState(
+            visible = state.visible,
+            tiltDegrees = state.tiltDegrees,
+            horizonDegrees = state.horizonDegrees,
         )
     }
 

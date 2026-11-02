@@ -2,18 +2,16 @@ package app.grapheneos.camera.di.viewfinder
 
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.LevelUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapper
+import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderLevelStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapper
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapper
-import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Reusable
@@ -38,15 +36,9 @@ internal abstract class ViewfinderBindsModule {
 
     @Binds
     @Reusable
-    abstract fun bindLevelUiStateMapper(
-        impl: LevelUiStateMapperImpl,
-    ): LevelUiStateMapper
-
-    @Binds
-    @Reusable
-    abstract fun bindZoomUiStateMapper(
-        impl: ZoomUiStateMapperImpl,
-    ): ZoomUiStateMapper
+    abstract fun bindViewfinderLevelStateMapper(
+        impl: ViewfinderLevelStateMapperImpl,
+    ): ViewfinderLevelStateMapper
 
     @Binds
     @Reusable
