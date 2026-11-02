@@ -1,8 +1,6 @@
 package app.grapheneos.camera.data.camera.session
 
 import android.annotation.SuppressLint
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.Surface
 import androidx.camera.core.Camera
@@ -15,15 +13,12 @@ import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.UseCase
-import androidx.camera.core.ZoomState
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
 import app.grapheneos.camera.data.camera.mapper.CameraXConstantsMapper
 import app.grapheneos.camera.data.camera.mapper.CameraXStateMapper
 import app.grapheneos.camera.data.camera.model.BindOutcome
@@ -35,6 +30,7 @@ import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraSessionEvent
 import app.grapheneos.camera.data.camera.model.CameraSessionPlan
 import app.grapheneos.camera.data.camera.model.CameraZoom
+import app.grapheneos.camera.data.camera.model.CameraZoomEvent
 import app.grapheneos.camera.data.camera.model.ExtensionKey
 import app.grapheneos.camera.data.camera.model.FeatureGroupRequest
 import app.grapheneos.camera.data.camera.model.HighFrameRateSupport
@@ -51,23 +47,31 @@ import app.grapheneos.camera.data.camera.repository.ExtensionAvailabilityReposit
 import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.core.model.ExtensionMode
 import app.grapheneos.camera.data.core.model.FlashMode
+import app.grapheneos.camera.di.core.CameraSessionScope
 import app.grapheneos.camera.di.core.MainImmediateDispatcher
+import app.grapheneos.camera.di.core.MainLooperDispatcher
+import app.grapheneos.camera.di.core.QrAnalysisDispatcher
 import com.google.zxing.BarcodeFormat
 import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 interface CameraSession {
     val events: Flow<CameraSessionEvent>
+    val zoomEvents: Flow<CameraZoomEvent>
     val boundCamera: StateFlow<BoundCamera?>
 
     val cameraProvider: ProcessCameraProvider?
@@ -123,13 +127,22 @@ internal class CameraSessionImpl @Inject constructor(
     private val videoQualitySupport: VideoQualitySupport,
     private val cameraXConstantsMapper: CameraXConstantsMapper,
     private val cameraXStateMapper: CameraXStateMapper,
+    private val zoomStateTracker: ZoomStateTracker,
     @MainImmediateDispatcher mainDispatcher: CoroutineDispatcher,
+    @MainLooperDispatcher private val mainLooperDispatcher: CoroutineDispatcher,
+    @QrAnalysisDispatcher qrAnalysisDispatcher: CoroutineDispatcher,
+    @CameraSessionScope private val scope: CoroutineScope,
 ) : CameraSession {
 
     private val _events = MutableSharedFlow<CameraSessionEvent>(
         extraBufferCapacity = EVENT_BUFFER_CAPACITY,
     )
     override val events: Flow<CameraSessionEvent> = _events.asSharedFlow()
+
+    private val _zoomEvents = MutableSharedFlow<CameraZoomEvent>(
+        extraBufferCapacity = EVENT_BUFFER_CAPACITY,
+    )
+    override val zoomEvents: Flow<CameraZoomEvent> = _zoomEvents.asSharedFlow()
 
     private val _boundCamera = MutableStateFlow<BoundCamera?>(null)
     override val boundCamera: StateFlow<BoundCamera?> = _boundCamera.asStateFlow()
@@ -168,7 +181,7 @@ internal class CameraSessionImpl @Inject constructor(
 
     override val zoom: CameraZoom?
         get() {
-            return zoomState?.let { cameraXStateMapper.map(it) }
+            return zoomStateTracker.zoomState?.let { cameraXStateMapper.map(it) }
         }
 
     private var extensionsManager: ExtensionsManager? = null
@@ -185,55 +198,11 @@ internal class CameraSessionImpl @Inject constructor(
     private var captureRotation: Int? = null
     private var previewRotation: Int? = null
 
-    // Asking CameraInfo for the zoom state is cheap for a plain camera but costs ~100 ms once an
-    // extension is bound, because CameraX then queries the extension's zoom range through
-    // CameraExtensionCharacteristics, which enumerates every vendor key. Read this snapshot instead
-    // of the camera on any path that runs more than once per bind. It is null from the moment a
-    // bind starts until attachZoomState has run, which is where that query was moved to.
-    private var zoomState: ZoomState? = null
-
-    private var zoomStateSource: LiveData<ZoomState>? = null
-
-    private var isZoomStateLoaded = false
-
-    private val zoomStateObserver = Observer<ZoomState> {
-        val event = when {
-            !isZoomStateLoaded -> {
-                CameraSessionEvent.ZoomStateLoaded
-            }
-
-            it.zoomRatio != zoomState?.zoomRatio || it.linearZoom != zoomState?.linearZoom -> {
-                CameraSessionEvent.ZoomStateChanged
-            }
-
-            else -> null
-        }
-
-        zoomState = it
-        isZoomStateLoaded = true
-
-        event?.let(_events::tryEmit)
-    }
-
     private val mainExecutor: Executor = mainDispatcher.asExecutor()
+    private val qrAnalysisExecutor: Executor = qrAnalysisDispatcher.asExecutor()
 
-    private val cameraExecutor = Executors.newSingleThreadExecutor()
-
-    private val handler = Handler(Looper.getMainLooper())
-
-    private val attachZoomState = Runnable {
-        if (!isActive) return@Runnable
-
-        val lifecycleOwner = previewTarget?.lifecycleOwner ?: return@Runnable
-
-        zoomStateSource = camera?.cameraInfo?.zoomState?.also {
-            it.observe(lifecycleOwner, zoomStateObserver)
-        }
-
-        zoomState = zoomStateSource?.value
-    }
-
-    private val qrAutofocus = Runnable { focusOnQrScanArea() }
+    private var attachZoomStateJob: Job? = null
+    private var qrAutofocusJob: Job? = null
 
     override fun setPreviewTarget(target: PreviewTarget?) {
         previewTarget = target
@@ -317,7 +286,7 @@ internal class CameraSessionImpl @Inject constructor(
 
         provider.unbindAll()
         _boundCamera.value = null
-        handler.removeCallbacks(qrAutofocus)
+        qrAutofocusJob?.cancel()
 
         val appliedExtension = settings.mode.extensionMode?.let(::applyExtension)
 
@@ -419,15 +388,12 @@ internal class CameraSessionImpl @Inject constructor(
     // otherwise stay attached: after a handful of mode switches a single zoom step redrew the
     // thumb once per bind that had ever happened.
     override fun reattachZoomState() {
-        zoomStateSource?.removeObserver(zoomStateObserver)
-        zoomStateSource = null
-        zoomState = null
-        isZoomStateLoaded = false
+        zoomStateTracker.detach()
         // Reading the new one is what costs ~100 ms behind an extension, and nothing before the
-        // next message needs it: the bar is drawn once ZoomStateLoaded arrives, and every other
-        // reader is a gesture.
-        handler.removeCallbacks(attachZoomState)
-        handler.post(attachZoomState)
+        // next message needs it: the bar is drawn once CameraZoomEvent.Loaded arrives, and every
+        // other reader is a gesture.
+        attachZoomStateJob?.cancel()
+        attachZoomStateJob = scope.launch(mainLooperDispatcher) { attachZoomState() }
     }
 
     override fun setExposureCompensationIndex(index: Int) {
@@ -459,21 +425,12 @@ internal class CameraSessionImpl @Inject constructor(
         qrAnalyzer?.setBarcodeFormats(barcodeFormats)
     }
 
-    internal fun close() {
-        setPreviewTarget(null)
-
-        cameraExecutor.shutdown()
-    }
-
     // CameraX unbinds every use case of a lifecycle that reaches ON_DESTROY, and this session
     // outlives the screen whose lifecycle that was.
     private fun forgetBoundCamera() {
-        handler.removeCallbacks(attachZoomState)
-        handler.removeCallbacks(qrAutofocus)
-        zoomStateSource?.removeObserver(zoomStateObserver)
-        zoomStateSource = null
-        zoomState = null
-        isZoomStateLoaded = false
+        attachZoomStateJob?.cancel()
+        qrAutofocusJob?.cancel()
+        zoomStateTracker.detach()
         camera = null
         preview = null
         imageCapture = null
@@ -644,7 +601,7 @@ internal class CameraSessionImpl @Inject constructor(
         val analysis = cameraSessionPlanFactory.createQrAnalysis()
         qrAnalyzer = analyzer
         iAnalyzer = analysis
-        analysis.setAnalyzer(cameraExecutor, analyzer)
+        analysis.setAnalyzer(qrAnalysisExecutor, analyzer)
         cameraSelector = cameraSelectorFor(
             requireNotNull(qr.lensFacing) {
                 "QR mode needs a lens facing"
@@ -652,7 +609,11 @@ internal class CameraSessionImpl @Inject constructor(
         )
 
         useCases.add(analysis)
-        handler.postDelayed(qrAutofocus, QR_AUTOFOCUS_INTERVAL_MILLIS)
+        qrAutofocusJob = scope.launch(mainLooperDispatcher) {
+            do {
+                delay(QR_AUTOFOCUS_INTERVAL)
+            } while (focusOnQrScanAreaIfResumed())
+        }
     }
 
     // False when the camera could not be asked, which fails the bind.
@@ -849,26 +810,43 @@ internal class CameraSessionImpl @Inject constructor(
         iAnalyzer?.targetRotation = rotation
     }
 
-    private fun focusOnQrScanArea() {
-        val lifecycle = previewTarget?.lifecycleOwner?.lifecycle ?: return
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+    private fun attachZoomState() {
+        val lifecycleOwner = previewTarget?.lifecycleOwner
+        if (!isActive || lifecycleOwner == null) return
 
-        val point = SurfaceOrientedMeteringPointFactory(1f, 1f)
-            .createPoint(0.5f, 0.5f, QR_SCAN_AREA_RATIO)
+        camera?.cameraInfo?.zoomState?.let { source ->
+            zoomStateTracker.attach(
+                source = source,
+                lifecycleOwner = lifecycleOwner,
+                onEvent = _zoomEvents::tryEmit,
+            )
+        }
+    }
 
-        camera?.cameraControl?.startFocusAndMetering(
-            FocusMeteringAction.Builder(point).disableAutoCancel().build()
-        )
+    private fun focusOnQrScanAreaIfResumed(): Boolean {
+        val isResumed = previewTarget
+            ?.lifecycleOwner
+            ?.lifecycle
+            ?.currentState
+            ?.isAtLeast(Lifecycle.State.RESUMED) == true
 
-        handler.postDelayed(qrAutofocus, QR_AUTOFOCUS_INTERVAL_MILLIS)
+        if (isResumed) {
+            val point = SurfaceOrientedMeteringPointFactory(1f, 1f)
+                .createPoint(0.5f, 0.5f, QR_SCAN_AREA_RATIO)
+
+            camera?.cameraControl?.startFocusAndMetering(
+                FocusMeteringAction.Builder(point).disableAutoCancel().build()
+            )
+        }
+
+        return isResumed
     }
 
     companion object {
         private const val TAG = "CameraSession"
 
         private const val EVENT_BUFFER_CAPACITY = 64
-        private const val QR_AUTOFOCUS_INTERVAL_MILLIS = 2000L
-
+        private val QR_AUTOFOCUS_INTERVAL = 2.seconds
         private val DEFAULT_LENS_FACING = LensFacing.BACK
     }
 }
