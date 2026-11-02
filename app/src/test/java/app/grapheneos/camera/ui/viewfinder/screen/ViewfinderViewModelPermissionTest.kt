@@ -1,5 +1,6 @@
 package app.grapheneos.camera.ui.viewfinder.screen
 
+import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
@@ -58,6 +59,7 @@ class ViewfinderViewModelPermissionTest : ViewfinderViewModelTestBase() {
             val viewModel = createViewModel()
             stateHolder.update {
                 it.copy(
+                    mode = CameraMode.VIDEO,
                     isCaptureSession = true,
                     requiresVideoModeOnly = true,
                     recording = it.recording.copy(isSaving = true),

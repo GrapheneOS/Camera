@@ -15,7 +15,6 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 
 data class ViewfinderUiState(
     val mode: CameraMode = CameraMode.CAMERA,
-    val isVideoMode: Boolean = false,
     val preview: PreviewUiModel = PreviewUiModel(),
     val modeTabs: ModeTabsUiModel = ModeTabsUiModel(),
     val captureButton: CaptureButtonUiModel = CaptureButtonUiModel(),

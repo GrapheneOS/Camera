@@ -197,10 +197,10 @@ class ViewfinderUiStateMapperTest {
     }
 
     @Test
-    fun videoOnlyEntryPoint_recordsWhicheverModeIsSelected() {
-        val state = map(mode = CameraMode.CAMERA, requiresVideoModeOnly = true)
+    fun videoOnlyEntryPoint_showsVideoControls() {
+        val state = map(mode = CameraMode.VIDEO, requiresVideoModeOnly = true)
 
-        assertTrue(state.isVideoMode)
+        assertEquals(CameraMode.VIDEO, state.mode)
         assertEquals(R.drawable.recording, state.captureButton.icon)
         assertEquals(AspectRatio.RATIO_16_9, state.preview.aspectRatio)
     }
@@ -457,13 +457,19 @@ class ViewfinderUiStateMapperTest {
 
     @Test
     fun videoCaptureSession_offersThePlayerOnlyForARecordingUnderReview() {
-        val waiting = map(isCaptureSession = true, requiresVideoModeOnly = true)
+        val waiting = map(
+            mode = CameraMode.VIDEO,
+            isCaptureSession = true,
+            requiresVideoModeOnly = true,
+        )
         val recording = map(
+            mode = CameraMode.VIDEO,
             isCaptureSession = true,
             requiresVideoModeOnly = true,
             recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )
         val reviewing = map(
+            mode = CameraMode.VIDEO,
             isCaptureSession = true,
             requiresVideoModeOnly = true,
             capture = ViewfinderCaptureState(isCapturedPreviewShown = true),
@@ -478,8 +484,9 @@ class ViewfinderUiStateMapperTest {
 
     @Test
     fun videoOnlySession_hidesTheThirdOptionWhileRecording() {
-        val idle = map(requiresVideoModeOnly = true)
+        val idle = map(mode = CameraMode.VIDEO, requiresVideoModeOnly = true)
         val recording = map(
+            mode = CameraMode.VIDEO,
             requiresVideoModeOnly = true,
             recording = ViewfinderRecordingState(phase = RecordingPhase.RECORDING),
         )

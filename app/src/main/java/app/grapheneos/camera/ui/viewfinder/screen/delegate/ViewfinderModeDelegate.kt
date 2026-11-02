@@ -1,6 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.data.core.model.CameraMode
+import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import javax.inject.Inject
 
@@ -12,13 +13,18 @@ interface ViewfinderModeDelegate {
     fun select(mode: CameraMode): Boolean
 }
 
-internal class ViewfinderModeDelegateImpl @Inject constructor() : ViewfinderModeDelegate {
+internal class ViewfinderModeDelegateImpl @Inject constructor(
+    private val entryPoint: CameraEntryPoint,
+) : ViewfinderModeDelegate {
 
     private lateinit var stateHolder: ViewfinderStateHolder
 
     override val defaultMode: CameraMode
         get() {
-            return DEFAULT_MODE
+            return when {
+                entryPoint.requiresVideoModeOnly -> CameraMode.VIDEO
+                else -> CameraMode.CAMERA
+            }
         }
 
     override fun bind(stateHolder: ViewfinderStateHolder) {
@@ -31,9 +37,5 @@ internal class ViewfinderModeDelegateImpl @Inject constructor() : ViewfinderMode
         stateHolder.update { it.copy(mode = mode) }
 
         return true
-    }
-
-    private companion object {
-        val DEFAULT_MODE = CameraMode.CAMERA
     }
 }
