@@ -2,7 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 import kotlin.math.abs
 

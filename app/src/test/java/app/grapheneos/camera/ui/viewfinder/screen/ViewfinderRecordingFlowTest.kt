@@ -28,11 +28,11 @@ import app.grapheneos.camera.ui.viewfinder.screen.mapper.CameraBindSettingsMappe
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ViewfinderUiStateMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.ZoomUiStateMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect.Recording.PlayStartSound
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

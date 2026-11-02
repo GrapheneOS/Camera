@@ -5,6 +5,9 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.VolumeKey
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 
 sealed interface ViewfinderAction {
 

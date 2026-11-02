@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.delegate
 
 import android.graphics.Bitmap
 import app.grapheneos.camera.data.media.model.CapturedItem

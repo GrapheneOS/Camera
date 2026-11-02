@@ -20,10 +20,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderRecordingDe
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderScreenWakeDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.delegate.ViewfinderSettingsDelegate
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.VolumeKeyActionMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

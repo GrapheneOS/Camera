@@ -21,9 +21,9 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.PreviewFrameHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
 import com.google.zxing.BarcodeFormat
 import io.mockk.every
 import io.mockk.mockk

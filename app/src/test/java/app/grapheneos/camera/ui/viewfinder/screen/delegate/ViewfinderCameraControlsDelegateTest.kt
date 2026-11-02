@@ -12,7 +12,7 @@ import app.grapheneos.camera.testutil.MainDispatcherRule
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapperImpl
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
