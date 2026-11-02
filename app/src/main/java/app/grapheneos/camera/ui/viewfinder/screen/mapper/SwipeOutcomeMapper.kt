@@ -1,8 +1,8 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeOutcome
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 
 interface SwipeOutcomeMapper {

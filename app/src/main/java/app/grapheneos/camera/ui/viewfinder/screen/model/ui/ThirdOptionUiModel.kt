@@ -1,11 +1,11 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.ui
 
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import app.grapheneos.camera.R
 
-data class ThirdOptionUiState(
+data class ThirdOptionUiModel(
     val visible: Boolean = true,
     @DrawableRes val icon: Int = R.drawable.option_circle,
     @StringRes val description: Int = R.string.open_gallery,

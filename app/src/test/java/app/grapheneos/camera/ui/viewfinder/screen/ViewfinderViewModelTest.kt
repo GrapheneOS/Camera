@@ -14,10 +14,10 @@ import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.Capture
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.PermissionAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

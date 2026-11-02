@@ -2,7 +2,7 @@ package app.grapheneos.camera.ui.viewfinder.screen
 
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent as NavEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

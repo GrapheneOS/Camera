@@ -1,7 +1,7 @@
 package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 
 interface ZoomUiStateMapper {

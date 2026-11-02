@@ -5,8 +5,8 @@ import app.grapheneos.camera.data.camera.model.PhotoBindSettings
 import app.grapheneos.camera.data.camera.model.QrBindSettings
 import app.grapheneos.camera.data.camera.model.VideoBindSettings
 import app.grapheneos.camera.data.core.model.JpegQuality
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import javax.inject.Inject
 
 interface CameraBindSettingsMapper {

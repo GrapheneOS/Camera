@@ -7,7 +7,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatSeekBar
-import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 
 class ExposureBar : AppCompatSeekBar {
     constructor(context: Context) : super(context)
@@ -19,9 +19,9 @@ class ExposureBar : AppCompatSeekBar {
 
     var onCompensationDragged: (Int) -> Unit = {}
 
-    private var renderedExposure: ExposureUiState? = null
+    private var renderedExposure: ExposureUiModel? = null
 
-    fun render(exposure: ExposureUiState) {
+    fun render(exposure: ExposureUiModel) {
         if (exposure == renderedExposure) return
         renderedExposure = exposure
 

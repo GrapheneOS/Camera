@@ -8,7 +8,7 @@ import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.NextZoomStopMapper
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
-import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ZoomDirection
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher

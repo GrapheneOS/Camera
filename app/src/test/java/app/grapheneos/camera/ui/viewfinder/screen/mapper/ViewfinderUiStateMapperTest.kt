@@ -9,14 +9,14 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.data.settings.model.GridType
 import app.grapheneos.camera.data.settings.model.VolumeKeyAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderPreviewControlsState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
@@ -505,7 +505,7 @@ class ViewfinderUiStateMapperTest {
 
         assertEquals(270, state.preview.sensorOrientationDegrees)
         assertEquals(modes, state.modeTabs.availableModes)
-        assertEquals(ExposureUiState(range = -12..12, progress = 3), state.exposure)
+        assertEquals(ExposureUiModel(range = -12..12, progress = 3), state.exposure)
     }
 
     @Test

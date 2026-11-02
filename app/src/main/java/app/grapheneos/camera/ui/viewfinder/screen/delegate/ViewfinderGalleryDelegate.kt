@@ -12,8 +12,8 @@ import app.grapheneos.camera.domain.media.usecase.RevertToMediaStoreLocation
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderGalleryState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderGalleryState
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher

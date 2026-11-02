@@ -10,10 +10,10 @@ import app.grapheneos.camera.domain.capture.coordinator.VideoRecorder
 import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

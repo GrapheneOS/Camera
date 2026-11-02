@@ -23,10 +23,10 @@ import app.grapheneos.camera.domain.sound.usecase.PlayCameraSound
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.model.PictureFailureCause
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCaptureEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
 import app.grapheneos.camera.util.printStackTraceToString
 import java.io.IOException
 import javax.inject.Inject

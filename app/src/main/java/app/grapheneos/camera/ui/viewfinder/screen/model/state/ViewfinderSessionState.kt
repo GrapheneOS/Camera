@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
 import app.grapheneos.camera.data.camera.model.CameraExposure
 import app.grapheneos.camera.data.camera.model.CameraZoom

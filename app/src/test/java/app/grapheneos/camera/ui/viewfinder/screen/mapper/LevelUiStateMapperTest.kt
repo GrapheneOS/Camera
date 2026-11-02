@@ -5,8 +5,8 @@ import app.grapheneos.camera.data.core.model.DeviceOrientation
 import app.grapheneos.camera.data.orientation.model.DeviceMotion
 import app.grapheneos.camera.data.settings.model.CameraSettings
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCaptureState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderCaptureState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import kotlin.time.Duration.Companion.seconds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

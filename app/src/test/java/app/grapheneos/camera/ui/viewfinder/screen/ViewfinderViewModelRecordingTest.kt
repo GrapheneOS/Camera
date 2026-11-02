@@ -5,11 +5,11 @@ import app.grapheneos.camera.data.media.model.CapturedItem
 import app.grapheneos.camera.data.media.model.CapturedItemType
 import app.grapheneos.camera.data.permission.model.AppPermission
 import app.grapheneos.camera.testutil.cameraEntryPoint
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.DialogAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.LifecycleAction
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderAction.RecordingAction
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.verify

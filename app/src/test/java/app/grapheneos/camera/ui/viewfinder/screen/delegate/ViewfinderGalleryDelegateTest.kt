@@ -15,9 +15,9 @@ import app.grapheneos.camera.testutil.cameraEntryPoint
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThumbnailSize
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderDialog
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.ThumbnailSize
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify

@@ -21,18 +21,18 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.ui.activities.CaptureActivity
 import app.grapheneos.camera.ui.activities.MainActivity
 import app.grapheneos.camera.ui.core.theme.cameraColorScheme
-import app.grapheneos.camera.ui.viewfinder.screen.model.CaptureButtonUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ExposureUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.FlipCameraUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.LevelUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.PreviewUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.QrUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.RotationUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.SelfTimerUiState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ThirdOptionUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderUiState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.CaptureButtonUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ExposureUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.FlipCameraUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.PreviewUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.QrUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RecordingUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.RotationUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.SelfTimerUiModel
+import app.grapheneos.camera.ui.viewfinder.screen.model.ui.ThirdOptionUiModel
 import com.google.android.material.color.MaterialColors
 import kotlin.math.abs
 
@@ -93,7 +93,7 @@ internal class ViewfinderViewRenderer(
         renderBoundPreview(state.preview)
     }
 
-    private fun renderQr(qr: QrUiState) {
+    private fun renderQr(qr: QrUiModel) {
         activity.qrOverlay.visibility = visibleOrInvisible(qr.overlayVisible)
         activity.qrScanToggles.visibility = visibleOrGone(qr.scanTogglesVisible)
     }
@@ -102,11 +102,11 @@ internal class ViewfinderViewRenderer(
         activity.cancelButtonView.visibility = visibleOrInvisible(visible)
     }
 
-    private fun renderCaptureButton(captureButton: CaptureButtonUiState) {
+    private fun renderCaptureButton(captureButton: CaptureButtonUiModel) {
         activity.captureButton.render(captureButton)
     }
 
-    private fun renderFlipCamera(flipCamera: FlipCameraUiState) {
+    private fun renderFlipCamera(flipCamera: FlipCameraUiModel) {
         activity.flipCameraCircle.visibility = visibleOrInvisible(flipCamera.visible)
         activity.setFlipCameraIcon(
             icon = flipCamera.icon,
@@ -114,7 +114,7 @@ internal class ViewfinderViewRenderer(
         )
     }
 
-    private fun renderThirdOption(thirdOption: ThirdOptionUiState) {
+    private fun renderThirdOption(thirdOption: ThirdOptionUiModel) {
         activity.thirdOption.visibility = visibleOrInvisible(thirdOption.visible)
         activity.setThirdCircleIcon(
             icon = thirdOption.icon,
@@ -125,7 +125,7 @@ internal class ViewfinderViewRenderer(
         renderThumbnail(thirdOption.thumbnail)
     }
 
-    private fun renderSelfTimer(selfTimer: SelfTimerUiState) {
+    private fun renderSelfTimer(selfTimer: SelfTimerUiModel) {
         val isRunning = selfTimer.remaining != null
 
         activity.cbText.text = selfTimer.badge
@@ -135,7 +135,7 @@ internal class ViewfinderViewRenderer(
         activity.cbCross.visibility = visibleOrInvisible(isRunning)
     }
 
-    private fun renderRecording(recording: RecordingUiState) {
+    private fun renderRecording(recording: RecordingUiModel) {
         activity.micOffIcon.visibility = visibleOrGone(recording.micOffIconVisible)
         activity.muteToggle.visibility = visibleOrGone(recording.muteToggleVisible)
         activity.setMuteToggleState(muted = recording.isMuted)
@@ -143,7 +143,7 @@ internal class ViewfinderViewRenderer(
         activity.timerView.text = recording.timerText
     }
 
-    private fun renderExposure(exposure: ExposureUiState) {
+    private fun renderExposure(exposure: ExposureUiModel) {
         activity.exposureBar.render(exposure)
         renderPanel(
             panel = activity.exposureBarPanel,
@@ -284,7 +284,7 @@ internal class ViewfinderViewRenderer(
         )
     }
 
-    private fun renderBoundPreview(preview: PreviewUiState) {
+    private fun renderBoundPreview(preview: PreviewUiModel) {
         val sensorOrientationDegrees = preview.sensorOrientationDegrees ?: return
 
         activity.previewView.setOnTouchListener(activity.gestureHandler)
@@ -302,7 +302,7 @@ internal class ViewfinderViewRenderer(
         }
     }
 
-    private fun renderRotation(rotation: RotationUiState) {
+    private fun renderRotation(rotation: RotationUiModel) {
         if (rotation.iconDegrees != renderedIconRotation) {
             renderedIconRotation = rotation.iconDegrees
 

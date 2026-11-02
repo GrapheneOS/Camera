@@ -20,10 +20,10 @@ import app.grapheneos.camera.testutil.collectNavEvents
 import app.grapheneos.camera.testutil.settingsRepositoryOver
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.quicksettings.navigation.QuickSetting
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderNavEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import io.mockk.every
 import io.mockk.verify
 import kotlin.time.Duration.Companion.seconds

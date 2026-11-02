@@ -2,9 +2,9 @@ package app.grapheneos.camera.ui.viewfinder.screen.delegate
 
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapper
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeOutcome
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeOutcome
 import javax.inject.Inject
 
 interface ViewfinderGestureDelegate {

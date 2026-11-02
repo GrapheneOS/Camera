@@ -17,9 +17,9 @@ import app.grapheneos.camera.domain.camera.usecase.ResolveDroppedVideoQuality
 import app.grapheneos.camera.domain.core.model.CameraEntryPoint
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderHost
 import app.grapheneos.camera.ui.viewfinder.screen.ViewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderBindTarget
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderCameraEvent
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderBindTarget
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderCameraEvent
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope

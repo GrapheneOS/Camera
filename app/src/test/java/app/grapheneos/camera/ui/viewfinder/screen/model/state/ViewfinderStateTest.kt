@@ -1,4 +1,4 @@
-package app.grapheneos.camera.ui.viewfinder.screen.model
+package app.grapheneos.camera.ui.viewfinder.screen.model.state
 
 import app.grapheneos.camera.data.camera.model.LensFacing
 import app.grapheneos.camera.data.core.model.AspectRatio

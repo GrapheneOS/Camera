@@ -4,8 +4,8 @@ import app.grapheneos.camera.data.core.model.CameraMode
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
 import app.grapheneos.camera.ui.viewfinder.screen.mapper.SwipeOutcomeMapperImpl
-import app.grapheneos.camera.ui.viewfinder.screen.model.SwipeDirection
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect
+import app.grapheneos.camera.ui.viewfinder.screen.model.input.SwipeDirection
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test

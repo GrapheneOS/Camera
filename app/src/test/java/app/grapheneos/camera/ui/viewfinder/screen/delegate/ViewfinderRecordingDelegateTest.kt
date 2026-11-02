@@ -12,10 +12,10 @@ import app.grapheneos.camera.domain.capture.model.RecordVideoRequest
 import app.grapheneos.camera.domain.capture.model.RecordedVideoEvent
 import app.grapheneos.camera.testutil.collectEffects
 import app.grapheneos.camera.testutil.viewfinderStateHolder
-import app.grapheneos.camera.ui.viewfinder.screen.model.RecordingPhase
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingEvent
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderRecordingState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderScreenEffect as Effect
+import app.grapheneos.camera.ui.viewfinder.screen.model.delegate.ViewfinderRecordingEvent
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.RecordingPhase
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderRecordingState
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk

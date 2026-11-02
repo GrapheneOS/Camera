@@ -2,10 +2,10 @@ package app.grapheneos.camera.ui.viewfinder.screen.mapper
 
 import app.grapheneos.camera.data.camera.model.CameraZoom
 import app.grapheneos.camera.data.core.model.CameraMode
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderPreviewControlsState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderSessionState
-import app.grapheneos.camera.ui.viewfinder.screen.model.ViewfinderState
 import app.grapheneos.camera.ui.viewfinder.screen.model.ZoomUiState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderPreviewControlsState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderSessionState
+import app.grapheneos.camera.ui.viewfinder.screen.model.state.ViewfinderState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
