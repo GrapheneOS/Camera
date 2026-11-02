@@ -30,7 +30,6 @@ internal class ViewfinderUiStateMapperImpl @Inject constructor() : ViewfinderUiS
 
         return ViewfinderUiState(
             mode = state.mode,
-            isVideoMode = state.isVideoMode(),
             preview = PreviewUiModel(
                 aspectRatio = state.aspectRatio(),
                 sensorOrientationDegrees = state.session.sensorOrientationDegrees,
